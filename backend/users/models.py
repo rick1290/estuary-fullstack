@@ -23,7 +23,6 @@ class User(BaseUser):
     last_name = models.CharField(_('last name'), max_length=150, blank=True)
     bio = models.TextField(blank=True)
     avatar_url = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     gender = models.TextField(blank=True, null=True)
     birthdate = models.DateField(blank=True, null=True)
     register_date = models.DateField(blank=True, null=True)
