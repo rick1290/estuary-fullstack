@@ -34,7 +34,8 @@ guessers._timezone_format = patched_timezone_format
 User = get_user_model()
 from practitioners.models import Practitioner, Topic, Specialize, Style, Certification, Education, OutOfOffice, Question, SchedulePreference, ServiceSchedule, ScheduleAvailability, Schedule, ScheduleTimeSlot
 from users.models import UserFavoritePractitioner
-from utils.models import Modality, Language
+from utils.models import Language
+from common.models import Modality
 from services.models import Service, ServiceCategory, ServiceType, ServiceSession, SessionAgendaItem, ServiceBenefit, ServicePractitioner, ServiceRelationship
 from bookings.models import Booking
 from payments.models import Order, CreditTransaction, PractitionerCreditTransaction, PractitionerPayout

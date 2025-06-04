@@ -1,32 +1,41 @@
-import uuid
 from django.db import models
 from django.utils import timezone
+from utils.models import BaseModel
 
 
-class Conversation(models.Model):
+class Conversation(BaseModel):
     """
     Model representing a conversation between users.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     participants = models.ManyToManyField('users.User', related_name='conversations')
     is_active = models.BooleanField(default=True)
-    title = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True)
     
     # For practitioner-client conversations
-    related_booking = models.ForeignKey('bookings.Booking', on_delete=models.SET_NULL, blank=True, null=True, related_name='conversations')
-    related_service = models.ForeignKey('services.Service', on_delete=models.SET_NULL, blank=True, null=True)
+    related_booking = models.ForeignKey(
+        'bookings.Booking', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True, 
+        related_name='conversations'
+    )
+    related_service = models.ForeignKey(
+        'services.Service', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='conversations'
+    )
     
     class Meta:
-        # Using Django's default naming convention (messaging_conversation)
         indexes = [
-            models.Index(fields=['created_at']),
-            models.Index(fields=['updated_at']),
+            models.Index(fields=['is_active', 'updated_at']),
+            models.Index(fields=['related_booking']),
+            models.Index(fields=['related_service']),
         ]
     
     def __str__(self):
-        return f"Conversation {self.id} - {self.title or 'Untitled'}"
+        return f"Conversation {str(self.id)[:8]}... - {self.title or 'Untitled'}"
     
     def add_message(self, sender, content, message_type='text', attachments=None):
         """
@@ -60,7 +69,7 @@ class Conversation(models.Model):
         )
 
 
-class Message(models.Model):
+class Message(BaseModel):
     """
     Model representing a message in a conversation.
     """
@@ -77,29 +86,31 @@ class Message(models.Model):
         ('interactive', 'Interactive'),
     )
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='sent_messages')
     content = models.TextField()
     message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='text')
-    attachments = models.JSONField(blank=True, null=True)  # Store file URLs and metadata
-    created_at = models.DateTimeField(auto_now_add=True)
+    attachments = models.JSONField(default=list, blank=True)
+    
+    # Edit tracking
     edited_at = models.DateTimeField(blank=True, null=True)
     is_edited = models.BooleanField(default=False)
+    
+    # Soft delete
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(blank=True, null=True)
     
     class Meta:
-        # Using Django's default naming convention (messaging_message)
         ordering = ['created_at']
         indexes = [
             models.Index(fields=['conversation', 'created_at']),
-            models.Index(fields=['sender']),
+            models.Index(fields=['sender', 'created_at']),
             models.Index(fields=['is_deleted']),
+            models.Index(fields=['message_type']),
         ]
     
     def __str__(self):
-        return f"Message from {self.sender} in {self.conversation}"
+        return f"Message from {self.sender} in {str(self.conversation.id)[:8]}..."
     
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -132,11 +143,10 @@ class Message(models.Model):
         self.save(update_fields=['is_deleted', 'deleted_at'])
 
 
-class MessageReceipt(models.Model):
+class MessageReceipt(BaseModel):
     """
     Model representing message read receipts.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='receipts')
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='message_receipts')
     is_read = models.BooleanField(default=False)
@@ -144,15 +154,15 @@ class MessageReceipt(models.Model):
     delivered_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        # Using Django's default naming convention (messaging_messagereceipt)
         unique_together = ('message', 'user')
         indexes = [
             models.Index(fields=['user', 'is_read']),
+            models.Index(fields=['message', 'is_read']),
         ]
     
     def __str__(self):
         status = "Read" if self.is_read else "Unread"
-        return f"{status} receipt for {self.user} - Message {self.message.id}"
+        return f"{status} receipt for {self.user} - Message {str(self.message.id)[:8]}..."
     
     def mark_as_read(self):
         """
@@ -164,20 +174,21 @@ class MessageReceipt(models.Model):
             self.save(update_fields=['is_read', 'read_at'])
 
 
-class TypingIndicator(models.Model):
+class TypingIndicator(BaseModel):
     """
     Model representing typing indicators in conversations.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='typing_indicators')
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='typing_indicators')
     is_typing = models.BooleanField(default=True)
-    timestamp = models.DateTimeField(auto_now=True)
     
     class Meta:
-        # Using Django's default naming convention (messaging_typingindicator)
         unique_together = ('conversation', 'user')
+        indexes = [
+            models.Index(fields=['conversation', 'is_typing']),
+            models.Index(fields=['user', 'updated_at']),
+        ]
     
     def __str__(self):
         status = "typing" if self.is_typing else "not typing"
-        return f"{self.user} is {status} in {self.conversation}"
+        return f"{self.user} is {status} in {str(self.conversation.id)[:8]}..."

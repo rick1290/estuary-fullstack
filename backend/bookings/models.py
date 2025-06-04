@@ -1,161 +1,322 @@
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from utils.models import BaseModel, PublicModel
+from decimal import Decimal
+
+# Booking status choices
+BOOKING_STATUS_CHOICES = [
+    ('draft', 'Draft'),
+    ('pending', 'Pending Approval'),
+    ('confirmed', 'Confirmed'),
+    ('in_progress', 'In Progress'),
+    ('completed', 'Completed'),
+    ('canceled', 'Canceled'),
+    ('no_show', 'No Show'),
+    ('rescheduled', 'Rescheduled'),
+]
+
+# Cancellation source choices
+CANCELED_BY_CHOICES = [
+    ('client', 'Client'),
+    ('practitioner', 'Practitioner'),
+    ('system', 'System'),
+    ('admin', 'Admin'),
+]
+
+# Payment status choices
+PAYMENT_STATUS_CHOICES = [
+    ('pending', 'Pending'),
+    ('paid', 'Paid'),
+    ('partially_paid', 'Partially Paid'),
+    ('refunded', 'Refunded'),
+    ('failed', 'Failed'),
+]
 
 
-class Booking(models.Model):
+class Booking(PublicModel):
     """
     Model representing a booking between a client and practitioner.
+    Updated to use PublicModel and improved structure.
     """
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('completed', 'Completed'),
-        ('canceled', 'Canceled'),
-        ('no_show', 'No Show'),
-    )
+    # Core relationships
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, 
+                           related_name='bookings', help_text="Client making the booking")
+    practitioner = models.ForeignKey('practitioners.Practitioner', on_delete=models.CASCADE,
+                                   related_name='bookings', help_text="Practitioner providing the service")
+    service = models.ForeignKey('services.Service', on_delete=models.CASCADE,
+                              related_name='bookings', help_text="Service being booked")
     
-    CANCELED_BY_CHOICES = (
-        ('client', 'Client'),
-        ('practitioner', 'Practitioner'),
-    )
+    # Scheduling
+    start_time = models.DateTimeField(help_text="Scheduled start time")
+    end_time = models.DateTimeField(help_text="Scheduled end time")
+    actual_start_time = models.DateTimeField(blank=True, null=True, help_text="Actual start time")
+    actual_end_time = models.DateTimeField(blank=True, null=True, help_text="Actual end time")
+    timezone = models.CharField(max_length=50, default='UTC', help_text="Timezone for this booking")
     
-    id = models.BigAutoField(primary_key=True)
-    practitioner = models.ForeignKey('practitioners.Practitioner', models.DO_NOTHING, blank=True, null=True)
-    user = models.ForeignKey('users.User', models.DO_NOTHING, related_name='booking_user_set', blank=True, null=True)
-    start_time = models.DateTimeField(blank=True, null=True)
-    end_time_expected = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
-    is_canceled = models.BooleanField(blank=True, null=True)
-    cancellation_reason = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    is_rescheduled = models.BooleanField(blank=True, null=True)
-    service = models.ForeignKey('services.Service', models.DO_NOTHING, blank=True, null=True)
-    note = models.TextField(blank=True, null=True)
-    location = models.TextField(blank=True, null=True)
-    title = models.TextField(blank=True, null=True)
-    credit = models.ForeignKey('payments.CreditTransaction', models.DO_NOTHING, blank=True, null=True)
-    parent_service = models.ForeignKey('services.Service', models.DO_NOTHING, related_name='booking_parent_service_set', blank=True, null=True)
-    credit_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
+    # Status and tracking
+    status = models.CharField(max_length=20, choices=BOOKING_STATUS_CHOICES, default='pending')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    
+    # Booking details
+    title = models.CharField(max_length=255, blank=True, null=True, help_text="Custom booking title")
+    description = models.TextField(blank=True, null=True, help_text="Booking description or notes")
+    client_notes = models.TextField(blank=True, null=True, help_text="Notes from the client")
+    practitioner_notes = models.TextField(blank=True, null=True, help_text="Private notes from practitioner")
+    
+    # Location and delivery
+    location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL, 
+                               blank=True, null=True, related_name='bookings',
+                               help_text="Physical location if in-person")
+    meeting_url = models.URLField(blank=True, null=True, help_text="Virtual meeting link")
+    meeting_id = models.CharField(max_length=100, blank=True, null=True, help_text="Meeting ID or room number")
+    
+    # Pricing and payment
+    price_charged = models.DecimalField(max_digits=10, decimal_places=2, 
+                                      help_text="Amount charged for this booking")
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'),
+                                        help_text="Discount applied")
+    final_amount = models.DecimalField(max_digits=10, decimal_places=2,
+                                     help_text="Final amount after discounts")
+    
+    # Completion tracking
     completed_at = models.DateTimeField(blank=True, null=True)
-    # Removed redundant daily_room_id field as we're using the room ForeignKey
-    practitioner_note = models.TextField(blank=True, null=True)
+    no_show_at = models.DateTimeField(blank=True, null=True)
+    
+    # Cancellation and rescheduling
+    canceled_at = models.DateTimeField(blank=True, null=True)
     canceled_by = models.CharField(max_length=20, choices=CANCELED_BY_CHOICES, blank=True, null=True)
-    canceled_date = models.DateTimeField(blank=True, null=True)
-    cancel_reason = models.TextField(blank=True, null=True)
-    room = models.ForeignKey('rooms.Room', models.DO_NOTHING, blank=True, null=True)
-    is_group = models.BooleanField(blank=True, null=True)
+    cancellation_reason = models.TextField(blank=True, null=True)
     
-    # For packages/bundles/courses - links child bookings to parent booking
-    parent_booking = models.ForeignKey('self', models.CASCADE, null=True, blank=True, related_name='child_bookings')
+    rescheduled_from = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True,
+                                       related_name='rescheduled_to_bookings',
+                                       help_text="Original booking this was rescheduled from")
     
-    # For workshops/courses - links to specific service session
-    service_session = models.ForeignKey('services.ServiceSession', models.SET_NULL, null=True, blank=True)
+    # Hierarchical bookings (packages, bundles, courses)
+    parent_booking = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True,
+                                     related_name='child_bookings',
+                                     help_text="Parent booking for packages/bundles")
     
-    # Many-to-many relationships
-    topics = models.ManyToManyField('practitioners.Topic', blank=True, related_name='bookings')
+    # Package and Bundle references
+    package = models.ForeignKey('services.Package', on_delete=models.SET_NULL, blank=True, null=True,
+                              related_name='bookings', help_text="Package this booking is for")
+    bundle = models.ForeignKey('services.Bundle', on_delete=models.SET_NULL, blank=True, null=True,
+                             related_name='bookings', help_text="Bundle this booking is for")
+    is_package_purchase = models.BooleanField(default=False, help_text="Whether this is a package purchase")
+    is_bundle_purchase = models.BooleanField(default=False, help_text="Whether this is a bundle purchase")
     
-    # These fields are now in SessionParticipant but kept for backward compatibility
-    check_in_time = models.DateTimeField(blank=True, null=True)
-    check_out_time = models.DateTimeField(blank=True, null=True)
-    attendance_duration = models.IntegerField(blank=True, null=True)
+    # Group bookings and sessions
+    service_session = models.ForeignKey('services.ServiceSession', on_delete=models.SET_NULL, 
+                                      blank=True, null=True, related_name='bookings',
+                                      help_text="Specific session for workshops/courses")
+    max_participants = models.PositiveIntegerField(default=1, help_text="Max participants for this booking")
+    
+    # External integrations
+    room = models.ForeignKey('rooms.Room', on_delete=models.SET_NULL, blank=True, null=True,
+                           related_name='bookings', help_text="Video room for virtual sessions")
+    payment_transaction = models.ForeignKey('payments.CreditTransaction', on_delete=models.SET_NULL,
+                                          blank=True, null=True, related_name='bookings')
 
     class Meta:
-        # Using Django's default naming convention (bookings_booking)
-        db_table_comment = 'Booking for session and bundle'
+        verbose_name = 'Booking'
+        verbose_name_plural = 'Bookings'
+        ordering = ['-start_time']
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['practitioner', 'start_time']),
+            models.Index(fields=['service', 'status']),
+            models.Index(fields=['status', 'start_time']),
+            models.Index(fields=['payment_status']),
+            models.Index(fields=['parent_booking']),
             models.Index(fields=['service_session']),
+            models.Index(fields=['start_time', 'end_time']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(start_time__lt=models.F('end_time')),
+                name='booking_valid_time_range'
+            ),
+            models.CheckConstraint(
+                check=models.Q(final_amount__gte=0),
+                name='booking_non_negative_amount'
+            ),
         ]
 
     def __str__(self):
-        return f"Booking {self.id} - {self.practitioner} and {self.user}"
+        return f"Booking #{self.id}: {self.service.name} - {self.user.email}"
+
+    def clean(self):
+        """Validate booking data."""
+        super().clean()
+        
+        # Validate time range
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError("Start time must be before end time")
+        
+        # Validate pricing
+        expected_price = self.price_charged - self.discount_amount
+        if abs(self.final_amount - expected_price) > Decimal('0.01'):
+            raise ValidationError("Final amount doesn't match price calculation")
     
-    @property
-    def is_workshop_booking(self):
-        """Check if this is a booking for a workshop/group session"""
-        return self.service_session is not None
-    
-    @property
-    def is_course_booking(self):
-        """Check if this is a booking for a course"""
-        return self.service and self.service.is_course
-    
-    @property
-    def is_package_booking(self):
-        """Check if this is a booking for a package or bundle"""
-        return self.service and (self.service.is_package or self.service.is_bundle)
-    
-    @property
-    def is_parent_booking(self):
-        """Check if this is a parent booking with child bookings"""
-        return self.child_bookings.exists()
-    
-    @property
-    def session_participants(self):
-        """
-        Get all session participants associated with this booking.
-        This is particularly useful for course bookings.
-        """
-        from apps.services.models import SessionParticipant
-        return SessionParticipant.objects.filter(booking=self)
-    
-    @property
-    def sessions(self):
-        """
-        Get all service sessions associated with this booking.
-        For course bookings, this returns all sessions the user is registered for.
-        """
-        if self.is_course_booking:
-            from apps.services.models import ServiceSession
-            return ServiceSession.objects.filter(participants__booking=self).distinct()
-        elif self.service_session:
-            return [self.service_session]
-        return []
-    
+    def save(self, *args, **kwargs):
+        # Auto-calculate final amount if not set
+        if not self.final_amount:
+            self.final_amount = self.price_charged - self.discount_amount
+        
+        # Set price from service if not set
+        if not self.price_charged and self.service:
+            self.price_charged = self.service.price
+            
+        self.clean()
+        super().save(*args, **kwargs)
+
+    # Booking type properties
     @property
     def is_individual_session(self):
-        """Check if this is a booking for an individual session"""
-        return not (self.is_workshop_booking or self.is_course_booking or self.is_parent_booking)
-    
-    def mark_completed(self):
-        """Mark this booking as completed"""
-        self.status = 'completed'
-        self.completed_at = timezone.now()
-        self.save()
-    
-    def cancel(self, reason=None, canceled_by=None):
-        """Cancel this booking"""
-        self.status = 'canceled'
-        self.is_canceled = True
-        self.canceled_date = timezone.now()
-        self.cancel_reason = reason
-        self.canceled_by = canceled_by
-        self.save()
+        """Check if this is an individual session booking."""
+        return not (self.is_group_session or self.is_package_booking or self.is_course_booking)
+
+    @property
+    def is_group_session(self):
+        """Check if this is a group session or workshop."""
+        return self.service_session is not None
+
+    @property
+    def is_package_booking(self):
+        """Check if this is a package or bundle booking."""
+        return self.is_package_purchase or self.is_bundle_purchase or bool(self.package) or bool(self.bundle)
+
+    @property
+    def is_course_booking(self):
+        """Check if this is a course booking."""
+        return self.service and self.service.is_course
+
+    @property
+    def is_parent_booking(self):
+        """Check if this booking has child bookings."""
+        return self.child_bookings.exists()
+
+    @property
+    def duration_minutes(self):
+        """Calculate booking duration in minutes."""
+        if self.actual_start_time and self.actual_end_time:
+            return int((self.actual_end_time - self.actual_start_time).total_seconds() / 60)
+        elif self.start_time and self.end_time:
+            return int((self.end_time - self.start_time).total_seconds() / 60)
+        return 0
+
+    @property
+    def is_upcoming(self):
+        """Check if booking is upcoming."""
+        return self.start_time > timezone.now() and self.status in ['confirmed', 'pending']
+
+    @property
+    def is_active(self):
+        """Check if booking is currently active."""
+        now = timezone.now()
+        return (self.actual_start_time or self.start_time) <= now <= (self.actual_end_time or self.end_time)
+
+    @property
+    def can_be_canceled(self):
+        """Check if booking can still be canceled."""
+        if self.status in ['completed', 'canceled', 'no_show']:
+            return False
         
-        # Cancel any child bookings if this is a parent booking
+        # Check cancellation policy (could be moved to service level)
+        min_notice_hours = 24  # This could come from service or practitioner settings
+        notice_deadline = self.start_time - timezone.timedelta(hours=min_notice_hours)
+        return timezone.now() < notice_deadline
+
+    @property
+    def can_be_rescheduled(self):
+        """Check if booking can be rescheduled."""
+        return self.can_be_canceled and self.status not in ['rescheduled']
+
+    # Booking actions
+    def mark_completed(self, completion_time=None):
+        """Mark booking as completed."""
+        self.status = 'completed'
+        self.completed_at = completion_time or timezone.now()
+        if not self.actual_end_time:
+            self.actual_end_time = self.completed_at
+        self.save(update_fields=['status', 'completed_at', 'actual_end_time'])
+
+    def mark_no_show(self):
+        """Mark booking as no-show."""
+        self.status = 'no_show'
+        self.no_show_at = timezone.now()
+        self.save(update_fields=['status', 'no_show_at'])
+
+    def cancel(self, reason=None, canceled_by='client'):
+        """Cancel this booking."""
+        if not self.can_be_canceled:
+            raise ValidationError("This booking cannot be canceled")
+        
+        self.status = 'canceled'
+        self.canceled_at = timezone.now()
+        self.cancellation_reason = reason
+        self.canceled_by = canceled_by
+        self.save(update_fields=['status', 'canceled_at', 'cancellation_reason', 'canceled_by'])
+        
+        # Cancel child bookings if this is a parent
         if self.is_parent_booking:
-            for child in self.child_bookings.all():
-                child.cancel(reason=f"Parent booking {self.id} was canceled", canceled_by=canceled_by)
+            for child in self.child_bookings.filter(status__in=['pending', 'confirmed']):
+                child.cancel(
+                    reason=f"Parent booking {self.public_uuid} was canceled", 
+                    canceled_by='system'
+                )
+
+    def reschedule(self, new_start_time, new_end_time):
+        """Reschedule this booking to a new time."""
+        if not self.can_be_rescheduled:
+            raise ValidationError("This booking cannot be rescheduled")
+        
+        # Create new booking with new time
+        new_booking = Booking.objects.create(
+            user=self.user,
+            practitioner=self.practitioner,
+            service=self.service,
+            start_time=new_start_time,
+            end_time=new_end_time,
+            price_charged=self.price_charged,
+            discount_amount=self.discount_amount,
+            final_amount=self.final_amount,
+            description=self.description,
+            client_notes=self.client_notes,
+            location=self.location,
+            rescheduled_from=self,
+            status='confirmed'
+        )
+        
+        # Mark original as rescheduled
+        self.status = 'rescheduled'
+        self.save(update_fields=['status'])
+        
+        return new_booking
+
+
+# Factory methods for complex booking creation
+class BookingFactory:
+    """Factory class for creating different types of bookings."""
     
-    def get_participants(self):
-        """Get all participants for this booking"""
-        if self.is_workshop_booking or self.is_course_booking:
-            from services.models import SessionParticipant
-            return SessionParticipant.objects.filter(booking=self)
-        return None
+    @classmethod
+    def create_individual_booking(cls, user, service, practitioner, start_time, end_time, **kwargs):
+        """Create a simple individual booking."""
+        return Booking.objects.create(
+            user=user,
+            service=service,
+            practitioner=practitioner,
+            start_time=start_time,
+            end_time=end_time,
+            price_charged=service.price,
+            final_amount=service.price,
+            **kwargs
+        )
     
     @classmethod
     def create_course_booking(cls, user, course, **kwargs):
         """
-        Create a booking for a course and register the user as a participant in all sessions.
-        
-        Instead of creating individual child bookings for each session, this method creates
-        a single booking for the course and uses the SessionParticipant model to track
-        attendance for each session. This is more efficient for courses with many participants.
+        Create a booking for a course and register user as participant in all sessions.
         
         Args:
             user: The user making the booking
@@ -168,100 +329,179 @@ class Booking(models.Model):
         if not course.is_course:
             raise ValueError("Service must be a course")
             
-        # Create a single booking for the course
-        booking = cls.objects.create(
+        # Create main course booking (no specific time - determined by sessions)
+        booking = Booking.objects.create(
             user=user,
             service=course,
-            # Use the primary practitioner from the course or the first practitioner
-            practitioner=kwargs.get('practitioner') or course.practitioner or course.practitioners.first(),
+            practitioner=course.primary_practitioner,
+            start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
+            end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
+            price_charged=course.price,
+            final_amount=course.price,
             status=kwargs.get('status', 'confirmed'),
-            is_group=True
+            max_participants=course.max_participants,
+            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
         )
-        
-        # Register the user as a participant in all sessions of all workshops in the course
-        from apps.services.models import ServiceSession, SessionParticipant
-        
-        # Get all child services (workshops) in the course
-        for relationship in course.child_relationships.all().order_by('order'):
-            child_service = relationship.child_service
-            
-            # For each session of the child service
-            for session in child_service.sessions.all():
-                # Register the user as a participant in this session
-                SessionParticipant.objects.create(
-                    session=session,
-                    user=user,
-                    booking=booking,
-                    attendance_status='registered'
-                )
         
         return booking
     
     @classmethod
-    def create_bundle_or_package_booking(cls, user, service, **kwargs):
+    def create_package_booking(cls, user, package, **kwargs):
         """
-        Create a booking for a bundle or package, including child bookings for all services.
+        Create a booking for a package with child bookings for included services.
         
         Args:
-            user: The user making the booking
-            service: The bundle or package Service object
+            user: The user making the booking  
+            package: The Package object
             **kwargs: Additional booking parameters
             
         Returns:
             The parent booking object
         """
-        if not (service.is_package or service.is_bundle):
-            raise ValueError("Service must be a package or bundle")
+        from services.models import Package
+        
+        if not isinstance(package, Package):
+            raise ValueError("Must provide a Package object")
             
-        # Create the parent booking
-        parent_booking = cls.objects.create(
+        # Create parent booking
+        parent_booking = Booking.objects.create(
             user=user,
-            service=service,
-            # Use the primary practitioner from the service or the first practitioner
-            practitioner=kwargs.get('practitioner') or service.practitioner or service.practitioners.first(),
-            status=kwargs.get('status', 'confirmed')
+            package=package,
+            practitioner=package.practitioner,
+            start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
+            end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
+            price_charged=package.price,
+            final_amount=package.price,
+            status=kwargs.get('status', 'confirmed'),
+            is_package_purchase=True,
+            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
         )
         
-        # Create child bookings for each service in the bundle/package
-        for relationship in service.child_relationships.all().order_by('order'):
-            child_service = relationship.child_service
-            
-            # Create a booking for each quantity of the service
-            for i in range(relationship.quantity):
-                # Create a booking for this service (without specific time yet)
-                child_booking = cls.objects.create(
+        # Create child bookings for each included service
+        for package_service in package.package_services.all().order_by('order'):
+            service = package_service.service
+            for _ in range(package_service.quantity):
+                Booking.objects.create(
                     user=user,
-                    service=child_service,
-                    practitioner=child_service.practitioner or child_service.practitioners.first(),
+                    service=service,
+                    practitioner=service.primary_practitioner,
                     parent_booking=parent_booking,
+                    price_charged=Decimal('0.00'),  # Included in parent
+                    final_amount=Decimal('0.00'),
                     status='pending',  # Pending until scheduled
+                    start_time=timezone.now(),  # Placeholder
+                    end_time=timezone.now() + timezone.timedelta(minutes=service.duration_minutes)
                 )
         
         return parent_booking
+    
+    @classmethod
+    def create_bundle_booking(cls, user, bundle, **kwargs):
+        """
+        Create a booking for a bundle purchase (creates credit balance).
+        
+        Args:
+            user: The user making the booking  
+            bundle: The Bundle object
+            **kwargs: Additional booking parameters
+            
+        Returns:
+            The bundle booking object
+        """
+        from services.models import Bundle
+        
+        if not isinstance(bundle, Bundle):
+            raise ValueError("Must provide a Bundle object")
+            
+        # Create bundle purchase booking
+        bundle_booking = Booking.objects.create(
+            user=user,
+            service=bundle.service,
+            bundle=bundle,
+            practitioner=bundle.service.primary_practitioner,
+            start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
+            end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
+            price_charged=bundle.price,
+            final_amount=bundle.price,
+            status=kwargs.get('status', 'confirmed'),
+            is_bundle_purchase=True,
+            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
+        )
+        
+        return bundle_booking
 
 
-class BookingReminders(models.Model):
+class BookingReminder(BaseModel):
     """
     Model representing a reminder for a booking.
+    Updated to use BaseModel and improved structure.
     """
-    REMINDER_TYPES = (
+    REMINDER_TYPE_CHOICES = [
         ('email', 'Email'),
         ('sms', 'SMS'),
         ('push', 'Push Notification'),
-    )
+        ('webhook', 'Webhook'),
+    ]
     
-    id = models.BigAutoField(primary_key=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    booking = models.ForeignKey(Booking, models.CASCADE, related_name='reminders')
-    type = models.CharField(max_length=20, choices=REMINDER_TYPES)
-    scheduled_time = models.DateTimeField()
-    sent_at = models.DateTimeField(null=True, blank=True)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='reminders')
+    reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPE_CHOICES)
+    scheduled_time = models.DateTimeField(help_text="When to send the reminder")
+    sent_at = models.DateTimeField(blank=True, null=True, help_text="When reminder was actually sent")
+    
+    # Reminder content
+    subject = models.CharField(max_length=255, blank=True, null=True)
+    message = models.TextField(blank=True, null=True)
+    
+    # Delivery tracking
+    is_sent = models.BooleanField(default=False)
+    send_attempts = models.PositiveIntegerField(default=0)
+    last_attempt_at = models.DateTimeField(blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
     
     class Meta:
-        # Using Django's default naming convention (bookings_bookingreminders)
+        verbose_name = 'Booking Reminder'
+        verbose_name_plural = 'Booking Reminders'
+        ordering = ['scheduled_time']
         indexes = [
             models.Index(fields=['booking', 'scheduled_time']),
+            models.Index(fields=['is_sent', 'scheduled_time']),
+            models.Index(fields=['reminder_type']),
         ]
 
     def __str__(self):
-        return f"Reminder for {self.booking}"
+        return f"{self.reminder_type.title()} reminder for {self.booking}"
+    
+    def mark_sent(self):
+        """Mark reminder as sent."""
+        self.is_sent = True
+        self.sent_at = timezone.now()
+        self.save(update_fields=['is_sent', 'sent_at'])
+    
+    def mark_failed(self, error_message):
+        """Mark reminder send attempt as failed."""
+        self.send_attempts += 1
+        self.last_attempt_at = timezone.now()
+        self.error_message = error_message
+        self.save(update_fields=['send_attempts', 'last_attempt_at', 'error_message'])
+
+
+class BookingNote(BaseModel):
+    """
+    Model for storing notes and communications related to a booking.
+    """
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='notes')
+    author = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='booking_notes')
+    content = models.TextField()
+    is_private = models.BooleanField(default=False, help_text="Whether note is visible only to practitioners")
+    
+    class Meta:
+        verbose_name = 'Booking Note'
+        verbose_name_plural = 'Booking Notes'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['booking', '-created_at']),
+            models.Index(fields=['author']),
+        ]
+    
+    def __str__(self):
+        return f"Note by {self.author.email} on {self.booking}"

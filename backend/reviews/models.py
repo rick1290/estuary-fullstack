@@ -1,116 +1,223 @@
 from django.db import models
-import uuid
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+from utils.models import BaseModel, PublicModel
 
 
-class ReviewQuestion(models.Model):
+class ReviewQuestion(BaseModel):
     """
     Model for structured review questions.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    question = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    is_required = models.BooleanField(default=True)
-    question_type = models.CharField(max_length=20, choices=[
+    QUESTION_TYPES = (
         ('rating', 'Rating'),
         ('text', 'Text'),
         ('boolean', 'Yes/No'),
-    ])
-    order = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-    applies_to = models.CharField(max_length=20, choices=[
+    )
+    
+    APPLIES_TO_CHOICES = (
         ('service', 'Service'),
         ('practitioner', 'Practitioner'),
         ('both', 'Both'),
-    ], default='both')
-    created_at = models.DateTimeField(auto_now_add=True)
+    )
+    
+    question = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    is_required = models.BooleanField(default=True)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    applies_to = models.CharField(max_length=20, choices=APPLIES_TO_CHOICES, default='both')
     
     class Meta:
-        # Using Django's default naming convention (reviews_reviewquestion)
         ordering = ['order']
+        indexes = [
+            models.Index(fields=['is_active', 'order']),
+            models.Index(fields=['applies_to']),
+        ]
     
     def __str__(self):
         return self.question
 
 
-class Review(models.Model):
+class Review(PublicModel):
     """
     Model representing a review for a practitioner or service.
     """
-    id = models.BigAutoField(primary_key=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
-    comment = models.TextField(blank=True, null=True)
-    practitioner = models.ForeignKey('practitioners.Practitioner', models.CASCADE, blank=True, null=True, related_name='reviews')
-    booking = models.ForeignKey('bookings.Booking', models.SET_NULL, blank=True, null=True, related_name='reviews')
-    user = models.ForeignKey('users.User', models.CASCADE, related_name='reviews_given', blank=True, null=True)
-    service = models.ForeignKey('services.Service', models.CASCADE, blank=True, null=True, related_name='reviews')
+    rating = models.DecimalField(
+        max_digits=3, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
+        help_text="Rating from 0.0 to 5.0"
+    )
+    comment = models.TextField(blank=True)
+    
+    # Relationships
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner', 
+        on_delete=models.CASCADE, 
+        related_name='reviews'
+    )
+    booking = models.ForeignKey(
+        'bookings.Booking', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True, 
+        related_name='reviews'
+    )
+    user = models.ForeignKey(
+        'users.User', 
+        on_delete=models.CASCADE, 
+        related_name='reviews_given'
+    )
+    service = models.ForeignKey(
+        'services.Service', 
+        on_delete=models.CASCADE, 
+        blank=True, 
+        null=True, 
+        related_name='reviews'
+    )
+    
+    # Status fields
     is_anonymous = models.BooleanField(default=False)
-    is_verified = models.BooleanField(default=True)  # True if from a verified booking
+    is_verified = models.BooleanField(default=True)
     is_published = models.BooleanField(default=True)
+    
+    # Engagement metrics (calculated from related models)
     helpful_votes = models.PositiveIntegerField(default=0)
     unhelpful_votes = models.PositiveIntegerField(default=0)
     reported_count = models.PositiveIntegerField(default=0)
     
     class Meta:
-        # Using Django's default naming convention (reviews_review)
         indexes = [
-            models.Index(fields=['practitioner']),
-            models.Index(fields=['service']),
+            models.Index(fields=['practitioner', 'is_published']),
+            models.Index(fields=['service', 'is_published']),
             models.Index(fields=['user']),
             models.Index(fields=['booking']),
             models.Index(fields=['created_at']),
-            models.Index(fields=['rating']),
+            models.Index(fields=['rating', 'is_published']),
+            models.Index(fields=['is_verified', 'is_published']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(rating__gte=0) & models.Q(rating__lte=5),
+                name='reviews_review_rating_range'
+            ),
         ]
 
+    def clean(self):
+        super().clean()
+        if not self.practitioner and not self.service:
+            raise ValidationError("Review must be for either a practitioner or service")
+        
+        if self.booking and self.booking.user != self.user:
+            raise ValidationError("Review user must match booking user")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+        # Update vote counts
+        self._update_vote_counts()
+
+    def _update_vote_counts(self):
+        """Update helpful/unhelpful vote counts from related votes"""
+        votes = self.votes.all()
+        self.helpful_votes = votes.filter(is_helpful=True).count()
+        self.unhelpful_votes = votes.filter(is_helpful=False).count()
+        self.reported_count = self.reports.count()
+        # Avoid infinite recursion by using update instead of save
+        Review.objects.filter(id=self.id).update(
+            helpful_votes=self.helpful_votes,
+            unhelpful_votes=self.unhelpful_votes,
+            reported_count=self.reported_count
+        )
+
+    @property
+    def net_helpful_votes(self):
+        """Net helpful votes (helpful - unhelpful)"""
+        return self.helpful_votes - self.unhelpful_votes
+
+    @property
+    def display_name(self):
+        """Display name for the reviewer"""
+        if self.is_anonymous:
+            return "Anonymous"
+        return self.user.get_full_name() or self.user.email
+
     def __str__(self):
-        return f"Review {self.id} - {self.rating} stars"
+        return f"Review {str(self.public_uuid)[:8]}... - {self.rating} stars"
 
 
-class ReviewAnswer(models.Model):
+class ReviewAnswer(BaseModel):
     """
     Model for answers to review questions.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='answers')
     question = models.ForeignKey(ReviewQuestion, on_delete=models.CASCADE, related_name='answers')
-    rating_answer = models.IntegerField(blank=True, null=True)
-    text_answer = models.TextField(blank=True, null=True)
+    rating_answer = models.IntegerField(
+        blank=True, 
+        null=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    text_answer = models.TextField(blank=True)
     boolean_answer = models.BooleanField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        # Using Django's default naming convention (reviews_reviewanswer)
         unique_together = ('review', 'question')
+        indexes = [
+            models.Index(fields=['review']),
+            models.Index(fields=['question']),
+        ]
+
+    def clean(self):
+        super().clean()
+        # Validate that answer type matches question type
+        if self.question.question_type == 'rating' and self.rating_answer is None:
+            raise ValidationError("Rating answer is required for rating questions")
+        elif self.question.question_type == 'text' and not self.text_answer:
+            raise ValidationError("Text answer is required for text questions")
+        elif self.question.question_type == 'boolean' and self.boolean_answer is None:
+            raise ValidationError("Boolean answer is required for yes/no questions")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"Answer to '{self.question}' for Review {self.review.id}"
+        return f"Answer to '{self.question}' for Review {str(self.review.public_uuid)[:8]}..."
 
 
-class ReviewVote(models.Model):
+class ReviewVote(BaseModel):
     """
     Model for tracking helpful/unhelpful votes on reviews.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='votes')
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='review_votes')
-    is_helpful = models.BooleanField()  # True for helpful, False for unhelpful
-    created_at = models.DateTimeField(auto_now_add=True)
+    is_helpful = models.BooleanField(help_text="True for helpful, False for unhelpful")
     
     class Meta:
-        # Using Django's default naming convention (reviews_reviewvote)
         unique_together = ('review', 'user')
         indexes = [
-            models.Index(fields=['review']),
+            models.Index(fields=['review', 'is_helpful']),
             models.Index(fields=['user']),
         ]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update parent review vote counts
+        self.review._update_vote_counts()
+    
+    def delete(self, *args, **kwargs):
+        review = self.review
+        super().delete(*args, **kwargs)
+        # Update parent review vote counts after deletion
+        review._update_vote_counts()
     
     def __str__(self):
         vote_type = "Helpful" if self.is_helpful else "Unhelpful"
-        return f"{vote_type} vote by {self.user} for Review {self.review.id}"
+        return f"{vote_type} vote by {self.user} for Review {str(self.review.public_uuid)[:8]}..."
 
 
-class ReviewReport(models.Model):
+class ReviewReport(BaseModel):
     """
     Model for tracking reported reviews.
     """
@@ -119,26 +226,49 @@ class ReviewReport(models.Model):
         ('spam', 'Spam'),
         ('off_topic', 'Off Topic'),
         ('fake', 'Fake Review'),
+        ('harassment', 'Harassment'),
         ('other', 'Other'),
     )
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='reports')
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='review_reports')
     reason = models.CharField(max_length=20, choices=REPORT_REASONS)
-    details = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    details = models.TextField(blank=True)
     is_resolved = models.BooleanField(default=False)
     resolved_at = models.DateTimeField(blank=True, null=True)
-    resolution_notes = models.TextField(blank=True, null=True)
+    resolved_by = models.ForeignKey(
+        'users.User', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='resolved_review_reports'
+    )
+    resolution_notes = models.TextField(blank=True)
     
     class Meta:
-        # Using Django's default naming convention (reviews_reviewreport)
         unique_together = ('review', 'user')
         indexes = [
             models.Index(fields=['review']),
-            models.Index(fields=['is_resolved']),
+            models.Index(fields=['is_resolved', 'created_at']),
+            models.Index(fields=['reason']),
         ]
+
+    def resolve(self, resolved_by, notes=""):
+        """Mark report as resolved"""
+        from django.utils import timezone
+        self.is_resolved = True
+        self.resolved_at = timezone.now()
+        self.resolved_by = resolved_by
+        self.resolution_notes = notes
+        self.save()
+        
+        # Update parent review report count
+        self.review._update_vote_counts()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update parent review report count
+        self.review._update_vote_counts()
     
     def __str__(self):
-        return f"Report for Review {self.review.id} by {self.user}"
+        return f"Report for Review {str(self.review.public_uuid)[:8]}... by {self.user}"

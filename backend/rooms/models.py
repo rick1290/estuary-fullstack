@@ -1,62 +1,86 @@
 from django.db import models
+from django.core.validators import URLValidator
+from utils.models import BaseModel
+import uuid
 
 
-class Room(models.Model):
+class Room(BaseModel):
     """
     Model representing a video room.
     """
-    id = models.UUIDField(primary_key=True)
-    daily_room_name = models.TextField()
-    daily_room_url = models.TextField()
-    status = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField()
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('ended', 'Ended'),
+        ('error', 'Error'),
+    )
+    
+    daily_room_name = models.CharField(max_length=255, unique=True)
+    daily_room_url = models.URLField(validators=[URLValidator()])
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     ended_at = models.DateTimeField(blank=True, null=True)
-    metadata = models.JSONField(blank=True, null=True)
+    metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        # Using Django's default naming convention (rooms_room)
-        pass
+        indexes = [
+            models.Index(fields=['daily_room_name']),
+            models.Index(fields=['status', 'created_at']),
+        ]
         
     def __str__(self):
-        return f"Room {self.id} - {self.daily_room_name}"
+        return f"Room {str(self.id)[:8]}... - {self.daily_room_name}"
 
 
-class VideoToken(models.Model):
+class VideoToken(BaseModel):
     """
     Model representing a video token for a room.
     """
-    id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    room = models.ForeignKey(Room, models.DO_NOTHING)
-    token = models.TextField()
-    booking = models.ForeignKey('bookings.Booking', models.DO_NOTHING, blank=True, null=True)
-    role = models.TextField()
-    permissions = models.JSONField(blank=True, null=True)
+    ROLE_CHOICES = (
+        ('owner', 'Owner'),
+        ('participant', 'Participant'),
+        ('observer', 'Observer'),
+    )
+    
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='video_tokens')
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='tokens')
+    token = models.TextField(unique=True)
+    booking = models.ForeignKey(
+        'bookings.Booking', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='video_tokens'
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='participant')
+    permissions = models.JSONField(default=dict, blank=True)
     expires_at = models.DateTimeField()
-    is_used = models.BooleanField(blank=True, null=True)
-    is_revoked = models.BooleanField(blank=True, null=True)
+    is_used = models.BooleanField(default=False)
+    is_revoked = models.BooleanField(default=False)
 
     class Meta:
-        # Using Django's default naming convention (rooms_videotoken)
-        pass
+        indexes = [
+            models.Index(fields=['user', 'room']),
+            models.Index(fields=['token']),
+            models.Index(fields=['expires_at']),
+            models.Index(fields=['is_used', 'is_revoked']),
+        ]
         
     def __str__(self):
         return f"Video Token for {self.user} in {self.room}"
 
 
-class RoomBookingRelation(models.Model):
+class RoomBookingRelation(BaseModel):
     """
     Model representing the relationship between rooms and bookings.
     """
-    id = models.UUIDField(primary_key=True)
-    room = models.ForeignKey(Room, models.DO_NOTHING)
-    booking = models.ForeignKey('bookings.Booking', models.DO_NOTHING)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField(auto_now=True)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='booking_relations')
+    booking = models.ForeignKey('bookings.Booking', on_delete=models.CASCADE, related_name='room_relations')
 
     class Meta:
-        # Using Django's default naming convention (rooms_roombookingrelation)
         unique_together = (('room', 'booking'),)
+        indexes = [
+            models.Index(fields=['room']),
+            models.Index(fields=['booking']),
+        ]
 
     def __str__(self):
-        return f"Room {self.room} for Booking {self.booking}"
+        return f"Room {self.room} for Booking {str(self.booking.public_uuid)[:8]}..."

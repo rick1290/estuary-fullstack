@@ -1,55 +1,66 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.db.models import Q, F
+from django.db.models import Q, F, Avg, Count, Min, Max
+from django.utils import timezone
 from users.models import User
+from utils.models import BaseModel, PublicModel
 import uuid
 import pytz
 
 # Common timezones for dropdown
 TIMEZONE_CHOICES = [(tz, tz) for tz in pytz.common_timezones]
 
-class Practitioner(models.Model):
+# Practitioner status choices
+PRACTITIONER_STATUS_CHOICES = [
+    ('active', 'Active'),
+    ('inactive', 'Inactive'),
+    ('vacation', 'On Vacation'),
+    ('pending', 'Pending Approval'),
+    ('suspended', 'Suspended'),
+    ('rejected', 'Rejected'),
+]
+
+
+class Practitioner(PublicModel):
     """
     Model representing a practitioner in the marketplace.
     Extends the User model with practitioner-specific fields.
+    Uses PublicModel for both internal UUID and public API exposure.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField('users.User', on_delete=models.CASCADE, related_name='practitioner_profile')
-    is_verified = models.BooleanField(default=False)
-    years_of_experience = models.PositiveIntegerField(blank=True, null=True)
-    average_rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
-    total_reviews = models.PositiveIntegerField(default=0)
-    featured = models.BooleanField(default=False)
+    
+    # Verification and status
+    is_verified = models.BooleanField(default=False, help_text="Whether practitioner is verified by admin")
+    practitioner_status = models.CharField(max_length=20, choices=PRACTITIONER_STATUS_CHOICES, default='pending')
+    featured = models.BooleanField(default=False, help_text="Whether to feature this practitioner")
     
     # Professional details
-    display_name = models.CharField(max_length=255, blank=True, null=True, help_text="Professional display name shown to clients")
-    title = models.CharField(max_length=255, blank=True, null=True)
-    bio = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    quote = models.TextField(blank=True, null=True)
-    profile_image_url = models.URLField(blank=True, null=True, help_text="URL to the practitioner's profile image stored in Cloudflare R2")
-    profile_video_url = models.URLField(blank=True, null=True, help_text="URL to the practitioner's profile video stored in Cloudflare R2")
+    display_name = models.CharField(max_length=255, blank=True, null=True, 
+                                  help_text="Professional display name shown to clients")
+    professional_title = models.CharField(max_length=255, blank=True, null=True,
+                                        help_text="Professional title/designation")
+    bio = models.TextField(blank=True, null=True, max_length=2000,
+                          help_text="Professional biography and description")
+    quote = models.TextField(blank=True, null=True, max_length=500,
+                           help_text="Inspirational quote or motto")
     
-    # Business details
-    buffer_time = models.PositiveIntegerField(blank=True, null=True, help_text="Buffer time between sessions in minutes")
-    practitioner_status = models.CharField(max_length=20, choices=[
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
-        ('vacation', 'Vacation'),
-        ('pending', 'Pending Approval'),
-        ('suspended', 'Suspended'),
-    ], default='pending')
-    next_available_date = models.DateTimeField(blank=True, null=True)
+    # Media
+    profile_image_url = models.URLField(blank=True, null=True, 
+                                      help_text="URL to practitioner's profile image")
+    profile_video_url = models.URLField(blank=True, null=True,
+                                      help_text="URL to practitioner's intro video")
     
-    # Performance metrics
-    completed_sessions = models.PositiveIntegerField(default=0)
-    cancellation_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    book_times = models.PositiveIntegerField(default=0)
-    min_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    max_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    total_services = models.PositiveIntegerField(default=0)
+    # Experience and qualifications
+    years_of_experience = models.PositiveIntegerField(blank=True, null=True,
+                                                    help_text="Years of professional experience")
     
-    # Onboarding status
+    # Business settings
+    buffer_time = models.PositiveIntegerField(default=15, 
+                                            help_text="Buffer time between sessions in minutes")
+    next_available_date = models.DateTimeField(blank=True, null=True,
+                                             help_text="Next available booking date")
+    
+    # Onboarding
     is_onboarded = models.BooleanField(default=False)
     onboarding_step = models.PositiveSmallIntegerField(default=1)
     onboarding_completed_at = models.DateTimeField(blank=True, null=True)
@@ -58,93 +69,123 @@ class Practitioner(models.Model):
     specializations = models.ManyToManyField('Specialize', related_name='practitioners', blank=True)
     styles = models.ManyToManyField('Style', related_name='practitioners', blank=True)
     topics = models.ManyToManyField('Topic', related_name='practitioners', blank=True)
-    modalities = models.ManyToManyField('utils.Modality', related_name='practitioners', blank=True)
+    modalities = models.ManyToManyField('common.Modality', related_name='practitioners', blank=True)
     certifications = models.ManyToManyField('Certification', related_name='practitioners', blank=True)
     educations = models.ManyToManyField('Education', related_name='practitioners', blank=True)
     questions = models.ManyToManyField('Question', related_name='practitioners', blank=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Location (link to consolidated location model)
+    primary_location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL,
+                                       blank=True, null=True, related_name='primary_practitioners')
     
     class Meta:
-        # Using Django's default naming convention (practitioners_practitioner)
         verbose_name = 'Practitioner'
         verbose_name_plural = 'Practitioners'
         indexes = [
-            models.Index(fields=['is_verified']),
+            models.Index(fields=['is_verified', 'practitioner_status']),
             models.Index(fields=['featured']),
             models.Index(fields=['practitioner_status']),
-            models.Index(fields=['average_rating']),
+            models.Index(fields=['user']),
+            models.Index(fields=['next_available_date']),
         ]
     
     def __str__(self):
         if self.display_name:
             return self.display_name
-        return f"{self.user.first_name} {self.user.last_name}" if self.user.first_name else self.user.email
+        return f"{self.user.first_name} {self.user.last_name}".strip() or self.user.email
     
-    def update_rating_stats(self):
-        """
-        Update the practitioner's rating statistics based on reviews
-        """
-        from django.db.models import Avg, Count
-        from apps.reviews.models import Review
-        
-        # Get aggregate data from reviews
-        stats = Review.objects.filter(
+    @property
+    def full_name(self):
+        """Return practitioner's full name."""
+        return self.user.full_name
+    
+    @property
+    def average_rating(self):
+        """Calculate average rating from reviews."""
+        from reviews.models import Review
+        result = Review.objects.filter(
             practitioner=self,
             is_published=True
-        ).aggregate(
-            avg_rating=Avg('rating'),
-            count=Count('id')
-        )
-        
-        # Update fields
-        self.average_rating = stats['avg_rating'] or 0
-        self.total_reviews = stats['count'] or 0
-        self.save(update_fields=['average_rating', 'total_reviews'])
-        
-    def update_price_range(self):
-        """
-        Update the min and max price for this practitioner's services
-        """
-        from django.db.models import Min, Max
-        from apps.services.models import Service
-        
-        # Get price range from active services
-        price_range = Service.objects.filter(
+        ).aggregate(avg_rating=Avg('rating'))
+        return round(result['avg_rating'] or 0, 2)
+    
+    @property 
+    def total_reviews(self):
+        """Count total published reviews."""
+        from reviews.models import Review
+        return Review.objects.filter(
             practitioner=self,
-            is_active=True
-        ).aggregate(
+            is_published=True
+        ).count()
+    
+    @property
+    def total_services(self):
+        """Count total active services."""
+        return self.services.filter(is_active=True).count()
+    
+    @property
+    def price_range(self):
+        """Get min and max price from active services."""
+        result = self.services.filter(is_active=True).aggregate(
             min_price=Min('price'),
-            max_price=Max('price'),
-            count=Count('id')
+            max_price=Max('price')
         )
-        
-        # Update fields
-        self.min_price = price_range['min_price']
-        self.max_price = price_range['max_price']
-        self.total_services = price_range['count'] or 0
-        self.save(update_fields=['min_price', 'max_price', 'total_services'])
+        return {
+            'min': result['min_price'],
+            'max': result['max_price']
+        }
+    
+    @property
+    def completed_sessions_count(self):
+        """Count completed bookings."""
+        return self.bookings.filter(status='completed').count()
+    
+    @property
+    def cancellation_rate(self):
+        """Calculate cancellation rate."""
+        total_bookings = self.bookings.count()
+        if total_bookings == 0:
+            return 0
+        canceled_bookings = self.bookings.filter(status='canceled').count()
+        return round((canceled_bookings / total_bookings) * 100, 2)
+    
+    @property
+    def is_active(self):
+        """Check if practitioner is active and available."""
+        return self.practitioner_status == 'active' and self.is_verified
+    
+    def mark_onboarding_complete(self):
+        """Mark onboarding as completed."""
+        self.is_onboarded = True
+        self.onboarding_completed_at = timezone.now()
+        self.save(update_fields=['is_onboarded', 'onboarding_completed_at'])
 
 
-class SchedulePreference(models.Model):
+class SchedulePreference(BaseModel):
     """
     Model representing scheduling preferences for practitioners.
+    Updated to use BaseModel for consistency.
     """
-    id = models.BigAutoField(primary_key=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    practitioner = models.OneToOneField(Practitioner, on_delete=models.CASCADE, related_name='schedule_preferences')
     timezone = models.CharField(max_length=50, default='UTC', choices=TIMEZONE_CHOICES, 
                                help_text="Timezone for the practitioner's schedule")
-    holidays = models.TextField(blank=True, null=True, help_text="JSON list of holiday dates")
-    country = models.ForeignKey('utils.Country', models.DO_NOTHING, blank=True, null=True)
-    practitioner = models.OneToOneField(Practitioner, models.DO_NOTHING)
-    holidays_on = models.BooleanField(default=False, help_text="Whether to allow bookings on holidays")
-    hours_buffer = models.SmallIntegerField(default=0, help_text="Minimum hours before a booking can be made")
-    days_buffer_max = models.SmallIntegerField(default=30, help_text="Maximum days in advance a booking can be made")
-    booking_buffer_on = models.BooleanField(default=True)
-    days_buffer_min = models.SmallIntegerField(default=0, help_text="Minimum days in advance a booking can be made")
+    country = models.ForeignKey('utils.Country', on_delete=models.SET_NULL, blank=True, null=True,
+                               help_text="Country for holiday calculations")
+    
+    # Holiday settings
+    holidays = models.JSONField(blank=True, null=True, help_text="List of custom holiday dates")
+    respect_holidays = models.BooleanField(default=True, help_text="Whether to block bookings on holidays")
+    
+    # Booking buffer settings
+    advance_booking_min_hours = models.PositiveIntegerField(default=24, 
+                                                           help_text="Minimum hours before a booking can be made")
+    advance_booking_max_days = models.PositiveIntegerField(default=30, 
+                                                          help_text="Maximum days in advance a booking can be made")
+    
+    # Availability settings
     is_active = models.BooleanField(default=True)
+    auto_accept_bookings = models.BooleanField(default=False, 
+                                             help_text="Automatically accept bookings within schedule")
 
     class Meta:
         # Using Django's default naming convention (practitioners_schedulepreference)

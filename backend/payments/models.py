@@ -1,9 +1,12 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from django.utils import timezone
+from decimal import Decimal
+from utils.models import BaseModel, PublicModel
 
 
-class Order(models.Model):
+class Order(PublicModel):
     """
     Model representing an order.
     """
@@ -19,41 +22,105 @@ class Order(models.Model):
     ORDER_TYPE_CHOICES = (
         ('direct', 'Direct Service Purchase'),
         ('credit', 'Credit Purchase'),
+        ('package', 'Package Purchase'),
+        ('subscription', 'Subscription'),
     )
     
-    id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey('users.User', models.DO_NOTHING, blank=True, null=True)
-    method = models.TextField(blank=True, null=True)
-    stripe_payment_intent_id = models.TextField(blank=True, null=True)
-    amount = models.FloatField(blank=True, null=True)
+    PAYMENT_METHOD_CHOICES = (
+        ('stripe', 'Stripe'),
+        ('credits', 'Credits'),
+        ('manual', 'Manual'),
+    )
+    
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='orders')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='stripe')
+    stripe_payment_intent_id = models.CharField(max_length=200, blank=True)
+    stripe_payment_method_id = models.CharField(max_length=200, blank=True)
+    
+    # Amount fields using DecimalField for financial accuracy
+    subtotal_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    tax_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    credits_applied = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    total_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField(blank=True, null=True)
-    service = models.ForeignKey('services.Service', models.DO_NOTHING, blank=True, null=True)
-    practitioner = models.ForeignKey('practitioners.Practitioner', models.DO_NOTHING, related_name='orders_as_practitioner', blank=True, null=True)
-    stripe_payment_method_id = models.TextField(blank=True, null=True)
-    metadata = models.JSONField(blank=True, null=True)  # Changed from TextField to JSONField
-    credits_applied = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES, default='direct')
-    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    tax_details = models.JSONField(blank=True, null=True)  # Store tax breakdown
     currency = models.CharField(max_length=3, default='USD')
-    audit_log = models.JSONField(blank=True, null=True)  # Store history of changes
+    
+    # Relationships
+    service = models.ForeignKey(
+        'services.Service', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='orders'
+    )
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='orders_as_practitioner'
+    )
+    
+    # Metadata and tracking
+    metadata = models.JSONField(default=dict, blank=True)
+    tax_details = models.JSONField(default=dict, blank=True)
+    audit_log = models.JSONField(default=list, blank=True)
 
     class Meta:
-        # Using Django's default naming convention (payments_order)
-        db_table_comment = 'Orders for services and packages'
         indexes = [
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['practitioner', 'created_at']),
-            models.Index(fields=['status']),
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['order_type']),
+            models.Index(fields=['stripe_payment_intent_id']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(total_amount__gte=0),
+                name='payments_order_total_amount_positive'
+            ),
         ]
 
+    def clean(self):
+        super().clean()
+        # Calculate total amount
+        calculated_total = self.subtotal_amount + self.tax_amount - self.credits_applied
+        if abs(calculated_total - self.total_amount) > Decimal('0.01'):
+            raise ValidationError("Total amount must equal subtotal + tax - credits applied")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def is_paid(self):
+        return self.status in ['completed', 'refunded', 'partially_refunded']
+
     def __str__(self):
-        return f"Order {self.id} - {self.amount} - {self.status}"
+        return f"Order {str(self.public_uuid)[:8]}... - {self.total_amount} {self.currency} - {self.status}"
 
 
-class CreditTransaction(models.Model):
+class CreditTransaction(BaseModel):
     """
     Model representing a credit transaction.
     """
@@ -62,61 +129,182 @@ class CreditTransaction(models.Model):
         ('consumption', 'Consumption'),
         ('refund', 'Refund'),
         ('adjustment', 'Adjustment'),
+        ('bonus', 'Bonus'),
+        ('transfer', 'Transfer'),
     )
     
-    id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey('users.User', models.DO_NOTHING, blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField(blank=True, null=True)
-    service = models.ForeignKey('services.Service', models.DO_NOTHING, blank=True, null=True)
-    practitioner = models.ForeignKey('practitioners.Practitioner', models.DO_NOTHING, related_name='credit_transactions_as_practitioner', blank=True, null=True)
-    initial_booking_date = models.DateTimeField(blank=True, null=True)
-    order = models.ForeignKey(Order, models.DO_NOTHING, blank=True, null=True)
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES, blank=True, null=True)
-    reference_transaction = models.ForeignKey('self', models.SET_NULL, blank=True, null=True)  # For linking refunds to original transactions
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='credit_transactions')
+    amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        help_text="Positive for credits added, negative for credits consumed"
+    )
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    
+    # Relationships
+    service = models.ForeignKey(
+        'services.Service', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='credit_transactions'
+    )
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='credit_transactions_as_practitioner'
+    )
+    order = models.ForeignKey(
+        Order, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='credit_transactions'
+    )
+    booking = models.ForeignKey(
+        'bookings.Booking',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='user_credit_transactions'
+    )
+    reference_transaction = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        help_text="Link to original transaction for refunds/adjustments"
+    )
+    
+    # Additional fields
     currency = models.CharField(max_length=3, default='USD')
-    exchange_rate = models.DecimalField(max_digits=10, decimal_places=6, blank=True, null=True)
+    exchange_rate = models.DecimalField(
+        max_digits=10, 
+        decimal_places=6, 
+        blank=True, 
+        null=True,
+        help_text="Exchange rate if currency conversion was applied"
+    )
     expires_at = models.DateTimeField(blank=True, null=True)
     is_expired = models.BooleanField(default=False)
-    audit_log = models.JSONField(blank=True, null=True)  # Store history of changes
+    description = models.TextField(blank=True, help_text="Human-readable description")
+    audit_log = models.JSONField(default=list, blank=True)
 
     class Meta:
-        # Using Django's default naming convention (payments_credittransaction)
-        db_table_comment = 'Credit transactions for users and practitioners'
         indexes = [
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['practitioner', 'created_at']),
             models.Index(fields=['transaction_type', 'created_at']),
             models.Index(fields=['order']),
+            models.Index(fields=['booking']),
+            models.Index(fields=['expires_at']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(amount=0),
+                name='payments_credittransaction_amount_nonzero'
+            ),
         ]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update user's credit balance
+        UserCreditBalance.update_balance(self.user)
+
+    @property
+    def is_credit(self):
+        """Returns True if this transaction adds credits to the user's balance"""
+        return self.amount > 0
+
+    @property
+    def is_debit(self):
+        """Returns True if this transaction removes credits from the user's balance"""
+        return self.amount < 0
+
     def __str__(self):
-        return f"Credit Transaction {self.id} - {self.amount}"
+        sign = "+" if self.amount > 0 else ""
+        return f"Credit Transaction {str(self.id)[:8]}... - {sign}{self.amount} {self.currency}"
 
 
-class PaymentMethod(models.Model):
+class PaymentMethod(BaseModel):
     """
     Model representing a payment method.
     """
-    id = models.BigAutoField(primary_key=True)
-    created_at = models.DateTimeField()
-    user = models.ForeignKey('users.User', models.DO_NOTHING, blank=True, null=True)
-    stripe_payment_id = models.TextField(blank=True, null=True)
-    brand = models.TextField(blank=True, null=True)
-    last4 = models.TextField(blank=True, null=True)
-    exp_month = models.SmallIntegerField(blank=True, null=True)
-    exp_year = models.SmallIntegerField(blank=True, null=True)
+    CARD_BRANDS = (
+        ('visa', 'Visa'),
+        ('mastercard', 'Mastercard'),
+        ('amex', 'American Express'),
+        ('discover', 'Discover'),
+        ('diners', 'Diners Club'),
+        ('jcb', 'JCB'),
+        ('unionpay', 'UnionPay'),
+        ('unknown', 'Unknown'),
+    )
+    
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='payment_methods')
+    stripe_payment_method_id = models.CharField(max_length=200, unique=True)
+    
+    # Card details
+    brand = models.CharField(max_length=20, choices=CARD_BRANDS, default='unknown')
+    last4 = models.CharField(max_length=4)
+    exp_month = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    exp_year = models.PositiveSmallIntegerField()
+    
+    # Status
     is_default = models.BooleanField(default=False)
-    is_deleted = models.BooleanField(default=False)
-    metadata = models.JSONField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    
+    # Additional data
+    metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        # Using Django's default naming convention (payments_paymentmethod)
-        pass
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['stripe_payment_method_id']),
+            models.Index(fields=['user', 'is_default']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user'],
+                condition=models.Q(is_default=True),
+                name='payments_paymentmethod_one_default_per_user'
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.exp_year < 2000:
+            raise ValidationError("Expiration year must be a 4-digit year")
+
+    def save(self, *args, **kwargs):
+        # If this is being set as default, unset other default methods for this user
+        if self.is_default:
+            PaymentMethod.objects.filter(user=self.user, is_default=True).exclude(
+                id=self.id
+            ).update(is_default=False)
+        
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self):
+        """Check if the payment method is expired"""
+        from django.utils import timezone
+        now = timezone.now()
+        return (self.exp_year < now.year or 
+                (self.exp_year == now.year and self.exp_month < now.month))
+
+    @property
+    def masked_number(self):
+        """Return masked card number"""
+        return f"**** **** **** {self.last4}"
         
     def __str__(self):
-        return f"{self.brand} **** **** **** {self.last4}"
+        return f"{self.brand.title()} {self.masked_number}"
 
 
 class PractitionerCreditTransaction(models.Model):
@@ -289,21 +477,30 @@ class PractitionerPayout(models.Model):
         return payout
 
 
-class UserCreditBalance(models.Model):
+class UserCreditBalance(BaseModel):
     """
     Model for tracking user credit balances for faster lookups.
     This avoids having to sum all CreditTransaction records for high-volume users.
     """
-    id = models.BigAutoField(primary_key=True)
-    user = models.OneToOneField('users.User', models.CASCADE, related_name='credit_balance')
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    last_transaction = models.ForeignKey(CreditTransaction, models.SET_NULL, blank=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    user = models.OneToOneField('users.User', on_delete=models.CASCADE, related_name='credit_balance')
+    balance = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    last_transaction = models.ForeignKey(
+        CreditTransaction, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='+'
+    )
     
     class Meta:
-        db_table = 'user_credit_balances'
         indexes = [
             models.Index(fields=['user']),
+            models.Index(fields=['balance']),
         ]
         
     def __str__(self):
@@ -335,20 +532,28 @@ class UserCreditBalance(models.Model):
         return credit_balance
 
 
-class SubscriptionTier(models.Model):
+class SubscriptionTier(BaseModel):
     """
     Model representing subscription tiers for practitioners.
     Different tiers can have different commission rates.
     """
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    monthly_price = models.DecimalField(max_digits=10, decimal_places=2)
-    annual_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    features = models.JSONField(blank=True, null=True)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    monthly_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    annual_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        blank=True, 
+        null=True,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    features = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         db_table = 'subscription_tiers'

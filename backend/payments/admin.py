@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Sum
 from decimal import Decimal
+from utils.admin_base import BaseModelAdmin
 
 from .models import (
     Order, 
@@ -20,29 +21,97 @@ from .models import (
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'practitioner', 'amount', 'status', 'created_at')
-    list_filter = ('status', 'order_type')
-    search_fields = ('user__email', 'practitioner__user__email', 'stripe_payment_intent_id')
+class OrderAdmin(BaseModelAdmin):
+    list_display = ('public_uuid_short', 'user_email', 'practitioner_name', 'total_amount', 
+                   'status', 'payment_method', 'created_at')
+    list_filter = ('status', 'order_type', 'payment_method', 'created_at')
+    search_fields = ('public_uuid', 'user__email', 'practitioner__user__email', 'stripe_payment_intent_id')
+    readonly_fields = ('id', 'public_uuid', 'created_at', 'updated_at', 'is_paid')
     date_hierarchy = 'created_at'
-    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Order Information', {
+            'fields': ('id', 'public_uuid', 'order_type', 'status', 'is_paid')
+        }),
+        ('Relationships', {
+            'fields': ('user', 'service', 'practitioner')
+        }),
+        ('Payment Details', {
+            'fields': ('payment_method', 'subtotal_amount', 'tax_amount', 'credits_applied', 'total_amount', 'currency')
+        }),
+        ('Stripe Information', {
+            'fields': ('stripe_payment_intent_id', 'stripe_payment_method_id'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('metadata', 'tax_details', 'audit_log'),
+            'classes': ('collapse',)
+        }),
+        ('System Info', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def public_uuid_short(self, obj):
+        return str(obj.public_uuid)[:8] + '...'
+    public_uuid_short.short_description = 'Public UUID'
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'Customer'
+    user_email.admin_order_field = 'user__email'
+    
+    def practitioner_name(self, obj):
+        return str(obj.practitioner) if obj.practitioner else '-'
+    practitioner_name.short_description = 'Practitioner'
+    practitioner_name.admin_order_field = 'practitioner__display_name'
 
 
 @admin.register(CreditTransaction)
-class CreditTransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'practitioner', 'amount', 'transaction_type', 'created_at')
-    list_filter = ('transaction_type', 'is_expired')
-    search_fields = ('user__email', 'practitioner__user__email')
+class CreditTransactionAdmin(BaseModelAdmin):
+    list_display = ('transaction_short', 'user_email', 'amount_display', 'transaction_type', 
+                   'is_credit', 'created_at')
+    list_filter = ('transaction_type', 'is_expired', 'currency', 'created_at')
+    search_fields = ('user__email', 'practitioner__user__email', 'description')
+    readonly_fields = ('id', 'created_at', 'updated_at', 'is_credit', 'is_debit')
     date_hierarchy = 'created_at'
-    readonly_fields = ('created_at', 'updated_at')
+    
+    def transaction_short(self, obj):
+        return str(obj.id)[:8] + '...'
+    transaction_short.short_description = 'Transaction ID'
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'User'
+    user_email.admin_order_field = 'user__email'
+    
+    def amount_display(self, obj):
+        sign = "+" if obj.amount > 0 else ""
+        color = "green" if obj.amount > 0 else "red"
+        return format_html(
+            '<span style="color: {};">{}{} {}</span>',
+            color, sign, obj.amount, obj.currency
+        )
+    amount_display.short_description = 'Amount'
+    amount_display.admin_order_field = 'amount'
 
 
 @admin.register(PaymentMethod)
-class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'brand', 'last4', 'is_default', 'is_deleted')
-    list_filter = ('brand', 'is_default', 'is_deleted')
-    search_fields = ('user__email', 'stripe_payment_id')
-    readonly_fields = ('created_at',)
+class PaymentMethodAdmin(BaseModelAdmin):
+    list_display = ('masked_number_display', 'user_email', 'brand', 'is_default', 'is_active', 'is_expired')
+    list_filter = ('brand', 'is_default', 'is_active', 'created_at')
+    search_fields = ('user__email', 'stripe_payment_method_id', 'last4')
+    readonly_fields = ('id', 'created_at', 'updated_at', 'is_expired', 'masked_number')
+    
+    def masked_number_display(self, obj):
+        return obj.masked_number
+    masked_number_display.short_description = 'Card Number'
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'User'
+    user_email.admin_order_field = 'user__email'
 
 
 @admin.register(PractitionerCreditTransaction)

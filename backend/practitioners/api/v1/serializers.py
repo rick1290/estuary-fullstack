@@ -10,7 +10,7 @@ from apps.practitioners.models import (
     Certification, Question, VerificationDocument
 )
 from apps.users.models import User
-from apps.utils.models import Modality
+from apps.common.models import Modality
 from apps.utils.serializer_fields import SafeImageURLField
 from drf_spectacular.utils import extend_schema_field, inline_serializer
 from apps.locations.models import PractitionerLocation

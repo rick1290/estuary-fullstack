@@ -2,200 +2,230 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Avg, Count
+from utils.models import BaseModel, PublicModel, Location
+
+# Experience level choices
+EXPERIENCE_LEVEL_CHOICES = [
+    ('beginner', 'Beginner'),
+    ('intermediate', 'Intermediate'), 
+    ('advanced', 'Advanced'),
+    ('all_levels', 'All Levels'),
+]
+
+# Location type choices
+LOCATION_TYPE_CHOICES = [
+    ('virtual', 'Virtual'),
+    ('in_person', 'In Person'),
+    ('hybrid', 'Hybrid'),
+]
 
 
-class ServiceType(models.Model):
+
+class ServiceCategory(BaseModel):
     """
-    Model representing a service type.
+    Model representing service categories for organizing services.
     """
-    id = models.SmallAutoField(primary_key=True)
-    name = models.CharField(max_length=50)  # 'session', 'workshop', 'package', 'bundle', 'course'
-    code = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text="Unique code for this service type (e.g., 'session', 'workshop')")
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
-
-    class Meta:
-        # Using Django's default naming convention (services_servicetype)
-        db_table_comment = 'Base Table For Service Type'
-
-    def __str__(self):
-        return self.name
-
-
-class Location(models.Model):
-    """
-    Model representing a service location with Google Maps integration.
-    """
-    id = models.BigIntegerField(primary_key=True)  # Keeping original ID type for compatibility
-    name = models.TextField()  # Keeping original field type for compatibility
-    
-    # Address components for structured data
-    address_line1 = models.CharField(max_length=255, blank=True, null=True, help_text="Street address")
-    address_line2 = models.CharField(max_length=255, blank=True, null=True, help_text="Apt, Suite, etc.")
-    city = models.CharField(max_length=100, blank=True, null=True)
-    state = models.CharField(max_length=100, blank=True, null=True)
-    postal_code = models.CharField(max_length=20, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True, default="United States")
-    
-    # Google Maps specific fields
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    place_id = models.CharField(max_length=255, blank=True, null=True, help_text="Google Maps Place ID")
-    
-    # Additional fields
+    icon = models.CharField(max_length=50, blank=True, null=True, help_text="Icon class or identifier")
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
     
     class Meta:
-        # Using Django's default naming convention (services_location)
-        db_table_comment = 'Location of service with Google Maps integration'
+        verbose_name = 'Service Category'
+        verbose_name_plural = 'Service Categories'
+        ordering = ['order', 'name']
+        indexes = [
+            models.Index(fields=['is_active', 'order']),
+        ]
 
     def __str__(self):
         return self.name
-    
-    def formatted_address(self):
-        """Return a fully formatted address string"""
-        components = []
-        if self.address_line1:
-            components.append(self.address_line1)
-        if self.address_line2:
-            components.append(self.address_line2)
-        city_state = []
-        if self.city:
-            city_state.append(self.city)
-        if self.state:
-            city_state.append(self.state)
-        if self.postal_code:
-            city_state.append(self.postal_code)
-        if city_state:
-            components.append(", ".join(city_state))
-        if self.country:
-            components.append(self.country)
-        return ", ".join(components) if components else self.name
-    
-    def geocode(self):
-        """
-        Geocode this location to get coordinates and place ID.
-        
-        Returns:
-            bool: True if geocoding was successful, False otherwise
-        """
-        from apps.integrations.google_maps.utils import geocode_location
-        return geocode_location(self)
-    
-    def get_details(self):
-        """
-        Get detailed information about this location from Google Maps.
-        
-        Returns:
-            dict: Location details or None if not found
-        """
-        if not self.place_id:
-            # Try to geocode first if we don't have a place_id
-            if not self.geocode():
-                return None
-                
-        from apps.integrations.google_maps.utils import get_location_details
-        return get_location_details(self.place_id)
-    
-    def calculate_distance_to(self, other_location, mode='driving'):
-        """
-        Calculate the distance and duration to another location.
-        
-        Args:
-            other_location: Another Location model instance
-            mode (str): Travel mode (driving, walking, bicycling, transit)
-            
-        Returns:
-            dict: Distance and duration information or None if calculation failed
-        """
-        # Ensure both locations have coordinates
-        if not (self.latitude and self.longitude):
-            self.geocode()
-            
-        if not (other_location.latitude and other_location.longitude):
-            other_location.geocode()
-            
-        from apps.integrations.google_maps.utils import calculate_distance_between_locations
-        return calculate_distance_between_locations(self, other_location, mode)
-    
-    def save(self, *args, **kwargs):
-        """Override save to geocode if coordinates are missing"""
-        # Track whether this is a new instance
-        is_new = self.pk is None
-        
-        # Save first
-        super().save(*args, **kwargs)
-        
-        # Only geocode if we're not already in a geocoding operation
-        # and we have address components but no coordinates
-        geocode_needed = not (self.latitude and self.longitude) and (self.address_line1 or self.city)
-        
-        # Use update_fields to check if we're in a partial update that doesn't need geocoding
-        update_fields = kwargs.get('update_fields')
-        if update_fields and not any(field in update_fields for field in 
-                                    ['address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country']):
-            geocode_needed = False
-            
-        if geocode_needed:
-            # Import here to avoid circular imports
-            from apps.integrations.google_maps.utils import geocode_location
-            geocode_location(self)
 
 
-class Service(models.Model):
+class ServiceType(BaseModel):
+    """
+    Model representing a service type (session, workshop, package, bundle, course).
+    Updated to use BaseModel for consistency.
+    """
+    name = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=20, unique=True, 
+                          help_text="Unique code for this service type (e.g., 'session', 'workshop')")
+    description = models.TextField(blank=True, null=True)
+    category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, 
+                               blank=True, null=True, related_name='service_types')
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
+
+    class Meta:
+        verbose_name = 'Service Type'
+        verbose_name_plural = 'Service Types'
+        ordering = ['order', 'name']
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['is_active', 'order']),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class Service(PublicModel):
     """
     Model representing a service offered by a practitioner.
+    Updated to use PublicModel and remove redundant calculated fields.
     """
-    EXPERIENCE_LEVEL_CHOICES = [
-        ('beginner', 'Beginner'),
-        ('intermediate', 'Intermediate'),
-        ('advanced', 'Advanced'),
-        ('all_levels', 'All Levels'),
-    ]
+    # Basic service information
+    name = models.CharField(max_length=255, help_text="Service name")
+    description = models.TextField(blank=True, null=True, help_text="Detailed service description")
+    short_description = models.CharField(max_length=500, blank=True, null=True, 
+                                       help_text="Brief description for listings")
     
-    id = models.BigAutoField(primary_key=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    name = models.TextField()
-    description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    duration = models.IntegerField(blank=True, null=True)
-    practitioners = models.ManyToManyField(
+    # Pricing and duration
+    price = models.DecimalField(max_digits=10, decimal_places=2, 
+                              validators=[MinValueValidator(0)],
+                              help_text="Price in USD")
+    duration_minutes = models.PositiveIntegerField(help_text="Duration in minutes")
+    
+    # Relationships
+    service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, 
+                                   help_text="Type of service")
+    category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, 
+                               blank=True, null=True, related_name='services')
+    primary_practitioner = models.ForeignKey('practitioners.Practitioner', 
+                                           on_delete=models.CASCADE,
+                                           related_name='primary_services',
+                                           help_text="Main practitioner for this service")
+    additional_practitioners = models.ManyToManyField(
         'practitioners.Practitioner', 
         through='ServicePractitioner',
         related_name='services',
-        blank=True
+        blank=True,
+        help_text="Additional practitioners involved in this service"
     )
-    service_type = models.ForeignKey(ServiceType, models.DO_NOTHING, blank=True, null=True)
-    category = models.ForeignKey('ServiceCategory', on_delete=models.SET_NULL, blank=True, null=True, related_name='services')
+    
+    # Capacity and targeting
+    max_participants = models.PositiveIntegerField(default=1, 
+                                                 validators=[MinValueValidator(1)],
+                                                 help_text="Maximum number of participants")
+    min_participants = models.PositiveIntegerField(default=1,
+                                                 validators=[MinValueValidator(1)],
+                                                 help_text="Minimum participants to run service")
+    experience_level = models.CharField(max_length=20, choices=EXPERIENCE_LEVEL_CHOICES, 
+                                      default='all_levels')
+    age_min = models.PositiveIntegerField(blank=True, null=True, help_text="Minimum age")
+    age_max = models.PositiveIntegerField(blank=True, null=True, help_text="Maximum age")
+    
+    # Location and delivery
+    location_type = models.CharField(max_length=20, choices=LOCATION_TYPE_CHOICES, 
+                                   default='virtual')
+    location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name='services',
+                               help_text="Physical location for in-person/hybrid services")
+    
+    # Content and learning
+    what_youll_learn = models.TextField(blank=True, null=True, 
+                                       help_text="Learning outcomes and benefits")
+    prerequisites = models.TextField(blank=True, null=True,
+                                   help_text="What participants need before joining")
+    includes = models.JSONField(blank=True, null=True, 
+                              help_text="What's included in the service")
+    
+    # Media and presentation
+    image_url = models.URLField(blank=True, null=True, help_text="Service image")
+    video_url = models.URLField(blank=True, null=True, help_text="Promotional video")
+    tags = models.JSONField(blank=True, null=True, help_text="Searchable tags")
+    
+    # Multi-language support
+    languages = models.ManyToManyField('utils.Language', related_name='services', blank=True)
+    
+    # Status and visibility
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
-    max_participants = models.PositiveIntegerField(default=1)
-    min_participants = models.PositiveIntegerField(default=1)
-    location_type = models.CharField(max_length=20, choices=[
-        ('virtual', 'Virtual'),
-        ('in_person', 'In Person'),
-        ('hybrid', 'Hybrid'),
-    ], default='virtual')
+    is_public = models.BooleanField(default=True, help_text="Whether service is publicly visible")
     
-    location = models.ForeignKey(
-        Location,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='services',
-        help_text="Structured location where this service is provided (for in-person and hybrid services)"
-    )
+    # Service type flags (for complex services)
+    is_course = models.BooleanField(default=False, help_text="Whether this is a multi-session course")
     
-    tags = models.JSONField(blank=True, null=True)
-    image_url = models.URLField(blank=True, null=True)
-    average_rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
-    total_reviews = models.PositiveIntegerField(default=0)
-    total_bookings = models.PositiveIntegerField(default=0)
-    experience_level = models.CharField(max_length=20, choices=EXPERIENCE_LEVEL_CHOICES, default='all_levels')
-    languages = models.ManyToManyField('utils.Language', related_name='services', blank=True)
-    what_youll_learn = models.TextField(blank=True, null=True, help_text="Describe what clients will learn or gain from this service")
+    class Meta:
+        verbose_name = 'Service'
+        verbose_name_plural = 'Services'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['service_type', 'is_active']),
+            models.Index(fields=['primary_practitioner', 'is_active']),
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['location_type']),
+            models.Index(fields=['is_featured', 'is_active']),
+            models.Index(fields=['price']),
+            models.Index(fields=['experience_level']),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def average_rating(self):
+        """Calculate average rating from reviews."""
+        from reviews.models import Review
+        result = Review.objects.filter(
+            service=self,
+            is_published=True
+        ).aggregate(avg_rating=Avg('rating'))
+        return round(result['avg_rating'] or 0, 2)
+
+    @property
+    def total_reviews(self):
+        """Count total published reviews."""
+        from reviews.models import Review
+        return Review.objects.filter(
+            service=self,
+            is_published=True
+        ).count()
+
+    @property
+    def total_bookings(self):
+        """Count total bookings for this service."""
+        return self.bookings.count()
+
+    @property
+    def duration_display(self):
+        """Return formatted duration string."""
+        hours = self.duration_minutes // 60
+        minutes = self.duration_minutes % 60
+        
+        if hours > 0 and minutes > 0:
+            return f"{hours}h {minutes}m"
+        elif hours > 0:
+            return f"{hours}h"
+        else:
+            return f"{minutes}m"
+
+    @property
+    def all_practitioners(self):
+        """Get all practitioners (primary + additional)."""
+        additional_ids = self.additional_practitioners.values_list('id', flat=True)
+        from practitioners.models import Practitioner
+        return Practitioner.objects.filter(
+            models.Q(id=self.primary_practitioner.id) | models.Q(id__in=additional_ids)
+        ).distinct()
+
+    def can_user_book(self, user):
+        """Check if a user can book this service."""
+        if not self.is_active or not self.is_public:
+            return False
+        
+        # Add age restrictions if specified
+        if user.profile and user.profile.birthdate:
+            from datetime import date
+            age = (date.today() - user.profile.birthdate).days // 365
+            if self.age_min and age < self.age_min:
+                return False
+            if self.age_max and age > self.age_max:
+                return False
+        
+        return True
     
     class Meta:
         # Using Django's default naming convention (services_service)
@@ -494,63 +524,6 @@ class SessionParticipant(models.Model):
         return f"{self.user} in {self.session}"
 
 
-class ServiceCategory(models.Model):
-    """
-    Model for hierarchical service categories.
-    
-    This is the primary category model used for organizing services.
-    Practitioners can create their own categories to organize their services.
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True)
-    description = models.TextField(blank=True, null=True)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
-    order = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-    icon = models.CharField(max_length=50, blank=True, null=True)
-    image_url = models.URLField(blank=True, null=True)
-    practitioner = models.ForeignKey('practitioners.Practitioner', on_delete=models.CASCADE, blank=True, null=True, related_name='categories')
-    is_system = models.BooleanField(default=False, help_text="If True, this is a system-defined category that cannot be modified by practitioners")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'service_categories'
-        ordering = ['order', 'name']
-        verbose_name_plural = 'Service categories'
-        indexes = [
-            models.Index(fields=['parent']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['slug']),
-            models.Index(fields=['practitioner']),
-        ]
-    
-    def __str__(self):
-        return self.name
-    
-    @property
-    def full_path(self):
-        """
-        Returns the full category path (e.g., 'Health > Mental Health > Therapy')
-        """
-        if self.parent:
-            return f"{self.parent.full_path} > {self.name}"
-        return self.name
-    
-    def get_all_children(self, include_self=False):
-        """
-        Returns all child categories recursively
-        """
-        r = []
-        if include_self:
-            r.append(self)
-        for c in self.children.all():
-            _r = c.get_all_children(include_self=True)
-            if _r:
-                r.extend(_r)
-        return r
-
 
 class SessionAgendaItem(models.Model):
     """
@@ -723,3 +696,259 @@ class Waitlist(models.Model):
             if entry.position != i:
                 entry.position = i
                 entry.save(update_fields=['position'])
+
+
+# ============================================================================
+# PACKAGE AND BUNDLE MODELS
+# ============================================================================
+
+class Package(PublicModel):
+    """
+    Model representing a package of different services sold together.
+    Example: "Wellness Journey" containing consultation + 3 massages + yoga class
+    """
+    name = models.CharField(max_length=255, help_text="Package name")
+    description = models.TextField(help_text="What this package includes and benefits")
+    
+    # Pricing
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="Total package price"
+    )
+    original_price = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="Sum of individual service prices (for showing savings)"
+    )
+    
+    # Package details
+    validity_days = models.PositiveIntegerField(
+        default=365,
+        help_text="How many days the package is valid after purchase"
+    )
+    is_transferable = models.BooleanField(
+        default=False,
+        help_text="Whether package can be transferred to another user"
+    )
+    
+    # Practitioner and category
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner',
+        on_delete=models.CASCADE,
+        related_name='packages'
+    )
+    category = models.ForeignKey(
+        ServiceCategory,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='packages'
+    )
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    
+    # Media
+    image_url = models.URLField(blank=True, null=True)
+    
+    # Metadata
+    tags = models.JSONField(blank=True, null=True, help_text="Searchable tags")
+    terms_conditions = models.TextField(
+        blank=True, null=True,
+        help_text="Specific terms for this package"
+    )
+
+    class Meta:
+        verbose_name = 'Package'
+        verbose_name_plural = 'Packages'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['practitioner', 'is_active']),
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['is_featured', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.practitioner.user.get_full_name()}"
+
+    @property
+    def savings_amount(self):
+        """Calculate savings compared to individual prices."""
+        return self.original_price - self.price
+
+    @property
+    def savings_percentage(self):
+        """Calculate savings percentage."""
+        if self.original_price > 0:
+            return round((self.savings_amount / self.original_price) * 100, 1)
+        return 0
+
+
+class PackageService(models.Model):
+    """
+    Junction table linking packages to services with quantities.
+    """
+    package = models.ForeignKey(
+        Package,
+        on_delete=models.CASCADE,
+        related_name='package_services'
+    )
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.CASCADE,
+        related_name='service_packages'
+    )
+    quantity = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text="Number of times this service is included"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within package"
+    )
+    is_mandatory = models.BooleanField(
+        default=True,
+        help_text="Whether this service must be used (vs optional)"
+    )
+    notes = models.CharField(
+        max_length=255,
+        blank=True, null=True,
+        help_text="Special notes about this service in the package"
+    )
+
+    class Meta:
+        verbose_name = 'Package Service'
+        verbose_name_plural = 'Package Services'
+        unique_together = ['package', 'service']
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.package.name} - {self.service.name} x{self.quantity}"
+
+
+class Bundle(PublicModel):
+    """
+    Model representing bulk purchase options for a single service.
+    Example: "5-Class Yoga Pass" or "10-Session Massage Bundle"
+    """
+    name = models.CharField(max_length=255, help_text="Bundle name")
+    description = models.TextField(
+        blank=True, null=True,
+        help_text="Bundle description and benefits"
+    )
+    
+    # The service this bundle is for
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.CASCADE,
+        related_name='bundles'
+    )
+    
+    # Bundle configuration
+    sessions_included = models.PositiveIntegerField(
+        validators=[MinValueValidator(2)],
+        help_text="Number of sessions included in bundle"
+    )
+    bonus_sessions = models.PositiveIntegerField(
+        default=0,
+        help_text="Additional free sessions (e.g., buy 5 get 1 free)"
+    )
+    
+    # Pricing
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="Total bundle price"
+    )
+    
+    # Validity
+    validity_days = models.PositiveIntegerField(
+        default=365,
+        help_text="Days valid after purchase"
+    )
+    is_shareable = models.BooleanField(
+        default=False,
+        help_text="Whether bundle can be shared with family/friends"
+    )
+    
+    # Restrictions
+    max_per_customer = models.PositiveIntegerField(
+        blank=True, null=True,
+        help_text="Maximum bundles one customer can purchase"
+    )
+    available_from = models.DateTimeField(
+        blank=True, null=True,
+        help_text="When bundle becomes available"
+    )
+    available_until = models.DateTimeField(
+        blank=True, null=True,
+        help_text="When bundle sales end"
+    )
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    
+    # Display
+    highlight_text = models.CharField(
+        max_length=50,
+        blank=True, null=True,
+        help_text="e.g., 'BEST VALUE' or 'SAVE 20%'"
+    )
+    
+    class Meta:
+        verbose_name = 'Bundle'
+        verbose_name_plural = 'Bundles'
+        ordering = ['service', 'sessions_included']
+        indexes = [
+            models.Index(fields=['service', 'is_active']),
+            models.Index(fields=['is_featured', 'is_active']),
+            models.Index(fields=['available_from', 'available_until']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.service.name}"
+
+    @property
+    def total_sessions(self):
+        """Total sessions including bonus."""
+        return self.sessions_included + self.bonus_sessions
+
+    @property
+    def price_per_session(self):
+        """Effective price per session."""
+        if self.total_sessions > 0:
+            return round(self.price / self.total_sessions, 2)
+        return 0
+
+    @property
+    def savings_amount(self):
+        """Savings compared to individual sessions."""
+        individual_total = self.service.price * self.total_sessions
+        return individual_total - self.price
+
+    @property
+    def savings_percentage(self):
+        """Savings percentage."""
+        individual_total = self.service.price * self.total_sessions
+        if individual_total > 0:
+            return round((self.savings_amount / individual_total) * 100, 1)
+        return 0
+
+    def is_available(self):
+        """Check if bundle is currently available for purchase."""
+        from django.utils import timezone
+        now = timezone.now()
+        
+        if not self.is_active:
+            return False
+            
+        if self.available_from and now < self.available_from:
+            return False
+            
+        if self.available_until and now > self.available_until:
+            return False
+            
+        return True
