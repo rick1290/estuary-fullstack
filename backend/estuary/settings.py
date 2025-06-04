@@ -32,14 +32,32 @@ ALLOWED_HOSTS = ['localhost']
 # Application definition
 
 INSTALLED_APPS = [
-    "users.apps.UsersConfig",
-    "django_use_email_as_username.apps.DjangoUseEmailAsUsernameConfig",
+    # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    
+    # Local apps
+    "users.apps.UsersConfig",
+    "analytics",
+    "bookings",
+    "community",
+    "integrations",
+    "locations",
+    "marketplace",
+    "media",
+    "messaging",
+    "notifications",
+    "payments",
+    "practitioners",
+    "referrals",
+    "reviews",
+    "rooms",
+    "services",
+    "utils",
 ]
 
 MIDDLEWARE = [
