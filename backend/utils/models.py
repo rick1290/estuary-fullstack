@@ -53,10 +53,11 @@ class SoftDeleteModel(BaseModel):
         self.save(update_fields=['is_deleted', 'deleted_at'])
 
 
-class PublicModel(BaseModel):
+class PublicModel(SoftDeleteModel):
     """
     Abstract base class for models that need both internal integer PK and public UUID.
     Provides: id (AutoField) + public_uuid (UUIDField) for secure API exposure.
+    Includes soft delete functionality for data retention.
     """
     public_uuid = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True,
                                    help_text="Public UUID for API exposure")
@@ -66,21 +67,35 @@ class PublicModel(BaseModel):
 
 
 # ============================================================================
-# LOCATION MODELS (Consolidated)
+# ADDRESS MODEL
 # ============================================================================
 
-class Location(BaseModel):
+class Address(BaseModel):
     """
-    Consolidated location model to replace scattered location implementations.
+    Model for storing physical addresses that can be used by any other model.
+    For geographic entities (Country, State, City), see the locations app.
     """
     # Basic location info
     name = models.CharField(max_length=255)
     address_line_1 = models.CharField(max_length=255)
     address_line_2 = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100)
-    state_province = models.CharField(max_length=100)
+    state_province = models.CharField(max_length=100, 
+                                    help_text="State, province, or region")
+    state_province_code = models.CharField(max_length=10, blank=True, null=True,
+                                         help_text="e.g., 'CA', 'ON', 'NSW'")
     postal_code = models.CharField(max_length=20)
+    country = models.ForeignKey('locations.Country', on_delete=models.SET_NULL, 
+                              null=True, blank=True, related_name='addresses')
     country_code = models.CharField(max_length=2, help_text="ISO 3166-1 alpha-2 country code")
+    
+    # SEO-friendly fields
+    city_slug = models.SlugField(max_length=100, blank=True, db_index=True)
+    state_slug = models.SlugField(max_length=100, blank=True, db_index=True)
+    
+    # Metro area for grouping
+    metro_area = models.CharField(max_length=100, blank=True, null=True,
+                                help_text="e.g., 'San Francisco Bay Area', 'Greater NYC'")
     
     # Geographic coordinates
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -97,14 +112,22 @@ class Location(BaseModel):
         ('online', 'Online Only'),
         ('other', 'Other'),
     ], default='office')
+    
+    # Service tracking
+    active_service_count = models.PositiveIntegerField(default=0,
+                                                     help_text="Number of active services at this location")
 
     class Meta:
-        verbose_name = 'Location'
-        verbose_name_plural = 'Locations'
+        verbose_name = 'Address'
+        verbose_name_plural = 'Addresses'
         indexes = [
             models.Index(fields=['city', 'state_province']),
+            models.Index(fields=['state_province']),
+            models.Index(fields=['postal_code']),
             models.Index(fields=['country_code']),
             models.Index(fields=['latitude', 'longitude']),
+            models.Index(fields=['is_verified']),
+            models.Index(fields=['metro_area']),
         ]
 
     def __str__(self):
@@ -118,6 +141,23 @@ class Location(BaseModel):
             address_parts.append(self.address_line_2)
         address_parts.extend([self.city, self.state_province, self.postal_code])
         return ", ".join(address_parts)
+    
+    def save(self, *args, **kwargs):
+        """Auto-generate slugs if not provided."""
+        if not self.city_slug and self.city:
+            from django.utils.text import slugify
+            self.city_slug = slugify(self.city)
+        if not self.state_slug and self.state_province:
+            from django.utils.text import slugify
+            self.state_slug = slugify(self.state_province)
+        super().save(*args, **kwargs)
+    
+    @property
+    def seo_url_path(self):
+        """Generate SEO-friendly URL path like 'san-francisco-ca'."""
+        if self.city_slug and self.state_slug:
+            return f"{self.city_slug}-{self.state_slug}"
+        return None
 
 
 # ============================================================================
@@ -125,32 +165,7 @@ class Location(BaseModel):
 # ============================================================================
 
 
-class Country(BaseModel):
-    """
-    Model representing a country.
-    Updated to use BaseModel for consistency.
-    """
-    name = models.CharField(max_length=100, unique=True, help_text="Full country name")
-    code = models.CharField(max_length=2, unique=True, help_text="ISO 3166-1 alpha-2 country code")
-    code_3 = models.CharField(max_length=3, unique=True, help_text="ISO 3166-1 alpha-3 country code")
-    numeric_code = models.CharField(max_length=3, blank=True, null=True, help_text="ISO 3166-1 numeric code")
-    
-    # Additional useful fields
-    phone_code = models.CharField(max_length=10, blank=True, null=True, help_text="International dialing code")
-    currency_code = models.CharField(max_length=3, blank=True, null=True, help_text="ISO 4217 currency code")
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = 'Country'
-        verbose_name_plural = 'Countries'
-        ordering = ['name']
-        indexes = [
-            models.Index(fields=['code']),
-            models.Index(fields=['is_active']),
-        ]
-
-    def __str__(self):
-        return self.name
+# Note: Country model has been moved to locations.models for better organization
 
 
 class Holiday(BaseModel):
@@ -159,7 +174,7 @@ class Holiday(BaseModel):
     Updated to use BaseModel and improved relationships.
     """
     name = models.CharField(max_length=255, help_text="Holiday name")
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='holidays')
+    country = models.ForeignKey('locations.Country', on_delete=models.CASCADE, related_name='holidays')
     date = models.DateField()
     is_recurring = models.BooleanField(default=True, help_text="Whether this holiday recurs annually")
     is_business_day = models.BooleanField(default=False, help_text="Whether businesses typically remain open")

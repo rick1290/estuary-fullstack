@@ -22,6 +22,8 @@ services:
       - '8000:8000'
     volumes:
       - ./backend:/app
+    env_file:
+      - ./backend/.env
     command: uvicorn estuary.asgi:application --host 0.0.0.0 --reload
     depends_on:
       - postgres
@@ -35,7 +37,9 @@ services:
       - '8001:8000'
     volumes:
       - ./backend:/app
-    command: uvicorn estuary.asgi:fastapp  --host 0.0.0.0 --reload
+    env_file:
+      - ./backend/.env
+    command: uvicorn api.main:app --host 0.0.0.0 --reload
     depends_on:
       - postgres
 

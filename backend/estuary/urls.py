@@ -22,6 +22,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    
+    # Note: All API endpoints are now handled by FastAPI
+    # Available at /api/v1/* via ASGI mount
 ]
 
 # Serve static files in development

@@ -7,7 +7,7 @@ from payments.models import (
     TierCommissionAdjustment, 
     PractitionerSubscription,
     ExternalServiceFee,
-    PractitionerCreditTransaction,
+    EarningsTransaction,
     PackageCompletionRecord
 )
 

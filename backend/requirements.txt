@@ -10,3 +10,16 @@ pytz==2023.3
 django-seed==0.3.1
 redis==5.0.0
 django-use-email-as-username==1.4.0
+PyJWT==2.8.0
+boto3==1.35.0
+django-storages==1.14.0
+temporalio==1.7.1
+httpx==0.26.0
+livekit==0.13.1
+livekit-api==1.0.2
+email-validator==2.1.0
+python-multipart==0.0.6
+stripe==7.12.0
+geopy==2.4.1
+channels==4.0.0
+channels-redis==4.1.0

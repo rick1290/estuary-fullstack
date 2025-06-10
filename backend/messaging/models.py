@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
 from utils.models import BaseModel
 
 
@@ -7,9 +8,25 @@ class Conversation(BaseModel):
     """
     Model representing a conversation between users.
     """
-    participants = models.ManyToManyField('users.User', related_name='conversations')
+    participants = models.ManyToManyField(
+        'users.User', 
+        through='ConversationParticipant',
+        related_name='conversations'
+    )
     is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
     title = models.CharField(max_length=255, blank=True)
+    conversation_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('direct', 'Direct Message'),
+            ('group', 'Group Conversation'),
+            ('booking', 'Booking Related'),
+            ('service', 'Service Related'),
+            ('support', 'Support'),
+        ],
+        default='direct'
+    )
     
     # For practitioner-client conversations
     related_booking = models.ForeignKey(
@@ -53,6 +70,15 @@ class Conversation(BaseModel):
         self.updated_at = timezone.now()
         self.save(update_fields=['updated_at'])
         
+        # Update participant's last read time
+        ConversationParticipant.objects.filter(
+            conversation=self,
+            user=sender
+        ).update(
+            last_read_at=timezone.now(),
+            last_read_message=message
+        )
+        
         return message
     
     def mark_as_read(self, user):
@@ -66,6 +92,67 @@ class Conversation(BaseModel):
         ).update(
             is_read=True,
             read_at=timezone.now()
+        )
+        
+        # Update participant's last read
+        last_message = self.messages.filter(is_deleted=False).last()
+        if last_message:
+            ConversationParticipant.objects.filter(
+                conversation=self,
+                user=user
+            ).update(
+                last_read_at=timezone.now(),
+                last_read_message=last_message
+            )
+    
+    def get_unread_count(self, user):
+        """
+        Get unread message count for a specific user
+        """
+        return MessageReceipt.objects.filter(
+            message__conversation=self,
+            user=user,
+            is_read=False,
+            message__is_deleted=False
+        ).count()
+    
+    def add_participant(self, user, role='member'):
+        """
+        Add a participant to the conversation
+        """
+        participant, created = ConversationParticipant.objects.get_or_create(
+            conversation=self,
+            user=user,
+            defaults={'role': role}
+        )
+        if not created and not participant.is_active:
+            participant.is_active = True
+            participant.left_at = None
+            participant.save()
+        return participant
+    
+    def remove_participant(self, user):
+        """
+        Remove a participant from the conversation
+        """
+        ConversationParticipant.objects.filter(
+            conversation=self,
+            user=user
+        ).update(
+            is_active=False,
+            left_at=timezone.now()
+        )
+    
+    def archive_for_user(self, user):
+        """
+        Archive the conversation for a specific user
+        """
+        ConversationParticipant.objects.filter(
+            conversation=self,
+            user=user
+        ).update(
+            is_archived=True,
+            archived_at=timezone.now()
         )
 
 
@@ -116,12 +203,16 @@ class Message(BaseModel):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Create message receipts for all participants except sender
+        # Create message receipts for all active participants except sender
         if is_new:
-            participants = self.conversation.participants.exclude(id=self.sender.id)
+            active_participants = ConversationParticipant.objects.filter(
+                conversation=self.conversation,
+                is_active=True
+            ).exclude(user=self.sender).values_list('user', flat=True)
+            
             receipts = [
-                MessageReceipt(message=self, user=participant, is_read=False)
-                for participant in participants
+                MessageReceipt(message=self, user_id=user_id, is_read=False)
+                for user_id in active_participants
             ]
             MessageReceipt.objects.bulk_create(receipts)
     
@@ -192,3 +283,121 @@ class TypingIndicator(BaseModel):
     def __str__(self):
         status = "typing" if self.is_typing else "not typing"
         return f"{self.user} is {status} in {str(self.conversation.id)[:8]}..."
+
+
+class ConversationParticipant(BaseModel):
+    """
+    Through model for conversation participants with additional metadata.
+    """
+    ROLE_CHOICES = [
+        ('member', 'Member'),
+        ('admin', 'Admin'),
+        ('owner', 'Owner'),
+    ]
+    
+    conversation = models.ForeignKey(
+        Conversation, 
+        on_delete=models.CASCADE,
+        related_name='conversation_participants'
+    )
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='conversation_participations'
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
+    
+    # Participant settings
+    is_muted = models.BooleanField(default=False)
+    muted_until = models.DateTimeField(blank=True, null=True)
+    
+    # Archive status per participant
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(blank=True, null=True)
+    
+    # Last read tracking
+    last_read_at = models.DateTimeField(blank=True, null=True)
+    last_read_message = models.ForeignKey(
+        'Message',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='+'
+    )
+    
+    # Join/leave tracking
+    joined_at = models.DateTimeField(auto_now_add=True)
+    left_at = models.DateTimeField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        unique_together = ['conversation', 'user']
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['conversation', 'is_active']),
+            models.Index(fields=['user', 'is_archived']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user} in {self.conversation} ({self.role})"
+
+
+class BlockedUser(BaseModel):
+    """
+    Model to track blocked users.
+    """
+    blocker = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='blocked_users'
+    )
+    blocked = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='blocked_by_users'
+    )
+    reason = models.TextField(blank=True)
+    
+    class Meta:
+        unique_together = ['blocker', 'blocked']
+        indexes = [
+            models.Index(fields=['blocker']),
+            models.Index(fields=['blocked']),
+        ]
+    
+    def __str__(self):
+        return f"{self.blocker} blocked {self.blocked}"
+
+
+class MessageNotificationPreference(BaseModel):
+    """
+    User preferences for message notifications.
+    """
+    user = models.OneToOneField(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='message_notification_preference'
+    )
+    
+    # Global settings
+    email_notifications = models.BooleanField(default=True)
+    push_notifications = models.BooleanField(default=True)
+    sms_notifications = models.BooleanField(default=False)
+    
+    # Notification types
+    notify_new_message = models.BooleanField(default=True)
+    notify_new_conversation = models.BooleanField(default=True)
+    notify_mentions = models.BooleanField(default=True)
+    
+    # Quiet hours
+    quiet_hours_enabled = models.BooleanField(default=False)
+    quiet_hours_start = models.TimeField(blank=True, null=True)
+    quiet_hours_end = models.TimeField(blank=True, null=True)
+    quiet_hours_timezone = models.CharField(max_length=50, default='UTC')
+    
+    # Sound settings
+    sound_enabled = models.BooleanField(default=True)
+    vibration_enabled = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"Notification preferences for {self.user}"

@@ -143,3 +143,58 @@ class SearchAnalytics(models.Model):
     
     def __str__(self):
         return f"Search for '{self.query_text}' on {self.search_date}"
+
+
+class SearchLog(models.Model):
+    """
+    Model for logging all search queries for analytics and suggestions.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True)
+    session_id = models.CharField(max_length=100, blank=True, null=True)
+    query = models.CharField(max_length=255, db_index=True)
+    search_type = models.CharField(max_length=20, default='all')
+    filters = models.JSONField(blank=True, null=True)
+    location = models.JSONField(blank=True, null=True)  # {'lat': x, 'lng': y}
+    result_count = models.PositiveIntegerField(default=0)
+    clicked_position = models.PositiveIntegerField(blank=True, null=True)  # Position of clicked result
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'search_logs'
+        indexes = [
+            models.Index(fields=['created_at']),
+            models.Index(fields=['user']),
+            models.Index(fields=['query']),
+            models.Index(fields=['search_type']),
+        ]
+    
+    def __str__(self):
+        return f"Search: '{self.query}' at {self.created_at}"
+
+
+class ServiceView(models.Model):
+    """
+    Model for tracking service page views.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    service = models.ForeignKey('services.Service', on_delete=models.CASCADE, related_name='views')
+    user = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True)
+    session_id = models.CharField(max_length=100, blank=True, null=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    referrer = models.CharField(max_length=255, blank=True, null=True)
+    search_query = models.CharField(max_length=255, blank=True, null=True)  # If came from search
+    duration_seconds = models.PositiveIntegerField(blank=True, null=True)  # Time spent on page
+    
+    class Meta:
+        db_table = 'service_views'
+        indexes = [
+            models.Index(fields=['service', 'viewed_at']),
+            models.Index(fields=['user']),
+            models.Index(fields=['viewed_at']),
+        ]
+    
+    def __str__(self):
+        return f"View of {self.service} at {self.viewed_at}"

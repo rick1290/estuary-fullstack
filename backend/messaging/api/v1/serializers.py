@@ -1,167 +1,275 @@
+"""
+DRF Serializers for messaging API.
+"""
+
 from rest_framework import serializers
-from apps.messaging.models import Conversation, Message, MessageReceipt, TypingIndicator
-from apps.users.api.v1.serializers import UserBasicSerializer
-from apps.bookings.api.v1.serializers import BookingBasicSerializer
-from apps.services.api.v1.serializers import ServiceBasicSerializer
-from drf_spectacular.utils import extend_schema_field
+from django.utils import timezone
+from django.db.models import Q, Count
+
+from messaging.models import (
+    Conversation, Message, MessageReceipt, ConversationParticipant,
+    BlockedUser, MessageNotificationPreference, TypingIndicator
+)
+from users.models import User
 
 
-class MessageSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the Message model.
-    """
-    sender_details = UserBasicSerializer(source='sender', read_only=True)
+class UserSummarySerializer(serializers.ModelSerializer):
+    """Serializer for user summary information."""
+    display_name = serializers.CharField(read_only=True)
+    avatar_url = serializers.SerializerMethodField()
     
     class Meta:
-        model = Message
-        fields = [
-            'id', 'conversation', 'sender', 'content', 'message_type',
-            'attachments', 'created_at', 'edited_at', 'is_edited',
-            'is_deleted', 'deleted_at', 'sender_details'
-        ]
-        read_only_fields = ['id', 'created_at', 'edited_at', 'is_edited', 'is_deleted', 'deleted_at']
+        model = User
+        fields = ['id', 'uuid', 'email', 'first_name', 'last_name', 
+                  'display_name', 'avatar_url', 'is_practitioner']
+    
+    def get_avatar_url(self, obj):
+        """Get avatar URL from user profile."""
+        if hasattr(obj, 'profile') and obj.profile:
+            return obj.profile.avatar_url
+        return None
 
 
-class MessageCreateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating a new Message.
-    """
-    class Meta:
-        model = Message
-        fields = ['conversation', 'content', 'message_type', 'attachments']
+class AttachmentSerializer(serializers.Serializer):
+    """Serializer for message attachments."""
+    id = serializers.CharField(required=False)
+    type = serializers.ChoiceField(choices=['image', 'file', 'video', 'audio'])
+    url = serializers.URLField()
+    filename = serializers.CharField()
+    size = serializers.IntegerField()
+    mime_type = serializers.CharField()
+    thumbnail_url = serializers.URLField(required=False, allow_null=True)
+    duration = serializers.IntegerField(required=False, allow_null=True)
+    width = serializers.IntegerField(required=False, allow_null=True)
+    height = serializers.IntegerField(required=False, allow_null=True)
 
 
-class MessageReceiptSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the MessageReceipt model.
-    """
-    user_details = UserBasicSerializer(source='user', read_only=True)
+class MessageStatusSerializer(serializers.ModelSerializer):
+    """Serializer for message delivery and read status."""
+    message_id = serializers.IntegerField(source='message.id')
+    user_id = serializers.IntegerField(source='user.id')
     
     class Meta:
         model = MessageReceipt
-        fields = [
-            'id', 'message', 'user', 'is_read', 'read_at',
-            'delivered_at', 'user_details'
-        ]
-        read_only_fields = ['id', 'delivered_at']
+        fields = ['message_id', 'user_id', 'delivered_at', 'is_read', 'read_at']
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    """Serializer for messages."""
+    sender = UserSummarySerializer(read_only=True)
+    attachments = AttachmentSerializer(many=True, read_only=True)
+    receipts = MessageStatusSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Message
+        fields = ['id', 'conversation', 'sender', 'content', 'message_type',
+                  'attachments', 'created_at', 'updated_at', 'edited_at',
+                  'is_edited', 'is_deleted', 'deleted_at', 'receipts']
+        read_only_fields = ['id', 'conversation', 'sender', 'created_at', 
+                            'updated_at', 'edited_at', 'is_edited', 
+                            'is_deleted', 'deleted_at']
+
+
+class MessageCreateSerializer(serializers.Serializer):
+    """Serializer for creating messages."""
+    content = serializers.CharField(min_length=1, max_length=10000)
+    message_type = serializers.ChoiceField(
+        choices=['text', 'image', 'file', 'video', 'audio', 'link'],
+        default='text'
+    )
+    attachments = AttachmentSerializer(many=True, required=False)
+    
+    def validate(self, data):
+        """Validate attachments match message type."""
+        message_type = data.get('message_type', 'text')
+        attachments = data.get('attachments', [])
+        
+        if message_type in ['image', 'file', 'video', 'audio'] and not attachments:
+            raise serializers.ValidationError(
+                f"{message_type} messages must have at least one attachment"
+            )
+        
+        return data
 
 
 class TypingIndicatorSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the TypingIndicator model.
-    """
-    user_details = UserBasicSerializer(source='user', read_only=True)
+    """Serializer for typing indicators."""
+    user = UserSummarySerializer(read_only=True)
     
     class Meta:
         model = TypingIndicator
-        fields = [
-            'id', 'conversation', 'user', 'is_typing',
-            'timestamp', 'user_details'
-        ]
-        read_only_fields = ['id', 'timestamp']
+        fields = ['user', 'is_typing', 'updated_at']
+
+
+class ConversationParticipantSerializer(serializers.ModelSerializer):
+    """Serializer for conversation participants."""
+    user = UserSummarySerializer(read_only=True)
+    
+    class Meta:
+        model = ConversationParticipant
+        fields = ['user', 'role', 'joined_at', 'is_active', 'left_at',
+                  'is_muted', 'muted_until', 'is_archived', 'archived_at',
+                  'last_read_at']
 
 
 class ConversationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the Conversation model.
-    """
-    participants_details = UserBasicSerializer(source='participants', many=True, read_only=True)
+    """Base serializer for conversations."""
+    participants = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Conversation
-        fields = [
-            'id', 'created_at', 'updated_at', 'participants', 'is_active',
-            'title', 'related_booking', 'related_service', 'participants_details',
-            'last_message', 'unread_count'
-        ]
+        fields = ['id', 'title', 'conversation_type', 'is_active', 'is_archived',
+                  'created_at', 'updated_at', 'participants', 'last_message',
+                  'unread_count', 'related_booking', 'related_service']
         read_only_fields = ['id', 'created_at', 'updated_at']
     
-    @extend_schema_field(MessageSerializer(allow_null=True))
+    def get_participants(self, obj):
+        """Get conversation participants."""
+        participants = obj.conversation_participants.select_related('user')
+        return ConversationParticipantSerializer(participants, many=True).data
+    
     def get_last_message(self, obj):
-        """Get the last message in the conversation"""
+        """Get the last message in the conversation."""
         last_message = obj.messages.filter(is_deleted=False).order_by('-created_at').first()
         if last_message:
             return MessageSerializer(last_message).data
         return None
     
-    @extend_schema_field(serializers.IntegerField())
     def get_unread_count(self, obj):
-        """Get the count of unread messages for the current user"""
-        user = self.context.get('request').user
+        """Get unread message count for current user."""
+        user = self.context.get('request').user if self.context.get('request') else None
         if not user:
             return 0
-            
-        # Count messages that don't have a read receipt for this user
-        return Message.objects.filter(
-            conversation=obj,
-            is_deleted=False
-        ).exclude(
-            receipts__user=user,
-            receipts__is_read=True
+        
+        return MessageReceipt.objects.filter(
+            message__conversation=obj,
+            user=user,
+            is_read=False,
+            message__is_deleted=False
         ).count()
 
 
 class ConversationDetailSerializer(ConversationSerializer):
-    """
-    Detailed serializer for the Conversation model including messages.
-    """
+    """Detailed serializer for conversations including messages."""
     messages = serializers.SerializerMethodField()
-    related_booking_details = BookingBasicSerializer(source='related_booking', read_only=True)
-    related_service_details = ServiceBasicSerializer(source='related_service', read_only=True)
+    typing_indicators = serializers.SerializerMethodField()
     
     class Meta(ConversationSerializer.Meta):
-        fields = ConversationSerializer.Meta.fields + [
-            'messages', 'related_booking_details', 'related_service_details'
-        ]
+        fields = ConversationSerializer.Meta.fields + ['messages', 'typing_indicators']
     
-    @extend_schema_field(MessageSerializer(many=True))
     def get_messages(self, obj):
-        """Get messages in the conversation with pagination"""
-        # Get the page size from the request or use a default
-        page_size = self.context.get('request').query_params.get('page_size', 20)
-        try:
-            page_size = int(page_size)
-        except (TypeError, ValueError):
-            page_size = 20
-            
-        # Get messages ordered by created_at
-        messages = obj.messages.filter(is_deleted=False).order_by('-created_at')[:page_size]
-        return MessageSerializer(messages, many=True).data
+        """Get conversation messages."""
+        messages = obj.messages.filter(is_deleted=False).order_by('-created_at')[:50]
+        return MessageSerializer(reversed(list(messages)), many=True).data
+    
+    def get_typing_indicators(self, obj):
+        """Get active typing indicators."""
+        indicators = TypingIndicator.objects.filter(
+            conversation=obj,
+            is_typing=True,
+            updated_at__gte=timezone.now() - timezone.timedelta(seconds=10)
+        )
+        return TypingIndicatorSerializer(indicators, many=True).data
 
 
-class ConversationCreateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating a new Conversation.
-    """
-    initial_message = serializers.CharField(required=False, write_only=True)
+class ConversationCreateSerializer(serializers.Serializer):
+    """Serializer for creating conversations."""
+    title = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    conversation_type = serializers.ChoiceField(choices=['direct', 'group'], default='direct')
+    participant_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1
+    )
+    initial_message = MessageCreateSerializer(required=False)
+    
+    def validate_participant_ids(self, value):
+        """Validate participant count based on conversation type."""
+        conv_type = self.initial_data.get('conversation_type', 'direct')
+        
+        if conv_type == 'direct' and len(value) != 1:
+            raise serializers.ValidationError(
+                "Direct conversations must have exactly one other participant"
+            )
+        elif conv_type == 'group' and len(value) < 2:
+            raise serializers.ValidationError(
+                "Group conversations must have at least 2 other participants"
+            )
+        
+        return value
+
+
+class AddParticipantSerializer(serializers.Serializer):
+    """Serializer for adding participants."""
+    user_id = serializers.IntegerField()
+    role = serializers.ChoiceField(choices=['member', 'admin'], default='member')
+
+
+class ArchiveConversationSerializer(serializers.Serializer):
+    """Serializer for archiving conversations."""
+    archive = serializers.BooleanField()
+
+
+class BlockedUserSerializer(serializers.ModelSerializer):
+    """Serializer for blocked users."""
+    blocked_user = UserSummarySerializer(source='blocked', read_only=True)
     
     class Meta:
-        model = Conversation
-        fields = [
-            'participants', 'title', 'related_booking',
-            'related_service', 'initial_message'
-        ]
+        model = BlockedUser
+        fields = ['id', 'blocked_user', 'reason', 'created_at']
+
+
+class BlockUserSerializer(serializers.Serializer):
+    """Serializer for blocking users."""
+    user_id = serializers.IntegerField()
+    reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class MessageNotificationPreferenceSerializer(serializers.ModelSerializer):
+    """Serializer for message notification preferences."""
+    quiet_hours_start = serializers.TimeField(format='%H:%M', required=False, allow_null=True)
+    quiet_hours_end = serializers.TimeField(format='%H:%M', required=False, allow_null=True)
     
-    def create(self, validated_data):
-        initial_message = validated_data.pop('initial_message', None)
-        participants = validated_data.pop('participants', [])
-        
-        # Create the conversation
-        conversation = Conversation.objects.create(**validated_data)
-        
-        # Add participants
-        if participants:
-            conversation.participants.add(*participants)
-        
-        # Add the current user as a participant if not already included
-        user = self.context.get('request').user
-        if user and user not in participants:
-            conversation.participants.add(user)
-        
-        # Add initial message if provided
-        if initial_message and user:
-            conversation.add_message(sender=user, content=initial_message)
-        
-        return conversation
+    class Meta:
+        model = MessageNotificationPreference
+        fields = ['email_notifications', 'push_notifications', 'sms_notifications',
+                  'notify_new_message', 'notify_new_conversation', 'notify_mentions',
+                  'quiet_hours_enabled', 'quiet_hours_start', 'quiet_hours_end',
+                  'quiet_hours_timezone', 'sound_enabled', 'vibration_enabled']
+
+
+class TypingStatusSerializer(serializers.Serializer):
+    """Serializer for typing status updates."""
+    is_typing = serializers.BooleanField()
+
+
+class MessageSearchSerializer(serializers.Serializer):
+    """Serializer for message search parameters."""
+    query = serializers.CharField(min_length=2, max_length=100)
+    conversation_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    sender_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    message_types = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    start_date = serializers.DateTimeField(required=False)
+    end_date = serializers.DateTimeField(required=False)
+    include_deleted = serializers.BooleanField(default=False)
+    limit = serializers.IntegerField(min_value=1, max_value=100, default=50)
+    offset = serializers.IntegerField(min_value=0, default=0)
+
+
+class UnreadCountResponseSerializer(serializers.Serializer):
+    """Serializer for unread message count response."""
+    total_unread = serializers.IntegerField()
+    conversations = serializers.ListField(
+        child=serializers.DictField(),
+        required=False
+    )

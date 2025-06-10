@@ -1,128 +1,151 @@
-# Migration Plan for Practitioner Model
+# UUID to BaseModel Migration Plan
 
 ## Overview
-This document outlines the migration plan for implementing the new Practitioner model structure in the Estuary application. The migration will be performed in two steps:
+This document outlines the migration plan for converting models with UUID primary keys to use BaseModel/PublicModel pattern for consistency across the codebase.
 
-1. Schema migration: Create the Practitioner model and update all foreign key references
-2. Data migration: Populate the Practitioner model with data from existing users
+## Current State
 
-## Step 1: Schema Migration
-Run the standard Django migration command to create the necessary database schema changes:
-```bash
-python manage.py makemigrations practitioners
+The following models in the practitioners app currently use UUID as primary key:
+
+1. **Schedule** (UUID primary key)
+2. **ScheduleTimeSlot** (UUID primary key)  
+3. **ServiceSchedule** (UUID primary key)
+4. **OutOfOffice** (UUID primary key)
+5. **Question** (UUID primary key)
+6. **Certification** (UUID primary key)
+7. **Education** (UUID primary key)
+
+## Target State
+
+According to our patterns:
+- **BaseModel**: For internal models (integer PK + timestamps)
+- **PublicModel**: For models exposed via API (integer PK + public_uuid + soft delete + timestamps)
+
+## Migration Strategy
+
+### Option 1: Update Models in Place (For Development)
+
+Since we're in development, we can update the models directly:
+
+1. **Update Model Definitions**
+
+```python
+# Change from:
+class Schedule(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    # ... rest of fields
+
+# To:
+class Schedule(BaseModel):
+    # BaseModel provides: id (AutoField), created_at, updated_at
+    # ... rest of fields (remove manual timestamp fields)
 ```
 
-This will create a migration file that:
-- Creates the new Practitioner model with a one-to-one relationship to the User model
-- Updates all foreign key references in related models to point to the Practitioner model instead of the User model
-
-## Step 2: Data Migration
-Create a data migration to populate the Practitioner model with data from existing users:
+2. **Create Migration File**
 
 ```bash
-python manage.py makemigrations practitioners --empty --name=populate_practitioner_model
+# First backup existing data if needed
+docker-compose exec api python manage.py dumpdata practitioners > practitioners_backup.json
+
+# Create migration
+docker-compose exec api python manage.py makemigrations practitioners
 ```
 
-Edit the generated migration file to include the following logic:
+3. **Update Foreign Keys**
+
+The migration will need to handle foreign key updates:
+- ScheduleTimeSlot.schedule_id references
+- ServiceSchedule references  
+- Many-to-many relationships with Certification/Education
+
+### Option 2: Data Migration (For Production)
+
+If this were production, we'd need a more careful approach:
 
 ```python
 from django.db import migrations
 
-def create_practitioner_profiles(apps, schema_editor):
-    """
-    Create practitioner profiles for all existing users who are practitioners.
+def convert_uuid_to_int(apps, schema_editor):
+    """Convert UUID PKs to integer PKs"""
+    Schedule = apps.get_model('practitioners', 'Schedule')
     
-    We'll identify practitioners based on whether they have related records in 
-    practitioner-specific tables like SchedulePreference, ServiceSchedule, etc.
-    """
-    User = apps.get_model('users', 'User')
-    Practitioner = apps.get_model('practitioners', 'Practitioner')
-    
-    # Get all models that have practitioner references
-    Service = apps.get_model('services', 'Service')
-    Package = apps.get_model('services', 'Package')
-    Category = apps.get_model('services', 'Category')
-    WorkshopSession = apps.get_model('services', 'WorkshopSession')
-    
-    # Find all users who have services (these are definitely practitioners)
-    practitioner_user_ids = set()
-    
-    # Add users with services
-    for service in Service.objects.all():
-        if service.practitioner_id:
-            practitioner_user_ids.add(service.practitioner_id)
-    
-    # Add users with packages
-    for package in Package.objects.all():
-        if package.practitioner_id:
-            practitioner_user_ids.add(package.practitioner_id)
-    
-    # Add users with categories
-    for category in Category.objects.all():
-        if category.practitioner_id:
-            practitioner_user_ids.add(category.practitioner_id)
-    
-    # Add users with workshop sessions
-    for session in WorkshopSession.objects.all():
-        if session.practitioner_id:
-            practitioner_user_ids.add(session.practitioner_id)
-    
-    # Create practitioner profiles for all identified practitioners
-    for user_id in practitioner_user_ids:
-        try:
-            user = User.objects.get(id=user_id)
-            Practitioner.objects.create(
-                user=user,
-                is_verified=False,  # Default values
-                years_of_experience=0,
-                average_rating=0.0,
-                total_reviews=0,
-                featured=False,
-                completed_sessions=0,
-                cancellation_rate=0.0
-            )
-            print(f"Created practitioner profile for user {user.username}")
-        except User.DoesNotExist:
-            print(f"User with ID {user_id} not found")
-        except Exception as e:
-            print(f"Error creating practitioner profile for user {user_id}: {e}")
-
-def reverse_practitioner_profiles(apps, schema_editor):
-    """
-    Remove all practitioner profiles.
-    """
-    Practitioner = apps.get_model('practitioners', 'Practitioner')
-    Practitioner.objects.all().delete()
+    # 1. Add temporary integer field
+    # 2. Populate with sequential values
+    # 3. Update all foreign keys
+    # 4. Drop UUID field
+    # 5. Rename temp field to id
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('practitioners', '0001_initial'),  # Update this to the actual initial migration
+        ('practitioners', 'XXXX_previous'),
     ]
-
+    
     operations = [
-        migrations.RunPython(create_practitioner_profiles, reverse_practitioner_profiles),
+        migrations.RunPython(convert_uuid_to_int),
     ]
 ```
 
-## Step 3: Run Migrations
-After creating both migration files, run the migrations:
+## Implementation Steps
 
-```bash
-python manage.py migrate
+### Step 1: Update Model Files
+
+```python
+# practitioners/models.py
+
+# Update imports
+from utils.models import BaseModel, PublicModel
+
+# Update Schedule
+class Schedule(BaseModel):
+    name = models.CharField(max_length=100)
+    practitioner = models.ForeignKey(Practitioner, on_delete=models.CASCADE, related_name='schedules')
+    # Remove id, created_at, updated_at fields
+
+# Update ScheduleTimeSlot  
+class ScheduleTimeSlot(BaseModel):
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name='time_slots')
+    # Remove id, created_at, updated_at fields
+
+# Similar updates for other models...
 ```
 
-## Step 4: Verification
-After running the migrations, verify that:
-1. All practitioner profiles were created correctly
-2. All foreign key references are working properly
-3. The application functions as expected with the new model structure
+### Step 2: Update API Serializers
 
-## Rollback Plan
-If issues are encountered, the migrations can be rolled back:
+Since we're changing from UUID strings to integers:
 
-```bash
-python manage.py migrate practitioners zero
+```python
+# api/v1/schemas/practitioners.py
+
+class ScheduleResponse(BaseModel):
+    id: int  # Changed from str
+    # ... rest of fields
 ```
 
-This will revert all migrations for the practitioners app. Then, the models can be adjusted and the migration process can be attempted again.
+### Step 3: Reset Database (Development Only)
+
+```bash
+# Drop and recreate database
+docker-compose down -v
+docker-compose up -d postgres
+
+# Run migrations
+docker-compose exec api python manage.py migrate
+
+# Load test data
+docker-compose exec api python manage.py seed_db
+```
+
+## API Impact
+
+- Schedule IDs will change from UUID strings to integers
+- Update frontend to handle integer IDs
+- No more UUID string conversion needed in views
+
+## Benefits
+
+1. **Consistency**: All models follow same pattern
+2. **Performance**: Integer PKs are faster than UUIDs
+3. **Simplicity**: No more UUID-to-string conversions
+4. **Standards**: Follows Django best practices

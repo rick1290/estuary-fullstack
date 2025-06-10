@@ -57,7 +57,9 @@ INSTALLED_APPS = [
     "reviews",
     "rooms",
     "services",
+    "streams",
     "utils",
+    "workflows",
 ]
 
 MIDDLEWARE = [
@@ -150,3 +152,93 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = 'users.User'
+
+# ============================================================================
+# LiveKit Configuration
+# ============================================================================
+
+# LiveKit API credentials
+LIVEKIT_API_KEY = os.getenv('LIVEKIT_API_KEY', '')
+LIVEKIT_API_SECRET = os.getenv('LIVEKIT_API_SECRET', '')
+LIVEKIT_HOST = os.getenv('LIVEKIT_HOST', 'https://your-instance.livekit.cloud')
+
+# LiveKit room defaults
+LIVEKIT_ROOM_DEFAULTS = {
+    'empty_timeout': 600,  # 10 minutes
+    'max_participants': 100,
+    'enable_recording': False,  # Practitioner decides per room
+    'enable_e2ee': False,  # End-to-end encryption
+}
+
+# LiveKit SIP/PSTN configuration (for phone dial-in)
+LIVEKIT_SIP_ENABLED = os.getenv('LIVEKIT_SIP_ENABLED', 'False').lower() == 'true'
+LIVEKIT_SIP_PROVIDER = os.getenv('LIVEKIT_SIP_PROVIDER', 'twilio')  # twilio, telnyx, vonage
+LIVEKIT_SIP_TRUNK_ID = os.getenv('LIVEKIT_SIP_TRUNK_ID', '')
+LIVEKIT_SIP_DEFAULT_REGION = os.getenv('LIVEKIT_SIP_DEFAULT_REGION', 'US')
+
+# LiveKit webhook secret (for verifying webhooks)
+LIVEKIT_WEBHOOK_SECRET = os.getenv('LIVEKIT_WEBHOOK_SECRET', LIVEKIT_API_SECRET)
+
+# LiveKit recording storage (S3/CloudFlare R2)
+LIVEKIT_RECORDING_STORAGE = {
+    'type': os.getenv('LIVEKIT_RECORDING_STORAGE_TYPE', 's3'),  # s3, r2, azure
+    'bucket': os.getenv('LIVEKIT_RECORDING_BUCKET', 'estuary-recordings'),
+    'region': os.getenv('LIVEKIT_RECORDING_REGION', 'us-east-1'),
+    'access_key': os.getenv('LIVEKIT_RECORDING_ACCESS_KEY', ''),
+    'secret_key': os.getenv('LIVEKIT_RECORDING_SECRET_KEY', ''),
+    'endpoint': os.getenv('LIVEKIT_RECORDING_ENDPOINT', ''),  # For R2/MinIO
+}
+
+# ============================================================================
+# Stripe Configuration
+# ============================================================================
+
+# Stripe API keys
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+
+# Stripe Connect settings (for practitioner payouts)
+STRIPE_CONNECT_CLIENT_ID = os.getenv('STRIPE_CONNECT_CLIENT_ID', '')
+STRIPE_CONNECT_WEBHOOK_SECRET = os.getenv('STRIPE_CONNECT_WEBHOOK_SECRET', '')
+
+# Stripe product/price IDs (for fixed products like credit packages)
+STRIPE_CREDIT_PACKAGES = {
+    '10_credits': os.getenv('STRIPE_PRICE_10_CREDITS', ''),
+    '25_credits': os.getenv('STRIPE_PRICE_25_CREDITS', ''),
+    '50_credits': os.getenv('STRIPE_PRICE_50_CREDITS', ''),
+    '100_credits': os.getenv('STRIPE_PRICE_100_CREDITS', ''),
+}
+
+# Stripe settings
+STRIPE_CURRENCY = 'usd'
+STRIPE_AUTOMATIC_TAX_ENABLED = os.getenv('STRIPE_AUTOMATIC_TAX_ENABLED', 'False').lower() == 'true'
+STRIPE_STATEMENT_DESCRIPTOR = 'ESTUARY'
+
+# Payment settings
+PAYMENT_MINIMUM_AMOUNT_CENTS = 100  # $1.00 minimum
+PAYMENT_HOLD_PERIOD_HOURS = 48  # Hold period before practitioner can withdraw
+PAYOUT_MINIMUM_AMOUNT_CENTS = 5000  # $50.00 minimum payout
+
+# ============================================================================
+# Cloudflare R2 Storage Configuration
+# ============================================================================
+
+CLOUDFLARE_R2_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY_ID', '')
+CLOUDFLARE_R2_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_ACCESS_KEY', '')
+CLOUDFLARE_R2_STORAGE_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_STORAGE_BUCKET_NAME', '')
+CLOUDFLARE_R2_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_ENDPOINT_URL', '')
+CLOUDFLARE_R2_REGION_NAME = os.getenv('CLOUDFLARE_R2_REGION_NAME', 'auto')
+CLOUDFLARE_R2_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_CUSTOM_DOMAIN', '')
+
+# ============================================================================
+# Temporal Configuration
+# ============================================================================
+
+TEMPORAL_HOST = os.getenv('TEMPORAL_HOST', 'localhost:7233')
+TEMPORAL_NAMESPACE = os.getenv('TEMPORAL_NAMESPACE', 'default')
+TEMPORAL_TASK_QUEUE = os.getenv('TEMPORAL_TASK_QUEUE', 'estuary-main')
+
+# Worker configuration
+TEMPORAL_MAX_CONCURRENT_ACTIVITIES = int(os.getenv('TEMPORAL_MAX_CONCURRENT_ACTIVITIES', '100'))
+TEMPORAL_MAX_CACHED_WORKFLOWS = int(os.getenv('TEMPORAL_MAX_CACHED_WORKFLOWS', '500'))

@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Any
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 
-from apps.integrations.temporal.base_workflows import BaseWorkflow
-from apps.integrations.temporal.decorators import monitored_workflow
+from integrations.temporal.base_workflows import BaseWorkflow
+from integrations.temporal.decorators import monitored_workflow
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +45,12 @@ class BookingLifecycleWorkflow(BaseWorkflow):
         """
         workflow.logger.info(f"Starting booking lifecycle workflow for booking {booking_id}")
         
+        # Import activities
+        from .temporal_activities import get_booking_details
+        
         # Get booking details
-        booking = await self.execute_activity(
-            "get_booking_details",
+        booking = await self.execute_activity_with_logging(
+            get_booking_details,
             booking_id,
             start_to_close_timeout=timedelta(seconds=10),
             retry_policy=RetryPolicy(
@@ -58,9 +61,12 @@ class BookingLifecycleWorkflow(BaseWorkflow):
             ),
         )
         
+        # Import activities
+        from .temporal_activities import send_booking_confirmation
+        
         # Send booking confirmation
-        await self.execute_activity(
-            "send_booking_confirmation",
+        await self.execute_activity_with_logging(
+            send_booking_confirmation,
             booking_id,
             start_to_close_timeout=timedelta(seconds=30),
         )
@@ -76,9 +82,10 @@ class BookingLifecycleWorkflow(BaseWorkflow):
                 time_until_reminder = (reminder_time - now).total_seconds()
                 await workflow.sleep(timedelta(seconds=time_until_reminder))
                 
-                # Send reminder
-                await self.execute_activity(
-                    "send_session_reminder",
+                # Import and send reminder
+                from .temporal_activities import send_session_reminder
+                await self.execute_activity_with_logging(
+                    send_session_reminder,
                     booking_id,
                     start_to_close_timeout=timedelta(seconds=30),
                 )
@@ -96,16 +103,18 @@ class BookingLifecycleWorkflow(BaseWorkflow):
                 await workflow.sleep(timedelta(seconds=time_until_session_end))
         
         # Check if session was marked as completed
-        session_status = await self.execute_activity(
-            "get_session_status",
+        from .temporal_activities import get_session_status
+        session_status = await self.execute_activity_with_logging(
+            get_session_status,
             booking_id,
             start_to_close_timeout=timedelta(seconds=10),
         )
         
         if session_status.get("status") == "completed":
             # Send follow-up and feedback request
-            await self.execute_activity(
-                "send_session_followup",
+            from .temporal_activities import send_session_followup
+            await self.execute_activity_with_logging(
+                send_session_followup,
                 booking_id,
                 start_to_close_timeout=timedelta(seconds=30),
             )
@@ -114,23 +123,26 @@ class BookingLifecycleWorkflow(BaseWorkflow):
             await workflow.sleep(timedelta(days=3))
             
             # Check if feedback was provided
-            feedback_status = await self.execute_activity(
-                "check_feedback_status",
+            from .temporal_activities import check_feedback_status
+            feedback_status = await self.execute_activity_with_logging(
+                check_feedback_status,
                 booking_id,
                 start_to_close_timeout=timedelta(seconds=10),
             )
             
             if not feedback_status.get("feedback_provided", False):
                 # Send feedback reminder
-                await self.execute_activity(
-                    "send_feedback_reminder",
+                from .temporal_activities import send_feedback_reminder
+                await self.execute_activity_with_logging(
+                    send_feedback_reminder,
                     booking_id,
                     start_to_close_timeout=timedelta(seconds=30),
                 )
         elif session_status.get("status") == "no_show":
             # Handle no-show
-            await self.execute_activity(
-                "handle_no_show",
+            from .temporal_activities import handle_no_show
+            await self.execute_activity_with_logging(
+                handle_no_show,
                 booking_id,
                 start_to_close_timeout=timedelta(seconds=30),
             )
@@ -173,38 +185,42 @@ class ReschedulingWorkflow(BaseWorkflow):
         workflow.logger.info(f"Starting rescheduling workflow for booking {original_booking_id}")
         
         # Get original booking details
-        original_booking = await self.execute_activity(
-            "get_booking_details",
+        from .temporal_activities import get_booking_details
+        original_booking = await self.execute_activity_with_logging(
+            get_booking_details,
             original_booking_id,
             start_to_close_timeout=timedelta(seconds=10),
         )
         
         # Cancel the original booking
-        await self.execute_activity(
-            "cancel_booking",
+        from .temporal_activities import cancel_booking
+        await self.execute_activity_with_logging(
+            cancel_booking,
             original_booking_id,
-            reason=reason or "Rescheduled",
+            reason or "Rescheduled",
             start_to_close_timeout=timedelta(seconds=30),
         )
         
         # Create a new booking
-        new_booking = await self.execute_activity(
-            "create_booking",
-            practitioner_id=original_booking.get("practitioner_id"),
-            client_id=original_booking.get("client_id"),
-            session_time=new_session_time,
-            duration_minutes=original_booking.get("duration_minutes"),
-            service_type_id=original_booking.get("service_type_id"),
-            is_rescheduled=True,
-            original_booking_id=original_booking_id,
+        from .temporal_activities import create_booking
+        new_booking = await self.execute_activity_with_logging(
+            create_booking,
+            original_booking.get("practitioner_id"),
+            original_booking.get("client_id"),
+            new_session_time,
+            original_booking.get("duration_minutes"),
+            original_booking.get("service_type_id"),
+            True,  # is_rescheduled
+            original_booking_id,
             start_to_close_timeout=timedelta(seconds=30),
         )
         
         # Send rescheduling notifications
-        await self.execute_activity(
-            "send_rescheduling_notification",
-            original_booking_id=original_booking_id,
-            new_booking_id=new_booking.get("id"),
+        from .temporal_activities import send_rescheduling_notification
+        await self.execute_activity_with_logging(
+            send_rescheduling_notification,
+            original_booking_id,
+            new_booking.get("id"),
             start_to_close_timeout=timedelta(seconds=30),
         )
         
@@ -249,20 +265,22 @@ class BatchReminderWorkflow(BaseWorkflow):
         workflow.logger.info(f"Starting batch reminder workflow for {reminder_type}")
         
         # Get bookings in the time window
-        bookings = await self.execute_activity(
-            "get_bookings_in_timeframe",
-            start_time=start_time,
-            end_time=end_time,
+        from .temporal_activities import get_bookings_in_timeframe
+        bookings = await self.execute_activity_with_logging(
+            get_bookings_in_timeframe,
+            start_time,
+            end_time,
             start_to_close_timeout=timedelta(seconds=30),
         )
         
         # Send reminders for each booking
         results = []
         for booking in bookings:
-            result = await self.execute_activity(
-                "send_reminder",
-                booking_id=booking.get("id"),
-                reminder_type=reminder_type,
+            from .temporal_activities import send_reminder
+            result = await self.execute_activity_with_logging(
+                send_reminder,
+                booking.get("id"),
+                reminder_type,
                 start_to_close_timeout=timedelta(seconds=30),
             )
             results.append(result)

@@ -5,7 +5,7 @@ from channels.db import database_sync_to_async
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from apps.messaging.models import Conversation, Message, MessageReceipt, TypingIndicator
+from messaging.models import Conversation, Message, MessageReceipt, TypingIndicator
 
 User = get_user_model()
 

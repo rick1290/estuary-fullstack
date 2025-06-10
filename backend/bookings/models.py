@@ -4,16 +4,23 @@ from django.core.exceptions import ValidationError
 from utils.models import BaseModel, PublicModel
 from decimal import Decimal
 
-# Booking status choices
+# Booking status choices - Clear progression
 BOOKING_STATUS_CHOICES = [
-    ('draft', 'Draft'),
-    ('pending', 'Pending Approval'),
-    ('confirmed', 'Confirmed'),
-    ('in_progress', 'In Progress'),
-    ('completed', 'Completed'),
-    ('canceled', 'Canceled'),
-    ('no_show', 'No Show'),
-    ('rescheduled', 'Rescheduled'),
+    ('draft', 'Draft'),  # Initial creation, not yet submitted
+    ('pending_payment', 'Pending Payment'),  # Awaiting payment
+    ('confirmed', 'Confirmed'),  # Payment received, booking confirmed
+    ('in_progress', 'In Progress'),  # Service currently happening
+    ('completed', 'Completed'),  # Service finished successfully
+    ('canceled', 'Canceled'),  # Booking was canceled
+    ('no_show', 'No Show'),  # Client didn't attend
+]
+
+# Payment status choices - Separate from booking status
+PAYMENT_STATUS_CHOICES = [
+    ('unpaid', 'Unpaid'),
+    ('paid', 'Paid'),
+    ('partially_refunded', 'Partially Refunded'),
+    ('refunded', 'Refunded'),
 ]
 
 # Cancellation source choices
@@ -22,15 +29,6 @@ CANCELED_BY_CHOICES = [
     ('practitioner', 'Practitioner'),
     ('system', 'System'),
     ('admin', 'Admin'),
-]
-
-# Payment status choices
-PAYMENT_STATUS_CHOICES = [
-    ('pending', 'Pending'),
-    ('paid', 'Paid'),
-    ('partially_paid', 'Partially Paid'),
-    ('refunded', 'Refunded'),
-    ('failed', 'Failed'),
 ]
 
 
@@ -55,8 +53,8 @@ class Booking(PublicModel):
     timezone = models.CharField(max_length=50, default='UTC', help_text="Timezone for this booking")
     
     # Status and tracking
-    status = models.CharField(max_length=20, choices=BOOKING_STATUS_CHOICES, default='pending')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=BOOKING_STATUS_CHOICES, default='draft')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
     
     # Booking details
     title = models.CharField(max_length=255, blank=True, null=True, help_text="Custom booking title")
@@ -65,19 +63,40 @@ class Booking(PublicModel):
     practitioner_notes = models.TextField(blank=True, null=True, help_text="Private notes from practitioner")
     
     # Location and delivery
-    location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL, 
+    location = models.ForeignKey('utils.Address', on_delete=models.SET_NULL, 
                                blank=True, null=True, related_name='bookings',
                                help_text="Physical location if in-person")
     meeting_url = models.URLField(blank=True, null=True, help_text="Virtual meeting link")
     meeting_id = models.CharField(max_length=100, blank=True, null=True, help_text="Meeting ID or room number")
     
-    # Pricing and payment
-    price_charged = models.DecimalField(max_digits=10, decimal_places=2, 
-                                      help_text="Amount charged for this booking")
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'),
-                                        help_text="Discount applied")
-    final_amount = models.DecimalField(max_digits=10, decimal_places=2,
-                                     help_text="Final amount after discounts")
+    # Pricing and payment (in cents)
+    price_charged_cents = models.IntegerField(
+        help_text="Amount charged for this booking in cents")
+    discount_amount_cents = models.IntegerField(
+        default=0,
+        help_text="Discount applied in cents")
+    final_amount_cents = models.IntegerField(
+        help_text="Final amount after discounts in cents")
+    
+    # Historical snapshot data (preserves what user booked/paid for)
+    service_name_snapshot = models.CharField(max_length=255, blank=True, 
+                                           help_text="Service name at time of booking")
+    service_description_snapshot = models.TextField(blank=True,
+                                                  help_text="Service description at time of booking")
+    practitioner_name_snapshot = models.CharField(max_length=255, blank=True,
+                                                help_text="Practitioner name at time of booking")
+    service_duration_snapshot = models.PositiveIntegerField(blank=True, null=True,
+                                                          help_text="Duration in minutes at time of booking")
+    
+    # Package/Bundle snapshot data
+    package_name_snapshot = models.CharField(max_length=255, blank=True,
+                                           help_text="Package name at time of booking")
+    package_contents_snapshot = models.JSONField(blank=True, null=True,
+                                               help_text="What was included in package at time of booking")
+    bundle_name_snapshot = models.CharField(max_length=255, blank=True,
+                                          help_text="Bundle name at time of booking")
+    bundle_sessions_snapshot = models.PositiveIntegerField(blank=True, null=True,
+                                                         help_text="Total sessions in bundle at time of booking")
     
     # Completion tracking
     completed_at = models.DateTimeField(blank=True, null=True)
@@ -88,6 +107,11 @@ class Booking(PublicModel):
     canceled_by = models.CharField(max_length=20, choices=CANCELED_BY_CHOICES, blank=True, null=True)
     cancellation_reason = models.TextField(blank=True, null=True)
     
+    # Status change tracking
+    status_changed_at = models.DateTimeField(auto_now=True, help_text="When status last changed")
+    confirmed_at = models.DateTimeField(blank=True, null=True, help_text="When booking was confirmed")
+    started_at = models.DateTimeField(blank=True, null=True, help_text="When service started")
+    
     rescheduled_from = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True,
                                        related_name='rescheduled_to_bookings',
                                        help_text="Original booking this was rescheduled from")
@@ -97,11 +121,7 @@ class Booking(PublicModel):
                                      related_name='child_bookings',
                                      help_text="Parent booking for packages/bundles")
     
-    # Package and Bundle references
-    package = models.ForeignKey('services.Package', on_delete=models.SET_NULL, blank=True, null=True,
-                              related_name='bookings', help_text="Package this booking is for")
-    bundle = models.ForeignKey('services.Bundle', on_delete=models.SET_NULL, blank=True, null=True,
-                             related_name='bookings', help_text="Bundle this booking is for")
+    # Package and Bundle tracking
     is_package_purchase = models.BooleanField(default=False, help_text="Whether this is a package purchase")
     is_bundle_purchase = models.BooleanField(default=False, help_text="Whether this is a bundle purchase")
     
@@ -114,7 +134,7 @@ class Booking(PublicModel):
     # External integrations
     room = models.ForeignKey('rooms.Room', on_delete=models.SET_NULL, blank=True, null=True,
                            related_name='bookings', help_text="Video room for virtual sessions")
-    payment_transaction = models.ForeignKey('payments.CreditTransaction', on_delete=models.SET_NULL,
+    payment_transaction = models.ForeignKey('payments.UserCreditTransaction', on_delete=models.SET_NULL,
                                           blank=True, null=True, related_name='bookings')
 
     class Meta:
@@ -137,13 +157,46 @@ class Booking(PublicModel):
                 name='booking_valid_time_range'
             ),
             models.CheckConstraint(
-                check=models.Q(final_amount__gte=0),
+                check=models.Q(final_amount_cents__gte=0),
                 name='booking_non_negative_amount'
             ),
         ]
 
     def __str__(self):
-        return f"Booking #{self.id}: {self.service.name} - {self.user.email}"
+        return f"Booking #{self.id}: {self.service.name if self.service else 'Package/Bundle'} - {self.user.email}"
+
+    def save(self, *args, **kwargs):
+        """Override save to capture snapshot data on creation."""
+        if not self.pk:  # Only on creation
+            # Capture service snapshot
+            if self.service:
+                self.service_name_snapshot = self.service.name
+                self.service_description_snapshot = self.service.description
+                self.service_duration_snapshot = self.service.duration_minutes
+            
+            # Capture practitioner snapshot
+            if self.practitioner:
+                self.practitioner_name_snapshot = self.practitioner.user.get_full_name() or self.practitioner.display_name
+            
+            # Capture package/bundle snapshot from service
+            if self.service:
+                if self.service.is_package:
+                    self.package_name_snapshot = self.service.name
+                    # Store package contents as JSON
+                    contents = []
+                    for rel in self.service.child_relationships.all():
+                        if rel.child_service:
+                            contents.append({
+                                'service_name': rel.child_service.name,
+                                'quantity': rel.quantity,
+                                'price_cents': rel.child_service.price_cents
+                            })
+                    self.package_contents_snapshot = contents
+                elif self.service.is_bundle:
+                    self.bundle_name_snapshot = self.service.name
+                    self.bundle_sessions_snapshot = self.service.total_sessions
+        
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validate booking data."""
@@ -154,22 +207,38 @@ class Booking(PublicModel):
             raise ValidationError("Start time must be before end time")
         
         # Validate pricing
-        expected_price = self.price_charged - self.discount_amount
-        if abs(self.final_amount - expected_price) > Decimal('0.01'):
+        expected_price_cents = self.price_charged_cents - self.discount_amount_cents
+        if self.final_amount_cents != expected_price_cents:
             raise ValidationError("Final amount doesn't match price calculation")
     
     def save(self, *args, **kwargs):
         # Auto-calculate final amount if not set
-        if not self.final_amount:
-            self.final_amount = self.price_charged - self.discount_amount
+        if not self.final_amount_cents:
+            self.final_amount_cents = self.price_charged_cents - self.discount_amount_cents
         
         # Set price from service if not set
-        if not self.price_charged and self.service:
-            self.price_charged = self.service.price
+        if not self.price_charged_cents and self.service:
+            self.price_charged_cents = self.service.price_cents
             
         self.clean()
         super().save(*args, **kwargs)
 
+    # Price properties in dollars
+    @property
+    def price_charged(self):
+        """Get price charged in dollars."""
+        return Decimal(self.price_charged_cents) / 100
+    
+    @property
+    def discount_amount(self):
+        """Get discount amount in dollars."""
+        return Decimal(self.discount_amount_cents) / 100
+    
+    @property
+    def final_amount(self):
+        """Get final amount in dollars."""
+        return Decimal(self.final_amount_cents) / 100
+    
     # Booking type properties
     @property
     def is_individual_session(self):
@@ -184,7 +253,7 @@ class Booking(PublicModel):
     @property
     def is_package_booking(self):
         """Check if this is a package or bundle booking."""
-        return self.is_package_purchase or self.is_bundle_purchase or bool(self.package) or bool(self.bundle)
+        return self.is_package_purchase or self.is_bundle_purchase or (self.service and (self.service.is_package or self.service.is_bundle))
 
     @property
     def is_course_booking(self):
@@ -208,7 +277,7 @@ class Booking(PublicModel):
     @property
     def is_upcoming(self):
         """Check if booking is upcoming."""
-        return self.start_time > timezone.now() and self.status in ['confirmed', 'pending']
+        return self.start_time > timezone.now() and self.status == 'confirmed'
 
     @property
     def is_active(self):
@@ -232,35 +301,74 @@ class Booking(PublicModel):
         """Check if booking can be rescheduled."""
         return self.can_be_canceled and self.status not in ['rescheduled']
 
+    # State transition validation
+    def can_transition_to(self, new_status):
+        """Check if transition to new status is valid."""
+        # Define valid transitions
+        valid_transitions = {
+            'draft': ['pending_payment', 'canceled'],
+            'pending_payment': ['confirmed', 'canceled'],
+            'confirmed': ['in_progress', 'canceled', 'no_show'],
+            'in_progress': ['completed', 'no_show'],
+            'completed': [],  # Terminal state
+            'canceled': [],  # Terminal state
+            'no_show': [],  # Terminal state
+        }
+        
+        current_transitions = valid_transitions.get(self.status, [])
+        return new_status in current_transitions
+    
+    def transition_to(self, new_status, **kwargs):
+        """Transition to a new status with validation."""
+        if not self.can_transition_to(new_status):
+            raise ValidationError(
+                f"Cannot transition from '{self.status}' to '{new_status}'"
+            )
+        
+        old_status = self.status
+        self.status = new_status
+        self.status_changed_at = timezone.now()
+        
+        # Handle status-specific updates
+        if new_status == 'confirmed':
+            self.confirmed_at = kwargs.get('confirmed_at', timezone.now())
+        elif new_status == 'in_progress':
+            self.started_at = kwargs.get('started_at', timezone.now())
+            if not self.actual_start_time:
+                self.actual_start_time = self.started_at
+        elif new_status == 'completed':
+            self.completed_at = kwargs.get('completed_at', timezone.now())
+            if not self.actual_end_time:
+                self.actual_end_time = self.completed_at
+        elif new_status == 'canceled':
+            self.canceled_at = kwargs.get('canceled_at', timezone.now())
+            self.canceled_by = kwargs.get('canceled_by', 'system')
+            self.cancellation_reason = kwargs.get('reason')
+        elif new_status == 'no_show':
+            self.no_show_at = kwargs.get('no_show_at', timezone.now())
+        
+        self.save()
+        return old_status
+    
     # Booking actions
     def mark_completed(self, completion_time=None):
         """Mark booking as completed."""
-        self.status = 'completed'
-        self.completed_at = completion_time or timezone.now()
-        if not self.actual_end_time:
-            self.actual_end_time = self.completed_at
-        self.save(update_fields=['status', 'completed_at', 'actual_end_time'])
+        self.transition_to('completed', completed_at=completion_time)
 
     def mark_no_show(self):
         """Mark booking as no-show."""
-        self.status = 'no_show'
-        self.no_show_at = timezone.now()
-        self.save(update_fields=['status', 'no_show_at'])
+        self.transition_to('no_show')
 
     def cancel(self, reason=None, canceled_by='client'):
         """Cancel this booking."""
         if not self.can_be_canceled:
             raise ValidationError("This booking cannot be canceled")
         
-        self.status = 'canceled'
-        self.canceled_at = timezone.now()
-        self.cancellation_reason = reason
-        self.canceled_by = canceled_by
-        self.save(update_fields=['status', 'canceled_at', 'cancellation_reason', 'canceled_by'])
+        self.transition_to('canceled', reason=reason, canceled_by=canceled_by)
         
         # Cancel child bookings if this is a parent
         if self.is_parent_booking:
-            for child in self.child_bookings.filter(status__in=['pending', 'confirmed']):
+            for child in self.child_bookings.exclude(status__in=['canceled', 'completed']):
                 child.cancel(
                     reason=f"Parent booking {self.public_uuid} was canceled", 
                     canceled_by='system'
@@ -278,9 +386,9 @@ class Booking(PublicModel):
             service=self.service,
             start_time=new_start_time,
             end_time=new_end_time,
-            price_charged=self.price_charged,
-            discount_amount=self.discount_amount,
-            final_amount=self.final_amount,
+            price_charged_cents=self.price_charged_cents,
+            discount_amount_cents=self.discount_amount_cents,
+            final_amount_cents=self.final_amount_cents,
             description=self.description,
             client_notes=self.client_notes,
             location=self.location,
@@ -308,8 +416,8 @@ class BookingFactory:
             practitioner=practitioner,
             start_time=start_time,
             end_time=end_time,
-            price_charged=service.price,
-            final_amount=service.price,
+            price_charged_cents=service.price_cents,
+            final_amount_cents=service.price_cents,
             **kwargs
         )
     
@@ -336,8 +444,8 @@ class BookingFactory:
             practitioner=course.primary_practitioner,
             start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
             end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
-            price_charged=course.price,
-            final_amount=course.price,
+            price_charged_cents=course.price_cents,
+            final_amount_cents=course.price_cents,
             status=kwargs.get('status', 'confirmed'),
             max_participants=course.max_participants,
             **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
@@ -346,49 +454,47 @@ class BookingFactory:
         return booking
     
     @classmethod
-    def create_package_booking(cls, user, package, **kwargs):
+    def create_package_booking(cls, user, package_service, **kwargs):
         """
         Create a booking for a package with child bookings for included services.
         
         Args:
             user: The user making the booking  
-            package: The Package object
+            package_service: The Service object with service_type='package'
             **kwargs: Additional booking parameters
             
         Returns:
             The parent booking object
         """
-        from services.models import Package
-        
-        if not isinstance(package, Package):
-            raise ValueError("Must provide a Package object")
+        if not package_service.is_package:
+            raise ValueError("Service must be a package type")
             
         # Create parent booking
         parent_booking = Booking.objects.create(
             user=user,
-            package=package,
-            practitioner=package.practitioner,
+            service=package_service,
+            practitioner=package_service.primary_practitioner,
             start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
             end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
-            price_charged=package.price,
-            final_amount=package.price,
+            price_charged_cents=package_service.price_cents,
+            final_amount_cents=package_service.price_cents,
             status=kwargs.get('status', 'confirmed'),
             is_package_purchase=True,
             **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
         )
         
         # Create child bookings for each included service
-        for package_service in package.package_services.all().order_by('order'):
-            service = package_service.service
-            for _ in range(package_service.quantity):
+        for rel in package_service.child_relationships.all().order_by('order'):
+            service = rel.child_service
+            for _ in range(rel.quantity):
                 Booking.objects.create(
                     user=user,
                     service=service,
                     practitioner=service.primary_practitioner,
                     parent_booking=parent_booking,
-                    price_charged=Decimal('0.00'),  # Included in parent
-                    final_amount=Decimal('0.00'),
-                    status='pending',  # Pending until scheduled
+                    price_charged_cents=0,  # Included in parent
+                    final_amount_cents=0,
+                    status='draft',  # Draft until scheduled
                     start_time=timezone.now(),  # Placeholder
                     end_time=timezone.now() + timezone.timedelta(minutes=service.duration_minutes)
                 )
@@ -396,33 +502,30 @@ class BookingFactory:
         return parent_booking
     
     @classmethod
-    def create_bundle_booking(cls, user, bundle, **kwargs):
+    def create_bundle_booking(cls, user, bundle_service, **kwargs):
         """
         Create a booking for a bundle purchase (creates credit balance).
         
         Args:
             user: The user making the booking  
-            bundle: The Bundle object
+            bundle_service: The Service object with service_type='bundle'
             **kwargs: Additional booking parameters
             
         Returns:
             The bundle booking object
         """
-        from services.models import Bundle
-        
-        if not isinstance(bundle, Bundle):
-            raise ValueError("Must provide a Bundle object")
+        if not bundle_service.is_bundle:
+            raise ValueError("Service must be a bundle type")
             
         # Create bundle purchase booking
         bundle_booking = Booking.objects.create(
             user=user,
-            service=bundle.service,
-            bundle=bundle,
-            practitioner=bundle.service.primary_practitioner,
+            service=bundle_service,
+            practitioner=bundle_service.primary_practitioner,
             start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
             end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
-            price_charged=bundle.price,
-            final_amount=bundle.price,
+            price_charged_cents=bundle_service.price_cents,
+            final_amount_cents=bundle_service.price_cents,
             status=kwargs.get('status', 'confirmed'),
             is_bundle_purchase=True,
             **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}

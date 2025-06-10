@@ -4,13 +4,13 @@ from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal
 
-from apps.payments.models import (
+from payments.models import (
     SubscriptionTier,
     ServiceTypeCommission,
     TierCommissionAdjustment,
     ExternalServiceFee
 )
-from apps.services.models import ServiceType
+from services.models import ServiceType
 
 logger = logging.getLogger(__name__)
 
