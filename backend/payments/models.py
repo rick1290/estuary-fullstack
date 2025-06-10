@@ -759,6 +759,26 @@ class SubscriptionTier(BaseModel):
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
     
+    # Stripe integration
+    stripe_product_id = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Stripe Product ID"
+    )
+    stripe_monthly_price_id = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Stripe Price ID for monthly billing"
+    )
+    stripe_annual_price_id = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Stripe Price ID for annual billing"
+    )
+    
     class Meta:
         db_table = 'subscription_tiers'
         ordering = ['order', 'monthly_price']

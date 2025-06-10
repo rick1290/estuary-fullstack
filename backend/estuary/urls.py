@@ -16,15 +16,17 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     
-    # Note: All API endpoints are now handled by FastAPI
-    # Available at /api/v1/* via ASGI mount
+    # DRF endpoints - these will be mounted under /api/v1/drf/ in ASGI
+    path("api/v1/drf/", include("api.v1.urls_drf")),
+    
+    # Note: FastAPI endpoints are available at /api/v1/* via ASGI mount
 ]
 
 # Serve static files in development

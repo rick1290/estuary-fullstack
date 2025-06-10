@@ -177,11 +177,11 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Would create product: {product_data}")
             else:
                 # Check if product already exists
-                if hasattr(tier, 'metadata') and tier.metadata and tier.metadata.get('stripe_product_id'):
+                if tier.stripe_product_id:
                     # Update existing product
                     try:
                         product = stripe.Product.modify(
-                            tier.metadata['stripe_product_id'],
+                            tier.stripe_product_id,
                             **product_data
                         )
                         self.stdout.write(f"  Updated existing product: {product.id}")
@@ -222,15 +222,10 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(self.style.SUCCESS(f"  Created annual price: {annual_price.id}"))
                 
-                # Update tier metadata with Stripe IDs
-                if not tier.metadata:
-                    tier.metadata = {}
-                
-                tier.metadata.update({
-                    'stripe_product_id': product.id,
-                    'stripe_monthly_price_id': monthly_price.id,
-                    'stripe_annual_price_id': annual_price.id,
-                })
+                # Update tier with Stripe IDs
+                tier.stripe_product_id = product.id
+                tier.stripe_monthly_price_id = monthly_price.id
+                tier.stripe_annual_price_id = annual_price.id
                 tier.save()
                 
                 # Display environment variables to set
@@ -287,18 +282,13 @@ class Command(BaseCommand):
                 )
                 continue
             
-            # Update tier metadata
+            # Update tier with Stripe IDs
             if not dry_run:
-                if not tier.metadata:
-                    tier.metadata = {}
-                
-                tier.metadata.update({
-                    'stripe_product_id': product_id,
-                    'stripe_monthly_price_id': monthly_price_id,
-                    'stripe_annual_price_id': annual_price_id,
-                })
+                tier.stripe_product_id = product_id
+                tier.stripe_monthly_price_id = monthly_price_id
+                tier.stripe_annual_price_id = annual_price_id
                 tier.save()
-                self.stdout.write(self.style.SUCCESS(f"  Updated {tier_name} tier metadata"))
+                self.stdout.write(self.style.SUCCESS(f"  Updated {tier_name} tier with Stripe IDs"))
 
     def display_current_setup(self):
         """Display current subscription tier setup."""
@@ -313,10 +303,10 @@ class Command(BaseCommand):
             self.stdout.write(f"  Monthly Price: ${tier.monthly_price}")
             self.stdout.write(f"  Annual Price: ${tier.annual_price}")
             
-            if tier.metadata and tier.metadata.get('stripe_product_id'):
-                self.stdout.write(f"  Stripe Product ID: {tier.metadata['stripe_product_id']}")
-                self.stdout.write(f"  Monthly Price ID: {tier.metadata.get('stripe_monthly_price_id', 'Not set')}")
-                self.stdout.write(f"  Annual Price ID: {tier.metadata.get('stripe_annual_price_id', 'Not set')}")
+            if tier.stripe_product_id:
+                self.stdout.write(f"  Stripe Product ID: {tier.stripe_product_id}")
+                self.stdout.write(f"  Monthly Price ID: {tier.stripe_monthly_price_id or 'Not set'}")
+                self.stdout.write(f"  Annual Price ID: {tier.stripe_annual_price_id or 'Not set'}")
             else:
                 self.stdout.write(self.style.WARNING("  Stripe IDs: Not configured"))
             

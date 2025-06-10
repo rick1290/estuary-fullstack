@@ -23,3 +23,6 @@ stripe==7.12.0
 geopy==2.4.1
 channels==4.0.0
 channels-redis==4.1.0
+djangorestframework==3.15.2
+drf-spectacular==0.27.2
+django-filter==24.3

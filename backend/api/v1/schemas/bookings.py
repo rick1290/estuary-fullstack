@@ -12,7 +12,7 @@ class BookingBase(BaseModel):
     """Base booking schema"""
     service_id: int
     practitioner_id: int
-    location_id: int
+    location_id: Optional[int] = None  # Optional for virtual services
     room_id: Optional[int] = None
     start_datetime: datetime
     end_datetime: datetime
@@ -30,7 +30,7 @@ class BookingCreate(BaseModel):
     """Booking creation schema"""
     service_id: int
     practitioner_id: int
-    location_id: int
+    location_id: Optional[int] = None  # Optional for virtual services
     room_id: Optional[int] = None
     start_datetime: datetime
     notes: Optional[str] = None
@@ -59,7 +59,7 @@ class BookingResponse(BookingBase, BaseORM, IDMixin, TimestampMixin):
     customer_name: str
     service_name: str
     practitioner_name: str
-    location_name: str
+    location_name: Optional[str] = None  # Optional for virtual services
     room_name: Optional[str] = None
     status: str
     payment_status: str

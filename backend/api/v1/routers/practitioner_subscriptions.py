@@ -44,6 +44,7 @@ from ..schemas.practitioner_subscriptions import (
     PractitionerSubscriptionStatus, SubscriptionInterval
 )
 from api.dependencies import PaginationParams, get_current_user, get_current_practitioner, get_current_superuser
+from api.dependencies_extended import get_or_create_practitioner
 from ..utils import paginate_queryset
 
 from integrations.stripe.client import stripe_client
@@ -72,7 +73,7 @@ def get_current_subscription_sync(practitioner: Practitioner) -> Optional[Practi
 def count_services_sync(practitioner: Practitioner) -> int:
     """Count active services for practitioner"""
     return Service.objects.filter(
-        practitioner=practitioner,
+        primary_practitioner=practitioner,
         is_active=True
     ).count()
 
@@ -111,11 +112,26 @@ def create_subscription_with_onboarding_sync(practitioner, tier, subscription_da
         onboarding, created = PractitionerOnboardingProgress.objects.get_or_create(
             practitioner=practitioner
         )
-        onboarding.subscription_setup = True
+        
+        # Add subscription_setup to completed steps
+        if 'subscription_setup' not in onboarding.steps_completed:
+            onboarding.steps_completed.append('subscription_setup')
+        
+        # Update current step if needed
+        if onboarding.current_step == 'subscription_setup':
+            onboarding.current_step = 'service_configuration'
+        
         onboarding.save()
         
-        # Check if onboarding is complete
-        if onboarding.is_complete:
+        # Check if all steps are complete
+        all_steps = ['profile_completion', 'document_verification', 'background_check', 
+                    'training_modules', 'subscription_setup', 'service_configuration']
+        
+        if all(step in onboarding.steps_completed for step in all_steps):
+            onboarding.status = 'completed'
+            onboarding.completed_at = timezone.now()
+            onboarding.save()
+            
             practitioner.is_onboarded = True
             practitioner.onboarding_completed_at = timezone.now()
             practitioner.save()
@@ -335,12 +351,21 @@ def serialize_subscription_tier(tier: SubscriptionTier) -> SubscriptionTierRespo
 # =============================================================================
 
 @sync_to_async
-def get_subscription_tiers_queryset(include_inactive: bool):
-    """Get subscription tiers queryset"""
+def get_subscription_tiers_list(include_inactive: bool, pagination: PaginationParams):
+    """Get subscription tiers with pagination"""
     queryset = SubscriptionTier.objects.all()
     if not include_inactive:
         queryset = queryset.filter(is_active=True)
-    return queryset.order_by('order', 'monthly_price')
+    queryset = queryset.order_by('order', 'monthly_price')
+    
+    # Handle pagination manually
+    total = queryset.count()
+    items = list(queryset[pagination.offset:pagination.offset + pagination.limit])
+    
+    return {
+        'items': items,
+        'total': total
+    }
 
 @router.get("/tiers", response_model=SubscriptionTierListResponse)
 async def list_subscription_tiers(
@@ -348,16 +373,21 @@ async def list_subscription_tiers(
     include_inactive: bool = Query(False, description="Include inactive tiers")
 ):
     """List available subscription tiers"""
-    queryset = await get_subscription_tiers_queryset(include_inactive)
+    result = await get_subscription_tiers_list(include_inactive, pagination)
     
-    return await paginate_queryset(
-        queryset, pagination,
-        lambda tier: serialize_subscription_tier(tier)
+    # Serialize items
+    serialized_items = [serialize_subscription_tier(tier) for tier in result['items']]
+    
+    return SubscriptionTierListResponse(
+        results=serialized_items,
+        total=result['total'],
+        limit=pagination.limit,
+        offset=pagination.offset
     )
 
 
 @router.get("/tiers/{tier_id}", response_model=SubscriptionTierResponse)
-async def get_subscription_tier(tier_id: UUID):
+async def get_subscription_tier(tier_id: int):
     """Get subscription tier details"""
     tier = await get_object_or_404_async(SubscriptionTier, id=tier_id, is_active=True)
     return serialize_subscription_tier(tier)
@@ -414,7 +444,7 @@ async def get_current_subscription(
 async def create_subscription(
     subscription_data: PractitionerSubscriptionCreate,
     background_tasks: BackgroundTasks,
-    practitioner: Practitioner = Depends(get_current_practitioner)
+    practitioner: Practitioner = Depends(get_or_create_practitioner)
 ):
     """Create a new practitioner subscription"""
     # Check if practitioner already has an active subscription
@@ -428,93 +458,112 @@ async def create_subscription(
     # Get tier
     tier = await get_object_or_404_async(SubscriptionTier, id=subscription_data.tier_id, is_active=True)
     
+    # Get user from practitioner (already loaded via select_related)
+    user = practitioner.user
+    
     # Get or create payment profile
-    payment_profile, created = await get_or_create_payment_profile_sync(practitioner.user)
+    payment_profile, created = await get_or_create_payment_profile_sync(user)
     
     # Create Stripe customer if needed
     if not payment_profile.stripe_customer_id:
-        stripe_customer = await stripe_client.create_customer(
-            email=practitioner.user.email,
-            name=practitioner.full_name,
+        # Create customer using the sync method
+        stripe_customer = stripe_client.create_customer(
+            user,
             metadata={
                 "practitioner_id": str(practitioner.id),
-                "user_id": str(practitioner.user.id)
+                "user_id": str(user.id)
             }
         )
         payment_profile.stripe_customer_id = stripe_customer.id
         await save_payment_profile_sync(payment_profile)
     
-    # Attach payment method to customer
-    await stripe_client.attach_payment_method(
-        payment_method_id=subscription_data.payment_method_id,
-        customer_id=payment_profile.stripe_customer_id
-    )
+    # Check if payment method is required (non-free tiers)
+    requires_payment = tier.monthly_price > 0 or (subscription_data.is_annual and tier.annual_price > 0)
     
-    # Set as default payment method
-    await stripe_client.update_customer(
-        customer_id=payment_profile.stripe_customer_id,
-        invoice_settings={"default_payment_method": subscription_data.payment_method_id}
-    )
-    
-    # Get Stripe price ID from tier metadata or environment
-    price_id = None
-    if subscription_data.is_annual:
-        # Try metadata first, then environment
-        if tier.metadata and tier.metadata.get('stripe_annual_price_id'):
-            price_id = tier.metadata['stripe_annual_price_id']
-        else:
-            # Fall back to environment variable
-            env_key = f"STRIPE_{tier.name.upper()}_ANNUAL_PRICE_ID"
-            price_id = getattr(settings, env_key, None)
-    else:
-        # Monthly price
-        if tier.metadata and tier.metadata.get('stripe_monthly_price_id'):
-            price_id = tier.metadata['stripe_monthly_price_id']
-        else:
-            # Fall back to environment variable
-            env_key = f"STRIPE_{tier.name.upper()}_MONTHLY_PRICE_ID"
-            price_id = getattr(settings, env_key, None)
-    
-    # Create subscription with price ID if available, otherwise use price_data
-    if price_id:
-        # Use existing price ID
-        stripe_subscription = await stripe_client.create_subscription(
-            customer_id=payment_profile.stripe_customer_id,
-            price_id=price_id,
-            metadata={
-                "practitioner_id": str(practitioner.id),
-                "tier_id": str(tier.id),
-                "tier_name": tier.name
-            }
-        )
-    else:
-        # Create inline price (fallback)
-        price_amount = tier.annual_price if subscription_data.is_annual else tier.monthly_price
-        interval = "year" if subscription_data.is_annual else "month"
+    if requires_payment:
+        if not subscription_data.payment_method_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment method is required for paid subscription tiers"
+            )
         
-        stripe_subscription = await stripe_client.create_subscription(
-            customer_id=payment_profile.stripe_customer_id,
-            price_data={
-                "unit_amount": int(price_amount * 100),  # Convert to cents
-                "currency": "usd",
-                "product_data": {
-                    "name": f"Estuary {tier.name} Subscription",
-                    "description": tier.description
-                },
-                "recurring": {
-                    "interval": interval
-                }
-            },
-            metadata={
-                "practitioner_id": str(practitioner.id),
-                "tier_id": str(tier.id),
-                "tier_name": tier.name
-            }
+        # Attach payment method to customer
+        await stripe_client.attach_payment_method(
+            payment_method_id=subscription_data.payment_method_id,
+            customer_id=payment_profile.stripe_customer_id
         )
+        
+        # Set as default payment method
+        await stripe_client.update_customer(
+            customer_id=payment_profile.stripe_customer_id,
+            invoice_settings={"default_payment_method": subscription_data.payment_method_id}
+        )
+    
+    # Calculate price amount
+    price_amount = tier.annual_price if subscription_data.is_annual else tier.monthly_price
+    
+    # Create Stripe subscription only for paid tiers
+    stripe_subscription_id = None
+    if requires_payment:
+        # Get Stripe price ID from tier
+        price_id = None
+        if subscription_data.is_annual:
+            # Use annual price ID
+            price_id = tier.stripe_annual_price_id
+            if not price_id:
+                # Fall back to environment variable
+                env_key = f"STRIPE_{tier.name.upper()}_ANNUAL_PRICE_ID"
+                price_id = getattr(settings, env_key, None)
+        else:
+            # Monthly price
+            price_id = tier.stripe_monthly_price_id
+            if not price_id:
+                # Fall back to environment variable
+                env_key = f"STRIPE_{tier.name.upper()}_MONTHLY_PRICE_ID"
+                price_id = getattr(settings, env_key, None)
+        
+        # Create subscription with price ID if available, otherwise use price_data
+        if price_id:
+            # Use existing price ID
+            stripe_subscription = await stripe_client.create_subscription(
+                customer_id=payment_profile.stripe_customer_id,
+                price_id=price_id,
+                metadata={
+                    "practitioner_id": str(practitioner.id),
+                    "tier_id": str(tier.id),
+                    "tier_name": tier.name
+                }
+            )
+        else:
+            # Create inline price (fallback)
+            price_amount = tier.annual_price if subscription_data.is_annual else tier.monthly_price
+            interval = "year" if subscription_data.is_annual else "month"
+            
+            stripe_subscription = await stripe_client.create_subscription(
+                customer_id=payment_profile.stripe_customer_id,
+                price_data={
+                    "unit_amount": int(price_amount * 100),  # Convert to cents
+                    "currency": "usd",
+                    "product_data": {
+                        "name": f"Estuary {tier.name} Subscription",
+                        "description": tier.description
+                    },
+                    "recurring": {
+                        "interval": interval
+                    }
+                },
+                metadata={
+                    "practitioner_id": str(practitioner.id),
+                    "tier_id": str(tier.id),
+                    "tier_name": tier.name
+                }
+            )
+        
+        stripe_subscription_id = stripe_subscription.id
     
     # Create local subscription record
     subscription = await create_subscription_with_onboarding_sync(
-        practitioner, tier, subscription_data, stripe_subscription.id
+        practitioner, tier, subscription_data, stripe_subscription_id
     )
     
     # Get usage counts for response
@@ -916,7 +965,7 @@ async def create_subscription_tier(
 
 @router.patch("/tiers/{tier_id}", response_model=SubscriptionTierResponse)
 async def update_subscription_tier(
-    tier_id: UUID,
+    tier_id: int,
     tier_data: SubscriptionTierUpdate,
     current_user: User = Depends(get_current_superuser)
 ):

@@ -55,6 +55,54 @@ class ServiceCategory(BaseModel):
         super().save(*args, **kwargs)
 
 
+class PractitionerServiceCategory(BaseModel):
+    """
+    Model representing practitioner-specific service categories.
+    Allows practitioners to create custom categories to organize their services.
+    """
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner',
+        on_delete=models.CASCADE,
+        related_name='service_categories'
+    )
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, help_text="URL-friendly version of name")
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, blank=True, null=True, help_text="Icon class or identifier")
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0, help_text="Display order for drag-drop sorting")
+    color = models.CharField(max_length=7, blank=True, null=True, help_text="Hex color for UI display")
+    
+    class Meta:
+        verbose_name = 'Practitioner Service Category'
+        verbose_name_plural = 'Practitioner Service Categories'
+        ordering = ['order', 'name']
+        unique_together = [('practitioner', 'slug'), ('practitioner', 'name')]
+        indexes = [
+            models.Index(fields=['practitioner', 'is_active']),
+            models.Index(fields=['practitioner', 'order']),
+        ]
+
+    def __str__(self):
+        return f"{self.practitioner} - {self.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            # Make slug unique within practitioner's categories
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while PractitionerServiceCategory.objects.filter(
+                practitioner=self.practitioner,
+                slug=slug
+            ).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
 class ServiceType(BaseModel):
     """
     Model representing a service type (session, workshop, package, bundle, course).
@@ -104,7 +152,13 @@ class Service(PublicModel):
     service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, 
                                    help_text="Type of service")
     category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, 
-                               blank=True, null=True, related_name='services')
+                               blank=True, null=True, related_name='services',
+                               help_text="Global category for discovery")
+    practitioner_category = models.ForeignKey(PractitionerServiceCategory, 
+                                            on_delete=models.SET_NULL,
+                                            blank=True, null=True, 
+                                            related_name='services',
+                                            help_text="Practitioner's custom category")
     primary_practitioner = models.ForeignKey('practitioners.Practitioner', 
                                            on_delete=models.CASCADE,
                                            related_name='primary_services',

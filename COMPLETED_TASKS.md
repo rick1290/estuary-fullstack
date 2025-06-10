@@ -17,6 +17,7 @@ This document tracks all completed tasks during the API development and testing 
 - **Subscription Integration**: Practitioner platform subscriptions (Free/Entry/Premium tiers)
 - **Onboarding Flow**: Multi-step practitioner onboarding with progress tracking
 - **Service Portfolio**: Practitioners can create and manage multiple service offerings
+- **Custom Categories**: Practitioner-specific service categories with drag-drop ordering
 
 #### 2. Service Catalog & Booking System
 - **Service Types**: Full support for sessions, workshops, courses, packages, and bundles
@@ -61,6 +62,8 @@ This document tracks all completed tasks during the API development and testing 
 - **Route Organization**: Moved `/my-subscriptions` before `/{stream_id}` to prevent conflicts
 - **Async Serialization**: Updated `paginate_queryset` utility to handle async serializers
 - **Database Access**: Wrapped sync Django ORM calls with `sync_to_async`
+- **Pydantic v2 Compatibility**: Updated schema validations (`regex` → `pattern`)
+- **Practitioner Categories**: Implemented custom service categories with drag-drop ordering
 
 #### Database & Models
 - **Model Consistency**: Standardized BaseModel vs PublicModel usage across all apps

@@ -257,7 +257,7 @@ async def list_bookings(
             'room_name': booking.room.name if booking.room else None,
             'status': booking.status,
             'payment_status': booking.payment_status,
-            'confirmation_code': booking.public_uuid,
+            'confirmation_code': str(booking.public_uuid),
             'cancelled_at': booking.canceled_at,
             'cancelled_by': booking.canceled_by,
             'cancellation_reason': booking.cancellation_reason,
@@ -295,23 +295,50 @@ async def create_booking(
         # Validate practitioner
         practitioner = await sync_to_async(Practitioner.objects.get)(
             id=booking_data.practitioner_id,
-            is_active=True,
-            services__id=service.id
+            practitioner_status='active',
+            is_verified=True
         )
+        
+        # Check if practitioner offers this service
+        @sync_to_async
+        def check_practitioner_service():
+            return service.primary_practitioner == practitioner or service.additional_practitioners.filter(id=practitioner.id).exists()
+        
+        offers_service = await check_practitioner_service()
+        if not offers_service:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Practitioner does not offer this service"
+            )
+            
     except Practitioner.DoesNotExist:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Practitioner not found or does not offer this service"
+            detail="Practitioner not found or not active"
         )
     
-    try:
-        # Validate location (using Address model)
-        location = await sync_to_async(Address.objects.get)(id=booking_data.location_id, is_active=True)
-    except Address.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Location not found or inactive"
-        )
+    # Validate location if provided (for in-person services)
+    location = None
+    if booking_data.location_id:
+        try:
+            location = await sync_to_async(Address.objects.get)(id=booking_data.location_id)
+        except Address.DoesNotExist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Location not found"
+            )
+    else:
+        # For virtual services, location is optional
+        @sync_to_async
+        def get_location_type():
+            return service.location_type
+        
+        location_type = await get_location_type()
+        if location_type == 'in_person':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Location is required for in-person services"
+            )
     
     # Validate room if provided
     room = None
@@ -329,7 +356,12 @@ async def create_booking(
             )
     
     # Calculate end time based on service duration
-    end_time = booking_data.start_datetime + timedelta(minutes=service.duration_minutes)
+    @sync_to_async
+    def get_service_duration():
+        return service.duration_minutes
+    
+    duration_minutes = await get_service_duration()
+    end_time = booking_data.start_datetime + timedelta(minutes=duration_minutes)
     
     # Check availability
     conflicts_exist = await check_booking_conflicts(
@@ -348,6 +380,19 @@ async def create_booking(
             booking_data, current_user, service, practitioner, location, room
         )
         
+        # Get all needed data for response
+        @sync_to_async
+        def get_response_data():
+            return {
+                'service_name': service.name,
+                'practitioner_first_name': practitioner.user.first_name,
+                'practitioner_last_name': practitioner.user.last_name,
+                'location_name': location.name if location else None,
+                'room_name': room.name if room else None,
+            }
+        
+        response_data = await get_response_data()
+        
         # Prepare response
         booking_dict = {
             'id': booking.id,
@@ -364,13 +409,13 @@ async def create_booking(
             'customer_id': booking.user_id,
             'customer_email': current_user.email,
             'customer_name': f"{current_user.first_name} {current_user.last_name}",
-            'service_name': service.name,
-            'practitioner_name': f"{practitioner.user.first_name} {practitioner.user.last_name}",
-            'location_name': location.name,
-            'room_name': room.name if room else None,
+            'service_name': response_data['service_name'],
+            'practitioner_name': f"{response_data['practitioner_first_name']} {response_data['practitioner_last_name']}",
+            'location_name': response_data['location_name'],
+            'room_name': response_data['room_name'],
             'status': booking.status,
             'payment_status': booking.payment_status,
-            'confirmation_code': booking.public_uuid,
+            'confirmation_code': str(booking.public_uuid),
             'cancelled_at': None,
             'cancelled_by': None,
             'cancellation_reason': None,
@@ -517,7 +562,7 @@ async def get_booking(
             'room_name': booking.room.name if booking.room else None,
             'status': booking.status,
             'payment_status': booking.payment_status,
-            'confirmation_code': booking.public_uuid,
+            'confirmation_code': str(booking.public_uuid),
             'cancelled_at': booking.canceled_at,
             'cancelled_by': booking.canceled_by,
             'cancellation_reason': booking.cancellation_reason,
@@ -595,7 +640,7 @@ async def update_booking(
             'room_name': booking.room.name if booking.room else None,
             'status': booking.status,
             'payment_status': booking.payment_status,
-            'confirmation_code': booking.public_uuid,
+            'confirmation_code': str(booking.public_uuid),
             'cancelled_at': booking.canceled_at,
             'cancelled_by': booking.canceled_by,
             'cancellation_reason': booking.cancellation_reason,
@@ -664,7 +709,7 @@ async def cancel_booking(
             'room_name': booking.room.name if booking.room else None,
             'status': booking.status,
             'payment_status': booking.payment_status,
-            'confirmation_code': booking.public_uuid,
+            'confirmation_code': str(booking.public_uuid),
             'cancelled_at': booking.canceled_at,
             'cancelled_by': booking.canceled_by,
             'cancellation_reason': booking.cancellation_reason,

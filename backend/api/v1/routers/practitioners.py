@@ -31,6 +31,13 @@ from api.v1.schemas.practitioners import (
     PayoutHistory,
     PractitionerAnalytics,
 )
+from api.v1.schemas.services import (
+    PractitionerServiceCategoryCreate,
+    PractitionerServiceCategoryUpdate,
+    PractitionerServiceCategoryResponse,
+    PractitionerServiceCategoryListResponse,
+    CategoryReorderRequest,
+)
 from api.v1.schemas.base import MessageResponse
 
 from practitioners.models import (
@@ -39,7 +46,7 @@ from practitioners.models import (
     ScheduleTimeSlot,
     SchedulePreference,
 )
-from services.models import Service, ServiceType, ServiceCategory
+from services.models import Service, ServiceType, ServiceCategory, PractitionerServiceCategory
 from payments.models import (
     PractitionerEarnings,
     EarningsTransaction as EarningsTransactionModel,
@@ -866,7 +873,7 @@ async def list_my_services(
             'id': service.id,
             'public_uuid': service.public_uuid,
             'name': service.name,
-            'slug': service.slug if hasattr(service, 'slug') else service.name.lower().replace(' ', '-'),
+            'slug': service.slug if hasattr(service, 'slug') and service.slug else (service.name.lower().replace(' ', '-') if service.name else 'service'),
             'description': service.description,
             'service_type': service.service_type.code if service.service_type else 'session',
             'category': {
@@ -963,7 +970,7 @@ async def create_service(
             'id': service.id,
             'public_uuid': service.public_uuid,
             'name': service.name,
-            'slug': service.slug if hasattr(service, 'slug') else service.name.lower().replace(' ', '-'),
+            'slug': service.slug if hasattr(service, 'slug') and service.slug else (service.name.lower().replace(' ', '-') if service.name else 'service'),
             'description': service.description,
             'service_type': service.service_type.code if service.service_type else 'session',
             'category': {
@@ -977,7 +984,7 @@ async def create_service(
             'primary_practitioner': {
                 'id': practitioner.id,
                 'display_name': practitioner.display_name,
-                'slug': practitioner.slug if hasattr(practitioner, 'slug') else practitioner.display_name.lower().replace(' ', '-')
+                'slug': practitioner.slug if hasattr(practitioner, 'slug') and practitioner.slug else (practitioner.display_name.lower().replace(' ', '-') if practitioner.display_name else f'practitioner-{practitioner.id}')
             },
             'is_active': service.is_active,
             'is_public': service.is_public,
@@ -1101,6 +1108,277 @@ async def delete_service(
     
     return MessageResponse(
         message="Service has been successfully deleted",
+        success=True
+    )
+
+
+# ==================== Service Categories Endpoints ====================
+
+@router.get("/me/service-categories", response_model=PractitionerServiceCategoryListResponse)
+async def list_my_service_categories(
+    current_user: User = Depends(get_current_user),
+    pagination: PaginationParams = Depends(get_pagination_params),
+):
+    """
+    List practitioner's custom service categories.
+    Categories are returned in order (for drag-drop support).
+    """
+    practitioner = await sync_to_async(Practitioner.objects.get)(user=current_user)
+    if not practitioner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not registered as a practitioner"
+        )
+    
+    @sync_to_async
+    def get_categories():
+        categories = PractitionerServiceCategory.objects.filter(
+            practitioner=practitioner,
+            is_active=True
+        ).annotate(
+            service_count=Count('services')
+        ).order_by('order', 'name')
+        
+        results = []
+        for category in categories:
+            results.append({
+                'id': category.id,
+                'practitioner_id': category.practitioner_id,
+                'name': category.name,
+                'slug': category.slug,
+                'description': category.description,
+                'icon': category.icon,
+                'color': category.color,
+                'is_active': category.is_active,
+                'order': category.order,
+                'service_count': category.service_count,
+                'created_at': category.created_at,
+                'updated_at': category.updated_at,
+            })
+        return results
+    
+    results = await get_categories()
+    
+    return PractitionerServiceCategoryListResponse(
+        results=results,
+        total=len(results),
+        limit=pagination.page_size,
+        offset=0,
+        has_more=False
+    )
+
+
+@router.post("/me/service-categories", response_model=PractitionerServiceCategoryResponse, status_code=status.HTTP_201_CREATED)
+async def create_service_category(
+    category_data: PractitionerServiceCategoryCreate,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create a new custom service category for organizing services.
+    """
+    practitioner = await sync_to_async(Practitioner.objects.get)(user=current_user)
+    if not practitioner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not registered as a practitioner"
+        )
+    
+    @sync_to_async
+    @db_transaction.atomic
+    def create_category():
+        # Get the next order number
+        max_order = PractitionerServiceCategory.objects.filter(
+            practitioner=practitioner
+        ).aggregate(Max('order'))['order__max'] or 0
+        
+        category = PractitionerServiceCategory.objects.create(
+            practitioner=practitioner,
+            name=category_data.name,
+            description=category_data.description,
+            icon=category_data.icon,
+            color=category_data.color,
+            is_active=category_data.is_active,
+            order=max_order + 1
+        )
+        
+        return {
+            'id': category.id,
+            'practitioner_id': category.practitioner_id,
+            'name': category.name,
+            'slug': category.slug,
+            'description': category.description,
+            'icon': category.icon,
+            'color': category.color,
+            'is_active': category.is_active,
+            'order': category.order,
+            'service_count': 0,
+            'created_at': category.created_at,
+            'updated_at': category.updated_at,
+        }
+    
+    category_response = await create_category()
+    return PractitionerServiceCategoryResponse(**category_response)
+
+
+@router.put("/me/service-categories/reorder", response_model=MessageResponse)
+async def reorder_service_categories(
+    reorder_data: CategoryReorderRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Reorder service categories by providing an ordered list of category IDs.
+    Supports drag-and-drop functionality.
+    """
+    practitioner = await sync_to_async(Practitioner.objects.get)(user=current_user)
+    if not practitioner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not registered as a practitioner"
+        )
+    
+    @sync_to_async
+    @db_transaction.atomic
+    def reorder_categories():
+        # Verify all category IDs belong to this practitioner
+        categories = PractitionerServiceCategory.objects.filter(
+            id__in=reorder_data.category_ids,
+            practitioner=practitioner
+        )
+        
+        if categories.count() != len(reorder_data.category_ids):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid category IDs provided"
+            )
+        
+        # Update order based on position in the list
+        for index, category_id in enumerate(reorder_data.category_ids):
+            PractitionerServiceCategory.objects.filter(
+                id=category_id,
+                practitioner=practitioner
+            ).update(order=index)
+        
+        return True
+    
+    await reorder_categories()
+    
+    return MessageResponse(
+        message="Categories reordered successfully",
+        success=True
+    )
+
+
+@router.put("/me/service-categories/{category_id}", response_model=PractitionerServiceCategoryResponse)
+async def update_service_category(
+    category_id: int,
+    category_data: PractitionerServiceCategoryUpdate,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Update a custom service category.
+    """
+    practitioner = await sync_to_async(Practitioner.objects.get)(user=current_user)
+    if not practitioner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not registered as a practitioner"
+        )
+    
+    @sync_to_async
+    @db_transaction.atomic
+    def update_category():
+        try:
+            category = PractitionerServiceCategory.objects.select_for_update().get(
+                id=category_id,
+                practitioner=practitioner
+            )
+        except PractitionerServiceCategory.DoesNotExist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found"
+            )
+        
+        # Update fields if provided
+        if category_data.name is not None:
+            category.name = category_data.name
+            category.slug = None  # Force regeneration
+        if category_data.description is not None:
+            category.description = category_data.description
+        if category_data.icon is not None:
+            category.icon = category_data.icon
+        if category_data.color is not None:
+            category.color = category_data.color
+        if category_data.is_active is not None:
+            category.is_active = category_data.is_active
+        if category_data.order is not None:
+            category.order = category_data.order
+        
+        category.save()
+        
+        # Get service count
+        service_count = category.services.count()
+        
+        return {
+            'id': category.id,
+            'practitioner_id': category.practitioner_id,
+            'name': category.name,
+            'slug': category.slug,
+            'description': category.description,
+            'icon': category.icon,
+            'color': category.color,
+            'is_active': category.is_active,
+            'order': category.order,
+            'service_count': service_count,
+            'created_at': category.created_at,
+            'updated_at': category.updated_at,
+        }
+    
+    category_response = await update_category()
+    return PractitionerServiceCategoryResponse(**category_response)
+
+
+@router.delete("/me/service-categories/{category_id}", response_model=MessageResponse)
+async def delete_service_category(
+    category_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Delete a custom service category.
+    Services in this category will have their practitioner_category set to null.
+    """
+    practitioner = await sync_to_async(Practitioner.objects.get)(user=current_user)
+    if not practitioner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not registered as a practitioner"
+        )
+    
+    @sync_to_async
+    @db_transaction.atomic
+    def delete_category():
+        try:
+            category = PractitionerServiceCategory.objects.get(
+                id=category_id,
+                practitioner=practitioner
+            )
+        except PractitionerServiceCategory.DoesNotExist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found"
+            )
+        
+        # Count services that will be affected
+        service_count = category.services.count()
+        
+        # Delete the category (services will have practitioner_category set to null)
+        category.delete()
+        
+        return service_count
+    
+    service_count = await delete_category()
+    
+    return MessageResponse(
+        message=f"Category deleted successfully. {service_count} services were uncategorized.",
         success=True
     )
 

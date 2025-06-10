@@ -213,7 +213,8 @@ async def get_current_practitioner(
     from practitioners.models import Practitioner
     
     try:
-        return Practitioner.objects.get(user=current_user)
+        practitioner = await sync_to_async(Practitioner.objects.get)(user=current_user)
+        return practitioner
     except Practitioner.DoesNotExist:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

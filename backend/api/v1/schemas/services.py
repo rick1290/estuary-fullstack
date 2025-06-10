@@ -28,6 +28,59 @@ class CategoryBase(BaseModel):
     slug: str
 
 
+class PractitionerServiceCategoryBase(BaseModel):
+    """Base schema for practitioner service categories"""
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
+    is_active: bool = True
+    order: int = Field(0, ge=0)
+
+
+class PractitionerServiceCategoryCreate(PractitionerServiceCategoryBase):
+    """Schema for creating a practitioner service category"""
+    pass
+
+
+class PractitionerServiceCategoryUpdate(BaseModel):
+    """Schema for updating a practitioner service category"""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
+    is_active: Optional[bool] = None
+    order: Optional[int] = Field(None, ge=0)
+
+
+class PractitionerServiceCategoryResponse(PractitionerServiceCategoryBase, IDMixin, TimestampMixin):
+    """Response schema for practitioner service category"""
+    id: int
+    practitioner_id: int
+    slug: str
+    service_count: Optional[int] = 0
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PractitionerServiceCategoryListResponse(ListResponse):
+    """List response for practitioner service categories"""
+    results: List[PractitionerServiceCategoryResponse]
+
+
+class CategoryReorderRequest(BaseModel):
+    """Request schema for reordering categories"""
+    category_ids: List[int] = Field(..., min_items=1)
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "category_ids": [3, 1, 4, 2]
+            }
+        }
+    )
+
+
 class PractitionerBase(BaseModel):
     """Basic practitioner info"""
     id: int
@@ -45,6 +98,7 @@ class ServiceBase(BaseModel):
     is_active: bool = True
     is_public: bool = True
     category_id: Optional[int] = None
+    practitioner_category_id: Optional[int] = None
     primary_practitioner_id: int
     
     # Bundle-specific fields

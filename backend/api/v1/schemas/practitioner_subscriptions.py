@@ -48,7 +48,7 @@ class SubscriptionTierFeatures(BaseModel):
 
 class SubscriptionTierResponse(BaseSchema):
     """Subscription tier details"""
-    id: UUID
+    id: int
     name: str
     description: str
     monthly_price: Decimal
@@ -70,9 +70,9 @@ class SubscriptionTierResponse(BaseSchema):
 # Practitioner Subscription schemas
 class PractitionerSubscriptionCreate(BaseModel):
     """Create a practitioner subscription"""
-    tier_id: UUID
+    tier_id: int
     is_annual: bool = False
-    payment_method_id: str = Field(..., description="Stripe payment method ID")
+    payment_method_id: Optional[str] = Field(None, description="Stripe payment method ID (required for paid tiers)")
     
     # Optional promo code
     promo_code: Optional[str] = None
@@ -86,15 +86,15 @@ class PractitionerSubscriptionUpdate(BaseModel):
 
 class PractitionerSubscriptionUpgrade(BaseModel):
     """Upgrade/downgrade subscription"""
-    new_tier_id: UUID
+    new_tier_id: int
     is_annual: Optional[bool] = None
     prorate: bool = Field(True, description="Apply proration for mid-cycle changes")
 
 
 class PractitionerSubscriptionResponse(BaseSchema):
     """Practitioner subscription details"""
-    id: UUID
-    practitioner_id: UUID
+    id: int
+    practitioner_id: int
     tier: SubscriptionTierResponse
     status: PractitionerSubscriptionStatus
     
@@ -236,7 +236,7 @@ class SubscriptionAnalyticsResponse(BaseModel):
 class PromoCodeValidation(BaseModel):
     """Validate a promo code"""
     code: str
-    tier_id: UUID
+    tier_id: int
 
 
 class PromoCodeResponse(BaseModel):

@@ -32,6 +32,8 @@ from api.v1.routers import (
     analytics,
     streams,
     practitioner_subscriptions,
+    stripe_webhooks,
+    schema,
 )
 
 
@@ -81,6 +83,7 @@ app.include_router(services.router, prefix="/api/v1/services", tags=["Services"]
 app.include_router(practitioners.router, prefix="/api/v1/practitioners", tags=["Practitioners"])
 app.include_router(availability.router, prefix="/api/v1/practitioners", tags=["Availability"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
+app.include_router(stripe_webhooks.router, prefix="/api/v1/payments", tags=["Webhooks"])
 app.include_router(locations.router, prefix="/api/v1/locations", tags=["Locations"])
 app.include_router(rooms.router, prefix="/api/v1/rooms", tags=["Rooms"])
 app.include_router(media.router, prefix="/api/v1/media", tags=["Media"])
@@ -93,6 +96,7 @@ app.include_router(search.router, prefix="/api/v1", tags=["Search & Discovery"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["Analytics"])
 app.include_router(streams.router, prefix="/api/v1/streams", tags=["Streams"])
 app.include_router(practitioner_subscriptions.router, prefix="/api/v1/practitioner-subscriptions", tags=["Practitioner Subscriptions"])
+app.include_router(schema.router, prefix="/api/v1", tags=["Schema"])
 
 
 # Global exception handler

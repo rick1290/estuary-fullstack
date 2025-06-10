@@ -86,8 +86,15 @@ def handle_payment_intent_succeeded(payment_intent):
         payment_intent: Stripe payment intent object
     """
     try:
+        metadata = payment_intent.get('metadata', {})
+        
+        # Check if this is a credit purchase
+        if metadata.get('type') == 'credit_purchase':
+            handle_credit_purchase_succeeded(payment_intent)
+            return
+        
         # Get the order ID from the metadata
-        order_id = payment_intent.get('metadata', {}).get('order_id')
+        order_id = metadata.get('order_id')
         if not order_id:
             logger.error(f"Payment intent {payment_intent['id']} has no order_id in metadata")
             return
@@ -135,6 +142,52 @@ def handle_payment_intent_succeeded(payment_intent):
         
     except Exception as e:
         logger.exception(f"Error handling payment intent succeeded: {str(e)}")
+
+def handle_credit_purchase_succeeded(payment_intent):
+    """
+    Handle a successful credit purchase payment.
+    
+    Args:
+        payment_intent: Stripe payment intent object
+    """
+    try:
+        metadata = payment_intent.get('metadata', {})
+        user_id = metadata.get('user_id')
+        credit_amount = metadata.get('credit_amount')
+        
+        if not user_id or not credit_amount:
+            logger.error(f"Credit purchase payment intent {payment_intent['id']} missing user_id or credit_amount")
+            return
+        
+        # Get the user
+        from users.models import User
+        from payments.models import UserCreditTransaction
+        from decimal import Decimal
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            logger.error(f"User {user_id} not found for credit purchase")
+            return
+        
+        # Create credit transaction
+        amount_cents = int(Decimal(credit_amount) * 100)
+        transaction = UserCreditTransaction.objects.create(
+            user=user,
+            amount_cents=amount_cents,
+            transaction_type='purchase',
+            description=f"Credit purchase via Stripe",
+            metadata={
+                'stripe_payment_intent_id': payment_intent['id'],
+                'amount_paid': payment_intent['amount'],
+                'currency': payment_intent['currency']
+            }
+        )
+        
+        logger.info(f"Successfully added {credit_amount} credits to user {user_id}")
+        
+    except Exception as e:
+        logger.exception(f"Error handling credit purchase: {str(e)}")
 
 def handle_payment_intent_failed(payment_intent):
     """

@@ -65,11 +65,13 @@ except ImportError:
 from channels.routing import URLRouter
 from django.urls import re_path
 
-# Define HTTP routing that serves Django admin and FastAPI
+# Define HTTP routing that serves Django admin, DRF, and FastAPI
 http_router = URLRouter([
     # Django admin and static files
     re_path(r"^admin/", django_application),
     re_path(r"^static/", django_application),
+    # DRF endpoints (will use Django's URL routing)
+    re_path(r"^api/v1/drf/", django_application),
     # All other paths go to FastAPI
     re_path(r"^", fastapi_app),
 ])

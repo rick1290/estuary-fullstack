@@ -593,6 +593,11 @@ class PractitionerOnboardingProgress(models.Model):
 
     def __str__(self):
         return f"Onboarding progress for {self.practitioner} - {self.status}"
+    
+    @property
+    def is_complete(self):
+        """Check if onboarding is complete."""
+        return self.status == 'completed'
         
     def calculate_completion_percentage(self):
         """

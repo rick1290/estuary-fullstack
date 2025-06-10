@@ -366,11 +366,24 @@ async def purchase_credits(
     """Purchase credits"""
     amount_cents = int(purchase_data.amount * 100)
     
+    # Get or create customer
+    @sync_to_async
+    def get_or_create_customer():
+        from users.models import UserPaymentProfile
+        profile, created = UserPaymentProfile.objects.get_or_create(user=current_user)
+        if not profile.stripe_customer_id:
+            customer = stripe_client.create_customer(current_user)
+            profile.stripe_customer_id = customer.id
+            profile.save()
+        return profile.stripe_customer_id
+    
+    customer_id = await get_or_create_customer()
+    
     # Create payment intent
-    payment_intent = await stripe_client.create_payment_intent(
+    payment_intent = await sync_to_async(stripe_client.create_payment_intent)(
         amount=amount_cents,
         currency="usd",
-        payment_method=purchase_data.payment_method_id,
+        customer_id=customer_id,
         metadata={
             "type": "credit_purchase",
             "user_id": str(current_user.id),
