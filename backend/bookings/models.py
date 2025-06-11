@@ -167,6 +167,14 @@ class Booking(PublicModel):
 
     def save(self, *args, **kwargs):
         """Override save to capture snapshot data on creation."""
+        # Auto-calculate final amount if not set
+        if not self.final_amount_cents:
+            self.final_amount_cents = self.price_charged_cents - self.discount_amount_cents
+        
+        # Set price from service if not set
+        if not self.price_charged_cents and self.service:
+            self.price_charged_cents = self.service.price_cents
+        
         if not self.pk:  # Only on creation
             # Capture service snapshot
             if self.service:
@@ -196,6 +204,7 @@ class Booking(PublicModel):
                     self.bundle_name_snapshot = self.service.name
                     self.bundle_sessions_snapshot = self.service.total_sessions
         
+        self.clean()
         super().save(*args, **kwargs)
 
     def clean(self):
@@ -210,18 +219,6 @@ class Booking(PublicModel):
         expected_price_cents = self.price_charged_cents - self.discount_amount_cents
         if self.final_amount_cents != expected_price_cents:
             raise ValidationError("Final amount doesn't match price calculation")
-    
-    def save(self, *args, **kwargs):
-        # Auto-calculate final amount if not set
-        if not self.final_amount_cents:
-            self.final_amount_cents = self.price_charged_cents - self.discount_amount_cents
-        
-        # Set price from service if not set
-        if not self.price_charged_cents and self.service:
-            self.price_charged_cents = self.service.price_cents
-            
-        self.clean()
-        super().save(*args, **kwargs)
 
     # Price properties in dollars
     @property
@@ -300,6 +297,16 @@ class Booking(PublicModel):
     def can_be_rescheduled(self):
         """Check if booking can be rescheduled."""
         return self.can_be_canceled and self.status not in ['rescheduled']
+    
+    @property
+    def is_past(self):
+        """Check if booking is in the past."""
+        return self.end_time < timezone.now()
+    
+    @property
+    def notes(self):
+        """Alias for client_notes for backward compatibility."""
+        return self.client_notes
 
     # State transition validation
     def can_transition_to(self, new_status):

@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "drf_spectacular",
+    "corsheaders",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     
     # Local apps
     "users.apps.UsersConfig",
@@ -69,6 +72,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # Must be before CommonMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -159,15 +163,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = 'users.User'
 
 # Django REST Framework configuration
+# Django REST Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'api.v1.authentication.JWTAuthentication',
+        'users.authentication.CustomJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'core.api.pagination.StandardResultsSetPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -175,15 +180,209 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'EXCEPTION_HANDLER': 'core.api.exceptions.custom_exception_handler',
+    # Temporarily disable versioning to test schema generation
+    # 'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
+    'DATETIME_INPUT_FORMATS': ['%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%SZ'],
 }
 
 # DRF Spectacular settings for OpenAPI schema
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Estuary API (DRF)',
-    'DESCRIPTION': 'Django REST Framework endpoints for Estuary',
+    'TITLE': 'Estuary API',
+    'DESCRIPTION': '''
+    # Estuary Wellness Marketplace API
+    
+    ## Overview
+    The Estuary API provides a comprehensive platform for wellness services, connecting practitioners with clients through an intuitive marketplace. Our API supports various service types including sessions, workshops, and courses.
+    
+    ## Key Features
+    - **Practitioner Management**: Complete profile and service management for wellness professionals
+    - **Booking System**: Flexible booking for sessions, workshops, and courses
+    - **Payment Processing**: Secure payment handling with credit-based system
+    - **Real-time Communications**: Video streaming and messaging capabilities
+    - **Content Platform**: Support for streaming content and media management
+    
+    ## Authentication
+    All API endpoints require authentication using JWT tokens. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-token>
+    ```
+    
+    ## Rate Limiting
+    - Anonymous users: 100 requests per hour
+    - Authenticated users: 1000 requests per hour
+    
+    ## API Versioning
+    The API uses URL-based versioning. Current version: v1
+    
+    ## Response Format
+    All responses are in JSON format with consistent error handling.
+    ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': r'/api/v1/drf',
+    'DISABLE_ERRORS_AND_WARNINGS': False,
+    # Remove path prefix since we're now at the API root level
+    # Let spectacular auto-discover the paths
+    'AUTHENTICATION_WHITELIST': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    
+    # Authentication configuration
+    'SECURITY': [{
+        'bearerAuth': []
+    }],
+    'SECURITY_DEFINITIONS': {
+        'bearerAuth': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"'
+        }
+    },
+    
+    # Component configuration
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    
+    # Swagger UI configuration
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': False,
+        'defaultModelsExpandDepth': 2,
+        'defaultModelExpandDepth': 2,
+        'defaultModelRendering': 'example',
+        'displayRequestDuration': True,
+        'docExpansion': 'none',
+        'filter': True,
+        'showExtensions': True,
+        'showCommonExtensions': True,
+        'tryItOutEnabled': True,
+    },
+    
+    # ReDoc UI configuration
+    'REDOC_UI_SETTINGS': {
+        'hideDownloadButton': False,
+        'disableSearch': False,
+        'expandResponses': '200,201',
+        'pathInMiddlePanel': True,
+    },
+    
+    # API tags for organization
+    'TAGS': [
+        {'name': 'Auth', 'description': 'Authentication and authorization endpoints'},
+        {'name': 'Users', 'description': 'User profile and account management'},
+        {'name': 'Practitioners', 'description': 'Practitioner profiles, services, and availability'},
+        {'name': 'Services', 'description': 'Service catalog including sessions, workshops, and courses'},
+        {'name': 'Bookings', 'description': 'Booking creation, management, and scheduling'},
+        {'name': 'Availability', 'description': 'Practitioner availability and time slot management'},
+        {'name': 'Payments', 'description': 'Payment processing, credits, and transactions'},
+        {'name': 'Subscriptions', 'description': 'Practitioner subscription management'},
+        {'name': 'Reviews', 'description': 'Reviews and ratings for practitioners and services'},
+        {'name': 'Locations', 'description': 'Service locations and venue management'},
+        {'name': 'Media', 'description': 'Media upload and management'},
+        {'name': 'Messaging', 'description': 'Real-time messaging between users'},
+        {'name': 'Notifications', 'description': 'Push notifications and alerts'},
+        {'name': 'Streams', 'description': 'Live streaming and video content'},
+        {'name': 'Rooms', 'description': 'Video room management for sessions'},
+        {'name': 'Community', 'description': 'Community features and interactions'},
+        {'name': 'Analytics', 'description': 'Analytics and reporting endpoints'},
+        {'name': 'Search', 'description': 'Search practitioners and services'},
+        {'name': 'Referrals', 'description': 'Referral program management'},
+    ],
+    
+    # Example value configuration
+    'EXAMPLES_TITLE': 'Example',
+    'EXAMPLES_DESCRIPTION_KEY': 'description',
+    'EXAMPLES_VALUE_KEY': 'value',
+    
+    # Enable preprocessing hook for debugging
+    'PREPROCESSING_HOOKS': [
+        'api.v1.schema.preprocessing_filter_spec',
+    ],
+    # 'POSTPROCESSING_HOOKS': [
+    #     'drf_spectacular.hooks.postprocess_schema_enums',
+    #     'api.v1.schema.postprocess_schema_responses',
+    # ],
+    
+    # Operation ID generation
+    'OPERATION_ID_OVERRIDES': {
+        'TokenObtainPairView': 'auth_login',
+        'TokenRefreshView': 'auth_refresh',
+        'TokenVerifyView': 'auth_verify',
+        'TokenBlacklistView': 'auth_logout',
+    },
+    
+    # Contact information
+    'CONTACT': {
+        'name': 'Estuary API Support',
+        'email': 'api@estuary.com',
+    },
+    
+    # License information
+    'LICENSE': {
+        'name': 'Proprietary',
+    },
+    
+    # External documentation
+    'EXTERNAL_DOCS': {
+        'description': 'Find more info here',
+        'url': 'https://docs.estuary.com',
+    },
+    
+    # Enum name overrides - commented out due to duplication issues
+    # 'ENUM_NAME_OVERRIDES': {
+    #     'ValidationErrorEnum': 'drf_spectacular.openapi.ValidationError',
+    #     'ParseErrorEnum': 'drf_spectacular.openapi.ParseError',
+    #     'AuthenticationFailedEnum': 'drf_spectacular.openapi.AuthenticationFailed',
+    #     'NotAuthenticatedEnum': 'drf_spectacular.openapi.NotAuthenticated',
+    #     'PermissionDeniedEnum': 'drf_spectacular.openapi.PermissionDenied',
+    #     'NotFoundEnum': 'drf_spectacular.openapi.NotFound',
+    # },
+}
+
+# JWT Configuration
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    
+    # Custom token fields to match existing FastAPI tokens
+    'TOKEN_OBTAIN_SERIALIZER': 'users.api.v1.serializers.CustomTokenObtainPairSerializer',
+    'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
 }
 
 # ============================================================================
@@ -275,3 +474,48 @@ TEMPORAL_TASK_QUEUE = os.getenv('TEMPORAL_TASK_QUEUE', 'estuary-main')
 # Worker configuration
 TEMPORAL_MAX_CONCURRENT_ACTIVITIES = int(os.getenv('TEMPORAL_MAX_CONCURRENT_ACTIVITIES', '100'))
 TEMPORAL_MAX_CACHED_WORKFLOWS = int(os.getenv('TEMPORAL_MAX_CACHED_WORKFLOWS', '500'))
+
+# ============================================================================
+# CORS Configuration
+# ============================================================================
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Frontend development
+    "http://localhost:8000",  # API development
+    "http://localhost:8001",  # Alternative API port
+]
+
+# Allow credentials to be included in CORS requests (for cookies/auth)
+CORS_ALLOW_CREDENTIALS = True
+
+# Headers that can be used during the actual request
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# ============================================================================
+# Security Settings
+# ============================================================================
+
+# Security headers
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Session security
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# CSRF settings
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'

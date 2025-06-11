@@ -78,7 +78,7 @@ class GoogleMapsClient:
             region (str, optional): Region bias (e.g., "us")
             
         Returns:
-            dict: Geocoding results
+            dict: Geocoding results with lat, lng, and formatted_address
         """
         params = {}
         
@@ -99,7 +99,40 @@ class GoogleMapsClient:
         if not params:
             raise ValueError("At least one of address or components must be provided")
             
-        return cls._make_request(cls.GEOCODING_URL, params)
+        data = cls._make_request(cls.GEOCODING_URL, params)
+        
+        # Return simplified format if results exist
+        if data.get('results'):
+            result = data['results'][0]
+            location = result['geometry']['location']
+            return {
+                'lat': location['lat'],
+                'lng': location['lng'],
+                'formatted_address': result.get('formatted_address', ''),
+                'components': cls._parse_address_components(result.get('address_components', []))
+            }
+        
+        return None
+    
+    @classmethod
+    def _parse_address_components(cls, components):
+        """Parse address components into a more usable format."""
+        parsed = {}
+        for component in components:
+            types = component.get('types', [])
+            if 'street_number' in types:
+                parsed['street_number'] = component['long_name']
+            elif 'route' in types:
+                parsed['street'] = component['long_name']
+            elif 'locality' in types:
+                parsed['city'] = component['long_name']
+            elif 'administrative_area_level_1' in types:
+                parsed['state'] = component['short_name']
+            elif 'country' in types:
+                parsed['country'] = component['short_name']
+            elif 'postal_code' in types:
+                parsed['postal_code'] = component['long_name']
+        return parsed
     
     @classmethod
     def reverse_geocode(cls, lat, lng, result_type=None, location_type=None):

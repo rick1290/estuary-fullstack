@@ -23,10 +23,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("admin/", admin.site.urls),
     
-    # DRF endpoints - these will be mounted under /api/v1/drf/ in ASGI
-    path("api/v1/drf/", include("api.v1.urls_drf")),
-    
-    # Note: FastAPI endpoints are available at /api/v1/* via ASGI mount
+    # API v1 endpoints
+    path("api/v1/", include("api.v1.urls_drf")),
 ]
 
 # Serve static files in development

@@ -181,8 +181,8 @@ def update_booking_fields(booking, update_data, current_user):
         try:
             room = Room.objects.get(
                 id=update_data['room_id'],
-                location=booking.location,
-                is_active=True
+                location=booking.location
+                # Room model doesn't have is_active field
             )
             booking.room = room
         except Room.DoesNotExist:
@@ -346,8 +346,8 @@ async def create_booking(
         try:
             room = await sync_to_async(Room.objects.get)(
                 id=booking_data.room_id,
-                location=location,
-                is_active=True
+                location=location
+                # Room model doesn't have is_active field
             )
         except Room.DoesNotExist:
             raise HTTPException(

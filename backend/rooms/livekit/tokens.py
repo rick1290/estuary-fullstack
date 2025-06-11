@@ -457,3 +457,50 @@ def create_room_token(
             metadata=str(metadata),
             ttl=ttl
         )
+
+
+def generate_room_token(
+    room_name: str,
+    participant_name: str,
+    participant_identity: str,
+    is_host: bool = False,
+    ttl: int = 3600
+) -> Dict[str, str]:
+    """
+    Generate a room token with URL.
+    
+    Args:
+        room_name: LiveKit room name
+        participant_name: Display name
+        participant_identity: Unique identity
+        is_host: Whether this is a host token
+        ttl: Token TTL in seconds
+        
+    Returns:
+        Dictionary with token and URL
+    """
+    generator = get_token_generator()
+    
+    if is_host:
+        token = generator.create_host_token(
+            room_name=room_name,
+            identity=participant_identity,
+            name=participant_name,
+            ttl=ttl
+        )
+    else:
+        token = generator.create_viewer_token(
+            room_name=room_name,
+            identity=participant_identity,
+            name=participant_name,
+            ttl=ttl
+        )
+    
+    # Generate join URL
+    livekit_url = getattr(settings, 'LIVEKIT_URL', 'wss://localhost:7880')
+    url = f"{livekit_url}?token={token}"
+    
+    return {
+        'token': token,
+        'url': url
+    }

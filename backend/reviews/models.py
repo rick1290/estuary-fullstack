@@ -87,6 +87,10 @@ class Review(PublicModel):
     unhelpful_votes = models.PositiveIntegerField(default=0)
     reported_count = models.PositiveIntegerField(default=0)
     
+    # Practitioner response
+    response_text = models.TextField(blank=True)
+    response_date = models.DateTimeField(blank=True, null=True)
+    
     class Meta:
         indexes = [
             models.Index(fields=['practitioner', 'is_published']),
