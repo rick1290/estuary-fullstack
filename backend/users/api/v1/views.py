@@ -10,7 +10,7 @@ from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshV
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -24,6 +24,9 @@ from .serializers import (
 User = get_user_model()
 
 
+@extend_schema_view(
+    create=extend_schema(tags=['Authentication'])
+)
 class RegisterView(generics.CreateAPIView):
     """User registration endpoint"""
     queryset = User.objects.all()

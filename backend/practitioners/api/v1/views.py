@@ -11,6 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from datetime import datetime, timedelta
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from practitioners.models import (
     Practitioner, Schedule, ScheduleTimeSlot, SchedulePreference,
@@ -34,6 +35,22 @@ from .permissions import IsPractitionerOwner, IsPractitionerOrReadOnly
 from .filters import PractitionerFilter
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Practitioners']),
+    create=extend_schema(tags=['Practitioners']),
+    retrieve=extend_schema(tags=['Practitioners']),
+    update=extend_schema(tags=['Practitioners']),
+    partial_update=extend_schema(tags=['Practitioners']),
+    destroy=extend_schema(tags=['Practitioners']),
+    my_profile=extend_schema(tags=['Practitioners']),
+    apply=extend_schema(tags=['Practitioners']),
+    verify_email=extend_schema(tags=['Practitioners']),
+    upload_document=extend_schema(tags=['Practitioners']),
+    services=extend_schema(tags=['Practitioners']),
+    availability=extend_schema(tags=['Practitioners']),
+    stats=extend_schema(tags=['Practitioners']),
+    search=extend_schema(tags=['Practitioners'])
+)
 class PractitionerViewSet(viewsets.ModelViewSet):
     """
     ViewSet for practitioner profiles.
@@ -378,6 +395,12 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             )
 
 
+@extend_schema_view(
+    check=extend_schema(tags=['Availability']),
+    out_of_office=extend_schema(tags=['Availability']),
+    preferences=extend_schema(tags=['Availability']),
+    update_next_available=extend_schema(tags=['Availability'])
+)
 class AvailabilityViewSet(viewsets.ViewSet):
     """
     ViewSet for managing practitioner availability.

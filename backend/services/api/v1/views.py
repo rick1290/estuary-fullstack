@@ -9,6 +9,7 @@ from django.db.models import Q, Count, Avg, F, Prefetch, Max
 from django.utils import timezone
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceSession,
@@ -31,6 +32,15 @@ from .permissions import (
 from .filters import ServiceFilter
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services']),
+    featured=extend_schema(tags=['Services'])
+)
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
     """
     ViewSet for service categories.
@@ -59,6 +69,15 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services']),
+    reorder=extend_schema(tags=['Services'])
+)
 class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
     """
     ViewSet for practitioner-specific service categories.
@@ -103,6 +122,26 @@ class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
         return Response({"message": "Categories reordered successfully"})
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services']),
+    featured=extend_schema(tags=['Services']),
+    popular=extend_schema(tags=['Services']),
+    upcoming=extend_schema(tags=['Services']),
+    search=extend_schema(tags=['Services']),
+    by_practitioner=extend_schema(tags=['Services']),
+    duplicate=extend_schema(tags=['Services']),
+    add_media=extend_schema(tags=['Services']),
+    remove_media=extend_schema(tags=['Services']),
+    reorder_media=extend_schema(tags=['Services']),
+    add_resources=extend_schema(tags=['Services']),
+    add_practitioners=extend_schema(tags=['Services']),
+    join_waitlist=extend_schema(tags=['Services'])
+)
 class ServiceViewSet(viewsets.ModelViewSet):
     """
     ViewSet for services.
@@ -411,6 +450,14 @@ class ServiceViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services'])
+)
 class PackageViewSet(viewsets.ModelViewSet):
     """
     ViewSet specifically for service packages.
@@ -430,6 +477,14 @@ class PackageViewSet(viewsets.ModelViewSet):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services'])
+)
 class BundleViewSet(viewsets.ModelViewSet):
     """
     ViewSet specifically for service bundles.
@@ -449,6 +504,14 @@ class BundleViewSet(viewsets.ModelViewSet):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services'])
+)
 class ServiceSessionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for service sessions (workshops/courses).
@@ -473,6 +536,14 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Services']),
+    create=extend_schema(tags=['Services']),
+    retrieve=extend_schema(tags=['Services']),
+    update=extend_schema(tags=['Services']),
+    partial_update=extend_schema(tags=['Services']),
+    destroy=extend_schema(tags=['Services'])
+)
 class ServiceResourceViewSet(viewsets.ModelViewSet):
     """
     ViewSet for service resources.

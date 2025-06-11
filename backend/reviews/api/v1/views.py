@@ -7,6 +7,7 @@ from django.db.models import Avg, Count, Q, F
 from django.utils import timezone
 from django_filters import rest_framework as django_filters
 from datetime import timedelta
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from reviews.models import Review, ReviewQuestion, ReviewVote, ReviewReport
 from practitioners.models import Practitioner
@@ -51,6 +52,20 @@ class ReviewFilter(django_filters.FilterSet):
             return queryset.filter(Q(response_text__isnull=True) | Q(response_text=''))
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Reviews']),
+    create=extend_schema(tags=['Reviews']),
+    retrieve=extend_schema(tags=['Reviews']),
+    update=extend_schema(tags=['Reviews']),
+    partial_update=extend_schema(tags=['Reviews']),
+    destroy=extend_schema(tags=['Reviews']),
+    respond=extend_schema(tags=['Reviews']),
+    vote=extend_schema(tags=['Reviews']),
+    report=extend_schema(tags=['Reviews']),
+    statistics=extend_schema(tags=['Reviews']),
+    my_reviews=extend_schema(tags=['Reviews']),
+    can_review=extend_schema(tags=['Reviews'])
+)
 class ReviewViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Review CRUD operations
@@ -347,6 +362,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         })
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Reviews']),
+    retrieve=extend_schema(tags=['Reviews'])
+)
 class ReviewQuestionViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for review questions (read-only for non-staff)"""
     queryset = ReviewQuestion.objects.filter(is_active=True).order_by('order')

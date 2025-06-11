@@ -14,6 +14,7 @@ from django.conf import settings
 from decimal import Decimal
 import stripe
 import logging
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from payments.models import (
     Order, UserCreditTransaction, UserCreditBalance, PaymentMethod,
@@ -51,6 +52,15 @@ from .permissions import (
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Payments']),
+    create=extend_schema(tags=['Payments']),
+    retrieve=extend_schema(tags=['Payments']),
+    update=extend_schema(tags=['Payments']),
+    partial_update=extend_schema(tags=['Payments']),
+    destroy=extend_schema(tags=['Payments']),
+    set_default=extend_schema(tags=['Payments'])
+)
 class PaymentMethodViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing payment methods
@@ -100,6 +110,12 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Payments']),
+    retrieve=extend_schema(tags=['Payments']),
+    transactions=extend_schema(tags=['Payments']),
+    balance=extend_schema(tags=['Payments'])
+)
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for viewing payment transactions (orders)
@@ -138,6 +154,9 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset.select_related('user', 'service', 'practitioner')
 
 
+@extend_schema_view(
+    create_session=extend_schema(tags=['Payments'])
+)
 class CheckoutViewSet(viewsets.GenericViewSet):
     """
     ViewSet for creating Stripe checkout sessions
@@ -247,6 +266,12 @@ class CheckoutViewSet(viewsets.GenericViewSet):
         })
 
 
+@extend_schema_view(
+    balance=extend_schema(tags=['Payments']),
+    transactions=extend_schema(tags=['Payments']),
+    purchase=extend_schema(tags=['Payments']),
+    transfer=extend_schema(tags=['Payments'])
+)
 class CreditViewSet(viewsets.GenericViewSet):
     """
     ViewSet for managing credits
@@ -359,6 +384,17 @@ class CreditViewSet(viewsets.GenericViewSet):
         })
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Payments']),
+    create=extend_schema(tags=['Payments']),
+    retrieve=extend_schema(tags=['Payments']),
+    update=extend_schema(tags=['Payments']),
+    partial_update=extend_schema(tags=['Payments']),
+    destroy=extend_schema(tags=['Payments']),
+    summary=extend_schema(tags=['Payments']),
+    process=extend_schema(tags=['Payments']),
+    mark_failed=extend_schema(tags=['Payments'])
+)
 class PayoutViewSet(viewsets.ModelViewSet):
     """
     ViewSet for practitioner payouts
@@ -475,6 +511,19 @@ class PayoutViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Subscriptions']),
+    create=extend_schema(tags=['Subscriptions']),
+    retrieve=extend_schema(tags=['Subscriptions']),
+    update=extend_schema(tags=['Subscriptions']),
+    partial_update=extend_schema(tags=['Subscriptions']),
+    destroy=extend_schema(tags=['Subscriptions']),
+    current=extend_schema(tags=['Subscriptions']),
+    tiers=extend_schema(tags=['Subscriptions']),
+    upgrade=extend_schema(tags=['Subscriptions']),
+    cancel=extend_schema(tags=['Subscriptions']),
+    reactivate=extend_schema(tags=['Subscriptions'])
+)
 class SubscriptionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for practitioner subscriptions
@@ -806,6 +855,10 @@ class WebhookView(APIView):
             payout_record.save()
 
 
+@extend_schema_view(
+    rates=extend_schema(tags=['Payments']),
+    calculate=extend_schema(tags=['Payments'])
+)
 class CommissionViewSet(viewsets.GenericViewSet):
     """
     ViewSet for commission information

@@ -9,6 +9,7 @@ from django.db.models import Q, Prefetch
 from django.utils import timezone
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from bookings.models import (
     Booking, BookingNote, BookingFactory
@@ -25,6 +26,24 @@ from core.api.permissions import IsPractitioner
 from practitioners.utils.availability import get_practitioner_availability
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Bookings']),
+    create=extend_schema(tags=['Bookings']),
+    retrieve=extend_schema(tags=['Bookings']),
+    update=extend_schema(tags=['Bookings']),
+    partial_update=extend_schema(tags=['Bookings']),
+    destroy=extend_schema(tags=['Bookings']),
+    confirm=extend_schema(tags=['Bookings']),
+    cancel=extend_schema(tags=['Bookings']),
+    complete=extend_schema(tags=['Bookings']),
+    no_show=extend_schema(tags=['Bookings']),
+    reschedule=extend_schema(tags=['Bookings']),
+    notes=extend_schema(tags=['Bookings']),
+    check_availability=extend_schema(tags=['Bookings']),
+    create_bundle=extend_schema(tags=['Bookings']),
+    create_package=extend_schema(tags=['Bookings']),
+    create_course=extend_schema(tags=['Bookings'])
+)
 class BookingViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing bookings.

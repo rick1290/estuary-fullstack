@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import datetime, timedelta
 import pytz
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from practitioners.models import (
     ServiceSchedule, ScheduleAvailability, OutOfOffice
@@ -27,6 +28,16 @@ from .serializers_scheduling import (
 from .permissions import IsPractitionerOwner
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Availability']),
+    create=extend_schema(tags=['Availability']),
+    retrieve=extend_schema(tags=['Availability']),
+    update=extend_schema(tags=['Availability']),
+    partial_update=extend_schema(tags=['Availability']),
+    destroy=extend_schema(tags=['Availability']),
+    bulk_update=extend_schema(tags=['Availability']),
+    copy_from_default=extend_schema(tags=['Availability'])
+)
 class ServiceScheduleViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing service-specific schedules.
