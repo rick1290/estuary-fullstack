@@ -119,10 +119,18 @@ export default function ServiceCard({
         <CardContent className="relative flex flex-col flex-grow p-6 bg-cream-50 -mt-8 rounded-t-[2.5rem] z-10">
           {/* Practitioner Info */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
-              <span className="text-sm font-medium text-olive-800">
-                {practitioner.name.split(' ').map(n => n[0]).join('')}
-              </span>
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
+              {practitioner.image ? (
+                <img 
+                  src={practitioner.image} 
+                  alt={practitioner.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-medium text-olive-800">
+                  {practitioner.name.split(' ').map(n => n[0]).join('')}
+                </span>
+              )}
             </div>
             <div>
               <p className="font-medium text-olive-900">{practitioner.name}</p>
