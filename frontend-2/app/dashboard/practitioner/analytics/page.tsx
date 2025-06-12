@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -106,10 +107,12 @@ export default function PractitionerAnalyticsPage() {
   })
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 py-4 sm:py-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
+    <PractitionerDashboardPageLayout 
+      title="Analytics" 
+      description="Track your performance and gain insights to grow your practice"
+    >
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 justify-end">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2">
@@ -992,6 +995,7 @@ export default function PractitionerAnalyticsPage() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </PractitionerDashboardPageLayout>
   )
 }

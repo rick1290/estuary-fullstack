@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { PlusCircle, MoreHorizontal, Clock, Globe } from "lucide-react"
+import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -174,20 +175,22 @@ export default function AvailabilityPage() {
   }
 
   return (
-    <div className="container py-6 max-w-6xl">
-      <div className="flex flex-col space-y-4">
+    <PractitionerDashboardPageLayout 
+      title="Availability" 
+      description="Manage your working hours and availability schedules"
+    >
+      <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Availability</h1>
-          <Button onClick={handleCreateSchedule} className="ml-auto">
+          <Button onClick={handleCreateSchedule} className="ml-auto bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Schedule
           </Button>
         </div>
 
         <Tabs defaultValue="my-availability" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="my-availability">My Availability</TabsTrigger>
-            <TabsTrigger value="team-availability">Team Availability</TabsTrigger>
+          <TabsList className="mb-6 bg-sage-100 p-1 rounded-lg">
+            <TabsTrigger value="my-availability" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">My Availability</TabsTrigger>
+            <TabsTrigger value="team-availability" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">Team Availability</TabsTrigger>
           </TabsList>
           <TabsContent value="my-availability" className="space-y-4">
             {isCreating || editingSchedule ? (
@@ -200,22 +203,22 @@ export default function AvailabilityPage() {
             ) : (
               <div className="space-y-4">
                 {schedules.map((schedule) => (
-                  <Card key={schedule.id} className="overflow-hidden">
+                  <Card key={schedule.id} className="overflow-hidden border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-0">
                       <div className="flex items-center justify-between p-6 border-b">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{schedule.name}</span>
-                            {schedule.is_default && <Badge>Default</Badge>}
+                            {schedule.is_default && <Badge className="bg-sage-100 text-sage-700 border-sage-300">Default</Badge>}
                           </div>
-                          <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center text-sm text-olive-600 mt-1">
                             <Clock className="mr-1 h-4 w-4" />
                             <span>
                               Mon - Fri, {schedule.time_slots[0]?.start_time.substring(0, 5)} -{" "}
                               {schedule.time_slots[0]?.end_time.substring(0, 5)}
                             </span>
                           </div>
-                          <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center text-sm text-olive-600 mt-1">
                             <Globe className="mr-1 h-4 w-4" />
                             <span>{schedule.timezone.split("/")[1].replace("_", " ")}</span>
                           </div>
@@ -256,7 +259,7 @@ export default function AvailabilityPage() {
             )}
           </TabsContent>
           <TabsContent value="team-availability">
-            <Card>
+            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
               <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground py-8">
                   Team availability management will be available soon.
@@ -266,6 +269,6 @@ export default function AvailabilityPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </PractitionerDashboardPageLayout>
   )
 }

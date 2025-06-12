@@ -6,6 +6,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
+import PractitionerDashboardBreadcrumb from "@/components/dashboard/practitioner/practitioner-dashboard-breadcrumb"
 import {
   Menu,
   Home,
@@ -503,7 +504,10 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-8 relative z-10">{children}</main>
+        <main className="flex-1 p-4 md:p-6 relative z-10">
+          <PractitionerDashboardBreadcrumb />
+          {children}
+        </main>
       </div>
     </div>
   )

@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 
 export default function PractitionerMessagesPage() {
   return (
-    <div className="flex h-[calc(100vh-4rem)] -mt-6 -mx-6 overflow-hidden">
-      <div className="w-full md:w-1/3 border-r border-border">
-        <div className="p-4 border-b">
-          <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
+    <div className="flex h-[calc(100vh-10rem)] -mt-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden border-2 border-sage-200 rounded-xl bg-white/80 backdrop-blur-sm">
+      <div className="w-full md:w-1/3 border-r border-sage-200">
+        <div className="p-4 border-b border-sage-200 bg-sage-50">
+          <h1 className="text-2xl font-medium tracking-tight text-olive-900">Messages</h1>
         </div>
         <PractitionerMessagesList />
       </div>

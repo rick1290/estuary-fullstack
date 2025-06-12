@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import ClientsList from "@/components/dashboard/practitioner/clients/clients-list"
 
 export const metadata: Metadata = {
@@ -8,9 +9,11 @@ export const metadata: Metadata = {
 
 export default function PractitionerClientsPage() {
   return (
-    <div className="w-full px-4 py-6">
-      <h1 className="text-2xl font-bold tracking-tight mb-6">Clients</h1>
+    <PractitionerDashboardPageLayout 
+      title="Clients" 
+      description="Manage your client relationships and information"
+    >
       <ClientsList />
-    </div>
+    </PractitionerDashboardPageLayout>
   )
 }
