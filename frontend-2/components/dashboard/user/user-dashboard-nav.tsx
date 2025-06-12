@@ -41,18 +41,18 @@ export default function UserDashboardNav() {
     )?.path || "/dashboard/user"
 
   return (
-    <div className="sticky top-0 z-30 w-full border-b bg-background">
+    <div className="sticky top-0 z-30 w-full border-b border-sage-200 bg-white/90 backdrop-blur-lg shadow-sm">
       <div className="container px-4">
-        <div className="flex h-12 items-center justify-between">
+        <div className="flex h-14 items-center justify-between">
           <Tabs value={activeTab} className="w-full">
-            <TabsList className="h-12 bg-transparent p-0">
+            <TabsList className="h-14 bg-transparent p-0">
               {visibleItems.map((item) => (
                 <TabsTrigger
                   key={item.path}
                   value={item.path}
                   className={cn(
-                    "flex h-12 items-center gap-x-2 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary",
-                    pathname.startsWith(item.path) ? "font-semibold" : "font-normal",
+                    "flex h-14 items-center gap-x-2 rounded-none border-b-2 border-transparent px-6 text-olive-700 hover:text-olive-900 data-[state=active]:border-sage-600 data-[state=active]:text-sage-700 transition-all",
+                    pathname.startsWith(item.path) ? "font-medium" : "font-normal",
                   )}
                   asChild
                 >

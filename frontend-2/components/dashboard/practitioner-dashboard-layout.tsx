@@ -142,8 +142,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
           <button
             onClick={() => toggleSubmenu(item.text)}
             className={cn(
-              "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-              isActive && "bg-primary/10 text-primary",
+              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-50 hover:text-sage-700 text-olive-700",
+              isActive && "bg-sage-100 text-sage-700",
             )}
           >
             <div className="flex items-center gap-3">
@@ -190,16 +190,18 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gradient-to-b from-cream-50 to-cream-100 relative">
+      {/* Subtle background texture */}
+      <div className="absolute inset-0 texture-grain opacity-20" />
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r bg-background transition-transform md:flex",
+          "fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-sage-200 bg-white/90 backdrop-blur-lg shadow-lg transition-transform md:flex rounded-r-2xl",
           !sidebarOpen && "md:-translate-x-full",
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b px-4">
-          <Link href="/" className="flex items-center font-bold text-xl tracking-widest">
+        <div className="flex h-16 items-center justify-between border-b border-sage-200 px-4">
+          <Link href="/" className="flex items-center font-bold text-xl tracking-widest text-olive-900">
             ESTUARY
           </Link>
         </div>
@@ -408,13 +410,13 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       {/* Main Content */}
       <div className={cn("flex-1 transition-all", sidebarOpen ? "md:ml-64" : "md:ml-0")}>
         {/* Top Navigation */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-sage-200 bg-white/90 backdrop-blur-lg shadow-sm px-4 md:px-6 relative">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle sidebar</span>
             </Button>
-            <h1 className="text-lg font-medium">Practitioner Dashboard</h1>
+            <h1 className="text-lg font-medium text-olive-900">Practitioner Dashboard</h1>
           </div>
           <div className="flex items-center gap-2">
             {/* Home button */}
@@ -501,7 +503,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-8 relative z-10">{children}</main>
       </div>
     </div>
   )

@@ -58,23 +58,23 @@ export default function UserUpcomingBookings() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Upcoming Bookings</h2>
+      <h2 className="text-2xl font-medium mb-6 text-olive-900">Upcoming Bookings</h2>
 
       {bookings.length === 0 ? (
-        <Card>
+        <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">You have no upcoming bookings</p>
-            <Button>Explore Services</Button>
+            <p className="text-olive-600 mb-4">You have no upcoming bookings</p>
+            <Button className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800">Explore Services</Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {bookings.map((booking) => (
-            <Card key={booking.id}>
-              <CardContent className="p-5">
+            <Card key={booking.id} className="border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-3">
-                    <h3 className="font-semibold text-lg">{booking.serviceName}</h3>
+                    <h3 className="font-medium text-lg text-olive-900">{booking.serviceName}</h3>
 
                     <div className="flex items-center mt-2 mb-3">
                       <Avatar className="h-6 w-6 mr-2">
@@ -84,44 +84,44 @@ export default function UserUpcomingBookings() {
                         />
                         <AvatarFallback>{booking.practitionerInitials}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm">with {booking.practitionerName}</span>
+                      <span className="text-sm text-olive-700">with {booking.practitionerName}</span>
                     </div>
 
                     <Separator className="my-3" />
 
                     <div className="space-y-2">
                       <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-primary" />
-                        <span className="text-sm">{formatDate(booking.date)}</span>
+                        <Calendar className="h-4 w-4 mr-2 text-sage-600" />
+                        <span className="text-sm text-olive-700">{formatDate(booking.date)}</span>
                       </div>
 
                       <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-primary" />
-                        <span className="text-sm">
+                        <Clock className="h-4 w-4 mr-2 text-sage-600" />
+                        <span className="text-sm text-olive-700">
                           {booking.time} ({booking.duration})
                         </span>
                       </div>
 
                       <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-2 text-primary" />
-                        <span className="text-sm">{booking.location}</span>
+                        <MapPin className="h-4 w-4 mr-2 text-sage-600" />
+                        <span className="text-sm text-olive-700">{booking.location}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex flex-col justify-between md:items-end">
-                    <Badge variant="outline" className="mb-4 self-start md:self-end">
+                    <Badge variant="outline" className="mb-4 self-start md:self-end border-sage-300 text-sage-700">
                       Upcoming
                     </Badge>
 
                     <div className="flex flex-col gap-2 w-full">
-                      <Button variant="outline" size="sm" className="w-full">
+                      <Button variant="outline" size="sm" className="w-full border-sage-300 text-sage-700 hover:bg-sage-50">
                         View Details
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-destructive border-destructive hover:bg-destructive/10"
+                        className="w-full text-terracotta-600 border-terracotta-300 hover:bg-terracotta-50"
                       >
                         Reschedule
                       </Button>
@@ -133,7 +133,7 @@ export default function UserUpcomingBookings() {
           ))}
 
           <div className="text-center mt-6">
-            <Button variant="outline">View All Bookings</Button>
+            <Button variant="outline" className="border-sage-300 text-sage-700 hover:bg-sage-50">View All Bookings</Button>
           </div>
         </div>
       )}

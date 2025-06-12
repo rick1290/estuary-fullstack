@@ -5,10 +5,10 @@
 @layer base {
   :root {
     /* Earth-inspired warm color scheme */
-    --background: 42 31% 98%; /* Warm off-white #fdfcf8 */
+    --background: 42 31% 95%; /* Warm cream background */
     --foreground: 100 14% 21%; /* Deep olive for text */
 
-    --card: 42 31% 97%; /* Slightly darker cream for cards */
+    --card: 0 0% 100%; /* Clean white for cards */
     --card-foreground: 100 14% 21%; /* Deep olive text */
 
     --popover: 42 31% 98%; /* Warm off-white popovers */
@@ -74,7 +74,7 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     line-height: 1.7;
-    background-color: #fdfcf8;
+    background-color: #f5f2ed;
   }
   
   /* Typography with strong contrast hierarchy */
