@@ -49,7 +49,7 @@ export default function Footer() {
         <div className="grid gap-8 lg:grid-cols-5">
           {/* Brand section */}
           <div className="lg:col-span-2 max-w-md">
-            <h3 className="text-xl font-medium mb-4">ESTUARY</h3>
+            <h3 className="text-xl font-bold mb-4 tracking-widest">ESTUARY</h3>
             <p className="text-sm text-gray-600 mb-6 leading-relaxed">
               Your sanctuary for wellness, growth, and meaningful connections. 
               Join thousands discovering balance and transformation.
@@ -133,7 +133,7 @@ export default function Footer() {
           {/* Legal links and copyright */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} Estuary
+              © {new Date().getFullYear()} <span className="font-bold tracking-widest">ESTUARY</span>
             </p>
             <div className="flex gap-4">
               {footerLinks.legal.map((link, index) => (

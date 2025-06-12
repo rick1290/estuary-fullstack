@@ -114,7 +114,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-100">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center font-medium text-xl tracking-tight">
+        <Link href="/" className="flex items-center font-bold text-xl tracking-widest">
           ESTUARY
         </Link>
 
@@ -309,7 +309,7 @@ export default function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] sm:w-[350px]">
               <SheetHeader>
-                <SheetTitle className="text-left">Estuary</SheetTitle>
+                <SheetTitle className="text-left font-bold tracking-widest">ESTUARY</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4 py-4">
                 <nav className="flex flex-col gap-2">
