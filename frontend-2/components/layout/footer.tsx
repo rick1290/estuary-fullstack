@@ -43,7 +43,7 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="bg-white border-t border-gray-100">
+    <footer className="bg-gradient-to-b from-cream-50 to-cream-100 border-t border-sage-200">
       <div className="container max-w-7xl py-12 md:py-16">
         {/* Main footer content */}
         <div className="grid gap-8 lg:grid-cols-5">
@@ -62,10 +62,10 @@ export default function Footer() {
                 <Input 
                   type="email"
                   placeholder="Enter your email" 
-                  className="bg-gray-50 border-gray-200 flex-1"
+                  className="bg-white/80 border-sage-300 flex-1 rounded-xl"
                 />
-                <Button size="sm" className="px-4">
-                  <ArrowRight className="h-4 w-4" />
+                <Button size="sm" className="px-4 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl">
+                  <ArrowRight className="h-4 w-4" strokeWidth="1.5" />
                 </Button>
               </form>
               <p className="text-xs text-gray-500 mt-2">
@@ -77,13 +77,13 @@ export default function Footer() {
           {/* Links columns */}
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-3">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Explore</h3>
+              <h3 className="text-sm font-medium text-olive-900 mb-4">Explore</h3>
               <ul className="space-y-3">
                 {footerLinks.explore.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href} 
-                      className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -93,13 +93,13 @@ export default function Footer() {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Company</h3>
+              <h3 className="text-sm font-medium text-olive-900 mb-4">Company</h3>
               <ul className="space-y-3">
                 {footerLinks.company.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href} 
-                      className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -109,13 +109,13 @@ export default function Footer() {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Support</h3>
+              <h3 className="text-sm font-medium text-olive-900 mb-4">Support</h3>
               <ul className="space-y-3">
                 {footerLinks.support.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href} 
-                      className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -126,13 +126,13 @@ export default function Footer() {
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-8 bg-sage-200" />
 
         {/* Bottom section */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Legal links and copyright */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-olive-600">
               © {new Date().getFullYear()} <span className="font-bold tracking-widest">ESTUARY</span>
             </p>
             <div className="flex gap-4">
@@ -140,7 +140,7 @@ export default function Footer() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
                 >
                   {link.name}
                 </Link>
@@ -157,7 +157,7 @@ export default function Footer() {
                   key={link.label}
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-gray-600 hover:text-gray-900"
+                  className="h-8 w-8 text-olive-600 hover:text-olive-900"
                   asChild
                 >
                   <a 

@@ -110,8 +110,15 @@ export default function Navbar() {
 
   const navItems = getNavItems()
 
+  // Check if we're on the homepage for transparent navbar
+  const isHomepage = pathname === '/'
+  
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-100">
+    <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
+      isHomepage 
+        ? 'bg-white/10 backdrop-blur-lg border-white/20' 
+        : 'bg-white/95 backdrop-blur-md border-gray-100'
+    }`}>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center font-bold text-xl tracking-widest">
