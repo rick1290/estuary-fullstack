@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Superfluent-inspired minimalist color scheme */
+    --background: 0 0% 100%; /* Pure white background */
+    --foreground: 0 0% 9%; /* Near black text */
+
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 0 0% 9%; /* Dark text on cards */
+
+    --popover: 0 0% 100%; /* White popovers */
+    --popover-foreground: 0 0% 9%; /* Dark text on popovers */
+
+    --primary: 0 0% 9%; /* Near black for primary actions */
+    --primary-foreground: 0 0% 98%; /* Near white text on primary */
+
+    --secondary: 0 0% 96%; /* Very light gray for secondary */
+    --secondary-foreground: 0 0% 9%; /* Dark text on secondary */
+
+    --muted: 0 0% 96%; /* Light gray for muted elements */
+    --muted-foreground: 0 0% 45%; /* Medium gray for muted text */
+
+    --accent: 0 0% 96%; /* Light gray accent */
+    --accent-foreground: 0 0% 9%; /* Dark accent text */
+
+    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* White text on destructive */
+
+    --border: 0 0% 90%; /* Light gray borders */
+    --input: 0 0% 96%; /* Light gray input backgrounds */
+    --ring: 0 0% 9%; /* Dark focus rings */
+
+    --radius: 0.5rem; /* Slightly smaller radius for cleaner look */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.6;
+  }
+  
+  /* Typography improvements for Superfluent-style design */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+    line-height: 1.25;
+  }
+  
+  h1 {
+    @apply text-4xl lg:text-5xl;
+  }
+  
+  h2 {
+    @apply text-3xl lg:text-4xl;
+  }
+  
+  h3 {
+    @apply text-2xl lg:text-3xl;
+  }
+  
+  p {
+    @apply leading-relaxed;
+  }
+}
+
+@layer components {
+  /* Layout utilities inspired by Octave's modular design */
+  .section-spacing {
+    @apply py-16 lg:py-24;
+  }
+  
+  .container-narrow {
+    @apply container max-w-4xl;
+  }
+  
+  .grid-auto-fit {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  /* Image-driven card variant */
+  .card-image-header {
+    @apply aspect-video w-full object-cover;
+  }
+  
+  /* Clean button with arrow */
+  .btn-with-arrow::after {
+    content: "→";
+    @apply ml-2 transition-transform group-hover:translate-x-1;
+  }
+  
+  /* Warm background sections */
+  .section-warm {
+    @apply bg-warm-100;
+  }
+}
