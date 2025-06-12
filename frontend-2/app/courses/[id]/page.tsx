@@ -1,4 +1,4 @@
-import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, CheckCircle } from "lucide-react"
+import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
 import { Button } from "@/components/ui/button"
@@ -167,7 +167,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -175,7 +175,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -183,7 +183,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <span className="text-olive-900 font-medium">{course.title}</span>
@@ -236,7 +236,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                     Enroll Now - ${course.price}
                   </Button>
                   <Button size="lg" variant="outline" className="group">
-                    <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" />
+                    <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" strokeWidth="1.5" />
                     Save Course
                   </Button>
                 </div>
@@ -258,7 +258,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center space-y-4">
-                      <Calendar className="h-24 w-24 text-sage-400 mx-auto" />
+                      <Calendar className="h-24 w-24 text-sage-400 mx-auto" strokeWidth="1" />
                       <p className="text-sage-600 font-medium">Transform Your Life</p>
                     </div>
                   </div>
@@ -294,7 +294,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
             size="icon"
             className="rounded-full bg-cream-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-4 w-4" strokeWidth="1.5" />
           </Button>
         </div>
 
@@ -319,7 +319,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                   <div key={index} className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-2xl p-6 card-hover">
                     <div className="flex gap-4">
                       <div className="flex-shrink-0">
-                        <CheckCircle className="h-6 w-6 text-sage-600" />
+                        <Check className="h-6 w-6 text-sage-600 rounded-full" strokeWidth="1.5" />
                       </div>
                       <p className="text-olive-700 leading-relaxed">{item}</p>
                     </div>
@@ -352,7 +352,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                     </div>
                     <CardContent className="p-6 bg-cream-50">
                       <div className="text-sm text-olive-600 mb-4">
-                        <Clock className="h-4 w-4 inline mr-2" />
+                        <Clock className="h-4 w-4 inline mr-2" strokeWidth="1.5" />
                         {session.startTime} - {session.endTime}
                       </div>
                       <div>
@@ -460,15 +460,15 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">Lifetime access to all materials</span>
                 </div>
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">Certificate of completion included</span>
                 </div>
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">30-day money-back guarantee</span>
                 </div>
               </div>

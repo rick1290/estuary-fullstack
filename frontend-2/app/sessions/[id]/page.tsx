@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, CheckCircle } from "lucide-react"
+import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check } from "lucide-react"
 import SessionBookingPanel from "@/components/sessions/session-booking-panel"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -134,7 +134,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -142,7 +142,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -150,7 +150,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <span className="text-olive-900 font-medium">{session.title}</span>
@@ -183,15 +183,15 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
               {/* Meta info */}
               <div className="flex flex-wrap items-center gap-6 text-olive-700">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-sage-600" />
+                  <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                   <span className="font-medium">{session.duration} minutes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-sage-600" />
+                  <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                   <span className="font-medium">{session.location}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-sage-600" />
+                  <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                   <span className="font-medium">1-on-1 Session</span>
                 </div>
               </div>
@@ -211,7 +211,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                   Book Your Session
                 </Button>
                 <Button size="lg" variant="ghost" className="group">
-                  <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" />
+                  <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" strokeWidth="1.5" />
                   Save for Later
                 </Button>
               </div>
@@ -228,7 +228,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Calendar className="h-32 w-32 text-sage-300" />
+                    <Calendar className="h-32 w-32 text-sage-300" strokeWidth="1" />
                   </div>
                 )}
                 
@@ -252,7 +252,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
             size="icon"
             className="rounded-full bg-cream-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-4 w-4" strokeWidth="1.5" />
           </Button>
         </div>
 
@@ -340,21 +340,21 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                   <div className="grid gap-5">
                     <div className="flex justify-between items-center py-4 border-b border-sage-200">
                       <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-sage-600" />
+                        <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                         <span className="text-olive-700">Duration</span>
                       </div>
                       <span className="font-medium text-olive-900">{session.duration} minutes</span>
                     </div>
                     <div className="flex justify-between items-center py-4 border-b border-sage-200">
                       <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5 text-sage-600" />
+                        <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                         <span className="text-olive-700">Format</span>
                       </div>
                       <span className="font-medium text-olive-900">One-on-one</span>
                     </div>
                     <div className="flex justify-between items-center py-4 border-b border-sage-200">
                       <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-sage-600" />
+                        <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                         <span className="text-olive-700">Location</span>
                       </div>
                       <span className="font-medium text-olive-900">{session.location}</span>
@@ -362,7 +362,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                     {session.platform && (
                       <div className="flex justify-between items-center py-4 border-b border-sage-200">
                         <div className="flex items-center gap-3">
-                          <Calendar className="h-5 w-5 text-sage-600" />
+                          <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                           <span className="text-olive-700">Platform</span>
                         </div>
                         <span className="font-medium text-olive-900">{session.platform}</span>
@@ -370,7 +370,7 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
                     )}
                     <div className="flex justify-between items-center py-4">
                       <div className="flex items-center gap-3">
-                        <Star className="h-5 w-5 text-sage-600" />
+                        <Star className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                         <span className="text-olive-700">Experience Level</span>
                       </div>
                       <span className="font-medium text-olive-900">All Levels Welcome</span>
@@ -439,15 +439,15 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">Free cancellation up to 24 hours before</span>
                 </div>
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">100% secure checkout</span>
                 </div>
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">Satisfaction guaranteed</span>
                 </div>
               </div>

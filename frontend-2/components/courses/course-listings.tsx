@@ -1,13 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Clock, MapPin, Calendar, Star } from "lucide-react"
-import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
+import { Clock, MapPin, Calendar, Star, Sparkles, Users } from "lucide-react"
 
 // Mock data for course listings
 const MOCK_COURSES = [
@@ -115,78 +113,120 @@ export default function CourseListings({ query, location, categories = [] }: Cou
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredCourses.map((course) => (
-          <div key={course.id} className="flex h-full">
-            <Card className="flex flex-col w-full h-full overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="flex-grow flex flex-col pt-6 pb-2">
-                <div className="flex items-center mb-1">
-                  <ServiceTypeBadge type="course" />
-                  <div className="flex items-center ml-auto">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                      <span className="ml-1 text-sm">{course.rating}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {filteredCourses.map((course, index) => (
+          <Link
+            key={course.id}
+            href={`/courses/${course.id}`}
+            className="group block animate-fade-in"
+            style={{animationDelay: `${index * 0.1}s`}}
+          >
+            <Card className="h-full overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-cream-50">
+              {/* Gradient Header */}
+              <div className="relative h-56 bg-gradient-to-br from-sage-100 via-terracotta-100 to-sage-100 overflow-hidden">
+                {/* Background texture */}
+                <div className="absolute inset-0 texture-grain opacity-20" />
+                
+                {/* Decorative shapes */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-terracotta-200/40 rounded-full blur-2xl" />
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-sage-200/40 rounded-full blur-2xl" />
+                
+                {/* Course Type Badge */}
+                <div className="absolute top-4 left-4">
+                  <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+                    <Sparkles className="h-3.5 w-3.5 text-sage-600" strokeWidth="1.5" />
+                    <span className="text-xs font-medium text-olive-800">Learning Journey</span>
+                  </div>
+                </div>
+                
+                {/* Rating */}
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
+                    <span className="text-sm font-medium text-olive-800">{course.rating}</span>
+                  </div>
+                </div>
+                
+                {/* Title Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-olive-900/70 to-transparent">
+                  <h3 className="text-2xl font-medium text-white leading-tight line-clamp-2">
+                    {course.title}
+                  </h3>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <CardContent className="p-6 bg-cream-50">
+                <div className="space-y-4">
+                  {/* Practitioner */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
+                      <span className="text-sm font-medium text-olive-800">
+                        {course.practitioner.name.split(' ').map(n => n[0]).join('')}
+                      </span>
                     </div>
-                    <span className="ml-1 text-xs text-muted-foreground">({course.reviewCount})</span>
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
-
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3 h-[4.5em]">{course.description}</p>
-
-                <div className="flex items-center mb-2">
-                  <Avatar className="h-6 w-6 mr-2">
-                    <AvatarImage src={course.practitioner.image || "/placeholder.svg"} alt={course.practitioner.name} />
-                    <AvatarFallback>{course.practitioner.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <Link
-                    href={`/practitioners/${course.practitioner.id}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {course.practitioner.name}
-                  </Link>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">{course.location}</span>
+                    <div>
+                      <p className="font-medium text-olive-900">{course.practitioner.name}</p>
+                      <p className="text-sm text-olive-600">{course.location}</p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">{course.duration}</span>
+                  {/* Course Details */}
+                  <div className="grid grid-cols-2 gap-4 text-sm text-olive-700">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                      <span>{course.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                      <span>{course.sessionCount} sessions</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                      <span>{course.location}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                      <span>{course.reviewCount} students</span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">{course.sessionCount} sessions</span>
+                  {/* Categories */}
+                  <div className="flex flex-wrap gap-2">
+                    {course.categories.map((category) => (
+                      <span key={category} className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full font-medium">
+                        {category}
+                      </span>
+                    ))}
                   </div>
-                </div>
 
-                <div className="mt-auto mb-2">
-                  {course.categories.slice(0, 3).map((category) => (
-                    <Badge key={category} variant="outline" className="mr-1 mb-1">
-                      {category}
-                    </Badge>
-                  ))}
-                  {course.categories.length > 3 && (
-                    <span className="text-xs text-muted-foreground">+{course.categories.length - 3} more</span>
-                  )}
+                  {/* Description */}
+                  <p className="text-sm text-olive-600 leading-relaxed line-clamp-2">
+                    {course.description}
+                  </p>
+
+                  <Separator className="bg-sage-200" />
+
+                  {/* Price and CTA */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-olive-600 mb-1">Investment</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-medium text-olive-900">
+                          ${course.price}
+                        </span>
+                        <span className="text-sm text-olive-600">/ journey</span>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-sage-700 hover:text-sage-800 hover:bg-sage-100 group">
+                      <span className="mr-1">Start Journey</span>
+                      <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
-
-              <Separator />
-
-              <CardFooter className="flex justify-between p-4 h-16">
-                <span className="text-lg font-semibold text-primary">${course.price}</span>
-                <Button asChild>
-                  <Link href={`/courses/${course.id}`}>View Course</Link>
-                </Button>
-              </CardFooter>
             </Card>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

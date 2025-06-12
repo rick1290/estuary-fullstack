@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, CheckCircle, Sparkles } from "lucide-react"
+import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles } from "lucide-react"
 import WorkshopBookingPanel from "@/components/workshops/workshop-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
 import { Button } from "@/components/ui/button"
@@ -488,7 +488,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -496,7 +496,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -504,7 +504,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" />
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <span className="text-olive-900 font-medium">{workshop.title}</span>
@@ -518,7 +518,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
             <div className="space-y-8 animate-slide-up">
               {/* Workshop Label */}
               <div className="inline-flex items-center gap-3 bg-sage-100 px-5 py-3 rounded-full">
-                <Sparkles className="h-5 w-5 text-sage-600 animate-pulse" />
+                <Sparkles className="h-5 w-5 text-sage-600 animate-pulse" strokeWidth="1.5" />
                 <span className="text-sage-800 font-medium">
                   {workshop.location === 'In-person' ? 'In-Person Experience' : workshop.location} • Limited Spots
                 </span>
@@ -555,17 +555,17 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
               <div className="bg-cream-100 rounded-2xl p-6 space-y-3">
                 {workshop.dates && workshop.dates[0] && (
                   <div className="flex items-center gap-3 text-olive-700">
-                    <Calendar className="h-5 w-5 text-sage-600" />
+                    <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                     <span className="font-medium">Next Date: {workshop.dates[0].date}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3 text-olive-700">
-                  <Clock className="h-5 w-5 text-sage-600" />
+                  <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                   <span className="font-medium">{workshop.startTime} - {workshop.endTime}</span>
                 </div>
                 {workshop.venue && (
                   <div className="flex items-center gap-3 text-olive-700">
-                    <MapPin className="h-5 w-5 text-sage-600" />
+                    <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                     <span className="font-medium">{workshop.venue}</span>
                   </div>
                 )}
@@ -578,7 +578,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
                     Reserve Your Spot - ${workshop.price}
                   </Button>
                   <Button size="lg" variant="outline" className="group">
-                    <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" />
+                    <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" strokeWidth="1.5" />
                     Save Workshop
                   </Button>
                 </div>
@@ -601,7 +601,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center space-y-6">
                       <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sage-300 to-terracotta-300 mx-auto flex items-center justify-center">
-                        <Sparkles className="h-16 w-16 text-white" />
+                        <Sparkles className="h-16 w-16 text-white" strokeWidth="1" />
                       </div>
                       <p className="text-xl text-sage-700 font-medium">Transform Your Journey</p>
                     </div>
@@ -643,7 +643,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
             size="icon"
             className="rounded-full bg-cream-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-4 w-4" strokeWidth="1.5" />
           </Button>
         </div>
 
@@ -669,7 +669,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
                     <div className="flex gap-4">
                       <div className="flex-shrink-0">
                         <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
-                          <CheckCircle className="h-5 w-5 text-sage-600" />
+                          <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                         </div>
                       </div>
                       <p className="text-olive-700 leading-relaxed">{item}</p>
@@ -795,15 +795,15 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">Small group size (max {workshop.capacity})</span>
                 </div>
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">All materials & resources included</span>
                 </div>
                 <div className="flex items-center gap-3 text-olive-600">
-                  <CheckCircle className="h-5 w-5 text-sage-600" />
+                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                   <span className="text-sm">100% satisfaction guarantee</span>
                 </div>
               </div>
@@ -811,7 +811,7 @@ export default function WorkshopPage({ params }: { params: { id: string } }) {
               {/* Urgency Card */}
               <Card className="mt-6 border-2 border-terracotta-200 bg-terracotta-50">
                 <CardContent className="p-6 text-center">
-                  <Sparkles className="h-8 w-8 text-terracotta-600 mx-auto mb-3" />
+                  <Sparkles className="h-8 w-8 text-terracotta-600 mx-auto mb-3" strokeWidth="1.5" />
                   <h3 className="font-semibold text-olive-900 mb-2">Limited Availability</h3>
                   <p className="text-sm text-olive-700 mb-4">
                     Only <span className="font-bold text-terracotta-600">{workshop.spotsRemaining} spots</span> remaining for this transformative experience

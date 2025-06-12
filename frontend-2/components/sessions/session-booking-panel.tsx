@@ -142,7 +142,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                   disabled={visibleDates[0]?.day === allDates[0].day}
                   className="text-sage-600 hover:bg-sage-100"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
                 </Button>
 
                 <div className="flex gap-2 justify-center flex-1">
@@ -169,7 +169,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                   disabled={visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day}
                   className="text-sage-600 hover:bg-sage-100"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
                 </Button>
               </div>
             </div>

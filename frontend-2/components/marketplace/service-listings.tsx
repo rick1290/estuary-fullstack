@@ -1,12 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Clock, MapPin, User, ShoppingBag, Calendar, GraduationCap, Star } from "lucide-react"
+import { Clock, MapPin, User, ShoppingBag, Calendar, GraduationCap, Star, Sparkles } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
 
@@ -248,90 +247,129 @@ export default function ServiceListings({ query, serviceType, location, categori
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredServices.map((service) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredServices.map((service, index) => (
           <Link
             key={service.id}
             href={`/marketplace/${service.type === "courses" ? "courses" : service.type === "workshops" ? "workshops" : service.type === "one-on-one" ? "sessions" : service.type}/${service.id}`}
-            className="group block"
+            className="group block animate-fade-in"
+            style={{animationDelay: `${index * 0.1}s`}}
           >
-            <Card className="h-full overflow-hidden border border-gray-200 hover:border-gray-300 transition-all duration-200">
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Service Type and Rating */}
-                  <div className="flex items-center justify-between">
-                    <ServiceTypeBadge type={service.type} />
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 mr-1" />
-                      <span className="font-medium">{service.rating}</span>
-                      <span className="text-gray-400 ml-1">({service.reviewCount})</span>
-                    </div>
+            <Card className="h-full overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-cream-50">
+              {/* Gradient Header */}
+              <div className="relative h-48 bg-gradient-to-br from-terracotta-100 via-sage-100 to-terracotta-100 overflow-hidden">
+                {/* Background texture */}
+                <div className="absolute inset-0 texture-grain opacity-20" />
+                
+                {/* Decorative shapes */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-sage-200/40 rounded-full blur-2xl" />
+                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-terracotta-200/40 rounded-full blur-2xl" />
+                
+                {/* Service Type Badge */}
+                <div className="absolute top-4 left-4">
+                  <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+                    <Sparkles className="h-3.5 w-3.5 text-terracotta-600" strokeWidth="1.5" />
+                    <span className="text-xs font-medium text-olive-800">
+                      {service.type === "one-on-one" && "Personal Session"}
+                      {service.type === "packages" && "Transformation Package"}
+                      {service.type === "workshops" && "Group Workshop"}
+                      {service.type === "courses" && "Learning Journey"}
+                    </span>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-gray-700 transition-colors line-clamp-2">
+                </div>
+                
+                {/* Rating */}
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
+                    <span className="text-sm font-medium text-olive-800">{service.rating}</span>
+                  </div>
+                </div>
+                
+                {/* Title Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-olive-900/60 to-transparent">
+                  <h3 className="text-xl font-medium text-white leading-tight line-clamp-2">
                     {service.title}
                   </h3>
-
+                </div>
+              </div>
+              
+              {/* Content */}
+              <CardContent className="p-6 bg-cream-50">
+                <div className="space-y-4">
                   {/* Practitioner */}
-                  <div className="flex items-center">
-                    <div className="text-sm">
-                      <p className="font-medium text-gray-900">{service.practitioner.name}</p>
-                      <p className="text-gray-500">{service.location}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
+                      <span className="text-sm font-medium text-olive-800">
+                        {service.practitioner.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-olive-900">{service.practitioner.name}</p>
+                      <p className="text-sm text-olive-600">{service.location}</p>
                     </div>
                   </div>
 
                   {/* Service Details */}
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-olive-700">
                     {service.duration && (
-                      <div className="flex items-center">
-                        <Clock className="h-3.5 w-3.5 mr-1" />
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
                         <span>
                           {typeof service.duration === "number" ? `${service.duration} min` : service.duration}
                         </span>
                       </div>
                     )}
                     {service.sessionCount && (
-                      <div className="flex items-center">
-                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
                         <span>{service.sessionCount} sessions</span>
                       </div>
                     )}
                     {service.date && (
-                      <div className="flex items-center">
-                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
                         <span>{service.date}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Categories */}
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {service.categories.map((category) => (
-                      <span key={category} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md">
+                      <span key={category} className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full font-medium">
                         {category}
                       </span>
                     ))}
                   </div>
 
-                  <Separator className="my-4" />
+                  {/* Description */}
+                  <p className="text-sm text-olive-600 leading-relaxed line-clamp-2">
+                    {service.description}
+                  </p>
 
-                  {/* Price */}
+                  <Separator className="bg-sage-200" />
+
+                  {/* Price and CTA */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-2xl font-medium text-gray-900">
-                        ${service.price}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-1">
-                        {service.type === "packages" && "/ package"}
-                        {service.type === "courses" && "/ course"}
-                        {service.type === "workshops" && "/ person"}
-                        {service.type === "one-on-one" && "/ session"}
-                      </span>
+                      <p className="text-xs text-olive-600 mb-1">Investment</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-medium text-olive-900">
+                          ${service.price}
+                        </span>
+                        <span className="text-sm text-olive-600">
+                          {service.type === "packages" && "/ package"}
+                          {service.type === "courses" && "/ journey"}
+                          {service.type === "workshops" && "/ person"}
+                          {service.type === "one-on-one" && "/ session"}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-sm text-primary group-hover:underline">
-                      View Details →
-                    </span>
+                    <Button variant="ghost" size="sm" className="text-sage-700 hover:text-sage-800 hover:bg-sage-100 group">
+                      <span className="mr-1">Explore</span>
+                      <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                    </Button>
                   </div>
                 </div>
               </CardContent>

@@ -10,7 +10,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Star, Sparkles } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import ClientPractitionerProfile from "@/components/practitioners/client-practitioner-profile"
 
@@ -22,41 +22,59 @@ export default async function PractitionerPage({ params }: { params: { id: strin
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-warm-50/30 to-white">
-      <div className="container py-12">
-        <Breadcrumb className="mb-8">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/" className="text-gray-600 hover:text-gray-900">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/marketplace" className="text-gray-600 hover:text-gray-900">Marketplace</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <span className="text-gray-900 font-medium">{practitioner.display_name}</span>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <div className="min-h-screen bg-cream-50">
+      {/* Hero Background Section */}
+      <div className="relative bg-gradient-to-b from-sage-50 via-terracotta-50/30 to-cream-50 pb-32">
+        {/* Background elements */}
+        <div className="absolute inset-0 texture-grain opacity-20" />
+        <div className="absolute top-20 -right-40 w-[500px] h-[500px] bg-sage-200/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 -left-40 w-[600px] h-[600px] bg-terracotta-200/30 rounded-full blur-3xl" />
+        
+        {/* Content Container */}
+        <div className="relative container max-w-7xl py-12">
+          {/* Breadcrumb */}
+          <Breadcrumb className="mb-8 animate-fade-in">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                  <Link href="/marketplace">Explore Wellness</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                  <Link href="/marketplace/practitioners">Practitioners</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <span className="text-olive-900 font-medium">{practitioner.display_name}</span>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-          <div className="flex-1 w-full lg:w-2/3">
-            <Suspense fallback={<ProfileSkeleton />}>
-              <ClientPractitionerProfile practitioner={practitioner} />
-            </Suspense>
-          </div>
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
+            <div className="flex-1 w-full lg:w-2/3">
+              <Suspense fallback={<ProfileSkeleton />}>
+                <ClientPractitionerProfile practitioner={practitioner} />
+              </Suspense>
+            </div>
 
-          <div className="w-full lg:w-1/3 lg:sticky lg:top-24 lg:self-start">
-            <PractitionerBookingPanel practitioner={practitioner} />
+            <div className="w-full lg:w-1/3 lg:sticky lg:top-24 lg:self-start">
+              <PractitionerBookingPanel practitioner={practitioner} />
+            </div>
           </div>
         </div>
       </div>

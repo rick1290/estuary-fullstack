@@ -94,7 +94,7 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
           {dates && dates.length > 0 && (
             <div className="mb-6">
               <label className="text-sm font-semibold text-olive-800 mb-3 block flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-terracotta-500" />
+                <Sparkles className="h-4 w-4 text-terracotta-500" strokeWidth="1.5" />
                 Select Your Journey Date
               </label>
               <Select value={selectedDateId} onValueChange={handleDateChange}>
@@ -124,14 +124,14 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
           <div className="space-y-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-sage-600" />
+                <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Date</span>
               </div>
               <span className="font-semibold text-olive-900">{selectedDate.date}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-sage-600" />
+                <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Time</span>
               </div>
               <span className="font-semibold text-olive-900">
@@ -140,14 +140,14 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-sage-600" />
+                <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Format</span>
               </div>
               <span className="font-semibold text-olive-900">{workshop.location}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-sage-600" />
+                <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Available Spots</span>
               </div>
               <Badge variant="terracotta" className="font-semibold">

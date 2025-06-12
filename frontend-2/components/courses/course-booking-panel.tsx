@@ -52,21 +52,21 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
           <div className="space-y-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-sage-600" />
+                <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Duration</span>
               </div>
               <span className="font-semibold text-olive-900">{course.duration}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-sage-600" />
+                <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Live Sessions</span>
               </div>
               <span className="font-semibold text-olive-900">{course.sessionCount} sessions</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-sage-600" />
+                <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Format</span>
               </div>
               <span className="font-semibold text-olive-900">{course.location}</span>
