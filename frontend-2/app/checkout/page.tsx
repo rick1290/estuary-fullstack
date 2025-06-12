@@ -330,19 +330,19 @@ export default function CheckoutPage() {
       </Dialog>
 
       {/* Logo - Full Width */}
-      <div className="w-full py-6 border-b border-gray-100 bg-white">
-        <div className="px-6 md:px-10 lg:px-12">
+      <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
+        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-xl font-medium tracking-tight">ESTUARY</h1>
+            <h1 className="text-2xl font-medium tracking-tight text-olive-900">ESTUARY</h1>
           </Link>
         </div>
       </div>
 
       <div className="min-h-screen bg-gradient-to-b from-warm-50/30 to-white">
-        <div className="container max-w-6xl py-12">
-          <div className="grid gap-12 lg:grid-cols-3">
+        <div className="container max-w-7xl py-12 px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:gap-12 lg:grid-cols-5">
             {/* Checkout Form */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-3">
               <h1 className="text-3xl font-medium mb-8">Checkout</h1>
 
               {/* Credits Section */}
@@ -430,7 +430,12 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" size="lg" disabled={processingPayment}>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg" 
+                    size="lg" 
+                    disabled={processingPayment}
+                  >
                     {processingPayment ? (
                       <>
                         <span className="mr-2">Processing</span>
@@ -468,39 +473,44 @@ export default function CheckoutPage() {
             </div>
 
             {/* Order Summary */}
-            <div>
-              <Card className="md:sticky md:top-6">
+            <div className="lg:col-span-2">
+              <Card className="sticky top-6">
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-md bg-muted overflow-hidden">
-                      {service.image ? (
-                        <img
-                          src={service.image || "/placeholder.svg"}
-                          alt={service.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-secondary flex items-center justify-center">
-                          <span className="text-secondary-foreground">{service.title?.charAt(0) || "S"}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{service.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {serviceType.charAt(0).toUpperCase() + serviceType.slice(1)}
-                      </p>
+                  <div className="p-4 bg-gradient-to-br from-sage-50 to-terracotta-50 rounded-lg border border-sage-200">
+                    <div className="flex items-start gap-4">
+                      <div className="h-20 w-20 rounded-lg bg-white border border-sage-200 overflow-hidden flex-shrink-0">
+                        {service.image ? (
+                          <img
+                            src={service.image || "/placeholder.svg"}
+                            alt={service.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                            <span className="text-2xl font-medium text-olive-700">{service.title?.charAt(0) || "S"}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-olive-900 line-clamp-2">{service.title}</h3>
+                        <p className="text-sm text-olive-600 mt-1">
+                          {serviceType === "one-on-one" ? "Session" : 
+                           serviceType === "workshops" ? "Workshop" :
+                           serviceType === "courses" ? "Course" :
+                           serviceType.charAt(0).toUpperCase() + serviceType.slice(1)}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Booking Details */}
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="space-y-4 p-3">
-                      <h3 className="font-medium text-sm">Booking Details</h3>
-                      <div className="grid gap-2 text-sm">
+                  <Card className="bg-sage-50/50 border border-sage-200">
+                    <CardContent className="space-y-4 p-4">
+                      <h3 className="font-medium">Booking Details</h3>
+                      <div className="grid gap-3">
                         <div className="flex items-start gap-3">
                           <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                           <div>
@@ -566,47 +576,53 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  <Separator />
+                  <Separator className="my-4" />
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-base">
+                      <span className="text-olive-700">Subtotal</span>
+                      <span className="font-medium">${subtotal.toFixed(2)}</span>
                     </div>
 
                     {creditsToApply > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>Credits Applied</span>
-                        <span>-${creditsToApply.toFixed(2)}</span>
+                      <div className="flex justify-between text-sage-700">
+                        <span className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Credits Applied
+                        </span>
+                        <span className="font-medium">-${creditsToApply.toFixed(2)}</span>
                       </div>
                     )}
 
                     {promoDiscount > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>Promo Discount</span>
-                        <span>-${promoDiscount.toFixed(2)}</span>
+                      <div className="flex justify-between text-sage-700">
+                        <span className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Promo Discount
+                        </span>
+                        <span className="font-medium">-${promoDiscount.toFixed(2)}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
-                      <span>Tax</span>
-                      <span>${tax.toFixed(2)}</span>
+                    <div className="flex justify-between text-base">
+                      <span className="text-olive-700">Tax</span>
+                      <span className="font-medium">${tax.toFixed(2)}</span>
                     </div>
 
-                    <Separator />
+                    <Separator className="my-3" />
 
-                    <div className="flex justify-between font-bold">
+                    <div className="flex justify-between text-lg font-bold text-olive-900">
                       <span>Total</span>
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="rounded-md bg-primary/10 p-3">
-                    <div className="flex gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                  <div className="rounded-lg bg-sage-100/50 border border-sage-200 p-4">
+                    <div className="flex gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-sage-700 flex-shrink-0 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium">Satisfaction Guaranteed</p>
-                        <p className="text-muted-foreground">Full refund if you're not completely satisfied</p>
+                        <p className="font-medium text-olive-900">Satisfaction Guaranteed</p>
+                        <p className="text-olive-600">Full refund if you're not completely satisfied</p>
                       </div>
                     </div>
                   </div>
