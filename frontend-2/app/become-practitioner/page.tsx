@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Check, Star, Wallet, Calendar, Eye, Users, Zap, Laptop, ArrowRight, ChevronDown } from "lucide-react"
+import { Check, Star, Wallet, Calendar, Eye, Users, Zap, Laptop, ArrowRight, ChevronDown, Sparkles } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
@@ -90,24 +90,18 @@ export default function BecomePractitionerPage() {
 
   return (
     <>
-      {/* Enhanced Hero Section with Parallax Effect */}
+      {/* Immersive Hero Section */}
       <div className="relative w-full h-[90vh] max-h-[800px] overflow-hidden">
-        <div
-          className="absolute inset-0 w-full h-full"
-          style={{
-            transform: `translateY(${scrollY * 0.4}px)`,
-            transition: "transform 0.1s ease-out",
-          }}
-        >
-          <Image
-            src="/hybrid-practitioner-sessions.jpeg"
-            alt="Hybrid practitioner sessions showing in-person and virtual offerings"
-            fill
-            priority
-            className="object-cover scale-110"
-          />
+        {/* Immersive gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-sage-100 via-terracotta-100 to-blush-100">
+          {/* Texture overlay */}
+          <div className="absolute inset-0 texture-grain opacity-20" />
+          
+          {/* Decorative blobs */}
+          <div className="absolute top-20 -right-40 w-[600px] h-[600px] bg-terracotta-200/40 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-sage-200/40 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blush-200/20 rounded-full blur-3xl" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80 backdrop-blur-[2px] z-10" />
 
         <div className="container relative z-20 h-full mx-auto px-4">
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -115,71 +109,84 @@ export default function BecomePractitionerPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="max-w-4xl"
+              className="max-w-5xl"
             >
-              <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-4 drop-shadow-md leading-tight">
-                Grow Your Practice. Earn With Purpose.
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-8 shadow-sm">
+                <Sparkles className="h-4 w-4 text-terracotta-600" strokeWidth="1.5" />
+                <span className="text-sm text-olive-700 font-medium">For Practitioners</span>
+              </div>
+
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium text-olive-900 mb-6 leading-tight">
+                Share Your Gifts.
+                <br />
+                <span className="text-gradient bg-gradient-to-r from-terracotta-600 to-sage-600 bg-clip-text text-transparent">
+                  Transform Lives.
+                </span>
               </h1>
-              <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-sm font-light">
-                Join Estuary's marketplace of purpose-driven practitioners and transform your impact.
+              
+              <p className="text-xl md:text-2xl text-olive-700 mb-10 max-w-3xl mx-auto leading-relaxed">
+                Join our community of purpose-driven practitioners and create sustainable income while making a meaningful impact.
               </p>
 
               {/* Social proof */}
-              <div className="mb-8 text-white/80 text-lg">
-                <span className="inline-flex items-center">
-                  <Users className="h-5 w-5 mr-2" />
-                  Trusted by 500+ practitioners worldwide
-                </span>
-                <span className="mx-4">•</span>
-                <span className="inline-flex items-center">
-                  <Wallet className="h-5 w-5 mr-2" />
-                  Over $1M earned by our community
-                </span>
+              <div className="flex flex-wrap justify-center gap-8 text-olive-600 mb-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-sage-500 rounded-full" />
+                  <span>500+ Trusted Practitioners</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-terracotta-500 rounded-full" />
+                  <span>$1M+ Community Earnings</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blush-500 rounded-full" />
+                  <span>Growing Since 2020</span>
+                </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                 <Button
                   size="lg"
                   onClick={scrollToSubscriptionTiers}
-                  className="px-8 py-7 text-lg rounded-full shadow-lg bg-gradient-to-r from-primary to-primary/80 hover:scale-105 transition-transform"
+                  className="px-8 py-6 text-lg rounded-2xl shadow-lg bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
                 >
-                  Start Earning Today
+                  Begin Your Journey
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={() => howItWorksRef.current?.scrollIntoView({ behavior: "smooth" })}
-                  className="px-8 py-7 text-lg rounded-full shadow-lg bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 hover:border-white/30"
+                  className="px-8 py-6 text-lg rounded-2xl border-sage-300 text-sage-700 hover:bg-sage-50"
                 >
                   How It Works
                 </Button>
               </div>
 
               {/* Key benefits highlight */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                 {[
                   {
-                    icon: <Eye className="h-6 w-6" />,
+                    icon: <Eye className="h-6 w-6" strokeWidth="1.5" />,
                     title: "Multiple Formats",
                     description: "Offer sessions, courses & workshops",
                   },
                   {
-                    icon: <Wallet className="h-6 w-6" />,
+                    icon: <Wallet className="h-6 w-6" strokeWidth="1.5" />,
                     title: "Secure Payments",
                     description: "Get paid easily for your valuable work",
                   },
                   {
-                    icon: <Users className="h-6 w-6" />,
+                    icon: <Users className="h-6 w-6" strokeWidth="1.5" />,
                     title: "Subscription Income",
                     description: "Create recurring revenue streams",
                   },
                 ].map((benefit, index) => (
-                  <div key={index} className="bg-white/10 backdrop-blur-md rounded-lg p-4 text-white text-center">
-                    <div className="bg-primary/20 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center mx-auto mb-2">
+                  <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all">
+                    <div className="w-12 h-12 bg-gradient-to-br from-sage-100 to-terracotta-100 text-olive-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       {benefit.icon}
                     </div>
-                    <h3 className="font-medium mb-1">{benefit.title}</h3>
-                    <p className="text-sm text-white/80">{benefit.description}</p>
+                    <h3 className="font-semibold text-olive-900 mb-2">{benefit.title}</h3>
+                    <p className="text-sm text-olive-600">{benefit.description}</p>
                   </div>
                 ))}
               </div>
@@ -187,7 +194,7 @@ export default function BecomePractitionerPage() {
           </div>
         </div>
 
-        {/* Enhanced scroll indicator */}
+        {/* Organic scroll indicator */}
         <motion.div
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
           initial={{ opacity: 0 }}
@@ -199,8 +206,8 @@ export default function BecomePractitionerPage() {
             transition={{ repeat: Number.POSITIVE_INFINITY, duration: 2 }}
             className="flex flex-col items-center"
           >
-            <span className="text-white/70 text-sm mb-2">Scroll to explore</span>
-            <ChevronDown className="h-8 w-8 text-white/70" />
+            <span className="text-olive-600 text-sm mb-2">Discover More</span>
+            <ChevronDown className="h-6 w-6 text-olive-600" strokeWidth="1.5" />
           </motion.div>
         </motion.div>
       </div>
@@ -209,9 +216,11 @@ export default function BecomePractitionerPage() {
       <SectionConnector type="wave" fromColor="#000000" toColor="#f8f5f2" height={100} />
 
       {/* Enhanced Benefits Section */}
-      <div className="bg-[#f8f5f2] relative overflow-hidden">
-        <BackgroundPattern pattern="dots" position="top-right" opacity={0.03} scale={1.5} color="#000000" />
-        <BackgroundPattern pattern="dots" position="bottom-left" opacity={0.03} scale={1.5} color="#000000" />
+      <div className="bg-gradient-to-b from-sage-50/30 to-terracotta-50/30 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 texture-grain opacity-10" />
+        <div className="absolute top-20 -right-40 w-[600px] h-[600px] bg-terracotta-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-sage-200/40 rounded-full blur-3xl" />
 
         <div className="container px-4 mx-auto py-20">
           <motion.div
@@ -223,16 +232,14 @@ export default function BecomePractitionerPage() {
             variants={containerVariants}
           >
             <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1 text-base bg-primary/10 text-primary border-primary/20 rounded-full">
-                Why Join Us
-              </Badge>
-              <h2 className="text-4xl font-bold mb-6 relative inline-block">
-                <span className="relative">
-                  The Estuary Advantage
-                  <span className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-20 h-1 bg-primary rounded-full"></span>
-                </span>
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
+                <Sparkles className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                <span className="text-sm text-olive-700 font-medium">Why Join Us</span>
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
+                The Estuary Advantage
               </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-lg text-olive-600 max-w-3xl mx-auto leading-relaxed">
                 Estuary is more than a marketplace—it's a complete ecosystem designed for practitioners to grow, build
                 community, and create sustainable income streams.
               </p>
@@ -241,50 +248,50 @@ export default function BecomePractitionerPage() {
             <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" variants={containerVariants}>
               {[
                 {
-                  icon: <Eye className="h-12 w-12" />,
+                  icon: <Eye className="h-12 w-12" strokeWidth="1.5" />,
                   title: "Offer Multiple Formats",
                   description:
                     "Create and sell sessions, courses, and workshops. Design offerings that match your expertise and your clients' needs.",
                 },
                 {
-                  icon: <Wallet className="h-12 w-12" />,
+                  icon: <Wallet className="h-12 w-12" strokeWidth="1.5" />,
                   title: "Manage Your Practice",
                   description:
                     "Handle clients, bookings, and messages all in one place. We take care of the admin so you can focus on your work.",
                 },
                 {
-                  icon: <Calendar className="h-12 w-12" />,
+                  icon: <Calendar className="h-12 w-12" strokeWidth="1.5" />,
                   title: "Secure Payments",
                   description:
                     "Accept payments securely and track your earnings. Get paid for your valuable work without payment hassles.",
                 },
                 {
-                  icon: <Users className="h-12 w-12" />,
+                  icon: <Users className="h-12 w-12" strokeWidth="1.5" />,
                   title: "Estuary Streams",
                   description:
                     "Create subscription-based content streams for exclusive content and ongoing client support.",
                 },
                 {
-                  icon: <Zap className="h-12 w-12" />,
+                  icon: <Zap className="h-12 w-12" strokeWidth="1.5" />,
                   title: "Practitioner Community",
                   description:
                     "Join a network of aligned, purpose-driven practitioners. Share knowledge, collaborate, and grow together.",
                 },
                 {
-                  icon: <Laptop className="h-12 w-12" />,
+                  icon: <Laptop className="h-12 w-12" strokeWidth="1.5" />,
                   title: "Integrated Platform",
                   description:
                     "Everything you need in one place - from client management to content creation to payment processing.",
                 },
               ].map((benefit, index) => (
                 <motion.div key={index} variants={itemVariants}>
-                  <Card className="h-full transition-all duration-300 hover:translate-y-[-8px] hover:shadow-lg border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 shadow-md">
+                  <Card className="h-full transition-all duration-300 hover:translate-y-[-8px] hover:shadow-xl border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl">
                     <CardContent className="p-8 text-center">
-                      <div className="bg-primary/10 text-primary rounded-full p-4 w-20 h-20 flex items-center justify-center mx-auto mb-6 transition-transform duration-300 hover:scale-110">
+                      <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 text-olive-700 rounded-2xl p-4 w-20 h-20 flex items-center justify-center mx-auto mb-6 transition-transform duration-300 hover:scale-110">
                         {benefit.icon}
                       </div>
-                      <h3 className="text-xl font-semibold mb-3">{benefit.title}</h3>
-                      <p className="text-muted-foreground">{benefit.description}</p>
+                      <h3 className="text-xl font-semibold text-olive-900 mb-3">{benefit.title}</h3>
+                      <p className="text-olive-600">{benefit.description}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -298,8 +305,10 @@ export default function BecomePractitionerPage() {
       <SectionConnector type="curve" fromColor="#f8f5f2" toColor="#ffffff" height={100} />
 
       {/* Enhanced Subscription Tiers */}
-      <div className="bg-white relative overflow-hidden">
-        <BackgroundPattern pattern="wave" position="top-right" opacity={0.03} scale={1.5} color="#000000" rotate={45} />
+      <div className="bg-gradient-to-b from-cream-50 to-white relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 texture-grain opacity-10" />
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-blush-200/30 rounded-full blur-3xl" />
 
         <div className="container px-4 mx-auto py-20">
           <motion.div
@@ -311,16 +320,14 @@ export default function BecomePractitionerPage() {
             variants={containerVariants}
           >
             <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1 text-base bg-primary/10 text-primary border-primary/20 rounded-full">
-                Pricing Plans
-              </Badge>
-              <h2 className="text-4xl font-bold mb-6 relative inline-block">
-                <span className="relative">
-                  Choose Your Path
-                  <span className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-20 h-1 bg-primary rounded-full"></span>
-                </span>
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
+                <Sparkles className="h-4 w-4 text-terracotta-600" strokeWidth="1.5" />
+                <span className="text-sm text-olive-700 font-medium">Pricing Plans</span>
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
+                Choose Your Path
               </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-lg text-olive-600 max-w-3xl mx-auto leading-relaxed">
                 We offer flexible tiers so you can start simple or scale big. Choose the plan that works for your
                 practice.
               </p>
@@ -385,23 +392,22 @@ export default function BecomePractitionerPage() {
                 <motion.div key={index} variants={itemVariants}>
                   <Card
                     className={cn(
-                      "h-full transition-all duration-500 relative",
-                      hoveredCard === tier.name ? "scale-105 shadow-xl z-10" : "scale-100 shadow-md z-0",
-                      tier.highlight ? "border-2 border-primary" : "border border-border",
-                      tier.highlight ? "bg-gradient-to-b from-primary/5 to-transparent" : "",
+                      "h-full transition-all duration-500 relative border-0 rounded-2xl",
+                      hoveredCard === tier.name ? "scale-105 shadow-2xl z-10" : "scale-100 shadow-lg z-0",
+                      tier.highlight ? "bg-gradient-to-b from-sage-50 to-white" : "bg-white/80 backdrop-blur-sm",
                     )}
                     onMouseEnter={() => setHoveredCard(tier.name)}
                     onMouseLeave={() => setHoveredCard(null)}
                   >
                     <div className="absolute top-4 right-4">
-                      <Badge className={cn("px-3 py-1", tier.badgeColor)}>{tier.badge}</Badge>
+                      <Badge className={cn("px-3 py-1 rounded-full", tier.highlight ? "bg-sage-200 text-olive-800" : "bg-terracotta-100 text-olive-700")}>{tier.badge}</Badge>
                     </div>
 
                     <CardContent className="pt-10 pb-6 px-6 text-center">
                       <div className="text-4xl mb-2">{tier.emoji}</div>
                       <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
                       <p className="text-xl font-medium mb-1">{tier.price}</p>
-                      <p className="text-primary font-medium mb-4">Platform fee: {tier.fee}</p>
+                      <p className="text-sage-700 font-medium mb-4">Platform fee: {tier.fee}</p>
                       <p className="text-muted-foreground mb-6">{tier.description}</p>
 
                       <Separator className="my-6" />
@@ -409,10 +415,10 @@ export default function BecomePractitionerPage() {
                       <ul className="space-y-4 text-left mb-8">
                         {tier.features.map((feature, idx) => (
                           <li key={idx} className="flex items-start">
-                            <div className="bg-primary/10 rounded-full p-1 mr-3 mt-0.5 flex-shrink-0">
-                              <Check className="h-4 w-4 text-primary" />
+                            <div className="bg-sage-100 rounded-full p-1 mr-3 mt-0.5 flex-shrink-0">
+                              <Check className="h-4 w-4 text-sage-700" strokeWidth="1.5" />
                             </div>
-                            <span>{feature}</span>
+                            <span className="text-olive-700">{feature}</span>
                           </li>
                         ))}
                       </ul>
@@ -422,19 +428,21 @@ export default function BecomePractitionerPage() {
                       <Button
                         variant={hoveredCard === tier.name ? "default" : "outline"}
                         className={cn(
-                          "w-full py-6 rounded-full transition-all duration-300",
+                          "w-full py-6 rounded-2xl transition-all duration-300",
                           tier.highlight && hoveredCard !== tier.name
-                            ? "border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                            : "",
+                            ? "border-sage-300 text-sage-700 hover:bg-sage-50"
+                            : hoveredCard === tier.name
+                            ? "bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+                            : "border-sage-300 text-sage-700 hover:bg-sage-50",
                         )}
                         onClick={() => handleGetStarted(tier.name)}
                       >
                         {hoveredCard === tier.name ? (
                           <span className="flex items-center">
-                            Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                            Begin Your Journey <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
                           </span>
                         ) : (
-                          "Get Started"
+                          "Begin Your Journey"
                         )}
                       </Button>
                     </CardFooter>
@@ -450,8 +458,11 @@ export default function BecomePractitionerPage() {
       <SectionConnector type="angle" fromColor="#ffffff" toColor="#f5f0eb" height={100} />
 
       {/* Enhanced How It Works Section */}
-      <div className="bg-[#f5f0eb] relative overflow-hidden">
-        <BackgroundPattern pattern="leaf" position="bottom-right" opacity={0.04} scale={1.2} color="#000000" />
+      <div className="bg-gradient-to-b from-white via-blush-50/30 to-cream-50 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 texture-grain opacity-10" />
+        <div className="absolute top-20 -left-40 w-[500px] h-[500px] bg-sage-200/30 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-terracotta-200/30 rounded-full blur-3xl" />
 
         <div className="container px-4 mx-auto py-20">
           <motion.div
@@ -463,16 +474,14 @@ export default function BecomePractitionerPage() {
             variants={containerVariants}
           >
             <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1 text-base bg-primary/10 text-primary border-primary/20 rounded-full">
-                The Process
-              </Badge>
-              <h2 className="text-4xl font-bold mb-6 relative inline-block">
-                <span className="relative">
-                  How to Get Started
-                  <span className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-20 h-1 bg-primary rounded-full"></span>
-                </span>
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
+                <Sparkles className="h-4 w-4 text-blush-600" strokeWidth="1.5" />
+                <span className="text-sm text-olive-700 font-medium">The Process</span>
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
+                How to Get Started
               </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-lg text-olive-600 max-w-3xl mx-auto leading-relaxed">
                 Our simple application process helps you set up your practice on Estuary. Here's what to expect.
               </p>
             </div>
@@ -486,7 +495,7 @@ export default function BecomePractitionerPage() {
                         <div
                           className={cn(
                             "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-lg font-medium",
-                            index === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                            index === 0 ? "bg-sage-600 text-white" : "bg-sage-100 text-olive-600",
                           )}
                         >
                           {index + 1}
@@ -497,7 +506,7 @@ export default function BecomePractitionerPage() {
                   ),
                 )}
                 {/* Connection line */}
-                <div className="absolute top-7 left-0 w-full h-0.5 bg-muted -z-0"></div>
+                <div className="absolute top-7 left-0 w-full h-0.5 bg-sage-200 -z-0"></div>
               </div>
             </div>
 
@@ -506,9 +515,9 @@ export default function BecomePractitionerPage() {
               variants={containerVariants}
             >
               <motion.div variants={itemVariants}>
-                <Card className="h-full transition-all duration-300 hover:shadow-lg hover:border-primary bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
+                <Card className="h-full transition-all duration-300 hover:shadow-xl border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl">
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-semibold text-primary mb-6">Practitioner Application Process</h3>
+                    <h3 className="text-2xl font-semibold text-sage-700 mb-6">Practitioner Application Process</h3>
                     <ul className="space-y-6">
                       {[
                         {
@@ -533,12 +542,12 @@ export default function BecomePractitionerPage() {
                         },
                       ].map((item, index) => (
                         <li key={index} className="flex">
-                          <div className="bg-primary/10 rounded-full p-2 mr-4 mt-0.5 h-8 w-8 flex items-center justify-center flex-shrink-0">
-                            <Check className="h-4 w-4 text-primary" />
+                          <div className="bg-sage-100 rounded-full p-2 mr-4 mt-0.5 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-4 w-4 text-sage-700" strokeWidth="1.5" />
                           </div>
                           <div>
-                            <p className="font-semibold text-lg">{item.primary}</p>
-                            <p className="text-muted-foreground">{item.secondary}</p>
+                            <p className="font-semibold text-lg text-olive-900">{item.primary}</p>
+                            <p className="text-olive-600">{item.secondary}</p>
                           </div>
                         </li>
                       ))}
@@ -548,9 +557,9 @@ export default function BecomePractitionerPage() {
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <Card className="h-full transition-all duration-300 hover:shadow-lg hover:border-primary bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
+                <Card className="h-full transition-all duration-300 hover:shadow-xl border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl">
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-semibold text-primary mb-6">What Happens After Submission?</h3>
+                    <h3 className="text-2xl font-semibold text-sage-700 mb-6">What Happens After Submission?</h3>
                     <ul className="space-y-6">
                       {[
                         {
@@ -575,12 +584,12 @@ export default function BecomePractitionerPage() {
                         },
                       ].map((item, index) => (
                         <li key={index} className="flex">
-                          <div className="bg-primary/10 rounded-full p-2 mr-4 mt-0.5 h-8 w-8 flex items-center justify-center flex-shrink-0">
-                            <Star className="h-4 w-4 text-primary" />
+                          <div className="bg-terracotta-100 rounded-full p-2 mr-4 mt-0.5 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                            <Star className="h-4 w-4 text-terracotta-700" strokeWidth="1.5" />
                           </div>
                           <div>
-                            <p className="font-semibold text-lg">{item.primary}</p>
-                            <p className="text-muted-foreground">{item.secondary}</p>
+                            <p className="font-semibold text-lg text-olive-900">{item.primary}</p>
+                            <p className="text-olive-600">{item.secondary}</p>
                           </div>
                         </li>
                       ))}
@@ -597,16 +606,11 @@ export default function BecomePractitionerPage() {
       <SectionConnector type="wave" fromColor="#f5f0eb" toColor="#ffffff" height={100} />
 
       {/* Enhanced Testimonials Section */}
-      <div className="bg-white relative overflow-hidden">
-        <BackgroundPattern pattern="flow" position="top-left" opacity={0.03} scale={1.5} color="#000000" />
-        <BackgroundPattern
-          pattern="flow"
-          position="bottom-right"
-          opacity={0.03}
-          scale={1.5}
-          color="#000000"
-          rotate={180}
-        />
+      <div className="bg-gradient-to-b from-cream-50 to-sage-50/30 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 texture-grain opacity-10" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blush-200/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-sage-200/30 rounded-full blur-3xl" />
 
         <div className="container px-4 mx-auto py-20">
           <motion.div
@@ -618,16 +622,14 @@ export default function BecomePractitionerPage() {
             variants={containerVariants}
           >
             <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1 text-base bg-primary/10 text-primary border-primary/20 rounded-full">
-                Success Stories
-              </Badge>
-              <h2 className="text-4xl font-bold mb-6 relative inline-block">
-                <span className="relative">
-                  Hear From Our Practitioners
-                  <span className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-20 h-1 bg-primary rounded-full"></span>
-                </span>
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
+                <Sparkles className="h-4 w-4 text-rose-600" strokeWidth="1.5" />
+                <span className="text-sm text-olive-700 font-medium">Success Stories</span>
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
+                Hear From Our Practitioners
               </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-lg text-olive-600 max-w-3xl mx-auto leading-relaxed">
                 Join hundreds of practitioners who have grown their practice with Estuary.
               </p>
             </div>
@@ -660,25 +662,26 @@ export default function BecomePractitionerPage() {
                 },
               ].map((testimonial, index) => (
                 <motion.div key={index} variants={itemVariants}>
-                  <Card className="h-full transition-all duration-300 hover:translate-y-[-8px] hover:shadow-lg overflow-hidden">
+                  <Card className="h-full transition-all duration-300 hover:translate-y-[-8px] hover:shadow-xl overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl">
                     <CardContent className="p-0">
-                      <div className="bg-primary/5 p-6">
+                      <div className="bg-gradient-to-br from-sage-50 to-terracotta-50 p-6">
                         <div className="flex items-center">
-                          <Avatar className="h-16 w-16 border-4 border-white shadow-md mr-4">
-                            <AvatarImage src={testimonial.image || "/placeholder.svg"} alt={testimonial.name} />
-                            <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                          <div className="h-16 w-16 border-4 border-white shadow-md mr-4 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
+                            <span className="text-lg font-semibold text-olive-800">
+                              {testimonial.name.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
                           <div>
-                            <h3 className="font-semibold text-lg">{testimonial.name}</h3>
-                            <p className="text-muted-foreground">{testimonial.role}</p>
+                            <h3 className="font-semibold text-lg text-olive-900">{testimonial.name}</h3>
+                            <p className="text-olive-600">{testimonial.role}</p>
                           </div>
                         </div>
                       </div>
                       <div className="p-6 relative">
-                        <div className="absolute top-0 right-6 transform -translate-y-1/2 text-primary/20 text-6xl font-serif">
+                        <div className="absolute top-0 right-6 transform -translate-y-1/2 text-sage-200 text-6xl font-serif">
                           "
                         </div>
-                        <p className="italic relative z-10 text-muted-foreground">"{testimonial.testimonial}"</p>
+                        <p className="italic relative z-10 text-olive-600">"{testimonial.testimonial}"</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -693,8 +696,11 @@ export default function BecomePractitionerPage() {
       <SectionConnector type="curve" fromColor="#ffffff" toColor="#f8f5f2" height={100} />
 
       {/* Enhanced FAQ Section with Accordion */}
-      <div className="bg-[#f8f5f2] relative overflow-hidden">
-        <BackgroundPattern pattern="grid" position="bottom-left" opacity={0.03} scale={1.5} color="#000000" />
+      <div className="bg-gradient-to-b from-sage-50/30 to-cream-50 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 texture-grain opacity-10" />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-sage-200/30 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-terracotta-200/30 rounded-full blur-3xl" />
 
         <div className="container px-4 mx-auto py-20">
           <motion.div
@@ -706,22 +712,20 @@ export default function BecomePractitionerPage() {
             variants={containerVariants}
           >
             <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1 text-base bg-primary/10 text-primary border-primary/20 rounded-full">
-                Common Questions
-              </Badge>
-              <h2 className="text-4xl font-bold mb-6 relative inline-block">
-                <span className="relative">
-                  Frequently Asked Questions
-                  <span className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-20 h-1 bg-primary rounded-full"></span>
-                </span>
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
+                <Sparkles className="h-4 w-4 text-olive-600" strokeWidth="1.5" />
+                <span className="text-sm text-olive-700 font-medium">Common Questions</span>
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
+                Frequently Asked Questions
               </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-lg text-olive-600 max-w-3xl mx-auto leading-relaxed">
                 Find answers to common questions about joining Estuary as a practitioner.
               </p>
             </div>
 
             <div className="max-w-4xl mx-auto">
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion type="single" collapsible className="w-full bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg">
                 {[
                   {
                     question: "What are the platform fees?",
@@ -764,11 +768,11 @@ export default function BecomePractitionerPage() {
                       "Yes! Estuary supports both virtual and in-person offerings. You can set location preferences and manage your availability for each type of service separately.",
                   },
                 ].map((faq, index) => (
-                  <AccordionItem key={index} value={`item-${index}`} className="border-b border-muted">
-                    <AccordionTrigger className="text-lg font-medium py-4 hover:no-underline hover:text-primary">
+                  <AccordionItem key={index} value={`item-${index}`} className="border-b border-sage-200">
+                    <AccordionTrigger className="text-lg font-medium text-olive-900 py-4 hover:no-underline hover:text-sage-700">
                       {faq.question}
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground pb-4 pt-2">{faq.answer}</AccordionContent>
+                    <AccordionContent className="text-olive-600 pb-4 pt-2">{faq.answer}</AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
@@ -784,14 +788,17 @@ export default function BecomePractitionerPage() {
       <div className="bg-white py-20">
         <div className="container px-4 mx-auto">
           <motion.div
-            className="rounded-2xl overflow-hidden relative"
+            className="rounded-3xl overflow-hidden relative"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary-foreground z-0"></div>
-            <div className="absolute inset-0 bg-[url('/decorative-pattern.svg')] opacity-10 z-0"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-sage-600 via-terracotta-600 to-sage-700 z-0"></div>
+            <div className="absolute inset-0 texture-grain opacity-20 z-0"></div>
+            {/* Decorative blobs */}
+            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl" />
 
             <div className="relative z-10 p-12 md:p-16 text-center">
               <motion.div
@@ -801,7 +808,7 @@ export default function BecomePractitionerPage() {
                 transition={{ delay: 0.2, duration: 0.6 }}
               >
                 <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">Ready to Transform Your Practice?</h2>
-                <p className="text-xl mb-8 max-w-3xl mx-auto text-white/90">
+                <p className="text-xl mb-8 max-w-3xl mx-auto text-white/90 leading-relaxed">
                   Join hundreds of practitioners who are growing their business, reaching more clients, and creating
                   sustainable income on Estuary.
                 </p>
@@ -809,17 +816,17 @@ export default function BecomePractitionerPage() {
                   <Button
                     size="lg"
                     onClick={scrollToSubscriptionTiers}
-                    className="bg-white text-primary hover:bg-white/90 px-8 py-6 text-lg rounded-full shadow-lg"
+                    className="bg-white text-sage-700 hover:bg-white/90 px-8 py-6 text-lg rounded-2xl shadow-xl font-medium"
                   >
-                    Apply Now — Free to Join
+                    Begin Your Journey — Free to Start
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
                     onClick={() => howItWorksRef.current?.scrollIntoView({ behavior: "smooth" })}
-                    className="border-white text-white hover:bg-white/20 px-8 py-6 text-lg rounded-full"
+                    className="border-white/40 text-white hover:bg-white/20 px-8 py-6 text-lg rounded-2xl backdrop-blur-sm"
                   >
-                    See How It Works
+                    Explore the Process
                   </Button>
                 </div>
               </motion.div>

@@ -79,110 +79,66 @@ export default function FeaturedPractitionersSection() {
           </Button>
         </div>
 
-        {/* Organic, uneven grid layout inspired by Octave */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 max-w-6xl mx-auto">
-          {FEATURED_PRACTITIONERS.map((practitioner, index) => {
-            // Create intentional vertical offsets for stepping stone effect
-            const offsetClasses = [
-              "mt-0",      // First card - baseline
-              "mt-8",      // Second card - pushed down
-              "mt-4",      // Third card - slight offset
-              "mt-12"      // Fourth card - more dramatic offset
-            ]
-            
-            const rotateClasses = [
-              "hover:rotate-1",         // Gentle rotation on hover
-              "hover:-rotate-1", 
-              "hover:rotate-2",
-              "hover:-rotate-0.5"
-            ]
-
-            return (
-              <div
-                key={practitioner.id}
-                className={`${offsetClasses[index]} animate-slide-up`}
-                style={{animationDelay: `${index * 0.15}s`}}
+        {/* Clean aligned grid like MasterClass */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {FEATURED_PRACTITIONERS.map((practitioner, index) => (
+            <div
+              key={practitioner.id}
+              className="animate-slide-up"
+              style={{animationDelay: `${index * 0.1}s`}}
+            >
+              <Link
+                href={`/practitioners/practitioner-${practitioner.id}`}
+                className="group block transform transition-all duration-300 hover:scale-105"
               >
-                <Link
-                  href={`/practitioners/practitioner-${practitioner.id}`}
-                  className={`group block transform transition-all duration-500 hover:scale-105 ${rotateClasses[index]}`}
-                >
-                  <Card className="overflow-visible border-0 shadow-lg hover:shadow-2xl transition-all duration-500 rounded-[28px] bg-white relative">
-                    {/* Minimalist top accent strip */}
-                    <div className="h-3 bg-gradient-to-r from-sage-200 via-terracotta-200 to-blush-200 rounded-t-[28px]" />
+                <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
+                  {/* Avatar section */}
+                  <div className="p-8 pb-4 text-center">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg mb-4">
+                      <span className="text-2xl font-medium text-olive-800">
+                        {practitioner.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
+                    <p className="text-olive-600 text-sm mb-3">{practitioner.specialty}</p>
+                    
+                    <div className="flex items-center justify-center gap-1 text-sm text-olive-600 mb-4">
+                      <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
+                      <span className="font-medium">{practitioner.rating}</span>
+                      <span className="text-olive-400">•</span>
+                      <span>{practitioner.location}</span>
+                    </div>
+                  </div>
 
-                    {/* Main content area with avatar */}
-                    <CardContent className="p-8 text-center bg-white rounded-b-[28px] relative">
-                      {/* Floating avatar that breaks the top boundary */}
-                      <div className="relative -mt-12 mb-6">
-                        <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 p-1 shadow-xl">
-                          <div className="w-full h-full rounded-full bg-white flex items-center justify-center shadow-inner">
-                            <span className="text-2xl font-medium text-olive-800">
-                              {practitioner.name.split(' ').map(n => n[0]).join('')}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Available badge floating beside avatar */}
-                        <div className="absolute -top-1 -right-6 bg-sage-600 text-white px-2.5 py-1 rounded-full shadow-lg text-xs font-medium transform rotate-12 hover:rotate-6 transition-transform">
-                          {practitioner.nextAvailable}
-                        </div>
-                      </div>
+                  {/* Bottom section */}
+                  <div className="px-8 pb-8">
+                    <div className="flex flex-wrap justify-center gap-2 mb-6">
+                      {practitioner.modalities.slice(0, 2).map((modality) => (
+                        <span 
+                          key={modality} 
+                          className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full"
+                        >
+                          {modality}
+                        </span>
+                      ))}
+                      {practitioner.modalities.length > 2 && (
+                        <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
+                      )}
+                    </div>
 
-                      {/* Rating badge in top corner */}
-                      <div className="absolute top-6 right-6 bg-cream-100 px-3 py-1.5 rounded-2xl shadow-md transform -rotate-2 hover:rotate-0 transition-transform">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
-                          <span className="text-sm font-semibold text-olive-800">{practitioner.rating}</span>
-                        </div>
-                      </div>
-
-                      <h3 className="text-xl font-semibold text-olive-900 mb-2">{practitioner.name}</h3>
-                      <p className="text-olive-600 mb-4 font-medium">{practitioner.specialty}</p>
-                      
-                      <div className="flex items-center justify-center gap-2 text-sm text-olive-600 mb-6">
-                        <MapPin className="h-4 w-4" strokeWidth="1.5" />
-                        <span>{practitioner.location}</span>
-                      </div>
-
-                      {/* Organically positioned modality tags */}
-                      <div className="flex flex-wrap justify-center gap-2 mb-8">
-                        {practitioner.modalities.slice(0, 2).map((modality, idx) => (
-                          <span 
-                            key={modality} 
-                            className={`text-xs px-3 py-2 bg-sage-100/70 text-olive-700 rounded-full border border-sage-200 transform transition-all hover:scale-110 hover:bg-sage-100 ${
-                              idx % 2 ? 'rotate-1 hover:rotate-0' : '-rotate-1 hover:rotate-0'
-                            }`}
-                          >
-                            {modality}
-                          </span>
-                        ))}
-                        {practitioner.modalities.length > 2 && (
-                          <span className="text-xs text-olive-600 self-center opacity-75">+{practitioner.modalities.length - 2}</span>
-                        )}
-                      </div>
-
-                      {/* Quote or specialty highlight */}
-                      <div className="bg-gradient-to-r from-sage-50 to-terracotta-50 rounded-2xl p-4 mb-6 transform -rotate-1 hover:rotate-0 transition-transform">
-                        <p className="text-sm text-olive-700 italic">
-                          "Guiding you toward deeper self-awareness and lasting well-being"
-                        </p>
-                      </div>
-
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="w-full text-sage-700 hover:text-sage-800 hover:bg-sage-50 rounded-[20px] group border border-sage-200 hover:border-sage-300 py-3 font-medium hover:shadow-md transition-all"
-                      >
-                        <span>Connect with {practitioner.name.split(' ')[0]}</span>
-                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" strokeWidth="1.5" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </div>
-            )
-          })}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400"
+                    >
+                      View Profile
+                    </Button>
+                  </div>
+                </Card>
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
     </section>
