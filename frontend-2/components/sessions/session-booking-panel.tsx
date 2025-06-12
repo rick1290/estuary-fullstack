@@ -152,10 +152,10 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                     <div
                       key={date.date}
                       onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border-2 transition-all text-sm ${
+                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border-2 transition-all ${
                         selectedDate === `${date.day}, ${date.date}`
-                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
-                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50"
+                          ? "border-sage-600 bg-sage-600 text-white shadow-md"
+                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
                       }`}
                     >
                       <p className="font-medium text-xs">{date.day}</p>

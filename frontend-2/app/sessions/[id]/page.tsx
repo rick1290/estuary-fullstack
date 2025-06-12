@@ -256,9 +256,9 @@ export default function SessionDetailsPage({ params }: { params: { id: string } 
           </Button>
         </div>
 
-        <div className="grid gap-16 lg:grid-cols-3">
+        <div className="grid gap-12 lg:grid-cols-[1fr_360px]">
           {/* Main Content - Left Side */}
-          <div className="lg:col-span-2 space-y-20">
+          <div className="space-y-20">
             {/* Immersive Overview Section */}
             <section className="animate-fade-in">
               <div className="relative">

@@ -9,14 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 
 export default function SignupPage() {
   const router = useRouter()
   const [activeStep, setActiveStep] = useState(0)
-  const [userType, setUserType] = useState<"client" | "practitioner">("client")
+  const [userType] = useState<"client">("client")
   const [error, setError] = useState("")
 
   // Form fields
@@ -74,52 +73,41 @@ export default function SignupPage() {
       userType,
     })
 
-    // Redirect to dashboard based on user type
-    if (userType === "client") {
-      router.push("/dashboard/client")
-    } else {
-      router.push("/dashboard/practitioner")
-    }
+    // Redirect to user dashboard
+    router.push("/dashboard/user")
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-b from-warm-50 to-white py-8">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-sage-50 via-cream-100 to-cream-50 py-8">
       <div className="w-full max-w-md px-4">
-        <Card className="border-gray-100 shadow-lg">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-3xl font-medium">Create an Account</CardTitle>
-            <CardDescription className="text-gray-600">Join the Estuary community</CardDescription>
+        <Card className="border-sage-200 shadow-xl bg-white/95 backdrop-blur-sm relative overflow-hidden">
+          {/* Subtle background pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-sage-50/30 to-terracotta-50/30" />
+          <CardHeader className="text-center pb-4 relative z-10">
+            <CardTitle className="text-3xl font-medium text-olive-900">Create an Account</CardTitle>
+            <CardDescription className="text-olive-600">Join the Estuary community</CardDescription>
           </CardHeader>
-        <CardContent>
-          <Tabs
-            value={userType}
-            onValueChange={(value) => setUserType(value as "client" | "practitioner")}
-            className="mb-6"
-          >
-            <TabsList className="grid w-full grid-cols-2 bg-gray-100">
-              <TabsTrigger value="client" className="data-[state=active]:bg-white">Client</TabsTrigger>
-              <TabsTrigger value="practitioner" className="data-[state=active]:bg-white">Practitioner</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <CardContent className="relative z-10">
+          {/* Remove user type selection - handle this on become-practitioner page */}
 
           <div className="mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${activeStep >= 0 ? "border-primary bg-primary text-primary-foreground" : "border-muted text-muted-foreground"}`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${activeStep >= 0 ? "border-sage-600 bg-sage-600 text-white" : "border-sage-300 text-sage-600"}`}
                 >
                   {activeStep > 0 ? "✓" : "1"}
                 </div>
-                <div className="ml-2 text-sm font-medium">Personal Info</div>
+                <div className="ml-2 text-sm font-medium text-olive-700">Personal Info</div>
               </div>
-              <div className="h-px w-12 bg-muted"></div>
+              <div className="h-px w-12 bg-sage-200"></div>
               <div className="flex items-center">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${activeStep >= 1 ? "border-primary bg-primary text-primary-foreground" : "border-muted text-muted-foreground"}`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${activeStep >= 1 ? "border-sage-600 bg-sage-600 text-white" : "border-sage-300 text-sage-600"}`}
                 >
                   2
                 </div>
-                <div className="ml-2 text-sm font-medium">Security</div>
+                <div className="ml-2 text-sm font-medium text-olive-700">Security</div>
               </div>
             </div>
           </div>
@@ -138,12 +126,12 @@ export default function SignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute left-3 top-3 h-4 w-4 text-olive-500" />
                       <Input
                         id="firstName"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 border-sage-300 focus:border-sage-500 focus:ring-sage-500"
                         placeholder="First name"
                         required
                       />
@@ -153,12 +141,12 @@ export default function SignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute left-3 top-3 h-4 w-4 text-olive-500" />
                       <Input
                         id="lastName"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 border-sage-300 focus:border-sage-500 focus:ring-sage-500"
                         placeholder="Last name"
                         required
                       />
@@ -169,13 +157,13 @@ export default function SignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-olive-500" />
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 border-sage-300 focus:border-sage-500 focus:ring-sage-500"
                       placeholder="Enter your email"
                       required
                     />
@@ -192,20 +180,20 @@ export default function SignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-olive-500" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 border-sage-300 focus:border-sage-500 focus:ring-sage-500"
                       placeholder="Create a password"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-3 text-olive-500 hover:text-olive-700"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -215,13 +203,13 @@ export default function SignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-olive-500" />
                     <Input
                       id="confirmPassword"
                       type={showPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 border-sage-300 focus:border-sage-500 focus:ring-sage-500"
                       placeholder="Confirm your password"
                       required
                     />
@@ -234,13 +222,13 @@ export default function SignupPage() {
                     checked={agreeToTerms}
                     onCheckedChange={(checked) => setAgreeToTerms(checked === true)}
                   />
-                  <Label htmlFor="terms" className="text-sm">
+                  <Label htmlFor="terms" className="text-sm text-olive-700">
                     I agree to the{" "}
-                    <Link href="/terms" className="text-primary hover:underline">
+                    <Link href="/terms" className="text-sage-700 hover:text-sage-900 hover:underline">
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="/privacy" className="text-primary hover:underline">
+                    <Link href="/privacy" className="text-sage-700 hover:text-sage-900 hover:underline">
                       Privacy Policy
                     </Link>
                   </Label>
@@ -298,9 +286,9 @@ export default function SignupPage() {
             </div>
 
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-olive-600">
                 Already have an account?{" "}
-                <Link href="/auth/login" className="text-primary hover:underline">
+                <Link href="/auth/login" className="text-sage-700 hover:text-sage-900 hover:underline font-medium transition-colors">
                   Sign in
                 </Link>
               </p>
