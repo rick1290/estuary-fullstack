@@ -1,20 +1,13 @@
 "use client"
 
-import Link from "next/link"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { Clock, MapPin, Calendar, User, Star } from "lucide-react"
-import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
+import ServiceCard from "@/components/ui/service-card"
 
 // Mock data for workshop listings
 const MOCK_WORKSHOPS = [
   {
     id: 3,
     title: "Life Transformation Workshop",
-    type: "workshops",
+    type: "workshops" as const,
     practitioner: {
       id: 3,
       name: "Aisha Patel",
@@ -34,7 +27,7 @@ const MOCK_WORKSHOPS = [
   {
     id: 8,
     title: "Sound Healing Workshop",
-    type: "workshops",
+    type: "workshops" as const,
     practitioner: {
       id: 6,
       name: "David Kim",
@@ -53,23 +46,23 @@ const MOCK_WORKSHOPS = [
   },
   {
     id: 10,
-    title: "Stress Management Workshop",
-    type: "workshops",
+    title: "Creative Expression Workshop",
+    type: "workshops" as const,
     practitioner: {
       id: 5,
       name: "Emma Rodriguez",
       image: "/placeholder.svg?height=50&width=50",
     },
-    price: 85,
-    date: "July 8, 2023",
-    duration: 150,
+    price: 175,
+    date: "July 20, 2023",
+    duration: 240,
     location: "Los Angeles, CA",
     capacity: 12,
-    rating: 4.6,
-    reviewCount: 42,
-    categories: ["Wellness", "Mental Health"],
-    image: "/mindful-moments.png",
-    description: "Learn practical techniques to manage stress and improve your overall wellbeing.",
+    rating: 4.9,
+    reviewCount: 34,
+    categories: ["Art", "Therapy"],
+    image: "/workshop-image-3.jpg",
+    description: "Unlock your creative potential through art therapy and expressive techniques.",
   },
 ]
 
@@ -118,86 +111,14 @@ export default function WorkshopListings({ query, location, categories = [] }: W
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredWorkshops.map((workshop) => (
-          <div key={workshop.id} className="flex h-full">
-            <Card className="flex flex-col w-full h-full overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="flex-grow flex flex-col pt-6 pb-2">
-                <div className="flex items-center mb-1">
-                  <ServiceTypeBadge type="workshop" />
-                  <div className="flex items-center ml-auto">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                      <span className="ml-1 text-sm">{workshop.rating}</span>
-                    </div>
-                    <span className="ml-1 text-xs text-muted-foreground">({workshop.reviewCount})</span>
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-semibold mb-2">{workshop.title}</h3>
-
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3 h-[4.5em]">{workshop.description}</p>
-
-                <div className="flex items-center mb-2">
-                  <Avatar className="h-6 w-6 mr-2">
-                    <AvatarImage
-                      src={workshop.practitioner.image || "/placeholder.svg"}
-                      alt={workshop.practitioner.name}
-                    />
-                    <AvatarFallback>{workshop.practitioner.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <Link
-                    href={`/practitioners/${workshop.practitioner.id}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {workshop.practitioner.name}
-                  </Link>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">{workshop.location}</span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">{workshop.date}</span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">{workshop.duration} min</span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span className="text-sm">Max {workshop.capacity} participants</span>
-                  </div>
-                </div>
-
-                <div className="mt-auto mb-2">
-                  {workshop.categories.slice(0, 3).map((category) => (
-                    <Badge key={category} variant="outline" className="mr-1 mb-1">
-                      {category}
-                    </Badge>
-                  ))}
-                  {workshop.categories.length > 3 && (
-                    <span className="text-xs text-muted-foreground">+{workshop.categories.length - 3} more</span>
-                  )}
-                </div>
-              </CardContent>
-
-              <Separator />
-
-              <CardFooter className="flex justify-between p-4 h-16">
-                <span className="text-lg font-semibold text-primary">${workshop.price}</span>
-                <Button asChild>
-                  <Link href={`/workshops/${workshop.id}`}>View Workshop</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {filteredWorkshops.map((workshop, index) => (
+          <ServiceCard
+            key={workshop.id}
+            {...workshop}
+            href={`/workshops/${workshop.id}`}
+            index={index}
+          />
         ))}
       </div>
     </div>

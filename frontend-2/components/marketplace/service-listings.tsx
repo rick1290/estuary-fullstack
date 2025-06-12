@@ -1,20 +1,13 @@
 "use client"
 
-import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Clock, MapPin, User, ShoppingBag, Calendar, GraduationCap, Star, Sparkles } from "lucide-react"
-import { getServiceTypeConfig } from "@/lib/service-type-config"
-import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
+import ServiceCard from "@/components/ui/service-card"
 
 // Mock data for service listings
 const MOCK_SERVICES = [
   {
     id: 1,
     title: "Mindfulness Meditation Session",
-    type: "one-on-one",
+    type: "one-on-one" as const,
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
@@ -32,7 +25,7 @@ const MOCK_SERVICES = [
   {
     id: 2,
     title: "Yoga for Beginners Package",
-    type: "packages",
+    type: "packages" as const,
     practitioner: {
       id: 2,
       name: "Michael Chen",
@@ -50,7 +43,7 @@ const MOCK_SERVICES = [
   {
     id: 3,
     title: "Life Transformation Workshop",
-    type: "workshops",
+    type: "workshops" as const,
     practitioner: {
       id: 3,
       name: "Aisha Patel",
@@ -70,7 +63,7 @@ const MOCK_SERVICES = [
   {
     id: 4,
     title: "Nutritional Health Course",
-    type: "courses",
+    type: "courses" as const,
     practitioner: {
       id: 4,
       name: "James Wilson",
@@ -89,7 +82,7 @@ const MOCK_SERVICES = [
   {
     id: 5,
     title: "Therapeutic Massage",
-    type: "one-on-one",
+    type: "one-on-one" as const,
     practitioner: {
       id: 5,
       name: "Emma Rodriguez",
@@ -107,7 +100,7 @@ const MOCK_SERVICES = [
   {
     id: 6,
     title: "Spiritual Guidance Sessions",
-    type: "packages",
+    type: "packages" as const,
     practitioner: {
       id: 6,
       name: "David Kim",
@@ -125,7 +118,7 @@ const MOCK_SERVICES = [
   {
     id: 7,
     title: "Mindfulness Meditation Course",
-    type: "courses",
+    type: "courses" as const,
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
@@ -144,7 +137,7 @@ const MOCK_SERVICES = [
   {
     id: 8,
     title: "Sound Healing Workshop",
-    type: "workshops",
+    type: "workshops" as const,
     practitioner: {
       id: 6,
       name: "David Kim",
@@ -212,169 +205,32 @@ export default function ServiceListings({ query, serviceType, location, categori
     )
   }
 
-  // Function to render the appropriate icon based on service type
-  const getServiceTypeIcon = (type: string) => {
-    switch (type) {
-      case "one-on-one":
-        return <User className="h-4 w-4" />
-      case "packages":
-        return <ShoppingBag className="h-4 w-4" />
-      case "workshops":
-        return <Calendar className="h-4 w-4" />
+  // Generate proper href based on service type
+  const getServiceHref = (service: typeof MOCK_SERVICES[0]) => {
+    switch (service.type) {
       case "courses":
-        return <GraduationCap className="h-4 w-4" />
+        return `/courses/${service.id}`
+      case "workshops":
+        return `/workshops/${service.id}`
+      case "one-on-one":
+        return `/sessions/${service.id}`
+      case "packages":
+        return `/packages/${service.id}`
       default:
-        return <User className="h-4 w-4" />
-    }
-  }
-
-  // Function to get badge variant based on service type
-  const getBadgeVariant = (type: string) => {
-    const config = getServiceTypeConfig(type)
-    switch (config.color) {
-      case "primary":
-        return "default"
-      case "secondary":
-        return "secondary"
-      case "success":
-        return "success"
-      case "info":
-        return "info"
-      default:
-        return "outline"
+        return `/marketplace/${service.type}/${service.id}`
     }
   }
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {filteredServices.map((service, index) => (
-          <Link
+          <ServiceCard
             key={service.id}
-            href={`/marketplace/${service.type === "courses" ? "courses" : service.type === "workshops" ? "workshops" : service.type === "one-on-one" ? "sessions" : service.type}/${service.id}`}
-            className="group block animate-fade-in"
-            style={{animationDelay: `${index * 0.1}s`}}
-          >
-            <Card className="h-full overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-cream-50">
-              {/* Gradient Header */}
-              <div className="relative h-48 bg-gradient-to-br from-terracotta-100 via-sage-100 to-terracotta-100 overflow-hidden">
-                {/* Background texture */}
-                <div className="absolute inset-0 texture-grain opacity-20" />
-                
-                {/* Decorative shapes */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-sage-200/40 rounded-full blur-2xl" />
-                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-terracotta-200/40 rounded-full blur-2xl" />
-                
-                {/* Service Type Badge */}
-                <div className="absolute top-4 left-4">
-                  <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
-                    <Sparkles className="h-3.5 w-3.5 text-terracotta-600" strokeWidth="1.5" />
-                    <span className="text-xs font-medium text-olive-800">
-                      {service.type === "one-on-one" && "Personal Session"}
-                      {service.type === "packages" && "Transformation Package"}
-                      {service.type === "workshops" && "Group Workshop"}
-                      {service.type === "courses" && "Learning Journey"}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Rating */}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
-                    <span className="text-sm font-medium text-olive-800">{service.rating}</span>
-                  </div>
-                </div>
-                
-                {/* Title Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-olive-900/60 to-transparent">
-                  <h3 className="text-xl font-medium text-white leading-tight line-clamp-2">
-                    {service.title}
-                  </h3>
-                </div>
-              </div>
-              
-              {/* Content */}
-              <CardContent className="p-6 bg-cream-50">
-                <div className="space-y-4">
-                  {/* Practitioner */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
-                      <span className="text-sm font-medium text-olive-800">
-                        {service.practitioner.name.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-olive-900">{service.practitioner.name}</p>
-                      <p className="text-sm text-olive-600">{service.location}</p>
-                    </div>
-                  </div>
-
-                  {/* Service Details */}
-                  <div className="flex items-center gap-4 text-sm text-olive-700">
-                    {service.duration && (
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                        <span>
-                          {typeof service.duration === "number" ? `${service.duration} min` : service.duration}
-                        </span>
-                      </div>
-                    )}
-                    {service.sessionCount && (
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                        <span>{service.sessionCount} sessions</span>
-                      </div>
-                    )}
-                    {service.date && (
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                        <span>{service.date}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Categories */}
-                  <div className="flex flex-wrap gap-2">
-                    {service.categories.map((category) => (
-                      <span key={category} className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full font-medium">
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-sm text-olive-600 leading-relaxed line-clamp-2">
-                    {service.description}
-                  </p>
-
-                  <Separator className="bg-sage-200" />
-
-                  {/* Price and CTA */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-olive-600 mb-1">Investment</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-medium text-olive-900">
-                          ${service.price}
-                        </span>
-                        <span className="text-sm text-olive-600">
-                          {service.type === "packages" && "/ package"}
-                          {service.type === "courses" && "/ journey"}
-                          {service.type === "workshops" && "/ person"}
-                          {service.type === "one-on-one" && "/ session"}
-                        </span>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-sage-700 hover:text-sage-800 hover:bg-sage-100 group">
-                      <span className="mr-1">Explore</span>
-                      <span className="group-hover:translate-x-0.5 transition-transform">→</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+            {...service}
+            href={getServiceHref(service)}
+            index={index}
+          />
         ))}
       </div>
     </div>
