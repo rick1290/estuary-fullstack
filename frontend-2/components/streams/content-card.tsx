@@ -77,43 +77,39 @@ export default function ContentCard({ post }: ContentCardProps) {
   const formattedDate = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
 
   return (
-    <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm rounded-2xl">
       {/* Card header with practitioner info */}
       <div className="flex items-center p-5">
-        <Avatar 
-          className="h-10 w-10 cursor-pointer ring-2 ring-gray-100" 
-          onClick={handlePractitionerClick}
-        >
-          <AvatarImage src={post.practitionerImage || "/placeholder.svg"} alt={post.practitionerName} />
-          <AvatarFallback className="bg-warm-100 text-warm-600">
-            {post.practitionerName.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+        <div className="h-10 w-10 cursor-pointer ring-2 ring-sage-200 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg" onClick={handlePractitionerClick}>
+          <span className="text-sm font-medium text-olive-800">
+            {post.practitionerName.split(' ').map(n => n[0]).join('')}
+          </span>
+        </div>
         <div className="ml-3 flex-1">
           <p 
-            className="font-medium text-gray-900 cursor-pointer hover:text-primary transition-colors" 
+            className="font-medium text-olive-900 cursor-pointer hover:text-sage-700 transition-colors" 
             onClick={handlePractitionerClick}
           >
             {post.practitionerName}
           </p>
-          <p className="text-sm text-gray-500">{formattedDate}</p>
+          <p className="text-sm text-olive-600">{formattedDate}</p>
         </div>
         {post.isPremium && (
-          <Badge className="bg-gradient-to-r from-warm-200 to-warm-300 text-warm-800 border-0 mr-2">
-            <Lock className="h-3 w-3 mr-1" />
+          <Badge className="bg-gradient-to-r from-terracotta-200 to-blush-200 text-olive-800 border-0 mr-2 rounded-full">
+            <Lock className="h-3 w-3 mr-1" strokeWidth="1.5" />
             Premium
           </Badge>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-olive-600 hover:text-olive-800 hover:bg-sage-50">
+              <MoreHorizontal className="h-4 w-4" strokeWidth="1.5" />
               <span className="sr-only">More options</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
+              <Share2 className="h-4 w-4 mr-2" strokeWidth="1.5" />
               Share
             </DropdownMenuItem>
             <DropdownMenuItem>Report</DropdownMenuItem>
@@ -124,7 +120,7 @@ export default function ContentCard({ post }: ContentCardProps) {
       {/* Content */}
       <CardContent className="px-5 pb-5 pt-0">
         {/* Content text */}
-        <div className="mb-4 text-gray-700 leading-relaxed">
+        <div className="mb-4 text-olive-700 leading-relaxed">
           {post.isPremium && !isAuthenticated ? (
             <>
               {post.content.substring(0, 150)}...{" "}
@@ -132,7 +128,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 variant="link" 
                 size="sm" 
                 onClick={() => router.push("/auth/login")} 
-                className="font-medium text-primary p-0 h-auto"
+                className="font-medium text-sage-700 p-0 h-auto"
               >
                 Subscribe to read more
               </Button>
@@ -150,7 +146,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 {post.isPremium && !isAuthenticated ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div className="p-3 bg-white/10 backdrop-blur-sm rounded-full mb-3">
-                      <Lock className="h-8 w-8 text-white" />
+                      <Lock className="h-8 w-8 text-white" strokeWidth="1.5" />
                     </div>
                     <h3 className="text-lg font-medium text-white mb-2">Premium Content</h3>
                     <p className="text-sm text-white/80 mb-4">Subscribe to watch this video</p>
@@ -158,7 +154,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                       className="bg-white text-gray-900 hover:bg-gray-100"
                       onClick={() => router.push("/auth/login")}
                     >
-                      <Play className="mr-2 h-4 w-4" />
+                      <Play className="mr-2 h-4 w-4" strokeWidth="1.5" />
                       Subscribe to Watch
                     </Button>
                   </div>
@@ -173,7 +169,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 {(!post.isPremium || isAuthenticated) && (
                   <div className="absolute inset-0 flex items-center justify-center group cursor-pointer">
                     <div className="w-16 h-16 bg-black/50 group-hover:bg-black/60 rounded-full flex items-center justify-center transition-colors">
-                      <Play className="h-8 w-8 text-white ml-1" fill="white" />
+                      <Play className="h-8 w-8 text-white ml-1" fill="white" strokeWidth="1.5" />
                     </div>
                   </div>
                 )}
@@ -196,7 +192,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                       className="bg-white/90 backdrop-blur-sm text-gray-900 hover:bg-white shadow-lg"
                       onClick={() => router.push("/auth/login")}
                     >
-                      <Lock className="mr-2 h-4 w-4" />
+                      <Lock className="mr-2 h-4 w-4" strokeWidth="1.5" />
                       Subscribe to View
                     </Button>
                   </div>
@@ -212,8 +208,7 @@ export default function ContentCard({ post }: ContentCardProps) {
             {post.tags.map((tag) => (
               <Badge
                 key={tag}
-                variant="secondary"
-                className="bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer transition-colors px-3 py-1"
+                className="bg-sage-100 text-olive-700 hover:bg-sage-200 cursor-pointer transition-colors px-3 py-1 rounded-full"
                 onClick={() => router.push(`/streams?tag=${encodeURIComponent(tag)}`)}
               >
                 #{tag}
@@ -222,7 +217,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           </div>
         )}
 
-        <Separator className="mb-4" />
+        <Separator className="mb-4 bg-sage-200" />
 
         {/* Action buttons */}
         <div className="flex items-center justify-between">
@@ -230,40 +225,40 @@ export default function ContentCard({ post }: ContentCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className={`px-3 ${liked ? "text-rose-500" : "text-gray-600"}`}
+              className={`px-3 ${liked ? "text-rose-500" : "text-olive-600"} hover:text-rose-500 hover:bg-rose-50`}
               onClick={handleLike}
             >
-              <Heart className={`h-4 w-4 mr-1.5 ${liked ? "fill-current" : ""}`} />
+              <Heart className={`h-4 w-4 mr-1.5 ${liked ? "fill-current" : ""}`} strokeWidth="1.5" />
               <span className="font-medium">{likeCount}</span>
             </Button>
             
             <Button
               variant="ghost"
               size="sm"
-              className="px-3 text-gray-600"
+              className="px-3 text-olive-600 hover:text-sage-700 hover:bg-sage-50"
               onClick={handleCommentToggle}
             >
-              <MessageCircle className="h-4 w-4 mr-1.5" />
+              <MessageCircle className="h-4 w-4 mr-1.5" strokeWidth="1.5" />
               <span className="font-medium">{post.comments}</span>
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              className="px-3 text-gray-600"
+              className="px-3 text-olive-600 hover:text-sage-700 hover:bg-sage-50"
               onClick={handleShare}
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-4 w-4" strokeWidth="1.5" />
             </Button>
           </div>
 
           <Button
             variant="ghost"
             size="sm"
-            className={`px-3 ${saved ? "text-primary" : "text-gray-600"}`}
+            className={`px-3 ${saved ? "text-sage-600" : "text-olive-600"} hover:text-sage-700 hover:bg-sage-50`}
             onClick={handleSave}
           >
-            <Bookmark className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
+            <Bookmark className={`h-4 w-4 ${saved ? "fill-current" : ""}`} strokeWidth="1.5" />
           </Button>
         </div>
 
@@ -272,12 +267,12 @@ export default function ContentCard({ post }: ContentCardProps) {
           <div className="mt-4 pt-4 border-t">
             <form onSubmit={handleCommentSubmit} className="flex gap-2 mb-4">
               <Input
-                className="flex-1"
+                className="flex-1 border-sage-300 focus:border-sage-500 rounded-xl"
                 placeholder="Add a comment..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
-              <Button type="submit" size="sm" disabled={!comment.trim()}>
+              <Button type="submit" size="sm" disabled={!comment.trim()} className="bg-sage-600 hover:bg-sage-700 rounded-xl">
                 Post
               </Button>
             </form>
@@ -292,18 +287,18 @@ export default function ContentCard({ post }: ContentCardProps) {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2">
-                        <span className="font-medium text-sm">{comment.userName}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="font-medium text-sm text-olive-900">{comment.userName}</span>
+                        <span className="text-xs text-olive-500">
                           {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 mt-0.5">{comment.content}</p>
+                      <p className="text-sm text-olive-700 mt-0.5">{comment.content}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-sm text-gray-500">No comments yet. Be the first to comment!</p>
+              <p className="text-center text-sm text-olive-500">No comments yet. Be the first to comment!</p>
             )}
           </div>
         )}

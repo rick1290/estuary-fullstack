@@ -27,11 +27,11 @@ export default function FeaturedPractitioners() {
       {practitioners.map((practitioner) => (
         <Card
           key={practitioner.id}
-          className="cursor-pointer rounded-lg transition-all hover:translate-y-[-4px] hover:shadow-md"
+          className="cursor-pointer rounded-2xl border-0 bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:translate-y-[-4px] hover:shadow-xl"
           onClick={() => handlePractitionerClick(practitioner.id)}
         >
           <div
-            className="h-[80px] bg-primary-light"
+            className="h-[80px] bg-gradient-to-br from-sage-200 to-terracotta-200 rounded-t-2xl"
             style={{
               backgroundImage: `url(${practitioner.coverImage})`,
               backgroundSize: "cover",
@@ -39,16 +39,17 @@ export default function FeaturedPractitioners() {
             }}
           />
           <div className="flex flex-col items-center -mt-5">
-            <Avatar className="h-16 w-16 border-4 border-white">
-              <AvatarImage src={practitioner.image || "/placeholder.svg"} alt={practitioner.name} />
-              <AvatarFallback>{practitioner.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+            <div className="h-16 w-16 border-4 border-white rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg">
+              <span className="text-lg font-medium text-olive-800">
+                {practitioner.name.split(' ').map(n => n[0]).join('')}
+              </span>
+            </div>
             <CardContent className="text-center pt-1 px-3">
-              <h3 className="mb-1 font-semibold text-sm">{practitioner.name}</h3>
-              <p className="mb-1 text-xs text-muted-foreground">{practitioner.title}</p>
+              <h3 className="mb-1 font-semibold text-sm text-olive-900">{practitioner.name}</h3>
+              <p className="mb-1 text-xs text-olive-600">{practitioner.title}</p>
               <div className="mb-2 flex flex-wrap justify-center gap-1">
                 {practitioner.tags.slice(0, 2).map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
+                  <Badge key={tag} className="text-xs bg-sage-100 text-olive-700 hover:bg-sage-200">
                     {tag}
                   </Badge>
                 ))}
@@ -56,7 +57,7 @@ export default function FeaturedPractitioners() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs"
+                className="w-full text-xs border-sage-300 text-sage-700 hover:bg-sage-50 rounded-xl"
                 onClick={(e) => handleViewStreamsClick(practitioner.id, e)}
               >
                 View Streams

@@ -105,7 +105,7 @@ export default function StreamsFilters({
     <div className="space-y-6">
       {/* Content Type Section */}
       <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Content Type</h4>
+        <h4 className="text-sm font-medium text-olive-900 mb-3">Content Type</h4>
         <div className="space-y-2">
           {contentTypes.map((type) => (
             <label
@@ -115,10 +115,10 @@ export default function StreamsFilters({
               <Checkbox
                 checked={contentType === type.value}
                 onCheckedChange={() => handleContentTypeChange(type.value)}
-                className="border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
               />
-              <span className="flex items-center gap-2 text-sm text-gray-700 group-hover:text-gray-900">
-                {type.icon}
+              <span className="flex items-center gap-2 text-sm text-olive-700 group-hover:text-olive-900">
+                <span className="text-sage-600">{type.icon}</span>
                 <span>{type.label}</span>
               </span>
             </label>
@@ -126,11 +126,11 @@ export default function StreamsFilters({
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-sage-200" />
 
       {/* Sort By Section */}
       <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Sort By</h4>
+        <h4 className="text-sm font-medium text-olive-900 mb-3">Sort By</h4>
         <RadioGroup value={sort} onValueChange={setSort}>
           <div className="space-y-2">
             {sortOptions.map((option) => (
@@ -140,10 +140,10 @@ export default function StreamsFilters({
               >
                 <RadioGroupItem 
                   value={option.value} 
-                  className="border-gray-300 text-gray-900 data-[state=checked]:border-gray-900"
+                  className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600"
                 />
-                <span className="flex items-center gap-2 text-sm text-gray-700 group-hover:text-gray-900">
-                  {option.icon}
+                <span className="flex items-center gap-2 text-sm text-olive-700 group-hover:text-olive-900">
+                  <span className="text-sage-600">{option.icon}</span>
                   <span>{option.label}</span>
                 </span>
               </label>
@@ -152,11 +152,11 @@ export default function StreamsFilters({
         </RadioGroup>
       </div>
 
-      <Separator />
+      <Separator className="bg-sage-200" />
 
       {/* Topics Section */}
       <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Topics</h4>
+        <h4 className="text-sm font-medium text-olive-900 mb-3">Topics</h4>
         <div className="space-y-2">
           {availableTags.map((tag) => (
             <label
@@ -166,15 +166,15 @@ export default function StreamsFilters({
               <Checkbox 
                 checked={tags.includes(tag)} 
                 onCheckedChange={() => handleTagChange(tag)}
-                className="border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
               />
-              <span className="text-sm text-gray-700 group-hover:text-gray-900">{tag}</span>
+              <span className="text-sm text-olive-700 group-hover:text-olive-900">{tag}</span>
             </label>
           ))}
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-sage-200" />
 
       {/* Premium Content Toggle */}
       <div>
@@ -182,29 +182,29 @@ export default function StreamsFilters({
           <Checkbox 
             checked={showLocked} 
             onCheckedChange={(checked) => setShowLocked(checked as boolean)}
-            className="border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+            className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
           />
-          <span className="text-sm text-gray-700 group-hover:text-gray-900">
+          <span className="text-sm text-olive-700 group-hover:text-olive-900">
             Include Premium Content
           </span>
         </label>
       </div>
 
-      <Separator />
+      <Separator className="bg-sage-200" />
 
       {/* Action Buttons */}
       <div className="space-y-2">
         <Button 
           variant="default" 
           onClick={applyFilters} 
-          className="w-full"
+          className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl"
         >
           Apply Filters
         </Button>
         <Button 
           variant="outline" 
           onClick={resetFilters}
-          className="w-full"
+          className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 rounded-xl"
         >
           Reset All
         </Button>
