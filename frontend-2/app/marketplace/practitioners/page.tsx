@@ -9,17 +9,18 @@ export const metadata: Metadata = {
 }
 
 interface PractitionersPageProps {
-  searchParams?: {
+  searchParams: Promise<{
     q?: string
     location?: string
     categories?: string
-  }
+  }>
 }
 
-export default function PractitionersPage({ searchParams }: PractitionersPageProps) {
-  const query = searchParams?.q || ""
-  const location = searchParams?.location || ""
-  const categories = searchParams?.categories ? searchParams.categories.split(",") : []
+export default async function PractitionersPage({ searchParams }: PractitionersPageProps) {
+  const params = await searchParams
+  const query = params?.q || ""
+  const location = params?.location || ""
+  const categories = params?.categories ? params.categories.split(",") : []
 
   return (
     <MarketplaceLayout

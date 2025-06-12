@@ -9,17 +9,18 @@ export const metadata: Metadata = {
 }
 
 interface WorkshopsPageProps {
-  searchParams?: {
+  searchParams: Promise<{
     q?: string
     location?: string
     categories?: string
-  }
+  }>
 }
 
-export default function WorkshopsPage({ searchParams }: WorkshopsPageProps) {
-  const query = searchParams?.q || ""
-  const location = searchParams?.location || ""
-  const categories = searchParams?.categories ? searchParams.categories.split(",") : []
+export default async function WorkshopsPage({ searchParams }: WorkshopsPageProps) {
+  const params = await searchParams
+  const query = params?.q || ""
+  const location = params?.location || ""
+  const categories = params?.categories ? params.categories.split(",") : []
 
   return (
     <MarketplaceLayout

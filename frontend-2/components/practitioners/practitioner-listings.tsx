@@ -36,8 +36,8 @@ export default async function PractitionerListings({
   if (practitioners.length === 0) {
     return (
       <div className="text-center py-8">
-        <h3 className="text-lg font-medium mb-2">No practitioners found</h3>
-        <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
+        <h3 className="text-lg font-medium mb-2 text-olive-900">No practitioners found</h3>
+        <p className="text-olive-600">Try adjusting your filters or search terms</p>
       </div>
     )
   }
@@ -45,12 +45,12 @@ export default async function PractitionerListings({
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <p className="text-sm text-gray-600">
-          Showing <span className="font-medium text-gray-900">{practitioners.length}</span> practitioners
+        <p className="text-sm text-olive-600">
+          Showing <span className="font-medium text-olive-900">{practitioners.length}</span> practitioners
         </p>
 
         <Select defaultValue="relevance">
-          <SelectTrigger className="w-[200px] bg-white border-gray-200">
+          <SelectTrigger className="w-[200px] bg-white border-sage-300 rounded-xl">
             <SelectValue placeholder="Sort By" />
           </SelectTrigger>
           <SelectContent>
