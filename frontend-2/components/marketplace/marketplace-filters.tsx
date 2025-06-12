@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Filter } from "lucide-react"
+import { MapPin, Filter, Globe, Users, Navigation } from "lucide-react"
 
 // Mock categories for the demo
 const CATEGORIES = [
@@ -47,6 +47,8 @@ export default function MarketplaceFilters({
   const [serviceType, setServiceType] = useState<string>(initialType || "all")
   const [location, setLocation] = useState<string>(initialLocation || "")
   const [rating, setRating] = useState<string>("any")
+  const [serviceFormat, setServiceFormat] = useState<string>("all")
+  const [distance, setDistance] = useState<number>(25)
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories((prev) =>
@@ -92,6 +94,8 @@ export default function MarketplaceFilters({
     params.delete("type")
     params.delete("location")
     params.delete("rating")
+    params.delete("format")
+    params.delete("distance")
 
     // Add new filter params
     selectedCategories.forEach((category) => {
@@ -113,6 +117,14 @@ export default function MarketplaceFilters({
       params.set("rating", rating)
     }
 
+    if (serviceFormat !== "all") {
+      params.set("format", serviceFormat)
+    }
+
+    if (serviceFormat === "in-person" && distance) {
+      params.set("distance", distance.toString())
+    }
+
     router.push(`${pathname}?${params.toString()}`)
   }
 
@@ -122,6 +134,8 @@ export default function MarketplaceFilters({
     setServiceType("all")
     setLocation("")
     setRating("any")
+    setServiceFormat("all")
+    setDistance(25)
 
     // Keep only the search query if it exists
     const params = new URLSearchParams()
@@ -137,17 +151,87 @@ export default function MarketplaceFilters({
         <h2 className="text-xl font-medium text-olive-900 mb-6">Refine Results</h2>
         
         <div className="space-y-8">
+          {/* Service Format Filter - Most prominent */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-olive-900">Location</Label>
+            <Label className="text-sm font-medium text-olive-900">Service Format</Label>
+            <RadioGroup value={serviceFormat} onValueChange={setServiceFormat} className="space-y-2.5">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="format-all" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                <Label htmlFor="format-all" className="text-sm font-normal text-olive-700 cursor-pointer flex items-center gap-2">
+                  All Services
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="online" id="format-online" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                <Label htmlFor="format-online" className="text-sm font-normal text-olive-700 cursor-pointer flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-sage-600" />
+                  Online Only
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="in-person" id="format-in-person" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                <Label htmlFor="format-in-person" className="text-sm font-normal text-olive-700 cursor-pointer flex items-center gap-2">
+                  <Users className="h-4 w-4 text-sage-600" />
+                  In-Person Only
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Location section - Enhanced for in-person */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-olive-900">
+              Location
+              {serviceFormat === "in-person" && <span className="text-sage-600 ml-1">*</span>}
+            </Label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3 h-4 w-4 text-sage-600" strokeWidth="1.5" />
               <Input
-                placeholder="Enter location"
+                placeholder={serviceFormat === "in-person" ? "Enter city, state or zip" : "Enter location (optional)"}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="pl-10 bg-white border-sage-300 focus:border-sage-500 focus:ring-0 rounded-xl"
+                required={serviceFormat === "in-person"}
               />
             </div>
+            
+            {/* Distance slider for in-person services */}
+            {serviceFormat === "in-person" && location && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-olive-700">Search radius</Label>
+                  <span className="text-xs font-medium text-sage-600">{distance} miles</span>
+                </div>
+                <Slider
+                  value={[distance]}
+                  onValueChange={([value]) => setDistance(value)}
+                  min={5}
+                  max={100}
+                  step={5}
+                  className="mt-2"
+                />
+                <div className="flex justify-between text-xs text-olive-600">
+                  <span>5 mi</span>
+                  <span>100 mi</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Use current location button */}
+            {serviceFormat === "in-person" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-2 border-sage-300 text-sage-700 hover:bg-sage-50"
+                onClick={() => {
+                  // In a real app, this would use geolocation API
+                  setLocation("Current Location")
+                }}
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Use my current location
+              </Button>
+            )}
           </div>
 
           {showServiceTypeFilter && (

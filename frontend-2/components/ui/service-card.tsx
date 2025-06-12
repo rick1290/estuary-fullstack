@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, MapPin, Calendar, Star, Sparkles, Users } from "lucide-react"
+import { Clock, MapPin, Calendar, Star, Sparkles, Users, Globe } from "lucide-react"
 
 interface ServiceCardProps {
   id: number | string
@@ -157,10 +157,20 @@ export default function ServiceCard({
               </div>
             )}
 
-            {/* Location */}
+            {/* Location with format indicator */}
             <div className="flex items-center gap-2 text-olive-700">
-              <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-              <span className="text-sm">{location}</span>
+              {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? (
+                <>
+                  <Globe className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                  <span className="text-sm font-medium text-sage-700">Online</span>
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                  <span className="text-sm">{location}</span>
+                  {/* Distance indicator would go here in real app */}
+                </>
+              )}
             </div>
 
             {/* Capacity/Reviews */}
