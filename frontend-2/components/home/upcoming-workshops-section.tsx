@@ -14,7 +14,7 @@ const UPCOMING_WORKSHOPS = [
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
-      image: "/practitioner-1.jpg",
+      image: "https://i.pravatar.cc/150?img=47",
     },
     date: "April 25",
     capacity: 5,
@@ -25,6 +25,7 @@ const UPCOMING_WORKSHOPS = [
     description: "Learn to cultivate deep presence and awareness in this transformative workshop.",
     rating: 4.9,
     reviewCount: 87,
+    image: "https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?w=400&h=300&fit=crop",
   },
   {
     id: 2,
@@ -33,7 +34,7 @@ const UPCOMING_WORKSHOPS = [
     practitioner: {
       id: 2,
       name: "James Wilson",
-      image: "/practitioner-2.jpg",
+      image: "https://i.pravatar.cc/150?img=12",
     },
     date: "April 30",
     capacity: 10,
@@ -44,6 +45,7 @@ const UPCOMING_WORKSHOPS = [
     description: "Experience the healing power of sound frequencies and vibrations.",
     rating: 4.8,
     reviewCount: 65,
+    image: "https://images.unsplash.com/photo-1593697820980-0254db11e436?w=400&h=300&fit=crop",
   },
   {
     id: 3,
@@ -52,7 +54,7 @@ const UPCOMING_WORKSHOPS = [
     practitioner: {
       id: 3,
       name: "Elena Rodriguez",
-      image: "/practitioner-3.jpg",
+      image: "https://i.pravatar.cc/150?img=32",
     },
     date: "May 15",
     capacity: 8,
@@ -63,6 +65,7 @@ const UPCOMING_WORKSHOPS = [
     description: "Immerse yourself in nature's healing embrace through forest bathing practices.",
     rating: 5.0,
     reviewCount: 42,
+    image: "https://images.unsplash.com/photo-1511497584788-876760111969?w=400&h=300&fit=crop",
   },
   {
     id: 4,
@@ -71,7 +74,7 @@ const UPCOMING_WORKSHOPS = [
     practitioner: {
       id: 4,
       name: "Michael Chen",
-      image: "/practitioner-4.jpg",
+      image: "https://i.pravatar.cc/150?img=33",
     },
     date: "May 2",
     capacity: 12,
@@ -82,6 +85,7 @@ const UPCOMING_WORKSHOPS = [
     description: "Master the fundamentals of conscious breathing for stress relief and vitality.",
     rating: 4.7,
     reviewCount: 124,
+    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&h=300&fit=crop",
   },
   {
     id: 5,
@@ -90,7 +94,7 @@ const UPCOMING_WORKSHOPS = [
     practitioner: {
       id: 5,
       name: "Aisha Patel",
-      image: "/images/avatar-2.png",
+      image: "https://i.pravatar.cc/150?img=44",
     },
     date: "May 8",
     capacity: 6,
@@ -101,6 +105,7 @@ const UPCOMING_WORKSHOPS = [
     description: "Explore the wisdom of your body through intuitive movement and expression.",
     rating: 4.9,
     reviewCount: 56,
+    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=300&fit=crop",
   },
 ]
 
@@ -164,7 +169,7 @@ export default function UpcomingWorkshopsSection() {
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {UPCOMING_WORKSHOPS.map((workshop, index) => (
-              <div key={workshop.id} className="min-w-[350px] max-w-[350px]">
+              <div key={workshop.id} className="min-w-[350px] max-w-[350px] flex">
                 <ServiceCard
                   {...workshop}
                   href={`/workshops/${workshop.id}`}

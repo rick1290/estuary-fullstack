@@ -12,7 +12,7 @@ const FEATURED_PRACTITIONERS = [
     name: "Dr. Sarah Johnson",
     specialty: "Mindfulness Coach",
     location: "New York, NY",
-    image: "/practitioner-1.jpg",
+    image: "https://i.pravatar.cc/150?img=47",
     rating: 4.9,
     reviews: 124,
     modalities: ["Meditation", "MBSR", "Breathwork"],
@@ -23,7 +23,7 @@ const FEATURED_PRACTITIONERS = [
     name: "Michael Chen",
     specialty: "Nutritional Therapist",
     location: "Los Angeles, CA",
-    image: "/practitioner-2.jpg",
+    image: "https://i.pravatar.cc/150?img=33",
     rating: 4.8,
     reviews: 98,
     modalities: ["Nutrition", "Holistic Health", "Detox"],
@@ -34,7 +34,7 @@ const FEATURED_PRACTITIONERS = [
     name: "Aisha Patel",
     specialty: "Life Coach",
     location: "Virtual",
-    image: "/practitioner-3.jpg",
+    image: "https://i.pravatar.cc/150?img=44",
     rating: 5.0,
     reviews: 87,
     modalities: ["Life Coaching", "NLP", "Goal Setting"],
@@ -45,7 +45,7 @@ const FEATURED_PRACTITIONERS = [
     name: "James Wilson",
     specialty: "Sound Healer",
     location: "Chicago, IL",
-    image: "/practitioner-4.jpg",
+    image: "https://i.pravatar.cc/150?img=12",
     rating: 4.7,
     reviews: 65,
     modalities: ["Sound Therapy", "Reiki", "Energy Work"],
@@ -84,20 +84,22 @@ export default function FeaturedPractitionersSection() {
           {FEATURED_PRACTITIONERS.map((practitioner, index) => (
             <div
               key={practitioner.id}
-              className="animate-slide-up"
+              className="animate-slide-up flex"
               style={{animationDelay: `${index * 0.1}s`}}
             >
               <Link
                 href={`/practitioners/practitioner-${practitioner.id}`}
-                className="group block transform transition-all duration-300 hover:scale-105"
+                className="group block w-full transform transition-all duration-300 hover:scale-105"
               >
-                <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
+                <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
                   {/* Avatar section */}
-                  <div className="p-8 pb-4 text-center">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg mb-4">
-                      <span className="text-2xl font-medium text-olive-800">
-                        {practitioner.name.split(' ').map(n => n[0]).join('')}
-                      </span>
+                  <div className="p-8 pb-4 text-center flex-grow flex flex-col">
+                    <div className="w-24 h-24 mx-auto rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white ring-2 ring-sage-200">
+                      <img 
+                        src={practitioner.image} 
+                        alt={practitioner.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     
                     <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
@@ -109,11 +111,8 @@ export default function FeaturedPractitionersSection() {
                       <span className="text-olive-400">•</span>
                       <span>{practitioner.location}</span>
                     </div>
-                  </div>
-
-                  {/* Bottom section */}
-                  <div className="px-8 pb-8">
-                    <div className="flex flex-wrap justify-center gap-2 mb-6">
+                    
+                    <div className="flex flex-wrap justify-center gap-2 mt-auto">
                       {practitioner.modalities.slice(0, 2).map((modality) => (
                         <span 
                           key={modality} 
@@ -126,7 +125,10 @@ export default function FeaturedPractitionersSection() {
                         <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
                       )}
                     </div>
+                  </div>
 
+                  {/* Bottom section */}
+                  <div className="px-8 pb-8">
                     <Button 
                       variant="outline" 
                       size="sm" 
