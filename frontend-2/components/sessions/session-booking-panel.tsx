@@ -119,56 +119,60 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
         serviceType="session"
       />
 
-      <Card className="w-full border border-gray-200">
-        <CardContent className="p-6">
-          {/* Price Display */}
-          <div className="mb-6">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-medium text-gray-900">${session.price}</span>
-              <span className="text-gray-600">/ session</span>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">{session.duration} minutes • {session.location}</p>
+      <Card className="w-full border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-br from-sage-50 to-terracotta-50 p-8 text-center">
+          <p className="text-sm text-olive-700 mb-2">Transform Your Practice</p>
+          <div className="flex items-baseline justify-center gap-2">
+            <span className="text-4xl font-medium text-olive-900">${session.price}</span>
+            <span className="text-olive-700">per session</span>
           </div>
+          <p className="text-sm text-olive-600 mt-2">{session.duration} minutes of personalized guidance</p>
+        </div>
+        <CardContent className="p-8">
 
           {/* Date selector - desktop version */}
-          <div className="hidden sm:block border-t border-b py-4 mb-4">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePrevDates}
-                disabled={visibleDates[0]?.day === allDates[0].day}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+          <div className="mb-6">
+            <label className="text-sm font-medium text-olive-900 mb-3 block">Choose Your Date</label>
+            <div className="hidden sm:block">
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrevDates}
+                  disabled={visibleDates[0]?.day === allDates[0].day}
+                  className="text-sage-600 hover:bg-sage-100"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-              <div className="flex gap-2 justify-center flex-1">
-                {visibleDates.map((date) => (
-                  <div
-                    key={date.date}
-                    onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                    className={`px-4 py-2 rounded-md cursor-pointer text-center min-w-[70px] border transition-all ${
-                      selectedDate === `${date.day}, ${date.date}`
-                        ? "border-gray-900 bg-gray-900 text-white"
-                        : "border-gray-200 hover:border-gray-300 bg-white"
-                    }`}
-                  >
-                    <p className="font-medium text-sm">{date.day}</p>
-                    <p className="text-xs">{date.date}</p>
-                  </div>
-                ))}
+                <div className="flex gap-2 justify-center flex-1">
+                  {visibleDates.map((date) => (
+                    <div
+                      key={date.date}
+                      onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
+                      className={`px-4 py-3 rounded-xl cursor-pointer text-center min-w-[80px] border-2 transition-all ${
+                        selectedDate === `${date.day}, ${date.date}`
+                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
+                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50"
+                      }`}
+                    >
+                      <p className="font-medium">{date.day}</p>
+                      <p className="text-sm mt-1">{date.date}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextDates}
+                  disabled={visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day}
+                  className="text-sage-600 hover:bg-sage-100"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNextDates}
-                disabled={visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
             </div>
-          </div>
 
           {/* Date selector - mobile dropdown */}
           <div className="block sm:hidden mb-4">
@@ -189,24 +193,25 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             </Select>
           </div>
 
-          <Label className="mb-3 block text-sm font-medium text-gray-900">
-            Select time
-          </Label>
+            <Label className="text-sm font-medium text-olive-900 mb-3 block">
+              Select Your Time
+            </Label>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {displayedTimeSlots.map((time) => (
-              <button
-                key={time}
-                onClick={() => handleTimeSelect(time)}
-                className={`p-2.5 rounded-md border text-center text-sm transition-all ${
-                  selectedTime === time
-                    ? "border-gray-900 bg-gray-900 text-white font-medium"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
-                }`}
-              >
-                {time}
-              </button>
-            ))}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {displayedTimeSlots.map((time) => (
+                <button
+                  key={time}
+                  onClick={() => handleTimeSelect(time)}
+                  className={`p-3 rounded-xl border-2 text-center text-sm font-medium transition-all ${
+                    selectedTime === time
+                      ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
+                      : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
+                  }`}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
           </div>
 
           {timeSlots.length > 6 && (
@@ -220,15 +225,16 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
 
           <Button 
-            className="w-full py-6 text-base font-medium" 
+            className="w-full py-6 text-lg font-medium shadow-lg hover:shadow-xl transition-all" 
             onClick={handleBookNow} 
             disabled={!selectedTime || !selectedDate}
+            size="lg"
           >
-            Book Session
+            Reserve Your Transformation
           </Button>
 
-          <p className="text-xs text-center text-gray-500 mt-4">
-            Free cancellation up to 24 hours before
+          <p className="text-sm text-center text-olive-600 mt-4">
+            ✓ Instant confirmation • ✓ Secure checkout
           </p>
         </CardContent>
       </Card>

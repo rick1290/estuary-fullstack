@@ -5,25 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md",
+        default: "bg-sage-600 text-cream-50 hover:bg-sage-700 shadow-sm hover:shadow-lg hover:-translate-y-0.5",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-md",
         outline:
-          "border border-border bg-background hover:bg-gray-50 hover:border-gray-300 shadow-sm hover:shadow-md",
+          "border-2 border-sage-300 bg-transparent hover:bg-sage-50 hover:border-sage-400 text-sage-700",
         secondary:
-          "bg-gray-100 text-gray-900 hover:bg-gray-200 shadow-sm hover:shadow-md",
-        ghost: "hover:bg-gray-100 hover:text-gray-900",
-        link: "text-primary underline-offset-4 hover:underline p-0 h-auto",
-        warm: "bg-warm-300 text-gray-900 hover:bg-warm-400 shadow-sm hover:shadow-md",
+          "bg-terracotta-200 text-olive-900 hover:bg-terracotta-300 shadow-sm hover:shadow-md hover:-translate-y-0.5",
+        ghost: "hover:bg-sage-100 hover:text-sage-800",
+        link: "text-sage-700 underline-offset-4 hover:underline hover:text-sage-800 p-0 h-auto",
+        warm: "bg-blush-300 text-olive-900 hover:bg-blush-400 shadow-sm hover:shadow-md hover:-translate-y-0.5",
       },
       size: {
-        default: "h-11 px-6 py-3",
-        sm: "h-9 rounded-md px-4 text-sm",
-        lg: "h-12 rounded-lg px-8 text-base",
+        default: "h-12 px-6 py-3",
+        sm: "h-10 rounded-lg px-4 text-sm",
+        lg: "h-14 rounded-xl px-10 text-base",
         icon: "h-11 w-11",
       },
     },

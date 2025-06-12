@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Clock, MapPin, User } from "lucide-react"
+import { Calendar, Clock, MapPin, Users, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import LoginModal from "@/components/auth/login-modal"
 
@@ -79,23 +79,26 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
         serviceType="workshop"
       />
 
-      <Card className="border border-gray-200">
-        <CardContent className="p-6">
-          {/* Price Display */}
-          <div className="mb-6">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-medium text-gray-900">${workshop.price}</span>
-              <span className="text-gray-600">/ person</span>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">{Math.floor(workshop.duration / 60)} hours • {workshop.location}</p>
+      <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-8 text-center">
+          <p className="text-sm text-olive-700 mb-2">Transform Your Weekend</p>
+          <div className="flex items-baseline justify-center gap-2">
+            <span className="text-4xl font-bold text-olive-900">${workshop.price}</span>
+            <span className="text-olive-700">per person</span>
           </div>
+          <p className="text-sm text-olive-600 mt-2">{Math.floor(workshop.duration / 60)} hours of transformation</p>
+        </div>
+        <CardContent className="p-8">
 
           {/* Date Selection */}
           {dates && dates.length > 0 && (
             <div className="mb-6">
-              <label className="text-sm font-medium text-gray-900 mb-2 block">Select Date</label>
+              <label className="text-sm font-semibold text-olive-800 mb-3 block flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-terracotta-500" />
+                Select Your Journey Date
+              </label>
               <Select value={selectedDateId} onValueChange={handleDateChange}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full border-sage-200 focus:border-sage-400">
                   <SelectValue placeholder="Choose a workshop date" />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,7 +106,10 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
                     <SelectItem key={date.id} value={date.id.toString()}>
                       <div className="flex justify-between items-center w-full">
                         <span>{date.date}</span>
-                        <Badge variant={date.spotsRemaining < 5 ? "destructive" : "secondary"} className="ml-2">
+                        <Badge 
+                          variant={date.spotsRemaining < 5 ? "destructive" : "sage"} 
+                          className="ml-2"
+                        >
                           {date.spotsRemaining} spots left
                         </Badge>
                       </div>
@@ -115,40 +121,53 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
           )}
 
           {/* Workshop Details */}
-          <div className="space-y-3 mb-6 pb-6 border-b border-gray-100">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Date</span>
-              <span className="font-medium text-gray-900">{selectedDate.date}</span>
+          <div className="space-y-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-sage-600" />
+                <span className="text-olive-700">Date</span>
+              </div>
+              <span className="font-semibold text-olive-900">{selectedDate.date}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Time</span>
-              <span className="font-medium text-gray-900">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-sage-600" />
+                <span className="text-olive-700">Time</span>
+              </div>
+              <span className="font-semibold text-olive-900">
                 {selectedDate.startTime} - {selectedDate.endTime}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Duration</span>
-              <span className="font-medium text-gray-900">{Math.floor(workshop.duration / 60)} hours</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-5 w-5 text-sage-600" />
+                <span className="text-olive-700">Format</span>
+              </div>
+              <span className="font-semibold text-olive-900">{workshop.location}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Format</span>
-              <span className="font-medium text-gray-900">{workshop.location}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Available Spots</span>
-              <span className="font-medium text-gray-900">{selectedDate.spotsRemaining} of {workshop.capacity}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-sage-600" />
+                <span className="text-olive-700">Available Spots</span>
+              </div>
+              <Badge variant="terracotta" className="font-semibold">
+                {selectedDate.spotsRemaining} of {workshop.capacity}
+              </Badge>
             </div>
           </div>
 
+          <Separator className="bg-sage-200 mb-6" />
+
           <Button 
-            className="w-full py-6 text-base font-medium" 
+            className="w-full py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all" 
             onClick={handleRegisterClick}
+            size="lg"
           >
-            Register for Workshop
+            Begin Your Transformation
           </Button>
 
-          <p className="text-xs text-center text-gray-500 mt-4">
-            Full refund available up to 48 hours before
+          <p className="text-sm text-center text-olive-600 mt-4">
+            ✓ Full refund 48hrs before • ✓ Materials included
           </p>
         </CardContent>
       </Card>
