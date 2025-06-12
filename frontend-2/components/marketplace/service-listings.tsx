@@ -11,7 +11,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=47",
     },
     price: 85,
     duration: 60,
@@ -29,7 +29,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 2,
       name: "Michael Chen",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=33",
     },
     price: 240,
     sessionCount: 5,
@@ -47,7 +47,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 3,
       name: "Aisha Patel",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=44",
     },
     price: 150,
     date: "May 15, 2023",
@@ -67,7 +67,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 4,
       name: "James Wilson",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=12",
     },
     price: 350,
     duration: "4 weeks",
@@ -86,7 +86,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 5,
       name: "Emma Rodriguez",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=32",
     },
     price: 95,
     duration: 90,
@@ -104,7 +104,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 6,
       name: "David Kim",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=52",
     },
     price: 280,
     sessionCount: 4,
@@ -122,7 +122,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=47",
     },
     price: 299,
     duration: "6 weeks",
@@ -141,7 +141,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 6,
       name: "David Kim",
-      image: "/placeholder.svg?height=50&width=50",
+      image: "https://i.pravatar.cc/150?img=52",
     },
     price: 120,
     date: "June 10, 2023",
