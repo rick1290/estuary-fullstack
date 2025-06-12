@@ -192,7 +192,7 @@ export default function MarketplaceLayout({
       </div>
 
       {/* Main Content Area */}
-      <div className="container mx-auto mt-8 px-4 pb-16 relative bg-gradient-to-b from-cream-50 to-white">
+      <div className="container mx-auto mt-8 px-4 pb-16 relative">
         {/* Subtle background texture */}
         <div className="absolute inset-0 texture-grain opacity-5" />
         
