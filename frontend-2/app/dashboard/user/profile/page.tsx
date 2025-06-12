@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { User, Lock, Mail, CreditCard, Receipt, Calendar, Bell, Trash2 } from "lucide-react"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
+import { Card, CardContent } from "@/components/ui/card"
 import AccountTab from "@/components/dashboard/user/settings/account-tab"
 import PasswordTab from "@/components/dashboard/user/settings/password-tab"
 import EmailTab from "@/components/dashboard/user/settings/email-tab"
@@ -59,16 +60,11 @@ export default function UserProfilePage() {
   }
 
   return (
-    <UserDashboardLayout>
-      <div className="min-h-screen bg-gray-50/50">
-        <div className="container max-w-7xl py-8 px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-medium text-gray-900">Settings</h1>
-            <p className="mt-1 text-sm text-gray-600">Manage your account settings and preferences</p>
-          </div>
+    <UserDashboardLayout title="Settings">
+      <p className="text-olive-600 mb-8 -mt-4">Manage your account settings and preferences</p>
 
-          {/* Main content container with clean layout */}
-          <div className="grid gap-8 lg:grid-cols-4">
+      {/* Main content container with clean layout */}
+      <div className="grid gap-8 lg:grid-cols-4">
             {/* Navigation sidebar */}
             <div className="lg:col-span-1">
               <nav className="space-y-1" aria-label="Settings navigation">
@@ -81,9 +77,9 @@ export default function UserProfilePage() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all",
                         activeTab === tab.id
-                          ? "bg-white text-gray-900 shadow-sm"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-white/50",
-                        tab.danger && activeTab !== tab.id && "text-red-600 hover:text-red-700"
+                          ? "bg-white text-olive-900 shadow-sm border-2 border-sage-200"
+                          : "text-olive-600 hover:text-olive-900 hover:bg-white/50",
+                        tab.danger && activeTab !== tab.id && "text-terracotta-600 hover:text-terracotta-700"
                       )}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -94,15 +90,13 @@ export default function UserProfilePage() {
               </nav>
             </div>
 
-            {/* Content area */}
-            <div className="lg:col-span-3">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="p-6 sm:p-8">
-                  {renderTabContent()}
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Content area */}
+        <div className="lg:col-span-3">
+          <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-6 sm:p-8">
+              {renderTabContent()}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </UserDashboardLayout>

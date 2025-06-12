@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Check, Copy, Facebook, Link, Mail, Twitter, Users } from "lucide-react"
-
+import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -27,12 +27,11 @@ export default function ReferralPage() {
   }
 
   return (
-    <div className="container max-w-5xl py-8">
-      <h1 className="text-3xl font-bold mb-6">Refer Friends & Earn Rewards</h1>
+    <UserDashboardLayout title="Refer Friends & Earn Rewards">
 
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-2">
-          <Card className="mb-8">
+          <Card className="mb-8 border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Share Your Referral Code</CardTitle>
               <CardDescription>
@@ -113,7 +112,7 @@ export default function ReferralPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>How It Works</CardTitle>
               <CardDescription>Bring friends along and earn rewards in three simple steps</CardDescription>
@@ -185,7 +184,7 @@ export default function ReferralPage() {
         </div>
 
         <div>
-          <Card className="mb-8">
+          <Card className="mb-8 border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Your Rewards</CardTitle>
               <CardDescription>Track your referral rewards</CardDescription>
@@ -220,7 +219,7 @@ export default function ReferralPage() {
             </CardFooter>
           </Card>
 
-          <Card>
+          <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Terms and Conditions</CardTitle>
             </CardHeader>
@@ -252,6 +251,6 @@ export default function ReferralPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </UserDashboardLayout>
   )
 }

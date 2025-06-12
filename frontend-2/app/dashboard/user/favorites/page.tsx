@@ -6,12 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default function UserFavoritesPage() {
   return (
-    <UserDashboardLayout>
-      <div className="py-6">
-        <h1 className="text-2xl font-bold mb-2">My Favorites</h1>
-        <p className="text-muted-foreground mb-6">Access your saved practitioners and services.</p>
+    <UserDashboardLayout title="My Favorites">
+      <p className="text-olive-600 mb-8 -mt-4">Access your saved practitioners and services.</p>
 
-        <Tabs defaultValue="practitioners" className="mb-6">
+      <Tabs defaultValue="practitioners" className="space-y-6">
           <TabsList>
             <TabsTrigger value="practitioners">Practitioners</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
@@ -38,7 +36,6 @@ export default function UserFavoritesPage() {
             </Suspense>
           </TabsContent>
         </Tabs>
-      </div>
     </UserDashboardLayout>
   )
 }

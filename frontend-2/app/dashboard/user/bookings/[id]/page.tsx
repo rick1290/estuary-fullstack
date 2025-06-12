@@ -283,7 +283,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main booking details */}
           <div className="md:col-span-2 space-y-6">
-            <Card>
+            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -480,7 +480,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
           {/* Practitioner info */}
           <div>
-            <Card>
+            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-lg">Practitioner</CardTitle>
               </CardHeader>
