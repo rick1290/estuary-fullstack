@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PaymentIntegrationSettings } from "@/components/dashboard/practitioner/settings/payment-integration-settings"
 import { PasswordSettings } from "@/components/dashboard/practitioner/settings/password-settings"
@@ -12,20 +13,16 @@ export const metadata: Metadata = {
 
 export default function PractitionerSettingsPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your account settings, payment integrations, and notification preferences.
-        </p>
-      </div>
-
+    <PractitionerDashboardPageLayout 
+      title="Settings" 
+      description="Manage your account settings, payment integrations, and notification preferences"
+    >
       <Tabs defaultValue="billing" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
-          <TabsTrigger value="billing">Billing</TabsTrigger>
-          <TabsTrigger value="payment">Payment Integration</TabsTrigger>
-          <TabsTrigger value="password">Password</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto bg-sage-100 p-1 rounded-lg">
+          <TabsTrigger value="billing" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">Billing</TabsTrigger>
+          <TabsTrigger value="payment" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">Payment Integration</TabsTrigger>
+          <TabsTrigger value="password" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">Password</TabsTrigger>
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="billing" className="space-y-4">
@@ -44,6 +41,6 @@ export default function PractitionerSettingsPage() {
           <NotificationSettings />
         </TabsContent>
       </Tabs>
-    </div>
+    </PractitionerDashboardPageLayout>
   )
 }

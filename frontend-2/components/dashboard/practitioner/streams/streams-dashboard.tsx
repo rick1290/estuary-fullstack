@@ -73,10 +73,7 @@ export default function StreamsDashboard() {
 
   if (loading) {
     return (
-      <div className="flex-1 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Streams Management</h1>
-        </div>
+      <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
@@ -96,14 +93,8 @@ export default function StreamsDashboard() {
   }
 
   return (
-    <div className="flex-1 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Streams Management</h1>
-          <p className="text-muted-foreground">
-            Create and manage your content streams to engage with your subscribers
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-end">
         <Button onClick={() => setCreatePostOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Create Post

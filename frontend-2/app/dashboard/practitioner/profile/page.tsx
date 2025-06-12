@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
+import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 import PractitionerProfileForm from "@/components/dashboard/practitioner/practitioner-profile-form"
@@ -16,40 +17,41 @@ export const metadata: Metadata = {
 
 export default function PractitionerProfilePage() {
   return (
-    <div className="container mx-auto py-6 max-w-7xl">
-      <h1 className="text-2xl font-bold tracking-tight mb-6">Profile</h1>
-
-      <Card className="w-full border border-border rounded-lg overflow-hidden">
+    <PractitionerDashboardPageLayout 
+      title="Profile" 
+      description="Manage your professional profile information"
+    >
+      <Card className="w-full border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg bg-white/80 backdrop-blur-sm rounded-lg overflow-hidden">
         <Tabs defaultValue="basic-info" className="w-full">
-          <div className="border-b">
+          <div className="border-b border-sage-200">
             <TabsList className="bg-transparent h-auto p-0">
               <TabsTrigger
                 value="basic-info"
-                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-4 py-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-sage-600 data-[state=active]:shadow-none data-[state=active]:text-sage-700 rounded-none px-4 py-3 text-olive-600"
               >
                 Basic Info
               </TabsTrigger>
               <TabsTrigger
                 value="professional-details"
-                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-4 py-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-sage-600 data-[state=active]:shadow-none data-[state=active]:text-sage-700 rounded-none px-4 py-3 text-olive-600"
               >
                 Professional Details
               </TabsTrigger>
               <TabsTrigger
                 value="credentials"
-                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-4 py-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-sage-600 data-[state=active]:shadow-none data-[state=active]:text-sage-700 rounded-none px-4 py-3 text-olive-600"
               >
                 Credentials & Education
               </TabsTrigger>
               <TabsTrigger
                 value="questions"
-                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-4 py-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-sage-600 data-[state=active]:shadow-none data-[state=active]:text-sage-700 rounded-none px-4 py-3 text-olive-600"
               >
                 Common Questions
               </TabsTrigger>
               <TabsTrigger
                 value="preview"
-                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-4 py-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-sage-600 data-[state=active]:shadow-none data-[state=active]:text-sage-700 rounded-none px-4 py-3 text-olive-600"
               >
                 Preview Profile
               </TabsTrigger>
@@ -87,6 +89,6 @@ export default function PractitionerProfilePage() {
           </TabsContent>
         </Tabs>
       </Card>
-    </div>
+    </PractitionerDashboardPageLayout>
   )
 }
