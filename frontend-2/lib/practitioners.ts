@@ -230,7 +230,7 @@ export async function getAllPractitioners(filters: PractitionerFilters = {}): Pr
       bio: "Professional bio text here.",
       description: "Detailed description of practitioner services and approach.",
       quote: "Inspirational quote.",
-      profile_image_url: `/placeholder.svg?height=200&width=200&query=practitioner${i + 1}`,
+      profile_image_url: `https://i.pravatar.cc/200?img=${[47, 33, 44, 12, 32, 52, 48, 68, 91, 15][i]}`,
       profile_video_url: null,
       average_rating: rating.toString(),
       average_rating_float: rating,

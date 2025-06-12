@@ -48,16 +48,10 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
 
   // Dummy avatar images for different practitioners
   const getDummyAvatar = (practitionerId: string) => {
-    const avatars = [
-      'https://images.unsplash.com/photo-1494790108755-2616b332c265?w=200&h=200&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face',
-    ]
-    const index = practitioner.id.charCodeAt(0) % avatars.length
-    return avatars[index]
+    // Use consistent pravatar.cc images based on practitioner ID
+    const imageNumbers = [47, 33, 44, 12, 32, 52, 48, 68, 91, 15]
+    const index = practitioner.id.charCodeAt(0) % imageNumbers.length
+    return `https://i.pravatar.cc/200?img=${imageNumbers[index]}`
   }
 
   return (
