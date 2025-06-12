@@ -61,14 +61,15 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
   const updateVisibleDates = (startIndex: number) => {
     // Show 3 dates on desktop, 2 on mobile
-    const visibleCount = window.innerWidth < 600 ? 2 : 3
+    const visibleCount = typeof window !== 'undefined' && window.innerWidth < 600 ? 2 : 3
     const endIndex = Math.min(startIndex + visibleCount, allDates.length)
     setVisibleDates(allDates.slice(startIndex, endIndex))
   }
 
   const handlePrevDates = () => {
+    if (visibleDates.length === 0) return
     const currentStartIndex = allDates.findIndex(
-      (date) => `${date.day}, ${date.date}` === visibleDates[0].day + ", " + visibleDates[0].date,
+      (date) => date.day === visibleDates[0].day && date.date === visibleDates[0].date
     )
     if (currentStartIndex > 0) {
       updateVisibleDates(currentStartIndex - 1)
@@ -76,10 +77,11 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   }
 
   const handleNextDates = () => {
+    if (visibleDates.length === 0) return
     const currentStartIndex = allDates.findIndex(
-      (date) => `${date.day}, ${date.date}` === visibleDates[0].day + ", " + visibleDates[0].date,
+      (date) => date.day === visibleDates[0].day && date.date === visibleDates[0].date
     )
-    if (currentStartIndex < allDates.length - visibleDates.length) {
+    if (currentStartIndex >= 0 && currentStartIndex < allDates.length - visibleDates.length) {
       updateVisibleDates(currentStartIndex + 1)
     }
   }
@@ -134,40 +136,40 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
           <div className="mb-6">
             <label className="text-sm font-medium text-olive-900 mb-3 block">Choose Your Date</label>
             <div className="hidden sm:block">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={handlePrevDates}
-                  disabled={visibleDates[0]?.day === allDates[0].day}
-                  className="text-sage-600 hover:bg-sage-100"
+                  disabled={visibleDates.length === 0 || (visibleDates[0]?.day === allDates[0].day && visibleDates[0]?.date === allDates[0].date)}
+                  className="text-sage-600 hover:bg-sage-100 flex-shrink-0 h-8 w-8"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
                 </Button>
 
-                <div className="flex gap-2 justify-center flex-1">
+                <div className="flex gap-1 justify-center flex-1 overflow-hidden">
                   {visibleDates.map((date) => (
                     <div
                       key={date.date}
                       onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                      className={`px-4 py-3 rounded-xl cursor-pointer text-center min-w-[80px] border-2 transition-all ${
+                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border-2 transition-all text-sm ${
                         selectedDate === `${date.day}, ${date.date}`
                           ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
                           : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50"
                       }`}
                     >
-                      <p className="font-medium">{date.day}</p>
-                      <p className="text-sm mt-1">{date.date}</p>
+                      <p className="font-medium text-xs">{date.day}</p>
+                      <p className="text-xs mt-1">{date.date}</p>
                     </div>
                   ))}
                 </div>
 
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={handleNextDates}
-                  disabled={visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day}
-                  className="text-sage-600 hover:bg-sage-100"
+                  disabled={visibleDates.length === 0 || (visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day && visibleDates[visibleDates.length - 1]?.date === allDates[allDates.length - 1].date)}
+                  className="text-sage-600 hover:bg-sage-100 flex-shrink-0 h-8 w-8"
                 >
                   <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
                 </Button>
@@ -202,7 +204,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                 <button
                   key={time}
                   onClick={() => handleTimeSelect(time)}
-                  className={`p-3 rounded-xl border-2 text-center text-sm font-medium transition-all ${
+                  className={`p-2 rounded-lg border-2 text-center text-xs font-medium transition-all ${
                     selectedTime === time
                       ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
                       : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
