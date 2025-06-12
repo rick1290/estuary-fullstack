@@ -159,6 +159,7 @@ export default function FinancesOverviewPage() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </PractitionerDashboardPageLayout>
   )
 }
