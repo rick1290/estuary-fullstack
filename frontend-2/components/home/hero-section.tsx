@@ -58,7 +58,7 @@ export default function HeroSection() {
               <SearchIcon className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
             </div>
             <Input
-              className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4 text-olive-800 placeholder:text-olive-500"
+              className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4 text-olive-800 placeholder:text-olive-400/70"
               placeholder="Search for practitioners, courses, or wellness topics..."
             />
             <Button className="mr-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg" size="lg">
