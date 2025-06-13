@@ -9,6 +9,7 @@ import StreamsTeaserSection from "@/components/home/streams-teaser-section"
 import EmailSignupSection from "@/components/home/email-signup-section"
 import BecomePractitionerSection from "@/components/home/become-practitioner-section"
 import SectionConnector from "@/components/home/section-connector"
+import ImageDividerSection from "@/components/home/image-divider-section"
 
 export default function Home() {
   // This array defines the order of sections
@@ -17,6 +18,7 @@ export default function Home() {
     { id: "hero", component: <HeroSection /> },
     { id: "featured-practitioners", component: <FeaturedPractitionersSection /> },
     { id: "upcoming-workshops", component: <UpcomingWorkshopsSection /> },
+    { id: "image-divider", component: <ImageDividerSection /> },
     { id: "explore-formats", component: <ExploreFormatsSection /> },
     { id: "streams-teaser", component: <StreamsTeaserSection /> },
     { id: "email-signup", component: <EmailSignupSection /> },
@@ -26,8 +28,9 @@ export default function Home() {
   // Define section background colors for connectors - cleaner, minimal palette
   const sectionColors = {
     hero: "white",
-    "upcoming-workshops": "#fefaf1", // warm-100
     "featured-practitioners": "white",
+    "upcoming-workshops": "#fefaf1", // warm-100
+    "image-divider": "transparent",
     "explore-formats": "#f5f5f5", // gray-100
     "streams-teaser": "#fafafa", // gray-50
     "email-signup": "white",
@@ -38,7 +41,8 @@ export default function Home() {
   const connectorTypes = {
     "hero-featured-practitioners": "wave",
     "featured-practitioners-upcoming-workshops": "curve",
-    "upcoming-workshops-explore-formats": "wave",
+    "upcoming-workshops-image-divider": "none",
+    "image-divider-explore-formats": "none",
     "explore-formats-streams-teaser": "angle",
     "streams-teaser-email-signup": "wave",
     "email-signup-become-practitioner": "curve",
