@@ -49,11 +49,13 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
   }
 
   return (
-    <div className="mb-12 animate-fade-in" style={{animationDelay: '0.4s'}}>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-olive-900 mb-1">Upcoming Transformations</h2>
-          <p className="text-olive-600">Join group experiences led by {coursesAndWorkshops[0].name.split(' ')[0]}</p>
+    <div className="mt-12 mb-12 animate-fade-in" style={{animationDelay: '0.4s'}}>
+      {/* Section title with enhanced spacing */}
+      <div className="flex justify-between items-center mb-8">
+        <div className="relative">
+          <div className="absolute -left-12 top-1/2 -translate-y-1/2 w-8 h-[2px] bg-gradient-to-r from-transparent to-sage-300 hidden lg:block" />
+          <h2 className="text-2xl font-bold text-olive-900 mb-2">Upcoming Transformations</h2>
+          <p className="text-olive-600">Group experiences and learning journeys</p>
         </div>
 
         {!isMobile && (
