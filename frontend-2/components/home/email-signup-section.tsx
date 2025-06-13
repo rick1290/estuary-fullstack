@@ -24,7 +24,7 @@ export default function EmailSignupSection() {
       <div className="absolute w-[500px] h-[500px] rounded-full bg-terracotta-200/30 blur-3xl top-[10%] right-[-200px] z-0" />
       <div className="absolute w-[400px] h-[400px] rounded-full bg-sage-200/30 blur-3xl bottom-[5%] left-[-100px] z-0" />
 
-      <div className="container relative z-10">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <Card className="max-w-4xl mx-auto border-0 shadow-2xl overflow-hidden animate-fade-in">
           <div className="bg-gradient-to-br from-terracotta-100 via-sage-100 to-blush-100 p-1">
             <CardContent className="bg-cream-50 p-12 rounded-[calc(theme(borderRadius.lg)-4px)]">

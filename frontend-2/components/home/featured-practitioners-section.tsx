@@ -61,7 +61,7 @@ export default function FeaturedPractitionersSection() {
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-sage-200/20 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-terracotta-200/20 rounded-full blur-3xl" />
 
-      <div className="container relative z-10">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center mb-12">
           <div className="animate-fade-in">
             <div className="flex items-center gap-2 mb-3">

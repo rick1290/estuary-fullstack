@@ -45,7 +45,7 @@ export default function ExploreFormatsSection() {
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-sage-200/20 rounded-full blur-3xl" />
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-terracotta-200/20 rounded-full blur-3xl" />
 
-      <div className="container relative z-10">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16 animate-fade-in">
           <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
             <Sparkles className="h-4 w-4 text-terracotta-600" strokeWidth="1.5" />

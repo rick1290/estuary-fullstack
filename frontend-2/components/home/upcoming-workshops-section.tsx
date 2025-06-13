@@ -130,7 +130,7 @@ export default function UpcomingWorkshopsSection() {
       <div className="absolute w-[400px] h-[400px] rounded-full bg-terracotta-200/30 blur-3xl top-[-100px] left-[-100px] z-0" />
       <div className="absolute w-[300px] h-[300px] rounded-full bg-sage-200/40 blur-3xl bottom-[50px] right-[10%] z-0" />
 
-      <div className="container relative z-10">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center mb-10">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-olive-900">Upcoming Transformations</h2>

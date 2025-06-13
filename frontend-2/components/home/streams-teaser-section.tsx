@@ -13,7 +13,7 @@ export default function StreamsTeaserSection() {
       <div className="absolute top-20 -left-40 w-[600px] h-[600px] bg-blush-200/30 rounded-full blur-3xl" />
       <div className="absolute bottom-20 -right-40 w-[500px] h-[500px] bg-sage-200/30 rounded-full blur-3xl" />
 
-      <div className="container relative z-10">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}

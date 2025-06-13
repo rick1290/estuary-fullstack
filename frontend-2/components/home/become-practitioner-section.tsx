@@ -32,7 +32,7 @@ export default function BecomePractitionerSection() {
       <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-sage-200/30 rounded-full blur-3xl" />
       <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-terracotta-200/30 rounded-full blur-3xl" />
 
-      <div className="container relative z-10">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
           <div className="order-2 lg:order-1 animate-fade-in">
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
