@@ -1,0 +1,10 @@
+🚫 unknown plugin dependency "@hey-api/client-next" - do you need to register a custom plugin with this name?
+Error: 🚫 unknown plugin dependency "@hey-api/client-next" - do you need to register a custom plugin with this name?
+    at n (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:6727)
+    at ou (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:6979)
+    at su (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:7173)
+    at /Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:8785
+    at Array.map (<anonymous>)
+    at au (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:7977)
+    at async pu (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:9038)
+    at async start (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/bin/index.cjs:86:5)
