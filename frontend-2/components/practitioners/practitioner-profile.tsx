@@ -9,8 +9,8 @@ import SessionOfferings from "./profile/session-offerings"
 import ClientReviews from "./profile/client-reviews"
 import EstuaryPromise from "./profile/estuary-promise"
 import { mockPractitionerData, mockServiceData } from "./profile/mock-data"
-import LoginModal from "@/components/auth/login-modal"
 import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface PractitionerProfileProps {
   practitioner: Practitioner
@@ -20,8 +20,8 @@ interface PractitionerProfileProps {
 export default function PractitionerProfile({ practitioner, initialLiked = false }: PractitionerProfileProps) {
   const [selectedServiceType, setSelectedServiceType] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(initialLiked)
-  const [showLoginModal, setShowLoginModal] = useState(false)
   const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
 
   // Load liked state from localStorage on mount
   useEffect(() => {
@@ -55,13 +55,18 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
 
   const handleMessageClick = useCallback(() => {
     if (!isAuthenticated) {
-      setShowLoginModal(true)
+      openAuthModal({
+        redirectUrl: `/practitioners/${practitioner.id}`,
+        serviceType: "message",
+        title: "Sign in to Message",
+        description: `Connect with ${practitioner.first_name} ${practitioner.last_name} and start your wellness journey`
+      })
     } else {
       // Handle messaging for authenticated users
       console.log("Open messaging interface")
       // This would typically navigate to a messaging page or open a messaging interface
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, openAuthModal, practitioner])
 
   // Filter services by type
   const getServicesByType = (type: string) => {
@@ -130,14 +135,6 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
 
       {/* Estuary Promise */}
       <EstuaryPromise />
-
-      {/* Login Modal */}
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        redirectUrl={`/practitioners/${practitioner.id}`}
-        serviceType="message"
-      />
     </div>
   )
 }

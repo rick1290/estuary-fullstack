@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import type { Practitioner } from "@/types/practitioner"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface PractitionerBookingPanelProps {
   practitioner: Practitioner
@@ -21,7 +21,7 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
   const [isSubscribed, setIsSubscribed] = useState(false)
   const router = useRouter()
   const { isAuthenticated } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
+  const { openAuthModal } = useAuthModal()
 
   // Load liked state from localStorage on mount
   useEffect(() => {
@@ -62,7 +62,12 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
     if (isAuthenticated) {
       router.push(`/practitioners/${practitioner.id}/contact`)
     } else {
-      setShowLoginModal(true)
+      openAuthModal({
+        redirectUrl: `/practitioners/${practitioner.id}`,
+        serviceType: "message",
+        title: "Sign in to Connect",
+        description: `Connect with ${practitioner.display_name} and begin your wellness journey`
+      })
     }
   }
 
@@ -198,13 +203,6 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
         </CardContent>
       </Card>
 
-      {/* Login Modal */}
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        redirectUrl={`/practitioners/${practitioner.id}`}
-        serviceType="message"
-      />
     </>
   )
 }

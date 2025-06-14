@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MessageCircle, Share2, Bookmark, MoreHorizontal, Lock, Play, Heart } from "lucide-react"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface ContentCardProps {
   post: StreamPost
@@ -24,6 +25,7 @@ interface ContentCardProps {
 export default function ContentCard({ post }: ContentCardProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
   const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
@@ -32,7 +34,13 @@ export default function ContentCard({ post }: ContentCardProps) {
 
   const handleLike = () => {
     if (!isAuthenticated) {
-      router.push("/auth/login")
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: window.location.pathname,
+        serviceType: "stream",
+        title: "Sign in to Interact",
+        description: "Please sign in to like this content"
+      })
       return
     }
 
@@ -42,7 +50,13 @@ export default function ContentCard({ post }: ContentCardProps) {
 
   const handleSave = () => {
     if (!isAuthenticated) {
-      router.push("/auth/login")
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: window.location.pathname,
+        serviceType: "stream",
+        title: "Sign in to Save",
+        description: "Please sign in to save this content"
+      })
       return
     }
     setSaved(!saved)
@@ -50,7 +64,13 @@ export default function ContentCard({ post }: ContentCardProps) {
 
   const handleCommentToggle = () => {
     if (!isAuthenticated) {
-      router.push("/auth/login")
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: window.location.pathname,
+        serviceType: "stream",
+        title: "Sign in to Comment",
+        description: "Please sign in to comment on this content"
+      })
       return
     }
     setShowComments(!showComments)
@@ -127,7 +147,13 @@ export default function ContentCard({ post }: ContentCardProps) {
               <Button 
                 variant="link" 
                 size="sm" 
-                onClick={() => router.push("/auth/login")} 
+                onClick={() => openAuthModal({
+                  defaultTab: "login",
+                  redirectUrl: window.location.pathname,
+                  serviceType: "stream",
+                  title: "Subscribe to Premium Content",
+                  description: "Sign in to access exclusive premium content"
+                })} 
                 className="font-medium text-sage-700 p-0 h-auto"
               >
                 Subscribe to read more
@@ -152,7 +178,13 @@ export default function ContentCard({ post }: ContentCardProps) {
                     <p className="text-sm text-white/80 mb-4">Subscribe to watch this video</p>
                     <Button 
                       className="bg-white text-gray-900 hover:bg-gray-100"
-                      onClick={() => router.push("/auth/login")}
+                      onClick={() => openAuthModal({
+                        defaultTab: "login",
+                        redirectUrl: window.location.pathname,
+                        serviceType: "stream",
+                        title: "Subscribe to Watch Video",
+                        description: "Sign in to access exclusive video content"
+                      })}
                     >
                       <Play className="mr-2 h-4 w-4" strokeWidth="1.5" />
                       Subscribe to Watch
@@ -190,7 +222,13 @@ export default function ContentCard({ post }: ContentCardProps) {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Button 
                       className="bg-white/90 backdrop-blur-sm text-gray-900 hover:bg-white shadow-lg"
-                      onClick={() => router.push("/auth/login")}
+                      onClick={() => openAuthModal({
+                        defaultTab: "login",
+                        redirectUrl: window.location.pathname,
+                        serviceType: "stream",
+                        title: "Subscribe to View Image",
+                        description: "Sign in to access exclusive image content"
+                      })}
                     >
                       <Lock className="mr-2 h-4 w-4" strokeWidth="1.5" />
                       Subscribe to View

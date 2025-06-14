@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Clock, MapPin, Calendar, Users } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface CourseBookingPanelProps {
   course: any
@@ -17,11 +16,17 @@ interface CourseBookingPanelProps {
 export default function CourseBookingPanel({ course }: CourseBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
+  const { openAuthModal } = useAuthModal()
 
   const handleEnrollClick = () => {
     if (!isAuthenticated) {
-      setShowLoginModal(true)
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/checkout?serviceId=${course.id}&type=course`,
+        serviceType: "course",
+        title: "Sign in to Enroll in Course",
+        description: "Please sign in to enroll in this transformative course"
+      })
       return
     }
 
@@ -30,15 +35,7 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
   }
 
   return (
-    <>
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        redirectUrl={`/checkout?serviceId=${course.id}&type=course`}
-        serviceType="course"
-      />
-
-      <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
+    <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
         <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-8 text-center">
           <p className="text-sm text-olive-700 mb-2">Transform Your Knowledge</p>
           <div className="flex items-baseline justify-center gap-2">
@@ -88,6 +85,5 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
           </p>
         </CardContent>
       </Card>
-    </>
   )
 }

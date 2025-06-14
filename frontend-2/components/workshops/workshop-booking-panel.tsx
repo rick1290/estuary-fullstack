@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Clock, MapPin, Users, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface WorkshopDate {
   id: string | number
@@ -27,7 +27,7 @@ interface WorkshopBookingPanelProps {
 export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
+  const { openAuthModal } = useAuthModal()
 
   // Find the most recent date as default selection
   const findMostRecentDate = (dates?: WorkshopDate[]) => {
@@ -62,7 +62,13 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
 
   const handleRegisterClick = () => {
     if (!isAuthenticated) {
-      setShowLoginModal(true)
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/checkout?serviceId=${workshop.id}&type=workshop&date=${selectedDateId}`,
+        serviceType: "workshop",
+        title: "Sign in to Register for Workshop",
+        description: "Please sign in to register for this transformative workshop"
+      })
       return
     }
 
@@ -71,15 +77,7 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
   }
 
   return (
-    <>
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        redirectUrl={`/checkout?serviceId=${workshop.id}&type=workshop&date=${selectedDateId}`}
-        serviceType="workshop"
-      />
-
-      <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
+    <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
         <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-8 text-center">
           <p className="text-sm text-olive-700 mb-2">Transform Your Weekend</p>
           <div className="flex items-baseline justify-center gap-2">
@@ -171,6 +169,5 @@ export default function WorkshopBookingPanel({ workshop, dates }: WorkshopBookin
           </p>
         </CardContent>
       </Card>
-    </>
   )
 }
