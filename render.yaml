@@ -34,7 +34,6 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: NEXTAUTH_SECRET
         generateValue: true # Render will generate a random value
-        sync: false # Won't be synced from Git
     buildFilter:
       paths:
         - frontend-2/**
@@ -54,7 +53,6 @@ services:
         value: estuary.settings
       - key: DJANGO_SECRET_KEY
         generateValue: true
-        sync: false
       - key: DEBUG
         value: false
       - key: ALLOWED_HOSTS
