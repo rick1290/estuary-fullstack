@@ -1,0 +1,1 @@
+# LiveKit integration for Django rooms app

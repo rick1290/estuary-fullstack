@@ -1,11 +1,16 @@
+"""
+Booking API URL configuration
+"""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from apps.bookings.api.v1.views import BookingViewSet, BookingReminderViewSet
 
+from bookings.api.v1.views import BookingViewSet
+
+# Create router
 router = DefaultRouter()
-router.register(r'bookings', BookingViewSet)
-router.register(r'reminders', BookingReminderViewSet)
+router.register(r'bookings', BookingViewSet, basename='booking')
 
+# URL patterns
 urlpatterns = [
     path('', include(router.urls)),
 ]

@@ -123,8 +123,8 @@ class UserProfile(BaseModel):
     # Verification
     phone_verification_token = models.CharField(max_length=6, blank=True, null=True)
     
-    # Location preference (can be linked to Location model later)
-    location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL, 
+    # Location preference (user's address)
+    address = models.ForeignKey('utils.Address', on_delete=models.SET_NULL, 
                                blank=True, null=True, related_name='user_profiles')
     
     class Meta:

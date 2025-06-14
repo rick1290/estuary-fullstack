@@ -1,0 +1,3 @@
+"""
+Bookings API v1
+"""

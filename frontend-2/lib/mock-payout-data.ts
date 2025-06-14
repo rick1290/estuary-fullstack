@@ -1,0 +1,188 @@
+import type { Payout } from "@/types/payout"
+
+// Helper to generate dates relative to today
+const getRelativeDate = (daysAgo: number) => {
+  const date = new Date()
+  date.setDate(date.getDate() - daysAgo)
+  return date.toISOString()
+}
+
+export const mockPendingPayouts: Payout[] = [
+  {
+    id: "19",
+    amount: 2500.0,
+    grossAmount: 2631.58,
+    commissionAmount: 131.58,
+    commissionRate: 5.0,
+    status: "processing",
+    requestedDate: getRelativeDate(2),
+    processedDate: null,
+    processingTime: 0,
+    transferId: null,
+    transactions: [
+      {
+        id: "t123",
+        serviceName: "Group Meditation Workshop",
+        serviceType: "Workshop",
+        clientName: "Various Clients",
+        date: getRelativeDate(5),
+        timeSlot: "10:00 AM - 12:00 PM",
+        amount: 2631.58,
+      },
+    ],
+  },
+]
+
+export const mockPayouts: Payout[] = [
+  {
+    id: "18",
+    amount: 10.0,
+    grossAmount: 10.0,
+    commissionAmount: 0.0,
+    commissionRate: 0.0,
+    status: "completed",
+    requestedDate: "2025-02-12T00:00:00.000Z",
+    processedDate: "2025-02-12T00:00:00.000Z",
+    processingTime: 0,
+    transferId: "tr_1QroPnIidCm8WRE6NbqhyO99",
+    transactions: [
+      {
+        id: "t101",
+        serviceName: "Dog Walking Service",
+        serviceType: "Session",
+        clientName: "Richard Nielsen",
+        date: "2025-02-02T00:00:00.000Z",
+        timeSlot: "03:30 AM - N/A",
+        amount: 35.0,
+      },
+      {
+        id: "t102",
+        serviceName: "English tutor",
+        serviceType: "Session",
+        clientName: "Daniel Carmody",
+        date: "2025-02-02T00:00:00.000Z",
+        timeSlot: "06:00 AM - N/A",
+        amount: 30.0,
+      },
+    ],
+  },
+  {
+    id: "17",
+    amount: 950.0,
+    grossAmount: 1000.0,
+    commissionAmount: 50.0,
+    commissionRate: 5.0,
+    status: "completed",
+    requestedDate: getRelativeDate(15),
+    processedDate: getRelativeDate(14),
+    processingTime: 1,
+    transferId: "tr_1QnbPnIidCm8WRE6Nbqh5Z88",
+    transactions: [
+      {
+        id: "t95",
+        serviceName: "Mindfulness Retreat",
+        serviceType: "Workshop",
+        clientName: "Multiple Clients",
+        date: getRelativeDate(18),
+        timeSlot: "All Day",
+        amount: 1000.0,
+      },
+    ],
+  },
+  {
+    id: "16",
+    amount: 475.0,
+    grossAmount: 500.0,
+    commissionAmount: 25.0,
+    commissionRate: 5.0,
+    status: "completed",
+    requestedDate: getRelativeDate(30),
+    processedDate: getRelativeDate(28),
+    processingTime: 2,
+    transferId: "tr_1QkbPnIidCm8WRE6Nbqh3Y77",
+    transactions: [
+      {
+        id: "t85",
+        serviceName: "Career Coaching Package",
+        serviceType: "Session",
+        clientName: "Jennifer Lawrence",
+        date: getRelativeDate(35),
+        timeSlot: "Various",
+        amount: 500.0,
+      },
+    ],
+  },
+  {
+    id: "15",
+    amount: 142.5,
+    grossAmount: 150.0,
+    commissionAmount: 7.5,
+    commissionRate: 5.0,
+    status: "completed",
+    requestedDate: getRelativeDate(45),
+    processedDate: getRelativeDate(44),
+    processingTime: 1,
+    transferId: "tr_1QhbPnIidCm8WRE6Nbqh1X66",
+    transactions: [
+      {
+        id: "t75",
+        serviceName: "Yoga for Beginners",
+        serviceType: "Session",
+        clientName: "Michael Chen",
+        date: getRelativeDate(48),
+        timeSlot: "09:00 AM - 10:00 AM",
+        amount: 75.0,
+      },
+      {
+        id: "t76",
+        serviceName: "Meditation Basics",
+        serviceType: "Session",
+        clientName: "Sarah Johnson",
+        date: getRelativeDate(47),
+        timeSlot: "02:00 PM - 03:00 PM",
+        amount: 75.0,
+      },
+    ],
+  },
+  {
+    id: "14",
+    amount: 380.0,
+    grossAmount: 400.0,
+    commissionAmount: 20.0,
+    commissionRate: 5.0,
+    status: "failed",
+    requestedDate: getRelativeDate(60),
+    processedDate: getRelativeDate(58),
+    processingTime: 2,
+    transferId: null,
+    transactions: [
+      {
+        id: "t65",
+        serviceName: "Life Coaching Session",
+        serviceType: "Session",
+        clientName: "Robert Williams",
+        date: getRelativeDate(65),
+        timeSlot: "11:00 AM - 12:30 PM",
+        amount: 150.0,
+      },
+      {
+        id: "t66",
+        serviceName: "Nutritional Consultation",
+        serviceType: "Session",
+        clientName: "Emily Davis",
+        date: getRelativeDate(63),
+        timeSlot: "03:30 PM - 04:30 PM",
+        amount: 125.0,
+      },
+      {
+        id: "t67",
+        serviceName: "Fitness Assessment",
+        serviceType: "Session",
+        clientName: "James Wilson",
+        date: getRelativeDate(62),
+        timeSlot: "08:00 AM - 09:00 AM",
+        amount: 125.0,
+      },
+    ],
+  },
+]

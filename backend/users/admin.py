@@ -66,17 +66,17 @@ class CustomUserAdmin(BaseUserAdmin):
         return super().get_queryset(request).select_related('profile')
 
 
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['user_email', 'display_name', 'gender', 'birthdate', 'location', 'created_at']
-    list_filter = ['gender', 'created_at']
-    search_fields = ['user__email', 'user__first_name', 'user__last_name', 'display_name']
-    readonly_fields = ['created_at', 'updated_at']
-    
-    def user_email(self, obj):
-        return obj.user.email
-    user_email.short_description = 'User Email'
-    user_email.admin_order_field = 'user__email'
+# @admin.register(UserProfile)
+# class UserProfileAdmin(admin.ModelAdmin):
+#     list_display = ['user_email', 'display_name', 'gender', 'birthdate', 'location', 'created_at']
+#     list_filter = ['gender', 'created_at']
+#     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'display_name']
+#     readonly_fields = ['created_at', 'updated_at']
+#     
+#     def user_email(self, obj):
+#         return obj.user.email
+#     user_email.short_description = 'User Email'
+#     user_email.admin_order_field = 'user__email'
 
 
 @admin.register(UserSocialLinks)

@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from bookings.models import Booking
 from payments.models import (
-    PractitionerCreditTransaction, 
+    EarningsTransaction, 
     PackageCompletionRecord
 )
 from payments.services import (

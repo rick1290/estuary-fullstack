@@ -1,10 +1,5 @@
 from django.contrib import admin
-from .models import Country, Holiday, Language
-
-@admin.register(Country)
-class CountryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'created_at']
-    search_fields = ['name', 'code']
+from .models import Holiday, Language
 
 @admin.register(Holiday)
 class HolidayAdmin(admin.ModelAdmin):

@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Estuary API
+  version: 1.0.0
+  description: "\n    # Estuary Wellness Marketplace API\n    \n    ## Overview\n\
+    \    The Estuary API provides a comprehensive platform for wellness services,\
+    \ connecting practitioners with clients through an intuitive marketplace. Our\
+    \ API supports various service types including sessions, workshops, and courses.\n\
+    \    \n    ## Key Features\n    - **Practitioner Management**: Complete profile\
+    \ and service management for wellness professionals\n    - **Booking System**:\
+    \ Flexible booking for sessions, workshops, and courses\n    - **Payment Processing**:\
+    \ Secure payment handling with credit-based system\n    - **Real-time Communications**:\
+    \ Video streaming and messaging capabilities\n    - **Content Platform**: Support\
+    \ for streaming content and media management\n    \n    ## Authentication\n  \
+    \  All API endpoints require authentication using JWT tokens. Include the token\
+    \ in the Authorization header:\n    ```\n    Authorization: Bearer <your-token>\n\
+    \    ```\n    \n    ## Rate Limiting\n    - Anonymous users: 100 requests per\
+    \ hour\n    - Authenticated users: 1000 requests per hour\n    \n    ## API Versioning\n\
+    \    The API uses URL-based versioning. Current version: v1\n    \n    ## Response\
+    \ Format\n    All responses are in JSON format with consistent error handling.\n\
+    \    "
+  contact:
+    name: Estuary API Support
+    email: api@estuary.com
+  license:
+    name: Proprietary
+paths: {}
+components: {}
+tags:
+- name: Auth
+  description: Authentication and authorization endpoints
+- name: Users
+  description: User profile and account management
+- name: Practitioners
+  description: Practitioner profiles, services, and availability
+- name: Services
+  description: Service catalog including sessions, workshops, and courses
+- name: Bookings
+  description: Booking creation, management, and scheduling
+- name: Availability
+  description: Practitioner availability and time slot management
+- name: Payments
+  description: Payment processing, credits, and transactions
+- name: Subscriptions
+  description: Practitioner subscription management
+- name: Reviews
+  description: Reviews and ratings for practitioners and services
+- name: Locations
+  description: Service locations and venue management
+- name: Media
+  description: Media upload and management
+- name: Messaging
+  description: Real-time messaging between users
+- name: Notifications
+  description: Push notifications and alerts
+- name: Streams
+  description: Live streaming and video content
+- name: Rooms
+  description: Video room management for sessions
+- name: Community
+  description: Community features and interactions
+- name: Analytics
+  description: Analytics and reporting endpoints
+- name: Search
+  description: Search practitioners and services
+- name: Referrals
+  description: Referral program management
+externalDocs:
+  description: Find more info here
+  url: https://docs.estuary.com
+x-debug-info:
+  paths_discovered: 0
+  components_discovered: 0
+  message: Schema generated but no paths found

@@ -1,0 +1,185 @@
+import type { StreamPost, StreamAnalytics, StreamSubscriber } from "@/types/stream-management"
+
+export const mockStreamPosts: StreamPost[] = [
+  {
+    id: "post-1",
+    practitionerId: "practitioner-1",
+    title: "Morning Meditation Practice",
+    content:
+      "Start your day with this 10-minute guided meditation focusing on breath awareness and setting positive intentions for the day ahead.",
+    mediaUrls: ["/mindful-breathing.png", "/serene-meditation-space.png"],
+    mediaType: "image",
+    tier: "free",
+    status: "published",
+    publishedAt: "2024-01-15T08:00:00Z",
+    createdAt: "2024-01-15T07:30:00Z",
+    updatedAt: "2024-01-15T07:30:00Z",
+    tags: ["meditation", "morning", "breathwork"],
+    stats: {
+      views: 245,
+      likes: 32,
+      comments: 8,
+      unlocks: 0,
+    },
+  },
+  {
+    id: "post-2",
+    practitionerId: "practitioner-1",
+    title: "Advanced Chakra Balancing Techniques",
+    content:
+      "Dive deep into advanced chakra balancing methods with this comprehensive guide. Includes visualization exercises, mantras, and energy work practices.",
+    mediaUrls: ["/serene-forest-meditation.png"],
+    mediaType: "image",
+    tier: "premium",
+    status: "published",
+    publishedAt: "2024-01-14T15:00:00Z",
+    createdAt: "2024-01-14T14:30:00Z",
+    updatedAt: "2024-01-14T14:30:00Z",
+    tags: ["chakras", "energy", "advanced"],
+    attachments: [
+      {
+        id: "att-1",
+        name: "Chakra_Balancing_Guide.pdf",
+        url: "/attachments/chakra-guide.pdf",
+        type: "application/pdf",
+        size: 2500000,
+      },
+    ],
+    stats: {
+      views: 89,
+      likes: 24,
+      comments: 12,
+      unlocks: 67,
+    },
+  },
+  {
+    id: "post-3",
+    practitionerId: "practitioner-1",
+    title: "Weekly Mindfulness Challenge",
+    content:
+      "Join our 7-day mindfulness challenge! Each day brings a new practice to help you cultivate awareness and presence in your daily life.",
+    mediaUrls: ["/mindful-moment.png", "/balanced-life.png"],
+    mediaType: "image",
+    tier: "entry",
+    status: "published",
+    publishedAt: "2024-01-13T10:00:00Z",
+    createdAt: "2024-01-13T09:30:00Z",
+    updatedAt: "2024-01-13T09:30:00Z",
+    tags: ["challenge", "mindfulness", "weekly"],
+    stats: {
+      views: 156,
+      likes: 28,
+      comments: 15,
+      unlocks: 134,
+    },
+  },
+  {
+    id: "post-4",
+    practitionerId: "practitioner-1",
+    title: "Upcoming Workshop: Sound Healing",
+    content:
+      "Join me next week for an immersive sound healing workshop. We'll explore the therapeutic power of singing bowls, gongs, and vocal toning.",
+    mediaUrls: [],
+    tier: "free",
+    status: "scheduled",
+    scheduledAt: "2024-01-20T12:00:00Z",
+    createdAt: "2024-01-15T16:00:00Z",
+    updatedAt: "2024-01-15T16:00:00Z",
+    tags: ["workshop", "sound-healing", "announcement"],
+    stats: {
+      views: 0,
+      likes: 0,
+      comments: 0,
+      unlocks: 0,
+    },
+  },
+  {
+    id: "post-5",
+    practitionerId: "practitioner-1",
+    title: "Draft: Seasonal Wellness Practices",
+    content:
+      "As we transition into the new season, it's important to align our wellness practices with the natural rhythms of the earth...",
+    mediaUrls: [],
+    tier: "entry",
+    status: "draft",
+    createdAt: "2024-01-15T20:00:00Z",
+    updatedAt: "2024-01-15T20:00:00Z",
+    tags: ["seasonal", "wellness", "nature"],
+    stats: {
+      views: 0,
+      likes: 0,
+      comments: 0,
+      unlocks: 0,
+    },
+  },
+]
+
+export const mockStreamSubscribers: StreamSubscriber[] = [
+  {
+    id: "sub-1",
+    userId: "user-1",
+    practitionerId: "practitioner-1",
+    tier: "premium",
+    startDate: "2024-01-01T00:00:00Z",
+    endDate: "2024-02-01T00:00:00Z",
+    isActive: true,
+    autoRenew: true,
+    userInfo: {
+      firstName: "Sarah",
+      lastName: "Johnson",
+      email: "sarah.johnson@example.com",
+      profilePicture: "/abstract-user-icon.png",
+    },
+  },
+  {
+    id: "sub-2",
+    userId: "user-2",
+    practitionerId: "practitioner-1",
+    tier: "entry",
+    startDate: "2024-01-10T00:00:00Z",
+    endDate: "2024-02-10T00:00:00Z",
+    isActive: true,
+    autoRenew: false,
+    userInfo: {
+      firstName: "Michael",
+      lastName: "Chen",
+      email: "michael.chen@example.com",
+    },
+  },
+  {
+    id: "sub-3",
+    userId: "user-3",
+    practitionerId: "practitioner-1",
+    tier: "premium",
+    startDate: "2024-01-05T00:00:00Z",
+    endDate: "2024-02-05T00:00:00Z",
+    isActive: true,
+    autoRenew: true,
+    userInfo: {
+      firstName: "Emma",
+      lastName: "Davis",
+      email: "emma.davis@example.com",
+      profilePicture: "/images/avatar-2.png",
+    },
+  },
+]
+
+export const mockStreamAnalytics: StreamAnalytics = {
+  totalSubscribers: 127,
+  subscribersByTier: {
+    entry: 89,
+    premium: 38,
+  },
+  recentSubscribers: mockStreamSubscribers,
+  revenue: {
+    monthly: 2840,
+    total: 8520,
+  },
+  topPosts: mockStreamPosts.slice(0, 3),
+  engagementStats: {
+    totalViews: 1250,
+    totalLikes: 184,
+    totalComments: 67,
+    averageEngagement: 12.5,
+  },
+}

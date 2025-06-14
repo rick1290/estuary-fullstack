@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Any
 from django.db import transaction
 from temporalio import activity
 
-from apps.integrations.temporal.base_activities import django_activity, transactional_activity
-from apps.integrations.temporal.decorators import monitored_activity
+from integrations.temporal.base_activities import django_activity, transactional_activity
+from integrations.temporal.decorators import monitored_activity
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def get_booking_details(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with booking details
     """
-    from apps.bookings.models import Booking
+    from bookings.models import Booking
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -66,8 +66,8 @@ def send_booking_confirmation(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with notification results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -128,8 +128,8 @@ def send_session_reminder(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with notification results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -189,7 +189,7 @@ def get_session_status(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with session status
     """
-    from apps.bookings.models import Booking
+    from bookings.models import Booking
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -218,8 +218,8 @@ def send_session_followup(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with notification results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -278,7 +278,7 @@ def check_feedback_status(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with feedback status
     """
-    from apps.bookings.models import Booking, Feedback
+    from bookings.models import Booking, Feedback
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -307,8 +307,8 @@ def send_feedback_reminder(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with notification results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -359,9 +359,9 @@ def handle_no_show(booking_id: int) -> Dict[str, Any]:
     Returns:
         Dict with handling results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
-    from apps.payments.services import PaymentService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
+    from payments.services import PaymentService
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -445,9 +445,9 @@ def cancel_booking(booking_id: int, reason: str = None) -> Dict[str, Any]:
     Returns:
         Dict with cancellation results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
-    from apps.payments.services import PaymentService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
+    from payments.services import PaymentService
     
     try:
         booking = Booking.objects.get(id=booking_id)
@@ -554,7 +554,7 @@ def create_booking(
         Dict with the new booking details
     """
     from django.contrib.auth import get_user_model
-    from apps.bookings.models import Booking
+    from bookings.models import Booking
     from apps.services.models import ServiceType
     
     User = get_user_model()
@@ -632,8 +632,8 @@ def send_rescheduling_notification(
     Returns:
         Dict with notification results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
     
     try:
         original_booking = Booking.objects.get(id=original_booking_id)
@@ -694,7 +694,7 @@ def get_bookings_in_timeframe(
     Returns:
         List of bookings in the time frame
     """
-    from apps.bookings.models import Booking
+    from bookings.models import Booking
     
     try:
         # Parse time range
@@ -741,8 +741,8 @@ def send_reminder(booking_id: int, reminder_type: str) -> Dict[str, Any]:
     Returns:
         Dict with notification results
     """
-    from apps.bookings.models import Booking
-    from apps.notifications.services import NotificationService
+    from bookings.models import Booking
+    from notifications.services import NotificationService
     
     try:
         booking = Booking.objects.get(id=booking_id)

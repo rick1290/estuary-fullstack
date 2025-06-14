@@ -1,940 +1,566 @@
+"""
+DRF Serializers for Practitioners API
+"""
 from rest_framework import serializers
+from django.db import transaction
+from django.db.models import Avg, Count, Min, Max, Q
 from django.utils import timezone
-from datetime import timedelta
-from django.db.models import Count, Sum, Max
-from django.db.models import Q
-from django.core.validators import FileExtensionValidator
-from apps.practitioners.models import (
-    Practitioner, Specialize, Style, Topic, 
-    PractitionerOnboardingProgress, Education, 
-    Certification, Question, VerificationDocument
+from decimal import Decimal
+
+from practitioners.models import (
+    Practitioner, Specialize, Style, Topic, Certification, Education,
+    Schedule, ScheduleTimeSlot, SchedulePreference, OutOfOffice,
+    VerificationDocument, PractitionerOnboardingProgress
 )
-from apps.users.models import User
-from apps.common.models import Modality
-from apps.utils.serializer_fields import SafeImageURLField
-from drf_spectacular.utils import extend_schema_field, inline_serializer
-from apps.locations.models import PractitionerLocation
-from apps.locations.api.v1.serializers import PractitionerLocationSerializer
-
-class PractitionerUserSerializer(serializers.ModelSerializer):
-    """Serializer for basic user information in practitioner context."""
-    
-    class Meta:
-        model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'profile_picture']
-        read_only_fields = ['id', 'email']
+from locations.models import PractitionerLocation
+from services.models import Service, ServiceType
+from reviews.models import Review
+from payments.models import PractitionerSubscription
+from users.models import User
+from common.models import Modality
 
 
-# Explicitly define readable versions for schema generation
-class PractitionerUserReadable(PractitionerUserSerializer):
-    """Read-only serializer for minimal user information in practitioner context."""
-    
-    class Meta(PractitionerUserSerializer.Meta):
-        read_only_fields = fields = ['id', 'first_name', 'last_name', 'email', 'profile_picture']
-
-
-class SpecializeSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner specializations."""
-    
+class SpecializationSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner specializations"""
     class Meta:
         model = Specialize
         fields = ['id', 'content']
-
-
-class StyleSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner styles."""
-    
-    class Meta:
-        model = Style
-        fields = ['id', 'content']
-
-
-class TopicSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner topics."""
-    
-    class Meta:
-        model = Topic
-        fields = ['id', 'content']
-
-
-class ModalitySerializer(serializers.ModelSerializer):
-    """Serializer for practitioner modalities."""
-    
-    class Meta:
-        model = Modality
-        fields = ['id', 'name', 'description']
-
-
-class EducationSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner education."""
-    
-    class Meta:
-        model = Education
-        fields = ['id', 'degree', 'educational_institute', 'order']
-
-
-class CertificationSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner certifications."""
-    
-    class Meta:
-        model = Certification
-        fields = ['id', 'certificate', 'institution', 'order']
         read_only_fields = ['id']
 
 
-class QuestionSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner questions."""
+class StyleSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner styles"""
+    class Meta:
+        model = Style
+        fields = ['id', 'content']
+        read_only_fields = ['id']
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner topics"""
+    class Meta:
+        model = Topic
+        fields = ['id', 'content']
+        read_only_fields = ['id']
+
+
+class CertificationSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner certifications"""
+    class Meta:
+        model = Certification
+        fields = ['id', 'certificate', 'institution', 'issue_date', 'expiry_date', 'order']
+        read_only_fields = ['id']
+
+
+class EducationSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner education"""
+    class Meta:
+        model = Education
+        fields = ['id', 'degree', 'educational_institute', 'order']
+        read_only_fields = ['id']
+
+
+class ModalitySerializer(serializers.ModelSerializer):
+    """Serializer for modalities"""
+    class Meta:
+        model = Modality
+        fields = ['id', 'name', 'description']
+        read_only_fields = ['id']
+
+
+class PractitionerLocationSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner location"""
+    full_address = serializers.ReadOnlyField()
     
     class Meta:
-        model = Question
-        fields = ['id', 'title', 'order']
+        model = PractitionerLocation
+        fields = [
+            'id', 'name', 'address_line1', 'address_line2', 
+            'city', 'state', 'postal_code', 'country',
+            'latitude', 'longitude', 'full_address',
+            'is_primary', 'is_virtual', 'is_in_person'
+        ]
+        read_only_fields = ['id', 'full_address']
 
 
-class BasicPractitionerSerializer(serializers.ModelSerializer):
-    """Minimal serializer for practitioner information in other contexts like bookings."""
+class VerificationDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for verification documents"""
+    class Meta:
+        model = VerificationDocument
+        fields = [
+            'id', 'document_type', 'document_url', 'status',
+            'rejection_reason', 'notes', 'expires_at',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'status', 'rejection_reason', 'created_at', 'updated_at']
+
+
+class PractitionerSubscriptionSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner subscription status"""
+    tier_display = serializers.CharField(source='get_tier_display', read_only=True)
     
-    user = PractitionerUserSerializer(read_only=True)
+    class Meta:
+        model = PractitionerSubscription
+        fields = [
+            'id', 'tier', 'tier_display', 'status', 'start_date',
+            'end_date', 'is_active', 'is_annual'
+        ]
+        read_only_fields = fields
+
+
+class PractitionerListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for practitioner listings"""
+    full_name = serializers.ReadOnlyField()
+    average_rating = serializers.SerializerMethodField()
+    total_reviews = serializers.SerializerMethodField()
+    total_services = serializers.SerializerMethodField()
+    price_range = serializers.SerializerMethodField()
+    primary_location = PractitionerLocationSerializer(read_only=True)
+    specializations = SpecializationSerializer(many=True, read_only=True)
     
     class Meta:
         model = Practitioner
         fields = [
-            'user', 'title', 'is_verified', 'average_rating', 'display_name'
+            'id', 'public_uuid', 'display_name', 'professional_title',
+            'profile_image_url', 'years_of_experience', 'is_verified',
+            'featured', 'full_name', 'average_rating', 'total_reviews',
+            'total_services', 'price_range', 'primary_location',
+            'specializations', 'next_available_date'
         ]
-
-
-# Alias for BasicPractitionerSerializer to maintain consistent naming across the project
-PractitionerBasicSerializer = BasicPractitionerSerializer
-
-# Explicitly define readable versions for schema generation
-class PractitionerBasicReadable(BasicPractitionerSerializer):
-    """Read-only serializer for basic practitioner information."""
+        read_only_fields = fields
     
-    user = PractitionerUserReadable(read_only=True)
+    def get_average_rating(self, obj):
+        """Calculate average rating from reviews"""
+        result = Review.objects.filter(
+            practitioner=obj,
+            is_published=True
+        ).aggregate(avg_rating=Avg('rating'))
+        return round(result['avg_rating'] or 0, 2)
     
-    class Meta(BasicPractitionerSerializer.Meta):
-        read_only_fields = fields = ['user', 'title', 'is_verified', 'average_rating', 'display_name']
+    def get_total_reviews(self, obj):
+        """Count total published reviews"""
+        return Review.objects.filter(
+            practitioner=obj,
+            is_published=True
+        ).count()
+    
+    def get_total_services(self, obj):
+        """Count total active services"""
+        return obj.primary_services.filter(is_active=True).count()
+    
+    def get_price_range(self, obj):
+        """Get min and max price from active services"""
+        result = obj.primary_services.filter(is_active=True).aggregate(
+            min_price=Min('price_cents'),
+            max_price=Max('price_cents')
+        )
+        return {
+            'min': Decimal(result['min_price']) / 100 if result['min_price'] else None,
+            'max': Decimal(result['max_price']) / 100 if result['max_price'] else None
+        }
 
 
-class PractitionerProfileUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating practitioner profile."""
-    user = PractitionerUserSerializer(required=False)
-    specializations = serializers.PrimaryKeyRelatedField(many=True, queryset=Specialize.objects.all(), required=False)
-    styles = serializers.PrimaryKeyRelatedField(many=True, queryset=Style.objects.all(), required=False)
-    topics = serializers.PrimaryKeyRelatedField(many=True, queryset=Topic.objects.all(), required=False)
-    modalities = serializers.PrimaryKeyRelatedField(many=True, queryset=Modality.objects.all(), required=False)
+class PractitionerDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for public practitioner profiles"""
+    full_name = serializers.ReadOnlyField()
+    average_rating = serializers.SerializerMethodField()
+    total_reviews = serializers.SerializerMethodField()
+    total_services = serializers.SerializerMethodField()
+    completed_sessions_count = serializers.SerializerMethodField()
+    price_range = serializers.SerializerMethodField()
+    
+    # Related data
+    primary_location = PractitionerLocationSerializer(read_only=True)
+    specializations = SpecializationSerializer(many=True, read_only=True)
+    styles = StyleSerializer(many=True, read_only=True)
+    topics = TopicSerializer(many=True, read_only=True)
+    modalities = ModalitySerializer(many=True, read_only=True)
+    certifications = CertificationSerializer(many=True, read_only=True)
     
     class Meta:
         model = Practitioner
         fields = [
-            'user',
-            'display_name',
-            'title',
-            'bio',
-            'description',
-            'quote',
-            'years_of_experience',
-            'specializations',
-            'styles',
-            'topics',
-            'modalities',
-            'buffer_time',
+            'id', 'public_uuid', 'display_name', 'professional_title',
+            'bio', 'quote', 'profile_image_url', 'profile_video_url',
+            'years_of_experience', 'is_verified', 'featured', 'is_active',
+            'full_name', 'average_rating', 'total_reviews', 'total_services',
+            'completed_sessions_count', 'price_range', 'next_available_date',
+            'primary_location', 'specializations', 'styles', 'topics',
+            'modalities', 'certifications'
         ]
+        read_only_fields = fields
+    
+    def get_average_rating(self, obj):
+        return obj.average_rating
+    
+    def get_total_reviews(self, obj):
+        return obj.total_reviews
+    
+    def get_total_services(self, obj):
+        return obj.total_services
+    
+    def get_completed_sessions_count(self, obj):
+        return obj.completed_sessions_count
+    
+    def get_price_range(self, obj):
+        return obj.price_range
 
-class PractitionerMediaSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner media uploads."""
-    profile_image = serializers.ImageField(required=False)
-    profile_video = serializers.FileField(
-        required=False,
-        validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'avi'])]
+
+class PractitionerPrivateSerializer(PractitionerDetailSerializer):
+    """Private serializer for practitioner's own profile"""
+    email = serializers.EmailField(source='user.email', read_only=True)
+    phone = serializers.CharField(source='user.phone_number', read_only=True)
+    cancellation_rate = serializers.SerializerMethodField()
+    subscription = PractitionerSubscriptionSerializer(read_only=True)
+    educations = EducationSerializer(many=True, read_only=True)
+    
+    class Meta(PractitionerDetailSerializer.Meta):
+        fields = PractitionerDetailSerializer.Meta.fields + [
+            'email', 'phone', 'practitioner_status', 'is_onboarded',
+            'onboarding_step', 'onboarding_completed_at', 'buffer_time',
+            'cancellation_rate', 'subscription', 'educations',
+            'created_at', 'updated_at'
+        ]
+    
+    def get_cancellation_rate(self, obj):
+        return obj.cancellation_rate
+
+
+class PractitionerUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating practitioner profile"""
+    specialization_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Specialize.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
+    style_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Style.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
+    topic_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Topic.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
+    modality_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Modality.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
+    certification_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Certification.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
+    education_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Education.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
     )
     
     class Meta:
         model = Practitioner
-        fields = ['profile_image', 'profile_video']
-
-class PractitionerEducationSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner education."""
-    class Meta:
-        model = Education
         fields = [
-            'id',
-            'degree',
-            'educational_institute',
-            'order'
+            'display_name', 'professional_title', 'bio', 'quote',
+            'profile_image_url', 'profile_video_url', 'years_of_experience',
+            'buffer_time', 'specialization_ids', 'style_ids', 'topic_ids',
+            'modality_ids', 'certification_ids', 'education_ids'
         ]
-
-class PractitionerCertificationSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner certifications."""
-    document = serializers.FileField(required=False, write_only=True)
     
-    class Meta:
-        model = Certification
-        fields = [
-            'id',
-            'certificate',
-            'institution',
-            'order',
-            'document'
-        ]
+    def update(self, instance, validated_data):
+        # Extract many-to-many fields
+        specializations = validated_data.pop('specialization_ids', None)
+        styles = validated_data.pop('style_ids', None)
+        topics = validated_data.pop('topic_ids', None)
+        modalities = validated_data.pop('modality_ids', None)
+        certifications = validated_data.pop('certification_ids', None)
+        educations = validated_data.pop('education_ids', None)
+        
+        # Update instance fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update many-to-many relationships
+        if specializations is not None:
+            instance.specializations.set(specializations)
+        if styles is not None:
+            instance.styles.set(styles)
+        if topics is not None:
+            instance.topics.set(topics)
+        if modalities is not None:
+            instance.modalities.set(modalities)
+        if certifications is not None:
+            instance.certifications.set(certifications)
+        if educations is not None:
+            instance.educations.set(educations)
+        
+        return instance
 
-class VerificationDocumentSerializer(serializers.ModelSerializer):
-    """Serializer for verification documents."""
-    document = serializers.FileField()
-    
-    class Meta:
-        model = VerificationDocument
-        fields = ['id', 'document_type', 'document', 'status', 'expires_at']
-        read_only_fields = ['uploaded_at', 'status']
 
 class PractitionerApplicationSerializer(serializers.ModelSerializer):
-    """Serializer for creating a practitioner application from an existing user."""
+    """Serializer for practitioner applications"""
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     
     class Meta:
         model = Practitioner
         fields = [
-            'title',            # Professional title (e.g., 'Life Coach', 'Therapist')
-            'bio',              # Short bio for listings
-            'description',       # Full profile description
-            'display_name',      # Professional display name
-            'years_of_experience'
+            'user', 'display_name', 'professional_title', 'bio',
+            'years_of_experience', 'profile_image_url'
         ]
     
     def create(self, validated_data):
-        # Get the current user from the context
-        user = self.context['request'].user
+        # Check if user already has a practitioner profile
+        if Practitioner.objects.filter(user=validated_data['user']).exists():
+            raise serializers.ValidationError("You already have a practitioner profile")
         
-        # Create the practitioner profile
+        # Create practitioner profile with pending status
         practitioner = Practitioner.objects.create(
-            user=user,
-            **validated_data
+            **validated_data,
+            practitioner_status='pending'
         )
         
-        # Create the onboarding progress record
+        # Create onboarding progress tracking
         PractitionerOnboardingProgress.objects.create(
             practitioner=practitioner,
             status='in_progress',
-            current_step='profile_setup',
-            steps_completed=[]
+            current_step='profile_completion'
         )
         
         return practitioner
 
 
-class PractitionerBasicWritable(serializers.ModelSerializer):
-    """Writable serializer for updating practitioner information during onboarding."""
+# Schedule-related serializers
+class ScheduleTimeSlotSerializer(serializers.ModelSerializer):
+    """Serializer for schedule time slots"""
+    class Meta:
+        model = ScheduleTimeSlot
+        fields = ['id', 'day', 'start_time', 'end_time', 'is_active']
+        read_only_fields = ['id']
+    
+    def validate(self, attrs):
+        if attrs.get('end_time') and attrs.get('start_time'):
+            if attrs['end_time'] <= attrs['start_time']:
+                raise serializers.ValidationError("End time must be after start time")
+        return attrs
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner schedules"""
+    time_slots = ScheduleTimeSlotSerializer(many=True, read_only=True)
     
     class Meta:
-        model = Practitioner
+        model = Schedule
         fields = [
-            # Basic Info
-            'title',
-            'bio',
-            'description',
-            'quote',
-            'display_name',
-            'years_of_experience',
-            
-            # Profile Media
-            'profile_image_url',
-            'profile_video_url',
-            
-            # Professional Details
-            'specializations',
-            'styles',
-            'topics',
-            'modalities',
-            'certifications',
-            'educations',
-            
-            # Scheduling
-            'buffer_time',
-            'book_times',
-            'availability',
-            
-            # Business Details
-            'min_price',
-            'max_price',
-            'services',
-            'categories',
-            
-            # Status Fields (read-only)
-            'is_verified',
-            'practitioner_status',
-            'average_rating',
-            'total_reviews'
+            'id', 'name', 'description', 'timezone', 'is_default',
+            'is_active', 'time_slots', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['is_verified', 'practitioner_status', 'average_rating', 'total_reviews']
-        extra_kwargs = {
-            # Optional profile fields
-            'profile_image_url': {'required': False},
-            'profile_video_url': {'required': False},
-            'quote': {'required': False},
-            'description': {'required': False},
-            
-            # Optional scheduling fields
-            'buffer_time': {'required': False},
-            'book_times': {'required': False},
-            'availability': {'required': False},
-            
-            # Optional business fields
-            'min_price': {'required': False},
-            'max_price': {'required': False},
-            
-            # Optional relationships
-            'specializations': {'required': False},
-            'styles': {'required': False},
-            'topics': {'required': False},
-            'modalities': {'required': False},
-            'certifications': {'required': False},
-            'educations': {'required': False},
-            'services': {'required': False},
-            'categories': {'required': False}
-        }
-        
-    def update(self, instance, validated_data):
-        # Update many-to-many relationships if provided
-        m2m_fields = ['specializations', 'styles', 'topics', 'modalities', 
-                     'certifications', 'educations', 'services', 'categories']
-        
-        for field in m2m_fields:
-            if field in validated_data:
-                setattr(instance, field, validated_data.pop(field))
-        
-        # Update the remaining fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        
-        instance.save()
-        return instance
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
-class PractitionerListSerializer(serializers.ModelSerializer):
-    """Serializer for listing practitioners."""
-    
-    user = PractitionerUserSerializer(read_only=True)
-    specializations = SpecializeSerializer(many=True, read_only=True)
-    modalities = ModalitySerializer(many=True, read_only=True)
-    average_rating_float = serializers.FloatField(source='average_rating', read_only=True)
-    profile_image_url = SafeImageURLField(allow_null=True)
-    locations = serializers.SerializerMethodField()
+class ScheduleCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating schedules with time slots"""
+    time_slots = ScheduleTimeSlotSerializer(many=True, write_only=True, required=False)
     
     class Meta:
-        model = Practitioner
+        model = Schedule
         fields = [
-            'id', 'user', 'title', 'bio', 'average_rating', 'average_rating_float', 'total_reviews', 
-            'is_verified', 'featured', 'specializations', 'modalities', 'min_price',
-            'max_price', 'display_name', 'profile_image_url', 'locations'
+            'name', 'description', 'timezone', 'is_default',
+            'is_active', 'time_slots'
         ]
     
-    @extend_schema_field(PractitionerLocationSerializer(many=True))
-    def get_locations(self, obj):
-        """Get locations for this practitioner."""
-        locations = obj.locations.all()
-        return PractitionerLocationSerializer(locations, many=True).data
-
-
-class ClientServiceHistorySerializer(serializers.Serializer):
-    """Serializer for a client's history with a particular service."""
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    times_booked = serializers.IntegerField()
-    last_booked = serializers.DateTimeField()
-
-
-class ClientBookingSnapshotSerializer(serializers.Serializer):
-    """Serializer for a snapshot of a client's booking (used for next/last booking)."""
-    id = serializers.IntegerField()
-    service = serializers.SerializerMethodField()
-    date = serializers.DateTimeField(source='start_time')
-    status = serializers.CharField()
-
-    def get_service(self, obj):
-        return {
-            'id': obj.service.id,
-            'name': obj.service.name
-        }
-
-
-class ClientStatsSerializer(serializers.Serializer):
-    """Serializer for client booking statistics."""
-    total_bookings = serializers.IntegerField()
-    total_completed = serializers.IntegerField()
-    total_cancelled = serializers.IntegerField()
-    lifetime_value = serializers.DecimalField(max_digits=10, decimal_places=2)
-
-
-class ClientListSerializer(serializers.Serializer):
-    """Serializer for client list view."""
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    stats = serializers.SerializerMethodField()
-    next_booking = serializers.SerializerMethodField()
-    last_booking = serializers.SerializerMethodField()
-    services_history = serializers.SerializerMethodField()
-
-    def get_stats(self, user):
-        bookings = user.bookings.all()
-        return {
-            'total_bookings': bookings.count(),
-            'total_completed': bookings.filter(status='completed').count(),
-            'total_cancelled': bookings.filter(status='cancelled').count(),
-            'lifetime_value': bookings.aggregate(total=Sum('total_price'))['total'] or 0
-        }
-
-    def get_next_booking(self, user):
-        now = timezone.now()
-        next_booking = user.bookings.filter(
-            start_time__gte=now
-        ).order_by('start_time').first()
+    def create(self, validated_data):
+        time_slots_data = validated_data.pop('time_slots', [])
         
-        if next_booking:
-            return ClientBookingSnapshotSerializer(next_booking).data
-        return None
-
-    def get_last_booking(self, user):
-        now = timezone.now()
-        last_booking = user.bookings.filter(
-            start_time__lt=now
-        ).order_by('-start_time').first()
+        with transaction.atomic():
+            schedule = Schedule.objects.create(**validated_data)
+            
+            # Create time slots
+            for slot_data in time_slots_data:
+                ScheduleTimeSlot.objects.create(schedule=schedule, **slot_data)
         
-        if last_booking:
-            return ClientBookingSnapshotSerializer(last_booking).data
-        return None
-
-    def get_services_history(self, user):
-        services = user.bookings.values(
-            'service__id',
-            'service__name'
-        ).annotate(
-            times_booked=Count('id'),
-            last_booked=Max('start_time')
-        ).order_by('-times_booked')
-
-        return [
-            {
-                'id': service['service__id'],
-                'name': service['service__name'],
-                'times_booked': service['times_booked'],
-                'last_booked': service['last_booked']
-            }
-            for service in services
-        ]
+        return schedule
 
 
-class ClientListResponseSerializer(serializers.Serializer):
-    """Wrapper serializer that includes meta information."""
-    clients = ClientListSerializer(many=True)
-    meta = serializers.SerializerMethodField()
-
-    def get_meta(self, users):
-        now = timezone.now()
-        three_months_ago = now - timedelta(days=90)
-        one_month_ago = now - timedelta(days=30)
-
-        active_clients = users.filter(
-            bookings__start_time__gte=three_months_ago
-        ).distinct().count()
-
-        new_clients = users.filter(
-            bookings__start_time__gte=one_month_ago,
-            bookings__start_time__lt=now
-        ).distinct().count()
-
-        return {
-            'total_clients': users.count(),
-            'active_clients': active_clients,
-            'new_clients': new_clients
-        }
-
-
-class PractitionerDetailSerializer(serializers.ModelSerializer):
-    """Serializer for detailed practitioner information."""
-    
-    user = PractitionerUserSerializer(read_only=True)
-    specializations = SpecializeSerializer(many=True, read_only=True)
-    styles = StyleSerializer(many=True, read_only=True)
-    topics = TopicSerializer(many=True, read_only=True)
-    modalities = ModalitySerializer(many=True, read_only=True)
-    average_rating_float = serializers.FloatField(source='average_rating', read_only=True)
-    profile_image_url = SafeImageURLField(allow_null=True)
-    locations = serializers.SerializerMethodField()
-    
+class SchedulePreferenceSerializer(serializers.ModelSerializer):
+    """Serializer for schedule preferences"""
     class Meta:
-        model = Practitioner
+        model = SchedulePreference
         fields = [
-            'id', 'user', 'title', 'bio', 'description', 'quote', 
-            'profile_image_url', 'profile_video_url',
-            'average_rating', 'average_rating_float', 'total_reviews', 'years_of_experience',
-            'is_verified', 'featured', 'practitioner_status',
-            'specializations', 'styles', 'topics', 'modalities', 'buffer_time',
-            'next_available_date', 'completed_sessions',
-            'cancellation_rate', 'book_times',
-            'min_price', 'max_price', 'total_services', 'display_name',
-            'locations'
+            'id', 'timezone', 'country', 'holidays', 'respect_holidays',
+            'advance_booking_min_hours', 'advance_booking_max_days',
+            'is_active', 'auto_accept_bookings'
         ]
-    
-    @extend_schema_field(PractitionerLocationSerializer(many=True))
-    def get_locations(self, obj):
-        """Get locations for this practitioner."""
-        locations = obj.locations.all()
-        return PractitionerLocationSerializer(locations, many=True).data
+        read_only_fields = ['id']
 
 
-class ServiceBasicSerializer(serializers.Serializer):
-    """Basic serializer for service information to avoid circular imports."""
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    price = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
-    duration = serializers.IntegerField(allow_null=True)
-    location_type = serializers.CharField()
-    is_active = serializers.BooleanField()
-    image_url = serializers.URLField(allow_null=True)
-    description = serializers.CharField(allow_null=True)
-    average_rating = serializers.DecimalField(max_digits=3, decimal_places=2, allow_null=True)
-    total_reviews = serializers.IntegerField(default=0)
-    upcoming_sessions = serializers.ListField(child=serializers.DictField(), required=False)
-    service_type = serializers.DictField(required=False)
-    category = serializers.DictField(required=False)
-    child_services = serializers.ListField(child=serializers.DictField(), required=False)
-
-
-class ServiceCategoryBasicSerializer(serializers.Serializer):
-    """Basic serializer for service category information to avoid circular imports."""
-    id = serializers.UUIDField()
-    name = serializers.CharField()
-    slug = serializers.SlugField()
-    description = serializers.CharField(allow_null=True)
-    icon = serializers.CharField(allow_null=True)
-    image_url = serializers.URLField(allow_null=True)
-    is_active = serializers.BooleanField()
-
-
-class PractitionerProfileSerializer(serializers.ModelSerializer):
-    """Comprehensive serializer for practitioner profiles with all related data."""
-    
-    user = PractitionerUserSerializer(read_only=True)
-    specializations = SpecializeSerializer(many=True, read_only=True)
-    styles = StyleSerializer(many=True, read_only=True)
-    topics = TopicSerializer(many=True, read_only=True)
-    modalities = ModalitySerializer(many=True, read_only=True)
-    certifications = CertificationSerializer(many=True, read_only=True)
-    educations = EducationSerializer(many=True, read_only=True)
-    questions = QuestionSerializer(many=True, read_only=True)
-    services = serializers.SerializerMethodField()
-    services_by_category = serializers.SerializerMethodField()
-    services_by_type = serializers.SerializerMethodField()
-    service_categories = serializers.SerializerMethodField()
-    average_rating_float = serializers.FloatField(source='average_rating', read_only=True)
-    locations = serializers.SerializerMethodField()
-    
+class OutOfOfficeSerializer(serializers.ModelSerializer):
+    """Serializer for out of office periods"""
     class Meta:
-        model = Practitioner
+        model = OutOfOffice
         fields = [
-            'id', 'user', 'title', 'bio', 'description', 'quote', 
-            'profile_image_url', 'profile_video_url',
-            'average_rating', 'average_rating_float', 'total_reviews', 'years_of_experience',
-            'is_verified', 'featured', 'practitioner_status',
-            'specializations', 'styles', 'topics', 'modalities', 
-            'certifications', 'educations', 'questions',
-            'buffer_time', 'next_available_date', 'completed_sessions',
-            'cancellation_rate', 'book_times',
-            'min_price', 'max_price', 'total_services', 'display_name',
-            'services', 'services_by_category', 'services_by_type', 'service_categories',
-            'locations'
+            'id', 'from_date', 'to_date', 'title', 'is_archived',
+            'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
-    @extend_schema_field(PractitionerLocationSerializer(many=True))
-    def get_locations(self, obj):
-        """Get locations for this practitioner."""
-        locations = obj.locations.all()
-        return PractitionerLocationSerializer(locations, many=True).data
-    
-    @extend_schema_field(inline_serializer(
-        name='ServiceBasicSerializerList',
-        fields={
-            'id': serializers.IntegerField(),
-            'name': serializers.CharField(),
-            'price': serializers.DecimalField(max_digits=10, decimal_places=2),
-            'duration': serializers.IntegerField(),
-            'location_type': serializers.CharField(),
-            'is_active': serializers.BooleanField(),
-            'image_url': serializers.URLField(),
-            'description': serializers.CharField(),
-            'average_rating': serializers.DecimalField(max_digits=3, decimal_places=2),
-            'total_reviews': serializers.IntegerField(),
-            'service_type': serializers.DictField(),
-            'category': serializers.DictField(),
-        },
-        many=True
-    ))
-    def get_services(self, obj):
-        """Get all services for this practitioner."""
-        from apps.services.models import Service, ServiceType, ServiceSession, ServiceRelationship
-        from django.utils import timezone
-        from collections import defaultdict
-        
-        # Get services through the M2M relationship only
-        services = Service.objects.filter(
-            practitioner_relationships__practitioner=obj,
-            is_active=True
-        ).select_related('service_type', 'category').distinct()
-        
-        # Get upcoming sessions for workshops and courses
-        now = timezone.now()
-        upcoming_sessions = ServiceSession.objects.filter(
-            service__in=services,
-            start_time__gte=now
-        ).order_by('start_time').select_related('service')
-        
-        # Create a mapping of service IDs to their upcoming sessions
-        service_sessions = defaultdict(list)
-        for session in upcoming_sessions:
-            service_sessions[session.service_id].append({
-                'id': session.id,
-                'start_time': session.start_time,
-                'end_time': session.end_time,
-                'location': session.location,
-                'max_participants': session.max_participants,
-                'current_participants': session.current_participants
-            })
-        
-        # Get child services for packages and bundles
-        package_services = [s for s in services if s.service_type and s.service_type.name in ['package', 'bundle']]
-        package_relationships = ServiceRelationship.objects.filter(
-            parent_service__in=package_services
-        ).select_related('child_service', 'child_service__service_type', 'child_service__category')
-        
-        # Create a mapping of parent service IDs to their child services
-        service_children = defaultdict(list)
-        for rel in package_relationships:
-            child = rel.child_service
-            service_children[rel.parent_service_id].append({
-                'id': child.id,
-                'name': child.name,
-                'price': child.price,
-                'duration': child.duration,
-                'location_type': child.location_type,
-                'description': child.description,
-                'service_type': {
-                    'id': child.service_type.id if child.service_type else None,
-                    'name': child.service_type.name if child.service_type else None
-                },
-                'category': {
-                    'id': child.category.id if child.category else None,
-                    'name': child.category.name if child.category else None
-                },
-                'quantity': rel.quantity,
-                'discount_percentage': rel.discount_percentage
-            })
-        
-        # Prepare service data
-        service_data = []
-        for service in services:
-            data = {
-                'id': service.id,
-                'name': service.name,
-                'price': service.price,
-                'duration': service.duration,
-                'location_type': service.location_type,
-                'is_active': service.is_active,
-                'image_url': service.image_url,
-                'description': service.description,
-                'average_rating': service.average_rating,
-                'total_reviews': service.total_reviews,
-            }
-            
-            # Add service type information
-            if service.service_type:
-                data['service_type'] = {
-                    'id': service.service_type.id,
-                    'name': service.service_type.name,
-                    'description': service.service_type.description,
-                    'code': service.service_type.code
-                }
-                
-                # Add upcoming sessions for all service types
-                data['upcoming_sessions'] = service_sessions.get(service.id, [])
-                
-                # Add child services for packages and bundles
-                if service.service_type.name in ['package', 'bundle'] and service.id in service_children:
-                    data['child_services'] = service_children[service.id]
-            
-            # Add category information
-            if service.category:
-                data['category'] = {
-                    'id': service.category.id,
-                    'name': service.category.name,
-                    'slug': service.category.slug,
-                    'description': service.category.description,
-                    'icon': service.category.icon,
-                    'image_url': service.category.image_url
-                }
-            
-            service_data.append(data)
-            
-        return ServiceBasicSerializer(service_data, many=True).data
-    
-    @extend_schema_field(inline_serializer(
-        name='ServicesByCategoryList',
-        fields={
-            'category': serializers.DictField(),
-            'services': serializers.ListField(child=serializers.DictField()),
-        },
-        many=True
-    ))
-    def get_services_by_category(self, obj):
-        """Group services by category for this practitioner."""
-        from apps.services.models import Service, ServiceCategory
-        from collections import defaultdict
-        
-        # Get services through the M2M relationship only
-        services = Service.objects.filter(
-            practitioner_relationships__practitioner=obj,
-            is_active=True
-        ).select_related('category').distinct()
-        
-        # Group services by category
-        services_by_category = defaultdict(list)
-        
-        # Add services with categories
-        for service in services:
-            if service.category:
-                category_id = str(service.category.id)  # Convert UUID to string
-                category_name = service.category.name
-                
-                services_by_category[category_id].append({
-                    'id': service.id,
-                    'name': service.name,
-                    'price': service.price,
-                    'duration': service.duration,
-                    'location_type': service.location_type,
-                    'is_active': service.is_active,
-                    'image_url': service.image_url,
-                    'description': service.description,
-                    'average_rating': service.average_rating,
-                    'total_reviews': service.total_reviews,
-                    'category': {
-                        'id': category_id,
-                        'name': category_name
-                    }
-                })
-        
-        # Format the result as a list of categories with their services
-        result = []
-        for category_id, services in services_by_category.items():
-            # Get the category object
-            try:
-                category = ServiceCategory.objects.get(id=category_id)
-                result.append({
-                    'category': {
-                        'id': str(category.id),
-                        'name': category.name,
-                        'slug': category.slug,
-                        'description': category.description,
-                        'icon': category.icon,
-                        'image_url': category.image_url,
-                        'parent': str(category.parent.id) if category.parent else None
-                    },
-                    'services': ServiceBasicSerializer(services, many=True).data
-                })
-            except ServiceCategory.DoesNotExist:
-                # If category doesn't exist anymore, still include the services
-                result.append({
-                    'category': {
-                        'id': category_id,
-                        'name': 'Unknown Category'
-                    },
-                    'services': ServiceBasicSerializer(services, many=True).data
-                })
-        
-        return result
-    
-    @extend_schema_field(inline_serializer(
-        name='ServicesByTypeList',
-        fields={
-            'service_type': inline_serializer(
-                name='ServiceTypeDetail',
-                fields={
-                    'id': serializers.IntegerField(),
-                    'name': serializers.CharField(),
-                    'description': serializers.CharField(allow_null=True, required=False),
-                    'code': serializers.CharField(required=False),
-                }
-            ),
-            'services': serializers.ListField(child=serializers.DictField()),
-        },
-        many=True
-    ))
-    def get_services_by_type(self, obj):
-        """Group services by type for this practitioner."""
-        from apps.services.models import Service, ServiceType, ServiceSession
-        from collections import defaultdict
-        from django.utils import timezone
-        
-        # Get services through the M2M relationship only
-        services = Service.objects.filter(
-            practitioner_relationships__practitioner=obj,
-            is_active=True
-        ).select_related('service_type').distinct()
-        
-        # Get upcoming sessions for workshops and courses
-        now = timezone.now()
-        upcoming_sessions = ServiceSession.objects.filter(
-            service__in=services,
-            start_time__gte=now
-        ).order_by('start_time').select_related('service')
-        
-        # Create a mapping of service IDs to their upcoming sessions
-        service_sessions = defaultdict(list)
-        for session in upcoming_sessions:
-            service_sessions[session.service_id].append({
-                'id': session.id,
-                'start_time': session.start_time,
-                'end_time': session.end_time,
-                'location': session.location,
-                'max_participants': session.max_participants,
-                'current_participants': session.current_participants
-            })
-        
-        # Group services by type
-        services_by_type = defaultdict(list)
-        
-        # Add services with types
-        for service in services:
-            if service.service_type:
-                type_id = service.service_type.id
-                type_name = service.service_type.name
-                
-                service_data = {
-                    'id': service.id,
-                    'name': service.name,
-                    'price': service.price,
-                    'duration': service.duration,
-                    'location_type': service.location_type,
-                    'is_active': service.is_active,
-                    'image_url': service.image_url,
-                    'description': service.description,
-                    'average_rating': service.average_rating,
-                    'total_reviews': service.total_reviews,
-                }
-                
-                # Add upcoming sessions if this is a workshop or course
-                if type_name in ['workshop', 'course'] and service.id in service_sessions:
-                    service_data['upcoming_sessions'] = service_sessions[service.id]
-                
-                services_by_type[type_id].append(service_data)
-        
-        # Format the result as a list of types with their services
-        result = []
-        for type_id, services in services_by_type.items():
-            # Get the type object
-            try:
-                service_type = ServiceType.objects.get(id=type_id)
-                result.append({
-                    'service_type': {
-                        'id': service_type.id,
-                        'name': service_type.name,
-                        'description': service_type.description,
-                        'code': service_type.code
-                    },
-                    'services': ServiceBasicSerializer(services, many=True).data
-                })
-            except ServiceType.DoesNotExist:
-                # If type doesn't exist anymore, still include the services
-                result.append({
-                    'service_type': {
-                        'id': type_id,
-                        'name': 'Unknown Type'
-                    },
-                    'services': ServiceBasicSerializer(services, many=True).data
-                })
-        
-        # Add a default empty list if there are no services
-        if not result:
-            # Return at least one item with a default type to prevent frontend errors
-            result.append({
-                'service_type': {
-                    'id': 0,
-                    'name': 'session',
-                    'description': '',
-                    'code': 'session'
-                },
-                'services': []
-            })
-        
-        return result
-    
-    @extend_schema_field(inline_serializer(
-        name='ServiceCategoryList',
-        fields={
-            'id': serializers.UUIDField(),
-            'name': serializers.CharField(),
-            'slug': serializers.SlugField(),
-            'description': serializers.CharField(),
-            'icon': serializers.CharField(),
-            'image_url': serializers.URLField(),
-            'is_active': serializers.BooleanField(),
-            'parent': serializers.UUIDField(),
-        },
-        many=True
-    ))
-    def get_service_categories(self, obj):
-        """Get all service categories created by this practitioner."""
-        from apps.services.models import ServiceCategory
-        
-        categories = ServiceCategory.objects.filter(
-            practitioner=obj,
-            is_active=True
-        )
-        
-        # Create a list of basic category data
-        category_data = []
-        for category in categories:
-            category_data.append({
-                'id': category.id,
-                'name': category.name,
-                'slug': category.slug,
-                'description': category.description,
-                'icon': category.icon,
-                'image_url': category.image_url,
-                'is_active': category.is_active,
-                'parent': category.parent.id if category.parent else None
-            })
-        
-        return ServiceCategoryBasicSerializer(category_data, many=True).data
+    def validate(self, attrs):
+        if attrs.get('to_date') and attrs.get('from_date'):
+            if attrs['to_date'] < attrs['from_date']:
+                raise serializers.ValidationError("To date must be after from date")
+        return attrs
 
 
-class PractitionerOnboardingProgressSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the PractitionerOnboardingProgress model.
-    Shows onboarding progress for practitioners.
-    """
+class OnboardingProgressSerializer(serializers.ModelSerializer):
+    """Serializer for onboarding progress"""
     completion_percentage = serializers.SerializerMethodField()
-    next_step_description = serializers.SerializerMethodField()
+    next_step_description = serializers.ReadOnlyField(source='get_next_step_description')
     
     class Meta:
         model = PractitionerOnboardingProgress
         fields = [
-            'id', 
-            'status', 
-            'current_step', 
-            'steps_completed', 
-            'completion_percentage',
-            'next_step_description',
-            'started_at',
-            'last_updated',
-            'completed_at'
+            'id', 'status', 'current_step', 'steps_completed',
+            'completion_percentage', 'next_step_description',
+            'stall_reason', 'rejection_reason', 'started_at',
+            'last_updated', 'completed_at'
         ]
         read_only_fields = fields
     
     def get_completion_percentage(self, obj):
-        """
-        Get the completion percentage for the onboarding progress.
-        """
         return obj.calculate_completion_percentage()
+
+
+# Availability-related serializers
+class AvailabilitySlotSerializer(serializers.Serializer):
+    """Serializer for available time slots"""
+    date = serializers.DateField()
+    start_time = serializers.DateTimeField()
+    end_time = serializers.DateTimeField()
+    duration_minutes = serializers.IntegerField()
+    is_available = serializers.BooleanField()
+    service_types = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    booking_id = serializers.IntegerField(required=False, allow_null=True)
+    service_name = serializers.CharField(required=False, allow_null=True)
+
+
+class AvailabilityQuerySerializer(serializers.Serializer):
+    """Serializer for availability queries"""
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    service_id = serializers.IntegerField(required=False, allow_null=True)
+    service_type = serializers.CharField(required=False, allow_null=True)
+    duration_minutes = serializers.IntegerField(required=False, allow_null=True)
+    timezone = serializers.CharField(default='UTC')
     
-    def get_next_step_description(self, obj):
-        """
-        Get a user-friendly description of the next step.
-        """
-        return obj.get_next_step_description()
+    def validate(self, attrs):
+        if attrs['end_date'] < attrs['start_date']:
+            raise serializers.ValidationError("End date must be after start date")
+        
+        # Limit date range to prevent excessive queries
+        date_diff = (attrs['end_date'] - attrs['start_date']).days
+        if date_diff > 90:
+            raise serializers.ValidationError("Date range cannot exceed 90 days")
+        
+        return attrs
+
+
+class PractitionerSearchSerializer(serializers.Serializer):
+    """Serializer for practitioner search/filter parameters"""
+    # Location filters
+    city = serializers.CharField(required=False, allow_blank=True)
+    state = serializers.CharField(required=False, allow_blank=True)
+    country = serializers.CharField(required=False, allow_blank=True)
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
+    radius_km = serializers.IntegerField(required=False, min_value=1, max_value=100)
+    
+    # Service filters
+    service_type_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    category_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    specialization_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    style_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    topic_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    modality_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False
+    )
+    
+    # Availability filters
+    available_on = serializers.DateField(required=False, allow_null=True)
+    available_time = serializers.TimeField(required=False, allow_null=True)
+    location_type = serializers.ChoiceField(
+        choices=['virtual', 'in_person', 'hybrid'],
+        required=False
+    )
+    
+    # Price filters
+    min_price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        min_value=0
+    )
+    max_price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        min_value=0
+    )
+    
+    # Other filters
+    min_rating = serializers.FloatField(required=False, min_value=0, max_value=5)
+    min_experience_years = serializers.IntegerField(required=False, min_value=0)
+    languages = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    is_verified = serializers.BooleanField(required=False)
+    featured_only = serializers.BooleanField(default=False)
+    
+    # Sorting
+    sort_by = serializers.ChoiceField(
+        choices=[
+            'relevance', 'rating', 'price_low', 'price_high',
+            'experience', 'distance', 'availability'
+        ],
+        default='relevance'
+    )
+    
+    def validate(self, attrs):
+        # Validate price range
+        if attrs.get('max_price') and attrs.get('min_price'):
+            if attrs['max_price'] < attrs['min_price']:
+                raise serializers.ValidationError(
+                    "max_price must be greater than min_price"
+                )
+        
+        # Validate location search
+        if (attrs.get('latitude') or attrs.get('longitude')) and not attrs.get('radius_km'):
+            attrs['radius_km'] = 10  # Default 10km radius
+        
+        return attrs

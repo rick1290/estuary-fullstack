@@ -1,34 +1,30 @@
 """
 ASGI config for estuary project.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
+Pure Django ASGI configuration with WebSocket support.
+All API endpoints now served by Django REST Framework.
 """
 
 import os
-
 from django.core.asgi import get_asgi_application
-from fastapi import FastAPI
+from channels.routing import ProtocolTypeRouter, URLRouter
+from django.urls import path
 
+# Set Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "estuary.settings")
 
-application = get_asgi_application()
-fastapp = FastAPI(
-    servers=[
-        {
-            "url": "/api/v1",
-            "description": "V1",
-        }
-    ]
-)
+# Get Django ASGI application
+django_application = get_asgi_application()
 
+# Import WebSocket consumers
+from messaging.consumers import ChatConsumer
+from notifications.consumers import NotificationConsumer
 
-def init(app: FastAPI):
-    @app.get("/health")
-    def health_check():
-        return {'status': 'ok'}
-
-
-init(fastapp)
+# Create the ASGI application with protocol routing
+application = ProtocolTypeRouter({
+    "http": django_application,  # All HTTP requests go to Django
+    "websocket": URLRouter([
+        path("ws/chat/<str:room_name>/", ChatConsumer.as_asgi()),
+        path("ws/notifications/", NotificationConsumer.as_asgi()),
+    ]),
+})

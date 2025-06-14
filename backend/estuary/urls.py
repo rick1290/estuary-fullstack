@@ -16,12 +16,15 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    
+    # API v1 endpoints
+    path("api/v1/", include("api.v1.urls_drf")),
 ]
 
 # Serve static files in development

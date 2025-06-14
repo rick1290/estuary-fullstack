@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Service, ServiceCategory, ServiceType, ServiceSession, 
     SessionAgendaItem, ServiceBenefit, ServicePractitioner, ServiceRelationship,
-    Package, PackageService, Bundle
+    ServiceResource, ServiceResourceAccess, SessionParticipant, Waitlist
 )
 
 @admin.register(ServiceCategory)
@@ -82,87 +82,5 @@ class ServiceAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'primary_practitioner__user', 'service_type', 'category', 'location'
         )
-
-
-class PackageServiceInline(admin.TabularInline):
-    model = PackageService
-    extra = 1
-    fields = ['service', 'quantity', 'order', 'is_mandatory', 'notes']
-    ordering = ['order']
-
-
-@admin.register(Package)
-class PackageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'practitioner', 'price', 'original_price', 'savings_percentage', 
-                   'validity_days', 'is_active', 'is_featured']
-    list_filter = ['category', 'practitioner', 'is_active', 'is_featured', 'is_transferable']
-    search_fields = ['name', 'description', 'practitioner__user__email', 
-                    'practitioner__display_name']
-    readonly_fields = ['id', 'public_uuid', 'created_at', 'updated_at', 'savings_amount', 
-                      'savings_percentage']
-    inlines = [PackageServiceInline]
-    
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'description', 'id', 'public_uuid')
-        }),
-        ('Practitioner & Category', {
-            'fields': ('practitioner', 'category')
-        }),
-        ('Pricing', {
-            'fields': ('price', 'original_price', 'savings_amount', 'savings_percentage')
-        }),
-        ('Package Details', {
-            'fields': ('validity_days', 'is_transferable', 'terms_conditions')
-        }),
-        ('Media & Metadata', {
-            'fields': ('image_url', 'tags')
-        }),
-        ('Status', {
-            'fields': ('is_active', 'is_featured')
-        }),
-        ('System Info', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        })
-    )
-
-
-@admin.register(Bundle)
-class BundleAdmin(admin.ModelAdmin):
-    list_display = ['name', 'service', 'sessions_included', 'bonus_sessions', 'total_sessions', 
-                   'price', 'price_per_session', 'savings_percentage', 'is_active']
-    list_filter = ['service', 'is_active', 'is_featured', 'is_shareable']
-    search_fields = ['name', 'description', 'service__name', 'service__primary_practitioner__user__email']
-    readonly_fields = ['id', 'public_uuid', 'created_at', 'updated_at', 'total_sessions', 
-                      'price_per_session', 'savings_amount', 'savings_percentage']
-    
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'description', 'service', 'id', 'public_uuid')
-        }),
-        ('Bundle Configuration', {
-            'fields': ('sessions_included', 'bonus_sessions', 'total_sessions')
-        }),
-        ('Pricing', {
-            'fields': ('price', 'price_per_session', 'savings_amount', 'savings_percentage')
-        }),
-        ('Validity & Restrictions', {
-            'fields': ('validity_days', 'is_shareable', 'max_per_customer')
-        }),
-        ('Availability', {
-            'fields': ('available_from', 'available_until')
-        }),
-        ('Display & Status', {
-            'fields': ('highlight_text', 'is_active', 'is_featured')
-        }),
-        ('System Info', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        })
-    )
-    
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('service__primary_practitioner__user')
 
 

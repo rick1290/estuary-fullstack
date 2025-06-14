@@ -1,304 +1,323 @@
-from django.db.models import F, ExpressionWrapper, FloatField, Q
-from django.db.models.functions import ACos, Cos, Sin, Radians
-from django.contrib.postgres.search import SearchVector, SearchQuery
-from rest_framework import viewsets, mixins, status, filters
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-
-from apps.locations.models import State, City, ZipCode, PractitionerLocation
-from apps.practitioners.models import Practitioner
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db.models import Q, F, Value, DecimalField
+from django.db.models.functions import Power, Sqrt, Sin, Cos, ATan2, Radians
+from django.db import models
+from django_filters import rest_framework as django_filters
+from locations.models import Country, State, City, ZipCode, PractitionerLocation
 from .serializers import (
-    StateSerializer, CitySerializer, ZipCodeSerializer,
-    PractitionerLocationSerializer, PractitionerLocationCreateUpdateSerializer,
-    PractitionerWithLocationSerializer, LocationSearchSerializer
+    CountrySerializer, StateSerializer, CitySerializer, ZipCodeSerializer,
+    PractitionerLocationSerializer, LocationSearchSerializer, NearbyLocationSerializer
 )
+from utils.permissions import IsPractitioner
+from .permissions import IsLocationOwnerOrReadOnly, CanManageLocation
+import math
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class CountryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for countries.
+    Provides read-only access to country data.
+    """
+    queryset = Country.objects.filter(is_active=True)
+    serializer_class = CountrySerializer
+    permission_classes = [AllowAny]
+    filterset_fields = ['code', 'currency_code']
+    search_fields = ['name', 'code']
+    ordering_fields = ['name', 'code']
+    ordering = ['name']
 
 
 class StateViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint for viewing states.
+    ViewSet for states/provinces.
+    Provides read-only access to state data with filtering by country.
     """
-    queryset = State.objects.all()
+    queryset = State.objects.filter(is_active=True).select_related('country')
     serializer_class = StateSerializer
-    lookup_field = 'slug'
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name', 'abbreviation']
+    permission_classes = [AllowAny]
+    filterset_fields = ['country', 'code']
+    search_fields = ['name', 'code']
+    ordering_fields = ['name', 'code']
+    ordering = ['name']
+
+
+class CityFilter(django_filters.FilterSet):
+    """Filter for cities."""
+    state = django_filters.ModelChoiceFilter(queryset=State.objects.all())
+    country = django_filters.ModelChoiceFilter(
+        field_name='state__country',
+        queryset=Country.objects.all()
+    )
+    is_major = django_filters.BooleanFilter()
+    metro_area = django_filters.CharFilter(lookup_expr='icontains')
+    min_population = django_filters.NumberFilter(field_name='population', lookup_expr='gte')
+    
+    class Meta:
+        model = City
+        fields = ['state', 'country', 'is_major', 'metro_area']
 
 
 class CityViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint for viewing cities.
+    ViewSet for cities.
+    Provides read-only access to city data with advanced filtering.
     """
-    queryset = City.objects.all()
+    queryset = City.objects.filter(is_active=True).select_related('state', 'state__country')
     serializer_class = CitySerializer
-    lookup_field = 'slug'
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    permission_classes = [AllowAny]
+    filterset_class = CityFilter
+    search_fields = ['name', 'metro_area']
+    ordering_fields = ['name', 'population', 'is_major']
+    ordering = ['-is_major', '-population', 'name']
     
-    def get_queryset(self):
-        queryset = City.objects.all()
+    @action(detail=False, methods=['get'])
+    def major_cities(self, request):
+        """Get major cities for SEO/discovery."""
+        cities = self.queryset.filter(is_major=True)
+        serializer = self.get_serializer(cities, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_metro(self, request):
+        """Get cities grouped by metro area."""
+        metro_area = request.query_params.get('metro_area')
+        if not metro_area:
+            return Response(
+                {"error": "metro_area parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        # Filter by state if provided
-        state_slug = self.request.query_params.get('state', None)
-        if state_slug:
-            queryset = queryset.filter(state__slug=state_slug)
-            
-        # Filter major cities only if requested
-        major_only = self.request.query_params.get('major_only', 'false').lower() == 'true'
-        if major_only:
-            queryset = queryset.filter(is_major=True)
-            
-        return queryset
+        cities = self.queryset.filter(metro_area__icontains=metro_area)
+        serializer = self.get_serializer(cities, many=True)
+        return Response(serializer.data)
 
 
 class ZipCodeViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint for viewing zip codes.
+    ViewSet for postal codes.
+    Provides read-only access to postal code data.
     """
-    queryset = ZipCode.objects.all()
+    queryset = ZipCode.objects.all().select_related('city', 'city__state', 'country')
     serializer_class = ZipCodeSerializer
-    lookup_field = 'code'
+    permission_classes = [AllowAny]
+    filterset_fields = ['country', 'city']
+    search_fields = ['code']
+    ordering = ['code']
     
     def get_queryset(self):
-        queryset = ZipCode.objects.all()
+        queryset = super().get_queryset()
         
         # Filter by state if provided
-        state_slug = self.request.query_params.get('state', None)
-        if state_slug:
-            queryset = queryset.filter(city__state__slug=state_slug)
-            
-        # Filter by city if provided
-        city_slug = self.request.query_params.get('city', None)
-        if city_slug and state_slug:
-            queryset = queryset.filter(city__slug=city_slug)
-            
+        state_id = self.request.query_params.get('state')
+        if state_id:
+            queryset = queryset.filter(city__state_id=state_id)
+        
         return queryset
 
 
 class PractitionerLocationViewSet(viewsets.ModelViewSet):
     """
-    API endpoint for managing practitioner locations.
+    ViewSet for practitioner locations.
+    Practitioners can manage their own locations.
     """
-    permission_classes = [IsAuthenticated]
+    serializer_class = PractitionerLocationSerializer
+    permission_classes = [IsAuthenticated, CanManageLocation, IsLocationOwnerOrReadOnly]
+    filterset_fields = ['is_primary', 'is_virtual', 'is_in_person', 'city', 'state']
+    ordering_fields = ['created_at', 'is_primary']
+    ordering = ['-is_primary', '-created_at']
     
     def get_queryset(self):
-        # Practitioners can only see their own locations
-        if hasattr(self.request.user, 'practitioner'):
-            return PractitionerLocation.objects.filter(practitioner=self.request.user.practitioner)
-        # Admin users can see all locations
-        return PractitionerLocation.objects.all()
-    
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return PractitionerLocationCreateUpdateSerializer
-        return PractitionerLocationSerializer
-
-
-class LocationSearchViewSet(viewsets.ViewSet):
-    """
-    API endpoint for location-based searches.
-    """
-    def get_serializer_class(self):
-        if self.action == 'search_locations':
-            return LocationSearchSerializer
-        elif self.action == 'find_practitioners':
-            return PractitionerWithLocationSerializer
-        return None
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name='q',
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description='Search query for locations (min 2 characters)',
-                required=True
-            )
-        ],
-        responses=LocationSearchSerializer,
-        description='Search for locations by text query'
-    )
-    @action(detail=False, methods=['get'])
-    def search_locations(self, request):
-        """
-        Search for locations by text query.
-        """
-        query = request.query_params.get('q', '')
-        if not query or len(query) < 2:
-            return Response({"error": "Query must be at least 2 characters"}, status=status.HTTP_400_BAD_REQUEST)
+        """Get locations based on user permissions."""
+        user = self.request.user
         
-        # Search cities
-        cities = City.objects.annotate(
-            search=SearchVector('name', 'state__name', 'state__abbreviation')
-        ).filter(search=SearchQuery(query))[:10]
-        
-        # Search zip codes
-        zip_codes = ZipCode.objects.filter(code__startswith=query)[:10]
-        
-        # Search states
-        states = State.objects.annotate(
-            search=SearchVector('name', 'abbreviation')
-        ).filter(search=SearchQuery(query))[:10]
-        
-        results = {
-            'cities': CitySerializer(cities, many=True).data,
-            'zip_codes': ZipCodeSerializer(zip_codes, many=True).data,
-            'states': StateSerializer(states, many=True).data
-        }
-        
-        return Response(results)
-    
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name='zip_code',
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description='ZIP code to search near',
-                required=False
-            ),
-            OpenApiParameter(
-                name='city_id',
-                type=int,
-                location=OpenApiParameter.QUERY,
-                description='City ID to search near',
-                required=False
-            ),
-            OpenApiParameter(
-                name='state_id',
-                type=int,
-                location=OpenApiParameter.QUERY,
-                description='State ID to search near',
-                required=False
-            ),
-            OpenApiParameter(
-                name='radius',
-                type=float,
-                location=OpenApiParameter.QUERY,
-                description='Search radius in miles (default: 50)',
-                required=False
-            )
-        ],
-        responses=PractitionerWithLocationSerializer(many=True),
-        description='Find practitioners near a location'
-    )
-    @action(detail=False, methods=['get', 'post'])
-    def find_practitioners(self, request):
-        """
-        Find practitioners near a location.
-        """
-        # Handle both GET and POST methods
-        if request.method == 'POST':
-            serializer = LocationSearchSerializer(data=request.data)
+        # If listing, show all locations
+        if self.action == 'list':
+            queryset = PractitionerLocation.objects.all()
+            
+            # Filter by practitioner if specified
+            practitioner_id = self.request.query_params.get('practitioner')
+            if practitioner_id:
+                queryset = queryset.filter(practitioner__public_id=practitioner_id)
         else:
-            serializer = LocationSearchSerializer(data=request.query_params)
-            
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        data = serializer.validated_data
-        radius = data.get('radius', 25)  # Default radius in miles
-        
-        # Get coordinates based on the provided parameters
-        lat, lng = None, None
-        
-        # Direct coordinates
-        if 'latitude' in data and 'longitude' in data:
-            lat, lng = data['latitude'], data['longitude']
-            
-        # Zip code lookup
-        elif 'zip_code' in data:
-            try:
-                zip_obj = ZipCode.objects.get(code=data['zip_code'])
-                lat, lng = zip_obj.latitude, zip_obj.longitude
-            except ZipCode.DoesNotExist:
-                return Response(
-                    {"error": f"Zip code {data['zip_code']} not found"},
-                    status=status.HTTP_404_NOT_FOUND
+            # For other actions, only show user's own locations
+            if hasattr(user, 'practitioner_profile'):
+                queryset = PractitionerLocation.objects.filter(
+                    practitioner=user.practitioner_profile
                 )
-                
-        # City lookup
-        elif 'city_id' in data:
-            try:
-                city = City.objects.get(id=data['city_id'])
-                lat, lng = city.latitude, city.longitude
-            except City.DoesNotExist:
-                return Response(
-                    {"error": f"City with ID {data['city_id']} not found"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-                
-        # State lookup (will use center point of state)
-        elif 'state_id' in data:
-            try:
-                # For states, we'll use the most populous city as a proxy for the center
-                city = City.objects.filter(state_id=data['state_id']).order_by('-population').first()
-                if not city:
-                    return Response(
-                        {"error": f"No cities found for state with ID {data['state_id']}"},
-                        status=status.HTTP_404_NOT_FOUND
-                    )
-                lat, lng = city.latitude, city.longitude
-            except Exception as e:
-                return Response(
-                    {"error": str(e)},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+            else:
+                queryset = PractitionerLocation.objects.none()
         
-        # If we have coordinates, perform the proximity search
-        if lat is not None and lng is not None:
-            # Calculate distance using Haversine formula
-            practitioners = Practitioner.objects.filter(
-                locations__isnull=False
-            ).annotate(
-                distance=ExpressionWrapper(
-                    3959 * ACos(  # 3959 is Earth's radius in miles
-                        Cos(Radians(lat)) * 
-                        Cos(Radians(F('locations__latitude'))) * 
-                        Cos(Radians(F('locations__longitude')) - Radians(lng)) + 
-                        Sin(Radians(lat)) * 
-                        Sin(Radians(F('locations__latitude')))
-                    ),
-                    output_field=FloatField()
-                )
-            ).filter(
-                distance__lte=radius,
-                # Only include practitioners with in-person services
-                locations__is_in_person=True
-            ).order_by('distance').distinct()
-            
-            # Attach the matched location to each practitioner
-            for practitioner in practitioners:
-                # Find the closest location for this practitioner
-                closest_location = PractitionerLocation.objects.filter(
-                    practitioner=practitioner,
-                    is_in_person=True
-                ).annotate(
-                    loc_distance=ExpressionWrapper(
-                        3959 * ACos(
-                            Cos(Radians(lat)) * 
-                            Cos(Radians(F('latitude'))) * 
-                            Cos(Radians(F('longitude')) - Radians(lng)) + 
-                            Sin(Radians(lat)) * 
-                            Sin(Radians(F('latitude')))
-                        ),
-                        output_field=FloatField()
-                    )
-                ).order_by('loc_distance').first()
-                
-                practitioner.matched_location = closest_location
-            
-            return Response({
-                'practitioners': PractitionerWithLocationSerializer(practitioners, many=True).data,
-                'search_coordinates': {
-                    'latitude': lat,
-                    'longitude': lng,
-                    'radius': radius
-                }
-            })
-            
-        return Response(
-            {"error": "Could not determine coordinates for search"},
-            status=status.HTTP_400_BAD_REQUEST
+        return queryset.select_related(
+            'practitioner', 'city', 'state', 'country',
+            'city__state', 'city__state__country'
         )
+    
+    def perform_create(self, serializer):
+        """Create location for the current practitioner."""
+        serializer.save(practitioner=self.request.user.practitioner_profile)
+    
+    @action(detail=True, methods=['post'])
+    def set_primary(self, request, pk=None):
+        """Set a location as primary."""
+        location = self.get_object()
+        
+        # Check if user owns this location
+        if location.practitioner != request.user.practitioner_profile:
+            return Response(
+                {"error": "You can only modify your own locations"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        location.is_primary = True
+        location.save()
+        
+        serializer = self.get_serializer(location)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def search(self, request):
+        """
+        Search for nearby practitioner locations.
+        Supports searching by coordinates, address, or city.
+        """
+        search_serializer = LocationSearchSerializer(data=request.data)
+        search_serializer.is_valid(raise_exception=True)
+        params = search_serializer.validated_data
+        
+        queryset = PractitionerLocation.objects.filter(
+            practitioner__practitioner_status='active'
+        )
+        
+        # Filter by location type
+        location_type = params.get('location_type', 'both')
+        if location_type == 'in_person':
+            queryset = queryset.filter(is_in_person=True)
+        elif location_type == 'virtual':
+            queryset = queryset.filter(is_virtual=True)
+        
+        # Filter by city/state/country if provided
+        if params.get('city'):
+            queryset = queryset.filter(city=params['city'])
+        elif params.get('state'):
+            queryset = queryset.filter(state=params['state'])
+        elif params.get('country'):
+            queryset = queryset.filter(country=params['country'])
+        
+        # If we have coordinates, calculate distances
+        if params.get('latitude') and params.get('longitude'):
+            lat = float(params['latitude'])
+            lng = float(params['longitude'])
+            radius = float(params.get('radius', 25.0))
+            
+            # Haversine formula for distance calculation
+            # Convert to radians
+            lat_rad = math.radians(lat)
+            lng_rad = math.radians(lng)
+            
+            # Annotate with distance using database functions
+            queryset = queryset.annotate(
+                distance_miles=Value(3959.0, output_field=DecimalField()) * 
+                ATan2(
+                    Sqrt(
+                        Power(Sin((Radians(F('latitude')) - lat_rad) / 2), 2) +
+                        Cos(lat_rad) * Cos(Radians(F('latitude'))) *
+                        Power(Sin((Radians(F('longitude')) - lng_rad) / 2), 2)
+                    ),
+                    Sqrt(
+                        1 - (
+                            Power(Sin((Radians(F('latitude')) - lat_rad) / 2), 2) +
+                            Cos(lat_rad) * Cos(Radians(F('latitude'))) *
+                            Power(Sin((Radians(F('longitude')) - lng_rad) / 2), 2)
+                        )
+                    )
+                ) * 2
+            )
+            
+            # Filter by radius
+            queryset = queryset.filter(distance_miles__lte=radius)
+            
+            # Order by distance
+            queryset = queryset.order_by('distance_miles')
+        
+        # Limit results
+        queryset = queryset[:100]
+        
+        serializer = NearbyLocationSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def nearby(self, request):
+        """
+        Get nearby locations based on user's IP or provided coordinates.
+        This is a simplified version of search for quick lookups.
+        """
+        lat = request.query_params.get('lat')
+        lng = request.query_params.get('lng')
+        radius = float(request.query_params.get('radius', 10.0))
+        
+        if not lat or not lng:
+            return Response(
+                {"error": "Latitude and longitude parameters are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            lat = float(lat)
+            lng = float(lng)
+        except ValueError:
+            return Response(
+                {"error": "Invalid latitude or longitude values"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Use the search action logic
+        return self.search(request)
+    
+    @action(detail=False, methods=['post'])
+    def validate_address(self, request):
+        """Validate and geocode an address."""
+        from integrations.google_maps.client import GoogleMapsClient
+        from django.conf import settings
+        
+        address = request.data.get('address')
+        if not address:
+            return Response(
+                {"error": "Address is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if hasattr(settings, 'GOOGLE_MAPS_API_KEY'):
+                client = GoogleMapsClient()
+                result = client.geocode(address)
+                
+                if result:
+                    return Response({
+                        "valid": True,
+                        "formatted_address": result.get('formatted_address', address),
+                        "latitude": result['lat'],
+                        "longitude": result['lng'],
+                        "components": result.get('components', {})
+                    })
+                else:
+                    return Response({
+                        "valid": False,
+                        "error": "Address could not be found"
+                    })
+            else:
+                return Response({
+                    "valid": False,
+                    "error": "Geocoding service not configured"
+                })
+        except Exception as e:
+            logger.error(f"Address validation error: {e}")
+            return Response({
+                "valid": False,
+                "error": "Error validating address"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

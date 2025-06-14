@@ -6,9 +6,9 @@ from utils.admin_base import BaseModelAdmin
 
 from .models import (
     Order, 
-    CreditTransaction, 
+    UserCreditTransaction, 
     PaymentMethod, 
-    PractitionerCreditTransaction, 
+    EarningsTransaction, 
     PractitionerPayout,
     UserCreditBalance,
     SubscriptionTier,
@@ -22,7 +22,7 @@ from .models import (
 
 @admin.register(Order)
 class OrderAdmin(BaseModelAdmin):
-    list_display = ('public_uuid_short', 'user_email', 'practitioner_name', 'total_amount', 
+    list_display = ('public_uuid_short', 'user_email', 'practitioner_name', 'total_amount_cents', 
                    'status', 'payment_method', 'created_at')
     list_filter = ('status', 'order_type', 'payment_method', 'created_at')
     search_fields = ('public_uuid', 'user__email', 'practitioner__user__email', 'stripe_payment_intent_id')
@@ -37,7 +37,7 @@ class OrderAdmin(BaseModelAdmin):
             'fields': ('user', 'service', 'practitioner')
         }),
         ('Payment Details', {
-            'fields': ('payment_method', 'subtotal_amount', 'tax_amount', 'credits_applied', 'total_amount', 'currency')
+            'fields': ('payment_method', 'subtotal_amount_cents', 'tax_amount_cents', 'credits_applied_cents', 'total_amount_cents', 'currency')
         }),
         ('Stripe Information', {
             'fields': ('stripe_payment_intent_id', 'stripe_payment_method_id'),
@@ -68,8 +68,8 @@ class OrderAdmin(BaseModelAdmin):
     practitioner_name.admin_order_field = 'practitioner__display_name'
 
 
-@admin.register(CreditTransaction)
-class CreditTransactionAdmin(BaseModelAdmin):
+@admin.register(UserCreditTransaction)
+class UserCreditTransactionAdmin(BaseModelAdmin):
     list_display = ('transaction_short', 'user_email', 'amount_display', 'transaction_type', 
                    'is_credit', 'created_at')
     list_filter = ('transaction_type', 'is_expired', 'currency', 'created_at')
@@ -114,10 +114,10 @@ class PaymentMethodAdmin(BaseModelAdmin):
     user_email.admin_order_field = 'user__email'
 
 
-@admin.register(PractitionerCreditTransaction)
-class PractitionerCreditTransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'practitioner', 'credits_earned', 'commission', 'net_credits', 'payout_status', 'created_at')
-    list_filter = ('payout_status',)
+@admin.register(EarningsTransaction)
+class EarningsTransactionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'practitioner', 'gross_amount_cents', 'commission_amount_cents', 'net_amount_cents', 'status', 'created_at')
+    list_filter = ('status',)
     search_fields = ('practitioner__user__email',)
     date_hierarchy = 'created_at'
     readonly_fields = ('created_at',)
@@ -125,7 +125,7 @@ class PractitionerCreditTransactionAdmin(admin.ModelAdmin):
 
 @admin.register(PractitionerPayout)
 class PractitionerPayoutAdmin(admin.ModelAdmin):
-    list_display = ('id', 'practitioner', 'credits_payout', 'cash_payout', 'status', 'payout_date')
+    list_display = ('id', 'practitioner', 'credits_payout_cents', 'cash_payout_cents', 'status', 'payout_date')
     list_filter = ('status',)
     search_fields = ('practitioner__user__email', 'stripe_transfer_id', 'batch_id')
     date_hierarchy = 'payout_date'
@@ -134,7 +134,7 @@ class PractitionerPayoutAdmin(admin.ModelAdmin):
 
 @admin.register(UserCreditBalance)
 class UserCreditBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'balance', 'updated_at')
+    list_display = ('id', 'user', 'balance_cents', 'updated_at')
     search_fields = ('user__email',)
     readonly_fields = ('updated_at',)
 

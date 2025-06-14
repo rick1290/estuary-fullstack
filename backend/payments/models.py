@@ -37,28 +37,24 @@ class Order(PublicModel):
     stripe_payment_intent_id = models.CharField(max_length=200, blank=True)
     stripe_payment_method_id = models.CharField(max_length=200, blank=True)
     
-    # Amount fields using DecimalField for financial accuracy
-    subtotal_amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.00'))]
+    # Amount fields in cents
+    subtotal_amount_cents = models.IntegerField(
+        validators=[MinValueValidator(0)],
+        help_text="Subtotal in cents"
     )
-    tax_amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0.00'))]
+    tax_amount_cents = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Tax amount in cents"
     )
-    credits_applied = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0.00'))]
+    credits_applied_cents = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Credits applied in cents"
     )
-    total_amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.00'))]
+    total_amount_cents = models.IntegerField(
+        validators=[MinValueValidator(0)],
+        help_text="Total amount in cents"
     )
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -96,7 +92,7 @@ class Order(PublicModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(total_amount__gte=0),
+                check=models.Q(total_amount_cents__gte=0),
                 name='payments_order_total_amount_positive'
             ),
         ]
@@ -104,8 +100,8 @@ class Order(PublicModel):
     def clean(self):
         super().clean()
         # Calculate total amount
-        calculated_total = self.subtotal_amount + self.tax_amount - self.credits_applied
-        if abs(calculated_total - self.total_amount) > Decimal('0.01'):
+        calculated_total = self.subtotal_amount_cents + self.tax_amount_cents - self.credits_applied_cents
+        if calculated_total != self.total_amount_cents:
             raise ValidationError("Total amount must equal subtotal + tax - credits applied")
 
     def save(self, *args, **kwargs):
@@ -117,27 +113,37 @@ class Order(PublicModel):
         return self.status in ['completed', 'refunded', 'partially_refunded']
 
     def __str__(self):
-        return f"Order {str(self.public_uuid)[:8]}... - {self.total_amount} {self.currency} - {self.status}"
+        return f"Order {str(self.public_uuid)[:8]}... - ${self.total_amount} {self.currency} - {self.status}"
+    
+    @property
+    def total_amount(self):
+        """Get total amount in dollars."""
+        return Decimal(self.total_amount_cents) / 100
+    
+    @property
+    def subtotal_amount(self):
+        """Get subtotal in dollars."""
+        return Decimal(self.subtotal_amount_cents) / 100
 
 
-class CreditTransaction(BaseModel):
+class UserCreditTransaction(BaseModel):
     """
-    Model representing a credit transaction.
+    Model representing a user's credit transaction.
+    Credits are prepaid value that users can spend on services.
     """
     TRANSACTION_TYPES = (
-        ('purchase', 'Purchase'),
-        ('consumption', 'Consumption'),
-        ('refund', 'Refund'),
-        ('adjustment', 'Adjustment'),
-        ('bonus', 'Bonus'),
-        ('transfer', 'Transfer'),
+        ('purchase', 'Purchase'),  # User bought credits
+        ('usage', 'Usage'),  # User spent credits on service
+        ('refund', 'Refund'),  # Credits returned to user
+        ('adjustment', 'Adjustment'),  # Manual adjustment
+        ('bonus', 'Bonus'),  # Free credits given
+        ('transfer', 'Transfer'),  # Credits transferred between users
+        ('expiry', 'Expiry'),  # Credits expired
     )
     
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='credit_transactions')
-    amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2,
-        help_text="Positive for credits added, negative for credits consumed"
+    amount_cents = models.IntegerField(
+        help_text="Amount in cents. Positive for credits added, negative for credits consumed"
     )
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     
@@ -147,21 +153,21 @@ class CreditTransaction(BaseModel):
         on_delete=models.SET_NULL, 
         blank=True, 
         null=True,
-        related_name='credit_transactions'
+        related_name='user_credit_transactions'
     )
     practitioner = models.ForeignKey(
         'practitioners.Practitioner', 
         on_delete=models.SET_NULL, 
         blank=True, 
         null=True,
-        related_name='credit_transactions_as_practitioner'
+        related_name='user_credit_transactions_as_practitioner'
     )
     order = models.ForeignKey(
         Order, 
         on_delete=models.SET_NULL, 
         blank=True, 
         null=True,
-        related_name='credit_transactions'
+        related_name='user_credit_transactions'
     )
     booking = models.ForeignKey(
         'bookings.Booking',
@@ -190,7 +196,7 @@ class CreditTransaction(BaseModel):
     expires_at = models.DateTimeField(blank=True, null=True)
     is_expired = models.BooleanField(default=False)
     description = models.TextField(blank=True, help_text="Human-readable description")
-    audit_log = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
         indexes = [
@@ -203,8 +209,8 @@ class CreditTransaction(BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(amount=0),
-                name='payments_credittransaction_amount_nonzero'
+                check=~models.Q(amount_cents=0),
+                name='payments_usercredittransaction_amount_nonzero'
             ),
         ]
 
@@ -214,18 +220,23 @@ class CreditTransaction(BaseModel):
         UserCreditBalance.update_balance(self.user)
 
     @property
+    def amount(self):
+        """Get amount in dollars."""
+        return Decimal(self.amount_cents) / 100
+    
+    @property
     def is_credit(self):
         """Returns True if this transaction adds credits to the user's balance"""
-        return self.amount > 0
+        return self.amount_cents > 0
 
     @property
     def is_debit(self):
         """Returns True if this transaction removes credits from the user's balance"""
-        return self.amount < 0
+        return self.amount_cents < 0
 
     def __str__(self):
-        sign = "+" if self.amount > 0 else ""
-        return f"Credit Transaction {str(self.id)[:8]}... - {sign}{self.amount} {self.currency}"
+        sign = "+" if self.amount_cents > 0 else ""
+        return f"User Credit Transaction {str(self.id)[:8]}... - {sign}${self.amount} {self.currency}"
 
 
 class PaymentMethod(BaseModel):
@@ -307,62 +318,239 @@ class PaymentMethod(BaseModel):
         return f"{self.brand.title()} {self.masked_number}"
 
 
-class PractitionerCreditTransaction(models.Model):
+class PractitionerEarnings(BaseModel):
     """
-    Model representing credit transactions for practitioners.
+    Model tracking practitioner's earnings balance.
+    This is separate from user credits - it tracks money owed to practitioners.
     """
-    PAYOUT_STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('ready', 'Ready for Payout'),
-        ('approved', 'Approved'),
-        ('paid', 'Paid'),
-        ('rejected', 'Rejected'),
-        ('on_hold', 'On Hold'),
+    practitioner = models.OneToOneField(
+        'practitioners.Practitioner', 
+        on_delete=models.CASCADE, 
+        related_name='earnings_balance'
+    )
+    pending_balance_cents = models.IntegerField(
+        default=0,
+        help_text="Earnings not yet eligible for payout in cents"
+    )
+    available_balance_cents = models.IntegerField(
+        default=0,
+        help_text="Earnings ready for payout in cents"
+    )
+    lifetime_earnings_cents = models.IntegerField(
+        default=0,
+        help_text="Total earnings ever in cents"
+    )
+    lifetime_payouts_cents = models.IntegerField(
+        default=0,
+        help_text="Total amount paid out in cents"
+    )
+    last_payout_date = models.DateTimeField(
+        blank=True, 
+        null=True,
+        help_text="When last payout was processed"
     )
     
-    id = models.BigAutoField(primary_key=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    credits_earned = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    commission = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    net_credits = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    practitioner = models.ForeignKey('practitioners.Practitioner', models.DO_NOTHING, blank=True, null=True)
-    payout_status = models.CharField(max_length=20, choices=PAYOUT_STATUS_CHOICES, default='pending')
-    payout = models.ForeignKey('PractitionerPayout', models.DO_NOTHING, blank=True, null=True)
-    booking = models.ForeignKey('bookings.Booking', models.DO_NOTHING, blank=True, null=True, related_name='credit_transactions')
-    currency = models.CharField(max_length=3, default='USD')
-    audit_log = models.JSONField(blank=True, null=True)  # Store history of changes
-    
-    # New fields for improved tracking
-    notes = models.TextField(blank=True, null=True, help_text="Additional information about this transaction")
-    transaction_type = models.CharField(max_length=50, default='booking_completion', 
-                                      help_text="Source of the transaction (e.g., booking_completion, package_partial, refund)")
-    batch_id = models.UUIDField(blank=True, null=True, help_text="ID for grouping related transactions")
-    ready_for_payout_date = models.DateTimeField(blank=True, null=True)
-    processed_by = models.ForeignKey('users.User', models.SET_NULL, blank=True, null=True, related_name='processed_transactions')
-    external_fees = models.JSONField(blank=True, null=True, help_text="Details of external fees applied to this transaction")
-
     class Meta:
-        # Using Django's default naming convention (payments_practitionercredittransaction)
         indexes = [
-            models.Index(fields=['practitioner', 'created_at']),
-            models.Index(fields=['payout_status']),
-            models.Index(fields=['payout']),
-            models.Index(fields=['transaction_type']),
-            models.Index(fields=['batch_id']),
+            models.Index(fields=['practitioner']),
+            models.Index(fields=['available_balance_cents']),
         ]
-
-    def __str__(self):
-        return f"Practitioner Credit Transaction {self.id} - {self.net_credits}"
         
-    def mark_ready_for_payout(self):
-        """Mark this transaction as ready for payout."""
-        if self.payout_status == 'pending':
-            self.payout_status = 'ready'
-            self.ready_for_payout_date = timezone.now()
-            self.save(update_fields=['payout_status', 'ready_for_payout_date'])
+    def __str__(self):
+        return f"{self.practitioner} - Available: ${self.available_balance}"
+    
+    @property
+    def pending_balance(self):
+        """Get pending balance in dollars."""
+        return Decimal(self.pending_balance_cents) / 100
+    
+    @property
+    def available_balance(self):
+        """Get available balance in dollars."""
+        return Decimal(self.available_balance_cents) / 100
+    
+    @property
+    def lifetime_earnings(self):
+        """Get lifetime earnings in dollars."""
+        return Decimal(self.lifetime_earnings_cents) / 100
+    
+    @property
+    def total_balance(self):
+        """Total balance (pending + available) in dollars."""
+        return self.pending_balance + self.available_balance
+    
+    def move_pending_to_available(self, amount_cents):
+        """Move funds from pending to available (amount in cents)."""
+        if amount_cents > self.pending_balance_cents:
+            raise ValueError("Insufficient pending balance")
+        
+        self.pending_balance_cents -= amount_cents
+        self.available_balance_cents += amount_cents
+        self.save(update_fields=['pending_balance_cents', 'available_balance_cents'])
+
+
+class EarningsTransaction(BaseModel):
+    """
+    Model representing practitioner earnings from completed services.
+    This replaces PractitionerCreditTransaction for clearer separation.
+    """
+    TRANSACTION_STATUS = (
+        ('pending', 'Pending'),  # Waiting for service completion
+        ('available', 'Available'),  # Ready for payout
+        ('paid', 'Paid'),  # Included in a payout
+        ('reversed', 'Reversed'),  # Refunded or canceled
+    )
+    
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner', 
+        on_delete=models.CASCADE, 
+        related_name='earnings_transactions'
+    )
+    booking = models.ForeignKey(
+        'bookings.Booking', 
+        on_delete=models.CASCADE, 
+        related_name='earnings_transactions'
+    )
+    
+    # Financial details
+    gross_amount_cents = models.IntegerField(
+        help_text="Service price before commission in cents"
+    )
+    commission_rate = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
+        help_text="Commission percentage"
+    )
+    commission_amount_cents = models.IntegerField(
+        help_text="Commission amount deducted in cents"
+    )
+    net_amount_cents = models.IntegerField(
+        help_text="Amount practitioner receives in cents"
+    )
+    
+    # Status tracking
+    status = models.CharField(
+        max_length=20, 
+        choices=TRANSACTION_STATUS, 
+        default='pending'
+    )
+    available_after = models.DateTimeField(
+        help_text="When funds become available for payout"
+    )
+    
+    # Payout tracking
+    payout = models.ForeignKey(
+        'PractitionerPayout', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+        related_name='earnings_transactions'
+    )
+    
+    # Additional info
+    currency = models.CharField(max_length=3, default='USD')
+    description = models.TextField(blank=True)
+    transaction_type = models.CharField(
+        max_length=50, 
+        default='booking_completion',
+        help_text="Type of earning (booking_completion, bonus, adjustment)"
+    )
+    
+    # Metadata
+    external_fees = models.JSONField(
+        blank=True, 
+        null=True,
+        help_text="External fees applied (Stripe, Daily.co, etc.)"
+    )
+    metadata = models.JSONField(blank=True, null=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['practitioner', 'status']),
+            models.Index(fields=['booking']),
+            models.Index(fields=['status', 'available_after']),
+            models.Index(fields=['payout']),
+        ]
+        
+    def __str__(self):
+        return f"Earnings {self.id} - {self.practitioner} - ${self.net_amount}"
+    
+    @property
+    def gross_amount(self):
+        """Get gross amount in dollars."""
+        return Decimal(self.gross_amount_cents) / 100
+    
+    @property
+    def commission_amount(self):
+        """Get commission amount in dollars."""
+        return Decimal(self.commission_amount_cents) / 100
+    
+    @property
+    def net_amount(self):
+        """Get net amount in dollars."""
+        return Decimal(self.net_amount_cents) / 100
+    
+    def save(self, *args, **kwargs):
+        # Calculate net amount if not set
+        if self.gross_amount_cents and self.commission_amount_cents and not self.net_amount_cents:
+            self.net_amount_cents = self.gross_amount_cents - self.commission_amount_cents
+            
+        # Set available_after if not set (48 hours after creation)
+        if not self.available_after:
+            self.available_after = timezone.now() + timezone.timedelta(hours=48)
+            
+        super().save(*args, **kwargs)
+        
+        # Update practitioner's earnings balance
+        self._update_practitioner_balance()
+    
+    def _update_practitioner_balance(self):
+        """Update the practitioner's earnings balance."""
+        balance, created = PractitionerEarnings.objects.get_or_create(
+            practitioner=self.practitioner
+        )
+        
+        # Recalculate balances based on all transactions
+        pending_cents = EarningsTransaction.objects.filter(
+            practitioner=self.practitioner,
+            status='pending'
+        ).aggregate(total=models.Sum('net_amount_cents'))['total'] or 0
+        
+        available_cents = EarningsTransaction.objects.filter(
+            practitioner=self.practitioner,
+            status='available'
+        ).aggregate(total=models.Sum('net_amount_cents'))['total'] or 0
+        
+        lifetime_cents = EarningsTransaction.objects.filter(
+            practitioner=self.practitioner,
+            status__in=['pending', 'available', 'paid']
+        ).aggregate(total=models.Sum('net_amount_cents'))['total'] or 0
+        
+        balance.pending_balance_cents = pending_cents
+        balance.available_balance_cents = available_cents
+        balance.lifetime_earnings_cents = lifetime_cents
+        balance.save()
+    
+    def mark_available(self):
+        """Mark transaction as available for payout."""
+        if self.status == 'pending' and timezone.now() >= self.available_after:
+            self.status = 'available'
+            self.save(update_fields=['status'])
             return True
         return False
+    
+    def mark_paid(self, payout):
+        """Mark transaction as paid and link to payout."""
+        if self.status == 'available':
+            self.status = 'paid'
+            self.payout = payout
+            self.save(update_fields=['status', 'payout'])
+            return True
+        return False
+
+
+# PractitionerCreditTransaction has been replaced by EarningsTransaction
+# for clearer separation between user credits and practitioner earnings
 
 
 class PractitionerPayout(models.Model):
@@ -381,9 +569,9 @@ class PractitionerPayout(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     practitioner = models.ForeignKey('practitioners.Practitioner', models.DO_NOTHING, blank=True, null=True)
     payout_date = models.DateTimeField(blank=True, null=True)
-    credits_payout = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    cash_payout = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    commission_collected = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    credits_payout_cents = models.IntegerField(blank=True, null=True, help_text="Payout amount in cents")
+    cash_payout_cents = models.IntegerField(blank=True, null=True, help_text="Cash payout in cents")
+    commission_collected_cents = models.IntegerField(blank=True, null=True, help_text="Commission collected in cents")
     stripe_account_id = models.TextField(blank=True, null=True)
     stripe_transfer_id = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -395,7 +583,7 @@ class PractitionerPayout(models.Model):
     notes = models.TextField(blank=True, null=True)
     payment_method = models.CharField(max_length=50, default='stripe', help_text="Method used for payout (e.g., stripe, manual)")
     error_message = models.TextField(blank=True, null=True)
-    transaction_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    transaction_fee_cents = models.IntegerField(blank=True, null=True, help_text="Transaction fee in cents")
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
@@ -408,12 +596,17 @@ class PractitionerPayout(models.Model):
         ]
     
     def __str__(self):
-        return f"Payout {self.id} - {self.practitioner} - {self.credits_payout} credits"
+        return f"Payout {self.id} - {self.practitioner} - ${self.credits_payout}"
+    
+    @property
+    def credits_payout(self):
+        """Get payout amount in dollars."""
+        return Decimal(self.credits_payout_cents) / 100 if self.credits_payout_cents else 0
     
     @property
     def transaction_count(self):
         """Get the number of transactions in this payout."""
-        return self.practitionercredittransaction_set.count()
+        return self.earnings_transactions.count()
     
     def mark_as_completed(self, transfer_id=None):
         """Mark this payout as completed."""
@@ -424,19 +617,19 @@ class PractitionerPayout(models.Model):
         self.payout_date = timezone.now()
         self.save(update_fields=['status', 'payout_date', 'stripe_transfer_id'])
         
-        # Update all related transactions
-        self.practitionercredittransaction_set.update(payout_status='paid')
+        # Update all related earnings transactions
+        self.earnings_transactions.update(status='paid')
         
         return True
     
     @classmethod
     def create_batch_payout(cls, practitioner, transactions, processed_by=None, notes=None):
         """
-        Create a batch payout for multiple transactions.
+        Create a batch payout for multiple earnings transactions.
         
         Args:
             practitioner: The practitioner to pay
-            transactions: QuerySet of PractitionerCreditTransaction objects
+            transactions: QuerySet of EarningsTransaction objects with status='available'
             processed_by: User who processed this payout
             notes: Optional notes about this payout
             
@@ -445,34 +638,41 @@ class PractitionerPayout(models.Model):
         """
         from uuid import uuid4
         
-        # Calculate total credits
-        total_credits = transactions.aggregate(
-            total=models.Sum('net_credits')
+        # Only include available transactions
+        available_transactions = transactions.filter(status='available')
+        
+        # Calculate total earnings
+        total_earnings_cents = available_transactions.aggregate(
+            total=models.Sum('net_amount_cents')
         )['total'] or 0
         
         # Calculate total commission
-        total_commission = transactions.aggregate(
-            total=models.Sum('commission')
+        total_commission_cents = available_transactions.aggregate(
+            total=models.Sum('commission_amount_cents')
         )['total'] or 0
         
         # Create the payout
         batch_id = uuid4()
         payout = cls.objects.create(
             practitioner=practitioner,
-            credits_payout=total_credits,
-            commission_collected=total_commission,
+            credits_payout_cents=total_earnings_cents,
+            commission_collected_cents=total_commission_cents,
             batch_id=batch_id,
             processed_by=processed_by,
             notes=notes,
             status='pending'
         )
         
-        # Link transactions to this payout
-        transactions.update(
-            payout=payout,
-            payout_status='approved',
-            batch_id=batch_id
-        )
+        # Mark transactions as paid and link to payout
+        for transaction in available_transactions:
+            transaction.mark_paid(payout)
+        
+        # Update practitioner's earnings balance
+        balance = practitioner.earnings_balance
+        balance.available_balance_cents -= total_earnings_cents
+        balance.lifetime_payouts_cents += total_earnings_cents
+        balance.last_payout_date = timezone.now()
+        balance.save()
         
         return payout
 
@@ -483,14 +683,13 @@ class UserCreditBalance(BaseModel):
     This avoids having to sum all CreditTransaction records for high-volume users.
     """
     user = models.OneToOneField('users.User', on_delete=models.CASCADE, related_name='credit_balance')
-    balance = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=Decimal('0.00'),
-        validators=[MinValueValidator(Decimal('0.00'))]
+    balance_cents = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Balance in cents"
     )
     last_transaction = models.ForeignKey(
-        CreditTransaction, 
+        UserCreditTransaction, 
         on_delete=models.SET_NULL, 
         blank=True, 
         null=True,
@@ -500,11 +699,16 @@ class UserCreditBalance(BaseModel):
     class Meta:
         indexes = [
             models.Index(fields=['user']),
-            models.Index(fields=['balance']),
+            models.Index(fields=['balance_cents']),
         ]
         
     def __str__(self):
-        return f"{self.user} - {self.balance} credits"
+        return f"{self.user} - ${self.balance} credits"
+    
+    @property
+    def balance(self):
+        """Get balance in dollars."""
+        return Decimal(self.balance_cents) / 100
     
     @classmethod
     def update_balance(cls, user):
@@ -513,15 +717,15 @@ class UserCreditBalance(BaseModel):
         """
         from django.db.models import Sum
         
-        # Calculate the current balance
-        transactions = CreditTransaction.objects.filter(user=user)
-        balance = transactions.aggregate(Sum('amount'))['amount__sum'] or 0
+        # Calculate the current balance in cents
+        transactions = UserCreditTransaction.objects.filter(user=user)
+        balance_cents = transactions.aggregate(Sum('amount_cents'))['amount_cents__sum'] or 0
         
         # Get or create the balance record
         credit_balance, created = cls.objects.get_or_create(user=user)
         
         # Update the balance
-        credit_balance.balance = balance
+        credit_balance.balance_cents = balance_cents
         
         # Set the last transaction if there are any
         last_transaction = transactions.order_by('-created_at').first()
@@ -554,6 +758,26 @@ class SubscriptionTier(BaseModel):
     features = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
+    
+    # Stripe integration
+    stripe_product_id = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Stripe Product ID"
+    )
+    stripe_monthly_price_id = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Stripe Price ID for monthly billing"
+    )
+    stripe_annual_price_id = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Stripe Price ID for annual billing"
+    )
     
     class Meta:
         db_table = 'subscription_tiers'
@@ -809,16 +1033,18 @@ class PackageCompletionRecord(models.Model):
         commission_amount = (commission_rate / 100) * credits_for_partial_payout
         net_credits = credits_for_partial_payout - commission_amount
         
-        # Create practitioner credit transaction for partial payout
-        PractitionerCreditTransaction.objects.create(
+        # Create earnings transaction for partial payout
+        EarningsTransaction.objects.create(
             practitioner=practitioner,
-            credits_earned=credits_for_partial_payout,
-            commission=commission_amount,
-            commission_rate=commission_rate,
-            net_credits=net_credits,
             booking=self.package_booking,
-            payout_status='pending',
-            notes=f"Partial payout ({newly_completed_percentage:.1f}% of package)"
+            gross_amount=credits_for_partial_payout,
+            commission_rate=commission_rate,
+            commission_amount=commission_amount,
+            net_amount=net_credits,
+            status='pending',
+            available_after=timezone.now() + timezone.timedelta(hours=48),
+            transaction_type='package_partial',
+            description=f"Partial payout ({newly_completed_percentage:.1f}% of package)"
         )
         
         # Update payout tracking
@@ -862,16 +1088,18 @@ class PackageCompletionRecord(models.Model):
         commission_amount = (commission_rate / 100) * remaining_credits
         net_credits = remaining_credits - commission_amount
         
-        # Create practitioner credit transaction for final payout
-        PractitionerCreditTransaction.objects.create(
+        # Create earnings transaction for final payout
+        EarningsTransaction.objects.create(
             practitioner=practitioner,
-            credits_earned=remaining_credits,
-            commission=commission_amount,
-            commission_rate=commission_rate,
-            net_credits=net_credits,
             booking=self.package_booking,
-            payout_status='pending',
-            notes="Final package completion payout"
+            gross_amount=remaining_credits,
+            commission_rate=commission_rate,
+            commission_amount=commission_amount,
+            net_amount=net_credits,
+            status='pending',
+            available_after=timezone.now() + timezone.timedelta(hours=48),
+            transaction_type='package_final',
+            description="Final package completion payout"
         )
         
         # Update payout status

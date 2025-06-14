@@ -6,8 +6,15 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from datetime import datetime
+import asyncio
 
-from apps.payments.models import Order, CreditTransaction, PaymentMethod
+from payments.models import (
+    Order, UserCreditTransaction, PaymentMethod,
+    PractitionerSubscription, SubscriptionTier
+)
+from practitioners.models import Practitioner, PractitionerOnboardingProgress
+from users.models import UserPaymentProfile
+from integrations.temporal.client import get_temporal_client
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +47,19 @@ def stripe_webhook_handler(request):
             handle_checkout_session_completed(event['data']['object'])
         elif event['type'] == 'charge.refunded':
             handle_charge_refunded(event['data']['object'])
+        
+        # Subscription events
+        elif event['type'] == 'customer.subscription.created':
+            handle_subscription_created(event['data']['object'])
+        elif event['type'] == 'customer.subscription.updated':
+            handle_subscription_updated(event['data']['object'])
+        elif event['type'] == 'customer.subscription.deleted':
+            handle_subscription_deleted(event['data']['object'])
+        elif event['type'] == 'invoice.payment_succeeded':
+            handle_invoice_payment_succeeded(event['data']['object'])
+        elif event['type'] == 'invoice.payment_failed':
+            handle_invoice_payment_failed(event['data']['object'])
+        
         else:
             logger.info(f"Unhandled event type: {event['type']}")
         
@@ -66,8 +86,15 @@ def handle_payment_intent_succeeded(payment_intent):
         payment_intent: Stripe payment intent object
     """
     try:
+        metadata = payment_intent.get('metadata', {})
+        
+        # Check if this is a credit purchase
+        if metadata.get('type') == 'credit_purchase':
+            handle_credit_purchase_succeeded(payment_intent)
+            return
+        
         # Get the order ID from the metadata
-        order_id = payment_intent.get('metadata', {}).get('order_id')
+        order_id = metadata.get('order_id')
         if not order_id:
             logger.error(f"Payment intent {payment_intent['id']} has no order_id in metadata")
             return
@@ -108,18 +135,59 @@ def handle_payment_intent_succeeded(payment_intent):
         
         order.save()
         
-        # Process based on order type
-        if order.order_type == 'credit':
-            # Create a credit transaction for credit purchase
-            create_credit_transaction_for_order(order)
-        elif order.order_type == 'direct' and order.service:
-            # Create booking(s) for service purchase
-            create_booking_for_order(order, payment_intent.get('metadata', {}))
+        # Trigger the order processing workflow
+        asyncio.create_task(trigger_order_workflow(order_id, payment_intent.get('metadata', {})))
         
         logger.info(f"Successfully processed payment intent {payment_intent['id']} for order {order_id}")
         
     except Exception as e:
         logger.exception(f"Error handling payment intent succeeded: {str(e)}")
+
+def handle_credit_purchase_succeeded(payment_intent):
+    """
+    Handle a successful credit purchase payment.
+    
+    Args:
+        payment_intent: Stripe payment intent object
+    """
+    try:
+        metadata = payment_intent.get('metadata', {})
+        user_id = metadata.get('user_id')
+        credit_amount = metadata.get('credit_amount')
+        
+        if not user_id or not credit_amount:
+            logger.error(f"Credit purchase payment intent {payment_intent['id']} missing user_id or credit_amount")
+            return
+        
+        # Get the user
+        from users.models import User
+        from payments.models import UserCreditTransaction
+        from decimal import Decimal
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            logger.error(f"User {user_id} not found for credit purchase")
+            return
+        
+        # Create credit transaction
+        amount_cents = int(Decimal(credit_amount) * 100)
+        transaction = UserCreditTransaction.objects.create(
+            user=user,
+            amount_cents=amount_cents,
+            transaction_type='purchase',
+            description=f"Credit purchase via Stripe",
+            metadata={
+                'stripe_payment_intent_id': payment_intent['id'],
+                'amount_paid': payment_intent['amount'],
+                'currency': payment_intent['currency']
+            }
+        )
+        
+        logger.info(f"Successfully added {credit_amount} credits to user {user_id}")
+        
+    except Exception as e:
+        logger.exception(f"Error handling credit purchase: {str(e)}")
 
 def handle_payment_intent_failed(payment_intent):
     """
@@ -657,3 +725,337 @@ def parse_datetime(datetime_str):
         except:
             logger.error(f"Could not parse datetime string: {datetime_str}")
             return None
+
+
+async def trigger_order_workflow(order_id: str, metadata: dict):
+    """
+    Trigger the order processing workflow via Temporal.
+    
+    Args:
+        order_id: Order ID
+        metadata: Additional metadata from payment
+    """
+    try:
+        client = await get_temporal_client()
+        
+        # Extract booking details from metadata if available
+        booking_details = None
+        if 'booking_details' in metadata:
+            booking_details = metadata['booking_details']
+        elif 'start_time' in metadata:
+            # Build booking details from individual fields
+            booking_details = {
+                'start_time': metadata.get('start_time'),
+                'end_time': metadata.get('end_time'),
+                'duration_minutes': metadata.get('duration_minutes', 60),
+                'location_type': metadata.get('location_type', 'online'),
+                'notes': metadata.get('notes', '')
+            }
+        
+        # Start the workflow
+        handle = await client.start_workflow(
+            "OrderProcessingWorkflow",
+            args=[order_id, booking_details],
+            id=f"order-processing-{order_id}",
+            task_queue="payment"
+        )
+        
+        logger.info(f"Started OrderProcessingWorkflow for order {order_id}")
+        
+    except Exception as e:
+        logger.error(f"Error triggering order workflow: {e}")
+        # Don't raise - we don't want webhook to fail
+
+
+# Subscription webhook handlers
+def handle_subscription_created(subscription):
+    """
+    Handle a newly created subscription.
+    
+    Args:
+        subscription: Stripe subscription object
+    """
+    try:
+        # Get practitioner ID from metadata
+        practitioner_id = subscription.get('metadata', {}).get('practitioner_id')
+        if not practitioner_id:
+            logger.error(f"Subscription {subscription['id']} has no practitioner_id in metadata")
+            return
+        
+        # Get tier ID from metadata
+        tier_id = subscription.get('metadata', {}).get('tier_id')
+        if not tier_id:
+            logger.error(f"Subscription {subscription['id']} has no tier_id in metadata")
+            return
+        
+        # Get the practitioner and tier
+        try:
+            practitioner = Practitioner.objects.get(id=practitioner_id)
+            tier = SubscriptionTier.objects.get(id=tier_id)
+        except (Practitioner.DoesNotExist, SubscriptionTier.DoesNotExist) as e:
+            logger.error(f"Practitioner or Tier not found: {str(e)}")
+            return
+        
+        # Create or update the subscription record
+        practitioner_sub, created = PractitionerSubscription.objects.update_or_create(
+            practitioner=practitioner,
+            defaults={
+                'tier': tier,
+                'status': subscription['status'],
+                'stripe_subscription_id': subscription['id'],
+                'start_date': timezone.make_aware(datetime.fromtimestamp(subscription['current_period_start'])),
+                'end_date': timezone.make_aware(datetime.fromtimestamp(subscription['current_period_end'])),
+                'is_annual': subscription['items']['data'][0]['plan']['interval'] == 'year',
+                'auto_renew': not subscription.get('cancel_at_period_end', False)
+            }
+        )
+        
+        # Update onboarding progress
+        onboarding, _ = PractitionerOnboardingProgress.objects.get_or_create(
+            practitioner=practitioner
+        )
+        onboarding.subscription_setup = True
+        onboarding.save()
+        
+        # Trigger subscription workflow
+        asyncio.create_task(trigger_subscription_workflow(
+            practitioner_id, 
+            'created', 
+            {'tier_name': tier.name, 'subscription_id': subscription['id']}
+        ))
+        
+        logger.info(f"Successfully processed subscription creation for practitioner {practitioner_id}")
+        
+    except Exception as e:
+        logger.exception(f"Error handling subscription created: {str(e)}")
+
+
+def handle_subscription_updated(subscription):
+    """
+    Handle a subscription update (upgrade/downgrade/renewal).
+    
+    Args:
+        subscription: Stripe subscription object
+    """
+    try:
+        # Find the subscription by Stripe ID
+        try:
+            practitioner_sub = PractitionerSubscription.objects.get(
+                stripe_subscription_id=subscription['id']
+            )
+        except PractitionerSubscription.DoesNotExist:
+            logger.error(f"No PractitionerSubscription found for Stripe ID {subscription['id']}")
+            return
+        
+        # Check if tier changed
+        tier_changed = False
+        new_tier = None
+        if 'tier_id' in subscription.get('metadata', {}):
+            new_tier_id = subscription['metadata']['tier_id']
+            try:
+                new_tier = SubscriptionTier.objects.get(id=new_tier_id)
+                if new_tier != practitioner_sub.tier:
+                    tier_changed = True
+                    practitioner_sub.tier = new_tier
+            except SubscriptionTier.DoesNotExist:
+                logger.error(f"Tier {new_tier_id} not found")
+        
+        # Update subscription details
+        practitioner_sub.status = subscription['status']
+        practitioner_sub.auto_renew = not subscription.get('cancel_at_period_end', False)
+        practitioner_sub.is_annual = subscription['items']['data'][0]['plan']['interval'] == 'year'
+        
+        # Update period dates
+        if subscription.get('current_period_start'):
+            practitioner_sub.start_date = timezone.make_aware(
+                datetime.fromtimestamp(subscription['current_period_start'])
+            )
+        if subscription.get('current_period_end'):
+            practitioner_sub.end_date = timezone.make_aware(
+                datetime.fromtimestamp(subscription['current_period_end'])
+            )
+        
+        practitioner_sub.save()
+        
+        # Trigger workflow for tier changes
+        if tier_changed:
+            asyncio.create_task(trigger_subscription_workflow(
+                str(practitioner_sub.practitioner_id),
+                'tier_changed',
+                {
+                    'old_tier': practitioner_sub.tier.name,
+                    'new_tier': new_tier.name if new_tier else 'Unknown',
+                    'subscription_id': subscription['id']
+                }
+            ))
+        
+        logger.info(f"Successfully processed subscription update for {subscription['id']}")
+        
+    except Exception as e:
+        logger.exception(f"Error handling subscription updated: {str(e)}")
+
+
+def handle_subscription_deleted(subscription):
+    """
+    Handle a subscription cancellation/deletion.
+    
+    Args:
+        subscription: Stripe subscription object
+    """
+    try:
+        # Find the subscription by Stripe ID
+        try:
+            practitioner_sub = PractitionerSubscription.objects.get(
+                stripe_subscription_id=subscription['id']
+            )
+        except PractitionerSubscription.DoesNotExist:
+            logger.error(f"No PractitionerSubscription found for Stripe ID {subscription['id']}")
+            return
+        
+        # Update subscription status
+        practitioner_sub.status = 'canceled'
+        practitioner_sub.auto_renew = False
+        
+        # Set end date if not already set
+        if subscription.get('ended_at'):
+            practitioner_sub.end_date = timezone.make_aware(
+                datetime.fromtimestamp(subscription['ended_at'])
+            )
+        elif subscription.get('current_period_end'):
+            # Will be active until period end
+            practitioner_sub.end_date = timezone.make_aware(
+                datetime.fromtimestamp(subscription['current_period_end'])
+            )
+        
+        practitioner_sub.save()
+        
+        # Trigger cancellation workflow
+        asyncio.create_task(trigger_subscription_workflow(
+            str(practitioner_sub.practitioner_id),
+            'canceled',
+            {
+                'tier_name': practitioner_sub.tier.name,
+                'subscription_id': subscription['id'],
+                'end_date': practitioner_sub.end_date.isoformat() if practitioner_sub.end_date else None
+            }
+        ))
+        
+        logger.info(f"Successfully processed subscription deletion for {subscription['id']}")
+        
+    except Exception as e:
+        logger.exception(f"Error handling subscription deleted: {str(e)}")
+
+
+def handle_invoice_payment_succeeded(invoice):
+    """
+    Handle successful subscription invoice payment.
+    
+    Args:
+        invoice: Stripe invoice object
+    """
+    try:
+        # Only process subscription invoices
+        if not invoice.get('subscription'):
+            return
+        
+        # Find the subscription
+        try:
+            practitioner_sub = PractitionerSubscription.objects.get(
+                stripe_subscription_id=invoice['subscription']
+            )
+        except PractitionerSubscription.DoesNotExist:
+            logger.warning(f"No PractitionerSubscription found for invoice {invoice['id']}")
+            return
+        
+        # Update subscription status to active if it was past_due
+        if practitioner_sub.status == 'past_due':
+            practitioner_sub.status = 'active'
+            practitioner_sub.save()
+        
+        # Log successful payment
+        logger.info(f"Subscription invoice {invoice['id']} paid successfully")
+        
+        # Trigger payment success workflow
+        asyncio.create_task(trigger_subscription_workflow(
+            str(practitioner_sub.practitioner_id),
+            'payment_succeeded',
+            {
+                'invoice_id': invoice['id'],
+                'amount': invoice['amount_paid'] / 100,  # Convert from cents
+                'subscription_id': invoice['subscription']
+            }
+        ))
+        
+    except Exception as e:
+        logger.exception(f"Error handling invoice payment succeeded: {str(e)}")
+
+
+def handle_invoice_payment_failed(invoice):
+    """
+    Handle failed subscription invoice payment.
+    
+    Args:
+        invoice: Stripe invoice object
+    """
+    try:
+        # Only process subscription invoices
+        if not invoice.get('subscription'):
+            return
+        
+        # Find the subscription
+        try:
+            practitioner_sub = PractitionerSubscription.objects.get(
+                stripe_subscription_id=invoice['subscription']
+            )
+        except PractitionerSubscription.DoesNotExist:
+            logger.warning(f"No PractitionerSubscription found for invoice {invoice['id']}")
+            return
+        
+        # Update subscription status
+        practitioner_sub.status = 'past_due'
+        practitioner_sub.save()
+        
+        # Log payment failure
+        logger.warning(f"Subscription invoice {invoice['id']} payment failed")
+        
+        # Trigger payment failure workflow
+        asyncio.create_task(trigger_subscription_workflow(
+            str(practitioner_sub.practitioner_id),
+            'payment_failed',
+            {
+                'invoice_id': invoice['id'],
+                'amount': invoice['amount_due'] / 100,  # Convert from cents
+                'subscription_id': invoice['subscription'],
+                'attempt_count': invoice.get('attempt_count', 1)
+            }
+        ))
+        
+    except Exception as e:
+        logger.exception(f"Error handling invoice payment failed: {str(e)}")
+
+
+async def trigger_subscription_workflow(practitioner_id: str, event_type: str, metadata: dict):
+    """
+    Trigger subscription-related workflows via Temporal.
+    
+    Args:
+        practitioner_id: Practitioner ID
+        event_type: Type of subscription event
+        metadata: Additional event metadata
+    """
+    try:
+        client = await get_temporal_client()
+        
+        # Start the workflow
+        handle = await client.start_workflow(
+            "PractitionerSubscriptionWorkflow",
+            args=[practitioner_id, event_type, metadata],
+            id=f"subscription-{event_type}-{practitioner_id}-{timezone.now().timestamp()}",
+            task_queue="subscriptions"
+        )
+        
+        logger.info(f"Started PractitionerSubscriptionWorkflow for {event_type} event")
+        
+    except Exception as e:
+        logger.error(f"Error triggering subscription workflow: {e}")
+        # Don't raise - we don't want webhook to fail

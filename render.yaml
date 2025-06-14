@@ -1,0 +1,142 @@
+services:
+  # Next.js Frontend
+  - type: web
+    name: estuary-frontend
+    runtime: node
+    region: oregon # or your preferred region
+    plan: starter # or standard for production
+    buildCommand: cd frontend-2 && npm install -g pnpm && pnpm install && pnpm run build
+    startCommand: cd frontend-2 && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: estuary-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_WS_URL
+        fromService:
+          name: estuary-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_SITE_URL
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXTAUTH_URL
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXTAUTH_SECRET
+        generateValue: true # Render will generate a random value
+        sync: false # Won't be synced from Git
+    buildFilter:
+      paths:
+        - frontend-2/**
+      ignoredPaths:
+        - frontend-2/node_modules/**
+
+  # Django Backend API
+  - type: web
+    name: estuary-backend
+    runtime: python
+    region: oregon # same region as frontend
+    plan: starter # or standard for production
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: uvicorn estuary.asgi:application --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: estuary.settings
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+        sync: false
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        fromService:
+          name: estuary-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estuary-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      # AWS S3 for static/media files (optional)
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        value: us-west-2
+      # Stripe (optional)
+      - key: STRIPE_PUBLIC_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Email (optional)
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: true
+    buildFilter:
+      paths:
+        - backend/**
+        - requirements.txt
+      ignoredPaths:
+        - backend/__pycache__/**
+        - backend/**/*.pyc
+
+  # Redis for Caching and WebSockets
+  - type: keyvalue
+    name: estuary-redis
+    region: oregon # same region
+    plan: starter # 25MB free tier
+    ipAllowList: # Allow only internal connections
+      - source: 0.0.0.0/0
+        description: everywhere
+
+databases:
+  # PostgreSQL Database
+  - name: estuary-db
+    region: oregon # same region
+    plan: starter # 256MB RAM, 1GB storage
+    postgresMajorVersion: '16'
+    ipAllowList: # Allow only internal connections
+      - source: 0.0.0.0/0
+        description: everywhere
+
+# Optional: Environment Variable Groups for shared config
+envVarGroups:
+  - name: estuary-shared
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SENTRY_DSN
+        sync: false
+      - key: LOG_LEVEL
+        value: info

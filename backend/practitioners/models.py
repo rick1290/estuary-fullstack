@@ -75,7 +75,7 @@ class Practitioner(PublicModel):
     questions = models.ManyToManyField('Question', related_name='practitioners', blank=True)
     
     # Location (link to consolidated location model)
-    primary_location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL,
+    primary_location = models.ForeignKey('locations.PractitionerLocation', on_delete=models.SET_NULL,
                                        blank=True, null=True, related_name='primary_practitioners')
     
     class Meta:
@@ -169,7 +169,7 @@ class SchedulePreference(BaseModel):
     practitioner = models.OneToOneField(Practitioner, on_delete=models.CASCADE, related_name='schedule_preferences')
     timezone = models.CharField(max_length=50, default='UTC', choices=TIMEZONE_CHOICES, 
                                help_text="Timezone for the practitioner's schedule")
-    country = models.ForeignKey('utils.Country', on_delete=models.SET_NULL, blank=True, null=True,
+    country = models.ForeignKey('locations.Country', on_delete=models.SET_NULL, blank=True, null=True,
                                help_text="Country for holiday calculations")
     
     # Holiday settings
@@ -197,15 +197,13 @@ class SchedulePreference(BaseModel):
         return f"Schedule preference for {self.practitioner}"
 
 
-class Schedule(models.Model):
+class Schedule(BaseModel):
     """
     Model representing a named schedule template created by a practitioner.
     Practitioners can create multiple schedules (e.g., "Summer Hours", "Holiday Hours")
     and set one as default.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=100, help_text="Name of this schedule")
     practitioner = models.ForeignKey(Practitioner, models.CASCADE, related_name='schedules')
     is_default = models.BooleanField(default=False, help_text="Whether this is the default schedule")
@@ -248,14 +246,12 @@ class Schedule(models.Model):
         super().save(*args, **kwargs)
 
 
-class ScheduleTimeSlot(models.Model):
+class ScheduleTimeSlot(BaseModel):
     """
     Model representing time slots within a named schedule.
     These define when a practitioner is generally available.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     schedule = models.ForeignKey(Schedule, models.CASCADE, related_name='time_slots')
     day = models.SmallIntegerField(help_text="Day of week (0=Monday, 6=Sunday)")
     start_time = models.TimeField()
@@ -310,13 +306,11 @@ class ScheduleTimeSlot(models.Model):
         return f"{day_name} {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
 
 
-class ServiceSchedule(models.Model):
+class ServiceSchedule(BaseModel):
     """
     Model representing a service schedule.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     day = models.SmallIntegerField(help_text="Day of week (0=Monday, 6=Sunday)")
     start_time = models.TimeField(help_text="Start time for availability")
     end_time = models.TimeField(help_text="End time for availability")
@@ -401,18 +395,16 @@ class ScheduleAvailability(models.Model):
         super().save(*args, **kwargs)
 
 
-class OutOfOffice(models.Model):
+class OutOfOffice(BaseModel):
     """
     Model representing out-of-office periods for practitioners.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True)
-    created_at = models.DateTimeField()
     from_date = models.DateField()
     to_date = models.DateField()
     title = models.TextField()
-    updated_at = models.DateTimeField()
     practitioner = models.ForeignKey(Practitioner, models.DO_NOTHING)
-    is_archived = models.BooleanField()
+    is_archived = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'out_of_office'
@@ -421,13 +413,13 @@ class OutOfOffice(models.Model):
         return f"{self.practitioner} - {self.title} ({self.from_date} to {self.to_date})"
 
 
-class Question(models.Model):
+class Question(BaseModel):
     """
     Model representing a question for user feedback.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True)
     title = models.TextField(blank=True, null=True)
-    order = models.IntegerField()
+    order = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'questions'
@@ -436,14 +428,15 @@ class Question(models.Model):
         return self.title or f"Question {self.id}"
 
 
-class Certification(models.Model):
+class Certification(BaseModel):
     """
     Model representing practitioner certifications.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True)
     certificate = models.TextField(blank=True, null=True)
     institution = models.TextField(blank=True, null=True)
-    order = models.IntegerField()
+    order = models.IntegerField(default=0)
+
     issue_date = models.DateField(blank=True, null=True)
     expiry_date = models.DateField(blank=True, null=True)
 
@@ -455,14 +448,14 @@ class Certification(models.Model):
         return f"{self.certificate} from {self.institution}" if self.certificate else f"Certification {self.id}"
 
 
-class Education(models.Model):
+class Education(BaseModel):
     """
     Model representing practitioner education.
+    Updated to use BaseModel for consistency.
     """
-    id = models.UUIDField(primary_key=True)
     degree = models.TextField(blank=True, null=True)
     educational_institute = models.TextField(blank=True, null=True)
-    order = models.IntegerField()
+    order = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'educations'
@@ -600,6 +593,11 @@ class PractitionerOnboardingProgress(models.Model):
 
     def __str__(self):
         return f"Onboarding progress for {self.practitioner} - {self.status}"
+    
+    @property
+    def is_complete(self):
+        """Check if onboarding is complete."""
+        return self.status == 'completed'
         
     def calculate_completion_percentage(self):
         """

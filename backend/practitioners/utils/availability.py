@@ -8,12 +8,12 @@ from typing import List, Dict, Any, Optional, Tuple
 from django.utils import timezone
 from django.db.models import Q
 
-from apps.practitioners.models import (
+from practitioners.models import (
     Practitioner, Schedule, ScheduleTimeSlot, 
     ServiceSchedule, ScheduleAvailability, SchedulePreference
 )
-from apps.services.models import Service
-from apps.bookings.models import Booking
+from services.models import Service
+from bookings.models import Booking
 
 
 def get_practitioner_availability(

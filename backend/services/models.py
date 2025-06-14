@@ -1,9 +1,10 @@
 import uuid
+from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg, Count
-from utils.models import BaseModel, PublicModel, Location
+from utils.models import BaseModel, PublicModel, Address
 
 # Experience level choices
 EXPERIENCE_LEVEL_CHOICES = [
@@ -27,9 +28,11 @@ class ServiceCategory(BaseModel):
     Model representing service categories for organizing services.
     """
     name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True, help_text="URL-friendly version of name")
     description = models.TextField(blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True, null=True, help_text="Icon class or identifier")
     is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False, help_text="Whether to feature this category")
     order = models.PositiveIntegerField(default=0, help_text="Display order")
     
     class Meta:
@@ -38,10 +41,66 @@ class ServiceCategory(BaseModel):
         ordering = ['order', 'name']
         indexes = [
             models.Index(fields=['is_active', 'order']),
+            models.Index(fields=['slug']),
+            models.Index(fields=['is_featured']),
         ]
 
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+class PractitionerServiceCategory(BaseModel):
+    """
+    Model representing practitioner-specific service categories.
+    Allows practitioners to create custom categories to organize their services.
+    """
+    practitioner = models.ForeignKey(
+        'practitioners.Practitioner',
+        on_delete=models.CASCADE,
+        related_name='service_categories'
+    )
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, help_text="URL-friendly version of name")
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, blank=True, null=True, help_text="Icon class or identifier")
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0, help_text="Display order for drag-drop sorting")
+    color = models.CharField(max_length=7, blank=True, null=True, help_text="Hex color for UI display")
+    
+    class Meta:
+        verbose_name = 'Practitioner Service Category'
+        verbose_name_plural = 'Practitioner Service Categories'
+        ordering = ['order', 'name']
+        unique_together = [('practitioner', 'slug'), ('practitioner', 'name')]
+        indexes = [
+            models.Index(fields=['practitioner', 'is_active']),
+            models.Index(fields=['practitioner', 'order']),
+        ]
+
+    def __str__(self):
+        return f"{self.practitioner} - {self.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            # Make slug unique within practitioner's categories
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while PractitionerServiceCategory.objects.filter(
+                practitioner=self.practitioner,
+                slug=slug
+            ).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class ServiceType(BaseModel):
@@ -83,16 +142,23 @@ class Service(PublicModel):
                                        help_text="Brief description for listings")
     
     # Pricing and duration
-    price = models.DecimalField(max_digits=10, decimal_places=2, 
-                              validators=[MinValueValidator(0)],
-                              help_text="Price in USD")
+    price_cents = models.IntegerField(
+        validators=[MinValueValidator(0)],
+        help_text="Price in cents (e.g., 10000 = $100.00)"
+    )
     duration_minutes = models.PositiveIntegerField(help_text="Duration in minutes")
     
     # Relationships
     service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, 
                                    help_text="Type of service")
     category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, 
-                               blank=True, null=True, related_name='services')
+                               blank=True, null=True, related_name='services',
+                               help_text="Global category for discovery")
+    practitioner_category = models.ForeignKey(PractitionerServiceCategory, 
+                                            on_delete=models.SET_NULL,
+                                            blank=True, null=True, 
+                                            related_name='services',
+                                            help_text="Practitioner's custom category")
     primary_practitioner = models.ForeignKey('practitioners.Practitioner', 
                                            on_delete=models.CASCADE,
                                            related_name='primary_services',
@@ -120,9 +186,9 @@ class Service(PublicModel):
     # Location and delivery
     location_type = models.CharField(max_length=20, choices=LOCATION_TYPE_CHOICES, 
                                    default='virtual')
-    location = models.ForeignKey('utils.Location', on_delete=models.SET_NULL,
+    address = models.ForeignKey('utils.Address', on_delete=models.SET_NULL,
                                null=True, blank=True, related_name='services',
-                               help_text="Physical location for in-person/hybrid services")
+                               help_text="Physical address for in-person/hybrid services")
     
     # Content and learning
     what_youll_learn = models.TextField(blank=True, null=True, 
@@ -145,8 +211,61 @@ class Service(PublicModel):
     is_featured = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True, help_text="Whether service is publicly visible")
     
-    # Service type flags (for complex services)
-    is_course = models.BooleanField(default=False, help_text="Whether this is a multi-session course")
+    # Service lifecycle and status
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+        ('paused', 'Paused'),
+        ('discontinued', 'Discontinued'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft',
+                            help_text="Service publication status")
+    published_at = models.DateTimeField(blank=True, null=True, 
+                                      help_text="When service was first published")
+    
+    # Bundle/Package specific fields
+    validity_days = models.PositiveIntegerField(
+        default=365,
+        help_text="Days valid after purchase (for bundles/packages)"
+    )
+    is_transferable = models.BooleanField(
+        default=False,
+        help_text="Whether bundle/package can be transferred to another user"
+    )
+    is_shareable = models.BooleanField(
+        default=False,
+        help_text="Whether bundle can be shared with family/friends"
+    )
+    sessions_included = models.PositiveIntegerField(
+        blank=True, null=True,
+        validators=[MinValueValidator(1)],
+        help_text="Number of sessions in bundle (for bundle type only)"
+    )
+    bonus_sessions = models.PositiveIntegerField(
+        default=0,
+        help_text="Additional free sessions in bundle"
+    )
+    max_per_customer = models.PositiveIntegerField(
+        blank=True, null=True,
+        help_text="Maximum purchases per customer (for bundles)"
+    )
+    available_from = models.DateTimeField(
+        blank=True, null=True,
+        help_text="When this becomes available for purchase"
+    )
+    available_until = models.DateTimeField(
+        blank=True, null=True,
+        help_text="When sales end"
+    )
+    highlight_text = models.CharField(
+        max_length=50,
+        blank=True, null=True,
+        help_text="e.g., 'BEST VALUE' or 'SAVE 20%'"
+    )
+    terms_conditions = models.TextField(
+        blank=True, null=True,
+        help_text="Specific terms for packages/bundles"
+    )
     
     class Meta:
         verbose_name = 'Service'
@@ -165,6 +284,11 @@ class Service(PublicModel):
     def __str__(self):
         return self.name
 
+    @property
+    def price(self):
+        """Get price in dollars as Decimal."""
+        return Decimal(self.price_cents) / 100
+    
     @property
     def average_rating(self):
         """Calculate average rating from reviews."""
@@ -266,26 +390,26 @@ class Service(PublicModel):
             parent_relationships__parent_service=self
         ).order_by('parent_relationships__order')
     
-    def get_total_package_price(self):
+    def get_total_package_price_cents(self):
         """
         Calculate the total price of this package/course including all child services
-        and applying any discounts.
+        and applying any discounts. Returns cents.
         """
         if not (self.is_course or self.is_package or self.is_bundle):
-            return self.price
+            return self.price_cents
             
         # If this service has its own price, use that
-        if self.price is not None:
-            return self.price
+        if self.price_cents is not None:
+            return self.price_cents
             
         # Otherwise calculate from child services
-        total = 0
+        total_cents = 0
         for relationship in self.child_relationships.all():
-            item_price = relationship.get_discounted_price()
-            if item_price:
-                total += item_price * relationship.quantity
+            item_price_cents = relationship.get_discounted_price_cents()
+            if item_price_cents:
+                total_cents += item_price_cents * relationship.quantity
                 
-        return total
+        return total_cents
     
     def add_child_service(self, child_service, order=None, quantity=1, discount_percentage=0, 
                          is_required=True, description_override=None):
@@ -316,6 +440,79 @@ class Service(PublicModel):
         )
         
         return relationship
+    
+    @property
+    def total_sessions(self):
+        """Total sessions for bundles (including bonus sessions)."""
+        if self.is_bundle and self.sessions_included:
+            return self.sessions_included + self.bonus_sessions
+        return 1
+    
+    @property
+    def price_per_session_cents(self):
+        """Calculate effective price per session for bundles in cents."""
+        if self.is_bundle and self.total_sessions > 0:
+            return self.price_cents // self.total_sessions
+        return self.price_cents
+    
+    @property
+    def price_per_session(self):
+        """Calculate effective price per session in dollars."""
+        return Decimal(self.price_per_session_cents) / 100
+    
+    @property
+    def original_price_cents(self):
+        """Calculate original price before discounts (for packages/bundles) in cents."""
+        if self.is_package:
+            # Sum of all child service prices
+            total_cents = 0
+            for rel in self.child_relationships.all():
+                if rel.child_service and rel.child_service.price_cents:
+                    total_cents += rel.child_service.price_cents * rel.quantity
+            return total_cents
+        elif self.is_bundle:
+            # Price of individual sessions
+            child_rels = self.child_relationships.first()
+            if child_rels and child_rels.child_service:
+                return child_rels.child_service.price_cents * self.total_sessions
+        return self.price_cents
+    
+    @property
+    def original_price(self):
+        """Get original price in dollars."""
+        return Decimal(self.original_price_cents) / 100
+    
+    @property
+    def savings_amount_cents(self):
+        """Calculate savings for packages/bundles in cents."""
+        if self.is_package or self.is_bundle:
+            return self.original_price_cents - self.price_cents
+        return 0
+    
+    @property
+    def savings_amount(self):
+        """Calculate savings in dollars."""
+        return Decimal(self.savings_amount_cents) / 100
+    
+    @property
+    def savings_percentage(self):
+        """Calculate savings percentage for packages/bundles."""
+        if (self.is_package or self.is_bundle) and self.original_price_cents > 0:
+            return round((self.savings_amount_cents / self.original_price_cents) * 100, 1)
+        return 0
+    
+    def is_available(self):
+        """Check if service is currently available for purchase."""
+        if not self.is_active:
+            return False
+            
+        if self.available_from and timezone.now() < self.available_from:
+            return False
+            
+        if self.available_until and timezone.now() > self.available_until:
+            return False
+            
+        return True
 
 
 class ServicePractitioner(models.Model):
@@ -404,18 +601,26 @@ class ServiceRelationship(models.Model):
     def __str__(self):
         return f"{self.parent_service} > {self.child_service}"
         
-    def get_discounted_price(self):
+    def get_discounted_price_cents(self):
         """
         Calculate the discounted price of this child service when purchased as part of the parent.
+        Returns price in cents.
         """
-        if not self.child_service or not self.child_service.price:
+        if not self.child_service or not self.child_service.price_cents:
             return None
             
         if not self.discount_percentage:
-            return self.child_service.price
+            return self.child_service.price_cents
             
         discount_factor = (100 - self.discount_percentage) / 100
-        return self.child_service.price * discount_factor
+        return int(self.child_service.price_cents * discount_factor)
+    
+    def get_discounted_price(self):
+        """
+        Get discounted price in dollars.
+        """
+        price_cents = self.get_discounted_price_cents()
+        return Decimal(price_cents) / 100 if price_cents else None
 
 
 class ServiceSession(models.Model):
@@ -433,7 +638,7 @@ class ServiceSession(models.Model):
     current_participants = models.IntegerField(default=0)
     sequence_number = models.PositiveIntegerField(default=0)
     room = models.ForeignKey('rooms.Room', models.SET_NULL, null=True, blank=True, related_name='service_sessions')
-    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    price_cents = models.IntegerField(blank=True, null=True, help_text="Price override in cents")
     status = models.CharField(max_length=20, default='scheduled')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -441,13 +646,13 @@ class ServiceSession(models.Model):
     what_youll_learn = models.TextField(blank=True, null=True, help_text="Describe what clients will learn or gain from this specific session")
     
     # Location handling for in-person sessions
-    location = models.ForeignKey(
-        Location,
+    address = models.ForeignKey(
+        'utils.Address',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='sessions',
-        help_text="Location where this session takes place (for in-person sessions)"
+        help_text="Address where this session takes place (for in-person sessions)"
     )
     
     class Meta:
@@ -468,9 +673,9 @@ class ServiceSession(models.Model):
         if self.max_participants is None and self.service and hasattr(self.service, 'max_participants'):
             self.max_participants = self.service.max_participants
             
-        # If location not specified but service has one, use it
-        if self.location is None and self.service and hasattr(self.service, 'location') and self.service.location:
-            self.location = self.service.location
+        # If address not specified but service has one, use it
+        if self.address is None and self.service and hasattr(self.service, 'address') and self.service.address:
+            self.address = self.service.address
             
         super().save(*args, **kwargs)
         
@@ -612,6 +817,153 @@ class ServiceBenefit(models.Model):
         return self.title
 
 
+class ServiceResource(BaseModel):
+    """
+    Resources that can be attached at different levels:
+    - Service level: Default resources for all bookings
+    - Session level: Resources for specific workshop/course sessions
+    - Booking level: Resources specific to individual bookings
+    """
+    # Resource types
+    RESOURCE_TYPE_CHOICES = [
+        ('post', 'Text Post'),
+        ('document', 'Document'),  # PDF, DOC, PPT, XLS, TXT
+        ('video', 'Video'),        # Upload or external link
+        ('image', 'Image'),        # Upload
+        ('link', 'External Link'), # General external resource
+        ('audio', 'Audio'),        # Podcasts, meditations
+    ]
+    
+    # Access level choices
+    ACCESS_LEVEL_CHOICES = [
+        ('public', 'Public'),              # Anyone can view
+        ('registered', 'Registered Users'), # Any logged-in user
+        ('enrolled', 'Enrolled Only'),     # Only users who booked this service
+        ('completed', 'Post-Completion'),  # Only after completing service
+        ('private', 'Private'),            # Only specific booking recipient
+    ]
+    
+    # Attachment level
+    ATTACHMENT_LEVEL_CHOICES = [
+        ('service', 'Service Default'),     # Available to all bookings of this service
+        ('session', 'Session Specific'),    # For workshop/course sessions
+        ('booking', 'Booking Specific'),    # For individual bookings
+    ]
+    
+    # Basic info
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
+    attachment_level = models.CharField(max_length=20, choices=ATTACHMENT_LEVEL_CHOICES)
+    
+    # Content fields
+    content = models.TextField(blank=True, null=True,
+                              help_text="For text posts and rich content")
+    file_url = models.URLField(blank=True, null=True,
+                              help_text="URL to uploaded file (S3/CDN)")
+    external_url = models.URLField(blank=True, null=True,
+                                  help_text="External video/link URL")
+    
+    # File metadata
+    file_name = models.CharField(max_length=255, blank=True, null=True)
+    file_size = models.IntegerField(blank=True, null=True,
+                                   help_text="File size in bytes")
+    file_type = models.CharField(max_length=50, blank=True, null=True,
+                                help_text="MIME type")
+    duration_seconds = models.IntegerField(blank=True, null=True,
+                                         help_text="For video/audio resources")
+    
+    # Polymorphic relationships (only one should be set)
+    service = models.ForeignKey('services.Service', on_delete=models.CASCADE, 
+                               related_name='resources', blank=True, null=True)
+    service_session = models.ForeignKey('services.ServiceSession', on_delete=models.CASCADE,
+                                       related_name='resources', blank=True, null=True)
+    booking = models.ForeignKey('bookings.Booking', on_delete=models.CASCADE,
+                               related_name='resources', blank=True, null=True)
+    
+    # Who added this
+    uploaded_by = models.ForeignKey('practitioners.Practitioner', 
+                                   on_delete=models.SET_NULL, null=True)
+    
+    # Access control
+    access_level = models.CharField(max_length=20, choices=ACCESS_LEVEL_CHOICES,
+                                   default='enrolled')
+    is_downloadable = models.BooleanField(default=True,
+                                         help_text="Allow downloads for files")
+    
+    # When to show (optional)
+    available_from = models.DateTimeField(blank=True, null=True,
+                                         help_text="When resource becomes available")
+    available_until = models.DateTimeField(blank=True, null=True,
+                                          help_text="When resource expires")
+    
+    # Organization
+    order = models.PositiveIntegerField(default=0)
+    is_featured = models.BooleanField(default=False)
+    tags = models.JSONField(blank=True, null=True)
+    
+    # Personal note (for booking-level resources)
+    personal_note = models.TextField(blank=True, null=True,
+                                    help_text="Practitioner's note to specific client")
+    
+    # Tracking
+    view_count = models.PositiveIntegerField(default=0)
+    download_count = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+        indexes = [
+            models.Index(fields=['attachment_level', 'resource_type']),
+            models.Index(fields=['service', 'access_level']),
+            models.Index(fields=['service_session']),
+            models.Index(fields=['booking']),
+        ]
+        constraints = [
+            # Ensure exactly one parent is set based on attachment_level
+            models.CheckConstraint(
+                check=(
+                    models.Q(attachment_level='service', service__isnull=False, 
+                            service_session__isnull=True, booking__isnull=True) |
+                    models.Q(attachment_level='session', service__isnull=True, 
+                            service_session__isnull=False, booking__isnull=True) |
+                    models.Q(attachment_level='booking', service__isnull=True, 
+                            service_session__isnull=True, booking__isnull=False)
+                ),
+                name='resource_parent_matches_level'
+            )
+        ]
+    
+    def __str__(self):
+        if self.attachment_level == 'service' and self.service:
+            return f"{self.title} - {self.service.name}"
+        elif self.attachment_level == 'session' and self.service_session:
+            return f"{self.title} - {self.service_session}"
+        elif self.attachment_level == 'booking' and self.booking:
+            return f"{self.title} - Booking #{self.booking.id}"
+        return self.title
+
+
+class ServiceResourceAccess(BaseModel):
+    """Track user access to resources for analytics and enforcement."""
+    resource = models.ForeignKey(ServiceResource, on_delete=models.CASCADE,
+                                related_name='access_logs')
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    accessed_at = models.DateTimeField(auto_now_add=True)
+    action = models.CharField(max_length=20, choices=[
+        ('view', 'Viewed'),
+        ('download', 'Downloaded'),
+    ])
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['resource', 'user']),
+            models.Index(fields=['accessed_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user} {self.action} {self.resource.title}"
+
+
 class Waitlist(models.Model):
     """
     Model for managing waitlists for services and sessions.
@@ -699,256 +1051,6 @@ class Waitlist(models.Model):
 
 
 # ============================================================================
-# PACKAGE AND BUNDLE MODELS
+# Note: Package and Bundle functionality has been consolidated into the Service model
+# Use service_type = 'package' or 'bundle' with ServiceRelationship
 # ============================================================================
-
-class Package(PublicModel):
-    """
-    Model representing a package of different services sold together.
-    Example: "Wellness Journey" containing consultation + 3 massages + yoga class
-    """
-    name = models.CharField(max_length=255, help_text="Package name")
-    description = models.TextField(help_text="What this package includes and benefits")
-    
-    # Pricing
-    price = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        validators=[MinValueValidator(0)],
-        help_text="Total package price"
-    )
-    original_price = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        validators=[MinValueValidator(0)],
-        help_text="Sum of individual service prices (for showing savings)"
-    )
-    
-    # Package details
-    validity_days = models.PositiveIntegerField(
-        default=365,
-        help_text="How many days the package is valid after purchase"
-    )
-    is_transferable = models.BooleanField(
-        default=False,
-        help_text="Whether package can be transferred to another user"
-    )
-    
-    # Practitioner and category
-    practitioner = models.ForeignKey(
-        'practitioners.Practitioner',
-        on_delete=models.CASCADE,
-        related_name='packages'
-    )
-    category = models.ForeignKey(
-        ServiceCategory,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='packages'
-    )
-    
-    # Status
-    is_active = models.BooleanField(default=True)
-    is_featured = models.BooleanField(default=False)
-    
-    # Media
-    image_url = models.URLField(blank=True, null=True)
-    
-    # Metadata
-    tags = models.JSONField(blank=True, null=True, help_text="Searchable tags")
-    terms_conditions = models.TextField(
-        blank=True, null=True,
-        help_text="Specific terms for this package"
-    )
-
-    class Meta:
-        verbose_name = 'Package'
-        verbose_name_plural = 'Packages'
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['practitioner', 'is_active']),
-            models.Index(fields=['category', 'is_active']),
-            models.Index(fields=['is_featured', 'is_active']),
-        ]
-
-    def __str__(self):
-        return f"{self.name} - {self.practitioner.user.get_full_name()}"
-
-    @property
-    def savings_amount(self):
-        """Calculate savings compared to individual prices."""
-        return self.original_price - self.price
-
-    @property
-    def savings_percentage(self):
-        """Calculate savings percentage."""
-        if self.original_price > 0:
-            return round((self.savings_amount / self.original_price) * 100, 1)
-        return 0
-
-
-class PackageService(models.Model):
-    """
-    Junction table linking packages to services with quantities.
-    """
-    package = models.ForeignKey(
-        Package,
-        on_delete=models.CASCADE,
-        related_name='package_services'
-    )
-    service = models.ForeignKey(
-        Service,
-        on_delete=models.CASCADE,
-        related_name='service_packages'
-    )
-    quantity = models.PositiveIntegerField(
-        default=1,
-        validators=[MinValueValidator(1)],
-        help_text="Number of times this service is included"
-    )
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order within package"
-    )
-    is_mandatory = models.BooleanField(
-        default=True,
-        help_text="Whether this service must be used (vs optional)"
-    )
-    notes = models.CharField(
-        max_length=255,
-        blank=True, null=True,
-        help_text="Special notes about this service in the package"
-    )
-
-    class Meta:
-        verbose_name = 'Package Service'
-        verbose_name_plural = 'Package Services'
-        unique_together = ['package', 'service']
-        ordering = ['order', 'id']
-
-    def __str__(self):
-        return f"{self.package.name} - {self.service.name} x{self.quantity}"
-
-
-class Bundle(PublicModel):
-    """
-    Model representing bulk purchase options for a single service.
-    Example: "5-Class Yoga Pass" or "10-Session Massage Bundle"
-    """
-    name = models.CharField(max_length=255, help_text="Bundle name")
-    description = models.TextField(
-        blank=True, null=True,
-        help_text="Bundle description and benefits"
-    )
-    
-    # The service this bundle is for
-    service = models.ForeignKey(
-        Service,
-        on_delete=models.CASCADE,
-        related_name='bundles'
-    )
-    
-    # Bundle configuration
-    sessions_included = models.PositiveIntegerField(
-        validators=[MinValueValidator(2)],
-        help_text="Number of sessions included in bundle"
-    )
-    bonus_sessions = models.PositiveIntegerField(
-        default=0,
-        help_text="Additional free sessions (e.g., buy 5 get 1 free)"
-    )
-    
-    # Pricing
-    price = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        validators=[MinValueValidator(0)],
-        help_text="Total bundle price"
-    )
-    
-    # Validity
-    validity_days = models.PositiveIntegerField(
-        default=365,
-        help_text="Days valid after purchase"
-    )
-    is_shareable = models.BooleanField(
-        default=False,
-        help_text="Whether bundle can be shared with family/friends"
-    )
-    
-    # Restrictions
-    max_per_customer = models.PositiveIntegerField(
-        blank=True, null=True,
-        help_text="Maximum bundles one customer can purchase"
-    )
-    available_from = models.DateTimeField(
-        blank=True, null=True,
-        help_text="When bundle becomes available"
-    )
-    available_until = models.DateTimeField(
-        blank=True, null=True,
-        help_text="When bundle sales end"
-    )
-    
-    # Status
-    is_active = models.BooleanField(default=True)
-    is_featured = models.BooleanField(default=False)
-    
-    # Display
-    highlight_text = models.CharField(
-        max_length=50,
-        blank=True, null=True,
-        help_text="e.g., 'BEST VALUE' or 'SAVE 20%'"
-    )
-    
-    class Meta:
-        verbose_name = 'Bundle'
-        verbose_name_plural = 'Bundles'
-        ordering = ['service', 'sessions_included']
-        indexes = [
-            models.Index(fields=['service', 'is_active']),
-            models.Index(fields=['is_featured', 'is_active']),
-            models.Index(fields=['available_from', 'available_until']),
-        ]
-
-    def __str__(self):
-        return f"{self.name} - {self.service.name}"
-
-    @property
-    def total_sessions(self):
-        """Total sessions including bonus."""
-        return self.sessions_included + self.bonus_sessions
-
-    @property
-    def price_per_session(self):
-        """Effective price per session."""
-        if self.total_sessions > 0:
-            return round(self.price / self.total_sessions, 2)
-        return 0
-
-    @property
-    def savings_amount(self):
-        """Savings compared to individual sessions."""
-        individual_total = self.service.price * self.total_sessions
-        return individual_total - self.price
-
-    @property
-    def savings_percentage(self):
-        """Savings percentage."""
-        individual_total = self.service.price * self.total_sessions
-        if individual_total > 0:
-            return round((self.savings_amount / individual_total) * 100, 1)
-        return 0
-
-    def is_available(self):
-        """Check if bundle is currently available for purchase."""
-        from django.utils import timezone
-        now = timezone.now()
-        
-        if not self.is_active:
-            return False
-            
-        if self.available_from and now < self.available_from:
-            return False
-            
-        if self.available_until and now > self.available_until:
-            return False
-            
-        return True
