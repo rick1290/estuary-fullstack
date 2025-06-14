@@ -1,7 +1,0 @@
-c._handlerLegacy is not a function
-TypeError: c._handlerLegacy is not a function
-    at qi (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:29:2663)
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async /Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:9407
-    at async pu (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1329:9659)
-    at async start (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+openapi-ts@0.58.0_typescript@5.8.3/node_modules/@hey-api/openapi-ts/bin/index.cjs:86:5)
