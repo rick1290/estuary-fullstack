@@ -122,7 +122,7 @@ databases:
   # PostgreSQL Database
   - name: estuary-db
     region: oregon # same region
-    plan: starter # 256MB RAM, 1GB storage
+    plan: standard # New Render database plan
     postgresMajorVersion: '16'
     ipAllowList: # Allow only internal connections
       - source: 0.0.0.0/0
