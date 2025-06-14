@@ -11,7 +11,7 @@ import { ChevronRight } from "lucide-react"
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-warm-50/30 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-cream-50/30 to-white">
       <div className="container max-w-5xl py-16">
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
