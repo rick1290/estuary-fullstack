@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:production": "node start-production.js",
     "lint": "next lint",
     "generate": "hey-api",
     "generate:safe": "hey-api || echo 'Warning: Could not generate API client. Using cached version if available.'",

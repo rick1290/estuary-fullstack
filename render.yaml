@@ -6,7 +6,7 @@ services:
     region: oregon # or your preferred region
     plan: starter # or standard for production
     buildCommand: cd frontend-2 && npm install -g pnpm && pnpm install && pnpm run build
-    startCommand: cd frontend-2 && node server.js
+    startCommand: cd frontend-2 && pnpm start:production
     envVars:
       - key: NODE_ENV
         value: production
