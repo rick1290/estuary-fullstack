@@ -4,6 +4,7 @@ import { CheckCircle, Shield, Clock, HeartHandshake } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar } from "@/components/ui/avatar"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 // Value propositions
 const VALUE_PROPS = [
@@ -38,6 +39,8 @@ const VALUE_PROPS = [
 ]
 
 export default function WhyJoinSection() {
+  const { openAuthModal } = useAuthModal()
+  
   return (
     <section className="py-12 md:py-16 relative overflow-hidden bg-[url('/serene-forest-meditation.png')] bg-cover bg-center">
       {/* Background overlay */}
@@ -72,8 +75,12 @@ export default function WhyJoinSection() {
         <Card className="mt-10 p-6 text-center bg-background/70 backdrop-blur-sm border-none shadow-lg">
           <CardContent className="p-0">
             <h3 className="text-xl font-medium mb-4">Ready to begin your journey of growth and connection?</h3>
-            <Button className="rounded-full px-8" size="lg" asChild>
-              <Link href="/auth/signup">Join Our Community</Link>
+            <Button 
+              className="rounded-full px-8" 
+              size="lg" 
+              onClick={() => openAuthModal({ defaultTab: "signup" })}
+            >
+              Join Our Community
             </Button>
           </CardContent>
         </Card>

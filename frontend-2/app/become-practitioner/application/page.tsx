@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 import PractitionerApplicationForm from "@/components/practitioners/practitioner-application-form"
 
 export default function PractitionerApplicationPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated, user } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
+  const { openAuthModal } = useAuthModal()
   const [isLoading, setIsLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
@@ -25,7 +25,13 @@ export default function PractitionerApplicationPage() {
       setIsLoading(false)
 
       if (!isLoggedInFromStorage) {
-        setShowLoginModal(true)
+        openAuthModal({
+          defaultTab: "login",
+          redirectUrl: `/become-practitioner/application?tier=${tier}`,
+          serviceType: "practitioner-application",
+          title: "Sign in to Apply",
+          description: "Please sign in to complete your practitioner application"
+        })
       }
     }
 
@@ -41,19 +47,6 @@ export default function PractitionerApplicationPage() {
     return () => window.removeEventListener("storage", handleStorageChange)
   }, [])
 
-  // Handle login modal close
-  const handleLoginModalClose = () => {
-    setShowLoginModal(false)
-
-    // Check auth state again
-    const isLoggedInFromStorage = localStorage.getItem("isLoggedIn") === "true"
-    setIsLoggedIn(isLoggedInFromStorage)
-
-    // If still not authenticated after closing modal, redirect to become-practitioner page
-    if (!isLoggedInFromStorage) {
-      router.push("/become-practitioner")
-    }
-  }
 
   if (isLoading) {
     return (
@@ -95,7 +88,13 @@ export default function PractitionerApplicationPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
             <p className="mb-6">Please sign in to access the practitioner application.</p>
-            <button className="px-4 py-2 bg-primary text-white rounded-md" onClick={() => setShowLoginModal(true)}>
+            <button className="px-4 py-2 bg-primary text-white rounded-md" onClick={() => openAuthModal({
+              defaultTab: "login",
+              redirectUrl: `/become-practitioner/application?tier=${tier}`,
+              serviceType: "practitioner-application",
+              title: "Sign in to Apply",
+              description: "Please sign in to complete your practitioner application"
+            })}>
               Sign In
             </button>
             <div className="mt-4 text-sm text-muted-foreground">
@@ -118,12 +117,6 @@ export default function PractitionerApplicationPage() {
         </div>
       )}
 
-      <LoginModal
-        open={showLoginModal}
-        onClose={handleLoginModalClose}
-        redirectUrl={`/become-practitioner/application?tier=${tier}`}
-        serviceType="practitioner-application"
-      />
     </>
   )
 }

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface SessionBookingPanelProps {
   session: any
@@ -18,11 +18,11 @@ interface SessionBookingPanelProps {
 export default function SessionBookingPanel({ session }: SessionBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [visibleDates, setVisibleDates] = useState<Array<{ day: string; date: string }>>([])
   const [showAllTimes, setShowAllTimes] = useState(false)
-  const [showLoginModal, setShowLoginModal] = useState(false)
 
   // Mock dates for the date selector
   const allDates = [
@@ -101,7 +101,13 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
   const handleBookNow = () => {
     if (!isAuthenticated) {
-      setShowLoginModal(true)
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/checkout?serviceId=${session.id}&type=session&date=${selectedDate}&time=${selectedTime}`,
+        serviceType: "session",
+        title: "Sign in to Book Session",
+        description: "Please sign in to book your wellness session"
+      })
       return
     }
 
@@ -113,15 +119,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   const displayedTimeSlots = showAllTimes ? timeSlots : timeSlots.slice(0, 6)
 
   return (
-    <>
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        redirectUrl={`/checkout?serviceId=${session.id}&type=session&date=${selectedDate}&time=${selectedTime}`}
-        serviceType="session"
-      />
-
-      <Card className="w-full border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
+    <Card className="w-full border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
         <div className="bg-gradient-to-br from-sage-50 to-terracotta-50 p-8 text-center">
           <p className="text-sm text-olive-700 mb-2">Transform Your Practice</p>
           <div className="flex items-baseline justify-center gap-2">
@@ -240,6 +238,5 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
           </p>
         </CardContent>
       </Card>
-    </>
   )
 }

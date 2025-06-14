@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -8,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Clock, MapPin, Calendar } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 import type { Service } from "@/types/service"
 
 interface ServiceBookingPanelProps {
@@ -18,7 +17,7 @@ interface ServiceBookingPanelProps {
 export default function ServiceBookingPanel({ service }: ServiceBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
+  const { openAuthModal } = useAuthModal()
 
   const getBookingButtonText = () => {
     switch (service.service_type.name) {
@@ -35,7 +34,13 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
 
   const handleBookingClick = () => {
     if (!isAuthenticated) {
-      setShowLoginModal(true)
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/checkout?serviceId=${service.id}&type=${service.service_type.name}`,
+        serviceType: service.service_type.name,
+        title: `Sign in to ${getBookingButtonText()}`,
+        description: "Please sign in to book this service"
+      })
       return
     }
 
@@ -44,15 +49,7 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
   }
 
   return (
-    <>
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        redirectUrl={`/checkout?serviceId=${service.id}&type=${service.service_type.name}`}
-        serviceType={service.service_type.name}
-      />
-
-      <Card className="overflow-hidden">
+    <Card className="overflow-hidden">
         <CardContent className="p-6">
           <p className="text-2xl font-semibold text-primary mb-4">${Number.parseFloat(service.price).toFixed(2)}</p>
 
@@ -103,6 +100,5 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
           <p className="text-xs text-center text-muted-foreground">Secure checkout • Satisfaction guaranteed</p>
         </CardContent>
       </Card>
-    </>
   )
 }

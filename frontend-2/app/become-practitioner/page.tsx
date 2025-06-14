@@ -12,10 +12,10 @@ import { Separator } from "@/components/ui/separator"
 import { Check, Star, Wallet, Calendar, Eye, Users, User, Zap, Laptop, ArrowRight, ChevronDown, Sparkles, Heart, Quote } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
 import BackgroundPattern from "@/components/ui/background-pattern"
 import SectionConnector from "@/components/home/section-connector"
-import LoginModal from "@/components/auth/login-modal"
 
 // Animation variants for staggered animations
 const containerVariants = {
@@ -42,7 +42,7 @@ const itemVariants = {
 export default function BecomePractitionerPage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
-  const [loginModalOpen, setLoginModalOpen] = useState(false)
+  const { openAuthModal } = useAuthModal()
   const [selectedTier, setSelectedTier] = useState<string | null>(null)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [scrollY, setScrollY] = useState(0)
@@ -74,17 +74,14 @@ export default function BecomePractitionerPage() {
     if (isAuthenticated) {
       router.push(`/become-practitioner/application?tier=${tier.toLowerCase()}`)
     } else {
-      // Otherwise show login modal
-      setLoginModalOpen(true)
-    }
-  }
-
-  const handleLoginSuccess = () => {
-    setLoginModalOpen(false)
-
-    // If user is now authenticated and we have a selected tier, navigate
-    if (isAuthenticated && selectedTier) {
-      router.push(`/become-practitioner/application?tier=${selectedTier.toLowerCase()}`)
+      // Otherwise show auth modal
+      openAuthModal({
+        defaultTab: "signup",
+        redirectUrl: `/become-practitioner/application?tier=${tier.toLowerCase()}`,
+        serviceType: "practitioner-application",
+        title: "Join as a Practitioner",
+        description: "Create an account to start your wellness practice journey"
+      })
     }
   }
 
@@ -770,13 +767,6 @@ export default function BecomePractitionerPage() {
         </div>
       </div>
 
-      {/* Login Modal */}
-      <LoginModal
-        open={loginModalOpen}
-        onClose={handleLoginSuccess}
-        redirectUrl={selectedTier ? `/become-practitioner/application?tier=${selectedTier.toLowerCase()}` : undefined}
-        serviceType="practitioner-application"
-      />
     </>
   )
 }

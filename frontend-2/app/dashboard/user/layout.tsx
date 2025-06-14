@@ -13,10 +13,14 @@ export default function UserDashboardLayout({
       <div className="absolute inset-0 texture-grain opacity-20" />
       
       <UserDashboardNav />
-      <div className="container py-8 relative z-10">
-        <DashboardBreadcrumb />
-        {children}
-      </div>
+      <main className="relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <DashboardBreadcrumb />
+        </div>
+        <div className="pb-8">
+          {children}
+        </div>
+      </main>
     </div>
   )
 }

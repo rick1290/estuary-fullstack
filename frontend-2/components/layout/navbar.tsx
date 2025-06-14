@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
 import {
   Menu,
@@ -46,6 +47,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, isAuthenticated, isPractitioner, logout, switchRole } = useAuth()
+  const { openAuthModal } = useAuthModal()
 
   // Check if we're in the practitioner dashboard or checkout pages
   const isInPractitionerDashboard = pathname.startsWith("/dashboard/practitioner")
@@ -291,17 +293,22 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="hidden md:flex md:items-center md:gap-3">
-              <Button variant="ghost" size="default" asChild>
-                <Link href="/auth/login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  <span>Login</span>
-                </Link>
+              <Button 
+                variant="ghost" 
+                size="default" 
+                onClick={() => openAuthModal({ defaultTab: "login" })}
+                className="flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Login</span>
               </Button>
-              <Button size="default" asChild>
-                <Link href="/auth/signup" className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  <span>Sign Up</span>
-                </Link>
+              <Button 
+                size="default" 
+                onClick={() => openAuthModal({ defaultTab: "signup" })}
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Sign Up</span>
               </Button>
             </div>
           )}
@@ -414,19 +421,22 @@ export default function Navbar() {
                 ) : (
                   <div className="flex flex-col gap-2">
                     <SheetClose asChild>
-                      <Button variant="outline" asChild className="w-full justify-start gap-2">
-                        <Link href="/auth/login">
-                          <LogIn className="h-4 w-4" />
-                          <span>Login</span>
-                        </Link>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start gap-2"
+                        onClick={() => openAuthModal({ defaultTab: "login" })}
+                      >
+                        <LogIn className="h-4 w-4" />
+                        <span>Login</span>
                       </Button>
                     </SheetClose>
                     <SheetClose asChild>
-                      <Button asChild className="w-full justify-start gap-2">
-                        <Link href="/auth/signup">
-                          <UserPlus className="h-4 w-4" />
-                          <span>Sign Up</span>
-                        </Link>
+                      <Button 
+                        className="w-full justify-start gap-2"
+                        onClick={() => openAuthModal({ defaultTab: "signup" })}
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        <span>Sign Up</span>
                       </Button>
                     </SheetClose>
                   </div>

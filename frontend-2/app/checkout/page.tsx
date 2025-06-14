@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import LoginModal from "@/components/auth/login-modal"
+import { useAuthModal } from "@/components/auth/auth-provider"
 import { getServiceById } from "@/lib/services"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -43,11 +43,11 @@ export default function CheckoutPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated, login } = useAuth()
+  const { openAuthModal } = useAuthModal()
 
   const [loading, setLoading] = useState(true)
   const [service, setService] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
-  const [showLoginModal, setShowLoginModal] = useState(false)
   const [specialRequests, setSpecialRequests] = useState("")
   const [processingPayment, setProcessingPayment] = useState(false)
   const [showNewCardDialog, setShowNewCardDialog] = useState(false)
@@ -83,7 +83,13 @@ export default function CheckoutPage() {
           await login("testuser@example.com", "test1234")
         } catch (error) {
           console.error("Auto-login failed:", error)
-          setShowLoginModal(true)
+          openAuthModal({
+            defaultTab: "login",
+            redirectUrl: `/checkout?serviceId=${serviceId}&type=${serviceType}`,
+            serviceType: serviceType,
+            title: "Sign in to Continue",
+            description: "Please sign in to complete your booking"
+          })
         }
       }
     }
@@ -119,13 +125,12 @@ export default function CheckoutPage() {
     fetchService()
   }, [serviceId])
 
-  const handleLoginModalClose = () => {
-    // If user closes login modal without logging in, redirect back
+  // Check authentication on component mount
+  useEffect(() => {
     if (!isAuthenticated) {
       router.back()
     }
-    setShowLoginModal(false)
-  }
+  }, [isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -244,12 +249,6 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <LoginModal
-        open={showLoginModal}
-        onClose={handleLoginModalClose}
-        redirectUrl={`/checkout?serviceId=${serviceId}&type=${serviceType}`}
-        serviceType={serviceType}
-      />
 
       {/* New Card Dialog */}
       <Dialog open={showNewCardDialog} onOpenChange={setShowNewCardDialog}>
