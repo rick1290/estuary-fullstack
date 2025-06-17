@@ -481,6 +481,7 @@ TEMPORAL_MAX_CACHED_WORKFLOWS = int(os.getenv('TEMPORAL_MAX_CACHED_WORKFLOWS', '
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Frontend development
+    "http://localhost:3001",  # Frontend development
     "http://localhost:8000",  # API development
     "http://localhost:8001",  # Alternative API port
 ]

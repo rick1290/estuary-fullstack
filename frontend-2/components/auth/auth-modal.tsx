@@ -82,41 +82,38 @@ export default function AuthModal({
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('handleEmailLogin called with:', { email, password })
     setError(null)
     setIsLoading(true)
     setLoginSuccessful(false)
 
     try {
-      // Accept any of our test accounts
-      const validTestCredentials = [
-        { email: "testuser@example.com", password: "test1234" },
-        { email: "user@example.com", password: "password123" },
-        { email: "practitioner@example.com", password: "password123" },
-      ]
+      console.log('Calling login function...')
+      console.log('login function:', login)
+      console.log('typeof login:', typeof login)
+      await login(email, password)
+      console.log('Login completed successfully')
+      setLoginSuccessful(true)
+      onClose()
 
-      const isValidTestCredential = validTestCredentials.some(
-        (cred) => cred.email === email && cred.password === password,
-      )
-
-      if (isValidTestCredential) {
-        await login(email, password)
-        setLoginSuccessful(true)
-        onClose()
-
-        // For testing purposes, directly set localStorage
-        localStorage.setItem("isLoggedIn", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userRole", "user")
-
-        if (redirectUrl) {
-          window.location.href = redirectUrl
-        }
-      } else {
-        setError("Invalid credentials. Try testuser@example.com / test1234")
+      if (redirectUrl) {
+        window.location.href = redirectUrl
       }
-    } catch (err) {
-      setError("Login failed. Please try again.")
+    } catch (err: any) {
+      console.error('Login error caught in handleEmailLogin:', err)
+      console.error('Error stack:', err?.stack)
+      
+      // Extract error message
+      let errorMessage = "Login failed. Please try again."
+      
+      if (err?.message) {
+        errorMessage = err.message
+      }
+      
+      console.log('Setting error message:', errorMessage)
+      setError(errorMessage)
     } finally {
+      console.log('Setting isLoading to false')
       setIsLoading(false)
     }
   }
@@ -139,20 +136,9 @@ export default function AuthModal({
     }
 
     try {
-      // Simulate signup for demo
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      
-      // Auto-login after signup
-      localStorage.setItem("isLoggedIn", "true")
-      localStorage.setItem("userEmail", email)
-      localStorage.setItem("userRole", "user")
-      
-      setLoginSuccessful(true)
-      onClose()
-
-      if (redirectUrl) {
-        window.location.href = redirectUrl
-      }
+      // TODO: Implement signup with authRegister from the API
+      // For now, just show an error message
+      setError("Signup is not yet implemented. Please use an existing account.")
     } catch (err) {
       setError("Signup failed. Please try again.")
     } finally {
@@ -166,21 +152,8 @@ export default function AuthModal({
     setLoginSuccessful(false)
 
     try {
-      // Simulate Google login for demo purposes
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      localStorage.setItem("isLoggedIn", "true")
-      localStorage.setItem("userEmail", "user@example.com")
-      localStorage.setItem("userRole", "user")
-
-      setLoginSuccessful(true)
-      onClose()
-
-      if (redirectUrl) {
-        setTimeout(() => {
-          window.location.href = redirectUrl
-        }, 100)
-      }
+      // TODO: Implement OAuth with Google
+      setError("Google authentication is not yet implemented. Please use email login.")
     } catch (err) {
       setError("Google authentication failed. Please try again.")
     } finally {

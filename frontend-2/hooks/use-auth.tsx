@@ -1,6 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { AuthService } from "@/lib/auth-service"
+import type { UserProfileReadable } from "@/src/client/types.gen"
 
 // Define user types
 type UserRole = "user" | "practitioner"
@@ -19,9 +21,11 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isPractitioner: boolean
+  isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   switchRole: () => void
+  refreshUser: () => Promise<void>
 }
 
 // Create context with default values
@@ -29,71 +33,48 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isPractitioner: false,
+  isLoading: true,
   login: async () => {},
-  logout: () => {},
+  logout: async () => {},
   switchRole: () => {},
+  refreshUser: async () => {},
 })
 
-// Mock user data for demonstration
-const MOCK_USERS = {
-  "user@example.com": {
-    id: "user-123",
-    firstName: "John",
-    lastName: "Doe",
-    email: "user@example.com",
-    role: "user",
-    hasPractitionerAccount: true,
-  },
-  "practitioner@example.com": {
-    id: "practitioner-456",
-    firstName: "Sarah",
-    lastName: "Johnson",
-    email: "practitioner@example.com",
-    role: "practitioner",
-    hasPractitionerAccount: true,
-  },
-  "testuser@example.com": {
-    id: "test-789",
-    firstName: "Test",
-    lastName: "User",
-    email: "testuser@example.com",
-    role: "user",
-    hasPractitionerAccount: false,
-  },
+// Helper function to convert API user to our User type
+function convertAPIUser(apiUser: UserProfileReadable): User {
+  const role = localStorage.getItem("userRole") || "user"
+  
+  return {
+    id: apiUser.id.toString(),
+    firstName: apiUser.first_name || "",
+    lastName: apiUser.last_name || "",
+    email: apiUser.email,
+    role: role as UserRole,
+    hasPractitionerAccount: apiUser.is_practitioner || false,
+  }
 }
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Check if user is authenticated on mount
   useEffect(() => {
-    // In a real app, this would check for a token in localStorage or cookies
-    // and validate it with the server
     const checkAuth = async () => {
       try {
-        // Mock authentication check
-        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
-
-        if (isLoggedIn) {
-          // Get stored email and role
-          const storedEmail = localStorage.getItem("userEmail") || ""
-          const storedRole = localStorage.getItem("userRole") || "user"
-
-          // Set user based on email or default to the first mock user
-          const mockUser = MOCK_USERS[storedEmail as keyof typeof MOCK_USERS] || MOCK_USERS["user@example.com"]
-
-          setUser({
-            ...mockUser,
-            role: storedRole as UserRole,
-          })
+        const apiUser = await AuthService.getCurrentUser()
+        
+        if (apiUser) {
+          setUser(convertAPIUser(apiUser))
+        } else {
+          setUser(null)
         }
       } catch (error) {
         console.error("Authentication check failed:", error)
         setUser(null)
       } finally {
-        setLoading(false)
+        setIsLoading(false)
       }
     }
 
@@ -102,51 +83,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login function
   const login = async (email: string, password: string) => {
+    console.log('useAuth.login called with:', { email, password })
     try {
-      // Mock login - in a real app, this would call an API
-      console.log("Logging in with:", email, password)
-
-      // Check if password is correct for test user
-      if (email === "testuser@example.com" && password !== "test1234") {
-        throw new Error("Invalid password")
-      }
-
-      // Determine if this is a practitioner login
-      const isPractitioner = email === "practitioner@example.com"
-      const role = isPractitioner ? "practitioner" : "user"
-
-      // Get the mock user data
-      const mockUser = MOCK_USERS[email as keyof typeof MOCK_USERS]
-
-      if (!mockUser) {
-        throw new Error("User not found")
-      }
-
-      // Store auth state
-      localStorage.setItem("isLoggedIn", "true")
-      localStorage.setItem("userEmail", email)
+      const { user: apiUser } = await AuthService.login({ email, password })
+      
+      // Store role preference
+      const role = apiUser.is_practitioner ? "practitioner" : "user"
       localStorage.setItem("userRole", role)
-
-      // Set user
-      setUser({
-        ...mockUser,
-        role: role as UserRole,
-      })
-    } catch (error) {
+      
+      setUser(convertAPIUser(apiUser))
+    } catch (error: any) {
       console.error("Login failed:", error)
-      throw error
+      
+      // Extract error message from API response
+      let errorMessage = "Login failed"
+      
+      if (error?.error?.detail) {
+        errorMessage = error.error.detail
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      
+      throw new Error(errorMessage)
     }
   }
 
   // Logout function
-  const logout = () => {
-    // Clear auth state
-    localStorage.removeItem("isLoggedIn")
-    localStorage.removeItem("userEmail")
-    localStorage.removeItem("userRole")
+  const logout = async () => {
+    try {
+      await AuthService.logout()
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      localStorage.removeItem("userRole")
+      setUser(null)
+    }
+  }
 
-    // Clear user
-    setUser(null)
+  // Refresh user data
+  const refreshUser = async () => {
+    try {
+      const apiUser = await AuthService.getCurrentUser()
+      
+      if (apiUser) {
+        setUser(convertAPIUser(apiUser))
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error("Failed to refresh user:", error)
+      setUser(null)
+    }
   }
 
   // Switch between user and practitioner roles
@@ -169,19 +156,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user
   const isPractitioner = user?.role === "practitioner"
 
-  // Provide auth context
+  // Provide auth context - always render children even while loading
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated,
         isPractitioner,
+        isLoading,
         login,
         logout,
         switchRole,
+        refreshUser,
       }}
     >
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   )
 }
