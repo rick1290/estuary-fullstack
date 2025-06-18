@@ -24,7 +24,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Plus, MoreVertical, Edit, Trash2, FolderOpen } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { practitionerCategoriesListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { 
+  practitionerCategoriesListOptions,
+  practitionerCategoriesCreateMutation,
+  practitionerCategoriesUpdateMutation,
+  practitionerCategoriesDestroyMutation
+} from "@/src/client/@tanstack/react-query.gen"
 
 // Color options for categories
 const COLOR_OPTIONS = [
@@ -68,42 +73,15 @@ export default function CompactCategoryManager() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // TODO: Replace with actual API when available
-  const { data: categories = [], isLoading } = useQuery({
-    ...practitionerCategoriesListOptions(),
-    select: (data) => data?.results || [],
-    // Mock fallback for now
-    placeholderData: () => [
-      {
-        id: 1,
-        name: "Wellness Sessions",
-        description: "General wellness and relaxation services",
-        color: "#3B82F6",
-        service_count: 5,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 2,
-        name: "Therapy & Healing",
-        description: "Therapeutic and healing-focused services",
-        color: "#10B981",
-        service_count: 3,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ] as PractitionerCategory[]
-  })
+  const { data: categoriesData, isLoading } = useQuery(practitionerCategoriesListOptions())
+  
+  const categories = categoriesData?.results || []
 
-  // TODO: Replace with actual API mutations when available
   const createMutation = useMutation({
-    mutationFn: async (data: CategoryFormData) => {
-      // Mock API call - replace with actual endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return { id: Date.now(), ...data, service_count: 0 }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['practitioner-categories'] })
+    ...practitionerCategoriesCreateMutation(),
+    onSuccess: (data) => {
+      console.log('Category created:', data)
+      queryClient.invalidateQueries({ queryKey: ['practitionerCategoriesList'] })
       setIsCreateDialogOpen(false)
       setFormData(initialFormData)
       toast({
@@ -176,7 +154,7 @@ export default function CompactCategoryManager() {
       })
       return
     }
-    createMutation.mutate(formData)
+    createMutation.mutate({ body: formData })
   }
 
   const handleEdit = (category: PractitionerCategory) => {
@@ -201,7 +179,10 @@ export default function CompactCategoryManager() {
       return
     }
     
-    updateMutation.mutate({ id: editingCategory.id, data: formData })
+    updateMutation.mutate({ 
+      path: { id: editingCategory.id },
+      body: formData 
+    })
   }
 
   const handleDelete = (category: PractitionerCategory) => {
@@ -215,7 +196,7 @@ export default function CompactCategoryManager() {
     }
 
     if (confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      deleteMutation.mutate(category.id)
+      deleteMutation.mutate({ path: { id: category.id } })
     }
   }
 

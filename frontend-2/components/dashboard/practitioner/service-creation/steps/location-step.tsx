@@ -102,24 +102,28 @@ export default function LocationStep() {
             <h3 className="font-medium">Online Details</h3>
 
             <div className="space-y-2">
-              <Label htmlFor="meetingPlatform">Platform</Label>
-              <Input
-                id="meetingPlatform"
-                placeholder="e.g., Zoom, Google Meet, Microsoft Teams"
-                value={meetingPlatform}
-                onChange={(e) => updateAddressField("meetingPlatform", e.target.value)}
-              />
+              <p className="text-sm text-muted-foreground">
+                Meeting links will be automatically generated for each booking through our integrated video platform.
+              </p>
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">How it works:</p>
+                <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                  <li>• Secure meeting rooms are created for each session</li>
+                  <li>• Links are sent automatically to participants</li>
+                  <li>• No need to manage your own video platform</li>
+                </ul>
+              </div>
             </div>
-
+            
             <div className="space-y-2">
-              <Label htmlFor="meetingLink">Meeting Link (optional)</Label>
-              <Input
-                id="meetingLink"
-                placeholder="e.g., https://zoom.us/j/123456789"
-                value={meetingLink}
-                onChange={(e) => updateAddressField("meetingLink", e.target.value)}
+              <Label htmlFor="locationNotes">Additional Notes (optional)</Label>
+              <Textarea
+                id="locationNotes"
+                placeholder="Any special instructions for online sessions..."
+                value={locationNotes}
+                onChange={(e) => updateAddressField("locationNotes", e.target.value)}
+                rows={3}
               />
-              <p className="text-xs text-muted-foreground">You can add this now or provide it to participants later.</p>
             </div>
           </CardContent>
         </Card>

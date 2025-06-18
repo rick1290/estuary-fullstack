@@ -56,7 +56,6 @@ export function PackageBuilderStep() {
       query: {
         practitioner: user?.practitioner_profile?.id,
         page_size: 100,
-        is_active: true,
         // Exclude packages and bundles from selection
         service_type: "session,workshop,course"
       }

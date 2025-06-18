@@ -364,7 +364,7 @@ export function RevenueSharingStep() {
                       <Avatar className="h-8 w-8 mr-3">
                         <AvatarImage src={practitioner.profile_image_url} />
                         <AvatarFallback>
-                          {practitioner.display_name.charAt(0)}
+                          {practitioner.display_name?.charAt(0) || 'P'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="text-left">

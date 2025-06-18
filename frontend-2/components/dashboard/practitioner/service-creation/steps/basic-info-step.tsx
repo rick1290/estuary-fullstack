@@ -28,6 +28,15 @@ export function BasicInfoStep() {
   const { data: globalCategories = [], isLoading: isLoadingGlobal } = useServiceCategories()
   const { data: practitionerCategories = [], isLoading: isLoadingPractitioner } = usePractitionerCategories()
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+  
+  console.log('BasicInfoStep - Categories Debug:', {
+    globalCategories,
+    practitionerCategories,
+    isLoadingGlobal,
+    isLoadingPractitioner,
+    formState_category_id: formState.category_id,
+    formState_practitioner_category_id: formState.practitioner_category_id
+  })
 
   const handleChange = (field: string, value: string) => {
     updateFormField(field, value)

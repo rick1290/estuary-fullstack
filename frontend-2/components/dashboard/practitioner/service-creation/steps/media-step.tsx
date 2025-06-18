@@ -141,8 +141,8 @@ export function MediaStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-2">Service Image</h2>
-        <p className="text-muted-foreground">Upload a high-quality image to showcase your service</p>
+        <h2 className="text-xl font-semibold mb-2">Service Image (Optional)</h2>
+        <p className="text-muted-foreground">Upload a high-quality image to showcase your service. While optional, images help attract more customers.</p>
       </div>
 
       <Card>
@@ -150,6 +150,7 @@ export function MediaStep() {
           <CardTitle className="flex items-center gap-2">
             <ImagePlus className="h-5 w-5" />
             Cover Image
+            <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
             {(formState.image || formState.coverImage) && <Check className="h-4 w-4 text-green-500 ml-auto" />}
           </CardTitle>
           <CardDescription>

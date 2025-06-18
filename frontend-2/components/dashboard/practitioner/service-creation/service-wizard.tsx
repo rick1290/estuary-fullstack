@@ -275,7 +275,7 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
 
   if (isLoadingService && serviceId) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="w-full max-w-6xl mx-auto">
         <CardContent className="p-8">
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -288,13 +288,20 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
   const isLoading = createMutation.isPending || updateMutation.isPending
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">{isEditMode ? "Edit Service" : "Create New Service"}</CardTitle>
+    <Card className="w-full max-w-6xl mx-auto">
+      <CardHeader className="pb-8">
+        <div className="space-y-1">
+          <CardTitle className="text-3xl font-bold">{isEditMode ? "Edit Service" : "Create New Service"}</CardTitle>
+          <p className="text-muted-foreground">
+            {isEditMode 
+              ? "Update your service details and settings"
+              : "Follow the steps below to create a comprehensive service listing"}
+          </p>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-8">
-          <Stepper value={activeStep} onValueChange={handleStepClick} className="w-full mb-8">
+        <div className="space-y-8">
+          <Stepper value={activeStep} onValueChange={handleStepClick} className="w-full">
             {steps.map((step, index) => (
               <StepperItem
                 key={step.id}
@@ -303,10 +310,10 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
                 disabled={!completed[index] && index !== activeStep && index !== Object.keys(completed).length}
                 className="[&:not(:last-child)]:flex-1"
               >
-                <StepperTrigger className="flex flex-col items-center gap-1">
-                  <StepperIndicator />
-                  <div className="flex flex-col items-center mt-2">
-                    <StepperTitle className="text-xs font-medium">{step.label}</StepperTitle>
+                <StepperTrigger className="flex flex-col items-center gap-2">
+                  <StepperIndicator className="h-10 w-10" />
+                  <div className="flex flex-col items-center">
+                    <StepperTitle className="text-sm font-medium">{step.label}</StepperTitle>
                   </div>
                 </StepperTrigger>
                 {index < steps.length - 1 && <StepperSeparator />}
@@ -314,7 +321,7 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
             ))}
           </Stepper>
 
-          <div className="mt-8">
+          <div className="bg-muted/30 rounded-lg p-6 md:p-8">
             <CurrentStepComponent isEditMode={isEditMode} />
           </div>
         </div>

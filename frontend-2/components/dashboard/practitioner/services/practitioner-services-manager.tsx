@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Plus, Search, SlidersHorizontal, X, LayoutGrid, List } from "lucide-react"
 import ServiceCard from "./service-card"
 import ServiceListItem from "./service-list-item"
-import { servicesListOptions, servicesUpdateMutation, servicesDestroyMutation } from "@/src/client/@tanstack/react-query.gen"
+import { servicesListOptions, servicesPartialUpdateMutation, servicesDestroyMutation } from "@/src/client/@tanstack/react-query.gen"
 import type { ServiceListReadable } from "@/src/client/types.gen"
 import EmptyState from "./empty-state"
 import LoadingSpinner from "@/components/ui/loading-spinner"
@@ -186,7 +186,7 @@ export default function PractitionerServicesManager() {
 
   // Update service mutation for status toggle
   const updateMutation = useMutation({
-    ...servicesUpdateMutation(),
+    ...servicesPartialUpdateMutation(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: servicesListOptions({ query: queryParams }).queryKey })
     },
@@ -203,10 +203,10 @@ export default function PractitionerServicesManager() {
   const handleToggleStatus = (serviceId: string) => {
     const service = services.find(s => s.id?.toString() === serviceId)
     if (service) {
-      const newStatus = service.status === "active" ? "inactive" : "active"
+      const newStatus = service.is_active ? false : true
       updateMutation.mutate({ 
         path: { id: parseInt(serviceId) },
-        body: { status: newStatus }
+        body: { is_active: newStatus }
       })
     }
   }

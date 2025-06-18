@@ -5,15 +5,18 @@ import {
 } from "@/src/client/@tanstack/react-query.gen"
 
 export function useServiceCategories() {
-  return useQuery({
-    ...serviceCategoriesListOptions(),
-    select: (data) => data?.results || []
-  })
+  const query = useQuery(serviceCategoriesListOptions())
+  return {
+    ...query,
+    data: query.data?.results || []
+  }
 }
 
 export function usePractitionerCategories() {
-  return useQuery({
-    ...practitionerCategoriesListOptions(),
-    select: (data) => data?.results || []
-  })
+  const query = useQuery(practitionerCategoriesListOptions())
+  console.log('Practitioner categories query data:', query.data)
+  return {
+    ...query,
+    data: query.data?.results || []
+  }
 }
