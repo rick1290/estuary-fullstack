@@ -21,7 +21,7 @@ import {
 interface ScheduleFormProps {
   schedule: ScheduleReadable | null
   isCreating: boolean
-  onSave: (schedule: Partial<ScheduleWritable>) => Promise<void>
+  onSave: (schedule: Partial<ScheduleWritable>, timeSlots?: ScheduleTimeSlotWritable[]) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
 }
@@ -225,15 +225,12 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
       is_active: isActive,
     }
 
-    // For new schedules, include time slots in the creation
-    if (isCreating) {
-      scheduleData.time_slots = timeSlots
-    }
-
     try {
-      await onSave(scheduleData)
+      // Pass time slots separately to parent
+      await onSave(scheduleData, timeSlots)
     } catch (error) {
       // Error handling is done in the parent component
+      throw error
     }
   }
 

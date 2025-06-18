@@ -89,7 +89,7 @@ export function RevenueSharingStep() {
   // Update form state when practitioners change
   useEffect(() => {
     updateFormField("additional_practitioner_ids", practitioners.map(p => p.practitionerId))
-  }, [practitioners])
+  }, [practitioners, updateFormField])
 
   const totalAllocatedPercentage = practitioners.reduce(
     (sum, p) => sum + p.revenueSharePercentage, 
@@ -322,10 +322,16 @@ export function RevenueSharingStep() {
                     </div>
                     <Slider
                       value={[practitioner.revenueSharePercentage]}
-                      onValueChange={(value) => updatePractitioner(index, { 
-                        revenueSharePercentage: value[0] 
-                      })}
-                      max={100 - totalAllocatedPercentage + practitioner.revenueSharePercentage}
+                      onValueChange={(value) => {
+                        const otherPractitionersTotal = practitioners
+                          .filter((_, i) => i !== index)
+                          .reduce((sum, p) => sum + p.revenueSharePercentage, 0)
+                        const maxAllowed = Math.min(100 - otherPractitionersTotal, value[0])
+                        updatePractitioner(index, { 
+                          revenueSharePercentage: maxAllowed 
+                        })
+                      }}
+                      max={100}
                       step={5}
                       className="w-full"
                     />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { useServiceForm } from "@/hooks/use-service-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,9 @@ import {
   X
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { serviceResourcesCreateMutation } from "@/src/client/@tanstack/react-query.gen"
+import type { ServiceResourceRequest } from "@/src/client/types.gen"
+import { AuthService } from "@/lib/auth-service"
 
 interface Resource {
   id: string
@@ -98,22 +102,43 @@ export function ResourcesStep() {
       [resourceId]: { isUploading: true, progress: 0 }
     }))
 
-    // Simulate upload progress
+    // Simulate upload progress for UX
     const progressInterval = setInterval(() => {
       setUploadStates(prev => ({
         ...prev,
         [resourceId]: {
           ...prev[resourceId],
-          progress: Math.min((prev[resourceId]?.progress || 0) + 20, 90)
+          progress: Math.min((prev[resourceId]?.progress || 0) + 10, 90)
         }
       }))
-    }, 200)
+    }, 300)
 
     try {
-      // In production: Upload to CloudFlare R2
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Create FormData for direct file upload to R2
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('resource_type', editingResource.resource_type || 'document')
+      formData.append('service_id', formState.id || '')
       
-      const fileUrl = URL.createObjectURL(file)
+      // Get the access token
+      const token = AuthService.getAccessToken()
+      
+      // Upload file directly to backend which will handle R2 upload
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/service-resources/upload/`, {
+        method: 'POST',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: formData,
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || error.message || 'Upload failed')
+      }
+      
+      const data = await response.json()
       
       clearInterval(progressInterval)
       setUploadStates(prev => ({
@@ -121,33 +146,37 @@ export function ResourcesStep() {
         [resourceId]: { isUploading: false, progress: 100 }
       }))
       
-      // Update resource with file info
-      if (editingId === resourceId) {
+      // Update resource with file info from response
+      // The backend should return the R2 URL and file metadata
+      if (editingId === resourceId && data) {
         setEditingResource(prev => ({
           ...prev,
-          file_url: fileUrl,
-          file_name: file.name,
-          file_size: file.size
+          file_url: data.file_url || data.url || '',
+          file_name: data.file_name || data.filename || file.name,
+          file_size: data.file_size || file.size
         }))
       }
       
       toast({
         title: "File uploaded successfully",
-        description: `${file.name} has been uploaded.`
+        description: `${file.name} has been uploaded to cloud storage.`
       })
-    } catch (error) {
+      
+      return data
+    } catch (error: any) {
       clearInterval(progressInterval)
       setUploadStates(prev => ({
         ...prev,
-        [resourceId]: { isUploading: false, progress: 0, error: "Upload failed" }
+        [resourceId]: { isUploading: false, progress: 0, error: error.message || "Upload failed" }
       }))
       toast({
         title: "Upload failed",
-        description: "Please try again.",
+        description: error.message || "Failed to upload file. Please try again.",
         variant: "destructive"
       })
+      throw error
     }
-  }, [editingId, toast])
+  }, [editingId, editingResource.resource_type, formState.id, toast])
 
   const handleAddResource = () => {
     if (!editingResource.title?.trim()) return
@@ -665,11 +694,12 @@ export function ResourcesStep() {
         <AlertDescription>
           <strong>Resource Management Tips:</strong>
           <ul className="mt-2 space-y-1 text-sm">
-            <li>• Upload high-quality materials that add value to your service</li>
-            <li>• Use clear, descriptive titles so customers know what to expect</li>
+            <li>• Files are securely uploaded to Cloudflare R2 storage</li>
+            <li>• Maximum file size: 100MB per file</li>
+            <li>• Supported formats: PDF, DOC, MP4, MP3, JPG, PNG, and more</li>
             <li>• Set appropriate access levels (preview materials can attract buyers)</li>
-            <li>• Consider file sizes - compress large videos when possible</li>
             <li>• Organize resources in logical order for the best learning experience</li>
+            <li>• Resources will be available to customers based on access level settings</li>
           </ul>
         </AlertDescription>
       </Alert>

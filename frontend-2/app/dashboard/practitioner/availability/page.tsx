@@ -11,12 +11,15 @@ import { Switch } from "@/components/ui/switch"
 import { ScheduleForm } from "@/components/dashboard/practitioner/availability/schedule-form"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { AuthService } from "@/lib/auth-service"
 import { 
   schedulesListOptions,
   schedulesCreateMutation,
   schedulesUpdateMutation,
   schedulesDestroyMutation,
-  schedulesSetDefaultCreateMutation
+  schedulesSetDefaultCreateMutation,
+  schedulesAddTimeSlotCreateMutation,
+  schedulesRemoveTimeSlotDestroyMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import type { ScheduleReadable, ScheduleWritable } from "@/src/client/types.gen"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -121,6 +124,49 @@ export default function AvailabilityPage() {
     },
   })
 
+  // Add time slot mutation
+  const addTimeSlotMutation = useMutation({
+    ...schedulesAddTimeSlotCreateMutation(),
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to add time slot.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Remove time slot mutation
+  const removeTimeSlotMutation = useMutation({
+    mutationFn: async ({ scheduleId, timeSlotId }: { scheduleId: number; timeSlotId: number }) => {
+      // Custom implementation because the backend expects body in DELETE request
+      const token = AuthService.getAccessToken()
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/schedules/${scheduleId}/remove_time_slot/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ time_slot_id: timeSlotId }),
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to remove time slot')
+      }
+      
+      return response
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to remove time slot.",
+        variant: "destructive",
+      })
+    },
+  })
+
   const handleCreateSchedule = () => {
     setEditingSchedule(null)
     setIsCreating(true)
@@ -131,16 +177,73 @@ export default function AvailabilityPage() {
     setIsCreating(false)
   }
 
-  const handleSaveSchedule = async (scheduleData: Partial<ScheduleWritable>) => {
+  const handleSaveSchedule = async (scheduleData: Partial<ScheduleWritable>, timeSlots?: any[]) => {
     if (isCreating) {
+      // For new schedules, create with time slots
       await createMutation.mutateAsync({
-        body: scheduleData as ScheduleWritable
+        body: {
+          ...scheduleData,
+          time_slots: timeSlots || []
+        } as ScheduleWritable
       })
     } else if (editingSchedule) {
+      // First update the schedule basic info
       await updateMutation.mutateAsync({
         path: { id: editingSchedule.id },
         body: scheduleData as ScheduleWritable
       })
+      
+      // Then handle time slots updates separately if provided
+      if (timeSlots && editingSchedule) {
+        // Get existing time slots
+        const existingSlots = editingSchedule.time_slots || []
+        
+        // Compare and update time slots
+        const existingSlotsMap = new Map(
+          existingSlots.map(slot => [
+            `${slot.day}-${slot.start_time}-${slot.end_time}`,
+            slot
+          ])
+        )
+        
+        const newSlotsMap = new Map(
+          timeSlots.map(slot => [
+            `${slot.day}-${slot.start_time}-${slot.end_time}`,
+            slot
+          ])
+        )
+        
+        // Find slots to remove
+        const slotsToRemove = existingSlots.filter(
+          slot => !newSlotsMap.has(`${slot.day}-${slot.start_time}-${slot.end_time}`)
+        )
+        
+        // Find slots to add
+        const slotsToAdd = timeSlots.filter(
+          slot => !existingSlotsMap.has(`${slot.day}-${slot.start_time}-${slot.end_time}`)
+        )
+        
+        // Remove old slots
+        for (const slot of slotsToRemove) {
+          if (slot.id) {
+            await removeTimeSlotMutation.mutateAsync({
+              scheduleId: editingSchedule.id,
+              timeSlotId: slot.id
+            })
+          }
+        }
+        
+        // Add new slots
+        for (const slot of slotsToAdd) {
+          await addTimeSlotMutation.mutateAsync({
+            path: { id: editingSchedule.id },
+            body: slot
+          })
+        }
+        
+        // Refresh the data
+        queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      }
     }
   }
 
