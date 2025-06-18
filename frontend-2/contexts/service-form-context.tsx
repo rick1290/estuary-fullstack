@@ -394,7 +394,7 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
 
   // Prepare data for API submission
   const prepareForSubmission = (): ServiceCreateUpdateRequestWritable => {
-    const baseData: ServiceCreateUpdateRequestWritable = {
+    const baseData: any = {
       name: formState.title || formState.name || "",
       description: formState.description,
       short_description: formState.short_description,
@@ -413,7 +413,6 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
       what_youll_learn: formState.what_youll_learn || formState.learningGoals?.join('\n'),
       prerequisites: formState.prerequisites,
       includes: formState.includes,
-      image: formState.image instanceof File ? formState.image : formState.image || formState.coverImage,
       tags: formState.tags,
       languages: formState.languages,
       status: formState.status,
@@ -435,7 +434,19 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
       })) || []
     }
 
-    return baseData
+    // Only include image if it's a File object or a valid URL
+    if (formState.image instanceof File) {
+      baseData.image = formState.image
+    } else if (formState.image && typeof formState.image === 'string' && formState.image.startsWith('http')) {
+      // Keep existing image URL for updates
+      baseData.image = formState.image
+    } else if (formState.coverImage && typeof formState.coverImage === 'string' && formState.coverImage.startsWith('http')) {
+      // Keep existing cover image URL for updates
+      baseData.image = formState.coverImage
+    }
+    // Otherwise, don't include the image field at all
+
+    return baseData as ServiceCreateUpdateRequestWritable
   }
 
   return (

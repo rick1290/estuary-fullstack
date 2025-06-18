@@ -25,8 +25,8 @@ import CompactCategoryManager from "../../categories/compact-category-manager"
 
 export function BasicInfoStep() {
   const { formState, updateFormField, validateStep, errors } = useServiceForm()
-  const { data: globalCategories = [], isLoading: isLoadingGlobal } = useServiceCategories()
-  const { data: practitionerCategories = [], isLoading: isLoadingPractitioner } = usePractitionerCategories()
+  const { data: globalCategories = [], isLoading: isLoadingGlobal, error: globalError } = useServiceCategories()
+  const { data: practitionerCategories = [], isLoading: isLoadingPractitioner, error: practitionerError } = usePractitionerCategories()
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   
   console.log('BasicInfoStep - Categories Debug:', {
@@ -34,8 +34,12 @@ export function BasicInfoStep() {
     practitionerCategories,
     isLoadingGlobal,
     isLoadingPractitioner,
+    globalError,
+    practitionerError,
     formState_category_id: formState.category_id,
-    formState_practitioner_category_id: formState.practitioner_category_id
+    formState_practitioner_category_id: formState.practitioner_category_id,
+    globalCategoriesLength: globalCategories?.length,
+    practitionerCategoriesLength: practitionerCategories?.length
   })
 
   const handleChange = (field: string, value: string) => {
@@ -89,14 +93,21 @@ export function BasicInfoStep() {
                 <SelectContent>
                   {isLoadingGlobal ? (
                     <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                  ) : globalError ? (
+                    <SelectItem value="error" disabled>Error loading categories</SelectItem>
+                  ) : globalCategories.length === 0 ? (
+                    <SelectItem value="empty" disabled>No categories available</SelectItem>
                   ) : (
                     <>
                       <SelectItem value="none">No category</SelectItem>
-                      {globalCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
+                      {globalCategories.map((category) => {
+                        console.log('Rendering global category:', category)
+                        return (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </SelectItem>
+                        )
+                      })}
                     </>
                   )}
                 </SelectContent>
@@ -134,27 +145,32 @@ export function BasicInfoStep() {
                 <SelectContent>
                   {isLoadingPractitioner ? (
                     <SelectItem value="loading" disabled>Loading your categories...</SelectItem>
+                  ) : practitionerError ? (
+                    <SelectItem value="error" disabled>Error loading categories</SelectItem>
                   ) : (
                     <>
                       <SelectItem value="none">No category</SelectItem>
-                      {practitionerCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
-                          <div className="flex items-center gap-2">
-                            {category.color && (
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: category.color }}
-                              />
-                            )}
-                            {category.name}
-                            {category.service_count > 0 && (
-                              <Badge variant="secondary" className="ml-auto text-xs">
-                                {category.service_count}
-                              </Badge>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {practitionerCategories.map((category) => {
+                        console.log('Rendering practitioner category:', category)
+                        return (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              {category.color && (
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: category.color }}
+                                />
+                              )}
+                              {category.name}
+                              {category.service_count > 0 && (
+                                <Badge variant="secondary" className="ml-auto text-xs">
+                                  {category.service_count}
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
                     </>
                   )}
                 </SelectContent>
