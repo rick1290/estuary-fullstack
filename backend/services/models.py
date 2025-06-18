@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg, Count
 from utils.models import BaseModel, PublicModel, Address
+from .enums import ServiceTypeEnum, ServiceStatusEnum
 
 # Experience level choices
 EXPERIENCE_LEVEL_CHOICES = [
@@ -212,14 +213,12 @@ class Service(PublicModel):
     is_public = models.BooleanField(default=True, help_text="Whether service is publicly visible")
     
     # Service lifecycle and status
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('published', 'Published'),
-        ('paused', 'Paused'),
-        ('discontinued', 'Discontinued'),
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft',
-                            help_text="Service publication status")
+    status = models.CharField(
+        max_length=20, 
+        choices=ServiceStatusEnum.choices, 
+        default=ServiceStatusEnum.DRAFT,
+        help_text="Service publication status"
+    )
     published_at = models.DateTimeField(blank=True, null=True, 
                                       help_text="When service was first published")
     
@@ -288,6 +287,11 @@ class Service(PublicModel):
     def price(self):
         """Get price in dollars as Decimal."""
         return Decimal(self.price_cents) / 100
+    
+    @property
+    def service_type_code(self):
+        """Get the service type code for API consistency."""
+        return self.service_type.code if self.service_type else None
     
     @property
     def average_rating(self):

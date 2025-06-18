@@ -14,6 +14,8 @@ interface User {
   email: string
   role: UserRole
   hasPractitionerAccount: boolean
+  practitionerId?: number | null
+  practitionerPublicId?: string | null
 }
 
 // Define auth context type
@@ -42,15 +44,27 @@ const AuthContext = createContext<AuthContextType>({
 
 // Helper function to convert API user to our User type
 function convertAPIUser(apiUser: UserProfileReadable): User {
-  const role = localStorage.getItem("userRole") || "user"
+  // Determine role based on practitioner profile existence and localStorage preference
+  const storedRole = localStorage.getItem("userRole")
+  const hasPractitionerProfile = !!apiUser.practitioner_id
+  
+  let role: UserRole = "user"
+  if (hasPractitionerProfile) {
+    // If user has practitioner profile, use stored preference or default to practitioner
+    role = (storedRole as UserRole) || "practitioner"
+  } else {
+    role = "user"
+  }
   
   return {
     id: apiUser.id.toString(),
     firstName: apiUser.first_name || "",
     lastName: apiUser.last_name || "",
     email: apiUser.email,
-    role: role as UserRole,
-    hasPractitionerAccount: apiUser.is_practitioner || false,
+    role: role,
+    hasPractitionerAccount: hasPractitionerProfile,
+    practitionerId: apiUser.practitioner_id || null,
+    practitionerPublicId: apiUser.practitioner_public_id || null,
   }
 }
 
@@ -63,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        
         const apiUser = await AuthService.getCurrentUser()
         
         if (apiUser) {
@@ -87,8 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { user: apiUser } = await AuthService.login({ email, password })
       
-      // Store role preference
-      const role = apiUser.is_practitioner ? "practitioner" : "user"
+      // Store role preference based on practitioner profile
+      const role = apiUser.practitioner_id ? "practitioner" : "user"
       localStorage.setItem("userRole", role)
       
       setUser(convertAPIUser(apiUser))

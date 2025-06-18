@@ -2,50 +2,53 @@
 
 import { useState, useEffect } from "react"
 import { useServiceForm } from "@/hooks/use-service-form"
+import { useServiceTypes } from "@/hooks/use-service-types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-
-// Define service type config directly in this file to avoid import issues
-const serviceTypeConfig = {
-  session: {
-    label: "One-on-One Session",
-    shortDescription: "Individual sessions with clients",
-    features: ["Personalized attention", "Flexible scheduling", "Direct client interaction"],
-  },
-  course: {
-    label: "Course",
-    shortDescription: "Multi-session educational content",
-    features: ["Structured curriculum", "Multiple sessions", "Group learning environment"],
-  },
-  workshop: {
-    label: "Workshop",
-    shortDescription: "Interactive group learning experience",
-    features: ["Hands-on activities", "Collaborative learning", "Limited time offering"],
-  },
-  package: {
-    label: "Package",
-    shortDescription: "Bundle of services at a special rate",
-    features: ["Multiple sessions", "Discounted pricing", "Comprehensive experience"],
-  },
-}
+import { Badge } from "@/components/ui/badge"
+import { Loader2 } from "lucide-react"
 
 export function ServiceTypeStep() {
   const { formState, updateFormField, validateStep } = useServiceForm()
-  const [selectedType, setSelectedType] = useState(formState.serviceType || "session")
+  const { data: serviceTypes, isLoading, error } = useServiceTypes()
+  const [selectedType, setSelectedType] = useState(formState.serviceType || "")
 
   useEffect(() => {
     // Set default service type if not already set
-    if (!formState.serviceType) {
-      updateFormField("serviceType", "session")
+    if (!formState.serviceType && serviceTypes && serviceTypes.length > 0) {
+      const defaultType = serviceTypes[0]
+      updateFormField("serviceType", defaultType.code)
+      updateFormField("serviceTypeId", defaultType.id)
+      setSelectedType(defaultType.code)
       validateStep("serviceType")
     }
-  }, [formState.serviceType, updateFormField, validateStep])
+  }, [formState.serviceType, serviceTypes, updateFormField, validateStep])
 
   const handleTypeChange = (value: string) => {
-    setSelectedType(value)
-    updateFormField("serviceType", value)
-    validateStep("serviceType")
+    const selectedServiceType = serviceTypes?.find(type => type.code === value)
+    if (selectedServiceType) {
+      setSelectedType(value)
+      updateFormField("serviceType", value)
+      updateFormField("serviceTypeId", selectedServiceType.id)
+      validateStep("serviceType")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-destructive">
+        <p>Error loading service types. Please try again.</p>
+      </div>
+    )
   }
 
   return (
@@ -60,21 +63,25 @@ export function ServiceTypeStep() {
         onValueChange={handleTypeChange}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        {Object.entries(serviceTypeConfig).map(([type, config]) => (
-          <div key={type} className="relative">
-            <RadioGroupItem value={type} id={type} className="peer sr-only" />
+        {serviceTypes?.map((type) => (
+          <div key={type.code} className="relative">
+            <RadioGroupItem value={type.code} id={type.code} className="peer sr-only" />
             <Label
-              htmlFor={type}
-              className="flex flex-col h-full p-4 border rounded-lg cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:bg-muted/50"
+              htmlFor={type.code}
+              className="flex flex-col h-full p-4 border rounded-lg cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:bg-muted/50 transition-colors"
             >
               <Card className="border-0 shadow-none bg-transparent">
                 <CardHeader className="p-0 pb-2">
-                  <CardTitle className="text-lg">{config.label}</CardTitle>
-                  <CardDescription>{config.shortDescription}</CardDescription>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg">{type.label}</CardTitle>
+                    {type.code === 'bundle' && <Badge variant="secondary">Popular</Badge>}
+                    {type.code === 'package' && <Badge variant="secondary">Value</Badge>}
+                  </div>
+                  <CardDescription>{type.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                   <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-                    {config.features.map((feature, index) => (
+                    {type.features.map((feature, index) => (
                       <li key={index}>{feature}</li>
                     ))}
                   </ul>
@@ -84,6 +91,42 @@ export function ServiceTypeStep() {
           </div>
         ))}
       </RadioGroup>
+
+      {selectedType === 'bundle' && (
+        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            <strong>Bundle:</strong> You'll create a package of multiple sessions of the same service. 
+            For example, "10-Class Yoga Pass" or "5-Session Massage Package".
+          </p>
+        </div>
+      )}
+
+      {selectedType === 'package' && (
+        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 rounded-lg p-4">
+          <p className="text-sm text-purple-800 dark:text-purple-200">
+            <strong>Package:</strong> Combine different services into one offering. 
+            For example, "Wellness Journey" with consultation + massage + yoga sessions.
+          </p>
+        </div>
+      )}
+
+      {selectedType === 'workshop' && (
+        <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4">
+          <p className="text-sm text-green-800 dark:text-green-200">
+            <strong>Workshop:</strong> Create a scheduled group event with specific dates and times. 
+            You'll be able to add multiple sessions if needed.
+          </p>
+        </div>
+      )}
+
+      {selectedType === 'course' && (
+        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-4">
+          <p className="text-sm text-orange-800 dark:text-orange-200">
+            <strong>Course:</strong> Design a comprehensive program with multiple sessions over time. 
+            Perfect for teaching skills progressively.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

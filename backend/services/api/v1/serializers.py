@@ -173,6 +173,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
     category = ServiceCategorySerializer(read_only=True)
     primary_practitioner = SimplePractitionerSerializer(read_only=True)
     service_type_display = serializers.CharField(source='service_type.name', read_only=True)
+    service_type_code = serializers.CharField(read_only=True)
     average_rating = serializers.SerializerMethodField()
     total_reviews = serializers.SerializerMethodField()
     total_bookings = serializers.SerializerMethodField()
@@ -184,9 +185,9 @@ class ServiceListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'public_uuid', 'name', 'short_description', 'price_cents',
             'price', 'duration_minutes', 'duration_display', 'service_type',
-            'service_type_display', 'category', 'primary_practitioner',
-            'max_participants', 'experience_level', 'location_type',
-            'is_active', 'is_featured', 'is_public', 'status',
+            'service_type_display', 'service_type_code', 'category', 
+            'primary_practitioner', 'max_participants', 'experience_level', 
+            'location_type', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
             'primary_image', 'created_at', 'updated_at'
         ]
