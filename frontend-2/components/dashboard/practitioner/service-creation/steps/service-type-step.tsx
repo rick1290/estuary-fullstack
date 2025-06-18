@@ -9,7 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 
-export function ServiceTypeStep() {
+interface ServiceTypeStepProps {
+  isEditMode?: boolean
+}
+
+export function ServiceTypeStep({ isEditMode = false }: ServiceTypeStepProps) {
   const { formState, updateFormField, validateStep } = useServiceForm()
   const { data: serviceTypes, isLoading, error } = useServiceTypes()
   const [selectedType, setSelectedType] = useState(formState.serviceType || "")
@@ -54,13 +58,28 @@ export function ServiceTypeStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-2">Select Service Type</h2>
-        <p className="text-muted-foreground">Choose the type of service you want to offer to your clients</p>
+        <h2 className="text-xl font-semibold mb-2">
+          {isEditMode ? "Service Type" : "Select Service Type"}
+        </h2>
+        <p className="text-muted-foreground">
+          {isEditMode 
+            ? "Service type cannot be changed after creation. To change the type, create a new service."
+            : "Choose the type of service you want to offer to your clients"
+          }
+        </p>
+        {isEditMode && (
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg p-3 mt-3">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              ⚠️ <strong>Note:</strong> Service type is locked after creation to maintain booking integrity.
+            </p>
+          </div>
+        )}
       </div>
 
       <RadioGroup
         value={selectedType}
-        onValueChange={handleTypeChange}
+        onValueChange={isEditMode ? undefined : handleTypeChange}
+        disabled={isEditMode}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
         {serviceTypes?.map((type) => (
@@ -68,7 +87,11 @@ export function ServiceTypeStep() {
             <RadioGroupItem value={type.code} id={type.code} className="peer sr-only" />
             <Label
               htmlFor={type.code}
-              className="flex flex-col h-full p-4 border rounded-lg cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:bg-muted/50 transition-colors"
+              className={`flex flex-col h-full p-4 border rounded-lg transition-colors ${
+                isEditMode 
+                  ? 'cursor-not-allowed opacity-60' 
+                  : 'cursor-pointer hover:bg-muted/50'
+              } peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5`}
             >
               <Card className="border-0 shadow-none bg-transparent">
                 <CardHeader className="p-0 pb-2">

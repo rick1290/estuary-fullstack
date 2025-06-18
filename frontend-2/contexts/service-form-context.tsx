@@ -1,57 +1,75 @@
 "use client"
 
-import { createContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import type { ServiceCreateUpdateRequestWritable, ServiceSessionRequest } from "@/src/client/types.gen"
 
 // Extended form data that includes UI-specific fields
 interface ServiceFormData extends Partial<ServiceCreateUpdateRequestWritable> {
-  // Service type info
+  // Service type info (IMMUTABLE after creation)
   serviceType: string
   serviceTypeId: number
   
-  // Basic info (mapped to API fields)
+  // Basic information
   title: string // maps to 'name'
+  name: string
+  description: string
+  short_description: string
+  price: string
+  duration_minutes: number
   
-  // UI-specific fields
-  sessionFormat?: string // individual/group
-  sessionType?: string // single/recurring
-  deliveryMethod?: string // online/in-person/hybrid
-  hasPrerequisites?: boolean
-  recurringFrequency?: string
+  // Categorization
+  category_id?: number // Global category
+  practitioner_category_id?: number // Practitioner's custom category
+  tags?: string[]
   
-  // Media
-  coverImage?: string
-  videoUrl?: string
-  mediaDescription?: string
+  // Participants & Demographics
+  max_participants: number
+  min_participants: number
+  experience_level: string
+  age_min?: number // NEW: Minimum age restriction
+  age_max?: number // NEW: Maximum age restriction
   
-  // Practitioner details
-  practitionerBio?: string
-  credentials?: string
-  yearsOfExperience?: number | string
-  teachingStyle?: string
-  
-  // Learning goals
-  learningGoals?: string[]
-  
-  // Location details
-  locationType?: string
-  meetingPlatform?: string
-  meetingLink?: string
+  // Location & Delivery
+  location_type: string
+  address_id?: number // NEW: Physical address for in-person services
   locationNotes?: string
+  languages?: string[]
   
-  // Availability
-  availabilityBlocks?: Array<{
-    id: string
-    day: string
-    startTime: string
-    endTime: string
-    recurring: boolean
-  }>
-  bufferTime?: number | string
+  // Status & Visibility
+  status: string // draft/active/inactive/archived
+  is_active: boolean
+  is_public: boolean
+  is_featured: boolean
   
-  // Bundle/Package specific
-  sessionsIncluded?: number // for bundles
-  bundleValidityDays?: number // for bundles
+  // Content & Learning
+  what_youll_learn: string
+  prerequisites: string
+  includes?: Record<string, any> // JSON object for what's included
+  
+  // Media & Presentation
+  image?: string | File // New ImageField in backend
+  coverImage?: string // UI preview field
+  
+  // Bundle/Package Specific Fields
+  validity_days?: number // Days valid after purchase
+  sessions_included?: number // Number of sessions (bundles)
+  sessionsIncluded?: number // UI field that maps to sessions_included
+  bonus_sessions?: number // NEW: Extra sessions included
+  max_per_customer?: number // NEW: Purchase limit per customer
+  maxPerCustomer?: number // UI field that maps to max_per_customer
+  is_transferable?: boolean // NEW: Can transfer to others
+  is_shareable?: boolean // NEW: Can share with family/friends
+  bundleValidityDays?: number // UI field that maps to validity_days
+  
+  // Availability Window
+  available_from?: Date // NEW: When sales start
+  available_until?: Date // NEW: When sales end
+  highlight_text?: string // NEW: Badge text (e.g., "BEST VALUE")
+  
+  // Terms & Conditions
+  terms_conditions?: string // NEW: Specific terms for service
+  
+  // Package/Bundle Configuration
   selectedServices?: Array<{ // for packages
     serviceId: number
     quantity: number
@@ -63,44 +81,142 @@ interface ServiceFormData extends Partial<ServiceCreateUpdateRequestWritable> {
     discount_percentage?: number
   }>
   
-  // Workshop/Course sessions
+  // Workshop/Course Sessions
   serviceSessions?: ServiceSessionRequest[]
   
-  // Additional fields
-  tags?: string[]
-  languages?: string[]
-  maxPerCustomer?: number
+  // Benefits & Features (to be implemented)
+  benefits?: Array<{
+    id: string
+    title: string
+    description: string
+    icon?: string
+    order: number
+  }>
+  
+  // Resources (to be implemented)
+  resources?: Array<{
+    id: string
+    title: string
+    description: string
+    resource_type: string
+    file_url?: string
+    external_url?: string
+    access_level: string
+  }>
+  
+  // Additional Practitioners (to be implemented)
+  additional_practitioner_ids?: number[]
+  
+  // Availability (current implementation)
+  availabilityBlocks?: Array<{
+    id: string
+    day: string
+    startTime: string
+    endTime: string
+    recurring: boolean
+  }>
+  bufferTime?: number | string
+  
+  // Legacy UI fields (to be cleaned up)
+  sessionFormat?: string // individual/group
+  sessionType?: string // single/recurring
+  deliveryMethod?: string // online/in-person/hybrid
+  hasPrerequisites?: boolean
+  recurringFrequency?: string
+  mediaDescription?: string
+  practitionerBio?: string
+  credentials?: string
+  yearsOfExperience?: number | string
+  teachingStyle?: string
+  learningGoals?: string[] // Maps to what_youll_learn as array
+  locationType?: string
+  meetingPlatform?: string
+  meetingLink?: string
   
   [key: string]: any
 }
 
 // Initial state
 const initialFormData: ServiceFormData = {
+  // Service type (IMMUTABLE)
   serviceType: "",
   serviceTypeId: 0,
+  
+  // Basic information
   title: "",
   name: "",
   description: "",
   short_description: "",
   price: "",
   duration_minutes: 60,
+  
+  // Categorization
+  category_id: undefined,
+  practitioner_category_id: undefined,
+  tags: [],
+  
+  // Participants & Demographics
   max_participants: 1,
   min_participants: 1,
   experience_level: "all_levels",
+  age_min: undefined,
+  age_max: undefined,
+  
+  // Location & Delivery
   location_type: "virtual",
-  service_type_id: 0,
+  address_id: undefined,
+  languages: [],
+  
+  // Status & Visibility
   status: "draft",
-  hasPrerequisites: false,
+  is_active: true,
+  is_public: true,
+  is_featured: false,
+  
+  // Content & Learning
+  what_youll_learn: "",
+  prerequisites: "",
+  includes: {},
+  
+  // Media & Presentation
+  image: "",
+  coverImage: "",
+  
+  // Bundle/Package Specific
+  validity_days: 90,
+  sessions_included: 10,
   sessionsIncluded: 10,
+  bonus_sessions: 0,
+  max_per_customer: undefined,
+  maxPerCustomer: undefined,
+  is_transferable: false,
+  is_shareable: false,
   bundleValidityDays: 90,
+  
+  // Availability Window
+  available_from: undefined,
+  available_until: undefined,
+  highlight_text: "",
+  
+  // Terms & Conditions
+  terms_conditions: "",
+  
+  // Configuration
   selectedServices: [],
   childServiceConfigs: [],
   serviceSessions: [],
-  learningGoals: [],
-  tags: [],
-  languages: [],
+  benefits: [],
+  resources: [],
+  additional_practitioner_ids: [],
+  
+  // Availability
   availabilityBlocks: [],
   bufferTime: 15,
+  
+  // Legacy fields (to be cleaned up)
+  service_type_id: 0,
+  hasPrerequisites: false,
+  learningGoals: [],
 }
 
 // Context type
@@ -178,9 +294,9 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
     }
   }
 
-  const updateMultipleFields = (fields: Partial<ServiceFormData>) => {
+  const updateMultipleFields = useCallback((fields: Partial<ServiceFormData>) => {
     setFormState((prev) => ({ ...prev, ...fields }))
-  }
+  }, [])
 
   // Validation function
   const validateStep = (step: string): boolean => {
@@ -208,6 +324,10 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
           newErrors.price = "Price is required"
           valid = false
         }
+        if (!formState.duration_minutes) {
+          newErrors.duration_minutes = "Duration is required"
+          valid = false
+        }
         if (formState.serviceType === 'bundle' && !formState.sessionsIncluded) {
           newErrors.sessionsIncluded = "Number of sessions is required for bundles"
           valid = false
@@ -215,10 +335,29 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
         break
 
       case "sessionSetup":
-        if (formState.sessionFormat === "group" && !formState.max_participants) {
-          newErrors.max_participants = "Maximum participants is required for group sessions"
+        // Validate demographic fields
+        if (!formState.experience_level) {
+          newErrors.experience_level = "Experience level is required"
           valid = false
         }
+        if (formState.age_min && formState.age_max && formState.age_min >= formState.age_max) {
+          newErrors.age_max = "Maximum age must be greater than minimum age"
+          valid = false
+        }
+        if (!formState.max_participants || formState.max_participants < 1) {
+          newErrors.max_participants = "Maximum participants is required"
+          valid = false
+        }
+        if (!formState.min_participants || formState.min_participants < 1) {
+          newErrors.min_participants = "Minimum participants is required"
+          valid = false
+        }
+        if (formState.min_participants && formState.max_participants && formState.min_participants > formState.max_participants) {
+          newErrors.min_participants = "Minimum participants cannot exceed maximum participants"
+          valid = false
+        }
+        
+        // Service type specific validations
         if (formState.serviceType === 'workshop' || formState.serviceType === 'course') {
           if (!formState.serviceSessions || formState.serviceSessions.length === 0) {
             newErrors.serviceSessions = "At least one session is required"
@@ -227,6 +366,10 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
         }
         if (formState.serviceType === 'package' && (!formState.selectedServices || formState.selectedServices.length === 0)) {
           newErrors.selectedServices = "At least one service must be selected for packages"
+          valid = false
+        }
+        if (formState.serviceType === 'bundle' && (!formState.sessionsIncluded || formState.sessionsIncluded < 2)) {
+          newErrors.sessionsIncluded = "Bundle must include at least 2 sessions"
           valid = false
         }
         break
@@ -270,8 +413,7 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
       what_youll_learn: formState.what_youll_learn || formState.learningGoals?.join('\n'),
       prerequisites: formState.prerequisites,
       includes: formState.includes,
-      image_url: formState.image_url || formState.coverImage,
-      video_url: formState.video_url || formState.videoUrl,
+      image: formState.image instanceof File ? formState.image : formState.image || formState.coverImage,
       tags: formState.tags,
       languages: formState.languages,
       status: formState.status,

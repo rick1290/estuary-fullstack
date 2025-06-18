@@ -1,16 +1,33 @@
 "use client"
 
 import { useServiceForm } from "@/hooks/use-service-form"
+import { useServiceCategories, usePractitionerCategories } from "@/hooks/use-categories"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { AlertCircle, Plus, Tag } from "lucide-react"
+import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import CompactCategoryManager from "../../categories/compact-category-manager"
 
 export function BasicInfoStep() {
   const { formState, updateFormField, validateStep, errors } = useServiceForm()
+  const { data: globalCategories = [], isLoading: isLoadingGlobal } = useServiceCategories()
+  const { data: practitionerCategories = [], isLoading: isLoadingPractitioner } = usePractitionerCategories()
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
 
   const handleChange = (field: string, value: string) => {
     updateFormField(field, value)
@@ -46,29 +63,102 @@ export function BasicInfoStep() {
               {errors.title && <p className="text-sm text-destructive mt-1">{errors.title}</p>}
             </div>
 
+            {/* Global Category */}
             <div className="space-y-2">
               <Label htmlFor="category" className="flex items-center">
-                Category
-                <span className="text-destructive ml-1">*</span>
+                Global Category
+                <span className="text-muted-foreground ml-1 text-xs">(Optional)</span>
               </Label>
               <Select
-                value={formState.category || ""}
-                onValueChange={(value) => handleChange("category", value)}
+                value={formState.category_id?.toString() || "none"}
+                onValueChange={(value) => updateFormField("category_id", value && value !== "none" ? parseInt(value) : undefined)}
                 onOpenChange={() => handleBlur("basicInfo")}
               >
-                <SelectTrigger id="category" className={errors.category ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select a category" />
+                <SelectTrigger id="category" className={errors.category_id ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select a global category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="wellness">Wellness</SelectItem>
-                  <SelectItem value="fitness">Fitness</SelectItem>
-                  <SelectItem value="mental-health">Mental Health</SelectItem>
-                  <SelectItem value="spiritual">Spiritual</SelectItem>
-                  <SelectItem value="creative">Creative</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
+                  {isLoadingGlobal ? (
+                    <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="none">No category</SelectItem>
+                      {globalCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
-              {errors.category && <p className="text-sm text-destructive mt-1">{errors.category}</p>}
+              {errors.category_id && <p className="text-sm text-destructive mt-1">{errors.category_id}</p>}
+            </div>
+
+            {/* Practitioner Category */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="practitioner-category" className="flex items-center">
+                  <Tag className="h-4 w-4 mr-2" />
+                  Personal Category
+                  <span className="text-muted-foreground ml-1 text-xs">(Recommended)</span>
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCategoryDialog(true)}
+                  className="text-xs h-7"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Manage
+                </Button>
+              </div>
+              <Select
+                value={formState.practitioner_category_id?.toString() || "none"}
+                onValueChange={(value) => updateFormField("practitioner_category_id", value && value !== "none" ? parseInt(value) : undefined)}
+                onOpenChange={() => handleBlur("basicInfo")}
+              >
+                <SelectTrigger id="practitioner-category" className={errors.practitioner_category_id ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select or create a personal category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingPractitioner ? (
+                    <SelectItem value="loading" disabled>Loading your categories...</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="none">No category</SelectItem>
+                      {practitionerCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            {category.color && (
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: category.color }}
+                              />
+                            )}
+                            {category.name}
+                            {category.service_count > 0 && (
+                              <Badge variant="secondary" className="ml-auto text-xs">
+                                {category.service_count}
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+              {practitionerCategories.length === 0 && !isLoadingPractitioner && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    💡 <strong>Tip:</strong> Create personal categories to organize your services (e.g., "Massage Therapy", "Yoga Classes").
+                    This helps you manage your offerings and makes it easier for clients to browse.
+                  </p>
+                </div>
+              )}
+              {errors.practitioner_category_id && <p className="text-sm text-destructive mt-1">{errors.practitioner_category_id}</p>}
             </div>
 
             <div className="space-y-2">
@@ -111,11 +201,11 @@ export function BasicInfoStep() {
                   <span className="text-destructive ml-1">*</span>
                 </Label>
                 <Select
-                  value={formState.duration?.toString() || ""}
-                  onValueChange={(value) => handleChange("duration", value)}
+                  value={formState.duration_minutes?.toString() || ""}
+                  onValueChange={(value) => updateFormField("duration_minutes", parseInt(value))}
                   onOpenChange={() => handleBlur("basicInfo")}
                 >
-                  <SelectTrigger id="duration" className={errors.duration ? "border-destructive" : ""}>
+                  <SelectTrigger id="duration" className={errors.duration_minutes ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
                   <SelectContent>
@@ -128,7 +218,7 @@ export function BasicInfoStep() {
                     <SelectItem value="240">4 hours</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.duration && <p className="text-sm text-destructive mt-1">{errors.duration}</p>}
+                {errors.duration_minutes && <p className="text-sm text-destructive mt-1">{errors.duration_minutes}</p>}
               </div>
             </div>
 
@@ -141,6 +231,26 @@ export function BasicInfoStep() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Category Management Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Personal Categories</DialogTitle>
+            <DialogDescription>
+              Create and organize your personal service categories
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <CompactCategoryManager />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowCategoryDialog(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

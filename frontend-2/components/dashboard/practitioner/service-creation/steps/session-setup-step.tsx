@@ -8,295 +8,356 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Calendar, Users, Package, Clock } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus, Trash2, Calendar, Users, Package, Clock, Target, AlertCircle } from "lucide-react"
 import { useState } from "react"
+import { WorkshopSessionsStep } from "./workshop-sessions-step"
+import { PackageBuilderStep } from "./package-builder-step"
+
+// Shared demographics section for all service types
+function DemographicsSection() {
+  const { formState, updateFormField, errors } = useServiceForm()
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="h-5 w-5" />
+          Demographics & Targeting
+        </CardTitle>
+        <CardDescription>
+          Define who this service is appropriate for
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Experience Level */}
+        <div className="space-y-2">
+          <Label htmlFor="experience-level">Experience Level Required</Label>
+          <Select
+            value={formState.experience_level || "all_levels"}
+            onValueChange={(value) => updateFormField("experience_level", value)}
+          >
+            <SelectTrigger id="experience-level" className={errors.experience_level ? "border-destructive" : ""}>
+              <SelectValue placeholder="Select experience level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all_levels">All Levels (No experience needed)</SelectItem>
+              <SelectItem value="beginner">Beginner (Some basic knowledge helpful)</SelectItem>
+              <SelectItem value="intermediate">Intermediate (Moderate experience required)</SelectItem>
+              <SelectItem value="advanced">Advanced (Extensive experience required)</SelectItem>
+              <SelectItem value="expert">Expert (Professional level only)</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.experience_level && <p className="text-sm text-destructive">{errors.experience_level}</p>}
+        </div>
+
+        {/* Age Restrictions */}
+        <div className="space-y-4">
+          <Label>Age Restrictions</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="age-min" className="text-sm">Minimum Age</Label>
+              <Select
+                value={formState.age_min?.toString() || "none"}
+                onValueChange={(value) => updateFormField("age_min", value && value !== "none" ? parseInt(value) : undefined)}
+              >
+                <SelectTrigger id="age-min" className={errors.age_min ? "border-destructive" : ""}>
+                  <SelectValue placeholder="No minimum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No minimum age</SelectItem>
+                  <SelectItem value="13">13+ (Teen-friendly)</SelectItem>
+                  <SelectItem value="16">16+ (Young adult)</SelectItem>
+                  <SelectItem value="18">18+ (Adult only)</SelectItem>
+                  <SelectItem value="21">21+ (Mature adult)</SelectItem>
+                  <SelectItem value="30">30+ (Mid-life)</SelectItem>
+                  <SelectItem value="50">50+ (Senior-friendly)</SelectItem>
+                  <SelectItem value="65">65+ (Senior-focused)</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.age_min && <p className="text-sm text-destructive">{errors.age_min}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="age-max" className="text-sm">Maximum Age</Label>
+              <Select
+                value={formState.age_max?.toString() || "none"}
+                onValueChange={(value) => updateFormField("age_max", value && value !== "none" ? parseInt(value) : undefined)}
+              >
+                <SelectTrigger id="age-max" className={errors.age_max ? "border-destructive" : ""}>
+                  <SelectValue placeholder="No maximum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No maximum age</SelectItem>
+                  <SelectItem value="25">Up to 25 (Young adult focus)</SelectItem>
+                  <SelectItem value="35">Up to 35 (Early career)</SelectItem>
+                  <SelectItem value="50">Up to 50 (Mid-career)</SelectItem>
+                  <SelectItem value="65">Up to 65 (Pre-retirement)</SelectItem>
+                  <SelectItem value="80">Up to 80 (Active senior)</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.age_max && <p className="text-sm text-destructive">{errors.age_max}</p>}
+            </div>
+          </div>
+          
+          {formState.age_min && formState.age_max && formState.age_min >= formState.age_max && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <p className="text-sm text-destructive">
+                Maximum age must be greater than minimum age
+              </p>
+            </div>
+          )}
+          
+          <p className="text-sm text-muted-foreground">
+            Setting age restrictions helps ensure your service is appropriate for participants
+          </p>
+        </div>
+
+        {/* Participant Limits */}
+        <div className="space-y-4">
+          <Label>Participant Limits</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="min-participants" className="text-sm">Minimum Participants</Label>
+              <Input
+                id="min-participants"
+                type="number"
+                min="1"
+                value={formState.min_participants || 1}
+                onChange={(e) => updateFormField("min_participants", parseInt(e.target.value) || 1)}
+                className={errors.min_participants ? "border-destructive" : ""}
+              />
+              <p className="text-xs text-muted-foreground">
+                Minimum needed to run the service
+              </p>
+              {errors.min_participants && <p className="text-sm text-destructive">{errors.min_participants}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="max-participants" className="text-sm">Maximum Participants</Label>
+              <Input
+                id="max-participants"
+                type="number"
+                min="1"
+                value={formState.max_participants || (formState.serviceType === 'session' ? 1 : 10)}
+                onChange={(e) => updateFormField("max_participants", parseInt(e.target.value) || 1)}
+                className={errors.max_participants ? "border-destructive" : ""}
+                disabled={formState.serviceType === 'session'}
+              />
+              <p className="text-xs text-muted-foreground">
+                {formState.serviceType === 'session' 
+                  ? 'Sessions are always 1-on-1'
+                  : 'Maximum people who can participate'
+                }
+              </p>
+              {errors.max_participants && <p className="text-sm text-destructive">{errors.max_participants}</p>}
+            </div>
+          </div>
+
+          {formState.min_participants && formState.max_participants && 
+           formState.min_participants > formState.max_participants && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <p className="text-sm text-destructive">
+                Maximum participants must be greater than or equal to minimum participants
+              </p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 // Bundle-specific component
 function BundleSetup() {
   const { formState, updateFormField, errors } = useServiceForm()
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="sessionsIncluded">Number of Sessions Included</Label>
-          <Input
-            id="sessionsIncluded"
-            type="number"
-            min="2"
-            value={formState.sessionsIncluded || 10}
-            onChange={(e) => updateFormField("sessionsIncluded", parseInt(e.target.value) || 0)}
-            placeholder="e.g., 10"
-          />
-          <p className="text-sm text-muted-foreground">
-            How many sessions are included in this bundle?
-          </p>
-          {errors.sessionsIncluded && (
-            <p className="text-sm text-destructive">{errors.sessionsIncluded}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="bundleValidityDays">Validity Period (Days)</Label>
-          <Input
-            id="bundleValidityDays"
-            type="number"
-            min="1"
-            value={formState.bundleValidityDays || 90}
-            onChange={(e) => updateFormField("bundleValidityDays", parseInt(e.target.value) || 0)}
-            placeholder="e.g., 90"
-          />
-          <p className="text-sm text-muted-foreground">
-            How many days do clients have to use all sessions?
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="maxPerCustomer">Maximum Bundles Per Customer</Label>
-        <Input
-          id="maxPerCustomer"
-          type="number"
-          min="1"
-          value={formState.maxPerCustomer || ''}
-          onChange={(e) => updateFormField("maxPerCustomer", parseInt(e.target.value) || null)}
-          placeholder="No limit"
-        />
-        <p className="text-sm text-muted-foreground">
-          Leave empty for no limit on how many bundles a customer can purchase
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// Package-specific component
-function PackageSetup() {
-  const { formState, updateFormField, errors } = useServiceForm()
-  const [newService, setNewService] = useState({ serviceId: '', quantity: 1, discountPercentage: 0 })
-
-  const handleAddService = () => {
-    if (newService.serviceId) {
-      const currentServices = formState.selectedServices || []
-      updateFormField("selectedServices", [
-        ...currentServices,
-        {
-          serviceId: parseInt(newService.serviceId),
-          quantity: newService.quantity,
-          discountPercentage: newService.discountPercentage
-        }
-      ])
-      setNewService({ serviceId: '', quantity: 1, discountPercentage: 0 })
-    }
-  }
-
-  const handleRemoveService = (index: number) => {
-    const currentServices = formState.selectedServices || []
-    updateFormField("selectedServices", currentServices.filter((_, i) => i !== index))
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-medium mb-2">Package Contents</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Add the services that will be included in this package
-        </p>
-
-        {errors.selectedServices && (
-          <p className="text-sm text-destructive mb-2">{errors.selectedServices}</p>
-        )}
-
-        {/* Service list */}
-        {formState.selectedServices && formState.selectedServices.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {formState.selectedServices.map((service, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <span className="font-medium">Service ID: {service.serviceId}</span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    Qty: {service.quantity}
-                    {service.discountPercentage > 0 && ` | ${service.discountPercentage}% off`}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveService(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Bundle Configuration
+        </CardTitle>
+        <CardDescription>
+          Configure your session bundle offering with credits that can be used for multiple appointments
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Core Bundle Settings */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="sessionsIncluded" className="flex items-center">
+              Sessions Included
+              <span className="text-destructive ml-1">*</span>
+            </Label>
+            <Input
+              id="sessionsIncluded"
+              type="number"
+              min="2"
+              value={formState.sessionsIncluded || formState.sessions_included || 10}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 0
+                updateFormField("sessionsIncluded", value)
+                updateFormField("sessions_included", value)
+              }}
+              placeholder="e.g., 10"
+              className={errors.sessionsIncluded ? "border-destructive" : ""}
+            />
+            <p className="text-sm text-muted-foreground">
+              How many sessions are included in this bundle?
+            </p>
+            {errors.sessionsIncluded && (
+              <p className="text-sm text-destructive">{errors.sessionsIncluded}</p>
+            )}
           </div>
-        )}
 
-        {/* Add service form */}
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Service</Label>
-                <Input
-                  placeholder="Service ID"
-                  value={newService.serviceId}
-                  onChange={(e) => setNewService({ ...newService, serviceId: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Quantity</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={newService.quantity}
-                  onChange={(e) => setNewService({ ...newService, quantity: parseInt(e.target.value) || 1 })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Discount %</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={newService.discountPercentage}
-                  onChange={(e) => setNewService({ ...newService, discountPercentage: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-            <Button
-              type="button"
-              onClick={handleAddService}
-              disabled={!newService.serviceId}
-              className="w-full"
+          <div className="space-y-2">
+            <Label htmlFor="bonusSessions">Bonus Sessions</Label>
+            <Input
+              id="bonusSessions"
+              type="number"
+              min="0"
+              value={formState.bonus_sessions || 0}
+              onChange={(e) => updateFormField("bonus_sessions", parseInt(e.target.value) || 0)}
+              placeholder="e.g., 1"
+            />
+            <p className="text-sm text-muted-foreground">
+              Extra sessions included as a bonus (e.g., "Buy 10, Get 1 Free")
+            </p>
+          </div>
+        </div>
+
+        {/* Validity and Limits */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="bundleValidityDays" className="flex items-center">
+              Validity Period (Days)
+              <span className="text-destructive ml-1">*</span>
+            </Label>
+            <Select
+              value={formState.bundleValidityDays?.toString() || formState.validity_days?.toString() || "90"}
+              onValueChange={(value) => {
+                const days = parseInt(value)
+                updateFormField("bundleValidityDays", days)
+                updateFormField("validity_days", days)
+              }}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Service to Package
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
-}
+              <SelectTrigger id="bundleValidityDays">
+                <SelectValue placeholder="Select validity period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 days (1 month)</SelectItem>
+                <SelectItem value="60">60 days (2 months)</SelectItem>
+                <SelectItem value="90">90 days (3 months)</SelectItem>
+                <SelectItem value="180">180 days (6 months)</SelectItem>
+                <SelectItem value="365">365 days (1 year)</SelectItem>
+                <SelectItem value="730">730 days (2 years)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              How long clients have to use all sessions
+            </p>
+          </div>
 
-// Workshop/Course sessions component
-function SessionScheduleSetup() {
-  const { formState, updateFormField, errors } = useServiceForm()
-  const [sessions, setSessions] = useState(formState.serviceSessions || [])
+          <div className="space-y-2">
+            <Label htmlFor="maxPerCustomer">Purchase Limit per Customer</Label>
+            <Input
+              id="maxPerCustomer"
+              type="number"
+              min="1"
+              value={formState.maxPerCustomer || formState.max_per_customer || ''}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || undefined
+                updateFormField("maxPerCustomer", value)
+                updateFormField("max_per_customer", value)
+              }}
+              placeholder="No limit"
+            />
+            <p className="text-sm text-muted-foreground">
+              Maximum bundles a customer can purchase (leave empty for no limit)
+            </p>
+          </div>
+        </div>
 
-  const addSession = () => {
-    const newSession = {
-      title: '',
-      description: '',
-      start_time: '',
-      end_time: '',
-      duration: formState.duration_minutes || 60,
-      max_participants: formState.max_participants || 10,
-      sequence_number: sessions.length + 1,
-    }
-    const updatedSessions = [...sessions, newSession]
-    setSessions(updatedSessions)
-    updateFormField("serviceSessions", updatedSessions)
-  }
+        {/* Transfer and Sharing Options */}
+        <div className="space-y-4">
+          <Label>Bundle Sharing Options</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="space-y-1">
+                <Label htmlFor="isTransferable" className="text-sm font-medium">
+                  Transferable
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Customers can transfer remaining sessions to others
+                </p>
+              </div>
+              <Switch
+                id="isTransferable"
+                checked={formState.is_transferable || false}
+                onCheckedChange={(checked) => updateFormField("is_transferable", checked)}
+              />
+            </div>
 
-  const updateSession = (index: number, field: string, value: any) => {
-    const updatedSessions = [...sessions]
-    updatedSessions[index] = { ...updatedSessions[index], [field]: value }
-    setSessions(updatedSessions)
-    updateFormField("serviceSessions", updatedSessions)
-  }
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="space-y-1">
+                <Label htmlFor="isShareable" className="text-sm font-medium">
+                  Shareable
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Family/friends can use sessions from the same bundle
+                </p>
+              </div>
+              <Switch
+                id="isShareable"
+                checked={formState.is_shareable || false}
+                onCheckedChange={(checked) => updateFormField("is_shareable", checked)}
+              />
+            </div>
+          </div>
+        </div>
 
-  const removeSession = (index: number) => {
-    const updatedSessions = sessions.filter((_, i) => i !== index)
-    // Resequence remaining sessions
-    updatedSessions.forEach((session, i) => {
-      session.sequence_number = i + 1
-    })
-    setSessions(updatedSessions)
-    updateFormField("serviceSessions", updatedSessions)
-  }
+        {/* Highlight Text */}
+        <div className="space-y-2">
+          <Label htmlFor="highlightText">Promotional Badge (Optional)</Label>
+          <Input
+            id="highlightText"
+            value={formState.highlight_text || ''}
+            onChange={(e) => updateFormField("highlight_text", e.target.value)}
+            placeholder="e.g., BEST VALUE, POPULAR, SAVE 20%"
+            maxLength={20}
+          />
+          <p className="text-sm text-muted-foreground">
+            Short text to highlight this bundle (will appear as a badge)
+          </p>
+        </div>
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-medium mb-2">Session Schedule</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Add the individual sessions for your {formState.serviceType}
-        </p>
-
-        {errors.serviceSessions && (
-          <p className="text-sm text-destructive mb-2">{errors.serviceSessions}</p>
-        )}
-
-        {sessions.length > 0 && (
-          <div className="space-y-4 mb-4">
-            {sessions.map((session, index) => (
-              <Card key={index}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Session {session.sequence_number}</CardTitle>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSession(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Session Title</Label>
-                    <Input
-                      value={session.title || ''}
-                      onChange={(e) => updateSession(index, 'title', e.target.value)}
-                      placeholder="e.g., Introduction to Meditation"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea
-                      value={session.description || ''}
-                      onChange={(e) => updateSession(index, 'description', e.target.value)}
-                      placeholder="What will be covered in this session?"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Start Date & Time</Label>
-                      <Input
-                        type="datetime-local"
-                        value={session.start_time || ''}
-                        onChange={(e) => updateSession(index, 'start_time', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Duration (minutes)</Label>
-                      <Input
-                        type="number"
-                        min="15"
-                        value={session.duration || formState.duration_minutes}
-                        onChange={(e) => updateSession(index, 'duration', parseInt(e.target.value) || 60)}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        {/* Bundle Preview */}
+        {formState.sessionsIncluded && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <h4 className="font-medium text-primary mb-2">Bundle Summary</h4>
+            <div className="text-sm space-y-1">
+              <p>
+                <strong>Total Sessions:</strong> {formState.sessionsIncluded}
+                {formState.bonus_sessions > 0 && ` + ${formState.bonus_sessions} bonus`}
+              </p>
+              <p>
+                <strong>Valid for:</strong> {formState.bundleValidityDays || formState.validity_days || 90} days
+              </p>
+              {formState.is_transferable && <p className="text-green-600">✓ Transferable to others</p>}
+              {formState.is_shareable && <p className="text-green-600">✓ Shareable with family/friends</p>}
+            </div>
           </div>
         )}
-
-        <Button type="button" onClick={addSession} variant="outline" className="w-full">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Session
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
+
+
 
 export function SessionSetupStep() {
   const { formState, updateFormField } = useServiceForm()
@@ -307,10 +368,10 @@ export function SessionSetupStep() {
       case 'bundle':
         return <BundleSetup />
       case 'package':
-        return <PackageSetup />
+        return <PackageBuilderStep />
       case 'workshop':
       case 'course':
-        return <SessionScheduleSetup />
+        return <WorkshopSessionsStep />
       default:
         // Regular session setup
         return <RegularSessionSetup />
@@ -333,6 +394,9 @@ export function SessionSetupStep() {
            'Configure how your sessions will be delivered'}
         </p>
       </div>
+
+      {/* Demographics section for all service types */}
+      <DemographicsSection />
 
       {renderServiceTypeContent()}
     </div>
@@ -367,23 +431,6 @@ function RegularSessionSetup() {
         </RadioGroup>
       </div>
 
-      {/* Max participants for group sessions */}
-      {formState.sessionFormat === "group" && (
-        <div className="space-y-2">
-          <Label htmlFor="maxParticipants">Maximum Participants</Label>
-          <Input
-            id="maxParticipants"
-            type="number"
-            min="2"
-            value={formState.max_participants || ''}
-            onChange={(e) => updateFormField("max_participants", parseInt(e.target.value) || 0)}
-            placeholder="e.g., 10"
-          />
-          <p className="text-sm text-muted-foreground">
-            The maximum number of people who can join this group session
-          </p>
-        </div>
-      )}
 
       {/* Session Type */}
       <div className="space-y-4">

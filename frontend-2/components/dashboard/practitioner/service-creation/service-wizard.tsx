@@ -7,7 +7,12 @@ import { ServiceFormProvider } from "@/contexts/service-form-context"
 import { ServiceTypeStep } from "./steps/service-type-step"
 import { BasicInfoStep } from "./steps/basic-info-step"
 import { SessionSetupStep } from "./steps/session-setup-step"
+import { WorkshopSessionsStep } from "./steps/workshop-sessions-step"
+import { PackageBuilderStep } from "./steps/package-builder-step"
 import { MediaStep } from "./steps/media-step"
+import { ResourcesStep } from "./steps/resources-step"
+import { RevenueSharingStep } from "./steps/revenue-sharing-step"
+import { BenefitsStep } from "./steps/benefits-step"
 import { PractitionerDetailsStep } from "./steps/practitioner-details-step"
 import { LearningGoalsStep } from "./steps/learning-goals-step"
 import LocationStep from "./steps/location-step"
@@ -42,16 +47,33 @@ const getStepsForServiceType = (serviceType: string) => {
 
   // Add session setup for all types
   baseSteps.push({ id: "session-setup", label: "Details", component: SessionSetupStep })
+  
+  // Add workshop/course sessions scheduling
+  if (serviceType === 'workshop' || serviceType === 'course') {
+    baseSteps.push({ id: "sessions", label: "Sessions", component: WorkshopSessionsStep })
+  }
+  
+  // Add package builder for packages
+  if (serviceType === 'package') {
+    baseSteps.push({ id: "package-builder", label: "Package Contents", component: PackageBuilderStep })
+  }
 
   // Add media and practitioner details
   baseSteps.push(
     { id: "media", label: "Media", component: MediaStep },
+    { id: "benefits", label: "Benefits", component: BenefitsStep },
     { id: "practitioner-details", label: "About You", component: PractitionerDetailsStep },
     { id: "learning-goals", label: "Learning Goals", component: LearningGoalsStep }
   )
 
   // Location is needed for all types
   baseSteps.push({ id: "location", label: "Location", component: LocationStep })
+  
+  // Resources for all types
+  baseSteps.push({ id: "resources", label: "Resources", component: ResourcesStep })
+  
+  // Revenue sharing (optional step)
+  baseSteps.push({ id: "revenue-sharing", label: "Revenue Sharing", component: RevenueSharingStep })
 
   // Availability only for sessions (individual appointments)
   if (serviceType === 'session') {
@@ -162,8 +184,8 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
         what_youll_learn: serviceData.what_youll_learn || '',
         prerequisites: serviceData.prerequisites || '',
         includes: serviceData.includes || {},
-        image_url: serviceData.image_url || '',
-        video_url: serviceData.video_url || '',
+        image: serviceData.image || '',
+        coverImage: serviceData.image || '',
         tags: serviceData.tags || [],
         languages: serviceData.languages || [],
         available_from: serviceData.available_from,
@@ -178,6 +200,8 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
         serviceSessions: serviceData.sessions || [],
         // Child services for packages
         childServiceConfigs: serviceData.child_service_configs || [],
+        // Benefits - TODO: Add to backend model
+        benefits: serviceData.benefits || [],
       })
       
       // Mark all steps as completed in edit mode
@@ -190,7 +214,7 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
       )
       setCompleted(allCompleted)
     }
-  }, [serviceId, serviceData, updateMultipleFields, steps])
+  }, [serviceId, serviceData, updateMultipleFields])
 
   const handleNext = () => {
     // Validate current step
@@ -291,7 +315,7 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
           </Stepper>
 
           <div className="mt-8">
-            <CurrentStepComponent />
+            <CurrentStepComponent isEditMode={isEditMode} />
           </div>
         </div>
       </CardContent>
@@ -349,8 +373,8 @@ export default function ServiceWizard({ serviceId }: ServiceWizardProps) {
         what_youll_learn: serviceData.what_youll_learn,
         prerequisites: serviceData.prerequisites,
         includes: serviceData.includes,
-        image_url: serviceData.image_url,
-        video_url: serviceData.video_url,
+        image: serviceData.image,
+        coverImage: serviceData.image,
         tags: serviceData.tags,
         languages: serviceData.languages,
         sessions_included: serviceData.sessions_included,

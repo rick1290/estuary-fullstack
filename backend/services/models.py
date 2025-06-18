@@ -200,8 +200,13 @@ class Service(PublicModel):
                               help_text="What's included in the service")
     
     # Media and presentation
-    image_url = models.URLField(blank=True, null=True, help_text="Service image")
-    video_url = models.URLField(blank=True, null=True, help_text="Promotional video")
+    image = models.ImageField(
+        upload_to='services/images/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text="Service cover image"
+    )
+    # Note: Videos should be handled through ServiceResource, not directly on Service
     tags = models.JSONField(blank=True, null=True, help_text="Searchable tags")
     
     # Multi-language support

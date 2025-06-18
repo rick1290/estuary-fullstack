@@ -234,7 +234,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
         fields = ServiceListSerializer.Meta.fields + [
             'description', 'practitioner_category', 'additional_practitioners',
             'min_participants', 'age_min', 'age_max', 'what_youll_learn',
-            'prerequisites', 'includes', 'address', 'image_url', 'video_url',
+            'prerequisites', 'includes', 'address', 'image',
             'tags', 'languages', 'published_at', 'validity_days',
             'is_transferable', 'is_shareable', 'sessions_included',
             'bonus_sessions', 'max_per_customer', 'available_from',
@@ -298,7 +298,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
             'address', 'what_youll_learn', 'prerequisites', 'includes',
-            'image_url', 'video_url', 'tags', 'is_active', 'is_featured',
+            'image', 'tags', 'is_active', 'is_featured',
             'is_public', 'status', 'validity_days', 'is_transferable',
             'is_shareable', 'sessions_included', 'bonus_sessions',
             'max_per_customer', 'available_from', 'available_until',
