@@ -5,6 +5,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { X, Check, Users, Star, Shield, ArrowRight, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { authRegisterCreate } from "@/src/client/sdk.gen"
+import type { UserRegisterRequest } from "@/src/client/types.gen"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -136,11 +138,39 @@ export default function AuthModal({
     }
 
     try {
-      // TODO: Implement signup with authRegister from the API
-      // For now, just show an error message
-      setError("Signup is not yet implemented. Please use an existing account.")
-    } catch (err) {
-      setError("Signup failed. Please try again.")
+      // Register the user
+      const registerData: UserRegisterRequest = {
+        email,
+        password,
+        password_confirm: confirmPassword,
+        first_name: firstName,
+        last_name: lastName,
+      }
+      
+      const response = await authRegisterCreate({ body: registerData })
+      
+      if (response.data) {
+        // After successful registration, log them in
+        await login(email, password)
+        setLoginSuccessful(true)
+        onClose()
+        
+        if (redirectUrl) {
+          window.location.href = redirectUrl
+        }
+      }
+    } catch (err: any) {
+      let errorMessage = "Signup failed. Please try again."
+      
+      if (err?.error?.message) {
+        errorMessage = err.error.message
+      } else if (err?.error?.email) {
+        errorMessage = err.error.email[0]
+      } else if (err?.message) {
+        errorMessage = err.message
+      }
+      
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }

@@ -14,7 +14,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
+        // Exclude NextAuth routes from being proxied
+        source: '/api/:path((?!auth).*)',
         destination: process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*` : 'http://localhost:8000/api/:path*',
       },
     ]

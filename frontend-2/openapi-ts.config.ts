@@ -4,7 +4,7 @@ export default {
   plugins: [
     {
       name: '@hey-api/client-next',
-      runtimeConfigPath: './src/hey-api.ts',
+      runtimeConfigPath: './src/hey-api-nextauth.ts',
     },
     '@tanstack/react-query',
     'zod', 

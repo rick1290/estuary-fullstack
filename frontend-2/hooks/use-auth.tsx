@@ -1,7 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { AuthService } from "@/lib/auth-service"
+import { useSession, signIn, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import type { UserProfileReadable } from "@/src/client/types.gen"
 
 // Define user types
@@ -18,34 +19,10 @@ interface User {
   practitionerPublicId?: string | null
 }
 
-// Define auth context type
-interface AuthContextType {
-  user: User | null
-  isAuthenticated: boolean
-  isPractitioner: boolean
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  switchRole: () => void
-  refreshUser: () => Promise<void>
-}
-
-// Create context with default values
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isPractitioner: false,
-  isLoading: true,
-  login: async () => {},
-  logout: async () => {},
-  switchRole: () => {},
-  refreshUser: async () => {},
-})
-
 // Helper function to convert API user to our User type
 function convertAPIUser(apiUser: UserProfileReadable): User {
   // Determine role based on practitioner profile existence and localStorage preference
-  const storedRole = localStorage.getItem("userRole")
+  const storedRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null
   const hasPractitionerProfile = !!apiUser.practitioner_id
   
   let role: UserRole = "user"
@@ -68,90 +45,68 @@ function convertAPIUser(apiUser: UserProfileReadable): User {
   }
 }
 
-// Auth provider component
-export function AuthProvider({ children }: { children: ReactNode }) {
+// Custom hook to use auth with NextAuth
+export function useAuth() {
+  const { data: session, status, update } = useSession()
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
 
-  // Check if user is authenticated on mount
+  // Convert session user to our User type
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        
-        const apiUser = await AuthService.getCurrentUser()
-        
-        if (apiUser) {
-          setUser(convertAPIUser(apiUser))
-        } else {
-          setUser(null)
-        }
-      } catch (error) {
-        console.error("Authentication check failed:", error)
-        setUser(null)
-      } finally {
-        setIsLoading(false)
-      }
+    if (session?.user && typeof session.user === 'object' && 'id' in session.user) {
+      setUser(convertAPIUser(session.user as UserProfileReadable))
+    } else {
+      setUser(null)
     }
+  }, [session])
 
-    checkAuth()
-  }, [])
-
-  // Login function
   const login = async (email: string, password: string) => {
-    console.log('useAuth.login called with:', { email, password })
+    setIsLoading(true)
+    
     try {
-      const { user: apiUser } = await AuthService.login({ email, password })
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      })
       
-      // Store role preference based on practitioner profile
-      const role = apiUser.practitioner_id ? "practitioner" : "user"
-      localStorage.setItem("userRole", role)
-      
-      setUser(convertAPIUser(apiUser))
-    } catch (error: any) {
-      console.error("Login failed:", error)
-      
-      // Extract error message from API response
-      let errorMessage = "Login failed"
-      
-      if (error?.error?.detail) {
-        errorMessage = error.error.detail
-      } else if (error?.message) {
-        errorMessage = error.message
+      if (result?.error) {
+        throw new Error(result.error === "CredentialsSignin" ? "Invalid email or password" : result.error)
       }
       
-      throw new Error(errorMessage)
+      if (result?.ok) {
+        // Store role preference based on practitioner profile
+        const updatedSession = await update()
+        if (updatedSession?.user && 'practitioner_id' in updatedSession.user) {
+          const role = updatedSession.user.practitioner_id ? "practitioner" : "user"
+          localStorage.setItem("userRole", role)
+        }
+        return
+      }
+      
+      throw new Error("Login failed")
+    } catch (err: any) {
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // Logout function
   const logout = async () => {
     try {
-      await AuthService.logout()
+      localStorage.removeItem("userRole")
+      await signOut({ redirect: false })
+      router.push("/")
     } catch (error) {
       console.error("Logout error:", error)
-    } finally {
-      localStorage.removeItem("userRole")
-      setUser(null)
     }
   }
 
-  // Refresh user data
   const refreshUser = async () => {
-    try {
-      const apiUser = await AuthService.getCurrentUser()
-      
-      if (apiUser) {
-        setUser(convertAPIUser(apiUser))
-      } else {
-        setUser(null)
-      }
-    } catch (error) {
-      console.error("Failed to refresh user:", error)
-      setUser(null)
-    }
+    await update()
   }
 
-  // Switch between user and practitioner roles
   const switchRole = () => {
     if (!user || !user.hasPractitionerAccount) return
 
@@ -167,36 +122,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  // Compute derived state
-  const isAuthenticated = !!user
-  const isPractitioner = user?.role === "practitioner"
-
-  // Provide auth context - always render children even while loading
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        isPractitioner,
-        isLoading,
-        login,
-        logout,
-        switchRole,
-        refreshUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  )
-}
-
-// Custom hook to use auth context
-export function useAuth() {
-  const context = useContext(AuthContext)
-
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  return {
+    user,
+    isAuthenticated: status === "authenticated",
+    isPractitioner: user?.role === "practitioner",
+    isLoading: status === "loading" || isLoading,
+    login,
+    logout,
+    switchRole,
+    refreshUser,
   }
-
-  return context
 }
