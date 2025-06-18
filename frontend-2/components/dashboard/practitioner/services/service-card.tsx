@@ -27,10 +27,10 @@ import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
 
 // Status variants
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  active: "default",
-  draft: "outline",
-  inactive: "secondary",
-  archived: "destructive",
+  active: "default",     // Green/primary color for published/active
+  draft: "secondary",    // Gray for draft  
+  inactive: "outline",   // Outline for inactive
+  archived: "destructive", // Red for archived
 }
 
 interface ServiceCardProps {
@@ -146,12 +146,12 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
               {service.status === "active" ? (
                 <>
                   <EyeOff className="mr-2 h-4 w-4" />
-                  <span>Deactivate</span>
+                  <span>Unpublish</span>
                 </>
               ) : (
                 <>
                   <Globe className="mr-2 h-4 w-4" />
-                  <span>Activate</span>
+                  <span>Publish</span>
                 </>
               )}
             </DropdownMenuItem>
@@ -201,18 +201,18 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{service.status === "active" ? "Deactivate Service?" : "Activate Service?"}</DialogTitle>
+            <DialogTitle>{service.status === "active" ? "Unpublish Service?" : "Publish Service?"}</DialogTitle>
             <DialogDescription>
               {service.status === "active"
-                ? "This service will no longer be visible to clients. Are you sure you want to deactivate it?"
-                : "This service will be visible to clients. Are you sure you want to activate it?"}
+                ? "This service will no longer be visible to clients and will return to draft status. Are you sure you want to unpublish it?"
+                : "This service will become active and visible to clients. Are you sure you want to publish it?"}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleStatusConfirm}>{service.status === "active" ? "Deactivate" : "Activate"}</Button>
+            <Button onClick={handleStatusConfirm}>{service.status === "active" ? "Unpublish" : "Publish"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

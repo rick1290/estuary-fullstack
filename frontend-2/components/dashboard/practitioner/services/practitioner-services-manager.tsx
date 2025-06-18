@@ -203,10 +203,19 @@ export default function PractitionerServicesManager() {
   const handleToggleStatus = (serviceId: string) => {
     const service = services.find(s => s.id?.toString() === serviceId)
     if (service) {
-      const newStatus = service.is_active ? false : true
+      // Toggle between draft and active status
+      const newStatus = service.status === 'active' ? 'draft' : 'active'
+      const newIsActive = newStatus === 'active'
+      
       updateMutation.mutate({ 
         path: { id: parseInt(serviceId) },
-        body: { is_active: newStatus }
+        body: { 
+          status: newStatus,
+          is_active: newIsActive,
+          is_public: newIsActive,
+          // Set published_at when first activating
+          ...(newStatus === 'active' && !service.published_at ? { published_at: new Date().toISOString() } : {})
+        }
       })
     }
   }
