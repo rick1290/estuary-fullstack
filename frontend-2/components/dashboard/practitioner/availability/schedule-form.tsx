@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { v4 as uuidv4 } from "uuid"
-import { type Schedule, type TimeSlot, DAYS_OF_WEEK, TIMEZONE_OPTIONS } from "@/types/availability"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type { ScheduleReadable, ScheduleWritable, ScheduleTimeSlotWritable } from "@/src/client/types.gen"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,31 +11,78 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Copy, Plus, Trash2, AlertCircle } from "lucide-react"
+import { Copy, Plus, Trash2, AlertCircle, Loader2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import {
+  schedulesAddTimeSlotCreateMutation,
+  schedulesRemoveTimeSlotDestroyMutation
+} from "@/src/client/@tanstack/react-query.gen"
 
 interface ScheduleFormProps {
-  schedule: Schedule | null
+  schedule: ScheduleReadable | null
   isCreating: boolean
-  onSave: (schedule: Schedule) => void
+  onSave: (schedule: Partial<ScheduleWritable>) => Promise<void>
   onCancel: () => void
+  isLoading?: boolean
 }
 
-export function ScheduleForm({ schedule, isCreating, onSave, onCancel }: ScheduleFormProps) {
+const DAYS_OF_WEEK = [
+  { value: 0, label: "Monday" },
+  { value: 1, label: "Tuesday" },
+  { value: 2, label: "Wednesday" },
+  { value: 3, label: "Thursday" },
+  { value: 4, label: "Friday" },
+  { value: 5, label: "Saturday" },
+  { value: 6, label: "Sunday" },
+]
+
+const TIMEZONE_OPTIONS = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Phoenix",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "UTC",
+]
+
+// Generate time options (15-minute intervals)
+const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
+  const hours = Math.floor(i / 4)
+  const minutes = (i % 4) * 15
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
+})
+
+export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading }: ScheduleFormProps) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [timezone, setTimezone] = useState("America/New_York")
   const [isDefault, setIsDefault] = useState(false)
   const [isActive, setIsActive] = useState(true)
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [timeSlots, setTimeSlots] = useState<ScheduleTimeSlotWritable[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  // Track active days for UI
   const [activeDays, setActiveDays] = useState<Record<number, boolean>>({
-    0: false, // Monday
-    1: false, // Tuesday
-    2: false, // Wednesday
-    3: false, // Thursday
-    4: false, // Friday
-    5: false, // Saturday
-    6: false, // Sunday
+    0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false,
+  })
+
+  // Mutations for time slots (only used when editing existing schedule)
+  const addTimeSlotMutation = useMutation({
+    ...schedulesAddTimeSlotCreateMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+    },
+  })
+
+  const removeTimeSlotMutation = useMutation({
+    ...schedulesRemoveTimeSlotDestroyMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+    },
   })
 
   // Initialize form with schedule data if editing
@@ -46,110 +93,47 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel }: Schedul
       setTimezone(schedule.timezone)
       setIsDefault(schedule.is_default)
       setIsActive(schedule.is_active)
-      setTimeSlots(schedule.time_slots)
+      
+      // Convert readonly time slots to writable format
+      const writableSlots: ScheduleTimeSlotWritable[] = (schedule.time_slots || []).map(slot => ({
+        day: slot.day,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        is_active: slot.is_active
+      }))
+      setTimeSlots(writableSlots)
 
-      // Set active days based on time slots
-      const newActiveDays = { ...activeDays }
-      schedule.time_slots.forEach((slot) => {
-        if (slot.is_active) {
-          newActiveDays[slot.day] = true
-        }
-      })
-      setActiveDays(newActiveDays)
-    } else {
-      // Default values for new schedule
-      setName("")
-      setDescription("")
-      setTimezone("America/New_York")
-      setIsDefault(false)
-      setIsActive(true)
-      setTimeSlots([])
-      setActiveDays({
-        0: true, // Monday
-        1: true, // Tuesday
-        2: true, // Wednesday
-        3: true, // Thursday
-        4: true, // Friday
-        5: false, // Saturday
-        6: false, // Sunday
-      })
+      // Update active days
+      const days = (schedule.time_slots || []).reduce((acc, slot) => {
+        acc[slot.day] = true
+        return acc
+      }, {} as Record<number, boolean>)
+      setActiveDays({ ...activeDays, ...days })
     }
   }, [schedule])
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
-
-    if (!name.trim()) {
-      newErrors.name = "Schedule name is required"
-    }
-
-    if (!timezone) {
-      newErrors.timezone = "Timezone is required"
-    }
-
-    // Check if at least one day is active
-    const hasActiveDay = Object.values(activeDays).some((isActive) => isActive)
-    if (!hasActiveDay) {
-      newErrors.days = "At least one day must be active"
-    }
-
-    // Check if active days have time slots
-    const activeDaysList = Object.entries(activeDays)
-      .filter(([_, isActive]) => isActive)
-      .map(([day]) => Number(day))
-
-    const hasTimeSlotsForActiveDays = activeDaysList.every((day) =>
-      timeSlots.some((slot) => slot.day === day && slot.is_active),
-    )
-
-    if (!hasTimeSlotsForActiveDays && hasActiveDay) {
-      newErrors.timeSlots = "Each active day must have at least one active time slot"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSave = () => {
-    if (!validateForm()) return
-
-    const updatedSchedule: Schedule = {
-      id: schedule?.id || `temp-${uuidv4()}`,
-      name,
-      description: description || undefined,
-      timezone,
-      is_default: isDefault,
-      is_active: isActive,
-      time_slots: timeSlots,
-    }
-
-    onSave(updatedSchedule)
-  }
-
-  const toggleDay = (day: number) => {
+  const handleDayToggle = (day: number) => {
     const newActiveDays = { ...activeDays, [day]: !activeDays[day] }
     setActiveDays(newActiveDays)
 
-    // If turning off a day, mark all its time slots as inactive
-    if (!newActiveDays[day]) {
-      setTimeSlots(timeSlots.map((slot) => (slot.day === day ? { ...slot, is_active: false } : slot)))
-    } else {
-      // If turning on a day and it has no time slots, add a default one
-      const hasSlotsForDay = timeSlots.some((slot) => slot.day === day)
-      if (!hasSlotsForDay) {
-        addTimeSlot(day)
-      } else {
-        // If turning on a day and it has inactive slots, activate them
-        setTimeSlots(timeSlots.map((slot) => (slot.day === day ? { ...slot, is_active: true } : slot)))
+    if (newActiveDays[day]) {
+      // Add default time slot for this day
+      const newSlot: ScheduleTimeSlotWritable = {
+        day,
+        start_time: "09:00:00",
+        end_time: "17:00:00",
+        is_active: true,
       }
+      setTimeSlots([...timeSlots, newSlot])
+    } else {
+      // Remove all time slots for this day
+      setTimeSlots(timeSlots.filter((slot) => slot.day !== day))
     }
   }
 
-  const addTimeSlot = (day: number) => {
-    const newSlot: TimeSlot = {
-      id: `slot-${uuidv4()}`,
+  const handleAddTimeSlot = (day: number) => {
+    const newSlot: ScheduleTimeSlotWritable = {
       day,
-      day_name: DAYS_OF_WEEK[day],
       start_time: "09:00:00",
       end_time: "17:00:00",
       is_active: true,
@@ -157,35 +141,100 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel }: Schedul
     setTimeSlots([...timeSlots, newSlot])
   }
 
-  const updateTimeSlot = (slotId: string, field: "start_time" | "end_time", value: string) => {
-    setTimeSlots(timeSlots.map((slot) => (slot.id === slotId ? { ...slot, [field]: `${value}:00` } : slot)))
+  const handleRemoveTimeSlot = (index: number) => {
+    const updatedSlots = timeSlots.filter((_, i) => i !== index)
+    setTimeSlots(updatedSlots)
+
+    // Check if we need to update active days
+    const slot = timeSlots[index]
+    const hasOtherSlotsForDay = updatedSlots.some((s) => s.day === slot.day)
+    if (!hasOtherSlotsForDay) {
+      setActiveDays({ ...activeDays, [slot.day]: false })
+    }
   }
 
-  const removeTimeSlot = (slotId: string) => {
-    setTimeSlots(timeSlots.filter((slot) => slot.id !== slotId))
+  const handleTimeSlotChange = (index: number, field: keyof ScheduleTimeSlotWritable, value: any) => {
+    const updatedSlots = [...timeSlots]
+    updatedSlots[index] = { ...updatedSlots[index], [field]: value }
+    setTimeSlots(updatedSlots)
   }
 
-  const copyTimeSlots = (fromDay: number, toDay: number) => {
-    // Get slots from source day
-    const sourceDaySlots = timeSlots.filter((slot) => slot.day === fromDay)
-    if (sourceDaySlots.length === 0) return
+  const handleCopyToAllDays = () => {
+    const firstDaySlots = timeSlots.filter((slot) => slot.day === Math.min(...timeSlots.map((s) => s.day)))
+    
+    if (firstDaySlots.length === 0) {
+      toast({
+        title: "No time slots to copy",
+        description: "Please add at least one time slot first.",
+        variant: "destructive",
+      })
+      return
+    }
 
-    // Remove existing slots for target day
-    const remainingSlots = timeSlots.filter((slot) => slot.day !== toDay)
+    const newSlots: ScheduleTimeSlotWritable[] = []
+    DAYS_OF_WEEK.forEach((day) => {
+      firstDaySlots.forEach((slot) => {
+        newSlots.push({
+          ...slot,
+          day: day.value,
+        })
+      })
+    })
 
-    // Create new slots for target day
-    const newSlots = sourceDaySlots.map((slot) => ({
-      ...slot,
-      id: `slot-${uuidv4()}`,
-      day: toDay,
-      day_name: DAYS_OF_WEEK[toDay],
-    }))
-
-    setTimeSlots([...remainingSlots, ...newSlots])
+    setTimeSlots(newSlots)
+    setActiveDays(DAYS_OF_WEEK.reduce((acc, day) => ({ ...acc, [day.value]: true }), {}))
+    
+    toast({
+      title: "Schedule copied",
+      description: "Time slots have been copied to all days.",
+    })
   }
 
-  const getTimeSlotsForDay = (day: number) => {
-    return timeSlots.filter((slot) => slot.day === day && slot.is_active)
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!name.trim()) {
+      newErrors.name = "Schedule name is required"
+    }
+
+    if (timeSlots.length === 0) {
+      newErrors.timeSlots = "At least one time slot is required"
+    }
+
+    // Validate time slots
+    timeSlots.forEach((slot, index) => {
+      if (slot.start_time >= slot.end_time) {
+        newErrors[`slot_${index}`] = "End time must be after start time"
+      }
+    })
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return
+    }
+
+    const scheduleData: Partial<ScheduleWritable> = {
+      name: name.trim(),
+      description: description.trim(),
+      timezone,
+      is_default: isDefault,
+      is_active: isActive,
+    }
+
+    // For new schedules, include time slots in the creation
+    if (isCreating) {
+      scheduleData.time_slots = timeSlots
+    }
+
+    try {
+      await onSave(scheduleData)
+    } catch (error) {
+      // Error handling is done in the parent component
+    }
   }
 
   return (
@@ -193,191 +242,186 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel }: Schedul
       <CardHeader>
         <CardTitle>{isCreating ? "Create New Schedule" : "Edit Schedule"}</CardTitle>
       </CardHeader>
-
       <CardContent className="space-y-6">
         {/* Basic Information */}
         <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Schedule Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Weekday Schedule"
-                className={errors.name ? "border-destructive" : ""}
-              />
-              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
-              <Select value={timezone} onValueChange={setTimezone}>
-                <SelectTrigger id="timezone" className={errors.timezone ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIMEZONE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.timezone && <p className="text-sm text-destructive">{errors.timezone}</p>}
-            </div>
+          <div>
+            <Label htmlFor="name">Schedule Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Regular Hours, Summer Schedule"
+              className={errors.name ? "border-destructive" : ""}
+            />
+            {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe this schedule (e.g., Regular weekday hours)"
+              placeholder="Brief description of this schedule"
               rows={2}
             />
           </div>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-            <div className="flex items-center space-x-2">
-              <Switch id="is-default" checked={isDefault} onCheckedChange={setIsDefault} />
-              <Label htmlFor="is-default">Set as default schedule</Label>
-            </div>
+          <div>
+            <Label htmlFor="timezone">Timezone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger id="timezone">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONE_OPTIONS.map((tz) => (
+                  <SelectItem key={tz} value={tz}>
+                    {tz}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
+          <div className="flex items-center justify-between space-x-2">
             <div className="flex items-center space-x-2">
-              <Switch id="is-active" checked={isActive} onCheckedChange={setIsActive} />
-              <Label htmlFor="is-active">Schedule is active</Label>
+              <Switch id="default" checked={isDefault} onCheckedChange={setIsDefault} />
+              <Label htmlFor="default">Set as default schedule</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch id="active" checked={isActive} onCheckedChange={setIsActive} />
+              <Label htmlFor="active">Active</Label>
             </div>
           </div>
         </div>
 
-        {/* Weekly Schedule */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Weekly Hours</h3>
+        {/* Day Selection */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <Label>Select Days</Label>
+            <Button type="button" variant="outline" size="sm" onClick={handleCopyToAllDays}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy to All Days
+            </Button>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {DAYS_OF_WEEK.map((day) => (
+              <button
+                key={day.value}
+                type="button"
+                onClick={() => handleDayToggle(day.value)}
+                className={`p-2 text-sm font-medium rounded-md transition-colors ${
+                  activeDays[day.value]
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {day.label.slice(0, 3)}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {errors.days && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{errors.days}</AlertDescription>
-            </Alert>
-          )}
-
+        {/* Time Slots */}
+        <div>
+          <Label>Time Slots</Label>
           {errors.timeSlots && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mt-2">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{errors.timeSlots}</AlertDescription>
             </Alert>
           )}
-
-          <div className="space-y-4">
-            {DAYS_OF_WEEK.map((day, index) => (
-              <div key={day} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <Switch checked={activeDays[index]} onCheckedChange={() => toggleDay(index)} className="mr-2" />
-                    <span className="font-medium">{day}</span>
+          
+          <div className="space-y-4 mt-4">
+            {DAYS_OF_WEEK.filter((day) => activeDays[day.value]).map((day) => {
+              const daySlots = timeSlots.filter((slot) => slot.day === day.value)
+              
+              return (
+                <div key={day.value} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">{day.label}</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddTimeSlot(day.value)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Time Slot
+                    </Button>
                   </div>
-
-                  {activeDays[index] && (
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => addTimeSlot(index)}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Time Slot
-                      </Button>
-
-                      {index > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            copyTimeSlots(index - 1, index)
-                            setActiveDays({ ...activeDays, [index]: true })
-                          }}
+                  
+                  {daySlots.map((slot, slotIndex) => {
+                    const globalIndex = timeSlots.findIndex(
+                      (s) => s.day === slot.day && s.start_time === slot.start_time && s.end_time === slot.end_time
+                    )
+                    
+                    return (
+                      <div key={slotIndex} className="flex items-center gap-2">
+                        <Select
+                          value={slot.start_time}
+                          onValueChange={(value) => handleTimeSlotChange(globalIndex, "start_time", value)}
                         >
-                          <Copy className="h-4 w-4 mr-1" />
-                          Copy Previous Day
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIME_OPTIONS.map((time) => (
+                              <SelectItem key={time} value={time}>
+                                {time.slice(0, 5)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <span>to</span>
+                        
+                        <Select
+                          value={slot.end_time}
+                          onValueChange={(value) => handleTimeSlotChange(globalIndex, "end_time", value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIME_OPTIONS.map((time) => (
+                              <SelectItem key={time} value={time}>
+                                {time.slice(0, 5)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveTimeSlot(globalIndex)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  )}
+                        
+                        {errors[`slot_${globalIndex}`] && (
+                          <p className="text-sm text-destructive">{errors[`slot_${globalIndex}`]}</p>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
-
-                {activeDays[index] && (
-                  <div className="space-y-3">
-                    {getTimeSlotsForDay(index).length > 0 ? (
-                      getTimeSlotsForDay(index).map((slot) => (
-                        <div key={slot.id} className="flex items-center gap-2">
-                          <Select
-                            value={slot.start_time.substring(0, 5)}
-                            onValueChange={(value) => updateTimeSlot(slot.id, "start_time", value)}
-                          >
-                            <SelectTrigger className="w-[120px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 24 }).map((_, hour) =>
-                                [0, 30].map((minute) => {
-                                  const timeValue = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-                                  return (
-                                    <SelectItem key={`${hour}-${minute}`} value={timeValue}>
-                                      {timeValue}
-                                    </SelectItem>
-                                  )
-                                }),
-                              )}
-                            </SelectContent>
-                          </Select>
-
-                          <span>-</span>
-
-                          <Select
-                            value={slot.end_time.substring(0, 5)}
-                            onValueChange={(value) => updateTimeSlot(slot.id, "end_time", value)}
-                          >
-                            <SelectTrigger className="w-[120px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 24 }).map((_, hour) =>
-                                [0, 30].map((minute) => {
-                                  const timeValue = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-                                  return (
-                                    <SelectItem key={`${hour}-${minute}`} value={timeValue}>
-                                      {timeValue}
-                                    </SelectItem>
-                                  )
-                                }),
-                              )}
-                            </SelectContent>
-                          </Select>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeTimeSlot(slot.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No time slots added yet.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </CardContent>
-
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onCancel}>
+      <CardFooter className="justify-end space-x-2">
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
-        <Button onClick={handleSave}>{isCreating ? "Create Schedule" : "Save Changes"}</Button>
+        <Button onClick={handleSubmit} disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isCreating ? "Create Schedule" : "Save Changes"}
+        </Button>
       </CardFooter>
     </Card>
   )

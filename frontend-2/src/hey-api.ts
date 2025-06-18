@@ -23,9 +23,27 @@ export const createClientConfig: CreateClientConfig = (config) => {
         return request;
       });
 
-      // Add response interceptor for token refresh
+      // Add response interceptor for token refresh and data unwrapping
       client.interceptors.response.use(
-        (response: Response) => response,
+        async (response: Response) => {
+          // Clone the response to read the body
+          const clonedResponse = response.clone();
+          try {
+            const data = await clonedResponse.json();
+            // Check if response has the status/data wrapper
+            if (data && typeof data === 'object' && 'status' in data && 'data' in data) {
+              // Create a new response with unwrapped data
+              return new Response(JSON.stringify(data.data), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+              });
+            }
+          } catch (e) {
+            // If parsing fails, return original response
+          }
+          return response;
+        },
         async (error: any) => {
           if (error.status === 401) {
             try {
