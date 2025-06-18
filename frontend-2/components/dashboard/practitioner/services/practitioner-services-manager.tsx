@@ -226,13 +226,9 @@ export default function PractitionerServicesManager() {
   }
 
   return (
-    <div className="py-6 space-y-6">
-      {/* Header with title and create button */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">My Services</h1>
-          <p className="text-muted-foreground">Manage your offerings and packages</p>
-        </div>
+    <div className="space-y-6">
+      {/* Create button */}
+      <div className="flex justify-end">
         <Button asChild>
           <Link href="/dashboard/practitioner/services/new">
             <Plus className="mr-2 h-4 w-4" />
