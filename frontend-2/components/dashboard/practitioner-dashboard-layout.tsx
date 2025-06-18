@@ -504,7 +504,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 relative z-10">
+        <main className="flex-1 p-4 md:p-6 relative z-10 overflow-x-hidden">
           <PractitionerDashboardBreadcrumb />
           {children}
         </main>

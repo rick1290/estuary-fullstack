@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function EditServicePage({ params }: { params: { id: string } }) {
   return (
-    <div className="container mx-auto py-6 max-w-5xl">
+    <div className="container mx-auto py-6 px-4 md:px-6 max-w-7xl">
       <h1 className="text-2xl font-bold tracking-tight mb-6">Edit Service</h1>
       <ServiceWizard serviceId={params.id} />
     </div>

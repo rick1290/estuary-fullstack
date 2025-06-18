@@ -409,108 +409,43 @@ function RegularSessionSetup() {
 
   return (
     <div className="space-y-6">
-      {/* Session Format */}
-      <div className="space-y-4">
-        <Label>Session Format</Label>
-        <RadioGroup
-          value={formState.sessionFormat || "individual"}
-          onValueChange={(value) => updateFormField("sessionFormat", value)}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="individual" id="individual" />
-            <Label htmlFor="individual" className="font-normal cursor-pointer">
-              Individual (One-on-one)
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="group" id="group" />
-            <Label htmlFor="group" className="font-normal cursor-pointer">
-              Group Session
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-
-
-      {/* Session Type */}
-      <div className="space-y-4">
-        <Label>Session Type</Label>
-        <RadioGroup
-          value={formState.sessionType || "single"}
-          onValueChange={(value) => updateFormField("sessionType", value)}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="single" id="single" />
-            <Label htmlFor="single" className="font-normal cursor-pointer">
-              Single Session
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="recurring" id="recurring" />
-            <Label htmlFor="recurring" className="font-normal cursor-pointer">
-              Recurring Sessions
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-
-      {/* Delivery Method */}
-      <div className="space-y-4">
-        <Label>Delivery Method</Label>
-        <RadioGroup
-          value={formState.deliveryMethod || formState.location_type || "online"}
-          onValueChange={(value) => {
-            updateFormField("deliveryMethod", value)
-            updateFormField("location_type", value === "online" ? "virtual" : value === "hybrid" ? "hybrid" : "in_person")
-          }}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="online" id="online" />
-            <Label htmlFor="online" className="font-normal cursor-pointer">
-              Online/Virtual
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="in-person" id="in-person" />
-            <Label htmlFor="in-person" className="font-normal cursor-pointer">
-              In-Person
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="hybrid" id="hybrid" />
-            <Label htmlFor="hybrid" className="font-normal cursor-pointer">
-              Hybrid (Both Online & In-Person)
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-
       {/* Prerequisites */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="hasPrerequisites">Prerequisites Required</Label>
-          <Switch
-            id="hasPrerequisites"
-            checked={formState.hasPrerequisites || false}
-            onCheckedChange={(checked) => updateFormField("hasPrerequisites", checked)}
-          />
-        </div>
-        {formState.hasPrerequisites && (
-          <div className="space-y-2">
-            <Label htmlFor="prerequisitesDescription">Describe Prerequisites</Label>
-            <Textarea
-              id="prerequisitesDescription"
-              value={formState.prerequisitesDescription || formState.prerequisites || ''}
-              onChange={(e) => {
-                updateFormField("prerequisitesDescription", e.target.value)
-                updateFormField("prerequisites", e.target.value)
-              }}
-              placeholder="What should participants know or have before joining?"
-              rows={3}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            Prerequisites & Requirements
+          </CardTitle>
+          <CardDescription>
+            Let participants know what they need before joining
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="hasPrerequisites">Prerequisites Required</Label>
+            <Switch
+              id="hasPrerequisites"
+              checked={formState.hasPrerequisites || false}
+              onCheckedChange={(checked) => updateFormField("hasPrerequisites", checked)}
             />
           </div>
-        )}
-      </div>
+          {formState.hasPrerequisites && (
+            <div className="space-y-2">
+              <Label htmlFor="prerequisitesDescription">Describe Prerequisites</Label>
+              <Textarea
+                id="prerequisitesDescription"
+                value={formState.prerequisitesDescription || formState.prerequisites || ''}
+                onChange={(e) => {
+                  updateFormField("prerequisitesDescription", e.target.value)
+                  updateFormField("prerequisites", e.target.value)
+                }}
+                placeholder="What should participants know or have before joining?"
+                rows={3}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -65,7 +65,7 @@ export function RevenueSharingStep() {
         is_active: true
       }
     }),
-    enabled: showSearch && searchQuery.length > 2
+    enabled: showSearch && searchQuery.length >= 3
   })
 
   const availablePractitioners = practitionersData?.results?.filter(
@@ -349,44 +349,48 @@ export function RevenueSharingStep() {
                 />
               </div>
 
-              {isLoading ? (
-                <p className="text-center text-muted-foreground py-4">Searching...</p>
-              ) : availablePractitioners.length > 0 ? (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {availablePractitioners.map((practitioner) => (
-                    <Button
-                      key={practitioner.id}
-                      type="button"
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => addPractitioner(practitioner)}
-                    >
-                      <Avatar className="h-8 w-8 mr-3">
-                        <AvatarImage src={practitioner.profile_image_url} />
-                        <AvatarFallback>
-                          {practitioner.display_name?.charAt(0) || 'P'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-left">
-                        <p className="font-medium">{practitioner.display_name}</p>
-                        {practitioner.specializations && (
-                          <p className="text-xs text-muted-foreground">
-                            {practitioner.specializations.slice(0, 2).join(", ")}
-                          </p>
-                        )}
-                      </div>
-                      <UserPlus className="ml-auto h-4 w-4" />
-                    </Button>
-                  ))}
-                </div>
-              ) : searchQuery.length > 2 ? (
-                <p className="text-center text-muted-foreground py-4">
-                  No practitioners found
-                </p>
-              ) : (
+              {searchQuery.length < 3 ? (
                 <p className="text-center text-muted-foreground py-4">
                   Type at least 3 characters to search
                 </p>
+              ) : isLoading ? (
+                <p className="text-center text-muted-foreground py-4">Searching...</p>
+              ) : (
+                <div className="border rounded-lg max-h-60 overflow-y-auto">
+                  {availablePractitioners.length > 0 ? (
+                    <div className="p-2 space-y-1">
+                      {availablePractitioners.map((practitioner) => (
+                        <Button
+                          key={practitioner.id}
+                          type="button"
+                          variant="ghost"
+                          className="w-full justify-start h-auto py-2 px-3 hover:bg-accent"
+                          onClick={() => addPractitioner(practitioner)}
+                        >
+                          <Avatar className="h-8 w-8 mr-3">
+                            <AvatarImage src={practitioner.profile_image_url} />
+                            <AvatarFallback>
+                              {practitioner.display_name?.charAt(0) || 'P'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="text-left flex-1">
+                            <p className="font-medium">{practitioner.display_name}</p>
+                            {practitioner.specializations && (
+                              <p className="text-xs text-muted-foreground">
+                                {practitioner.specializations.slice(0, 2).join(", ")}
+                              </p>
+                            )}
+                          </div>
+                          <UserPlus className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      No practitioners found matching "{searchQuery}"
+                    </p>
+                  )}
+                </div>
               )}
 
               <Button

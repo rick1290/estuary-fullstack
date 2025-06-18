@@ -288,45 +288,47 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
   const isLoading = createMutation.isPending || updateMutation.isPending
 
   return (
-    <Card className="w-full max-w-6xl mx-auto">
+    <Card className="w-full mx-auto">
       <CardHeader className="pb-8">
         <div className="space-y-1">
-          <CardTitle className="text-3xl font-bold">{isEditMode ? "Edit Service" : "Create New Service"}</CardTitle>
-          <p className="text-muted-foreground">
+          <CardTitle className="text-2xl md:text-3xl font-bold">{isEditMode ? "Edit Service" : "Create New Service"}</CardTitle>
+          <p className="text-sm md:text-base text-muted-foreground">
             {isEditMode 
               ? "Update your service details and settings"
               : "Follow the steps below to create a comprehensive service listing"}
           </p>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-8">
         <div className="space-y-8">
-          <Stepper value={activeStep} onValueChange={handleStepClick} className="w-full">
+          <div className="overflow-x-auto pb-2">
+            <Stepper value={activeStep} onValueChange={handleStepClick} className="w-full min-w-[600px]">
             {steps.map((step, index) => (
               <StepperItem
                 key={step.id}
                 step={index}
                 completed={completed[index]}
                 disabled={!completed[index] && index !== activeStep && index !== Object.keys(completed).length}
-                className="[&:not(:last-child)]:flex-1"
+                className="flex-shrink-0 min-w-[80px] md:min-w-[100px]"
               >
-                <StepperTrigger className="flex flex-col items-center gap-2">
-                  <StepperIndicator className="h-10 w-10" />
+                <StepperTrigger className="flex flex-col items-center gap-1 md:gap-2 px-2">
+                  <StepperIndicator className="h-8 w-8 md:h-10 md:w-10" />
                   <div className="flex flex-col items-center">
-                    <StepperTitle className="text-sm font-medium">{step.label}</StepperTitle>
+                    <StepperTitle className="text-[10px] md:text-xs lg:text-sm font-medium text-center leading-tight">{step.label}</StepperTitle>
                   </div>
                 </StepperTrigger>
-                {index < steps.length - 1 && <StepperSeparator />}
+                {index < steps.length - 1 && <StepperSeparator className="hidden sm:block" />}
               </StepperItem>
             ))}
-          </Stepper>
+            </Stepper>
+          </div>
 
-          <div className="bg-muted/30 rounded-lg p-6 md:p-8">
+          <div className="bg-muted/30 rounded-lg p-4 md:p-8">
             <CurrentStepComponent isEditMode={isEditMode} />
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter className="flex justify-between p-4 md:p-6 border-t">
         <Button onClick={handleBack} disabled={activeStep === 0 || isLoading} variant="outline">
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back
