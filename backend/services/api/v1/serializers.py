@@ -293,7 +293,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = [
-            'name', 'description', 'short_description', 'price', 'price_cents',
+            'id', 'public_uuid', 'name', 'description', 'short_description', 'price', 'price_cents',
             'duration_minutes', 'service_type_id', 'category_id',
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
@@ -305,7 +305,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             'highlight_text', 'terms_conditions', 'additional_practitioner_ids',
             'child_service_configs'
         ]
-        read_only_fields = ['price_cents']
+        read_only_fields = ['id', 'public_uuid', 'price_cents']
     
     def validate_price(self, value):
         """Ensure price is positive"""

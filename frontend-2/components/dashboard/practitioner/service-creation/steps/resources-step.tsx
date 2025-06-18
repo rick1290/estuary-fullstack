@@ -4,6 +4,7 @@ import { useState, useCallback } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useServiceForm } from "@/hooks/use-service-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { v4 as uuidv4 } from 'uuid'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -73,7 +74,12 @@ const accessLevelInfo = {
   private: { label: "Private", icon: Eye, description: "Only you can see" }
 }
 
-export function ResourcesStep() {
+interface ResourcesStepProps {
+  serviceId?: string
+  servicePublicUuid?: string
+}
+
+export function ResourcesStep({ serviceId, servicePublicUuid }: ResourcesStepProps = {}) {
   const { formState, updateFormField } = useServiceForm()
   const { toast } = useToast()
   const [resources, setResources] = useState<Resource[]>(formState.resources || [])
@@ -114,31 +120,76 @@ export function ResourcesStep() {
     }, 300)
 
     try {
-      // Create FormData for direct file upload to R2
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('resource_type', editingResource.resource_type || 'document')
-      formData.append('service_id', formState.id || '')
-      
       // Get the access token
       const token = AuthService.getAccessToken()
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
       
-      // Upload file directly to backend which will handle R2 upload
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/service-resources/upload/`, {
+      // Step 1: Request pre-signed upload URL from backend
+      const presignedFormData = new FormData()
+      presignedFormData.append('filename', file.name)
+      presignedFormData.append('content_type', file.type || 'application/octet-stream')
+      presignedFormData.append('file_size', file.size.toString())
+      presignedFormData.append('entity_type', 'service')
+      // Use the service's public UUID for media association
+      // If no public UUID yet (new service), generate a temporary one
+      const entityId = servicePublicUuid || uuidv4()
+      presignedFormData.append('entity_id', entityId)
+      
+      const uploadUrlResponse = await fetch(`${apiUrl}/api/v1/media/presigned_upload/`, {
         method: 'POST',
         headers: {
           ...(token && { 'Authorization': `Bearer ${token}` }),
+          // Don't set Content-Type - let browser set it with boundary for FormData
         },
-        body: formData,
+        body: presignedFormData,
         credentials: 'include',
       })
       
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || error.message || 'Upload failed')
+      if (!uploadUrlResponse.ok) {
+        const error = await uploadUrlResponse.json()
+        throw new Error(error.detail || error.message || 'Failed to get upload URL')
       }
       
-      const data = await response.json()
+      const uploadData = await uploadUrlResponse.json()
+      
+      // Handle wrapped response if needed
+      const responseData = uploadData.data || uploadData
+      const { upload_url, upload_headers, media_id, storage_key, expires_at } = responseData
+      const upload_id = media_id || responseData.upload_id
+      
+      // Step 2: Upload file directly to R2 using pre-signed URL
+      const uploadResponse = await fetch(upload_url, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+          ...(upload_headers || {}),
+        },
+      })
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to storage')
+      }
+      
+      // Step 3: Confirm upload completion with backend
+      const confirmUrl = `${apiUrl}/api/v1/media/${upload_id}/confirm_upload/`
+      const confirmFormData = new FormData()
+      confirmFormData.append('file_size', file.size.toString())
+      
+      const completeResponse = await fetch(confirmUrl, {
+        method: 'POST',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+          // Don't set Content-Type - let browser set it with boundary for FormData
+        },
+        body: confirmFormData,
+        credentials: 'include',
+      })
+      
+      if (!completeResponse.ok) {
+        const error = await completeResponse.json()
+        throw new Error(error.detail || error.message || 'Failed to complete upload')
+      }
       
       clearInterval(progressInterval)
       setUploadStates(prev => ({
@@ -146,14 +197,18 @@ export function ResourcesStep() {
         [resourceId]: { isUploading: false, progress: 100 }
       }))
       
-      // Update resource with file info from response
-      // The backend should return the R2 URL and file metadata
-      if (editingId === resourceId && data) {
+      // Step 4: Get the final file URL from R2
+      // The complete response should include the public URL
+      const completeData = await completeResponse.json()
+      const fileUrl = completeData.url || `${apiUrl}/api/v1/media/${upload_id}`
+      
+      // Update resource with file info
+      if (editingId === resourceId) {
         setEditingResource(prev => ({
           ...prev,
-          file_url: data.file_url || data.url || '',
-          file_name: data.file_name || data.filename || file.name,
-          file_size: data.file_size || file.size
+          file_url: fileUrl,
+          file_name: file.name,
+          file_size: file.size
         }))
       }
       
@@ -162,7 +217,12 @@ export function ResourcesStep() {
         description: `${file.name} has been uploaded to cloud storage.`
       })
       
-      return data
+      return {
+        url: fileUrl,
+        filename: file.name,
+        file_size: file.size,
+        upload_id
+      }
     } catch (error: any) {
       clearInterval(progressInterval)
       setUploadStates(prev => ({
@@ -176,7 +236,7 @@ export function ResourcesStep() {
       })
       throw error
     }
-  }, [editingId, editingResource.resource_type, formState.id, toast])
+  }, [editingId, formState.id, toast])
 
   const handleAddResource = () => {
     if (!editingResource.title?.trim()) return
@@ -267,6 +327,33 @@ export function ResourcesStep() {
     const sizes = ["Bytes", "KB", "MB", "GB"]
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  }
+
+  const getAcceptedFileTypes = (resourceType?: string) => {
+    switch (resourceType) {
+      case 'document':
+        return '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf'
+      case 'video':
+        return '.mp4,.avi,.mov,.wmv,.flv,.mkv,.webm'
+      case 'audio':
+        return '.mp3,.wav,.ogg,.m4a,.aac,.flac'
+      case 'link':
+        return '' // No file upload for links
+      default:
+        return '*' // Accept all files for 'other'
+    }
+  }
+
+  const getMediaTypeFromMimeType = (mimeType?: string) => {
+    if (!mimeType) return 'document'
+    
+    if (mimeType.startsWith('image/')) return 'image'
+    if (mimeType.startsWith('video/')) return 'video'
+    if (mimeType.startsWith('audio/')) return 'audio'
+    if (mimeType === 'application/pdf') return 'document'
+    if (mimeType.includes('document') || mimeType.includes('text')) return 'document'
+    
+    return 'document' // Default to document
   }
 
   const resourcesByType = resources.reduce((acc, resource) => {
@@ -569,9 +656,19 @@ export function ResourcesStep() {
                         id={`file-upload-${editingId || 'new'}`}
                         type="file"
                         className="hidden"
+                        accept={getAcceptedFileTypes(editingResource.resource_type)}
                         onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
+                            // Validate file size (100MB max)
+                            if (file.size > 100 * 1024 * 1024) {
+                              toast({
+                                title: "File too large",
+                                description: "Maximum file size is 100MB",
+                                variant: "destructive"
+                              })
+                              return
+                            }
                             handleFileUpload(file, editingId || 'new')
                           }
                         }}
@@ -586,6 +683,11 @@ export function ResourcesStep() {
                         <Upload className="mr-2 h-4 w-4" />
                         {uploadStates[editingId || 'new']?.isUploading ? "Uploading..." : "Upload File"}
                       </Button>
+                      {uploadStates[editingId || 'new']?.error && (
+                        <p className="text-sm text-destructive mt-2">
+                          {uploadStates[editingId || 'new']?.error}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

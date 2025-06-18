@@ -55,9 +55,9 @@ export default function EmptyState({ selectedType, hasFilters, onClearFilters }:
             You haven't created any {getServiceTypeLabel()} yet. Get started by creating your first service.
           </p>
           <Button asChild>
-            <Link href="/dashboard/practitioner/services/create">
+            <Link href="/dashboard/practitioner/services/new">
               <Plus className="mr-2 h-4 w-4" />
-              Create New Service
+              Create Your First Service
             </Link>
           </Button>
         </>

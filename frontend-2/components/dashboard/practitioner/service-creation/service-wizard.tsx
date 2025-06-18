@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ServiceFormProvider } from "@/contexts/service-form-context"
+import { useToast } from "@/hooks/use-toast"
 import { ServiceTypeStep } from "./steps/service-type-step"
 import { BasicInfoStep } from "./steps/basic-info-step"
 import { SessionSetupStep } from "./steps/session-setup-step"
@@ -20,7 +21,8 @@ import AvailabilityStep from "./steps/availability-step"
 import PreviewStep from "./steps/preview-step"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeft, ChevronRight, Save, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Save, Loader2, Eye, X } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import {
   Stepper,
   StepperItem,
@@ -29,7 +31,6 @@ import {
   StepperTrigger,
   StepperSeparator,
 } from "@/components/ui/stepper"
-import { useToast } from "@/hooks/use-toast"
 import { useServiceForm } from "@/hooks/use-service-form"
 import { 
   servicesCreateMutation, 
@@ -135,11 +136,11 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
     ...servicesUpdateMutation(),
     onSuccess: (data) => {
       toast({
-        title: "Service Updated",
-        description: "Your service has been updated successfully.",
+        title: "Service Saved",
+        description: "Your changes have been saved.",
       })
       queryClient.invalidateQueries({ queryKey: ['services'] })
-      router.push("/dashboard/practitioner/services")
+      // Don't redirect on save, only on final save
     },
     onError: (error: any) => {
       toast({
@@ -251,7 +252,7 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
     }
   }
 
-  const handleSave = async () => {
+  const handleSave = async (redirectAfter = true) => {
     try {
       const data = prepareForSubmission()
       
@@ -260,6 +261,9 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
           path: { id: parseInt(serviceId) },
           body: data
         })
+        if (redirectAfter) {
+          router.push("/dashboard/practitioner/services")
+        }
       } else {
         await createMutation.mutateAsync({
           body: data
@@ -269,6 +273,11 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
       // Error handling is done in mutation callbacks
       console.error('Error saving service:', error)
     }
+  }
+
+  // Quick save function (saves without redirecting)
+  const handleQuickSave = () => {
+    handleSave(false)
   }
 
   const CurrentStepComponent = steps[activeStep]?.component || steps[0].component
@@ -290,13 +299,44 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
   return (
     <Card className="w-full mx-auto">
       <CardHeader className="pb-8">
-        <div className="space-y-1">
-          <CardTitle className="text-2xl md:text-3xl font-bold">{isEditMode ? "Edit Service" : "Create New Service"}</CardTitle>
-          <p className="text-sm md:text-base text-muted-foreground">
-            {isEditMode 
-              ? "Update your service details and settings"
-              : "Follow the steps below to create a comprehensive service listing"}
-          </p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-2xl md:text-3xl font-bold">
+                {isEditMode ? serviceData?.name || "Edit Service" : "Create New Service"}
+              </CardTitle>
+              {isEditMode && serviceData && (
+                <Badge variant={serviceData.status === 'active' ? 'default' : 'secondary'}>
+                  {serviceData.status}
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {isEditMode 
+                ? "Update your service details and settings"
+                : "Follow the steps below to create a comprehensive service listing"}
+            </p>
+          </div>
+          {isEditMode && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(`/services/${serviceId}`, '_blank')}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Preview
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/dashboard/practitioner/services")}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="px-4 md:px-8">
@@ -324,31 +364,63 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
           </div>
 
           <div className="bg-muted/30 rounded-lg p-4 md:p-8">
-            <CurrentStepComponent isEditMode={isEditMode} />
+            <CurrentStepComponent 
+              isEditMode={isEditMode} 
+              serviceId={serviceId}
+              servicePublicUuid={serviceData?.public_uuid}
+            />
           </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between p-4 md:p-6 border-t">
-        <Button onClick={handleBack} disabled={activeStep === 0 || isLoading} variant="outline">
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-
-        {isLastStep ? (
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
+        <div className="flex gap-2">
+          <Button onClick={handleBack} disabled={activeStep === 0 || isLoading} variant="outline">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          {isEditMode && (
+            <Button 
+              onClick={handleQuickSave} 
+              disabled={isLoading}
+              variant="ghost"
+            >
               <Save className="mr-2 h-4 w-4" />
-            )}
-            {isEditMode ? "Save Changes" : "Create Service"}
-          </Button>
-        ) : (
-          <Button onClick={handleNext} disabled={isLoading}>
-            Next
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+              Save Progress
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {isLastStep ? (
+            <>
+              {isEditMode && (
+                <Button 
+                  onClick={handleQuickSave} 
+                  disabled={isLoading}
+                  variant="outline"
+                >
+                  Save Draft
+                </Button>
+              )}
+              <Button 
+                onClick={() => handleSave(true)} 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isEditMode ? "Save & Publish" : "Create Service"}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleNext} disabled={isLoading}>
+              Next
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   )
@@ -357,8 +429,8 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
 export default function ServiceWizard({ serviceId }: ServiceWizardProps) {
   const [initialData, setInitialData] = useState<any>({})
 
-  // Fetch service data if editing
-  const { data: serviceData } = useQuery({
+  // Fetch service data - service must already exist
+  const { data: serviceData, isLoading } = useQuery({
     ...servicesRetrieveOptions({ path: { id: parseInt(serviceId || '0') } }),
     enabled: !!serviceId,
   })
@@ -397,6 +469,33 @@ export default function ServiceWizard({ serviceId }: ServiceWizardProps) {
       })
     }
   }, [serviceData])
+
+  // Show loading state while fetching service
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading service...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Service not found
+  if (!isLoading && !serviceData && serviceId) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-semibold">Service not found</h2>
+          <p className="text-muted-foreground">The service you're looking for doesn't exist.</p>
+          <Button onClick={() => window.location.href = '/dashboard/practitioner/services'}>
+            Back to Services
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <ServiceFormProvider initialData={initialData} serviceId={serviceId}>

@@ -234,9 +234,9 @@ export default function PractitionerServicesManager() {
           <p className="text-muted-foreground">Manage your offerings and packages</p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/practitioner/services/create">
+          <Link href="/dashboard/practitioner/services/new">
             <Plus className="mr-2 h-4 w-4" />
-            Create New Service
+            New Service
           </Link>
         </Button>
       </div>
