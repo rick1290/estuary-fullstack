@@ -8553,6 +8553,9 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
+        requirements:
+          type: string
+          readOnly: true
         includes:
           nullable: true
           description: What's included in the service
@@ -8659,6 +8662,27 @@ components:
           readOnly: true
         total_sessions:
           type: integer
+          readOnly: true
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceBenefit'
+          readOnly: true
+        agenda_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionAgendaItem'
+          readOnly: true
+        waitlist_count:
+          type: string
+          readOnly: true
+        practitioner_relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicePractitioner'
+          readOnly: true
+        cancellation_policy:
+          type: string
           readOnly: true
       required:
       - duration_minutes
@@ -10331,6 +10355,9 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
+        requirements:
+          type: string
+          readOnly: true
         includes:
           nullable: true
           description: What's included in the service
@@ -10437,6 +10464,27 @@ components:
           readOnly: true
         total_sessions:
           type: integer
+          readOnly: true
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceBenefit'
+          readOnly: true
+        agenda_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionAgendaItem'
+          readOnly: true
+        waitlist_count:
+          type: string
+          readOnly: true
+        practitioner_relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicePractitioner'
+          readOnly: true
+        cancellation_policy:
+          type: string
           readOnly: true
       required:
       - duration_minutes
@@ -16415,6 +16463,60 @@ components:
       - day
       - end_time
       - start_time
+    ServiceBenefit:
+      type: object
+      description: Serializer for service benefits
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Icon identifier for UI display
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - title
+    ServiceBenefitRequest:
+      type: object
+      description: Serializer for service benefits
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Icon identifier for UI display
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - title
     ServiceCategory:
       type: object
       description: Serializer for service categories
@@ -16974,6 +17076,9 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
+        requirements:
+          type: string
+          readOnly: true
         includes:
           nullable: true
           description: What's included in the service
@@ -17080,6 +17185,27 @@ components:
           readOnly: true
         total_sessions:
           type: integer
+          readOnly: true
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceBenefit'
+          readOnly: true
+        agenda_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionAgendaItem'
+          readOnly: true
+        waitlist_count:
+          type: string
+          readOnly: true
+        practitioner_relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicePractitioner'
+          readOnly: true
+        cancellation_policy:
+          type: string
           readOnly: true
       required:
       - duration_minutes
@@ -17355,6 +17481,58 @@ components:
       - name
       - price_cents
       - service_type
+    ServicePractitioner:
+      type: object
+      description: Serializer for service-practitioner relationships
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        practitioner:
+          allOf:
+          - $ref: '#/components/schemas/SimplePractitioner'
+          readOnly: true
+        is_primary:
+          type: boolean
+          description: If True, this practitioner is the primary owner of the service
+        role:
+          type: string
+          nullable: true
+          description: The role of the practitioner in this service
+          maxLength: 100
+        revenue_share_percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Percentage of revenue this practitioner receives from this
+            service
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    ServicePractitionerRequest:
+      type: object
+      description: Serializer for service-practitioner relationships
+      properties:
+        practitioner_id:
+          type: integer
+          writeOnly: true
+        is_primary:
+          type: boolean
+          description: If True, this practitioner is the primary owner of the service
+        role:
+          type: string
+          nullable: true
+          description: The role of the practitioner in this service
+          maxLength: 100
+        revenue_share_percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Percentage of revenue this practitioner receives from this
+            service
+      required:
+      - practitioner_id
     ServiceResource:
       type: object
       description: Serializer for service resources
@@ -17566,6 +17744,12 @@ components:
         current_participants:
           type: integer
           readOnly: true
+        participant_count:
+          type: integer
+          readOnly: true
+        waitlist_count:
+          type: string
+          readOnly: true
         sequence_number:
           type: integer
           maximum: 2147483647
@@ -17579,6 +17763,16 @@ components:
         agenda:
           type: string
           nullable: true
+        agenda_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionAgendaItem'
+          readOnly: true
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceBenefit'
+          readOnly: true
         what_youll_learn:
           type: string
           nullable: true
@@ -17650,6 +17844,58 @@ components:
       required:
       - end_time
       - start_time
+    SessionAgendaItem:
+      type: object
+      description: Serializer for session agenda items
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        start_time:
+          type: string
+          format: date-time
+          nullable: true
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - title
+    SessionAgendaItemRequest:
+      type: object
+      description: Serializer for session agenda items
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        start_time:
+          type: string
+          format: date-time
+          nullable: true
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - title
     SimplePractitioner:
       type: object
       description: Simple practitioner serializer for nested responses

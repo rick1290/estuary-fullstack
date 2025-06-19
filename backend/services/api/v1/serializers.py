@@ -9,7 +9,7 @@ from decimal import Decimal
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceRelationship,
     ServiceSession, ServiceResource, PractitionerServiceCategory,
-    ServicePractitioner, Waitlist
+    ServicePractitioner, Waitlist, ServiceBenefit, SessionAgendaItem
 )
 from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
@@ -140,19 +140,52 @@ class ServiceRelationshipSerializer(serializers.ModelSerializer):
         return None
 
 
+class ServiceBenefitSerializer(serializers.ModelSerializer):
+    """Serializer for service benefits"""
+    
+    class Meta:
+        model = ServiceBenefit
+        fields = [
+            'id', 'title', 'description', 'icon', 'order',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class SessionAgendaItemSerializer(serializers.ModelSerializer):
+    """Serializer for session agenda items"""
+    
+    class Meta:
+        model = SessionAgendaItem
+        fields = [
+            'id', 'title', 'description', 'start_time', 'end_time',
+            'order'
+        ]
+        read_only_fields = ['id']
+
+
 class ServiceSessionSerializer(serializers.ModelSerializer):
     """Serializer for service sessions (workshops/courses)"""
     room_url = serializers.CharField(source='room.room_url', read_only=True)
+    agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
+    benefits = ServiceBenefitSerializer(many=True, read_only=True)
+    participant_count = serializers.IntegerField(source='current_participants', read_only=True)
+    waitlist_count = serializers.SerializerMethodField()
     
     class Meta:
         model = ServiceSession
         fields = [
             'id', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
-            'sequence_number', 'room_url', 'status', 'agenda',
+            'participant_count', 'waitlist_count', 'sequence_number', 
+            'room_url', 'status', 'agenda', 'agenda_items', 'benefits',
             'what_youll_learn', 'address', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'current_participants', 'room_url', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'current_participants', 'participant_count', 'room_url', 'created_at', 'updated_at']
+    
+    def get_waitlist_count(self, obj):
+        """Get count of waiting users for this session"""
+        return obj.waitlist_entries.filter(status='waiting').count()
 
 
 class ServiceResourceSerializer(serializers.ModelSerializer):
@@ -229,19 +262,26 @@ class ServiceDetailSerializer(ServiceListSerializer):
     savings_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     savings_percentage = serializers.FloatField(read_only=True)
     total_sessions = serializers.IntegerField(read_only=True)
+    benefits = ServiceBenefitSerializer(many=True, read_only=True)
+    agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
+    requirements = serializers.CharField(source='prerequisites', read_only=True)
+    waitlist_count = serializers.SerializerMethodField()
+    practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
+    cancellation_policy = serializers.SerializerMethodField()
     
     class Meta(ServiceListSerializer.Meta):
         fields = ServiceListSerializer.Meta.fields + [
             'description', 'practitioner_category', 'additional_practitioners',
             'min_participants', 'age_min', 'age_max', 'what_youll_learn',
-            'prerequisites', 'includes', 'address', 'image',
+            'prerequisites', 'requirements', 'includes', 'address', 'image',
             'tags', 'languages', 'published_at', 'validity_days',
             'is_transferable', 'is_shareable', 'sessions_included',
             'bonus_sessions', 'max_per_customer', 'available_from',
             'available_until', 'highlight_text', 'terms_conditions',
             'media_attachments', 'child_services', 'sessions', 'resources',
             'price_per_session', 'original_price', 'savings_amount',
-            'savings_percentage', 'total_sessions'
+            'savings_percentage', 'total_sessions', 'benefits', 'agenda_items',
+            'waitlist_count', 'practitioner_relationships', 'cancellation_policy'
         ]
     
     def get_additional_practitioners(self, obj):
@@ -270,6 +310,18 @@ class ServiceDetailSerializer(ServiceListSerializer):
             access_level__in=['public', 'registered']
         ).order_by('order', '-created_at')
         return ServiceResourceSerializer(resources, many=True).data
+    
+    def get_waitlist_count(self, obj):
+        """Get count of waiting users for this service"""
+        return obj.waitlist_entries.filter(status='waiting').count()
+    
+    def get_cancellation_policy(self, obj):
+        """Get cancellation policy from terms_conditions or return default"""
+        # Check if cancellation policy is mentioned in terms_conditions
+        if obj.terms_conditions and 'cancel' in obj.terms_conditions.lower():
+            return obj.terms_conditions
+        # Return a default policy or None
+        return "Standard cancellation policy applies. Please contact the practitioner for details."
 
 
 class ServiceCreateUpdateSerializer(serializers.ModelSerializer):

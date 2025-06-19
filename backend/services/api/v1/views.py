@@ -14,7 +14,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceSession,
     ServiceResource, PractitionerServiceCategory, Waitlist,
-    ServicePractitioner, ServiceRelationship
+    ServicePractitioner, ServiceRelationship, ServiceBenefit,
+    SessionAgendaItem
 )
 from media.models import Media, MediaEntityType
 from reviews.models import Review
@@ -158,10 +159,19 @@ class ServiceViewSet(viewsets.ModelViewSet):
         """Get services with optimized queries"""
         queryset = Service.objects.select_related(
             'service_type', 'category', 'practitioner_category',
-            'primary_practitioner', 'primary_practitioner__user', 'address'
+            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'schedule'
         ).prefetch_related(
             'additional_practitioners',
             'languages',
+            'benefits',
+            'agenda_items',
+            'sessions__agenda_items',
+            'sessions__benefits',
+            'practitioner_relationships__practitioner__user',
+            'child_relationships__child_service',
+            'resources',
+            'waitlist_entries',
             Prefetch('reviews', queryset=Review.objects.filter(is_published=True))
         )
         
