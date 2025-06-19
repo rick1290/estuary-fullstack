@@ -34,7 +34,6 @@ import {
 // Import section components
 import { BasicInfoSection } from "./sections/basic-info-section"
 import { PricingDurationSection } from "./sections/pricing-duration-section"
-import { ScheduleAvailabilitySection } from "./sections/schedule-availability-section"
 import { ScheduleSelectionSection } from "./sections/schedule-selection-section"
 import { LocationSection } from "./sections/location-section"
 import { MediaSection } from "./sections/media-section"
@@ -65,19 +64,11 @@ const sections = [
   },
   {
     id: "schedule-selection",
-    title: "Schedule Selection",
-    description: "Choose which availability schedule to use",
+    title: "Schedule & Availability",
+    description: "Choose which availability schedule to use for this service",
     component: ScheduleSelectionSection,
     required: true,
-    conditional: (service: ServiceReadable) => service.service_type_info?.type_code === 'session',
-  },
-  {
-    id: "schedule-availability",
-    title: "Schedule & Availability",
-    description: "When your service is available",
-    component: ScheduleAvailabilitySection,
-    required: true,
-    conditional: (service: ServiceReadable) => service.service_type_info?.type_code !== 'session',
+    conditional: (service: ServiceReadable) => service.service_type_code === 'session',
   },
   {
     id: "location",
@@ -181,10 +172,7 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
           min_participants: service.min_participants,
         },
         "schedule-selection": {
-          scheduleId: service.schedule_id,
-        },
-        "schedule-availability": {
-          // This would be populated from availability data
+          scheduleId: service.schedule_id || service.schedule?.id?.toString(),
         },
         "revenue-sharing": {
           additionalPractitioners: service.additional_practitioners || [],
@@ -238,8 +226,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         return !!(data.price && data.duration_minutes)
       case "schedule-selection":
         return !!data.scheduleId
-      case "schedule-availability":
-        return true // Check availability data
       case "location":
         return !!data.location_type
       default:
@@ -270,7 +256,15 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
     
     // Merge all changed sections
     unsavedChanges.forEach(sectionId => {
-      Object.assign(updates, sectionData[sectionId])
+      const sectionUpdates = { ...sectionData[sectionId] }
+      
+      // Map scheduleId to schedule field for API
+      if (sectionId === 'schedule-selection' && sectionUpdates.scheduleId) {
+        sectionUpdates.schedule = parseInt(sectionUpdates.scheduleId)
+        delete sectionUpdates.scheduleId
+      }
+      
+      Object.assign(updates, sectionUpdates)
     })
 
     await updateMutation.mutateAsync({
@@ -281,7 +275,15 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
 
   // Save specific section
   const handleSaveSection = async (sectionId: string) => {
-    const updates = sectionData[sectionId]
+    let updates = { ...sectionData[sectionId] }
+    
+    // Map scheduleId to schedule field for API
+    if (sectionId === 'schedule-selection' && updates.scheduleId) {
+      updates = {
+        schedule: parseInt(updates.scheduleId)
+      }
+      delete updates.scheduleId
+    }
     
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },
@@ -330,9 +332,15 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
     )
   }
 
+  // Debug logging
+  console.log('Service type code:', service.service_type_code)
+  console.log('Service object:', service)
+  
   const visibleSections = sections.filter(section => 
     !section.conditional || section.conditional(service)
   )
+  
+  console.log('Visible sections:', visibleSections.map(s => s.id))
 
   return (
     <div className="space-y-6">
@@ -355,7 +363,7 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
               {service.status}
             </Badge>
             <Badge variant="outline">
-              {service.service_type_info?.display_name}
+              {service.service_type_display || service.service_type_code}
             </Badge>
             {service.is_featured && (
               <Badge variant="default" className="bg-amber-100 text-amber-800">

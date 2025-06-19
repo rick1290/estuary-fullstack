@@ -11,7 +11,7 @@ from services.models import (
     ServiceSession, ServiceResource, PractitionerServiceCategory,
     ServicePractitioner, Waitlist
 )
-from practitioners.models import Practitioner
+from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
 from users.models import User
 
@@ -90,6 +90,14 @@ class SimplePractitionerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = ['id', 'display_name', 'slug', 'profile_image_url']
+
+
+class SimpleScheduleSerializer(serializers.ModelSerializer):
+    """Simple schedule serializer for nested responses"""
+    
+    class Meta:
+        model = Schedule
+        fields = ['id', 'name', 'is_default', 'timezone', 'description']
 
 
 class ServicePractitionerSerializer(serializers.ModelSerializer):
@@ -174,11 +182,12 @@ class ServiceListSerializer(serializers.ModelSerializer):
     primary_practitioner = SimplePractitionerSerializer(read_only=True)
     service_type_display = serializers.CharField(source='service_type.name', read_only=True)
     service_type_code = serializers.CharField(read_only=True)
-    average_rating = serializers.SerializerMethodField()
-    total_reviews = serializers.SerializerMethodField()
-    total_bookings = serializers.SerializerMethodField()
+    average_rating = serializers.ReadOnlyField()
+    total_reviews = serializers.ReadOnlyField()
+    total_bookings = serializers.ReadOnlyField()
     duration_display = serializers.CharField(read_only=True)
     primary_image = serializers.SerializerMethodField()
+    schedule = SimpleScheduleSerializer(read_only=True)
     
     class Meta:
         model = Service
@@ -187,20 +196,11 @@ class ServiceListSerializer(serializers.ModelSerializer):
             'price', 'duration_minutes', 'duration_display', 'service_type',
             'service_type_display', 'service_type_code', 'category', 
             'primary_practitioner', 'max_participants', 'experience_level', 
-            'location_type', 'is_active', 'is_featured', 'is_public', 'status',
+            'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
             'primary_image', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'public_uuid', 'created_at', 'updated_at']
-    
-    def get_average_rating(self, obj):
-        return obj.average_rating
-    
-    def get_total_reviews(self, obj):
-        return obj.total_reviews
-    
-    def get_total_bookings(self, obj):
-        return obj.total_bookings
     
     def get_primary_image(self, obj):
         """Get primary image for the service"""
@@ -297,7 +297,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             'duration_minutes', 'service_type_id', 'category_id',
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
-            'address', 'what_youll_learn', 'prerequisites', 'includes',
+            'address', 'schedule', 'what_youll_learn', 'prerequisites', 'includes',
             'image', 'tags', 'is_active', 'is_featured',
             'is_public', 'status', 'validity_days', 'is_transferable',
             'is_shareable', 'sessions_included', 'bonus_sessions',

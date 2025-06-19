@@ -210,7 +210,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             status='published'
         ).annotate(
             booking_count=Count('bookings'),
-            avg_rating=Avg('reviews__rating')
+            avg_rating_annotated=Avg('reviews__rating')
         ).order_by('-booking_count', '-avg_rating')[:20]
         
         serializer = ServiceListSerializer(popular, many=True, context={'request': request})
@@ -266,9 +266,9 @@ class ServiceViewSet(viewsets.ModelViewSet):
         # Apply sorting
         sort_by = params.get('sort_by', '-created_at')
         if sort_by == 'rating':
-            queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+            queryset = queryset.annotate(avg_rating_sort=Avg('reviews__rating')).order_by('-avg_rating_sort')
         elif sort_by == '-rating':
-            queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('avg_rating')
+            queryset = queryset.annotate(avg_rating_sort=Avg('reviews__rating')).order_by('avg_rating_sort')
         elif sort_by == 'popularity':
             queryset = queryset.annotate(booking_count=Count('bookings')).order_by('-booking_count')
         elif sort_by == 'price':

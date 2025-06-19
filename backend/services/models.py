@@ -191,6 +191,11 @@ class Service(PublicModel):
                                null=True, blank=True, related_name='services',
                                help_text="Physical address for in-person/hybrid services")
     
+    # Scheduling (for session-type services)
+    schedule = models.ForeignKey('practitioners.Schedule', on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name='services',
+                               help_text="Availability schedule for session-type services")
+    
     # Content and learning
     what_youll_learn = models.TextField(blank=True, null=True, 
                                        help_text="Learning outcomes and benefits")
@@ -275,13 +280,14 @@ class Service(PublicModel):
         verbose_name = 'Service'
         verbose_name_plural = 'Services'
         ordering = ['-created_at']
+        # Using Django's default naming convention (services_service)
         indexes = [
             models.Index(fields=['service_type', 'is_active']),
             models.Index(fields=['primary_practitioner', 'is_active']),
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['location_type']),
             models.Index(fields=['is_featured', 'is_active']),
-            models.Index(fields=['price']),
+            models.Index(fields=['price_cents']),
             models.Index(fields=['experience_level']),
         ]
 
@@ -359,19 +365,6 @@ class Service(PublicModel):
                 return False
         
         return True
-    
-    class Meta:
-        # Using Django's default naming convention (services_service)
-        indexes = [
-            models.Index(fields=['service_type']),
-            models.Index(fields=['category']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_featured']),
-            models.Index(fields=['experience_level']),
-        ]
-
-    def __str__(self):
-        return self.name
         
     @property
     def is_course(self):

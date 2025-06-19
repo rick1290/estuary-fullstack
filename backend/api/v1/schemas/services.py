@@ -85,7 +85,7 @@ class PractitionerBase(BaseModel):
     """Basic practitioner info"""
     id: int
     display_name: str
-    slug: str
+    slug: Optional[str] = None
 
 
 class ServiceBase(BaseModel):
@@ -141,7 +141,7 @@ class ServiceResponse(BaseModel):
     id: int
     public_uuid: UUID
     name: str
-    slug: str
+    slug: Optional[str] = None
     description: Optional[str] = None
     service_type: str
     category: Optional[CategoryBase] = None

@@ -47,7 +47,7 @@ def get_services_list(
         'category'
     ).prefetch_related(
         'additional_practitioners__user',
-        'child_services',
+        'child_relationships__child_service',
         'sessions'
     )
     
@@ -83,7 +83,7 @@ def get_services_list(
     # Add annotations
     queryset = queryset.annotate(
         booking_count=Count('bookings', distinct=True),
-        average_rating=Avg('reviews__rating')
+        avg_rating=Avg('reviews__rating')
     )
     
     # Apply ordering
@@ -103,7 +103,6 @@ def get_services_list(
             'id': service.id,
             'public_uuid': str(service.public_uuid),
             'name': service.name,
-            'slug': service.slug,
             'description': service.description,
             'service_type': service.service_type.code if service.service_type else None,
             'category': {
@@ -116,13 +115,12 @@ def get_services_list(
             'duration_minutes': service.duration_minutes,
             'primary_practitioner': {
                 'id': service.primary_practitioner.id,
-                'display_name': service.primary_practitioner.display_name,
-                'slug': service.primary_practitioner.slug
+                'display_name': service.primary_practitioner.display_name
             } if service.primary_practitioner else None,
             'is_active': service.is_active,
             'is_public': service.is_public,
             'booking_count': service.booking_count,
-            'average_rating': service.average_rating,
+            'average_rating': service.avg_rating if hasattr(service, 'avg_rating') else service.average_rating,
             'sessions_included': service.sessions_included if service.is_bundle else None,
             'created_at': service.created_at,
             'updated_at': service.updated_at,
