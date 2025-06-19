@@ -21,7 +21,7 @@ export default function PractitionerSchedulePage() {
           <TabsTrigger value="calendar" className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-sage-700 text-olive-600 rounded-md">Calendar View</TabsTrigger>
         </TabsList>
         <TabsContent value="calendar">
-          <PractitionerCalendarView />
+          <PractitionerCalendarView view="week" />
         </TabsContent>
         <TabsContent value="list">
           <PractitionerScheduleList />

@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { MoreVertical, Calendar, Clock, User, Users, Video, MapPin } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { MoreVertical, Calendar, Clock, User, Users, Video, MapPin, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useAuth } from "@/hooks/use-auth"
+import type { BookingListReadable } from "@/src/client/types.gen"
 
 // Mock data for schedule
 const mockSchedule = (() => {
@@ -110,21 +114,83 @@ const typeConfig = {
 
 export default function PractitionerScheduleList() {
   const router = useRouter()
+  const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState<string>("upcoming")
   const [searchTerm, setSearchTerm] = useState<string>("")
 
-  // Filter schedule based on selected tab and search term
-  const filteredSchedule = mockSchedule.filter((event) => {
-    const matchesTab = selectedTab === "all" || event.status === selectedTab
-    const matchesSearch =
-      searchTerm === "" ||
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.clientName.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesTab && matchesSearch
-  })
+  // Build query params based on selected tab
+  const getQueryParams = () => {
+    const params: any = {
+      practitioner_id: user?.practitioner_profile?.id,
+      ordering: '-start_time'
+    }
+
+    switch (selectedTab) {
+      case 'upcoming':
+        params.status = 'confirmed'
+        params.is_upcoming = true
+        break
+      case 'completed':
+        params.status = 'completed'
+        break
+      case 'canceled':
+        params.status = 'canceled'
+        break
+      // 'all' has no additional filters
+    }
+
+    if (searchTerm) {
+      params.search = searchTerm
+    }
+
+    return params
+  }
+
+  // Fetch bookings from API
+  const { data: bookingsData, isLoading, error } = useQuery(
+    bookingsListOptions({
+      query: getQueryParams()
+    })
+  )
+
+  const bookings = bookingsData?.results || []
+
+  // Transform booking data to match the component's expected format
+  const transformedSchedule = bookings.map((booking: BookingListReadable) => ({
+    id: booking.id?.toString() || '',
+    title: booking.service?.name || 'Unknown Service',
+    clientName: booking.user?.full_name || booking.user?.email || 'Unknown Client',
+    clientAvatar: booking.user?.avatar_url,
+    date: booking.start_time ? new Date(booking.start_time).toISOString().split('T')[0] : '',
+    startTime: booking.start_time ? new Date(booking.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
+    endTime: booking.end_time ? new Date(booking.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
+    type: booking.service?.service_type_code || 'session',
+    location: booking.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person',
+    status: booking.status || 'unknown',
+    booking: booking // Keep full booking data for detail view
+  }))
 
   const handleViewDetails = (eventId: string) => {
-    router.push(`/dashboard/practitioner/schedule/${eventId}`)
+    router.push(`/dashboard/practitioner/bookings/${eventId}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Failed to load bookings</p>
+        <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
+          Try Again
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -157,26 +223,40 @@ export default function PractitionerScheduleList() {
         </div>
 
         <TabsContent value="all" className="mt-0">
-          <ScheduleTable events={filteredSchedule} onViewDetails={handleViewDetails} />
+          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
         </TabsContent>
         <TabsContent value="upcoming" className="mt-0">
-          <ScheduleTable events={filteredSchedule} onViewDetails={handleViewDetails} />
+          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
         </TabsContent>
         <TabsContent value="completed" className="mt-0">
-          <ScheduleTable events={filteredSchedule} onViewDetails={handleViewDetails} />
+          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
         </TabsContent>
         <TabsContent value="canceled" className="mt-0">
-          <ScheduleTable events={filteredSchedule} onViewDetails={handleViewDetails} />
+          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
         </TabsContent>
       </Tabs>
     </div>
   )
 }
 
+interface ScheduleEvent {
+  id: string
+  title: string
+  clientName: string
+  clientAvatar?: string | null
+  date: string
+  startTime: string
+  endTime: string
+  type: string
+  location: string
+  status: string
+  booking?: any
+}
+
 function ScheduleTable({
   events,
   onViewDetails,
-}: { events: typeof mockSchedule; onViewDetails: (id: string) => void }) {
+}: { events: ScheduleEvent[]; onViewDetails: (id: string) => void }) {
   return (
     <Card className="bg-white">
       <CardContent className="p-0">

@@ -18,19 +18,17 @@ import {
 } from "lucide-react"
 import type { ServiceReadable } from "@/src/client/types.gen"
 
+// Includes is now just a text field
+// Benefits and agenda items are stored separately in the API
+
 interface BenefitsSectionProps {
   service: ServiceReadable
   data: {
     what_youll_learn?: string
     prerequisites?: string
-    includes?: Record<string, any>
-    benefits?: Array<{
-      id: string
-      title: string
-      description: string
-      icon?: string
-      order: number
-    }>
+    includes?: string
+    benefits?: Array<any>
+    agenda_items?: Array<any>
   }
   onChange: (data: any) => void
   onSave: () => void
@@ -50,6 +48,11 @@ export function BenefitsSection({
   const [learningGoals, setLearningGoals] = useState<string[]>([])
   const [newGoal, setNewGoal] = useState("")
   const [newBenefit, setNewBenefit] = useState({ title: "", description: "" })
+  const [newAgendaItem, setNewAgendaItem] = useState({ title: "", description: "", duration_minutes: 0 })
+
+  // Parse includes data - for new structure, includes is just a text field
+  // Benefits and agenda items are stored separately
+  const includesText = typeof localData.includes === 'string' ? localData.includes : ''
 
   useEffect(() => {
     setLocalData(data)
@@ -64,6 +67,10 @@ export function BenefitsSection({
     const newData = { ...localData, [field]: value }
     setLocalData(newData)
     onChange(newData)
+  }
+
+  const updateIncludesText = (text: string) => {
+    handleChange('includes', text)
   }
 
   const addLearningGoal = () => {
@@ -94,13 +101,31 @@ export function BenefitsSection({
     }
   }
 
-  const removeBenefit = (id: string) => {
+  const removeBenefit = (id: string | number | undefined) => {
     const currentBenefits = localData.benefits || []
     handleChange('benefits', currentBenefits.filter(b => b.id !== id))
   }
 
-  // Parse includes data
-  const includesItems = localData.includes ? Object.entries(localData.includes) : []
+  const addAgendaItem = () => {
+    if (newAgendaItem.title) {
+      const currentItems = localData.agenda_items || []
+      const item = {
+        id: Date.now().toString(),
+        ...newAgendaItem,
+        order: currentItems.length
+      }
+      handleChange('agenda_items', [...currentItems, item])
+      setNewAgendaItem({ title: "", description: "", duration_minutes: 0 })
+    }
+  }
+
+  const removeAgendaItem = (id: string | number | undefined) => {
+    const currentItems = localData.agenda_items || []
+    handleChange('agenda_items', currentItems.filter(item => item.id !== id))
+  }
+
+  // Check if service type should show agenda items
+  const showAgendaItems = service.service_type_code === 'workshop' || service.service_type_code === 'course'
 
   return (
     <div className="space-y-6">
@@ -241,22 +266,99 @@ export function BenefitsSection({
       </div>
 
       {/* What's Included */}
-      {includesItems.length > 0 && (
+      <div className="space-y-4">
+        <div>
+          <Label>What's Included</Label>
+          <p className="text-sm text-muted-foreground mt-1">
+            List everything included with this service
+          </p>
+        </div>
+        
+        <Textarea
+          value={includesText}
+          onChange={(e) => updateIncludesText(e.target.value)}
+          placeholder="E.g., Workbook materials, access to online resources, post-session support, refreshments"
+          rows={4}
+          className="max-w-2xl"
+        />
+      </div>
+
+      {/* Agenda Items (for workshops and courses) */}
+      {showAgendaItems && (
         <div className="space-y-4">
           <div>
-            <Label>What's Included</Label>
+            <Label className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Session Agenda
+            </Label>
             <p className="text-sm text-muted-foreground mt-1">
-              Additional items or services included
+              Outline the agenda or curriculum for your {service.service_type_code}
             </p>
           </div>
-          
-          <div className="space-y-2">
-            {includesItems.map(([key, value]) => (
-              <div key={key} className="flex items-center gap-2">
-                <Badge variant="outline">{key}</Badge>
-                <span className="text-sm">{String(value)}</span>
-              </div>
+
+          <div className="space-y-3">
+            {(localData.agenda_items || []).map((item, index) => (
+              <Card key={item.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{index + 1}</Badge>
+                      <h4 className="font-medium">{item.title}</h4>
+                      {item.duration_minutes ? (
+                        <span className="text-sm text-muted-foreground">
+                          ({item.duration_minutes} min)
+                        </span>
+                      ) : null}
+                    </div>
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground mt-2 ml-8">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAgendaItem(item.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
             ))}
+
+            <Card className="p-4 border-dashed">
+              <div className="space-y-3">
+                <Input
+                  value={newAgendaItem.title}
+                  onChange={(e) => setNewAgendaItem({ ...newAgendaItem, title: e.target.value })}
+                  placeholder="Agenda item title"
+                />
+                <Textarea
+                  value={newAgendaItem.description || ""}
+                  onChange={(e) => setNewAgendaItem({ ...newAgendaItem, description: e.target.value })}
+                  placeholder="Description (optional)"
+                  rows={2}
+                />
+                <Input
+                  type="number"
+                  value={newAgendaItem.duration_minutes || ""}
+                  onChange={(e) => setNewAgendaItem({ ...newAgendaItem, duration_minutes: parseInt(e.target.value) || 0 })}
+                  placeholder="Duration in minutes (optional)"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addAgendaItem}
+                  disabled={!newAgendaItem.title}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Agenda Item
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       )}

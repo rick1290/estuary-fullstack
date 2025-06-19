@@ -41,6 +41,9 @@ import { BenefitsSection } from "./sections/benefits-section"
 import { ResourcesSection } from "./sections/resources-section"
 import { RevenueSharingSection } from "./sections/revenue-sharing-section"
 import { AdvancedSection } from "./sections/advanced-section"
+import { ServiceSessionsSection } from "./sections/service-sessions-section"
+import { PackageCompositionSection } from "./sections/package-composition-section"
+import { BundleConfigurationSection } from "./sections/bundle-configuration-section"
 
 interface ServiceEditAccordionProps {
   serviceId: string
@@ -61,6 +64,30 @@ const sections = [
     description: "Service pricing, duration, and participant limits",
     component: PricingDurationSection,
     required: true,
+  },
+  {
+    id: "bundle-configuration",
+    title: "Bundle Configuration",
+    description: "Configure which session service and how many are included",
+    component: BundleConfigurationSection,
+    required: true,
+    conditional: (service: ServiceReadable) => service.service_type_code === 'bundle',
+  },
+  {
+    id: "package-composition",
+    title: "Package Contents",
+    description: "Select which services are included in this package",
+    component: PackageCompositionSection,
+    required: true,
+    conditional: (service: ServiceReadable) => service.service_type_code === 'package',
+  },
+  {
+    id: "service-sessions",
+    title: "Sessions & Schedule",
+    description: "Define session dates and times",
+    component: ServiceSessionsSection,
+    required: true,
+    conditional: (service: ServiceReadable) => service.service_type_code === 'workshop' || service.service_type_code === 'course',
   },
   {
     id: "schedule-selection",
@@ -174,6 +201,24 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         "schedule-selection": {
           scheduleId: service.schedule_id || service.schedule?.id?.toString(),
         },
+        "bundle-configuration": {
+          sessions_included: service.sessions_included,
+          child_service_configs: service.child_relationships?.map(rel => ({
+            child_service_id: rel.child_service?.id,
+            quantity: rel.quantity
+          })) || [],
+        },
+        "package-composition": {
+          child_service_configs: service.child_relationships?.map(rel => ({
+            child_service_id: rel.child_service?.id,
+            quantity: rel.quantity,
+            discount_percentage: rel.discount_percentage,
+            order: rel.order
+          })) || [],
+        },
+        "service-sessions": {
+          sessions: service.sessions || [],
+        },
         "revenue-sharing": {
           additionalPractitioners: service.additional_practitioners || [],
         },
@@ -189,6 +234,8 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
           what_youll_learn: service.what_youll_learn,
           prerequisites: service.prerequisites,
           includes: service.includes,
+          benefits: service.benefits || [],
+          agenda_items: service.agenda_items || [],
         },
         "resources": {
           // resources: service.resources,
@@ -226,6 +273,12 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         return !!(data.price && data.duration_minutes)
       case "schedule-selection":
         return !!data.scheduleId
+      case "bundle-configuration":
+        return !!(data.sessions_included && data.child_service_configs?.length)
+      case "package-composition":
+        return !!data.child_service_configs?.length
+      case "service-sessions":
+        return !!data.sessions?.length
       case "location":
         return !!data.location_type
       default:
@@ -264,6 +317,21 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         delete sectionUpdates.scheduleId
       }
       
+      // Handle package composition - child_service_configs is already in correct format
+      if (sectionId === 'package-composition') {
+        // child_service_configs is already properly formatted from the section
+      }
+      
+      // Handle bundle configuration
+      if (sectionId === 'bundle-configuration') {
+        // sessions_included and child_service_configs are already properly formatted
+      }
+      
+      // Handle service sessions
+      if (sectionId === 'service-sessions') {
+        // sessions array is already properly formatted
+      }
+      
       Object.assign(updates, sectionUpdates)
     })
 
@@ -284,6 +352,14 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
       }
       delete updates.scheduleId
     }
+    
+    // Debug logging for package and bundle sections
+    if (sectionId === 'package-composition' || sectionId === 'bundle-configuration') {
+      console.log(`Saving ${sectionId}:`, updates)
+    }
+    
+    // For package, bundle, and service sessions, the data is already properly formatted
+    // No special handling needed
     
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },

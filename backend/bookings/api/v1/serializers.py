@@ -14,6 +14,18 @@ from practitioners.models import Practitioner
 from services.models import Service, ServiceSession
 from rooms.models import Room
 from utils.models import Address
+from users.models import User
+
+
+class BookingUserSerializer(serializers.ModelSerializer):
+    """Simplified user serializer for bookings"""
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    avatar_url = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'full_name', 'avatar_url', 'phone_number']
+        read_only_fields = fields
 
 
 class BookingPractitionerSerializer(serializers.ModelSerializer):
@@ -86,6 +98,7 @@ class BookingNoteSerializer(serializers.ModelSerializer):
 
 class BookingListSerializer(serializers.ModelSerializer):
     """Booking list serializer with minimal details"""
+    user = BookingUserSerializer(read_only=True)
     practitioner = BookingPractitionerSerializer(read_only=True)
     service = BookingServiceSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -98,7 +111,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id', 'public_uuid', 'practitioner', 'service', 'start_time', 'end_time',
+            'id', 'public_uuid', 'user', 'practitioner', 'service', 'start_time', 'end_time',
             'status', 'status_display', 'payment_status', 'payment_status_display',
             'price_charged', 'final_amount', 'duration_minutes', 'is_upcoming',
             'created_at', 'updated_at'
@@ -107,6 +120,7 @@ class BookingListSerializer(serializers.ModelSerializer):
 
 class BookingDetailSerializer(serializers.ModelSerializer):
     """Detailed booking serializer"""
+    user = BookingUserSerializer(read_only=True)
     practitioner = BookingPractitionerSerializer(read_only=True)
     service = BookingServiceSerializer(read_only=True)
     room = BookingRoomSerializer(read_only=True)
@@ -147,7 +161,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id', 'public_uuid', 'practitioner', 'service', 'room', 'location',
+            'id', 'public_uuid', 'user', 'practitioner', 'service', 'room', 'location',
             'start_time', 'end_time', 'actual_start_time', 'actual_end_time',
             'timezone', 'status', 'status_display', 'payment_status', 'payment_status_display',
             'title', 'description', 'client_notes', 'practitioner_notes',

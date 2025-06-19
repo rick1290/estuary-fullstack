@@ -18,6 +18,7 @@ class ServiceFilter(django_filters.FilterSet):
     # Service type filters
     service_type = django_filters.CharFilter(field_name='service_type__code', lookup_expr='exact')
     service_type_id = django_filters.NumberFilter(field_name='service_type__id')
+    exclude_types = django_filters.CharFilter(method='filter_exclude_types')
     
     # Practitioner filters
     practitioner = django_filters.NumberFilter(field_name='primary_practitioner__id')
@@ -87,7 +88,7 @@ class ServiceFilter(django_filters.FilterSet):
     class Meta:
         model = Service
         fields = [
-            'category', 'category_id', 'service_type', 'service_type_id',
+            'category', 'category_id', 'service_type', 'service_type_id', 'exclude_types',
             'practitioner', 'practitioner_slug', 'min_price', 'max_price',
             'min_duration', 'max_duration', 'min_participants', 'max_participants',
             'location_type', 'experience_level', 'age', 'is_featured',
@@ -140,6 +141,13 @@ class ServiceFilter(django_filters.FilterSet):
                 is_public=True,
                 status='published'
             )
+        return queryset
+    
+    def filter_exclude_types(self, queryset, name, value):
+        """Exclude specific service types (comma-separated)"""
+        exclude_types = [t.strip() for t in value.split(',') if t.strip()]
+        if exclude_types:
+            return queryset.exclude(service_type__code__in=exclude_types)
         return queryset
     
     def filter_search(self, queryset, name, value):
