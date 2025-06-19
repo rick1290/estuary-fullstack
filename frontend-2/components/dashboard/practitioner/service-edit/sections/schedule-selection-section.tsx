@@ -52,8 +52,8 @@ export function ScheduleSelectionSection({
   useEffect(() => {
     setLocalData(data)
     // Set default schedule if none selected and schedules are loaded
-    if (!data.scheduleId && schedules?.data?.results?.length) {
-      const defaultSchedule = schedules.data.results.find(s => s.is_default) || schedules.data.results[0]
+    if (!data.scheduleId && schedules?.results?.length) {
+      const defaultSchedule = schedules.results.find(s => s.is_default) || schedules.results[0]
       if (defaultSchedule) {
         handleChange('scheduleId', String(defaultSchedule.id))
       }
@@ -80,13 +80,13 @@ export function ScheduleSelectionSection({
         <Select 
           value={localData.scheduleId || ""} 
           onValueChange={(value) => handleChange('scheduleId', value)}
-          disabled={isLoading || !schedules?.data?.results?.length}
+          disabled={isLoading || !schedules?.results?.length}
         >
           <SelectTrigger id="schedule" className="max-w-md">
             <SelectValue placeholder={isLoading ? "Loading schedules..." : "Choose a schedule"} />
           </SelectTrigger>
           <SelectContent>
-            {schedules?.data?.results?.map((schedule) => (
+            {schedules?.results?.map((schedule) => (
               <SelectItem key={schedule.id} value={String(schedule.id)}>
                 <div className="flex items-center gap-2">
                   <span>{schedule.name}</span>
@@ -108,7 +108,7 @@ export function ScheduleSelectionSection({
       </div>
 
       {/* No Schedules Alert */}
-      {!schedules?.data?.results?.length && !isLoading && (
+      {!schedules?.results?.length && !isLoading && (
         <Alert variant="destructive">
           <AlertDescription>
             You haven't created any availability schedules yet. Please{" "}
