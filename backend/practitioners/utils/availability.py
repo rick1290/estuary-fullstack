@@ -118,11 +118,19 @@ def get_practitioner_availability(
         # Get all available time slots
         available_slots = []
         
-        # First, check for named schedules
-        named_schedules = Schedule.objects.filter(
-            practitioner=practitioner,
-            is_active=True
-        ).prefetch_related('time_slots')
+        # First, check if service has a linked schedule
+        if hasattr(service, 'schedule') and service.schedule:
+            named_schedules = Schedule.objects.filter(
+                id=service.schedule.id,
+                is_active=True
+            ).prefetch_related('time_slots')
+        else:
+            # Fall back to practitioner's default schedule
+            named_schedules = Schedule.objects.filter(
+                practitioner=practitioner,
+                is_default=True,
+                is_active=True
+            ).prefetch_related('time_slots')
         
         # If no named schedules, fall back to service schedules
         if not named_schedules.exists():
@@ -214,6 +222,16 @@ def get_practitioner_availability(
                             schedule.name
                         )
                         available_slots.extend(slots)
+        
+        # Remove duplicate slots based on start_datetime
+        unique_slots = {}
+        for slot in available_slots:
+            slot_key = slot['start_datetime'].isoformat()
+            if slot_key not in unique_slots:
+                unique_slots[slot_key] = slot
+        
+        # Convert back to list
+        available_slots = list(unique_slots.values())
         
         # Filter out slots that overlap with existing bookings
         filtered_slots = filter_booked_slots(available_slots, practitioner, service_duration)
@@ -334,7 +352,7 @@ def filter_booked_slots(
     """
     # Get all bookings for this practitioner
     try:
-        from apps.bookings.models import Booking
+        from bookings.models import Booking
         
         # Get bookings that overlap with the date range of the slots
         if not slots:
