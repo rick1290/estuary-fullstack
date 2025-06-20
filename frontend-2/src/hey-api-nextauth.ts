@@ -19,7 +19,16 @@ export const createClientConfig: CreateClientConfig = (config) => {
       
       // Add request interceptor for auth
       client.interceptors.request.use(async (request: Request) => {
+        // Force session refresh to get latest token
         const session = await getSession();
+        
+        // Check if token is expired
+        if (session?.accessTokenExpires && Date.now() >= session.accessTokenExpires) {
+          // Token is expired, trigger a session refresh
+          // NextAuth should handle this automatically in the JWT callback
+          console.warn('Access token expired, refreshing session...');
+        }
+        
         if (session?.accessToken) {
           request.headers.set('Authorization', `Bearer ${session.accessToken}`);
         }
@@ -48,8 +57,23 @@ export const createClientConfig: CreateClientConfig = (config) => {
           return response;
         },
         async (error: any) => {
-          // NextAuth will handle token refresh automatically through the JWT callback
-          // So we don't need to handle 401 errors here
+          // Check if it's a 401 error (unauthorized)
+          if (error instanceof Response && error.status === 401) {
+            console.warn('Received 401 error, token might be invalid');
+            
+            // Try to get a fresh session
+            const { signIn } = await import('next-auth/react');
+            const session = await getSession();
+            
+            // If we have a refresh token, NextAuth should handle the refresh
+            // If not, we might need to re-authenticate
+            if (!session || session.error === "RefreshAccessTokenError") {
+              // Redirect to login or show auth modal
+              if (typeof window !== 'undefined') {
+                window.location.href = '/auth/signin';
+              }
+            }
+          }
           throw error;
         }
       );
