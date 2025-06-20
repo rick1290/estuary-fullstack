@@ -909,7 +909,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ id: string 
           {/* Right Column - Sticky Booking Panel */}
           <div className="space-y-8">
             <div className="lg:sticky lg:top-24">
-              <WorkshopBookingPanel workshop={workshop} dates={workshop.dates} />
+              <WorkshopBookingPanel workshop={transformedWorkshop} serviceData={serviceData} />
               
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">
