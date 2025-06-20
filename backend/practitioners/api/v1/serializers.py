@@ -121,7 +121,7 @@ class PractitionerListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = [
-            'id', 'public_uuid', 'display_name', 'professional_title',
+            'id', 'public_uuid', 'display_name', 'slug', 'professional_title',
             'profile_image_url', 'years_of_experience', 'is_verified',
             'featured', 'full_name', 'average_rating', 'total_reviews',
             'total_services', 'price_range', 'primary_location',
@@ -180,7 +180,7 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = [
-            'id', 'public_uuid', 'display_name', 'professional_title',
+            'id', 'public_uuid', 'display_name', 'slug', 'professional_title',
             'bio', 'quote', 'profile_image_url', 'profile_video_url',
             'years_of_experience', 'is_verified', 'featured', 'is_active',
             'full_name', 'average_rating', 'total_reviews', 'total_services',
@@ -268,7 +268,7 @@ class PractitionerUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = [
-            'display_name', 'professional_title', 'bio', 'quote',
+            'display_name', 'slug', 'professional_title', 'bio', 'quote',
             'profile_image_url', 'profile_video_url', 'years_of_experience',
             'buffer_time', 'specialization_ids', 'style_ids', 'topic_ids',
             'modality_ids', 'certification_ids', 'education_ids'

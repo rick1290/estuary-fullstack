@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
-import { publicServicesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { servicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -448,12 +448,12 @@ const getWorkshopById = (id: string) => {
   return workshops.find((workshop) => workshop.id === id)
 }
 
-export default function WorkshopPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params)
+export default function WorkshopPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = React.use(params)
   
-  // Fetch workshop data from API using public_uuid
+  // Fetch workshop data from API using slug
   const { data: serviceData, isLoading, error } = useQuery({
-    ...publicServicesRetrieveOptions({ path: { public_uuid: id } }),
+    ...servicesBySlugRetrieveOptions({ path: { slug } }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 

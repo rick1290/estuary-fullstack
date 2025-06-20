@@ -141,7 +141,8 @@ class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
     reorder_media=extend_schema(tags=['Services']),
     add_resources=extend_schema(tags=['Services']),
     add_practitioners=extend_schema(tags=['Services']),
-    join_waitlist=extend_schema(tags=['Services'])
+    join_waitlist=extend_schema(tags=['Services']),
+    by_slug=extend_schema(tags=['Services'])
 )
 class ServiceViewSet(viewsets.ModelViewSet):
     """
@@ -198,6 +199,19 @@ class ServiceViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return ServiceCreateUpdateSerializer
         return ServiceDetailSerializer
+    
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get service by slug"""
+        try:
+            service = self.get_queryset().get(slug=slug)
+            serializer = ServiceDetailSerializer(service, context={'request': request})
+            return Response(serializer.data)
+        except Service.DoesNotExist:
+            return Response(
+                {"detail": "Service not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     @action(detail=False, methods=['get'])
     def featured(self, request):

@@ -226,7 +226,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = [
-            'id', 'public_uuid', 'name', 'short_description', 'price_cents',
+            'id', 'public_uuid', 'name', 'slug', 'short_description', 'price_cents',
             'price', 'duration_minutes', 'duration_display', 'service_type',
             'service_type_display', 'service_type_code', 'category', 
             'primary_practitioner', 'max_participants', 'experience_level', 
@@ -234,7 +234,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
             'average_rating', 'total_reviews', 'total_bookings',
             'primary_image', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'public_uuid', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'public_uuid', 'slug', 'created_at', 'updated_at']
     
     def get_primary_image(self, obj):
         """Get primary image for the service"""
@@ -353,7 +353,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = [
-            'id', 'public_uuid', 'name', 'description', 'short_description', 'price', 'price_cents',
+            'id', 'public_uuid', 'name', 'slug', 'description', 'short_description', 'price', 'price_cents',
             'duration_minutes', 'service_type_id', 'category_id',
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
@@ -365,7 +365,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             'highlight_text', 'terms_conditions', 'additional_practitioner_ids',
             'child_service_configs', 'sessions'
         ]
-        read_only_fields = ['id', 'public_uuid', 'price_cents']
+        read_only_fields = ['id', 'public_uuid', 'price_cents', 'slug']
     
     def validate_price(self, value):
         """Ensure price is positive"""

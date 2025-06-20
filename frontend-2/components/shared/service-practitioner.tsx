@@ -92,7 +92,7 @@ export default function ServicePractitioner({ practitioner, variant = "compact" 
           size="sm"
           className={cn("px-2", variant === "compact" ? "text-xs" : "text-sm")}
         >
-          <Link href={`/practitioners/${practitioner.id}`}>View Full Profile</Link>
+          <Link href={`/practitioners/${practitioner.slug || practitioner.id}`}>View Full Profile</Link>
         </Button>
       </CardContent>
     </Card>

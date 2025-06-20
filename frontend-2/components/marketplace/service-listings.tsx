@@ -202,11 +202,13 @@ export default function ServiceListings({ query, serviceType, location, categori
 
   // Transform API data to component format
   const transformedServices = apiServices.map(service => ({
-    id: service.public_uuid || service.id, // Use public_uuid for URLs
+    id: service.public_uuid || service.id, // Keep for key prop
+    slug: service.slug, // Use slug for URLs
     title: service.name || service.title || 'Service',
     type: getServiceType(service.service_type_code || service.type),
     practitioner: {
       id: service.practitioner?.public_uuid || service.primary_practitioner?.public_uuid || service.practitioner?.id || service.primary_practitioner?.id,
+      slug: service.primary_practitioner?.slug || service.practitioner?.slug,
       name: service.practitioner?.display_name || service.primary_practitioner?.display_name || 'Practitioner',
       image: service.practitioner?.profile_image_url || service.primary_practitioner?.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
     },
@@ -303,20 +305,20 @@ export default function ServiceListings({ query, serviceType, location, categori
     )
   }
 
-  // Generate proper href based on service type using public_uuid
+  // Generate proper href based on service type using slug
   const getServiceHref = (service: any) => {
-    const id = service.id // Now uses public_uuid
+    const slug = service.slug || service.id // Fallback to id if no slug
     switch (service.type) {
       case "courses":
-        return `/courses/${id}`
+        return `/courses/${slug}`
       case "workshops":
-        return `/workshops/${id}`
+        return `/workshops/${slug}`
       case "one-on-one":
-        return `/sessions/${id}`
+        return `/sessions/${slug}`
       case "packages":
-        return `/packages/${id}`
+        return `/packages/${slug}`
       default:
-        return `/services/${id}`
+        return `/services/${slug}`
     }
   }
 

@@ -26,7 +26,7 @@ export default function CoursePractitioners({ practitioners }: CoursePractitione
                 />
               </Avatar>
               <div>
-                <Link href={`/practitioners/${practitioner.id}`} className="font-medium text-primary hover:underline">
+                <Link href={`/practitioners/${practitioner.slug || practitioner.id}`} className="font-medium text-primary hover:underline">
                   {practitioner.name}
                 </Link>
                 <p className="text-sm text-muted-foreground">{practitioner.title}</p>

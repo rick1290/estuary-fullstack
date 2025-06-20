@@ -203,7 +203,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
             {service.primary_practitioner.bio || "Experienced practitioner specializing in this field."}
           </p>
           <Button variant="outline" asChild>
-            <Link href={`/practitioners/${service.primary_practitioner.id}`}>View Full Profile</Link>
+            <Link href={`/practitioners/${service.primary_practitioner.slug || service.primary_practitioner.id}`}>View Full Profile</Link>
           </Button>
         </CardContent>
       </Card>

@@ -66,7 +66,8 @@ from .filters import PractitionerFilter
     educations=extend_schema(tags=['Practitioners']),
     education_detail=extend_schema(tags=['Practitioners']),
     questions=extend_schema(tags=['Practitioners']),
-    question_detail=extend_schema(tags=['Practitioners'])
+    question_detail=extend_schema(tags=['Practitioners']),
+    by_slug=extend_schema(tags=['Practitioners'])
 )
 class PractitionerViewSet(viewsets.ModelViewSet):
     """
@@ -137,6 +138,19 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+    
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get practitioner by slug"""
+        try:
+            practitioner = self.get_queryset().get(slug=slug)
+            serializer = PractitionerDetailSerializer(practitioner, context={'request': request})
+            return Response(serializer.data)
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "Practitioner not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_profile(self, request):

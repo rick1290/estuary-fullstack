@@ -37,6 +37,7 @@ class Practitioner(PublicModel):
     # Professional details
     display_name = models.CharField(max_length=255, blank=True, null=True, 
                                   help_text="Professional display name shown to clients")
+    slug = models.SlugField(max_length=255, unique=True, help_text="URL-friendly version of name")
     professional_title = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Professional title/designation")
     bio = models.TextField(blank=True, null=True, max_length=2000,
@@ -82,6 +83,7 @@ class Practitioner(PublicModel):
         verbose_name = 'Practitioner'
         verbose_name_plural = 'Practitioners'
         indexes = [
+            models.Index(fields=['slug']),
             models.Index(fields=['is_verified', 'practitioner_status']),
             models.Index(fields=['featured']),
             models.Index(fields=['practitioner_status']),
@@ -159,6 +161,25 @@ class Practitioner(PublicModel):
         self.is_onboarded = True
         self.onboarding_completed_at = timezone.now()
         self.save(update_fields=['is_onboarded', 'onboarding_completed_at'])
+    
+    def save(self, *args, **kwargs):
+        """Override save to auto-generate slug if not provided."""
+        if not self.slug:
+            from django.utils.text import slugify
+            # Use display_name if available, otherwise use user's full name
+            if self.display_name:
+                base_slug = slugify(self.display_name)
+            else:
+                base_slug = slugify(self.user.full_name)
+            
+            slug = base_slug
+            counter = 1
+            # Ensure slug is unique
+            while Practitioner.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class SchedulePreference(BaseModel):

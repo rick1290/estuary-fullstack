@@ -220,7 +220,7 @@ export default function SessionDetails({ session, service }: SessionDetailsProps
                 variant="text"
                 startIcon={<PersonIcon />}
                 component={Link}
-                href={`/practitioners/${service.primary_practitioner.id}`}
+                href={`/practitioners/${service.primary_practitioner.slug || service.primary_practitioner.id}`}
                 fullWidth
               >
                 View Profile

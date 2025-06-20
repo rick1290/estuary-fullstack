@@ -165,7 +165,7 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
       {/* Footer */}
       <div className="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
         <Button asChild className="w-full shadow-sm">
-          <Link href={`/practitioners/${practitioner.id}`}>View Profile</Link>
+          <Link href={`/practitioners/${practitioner.slug || practitioner.id}`}>View Profile</Link>
         </Button>
       </div>
     </Card>

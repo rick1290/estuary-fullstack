@@ -138,6 +138,7 @@ class Service(PublicModel):
     """
     # Basic service information
     name = models.CharField(max_length=255, help_text="Service name")
+    slug = models.SlugField(max_length=255, unique=True, help_text="URL-friendly version of name")
     description = models.TextField(blank=True, null=True, help_text="Detailed service description")
     short_description = models.CharField(max_length=500, blank=True, null=True, 
                                        help_text="Brief description for listings")
@@ -282,6 +283,7 @@ class Service(PublicModel):
         ordering = ['-created_at']
         # Using Django's default naming convention (services_service)
         indexes = [
+            models.Index(fields=['slug']),
             models.Index(fields=['service_type', 'is_active']),
             models.Index(fields=['primary_practitioner', 'is_active']),
             models.Index(fields=['category', 'is_active']),
@@ -515,6 +517,20 @@ class Service(PublicModel):
             return False
             
         return True
+    
+    def save(self, *args, **kwargs):
+        """Override save to auto-generate slug if not provided."""
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            # Ensure slug is unique
+            while Service.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class ServicePractitioner(models.Model):

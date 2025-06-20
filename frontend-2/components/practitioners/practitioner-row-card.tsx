@@ -188,7 +188,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
               
               {/* View Profile Button */}
               <div className="flex justify-end">
-                <Link href={`/practitioners/${practitioner.public_uuid || practitioner.id}`}>
+                <Link href={`/practitioners/${practitioner.slug || practitioner.public_uuid || practitioner.id}`}>
                   <Button className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl px-6 shadow-lg">
                     View Profile
                   </Button>

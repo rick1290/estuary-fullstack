@@ -77,6 +77,7 @@ export default function FeaturedPractitionersSection() {
   // Transform API data to component format
   const transformedPractitioners = apiPractitioners.map(practitioner => ({
     id: practitioner.public_uuid || practitioner.id,
+    slug: practitioner.slug,
     name: practitioner.display_name || practitioner.full_name || 'Practitioner',
     specialty: practitioner.primary_specialty || practitioner.title || 'Wellness Practitioner',
     location: practitioner.location || 'Location TBD',
@@ -154,7 +155,7 @@ export default function FeaturedPractitionersSection() {
                 style={{animationDelay: `${index * 0.1}s`}}
               >
                 <Link
-                  href={`/practitioners/${practitioner.id}`}
+                  href={`/practitioners/${practitioner.slug || practitioner.id}`}
                   className="group block w-full transform transition-all duration-300 hover:scale-105"
                 >
                   <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
