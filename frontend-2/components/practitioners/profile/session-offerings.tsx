@@ -91,9 +91,9 @@ export default function SessionOfferings({
                     {/* Replace category badge with service type badge */}
                     <Badge
                       className="mb-3 capitalize"
-                      variant={getServiceTypeConfig(session.service_type.name).variant}
+                      variant={getServiceTypeConfig(session.service_type_code || session.service_type?.name).variant}
                     >
-                      {session.service_type.name}
+                      {session.service_type_display || session.service_type_code || session.service_type?.name}
                     </Badge>
 
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
@@ -148,10 +149,12 @@ This course is perfect for anyone interested in improving their health through b
   ],
 }
 
-export default function CourseDetailsPage({ params }: { params: { id: string } }) {
+export default function CourseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
+  
   // Fetch course data from API using public_uuid
   const { data: serviceData, isLoading, error } = useQuery({
-    ...publicServicesRetrieveOptions({ path: { public_uuid: params.id } }),
+    ...publicServicesRetrieveOptions({ path: { public_uuid: id } }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
@@ -490,7 +493,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                       <div>
                         <p className="text-sm font-semibold text-olive-800 mb-3">What we'll explore:</p>
                         <div className="grid gap-2">
-                          {session.agenda.map((item, i) => (
+                          {(session.agenda || []).map((item, i) => (
                             <div key={i} className="flex gap-3">
                               <div className="w-1.5 h-1.5 rounded-full bg-terracotta-400 mt-2 flex-shrink-0" />
                               <span className="text-olive-600">{item}</span>

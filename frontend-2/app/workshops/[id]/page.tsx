@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles, AlertCircle } from "lucide-react"
@@ -447,10 +448,12 @@ const getWorkshopById = (id: string) => {
   return workshops.find((workshop) => workshop.id === id)
 }
 
-export default function WorkshopPage({ params }: { params: { id: string } }) {
+export default function WorkshopPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
+  
   // Fetch workshop data from API using public_uuid
   const { data: serviceData, isLoading, error } = useQuery({
-    ...publicServicesRetrieveOptions({ path: { public_uuid: params.id } }),
+    ...publicServicesRetrieveOptions({ path: { public_uuid: id } }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 

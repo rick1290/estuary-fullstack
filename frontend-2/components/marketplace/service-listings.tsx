@@ -204,7 +204,7 @@ export default function ServiceListings({ query, serviceType, location, categori
   const transformedServices = apiServices.map(service => ({
     id: service.public_uuid || service.id, // Use public_uuid for URLs
     title: service.name || service.title || 'Service',
-    type: getServiceType(service.service_type?.name || service.type),
+    type: getServiceType(service.service_type_code || service.type),
     practitioner: {
       id: service.practitioner?.public_uuid || service.primary_practitioner?.public_uuid || service.practitioner?.id || service.primary_practitioner?.id,
       name: service.practitioner?.display_name || service.primary_practitioner?.display_name || 'Practitioner',

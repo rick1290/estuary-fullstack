@@ -72,11 +72,11 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
   const getServicesByType = (type: string) => {
     // First try to get from practitioner data
     if (practitioner.services_by_type && practitioner.services_by_type.length > 0) {
-      return practitioner.services_by_type.find((group) => group.service_type.name === type)?.services || []
+      return practitioner.services_by_type.find((group) => (group.service_type.code || group.service_type.name) === type)?.services || []
     }
 
     // Fall back to mock data if practitioner data is empty
-    return mockServiceData.services_by_type.find((group) => group.service_type.name === type)?.services || []
+    return mockServiceData.services_by_type.find((group) => (group.service_type.code || group.service_type.name) === type)?.services || []
   }
 
   // Get upcoming sessions across all services

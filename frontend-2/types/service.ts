@@ -81,6 +81,8 @@ export interface Service {
   price: string
   duration: number
   service_type: ServiceType
+  service_type_code: string
+  service_type_display: string
   category: Category
   is_active: boolean
   is_featured: boolean

@@ -205,7 +205,7 @@ export default function UserBookingsList() {
         location: booking.location_type === 'virtual' ? 'Virtual' : 'In-person',
         address: booking.address,
         status: booking.status,
-        serviceType: booking.service?.service_type?.name || booking.service_type || 'session',
+        serviceType: booking.service?.service_type_code || booking.service_type || 'session',
         description: booking.service?.description || booking.description || '',
         price: booking.total_amount ? `$${(booking.total_amount / 100).toFixed(2)}` : undefined,
         bookingDate: booking.created_at,

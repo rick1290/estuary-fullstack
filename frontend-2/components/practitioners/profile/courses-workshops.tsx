@@ -84,11 +84,11 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
             {/* Card Header with Gradient */}
             <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-6 pb-8">
               <Badge
-                variant={item.service_type.name === "course" ? "terracotta" : "sage"}
+                variant={(item.service_type_code || item.service_type?.name) === "course" ? "terracotta" : "sage"}
                 className="mb-3"
               >
                 <Sparkles className="h-3 w-3 mr-1" strokeWidth="1.5" />
-                {item.service_type.name}
+                {item.service_type_display || item.service_type_code || item.service_type?.name}
               </Badge>
 
               <h3 className="font-semibold text-xl text-olive-900 mb-2 line-clamp-2">{item.name}</h3>
@@ -118,8 +118,8 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
                 <p className="text-2xl font-bold text-olive-900">{item.price ? item.price : "Free"}</p>
 
                 <Button asChild size="sm" className="shadow-md hover:shadow-lg">
-                  <Link href={`/${item.service_type.name}s/${item.id}`}>
-                    {item.service_type.name === "course" ? "Start Journey" : "Reserve Spot"}
+                  <Link href={`/${(item.service_type_code || item.service_type?.name)}s/${item.id}`}>
+                    {(item.service_type_code || item.service_type?.name) === "course" ? "Start Journey" : "Reserve Spot"}
                   </Link>
                 </Button>
               </div>

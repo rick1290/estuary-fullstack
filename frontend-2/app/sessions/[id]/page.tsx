@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
@@ -113,10 +114,12 @@ Each session includes personalized guidance, feedback on your technique, and rec
   },
 }
 
-export default function SessionDetailsPage({ params }: { params: { id: string } }) {
+export default function SessionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
+  
   // Fetch session data from API using public_uuid
   const { data: serviceData, isLoading, error } = useQuery({
-    ...publicServicesRetrieveOptions({ path: { public_uuid: params.id } }),
+    ...publicServicesRetrieveOptions({ path: { public_uuid: id } }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 

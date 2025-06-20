@@ -187,7 +187,7 @@ export default function SessionDetails({ session, service }: SessionDetailsProps
                 href={`/services/${service.id}/book`}
                 sx={{ mt: 2 }}
               >
-                Book Full {service.service_type.name}
+                Book Full {service.service_type_display || service.service_type_code || 'Service'}
               </Button>
             </CardContent>
           </Card>

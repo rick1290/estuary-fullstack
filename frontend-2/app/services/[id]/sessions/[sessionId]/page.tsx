@@ -45,7 +45,7 @@ export default async function SessionPage({
 
       <Box sx={{ mb: 3 }}>
         <Button startIcon={<ArrowBackIcon />} component={Link} href={`/services/${service.id}`} variant="text">
-          Back to {service.service_type.name}
+          Back to {service.service_type_display || service.service_type_code || service.service_type?.name}
         </Button>
       </Box>
 
