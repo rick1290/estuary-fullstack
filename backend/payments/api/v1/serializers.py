@@ -117,6 +117,21 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
 
+class DirectPaymentSerializer(serializers.Serializer):
+    """Serializer for direct payment with saved payment method"""
+    service_id = serializers.UUIDField()
+    payment_method_id = serializers.IntegerField()  # ID of saved PaymentMethod
+    apply_credits = serializers.BooleanField(default=True)
+    special_requests = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_payment_method_id(self, value):
+        """Validate payment method belongs to user"""
+        user = self.context['request'].user
+        if not PaymentMethod.objects.filter(id=value, user=user, is_active=True).exists():
+            raise serializers.ValidationError("Invalid payment method")
+        return value
+
+
 class CheckoutSessionSerializer(serializers.Serializer):
     """Serializer for creating Stripe checkout sessions"""
     order_type = serializers.ChoiceField(choices=Order.ORDER_TYPE_CHOICES)

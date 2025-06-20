@@ -23,7 +23,7 @@ from payments.models import (
 )
 from users.models import User
 from practitioners.models import Practitioner
-from services.models import ServiceType
+from services.models import Service, ServiceType
 from bookings.models import Booking
 from integrations.stripe.client import StripeClient
 
@@ -31,7 +31,7 @@ from .serializers import (
     # Payment Methods
     PaymentMethodSerializer, PaymentMethodCreateSerializer,
     # Orders
-    OrderSerializer, CheckoutSessionSerializer,
+    OrderSerializer, CheckoutSessionSerializer, DirectPaymentSerializer,
     # Credits
     UserCreditTransactionSerializer, UserCreditBalanceSerializer,
     CreditPurchaseSerializer, CreditTransferSerializer,
@@ -155,7 +155,8 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @extend_schema_view(
-    create_session=extend_schema(tags=['Payments'])
+    create_session=extend_schema(tags=['Payments']),
+    direct_payment=extend_schema(tags=['Payments'])
 )
 class CheckoutViewSet(viewsets.GenericViewSet):
     """
@@ -264,6 +265,223 @@ class CheckoutViewSet(viewsets.GenericViewSet):
             'session_id': session.id,
             'url': session.url
         })
+    
+    @action(detail=False, methods=['post'])
+    def direct_payment(self, request):
+        """Process direct payment with saved payment method"""
+        serializer = DirectPaymentSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        
+        user = request.user
+        data = serializer.validated_data
+        
+        # Get service and payment method
+        service = get_object_or_404(Service, public_uuid=data['service_id'])
+        payment_method = get_object_or_404(PaymentMethod, id=data['payment_method_id'], user=user)
+        
+        # Calculate amounts
+        service_price_cents = int(service.price * 100)
+        credits_to_apply_cents = 0
+        
+        # Apply credits if requested
+        if data.get('apply_credits', True):
+            user_balance = UserCreditBalance.objects.filter(user=user).first()
+            if user_balance and user_balance.balance_cents > 0:
+                credits_to_apply_cents = min(user_balance.balance_cents, service_price_cents)
+        
+        amount_to_charge_cents = service_price_cents - credits_to_apply_cents
+        
+        # Create order record
+        order = Order.objects.create(
+            user=user,
+            payment_method='stripe',
+            stripe_payment_method_id=payment_method.stripe_payment_method_id,
+            subtotal_amount_cents=service_price_cents,
+            credits_applied_cents=credits_to_apply_cents,
+            total_amount_cents=amount_to_charge_cents,
+            status='pending',
+            order_type='direct',
+            service=service,
+            practitioner=service.primary_practitioner,
+            metadata={
+                'special_requests': data.get('special_requests', ''),
+                'payment_method_id': str(payment_method.id)
+            }
+        )
+        
+        try:
+            if amount_to_charge_cents > 0:
+                # Initialize Stripe and create payment intent
+                stripe_client = StripeClient()
+                stripe_client.initialize()
+                
+                # Ensure user has Stripe customer
+                if not hasattr(user, 'payment_profile') or not user.payment_profile.stripe_customer_id:
+                    from users.models import UserPaymentProfile
+                    profile, created = UserPaymentProfile.objects.get_or_create(user=user)
+                    if not profile.stripe_customer_id:
+                        customer = stripe_client.create_customer(user)
+                        profile.stripe_customer_id = customer.id
+                        profile.save()
+                
+                # Create and confirm payment intent
+                payment_intent = stripe.PaymentIntent.create(
+                    amount=amount_to_charge_cents,
+                    currency='usd',
+                    customer=user.payment_profile.stripe_customer_id,
+                    payment_method=payment_method.stripe_payment_method_id,
+                    payment_method_types=['card'],  # Only accept card payments
+                    confirm=True,
+                    automatic_payment_methods={
+                        'enabled': False  # Don't use automatic payment methods
+                    },
+                    metadata={
+                        'order_id': str(order.id),
+                        'user_id': str(user.id),
+                        'service_id': str(service.id),
+                        'practitioner_id': str(service.primary_practitioner.id) if service.primary_practitioner else None
+                    }
+                )
+                
+                order.stripe_payment_intent_id = payment_intent.id
+                order.save()
+                
+                if payment_intent.status == 'succeeded':
+                    # Payment successful
+                    order.status = 'completed'
+                    order.save()
+                    
+                    # Deduct credits if used
+                    if credits_to_apply_cents > 0:
+                        UserCreditTransaction.objects.create(
+                            user=user,
+                            amount_cents=-credits_to_apply_cents,
+                            transaction_type='usage',
+                            service=service,
+                            practitioner=service.primary_practitioner,
+                            order=order,
+                            description=f"Applied to {service.name}"
+                        )
+                    
+                    # Create booking record
+                    from bookings.models import Booking
+                    booking = Booking.objects.create(
+                        user=user,
+                        service=service,
+                        practitioner=service.primary_practitioner,
+                        price_charged_cents=amount_to_charge_cents + credits_to_apply_cents,
+                        discount_amount_cents=credits_to_apply_cents,
+                        final_amount_cents=amount_to_charge_cents,
+                        status='confirmed',
+                        payment_status='paid',
+                        client_notes=data.get('special_requests', ''),
+                        start_time=timezone.now(),  # TODO: Get actual booking time from frontend
+                        end_time=timezone.now() + timezone.timedelta(hours=1),  # TODO: Get actual duration
+                        service_name_snapshot=service.name,
+                        service_description_snapshot=service.description or '',
+                        practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
+                        confirmed_at=timezone.now()
+                    )
+                    
+                    # Create earnings for practitioner
+                    if service.primary_practitioner:
+                        from payments.services import CommissionCalculator
+                        calculator = CommissionCalculator()
+                        
+                        # Get commission rate
+                        commission_rate = calculator.get_commission_rate(
+                            practitioner=service.primary_practitioner,
+                            service_type=service.service_type
+                        )
+                        
+                        # Calculate commission and net amounts
+                        commission_amount_cents = int((commission_rate / 100) * service_price_cents)
+                        net_amount_cents = service_price_cents - commission_amount_cents
+                        
+                        EarningsTransaction.objects.create(
+                            practitioner=service.primary_practitioner,
+                            booking=booking,
+                            gross_amount_cents=service_price_cents,
+                            commission_rate=commission_rate,
+                            commission_amount_cents=commission_amount_cents,
+                            net_amount_cents=net_amount_cents,
+                            status='pending',
+                            available_after=timezone.now() + timezone.timedelta(hours=48),
+                            description=f"Earnings from booking for {service.name}"
+                        )
+                    
+                    return Response({
+                        'status': 'success',
+                        'order_id': str(order.id),
+                        'booking_id': str(booking.id) if booking else None,
+                        'payment_intent_id': payment_intent.id,
+                        'amount_charged': amount_to_charge_cents / 100,
+                        'credits_applied': credits_to_apply_cents / 100
+                    })
+                else:
+                    # Payment requires additional action
+                    order.status = 'processing'
+                    order.save()
+                    return Response({
+                        'status': 'requires_action',
+                        'order_id': str(order.id),
+                        'payment_intent_id': payment_intent.id,
+                        'client_secret': payment_intent.client_secret
+                    })
+            else:
+                # No payment needed, only credits used
+                order.status = 'completed'
+                order.save()
+                
+                # Deduct credits
+                UserCreditTransaction.objects.create(
+                    user=user,
+                    amount_cents=-credits_to_apply_cents,
+                    transaction_type='usage',
+                    service=service,
+                    practitioner=service.primary_practitioner,
+                    order=order,
+                    description=f"Applied to {service.name}"
+                )
+                
+                # Create booking
+                from bookings.models import Booking
+                booking = Booking.objects.create(
+                    user=user,
+                    service=service,
+                    practitioner=service.primary_practitioner,
+                    price_charged_cents=credits_to_apply_cents,
+                    discount_amount_cents=0,
+                    final_amount_cents=0,  # Paid entirely with credits
+                    status='confirmed',
+                    payment_status='paid',
+                    client_notes=data.get('special_requests', ''),
+                    start_time=timezone.now(),  # TODO: Get actual booking time from frontend
+                    end_time=timezone.now() + timezone.timedelta(hours=1),  # TODO: Get actual duration
+                    service_name_snapshot=service.name,
+                    service_description_snapshot=service.description or '',
+                    practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
+                    confirmed_at=timezone.now()
+                )
+                
+                return Response({
+                    'status': 'success',
+                    'order_id': str(order.id),
+                    'booking_id': str(booking.id),
+                    'amount_charged': 0,
+                    'credits_applied': credits_to_apply_cents / 100
+                })
+                
+        except Exception as e:
+            # Payment failed
+            order.status = 'failed'
+            order.save()
+            logger.error(f"Payment failed for order {order.id}: {str(e)}")
+            return Response({
+                'status': 'error',
+                'message': 'Payment processing failed',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(

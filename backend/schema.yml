@@ -52,6 +52,74 @@ paths:
           description: Validation error
         '401':
           description: Not authenticated
+  /api/v1/auth/favorites/:
+    get:
+      operationId: user_favorites
+      description: Get list of practitioners favorited by the authenticated user
+      summary: Get user favorite practitioners
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: List of favorite practitioners
+        '401':
+          description: Not authenticated
+  /api/v1/auth/favorites/{practitioner_id}/remove/:
+    delete:
+      operationId: user_remove_favorite
+      description: Remove a practitioner from the authenticated user favorites
+      summary: Remove practitioner from favorites
+      parameters:
+      - in: path
+        name: practitioner_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: Practitioner removed from favorites
+        '401':
+          description: Not authenticated
+        '404':
+          description: Favorite not found
+  /api/v1/auth/favorites/add/:
+    post:
+      operationId: user_add_favorite
+      description: Add a practitioner to the authenticated user favorites
+      summary: Add practitioner to favorites
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                practitioner_id:
+                  type: integer
+                  description: ID of the practitioner to favorite
+              required:
+              - practitioner_id
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Practitioner added to favorites
+        '400':
+          description: Validation error
+        '401':
+          description: Not authenticated
+        '404':
+          description: Practitioner not found
   /api/v1/auth/login/:
     post:
       operationId: auth_login
@@ -202,6 +270,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserRegistration'
           description: ''
+  /api/v1/auth/stats/:
+    get:
+      operationId: user_stats
+      description: Get statistics for the authenticated user including bookings, favorites,
+        and activity
+      summary: Get user statistics
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: User statistics
+        '401':
+          description: Not authenticated
   /api/v1/auth/token/refresh/:
     post:
       operationId: auth_refresh
@@ -1137,6 +1221,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/CheckoutSession'
           description: ''
+  /api/v1/checkout/direct_payment/:
+    post:
+      operationId: checkout_direct_payment_create
+      description: Process direct payment with saved payment method
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+          description: ''
   /api/v1/cities/:
     get:
       operationId: cities_list
@@ -1285,6 +1391,252 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/conversations/:
+    get:
+      operationId: conversations_list
+      description: Get all conversations for the authenticated user
+      summary: List conversations
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: unread_only
+        schema:
+          type: boolean
+        description: Filter to show only conversations with unread messages
+      tags:
+      - Messaging
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConversationListList'
+          description: ''
+    post:
+      operationId: conversations_create
+      description: Create a new conversation with another user
+      summary: Start new conversation
+      tags:
+      - Messaging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleConversationCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleConversationCreate'
+          description: ''
+  /api/v1/conversations/{id}/:
+    get:
+      operationId: conversations_retrieve
+      description: Get details of a specific conversation including recent messages
+      summary: Get conversation details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Messaging
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+          description: ''
+    put:
+      operationId: conversations_update
+      description: ViewSet for managing conversations and messages
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - conversations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationDetailRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+          description: ''
+    patch:
+      operationId: conversations_partial_update
+      description: ViewSet for managing conversations and messages
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - conversations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConversationDetailRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+          description: ''
+    delete:
+      operationId: conversations_destroy
+      description: ViewSet for managing conversations and messages
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - conversations
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/conversations/{id}/mark_read/:
+    post:
+      operationId: conversations_mark_read_create
+      description: Mark all messages in a conversation as read
+      summary: Mark messages as read
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Messaging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationDetailRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+          description: ''
+  /api/v1/conversations/{id}/messages/:
+    get:
+      operationId: conversations_messages_retrieve
+      description: Get paginated messages for a conversation
+      summary: Get conversation messages
+      parameters:
+      - in: query
+        name: before_id
+        schema:
+          type: integer
+        description: Get messages before this message ID (for pagination)
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Messaging
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+  /api/v1/conversations/{id}/send_message/:
+    post:
+      operationId: conversations_send_message_create
+      description: Send a new message in a conversation
+      summary: Send message
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Messaging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
   /api/v1/countries/:
     get:
       operationId: countries_list
@@ -2500,6 +2852,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Media'
+          description: ''
+  /api/v1/messages/unread_count/:
+    get:
+      operationId: messages_unread_count_retrieve
+      description: Get total count of unread messages across all conversations
+      summary: Get unread message count
+      tags:
+      - Messaging
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/modalities/:
+    get:
+      operationId: modalities_list
+      description: ViewSet for viewing modalities
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Common
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedModalityList'
+          description: ''
+  /api/v1/modalities/{id}/:
+    get:
+      operationId: modalities_retrieve
+      description: ViewSet for viewing modalities
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Modality.
+        required: true
+      tags:
+      - Common
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modality'
           description: ''
   /api/v1/notification-settings/:
     get:
@@ -4608,6 +5039,222 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/practitioners/{id}/certifications/:
+    get:
+      operationId: practitioners_certifications_retrieve
+      description: |-
+        Manage practitioner's certifications.
+        GET: List all certifications for the practitioner
+        POST: Add a new certification to the practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    post:
+      operationId: practitioners_certifications_create
+      description: |-
+        Manage practitioner's certifications.
+        GET: List all certifications for the practitioner
+        POST: Add a new certification to the practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/{id}/certifications/{cert_id}/:
+    put:
+      operationId: practitioners_certifications_update
+      description: |-
+        Update or delete a specific certification.
+        PUT: Update certification details
+        DELETE: Remove certification from practitioner
+      parameters:
+      - in: path
+        name: cert_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    delete:
+      operationId: practitioners_certifications_destroy
+      description: |-
+        Update or delete a specific certification.
+        PUT: Update certification details
+        DELETE: Remove certification from practitioner
+      parameters:
+      - in: path
+        name: cert_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/practitioners/{id}/educations/:
+    get:
+      operationId: practitioners_educations_retrieve
+      description: |-
+        Manage practitioner's education entries.
+        GET: List all education entries for the practitioner
+        POST: Add a new education entry to the practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    post:
+      operationId: practitioners_educations_create
+      description: |-
+        Manage practitioner's education entries.
+        GET: List all education entries for the practitioner
+        POST: Add a new education entry to the practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/{id}/educations/{edu_id}/:
+    put:
+      operationId: practitioners_educations_update
+      description: |-
+        Update or delete a specific education entry.
+        PUT: Update education details
+        DELETE: Remove education from practitioner
+      parameters:
+      - in: path
+        name: edu_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    delete:
+      operationId: practitioners_educations_destroy
+      description: |-
+        Update or delete a specific education entry.
+        PUT: Update education details
+        DELETE: Remove education from practitioner
+      parameters:
+      - in: path
+        name: edu_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/practitioners/{id}/onboarding_progress/:
     get:
       operationId: practitioners_onboarding_progress_retrieve
@@ -4631,6 +5278,114 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
           description: ''
+  /api/v1/practitioners/{id}/questions/:
+    get:
+      operationId: practitioners_questions_retrieve
+      description: |-
+        Manage practitioner's questions.
+        GET: List all questions for the practitioner
+        POST: Add a new question to the practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    post:
+      operationId: practitioners_questions_create
+      description: |-
+        Manage practitioner's questions.
+        GET: List all questions for the practitioner
+        POST: Add a new question to the practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/{id}/questions/{question_id}/:
+    put:
+      operationId: practitioners_questions_update
+      description: |-
+        Update or delete a specific question.
+        PUT: Update question details
+        DELETE: Remove question from practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      - in: path
+        name: question_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    delete:
+      operationId: practitioners_questions_destroy
+      description: |-
+        Update or delete a specific question.
+        PUT: Update question details
+        DELETE: Remove question from practitioner
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Practitioner.
+        required: true
+      - in: path
+        name: question_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/practitioners/{id}/upload_document/:
     post:
       operationId: practitioners_upload_document_create
@@ -4677,6 +5432,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
           description: ''
+  /api/v1/practitioners/analytics/:
+    get:
+      operationId: practitioners_analytics_retrieve
+      description: Get analytics data for the practitioner dashboard.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
   /api/v1/practitioners/apply/:
     post:
       operationId: practitioners_apply_create
@@ -4698,6 +5469,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerApplication'
           description: ''
+  /api/v1/practitioners/balance/:
+    get:
+      operationId: practitioners_balance_retrieve
+      description: Get practitioner's current balance and commission information.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/clients/:
+    get:
+      operationId: practitioners_clients_retrieve
+      description: |-
+        Get list of clients who have booked with the practitioner.
+        Returns unique clients with booking statistics.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/earnings/:
+    get:
+      operationId: practitioners_earnings_retrieve
+      description: |-
+        Get practitioner earnings with filtering options.
+        Supports date range filtering and grouping by period.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
   /api/v1/practitioners/my_profile/:
     get:
       operationId: practitioners_my_profile_retrieve
@@ -4713,6 +5536,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PractitionerPrivate'
+          description: ''
+  /api/v1/practitioners/payouts/:
+    get:
+      operationId: practitioners_payouts_retrieve
+      description: Get practitioner's payout history.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/request_payout/:
+    post:
+      operationId: practitioners_request_payout_create
+      description: Request a payout of available balance.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
           description: ''
   /api/v1/practitioners/search/:
     get:
@@ -4731,6 +5586,439 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/stats/:
+    get:
+      operationId: practitioners_stats_retrieve
+      description: |-
+        Get dashboard statistics for the practitioner.
+        Returns bookings, revenue, clients, and rating stats.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/practitioners/transactions/:
+    get:
+      operationId: practitioners_transactions_retrieve
+      description: Get practitioner transactions with extensive filtering.
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/public-practitioners/:
+    get:
+      operationId: public_practitioners_list
+      description: |-
+        Public-facing ViewSet for practitioners using public_uuid for lookup.
+        Used by marketing pages and public practitioner discovery.
+        Read-only access with public-friendly URLs.
+      parameters:
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+        description: Available Now
+      - in: query
+        name: city
+        schema:
+          type: string
+        description: City
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: Country
+      - in: query
+        name: featured
+        schema:
+          type: boolean
+        description: Featured Only
+      - in: query
+        name: is_verified
+        schema:
+          type: boolean
+        description: Is Verified
+      - in: query
+        name: language
+        schema:
+          type: string
+        description: Language Code
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          Service Location Type
+
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_experience
+        schema:
+          type: integer
+        description: Maximum Years of Experience
+      - in: query
+        name: max_price
+        schema:
+          type: number
+        description: Maximum Price
+      - in: query
+        name: min_experience
+        schema:
+          type: integer
+        description: Minimum Years of Experience
+      - in: query
+        name: min_price
+        schema:
+          type: number
+        description: Minimum Price
+      - in: query
+        name: modality
+        schema:
+          type: integer
+        description: Modality ID
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_status
+        schema:
+          type: string
+          enum:
+          - active
+          - inactive
+          - pending
+          - rejected
+          - suspended
+          - vacation
+        description: |-
+          Practitioner Status
+
+          * `active` - Active
+          * `inactive` - Inactive
+          * `vacation` - On Vacation
+          * `pending` - Pending Approval
+          * `suspended` - Suspended
+          * `rejected` - Rejected
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_category
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Service Category
+        explode: true
+        style: form
+      - in: query
+        name: service_type
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Service Type
+        explode: true
+        style: form
+      - in: query
+        name: specialization
+        schema:
+          type: integer
+        description: Specialization ID
+      - in: query
+        name: state
+        schema:
+          type: string
+        description: State
+      - in: query
+        name: style
+        schema:
+          type: integer
+        description: Style ID
+      - in: query
+        name: topic
+        schema:
+          type: integer
+        description: Topic ID
+      tags:
+      - Public Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPractitionerListList'
+          description: ''
+  /api/v1/public-practitioners/{public_uuid}/:
+    get:
+      operationId: public_practitioners_retrieve
+      description: |-
+        Public-facing ViewSet for practitioners using public_uuid for lookup.
+        Used by marketing pages and public practitioner discovery.
+        Read-only access with public-friendly URLs.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Public Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+  /api/v1/public-services/:
+    get:
+      operationId: public_services_list
+      description: |-
+        Public-facing ViewSet for services using public_uuid for lookup.
+        Used by marketing pages and public service discovery.
+        Read-only access with public-friendly URLs.
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Public Services
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceDetailList'
+          description: ''
+  /api/v1/public-services/{public_uuid}/:
+    get:
+      operationId: public_services_retrieve
+      description: |-
+        Public-facing ViewSet for services using public_uuid for lookup.
+        Used by marketing pages and public service discovery.
+        Read-only access with public-friendly URLs.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Public Services
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDetail'
           description: ''
   /api/v1/resources/:
     get:
@@ -6009,8 +7297,8 @@ paths:
     get:
       operationId: services_list
       description: |-
-        ViewSet for services.
-        Includes filtering, search, and special endpoints.
+        ViewSet for services - Internal CRUD operations using primary keys.
+        Used by practitioner dashboard and admin interfaces.
       parameters:
       - in: query
         name: age
@@ -6028,6 +7316,10 @@ paths:
         name: category_id
         schema:
           type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
       - in: query
         name: experience_level
         schema:
@@ -6174,8 +7466,8 @@ paths:
     post:
       operationId: services_create
       description: |-
-        ViewSet for services.
-        Includes filtering, search, and special endpoints.
+        ViewSet for services - Internal CRUD operations using primary keys.
+        Used by practitioner dashboard and admin interfaces.
       tags:
       - Services
       requestBody:
@@ -6198,8 +7490,8 @@ paths:
     get:
       operationId: services_retrieve
       description: |-
-        ViewSet for services.
-        Includes filtering, search, and special endpoints.
+        ViewSet for services - Internal CRUD operations using primary keys.
+        Used by practitioner dashboard and admin interfaces.
       parameters:
       - in: path
         name: id
@@ -6223,8 +7515,8 @@ paths:
     put:
       operationId: services_update
       description: |-
-        ViewSet for services.
-        Includes filtering, search, and special endpoints.
+        ViewSet for services - Internal CRUD operations using primary keys.
+        Used by practitioner dashboard and admin interfaces.
       parameters:
       - in: path
         name: id
@@ -6253,8 +7545,8 @@ paths:
     patch:
       operationId: services_partial_update
       description: |-
-        ViewSet for services.
-        Includes filtering, search, and special endpoints.
+        ViewSet for services - Internal CRUD operations using primary keys.
+        Used by practitioner dashboard and admin interfaces.
       parameters:
       - in: path
         name: id
@@ -6282,8 +7574,8 @@ paths:
     delete:
       operationId: services_destroy
       description: |-
-        ViewSet for services.
-        Includes filtering, search, and special endpoints.
+        ViewSet for services - Internal CRUD operations using primary keys.
+        Used by practitioner dashboard and admin interfaces.
       parameters:
       - in: path
         name: id
@@ -6478,6 +7770,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServiceDetail'
+          description: ''
+  /api/v1/specializations/:
+    get:
+      operationId: specializations_list
+      description: ViewSet for viewing specializations
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - specializations
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSpecializationList'
+          description: ''
+  /api/v1/specializations/{id}/:
+    get:
+      operationId: specializations_retrieve
+      description: ViewSet for viewing specializations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this specialize.
+        required: true
+      tags:
+      - specializations
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Specialization'
           description: ''
   /api/v1/states/:
     get:
@@ -7105,6 +8463,72 @@ paths:
               schema:
                 $ref: '#/components/schemas/Stream'
           description: ''
+  /api/v1/styles/:
+    get:
+      operationId: styles_list
+      description: ViewSet for viewing styles
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - styles
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStyleList'
+          description: ''
+  /api/v1/styles/{id}/:
+    get:
+      operationId: styles_retrieve
+      description: ViewSet for viewing styles
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this style.
+        required: true
+      tags:
+      - styles
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Style'
+          description: ''
   /api/v1/subscriptions/:
     get:
       operationId: subscriptions_list
@@ -7308,6 +8732,72 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerSubscription'
           description: ''
+  /api/v1/topics/:
+    get:
+      operationId: topics_list
+      description: ViewSet for viewing topics
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - topics
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopicList'
+          description: ''
+  /api/v1/topics/{id}/:
+    get:
+      operationId: topics_retrieve
+      description: ViewSet for viewing topics
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic.
+        required: true
+      tags:
+      - topics
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Topic'
+          description: ''
   /api/v1/zipcodes/:
     get:
       operationId: zipcodes_list
@@ -7498,6 +8988,42 @@ components:
         * `service` - Service
         * `practitioner` - Practitioner
         * `both` - Both
+    Attachment:
+      type: object
+      description: Serializer for message attachments.
+      properties:
+        id:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        url:
+          type: string
+          format: uri
+        filename:
+          type: string
+        size:
+          type: integer
+        mime_type:
+          type: string
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+        duration:
+          type: integer
+          nullable: true
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+      required:
+      - filename
+      - mime_type
+      - size
+      - type
+      - url
     AttachmentLevelEnum:
       enum:
       - service
@@ -7508,6 +9034,47 @@ components:
         * `service` - Service Default
         * `session` - Session Specific
         * `booking` - Booking Specific
+    AttachmentRequest:
+      type: object
+      description: Serializer for message attachments.
+      properties:
+        id:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        url:
+          type: string
+          format: uri
+          minLength: 1
+        filename:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+        mime_type:
+          type: string
+          minLength: 1
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          minLength: 1
+        duration:
+          type: integer
+          nullable: true
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+      required:
+      - filename
+      - mime_type
+      - size
+      - type
+      - url
     AvailabilityCheck:
       type: object
       description: Serializer for checking availability
@@ -7702,6 +9269,10 @@ components:
           format: uuid
           readOnly: true
           description: Public UUID for API exposure
+        user:
+          allOf:
+          - $ref: '#/components/schemas/BookingUser'
+          readOnly: true
         practitioner:
           allOf:
           - $ref: '#/components/schemas/BookingPractitioner'
@@ -8036,6 +9607,10 @@ components:
           type: string
           format: uuid
           description: Public UUID for API exposure
+        user:
+          allOf:
+          - $ref: '#/components/schemas/BookingUser'
+          readOnly: true
         practitioner:
           allOf:
           - $ref: '#/components/schemas/BookingPractitioner'
@@ -8391,6 +9966,29 @@ components:
           minLength: 1
           description: Timezone for this booking
           maxLength: 50
+    BookingUser:
+      type: object
+      description: Simplified user serializer for bookings
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        full_name:
+          type: string
+          readOnly: true
+        avatar_url:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Phone number in international format
     BrandEnum:
       enum:
       - visa
@@ -8630,7 +10228,7 @@ components:
         media_attachments:
           type: string
           readOnly: true
-        child_services:
+        child_relationships:
           type: string
           readOnly: true
         sessions:
@@ -9051,6 +10649,108 @@ components:
       required:
       - name
       - state
+    ConversationDetail:
+      type: object
+      description: Detailed serializer for conversations including messages.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        conversation_type:
+          $ref: '#/components/schemas/ConversationTypeEnum'
+        is_active:
+          type: boolean
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        participants:
+          type: string
+          readOnly: true
+        last_message:
+          type: string
+          readOnly: true
+        unread_count:
+          type: string
+          readOnly: true
+        related_booking:
+          type: integer
+          nullable: true
+        related_service:
+          type: integer
+          nullable: true
+        messages:
+          type: string
+          readOnly: true
+        typing_indicators:
+          type: string
+          readOnly: true
+    ConversationDetailRequest:
+      type: object
+      description: Detailed serializer for conversations including messages.
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        conversation_type:
+          $ref: '#/components/schemas/ConversationTypeEnum'
+        is_active:
+          type: boolean
+        is_archived:
+          type: boolean
+        related_booking:
+          type: integer
+          nullable: true
+        related_service:
+          type: integer
+          nullable: true
+    ConversationList:
+      type: object
+      description: Simplified serializer for conversation list.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        other_user:
+          type: string
+          readOnly: true
+        last_message:
+          type: string
+          readOnly: true
+        unread_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    ConversationTypeEnum:
+      enum:
+      - direct
+      - group
+      - booking
+      - service
+      - support
+      type: string
+      description: |-
+        * `direct` - Direct Message
+        * `group` - Group Conversation
+        * `booking` - Booking Related
+        * `service` - Service Related
+        * `support` - Support
     Country:
       type: object
       description: Serializer for Country model.
@@ -9835,6 +11535,71 @@ components:
       - format
       - url
       - version_type
+    Message:
+      type: object
+      description: Serializer for messages.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        conversation:
+          type: integer
+          readOnly: true
+        sender:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          readOnly: true
+        content:
+          type: string
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        edited_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_edited:
+          type: boolean
+          readOnly: true
+        is_deleted:
+          type: boolean
+          readOnly: true
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        receipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageStatus'
+          readOnly: true
+      required:
+      - content
+    MessageRequest:
+      type: object
+      description: Serializer for messages.
+      properties:
+        content:
+          type: string
+          minLength: 1
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+      required:
+      - content
     MessageResponse:
       type: object
       description: Generic message response serializer
@@ -9846,6 +11611,68 @@ components:
           default: true
       required:
       - message
+    MessageStatus:
+      type: object
+      description: Serializer for message delivery and read status.
+      properties:
+        message_id:
+          type: integer
+        user_id:
+          type: integer
+        delivered_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_read:
+          type: boolean
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - message_id
+      - user_id
+    MessageStatusRequest:
+      type: object
+      description: Serializer for message delivery and read status.
+      properties:
+        message_id:
+          type: integer
+        user_id:
+          type: integer
+        is_read:
+          type: boolean
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - message_id
+      - user_id
+    MessageTypeEnum:
+      enum:
+      - text
+      - image
+      - file
+      - video
+      - audio
+      - system
+      - link
+      - booking_request
+      - payment_request
+      - interactive
+      type: string
+      description: |-
+        * `text` - Text
+        * `image` - Image
+        * `file` - File
+        * `video` - Video
+        * `audio` - Audio
+        * `system` - System
+        * `link` - Link
+        * `booking_request` - Booking Request
+        * `payment_request` - Payment Request
+        * `interactive` - Interactive
     Modality:
       type: object
       description: Serializer for modalities
@@ -10432,7 +12259,7 @@ components:
         media_attachments:
           type: string
           readOnly: true
-        child_services:
+        child_relationships:
           type: string
           readOnly: true
         sessions:
@@ -10741,6 +12568,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/City'
+    PaginatedConversationListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationList'
     PaginatedCountryList:
       type: object
       required:
@@ -10833,6 +12683,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Media'
+    PaginatedModalityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
     PaginatedNotificationListList:
       type: object
       required:
@@ -11178,6 +13051,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceCategory'
+    PaginatedServiceDetailList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceDetail'
     PaginatedServiceListList:
       type: object
       required:
@@ -11247,6 +13143,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceSession'
+    PaginatedSpecializationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Specialization'
     PaginatedStateList:
       type: object
       required:
@@ -11339,6 +13258,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StreamSchedule'
+    PaginatedStyleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Style'
+    PaginatedTopicList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Topic'
     PaginatedZipCodeList:
       type: object
       required:
@@ -11590,6 +13555,25 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
+    PatchedConversationDetailRequest:
+      type: object
+      description: Detailed serializer for conversations including messages.
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        conversation_type:
+          $ref: '#/components/schemas/ConversationTypeEnum'
+        is_active:
+          type: boolean
+        is_archived:
+          type: boolean
+        related_booking:
+          type: integer
+          nullable: true
+        related_service:
+          type: integer
+          nullable: true
     PatchedEducationRequest:
       type: object
       description: Serializer for practitioner education
@@ -12783,6 +14767,13 @@ components:
             additionalProperties: {}
           description: List of dicts with child_service_id, quantity, discount_percentage,
             etc.
+        sessions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          writeOnly: true
+          description: List of session data for workshops/courses
     PatchedServiceResourceRequest:
       type: object
       description: Serializer for service resources
@@ -16929,6 +18920,13 @@ components:
             additionalProperties: {}
           description: List of dicts with child_service_id, quantity, discount_percentage,
             etc.
+        sessions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          writeOnly: true
+          description: List of session data for workshops/courses
       required:
       - duration_minutes
       - name
@@ -17153,7 +19151,7 @@ components:
         media_attachments:
           type: string
           readOnly: true
-        child_services:
+        child_relationships:
           type: string
           readOnly: true
         sessions:
@@ -17896,6 +19894,26 @@ components:
           minimum: 0
       required:
       - title
+    SimpleConversationCreate:
+      type: object
+      description: Simple serializer for creating direct conversations.
+      properties:
+        other_user_id:
+          type: integer
+        initial_message:
+          type: string
+      required:
+      - other_user_id
+    SimpleConversationCreateRequest:
+      type: object
+      description: Simple serializer for creating direct conversations.
+      properties:
+        other_user_id:
+          type: integer
+        initial_message:
+          type: string
+      required:
+      - other_user_id
     SimplePractitioner:
       type: object
       description: Simple practitioner serializer for nested responses
@@ -20344,6 +22362,18 @@ components:
         content:
           type: string
           nullable: true
+    TypeEnum:
+      enum:
+      - image
+      - file
+      - video
+      - audio
+      type: string
+      description: |-
+        * `image` - image
+        * `file` - file
+        * `video` - video
+        * `audio` - audio
     UserLoginRequest:
       type: object
       description: User login serializer
@@ -20522,6 +22552,58 @@ components:
       - last_name
       - password
       - password_confirm
+    UserSummary:
+      type: object
+      description: Serializer for user summary information.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        display_name:
+          type: string
+          readOnly: true
+        avatar_url:
+          type: string
+          readOnly: true
+        is_practitioner:
+          type: boolean
+      required:
+      - email
+    UserSummaryRequest:
+      type: object
+      description: Serializer for user summary information.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        is_practitioner:
+          type: boolean
+      required:
+      - email
     ZipCode:
       type: object
       description: Serializer for postal/zip codes.

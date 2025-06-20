@@ -5,7 +5,11 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { publicServicesRetrieveOptions, paymentMethodsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { 
+  publicServicesRetrieveOptions, 
+  paymentMethodsListOptions,
+  checkoutDirectPaymentCreateMutation 
+} from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -115,6 +119,26 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, router])
 
+  // Create direct payment mutation
+  const directPayment = useMutation({
+    ...checkoutDirectPaymentCreateMutation(),
+    onSuccess: (data) => {
+      // Payment successful, redirect to confirmation
+      if (data?.status === 'success') {
+        router.push(`/checkout/confirmation?orderId=${data.order_id}&bookingId=${data.booking_id}&serviceId=${serviceId}&type=${serviceType}`)
+      } else if (data?.status === 'requires_action') {
+        // Payment requires additional authentication
+        setCheckoutError("Payment requires additional authentication. Please try again.")
+        setProcessingPayment(false)
+      }
+    },
+    onError: (error: any) => {
+      const message = error?.body?.message || error?.body?.detail || error?.message || "Payment processing failed. Please try again."
+      setCheckoutError(message)
+      setProcessingPayment(false)
+    }
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -123,30 +147,34 @@ export default function CheckoutPage() {
       return
     }
 
+    if (!serviceId) {
+      setCheckoutError("Service information is missing")
+      return
+    }
+
     // Clear any previous errors
     setCheckoutError(null)
     setProcessingPayment(true)
 
+    // Get the current URL for success/cancel redirects
+    const currentOrigin = window.location.origin
+    const successUrl = `${currentOrigin}/checkout/confirmation?serviceId=${serviceId}&type=${serviceType}`
+    const cancelUrl = `${currentOrigin}/checkout?serviceId=${serviceId}&type=${serviceType}`
+
     try {
-      // TODO: Create checkout session via API
-      // const response = await checkoutCreateSession({
-      //   body: {
-      //     service_id: serviceId,
-      //     payment_method_id: selectedPaymentMethodId,
-      //     apply_credits: applyCredits,
-      //     special_requests: specialRequests,
-      //     promo_code: promoApplied ? promoCode : undefined,
-      //   }
-      // })
-
-      // For now, simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Redirect to confirmation page
-      router.push(`/checkout/confirmation?serviceId=${serviceId}&type=${serviceType}`)
-    } catch (error: any) {
-      const message = error?.body?.detail || error?.message || "Payment processing failed. Please try again."
-      setCheckoutError(message)
+      // Use direct payment with saved payment method
+      await directPayment.mutateAsync({
+        body: {
+          service_id: serviceId,
+          payment_method_id: parseInt(selectedPaymentMethodId),
+          apply_credits: applyCredits,
+          special_requests: specialRequests,
+        }
+      })
+    } catch (error) {
+      // Error is handled by onError
+      console.error('Payment error:', error)
+    } finally {
       setProcessingPayment(false)
     }
   }
