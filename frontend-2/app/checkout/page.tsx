@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { publicServicesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { publicServicesRetrieveOptions, paymentMethodsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -51,6 +51,22 @@ export default function CheckoutPage() {
 
   // Payment form state
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null)
+  
+  // Watch payment methods to auto-select default
+  const { data: paymentMethods } = useQuery({
+    ...paymentMethodsListOptions(),
+    enabled: isAuthenticated,
+  })
+  
+  // Auto-select default payment method when it changes
+  useEffect(() => {
+    if (paymentMethods?.results && !selectedPaymentMethodId) {
+      const defaultMethod = paymentMethods.results.find(m => m.is_default)
+      if (defaultMethod) {
+        setSelectedPaymentMethodId(defaultMethod.id.toString())
+      }
+    }
+  }, [paymentMethods, selectedPaymentMethodId])
 
   // Credit balance state
   const [applyCredits, setApplyCredits] = useState(userCreditBalance > 0)
