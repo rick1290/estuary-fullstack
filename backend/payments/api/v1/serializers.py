@@ -46,7 +46,7 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
         """Validate the stripe payment method exists"""
         try:
             stripe_client = StripeClient()
-            stripe_client.payment_methods.retrieve(value)
+            stripe_client.retrieve_payment_method(value)
         except Exception as e:
             raise serializers.ValidationError(f"Invalid Stripe payment method: {str(e)}")
         return value
@@ -57,7 +57,7 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
         stripe_client = StripeClient()
         
         # Retrieve payment method details
-        stripe_pm = stripe_client.payment_methods.retrieve(
+        stripe_pm = stripe_client.retrieve_payment_method(
             validated_data['stripe_payment_method_id']
         )
         
@@ -66,17 +66,14 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
             from users.models import UserPaymentProfile
             profile, created = UserPaymentProfile.objects.get_or_create(user=user)
             if not profile.stripe_customer_id:
-                customer = stripe_client.customers.create(
-                    email=user.email,
-                    name=user.get_full_name()
-                )
+                customer = stripe_client.create_customer(user)
                 profile.stripe_customer_id = customer.id
                 profile.save()
         
         # Attach payment method to customer
-        stripe_client.payment_methods.attach(
+        stripe_client.attach_payment_method(
             validated_data['stripe_payment_method_id'],
-            customer=user.payment_profile.stripe_customer_id
+            user.payment_profile.stripe_customer_id
         )
         
         # Create payment method record

@@ -84,7 +84,7 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
         """Soft delete and detach from Stripe"""
         stripe_client = StripeClient()
         try:
-            stripe_client.payment_methods.detach(instance.stripe_payment_method_id)
+            stripe_client.detach_payment_method(instance.stripe_payment_method_id)
         except Exception as e:
             logger.error(f"Failed to detach payment method from Stripe: {e}")
         

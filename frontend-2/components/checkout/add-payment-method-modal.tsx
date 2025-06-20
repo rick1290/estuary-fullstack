@@ -43,11 +43,7 @@ function PaymentMethodForm({ onSuccess, onCancel }: {
   
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isDefault, setIsDefault] = useState(true)
-  const [billingDetails, setBillingDetails] = useState({
-    name: "",
-    email: "",
-    postalCode: ""
-  })
+  const [postalCode, setPostalCode] = useState("")
 
   const createPaymentMethod = useMutation({
     ...paymentMethodsCreateMutation(),
@@ -70,15 +66,7 @@ function PaymentMethodForm({ onSuccess, onCancel }: {
 
     setErrors({})
 
-    // Validate form
-    const validationErrors: { [key: string]: string } = {}
-    if (!billingDetails.name) validationErrors.name = "Name is required"
-    if (!billingDetails.email) validationErrors.email = "Email is required"
-    
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      return
-    }
+    // Form is valid - proceed
 
     const cardElement = elements.getElement(CardElement)
     if (!cardElement) {
@@ -90,10 +78,8 @@ function PaymentMethodForm({ onSuccess, onCancel }: {
       type: 'card',
       card: cardElement,
       billing_details: {
-        name: billingDetails.name,
-        email: billingDetails.email,
         address: {
-          postal_code: billingDetails.postalCode
+          postal_code: postalCode
         }
       }
     })
@@ -142,29 +128,6 @@ function PaymentMethodForm({ onSuccess, onCancel }: {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="name">Cardholder Name</Label>
-        <Input
-          id="name"
-          placeholder="John Doe"
-          value={billingDetails.name}
-          onChange={(e) => setBillingDetails(prev => ({ ...prev, name: e.target.value }))}
-        />
-        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="john@example.com"
-          value={billingDetails.email}
-          onChange={(e) => setBillingDetails(prev => ({ ...prev, email: e.target.value }))}
-        />
-        {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="card">Card Information</Label>
         <div className="border rounded-md p-3 bg-background">
           <CardElement id="card" options={cardElementOptions} />
@@ -177,8 +140,8 @@ function PaymentMethodForm({ onSuccess, onCancel }: {
         <Input
           id="postalCode"
           placeholder="12345"
-          value={billingDetails.postalCode}
-          onChange={(e) => setBillingDetails(prev => ({ ...prev, postalCode: e.target.value }))}
+          value={postalCode}
+          onChange={(e) => setPostalCode(e.target.value)}
         />
       </div>
 

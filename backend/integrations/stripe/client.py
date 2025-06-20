@@ -260,7 +260,7 @@ class StripeClient:
             raise
     
     @classmethod
-    async def attach_payment_method(cls, payment_method_id, customer_id):
+    def attach_payment_method(cls, payment_method_id, customer_id):
         """Attach a payment method to a customer"""
         cls.initialize()
         
@@ -350,7 +350,7 @@ class StripeClient:
             raise
     
     @classmethod
-    async def retrieve_payment_method(cls, payment_method_id):
+    def retrieve_payment_method(cls, payment_method_id):
         """Retrieve a payment method"""
         cls.initialize()
         
@@ -361,7 +361,7 @@ class StripeClient:
             raise
     
     @classmethod
-    async def detach_payment_method(cls, payment_method_id):
+    def detach_payment_method(cls, payment_method_id):
         """Detach a payment method"""
         cls.initialize()
         
