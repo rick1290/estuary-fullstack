@@ -4,9 +4,10 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { publicServicesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
-import { getServiceById } from "@/lib/services"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,16 +28,11 @@ import {
   HelpCircle,
 } from "lucide-react"
 import Link from "next/link"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
+import PaymentMethodSelector from "@/components/checkout/payment-method-selector"
+import AddPaymentMethodModal from "@/components/checkout/add-payment-method-modal"
 
-// Mock saved cards data
-const savedCards = [
-  { id: 1, last4: "4242", brand: "Visa", expiry: "12/25" },
-  { id: 2, last4: "5555", brand: "Mastercard", expiry: "08/24" },
-]
-
-// Mock user credit balance
+// Mock user credit balance for now
 const userCreditBalance = 25.0
 
 export default function CheckoutPage() {
@@ -45,24 +41,16 @@ export default function CheckoutPage() {
   const { isAuthenticated, login } = useAuth()
   const { openAuthModal } = useAuthModal()
 
-  const [loading, setLoading] = useState(true)
-  const [service, setService] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
   const [specialRequests, setSpecialRequests] = useState("")
   const [processingPayment, setProcessingPayment] = useState(false)
-  const [showNewCardDialog, setShowNewCardDialog] = useState(false)
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
   const [promoCode, setPromoCode] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
   const [promoDiscount, setPromoDiscount] = useState(0)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Payment form state
-  const [selectedCard, setSelectedCard] = useState(savedCards.length > 0 ? savedCards[0].id : null)
-  const [cardNumber, setCardNumber] = useState("")
-  const [cardName, setCardName] = useState("")
-  const [cardExpiry, setCardExpiry] = useState("")
-  const [cardCvc, setCardCvc] = useState("")
-  const [cardErrors, setCardErrors] = useState<{ [key: string]: string }>({})
-  const [verifyingCard, setVerifyingCard] = useState(false)
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null)
 
   // Credit balance state
   const [applyCredits, setApplyCredits] = useState(userCreditBalance > 0)
@@ -97,33 +85,12 @@ export default function CheckoutPage() {
     autoLogin()
   }, [isAuthenticated, login])
 
-  useEffect(() => {
-    // Fetch service data
-    const fetchService = async () => {
-      if (!serviceId) {
-        setError("No service selected")
-        setLoading(false)
-        return
-      }
-
-      try {
-        const serviceData = await getServiceById(serviceId)
-        if (!serviceData) {
-          setError("Service not found")
-          setLoading(false)
-          return
-        }
-
-        setService(serviceData)
-        setLoading(false)
-      } catch (err) {
-        setError("Failed to load service data")
-        setLoading(false)
-      }
-    }
-
-    fetchService()
-  }, [serviceId])
+  // Fetch service data from API using public_uuid
+  const { data: serviceData, isLoading: loadingService, error: serviceError } = useQuery({
+    ...publicServicesRetrieveOptions({ path: { public_uuid: serviceId || '' } }),
+    enabled: !!serviceId,
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  })
 
   // Check authentication on component mount
   useEffect(() => {
@@ -135,64 +102,36 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Simulate payment processing
+    if (!selectedPaymentMethodId) {
+      setCheckoutError("Please select a payment method")
+      return
+    }
+
+    // Clear any previous errors
+    setCheckoutError(null)
     setProcessingPayment(true)
 
     try {
-      // Simulate API call
+      // TODO: Create checkout session via API
+      // const response = await checkoutCreateSession({
+      //   body: {
+      //     service_id: serviceId,
+      //     payment_method_id: selectedPaymentMethodId,
+      //     apply_credits: applyCredits,
+      //     special_requests: specialRequests,
+      //     promo_code: promoApplied ? promoCode : undefined,
+      //   }
+      // })
+
+      // For now, simulate payment processing
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
       // Redirect to confirmation page
       router.push(`/checkout/confirmation?serviceId=${serviceId}&type=${serviceType}`)
-    } catch (error) {
-      setError("Payment processing failed. Please try again.")
+    } catch (error: any) {
+      const message = error?.body?.detail || error?.message || "Payment processing failed. Please try again."
+      setCheckoutError(message)
       setProcessingPayment(false)
-    }
-  }
-
-  const handleAddCard = async () => {
-    // Validate card details
-    const errors: { [key: string]: string } = {}
-
-    if (!cardNumber) errors.cardNumber = "Card number is required"
-    if (!cardName) errors.cardName = "Name on card is required"
-    if (!cardExpiry) errors.cardExpiry = "Expiry date is required"
-    if (!cardCvc) errors.cardCvc = "CVC is required"
-
-    if (Object.keys(errors).length > 0) {
-      setCardErrors(errors)
-      return
-    }
-
-    setVerifyingCard(true)
-
-    try {
-      // Simulate card verification
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Add the new card to saved cards (in a real app, this would be an API call)
-      const newCard = {
-        id: savedCards.length + 1,
-        last4: cardNumber.slice(-4),
-        brand: cardNumber.startsWith("4") ? "Visa" : "Mastercard",
-        expiry: cardExpiry,
-      }
-
-      // Close dialog and reset form
-      setShowNewCardDialog(false)
-      setVerifyingCard(false)
-      setCardNumber("")
-      setCardName("")
-      setCardExpiry("")
-      setCardCvc("")
-      setCardErrors({})
-
-      // In a real app, you would update the saved cards list
-      // For now, we'll just set the selected card
-      setSelectedCard(newCard.id)
-    } catch (error) {
-      setCardErrors({ general: "Failed to verify card. Please try again." })
-      setVerifyingCard(false)
     }
   }
 
@@ -204,7 +143,7 @@ export default function CheckoutPage() {
     setPromoDiscount(10) // $10 discount for demo
   }
 
-  if (loading) {
+  if (loadingService) {
     return (
       <div className="container max-w-6xl py-12">
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -214,33 +153,35 @@ export default function CheckoutPage() {
     )
   }
 
-  if (error) {
+  if (serviceError || !serviceData) {
     return (
       <div className="container max-w-6xl py-12">
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {serviceError ? "Failed to load service data" : "Service not found"}
+          </AlertDescription>
         </Alert>
         <Button onClick={() => router.back()}>Go Back</Button>
       </div>
     )
   }
 
-  if (!service) {
-    return (
-      <div className="container max-w-6xl py-12">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Service not found</AlertDescription>
-        </Alert>
-        <Button onClick={() => router.back()}>Go Back</Button>
-      </div>
-    )
+  // Transform API data to component format
+  const service = {
+    id: serviceData.public_uuid || serviceData.id,
+    title: serviceData.name || 'Service',
+    type: serviceType,
+    price: serviceData.price_cents ? serviceData.price_cents / 100 : 0,
+    location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Virtual',
+    practitioner: {
+      name: serviceData.primary_practitioner?.display_name || serviceData.practitioner?.display_name || 'Practitioner'
+    },
+    image: serviceData.image_url || serviceData.featured_image
   }
 
   // Calculate pricing - ensure all values are numbers
-  const basePrice =
-    typeof service.price === "number" ? service.price : service.price ? Number.parseFloat(service.price) : 99.99 // Default price if not available
+  const basePrice = service.price
   const creditsToApply = applyCredits ? Math.min(userCreditBalance, basePrice) : 0
   const subtotal = basePrice
   const discount = creditsToApply + promoDiscount
@@ -249,84 +190,11 @@ export default function CheckoutPage() {
 
   return (
     <>
-
-      {/* New Card Dialog */}
-      <Dialog open={showNewCardDialog} onOpenChange={setShowNewCardDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Payment Method</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {cardErrors.general && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{cardErrors.general}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="dialog-card-number">Card Number</Label>
-              <Input
-                id="dialog-card-number"
-                placeholder="1234 5678 9012 3456"
-                value={cardNumber}
-                onChange={(e) => setCardNumber(e.target.value)}
-              />
-              {cardErrors.cardNumber && <p className="text-sm text-destructive">{cardErrors.cardNumber}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dialog-card-name">Name on Card</Label>
-              <Input
-                id="dialog-card-name"
-                placeholder="John Doe"
-                value={cardName}
-                onChange={(e) => setCardName(e.target.value)}
-              />
-              {cardErrors.cardName && <p className="text-sm text-destructive">{cardErrors.cardName}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dialog-card-expiry">Expiry Date</Label>
-                <Input
-                  id="dialog-card-expiry"
-                  placeholder="MM/YY"
-                  value={cardExpiry}
-                  onChange={(e) => setCardExpiry(e.target.value)}
-                />
-                {cardErrors.cardExpiry && <p className="text-sm text-destructive">{cardErrors.cardExpiry}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dialog-card-cvc">CVC</Label>
-                <Input
-                  id="dialog-card-cvc"
-                  placeholder="123"
-                  value={cardCvc}
-                  onChange={(e) => setCardCvc(e.target.value)}
-                />
-                {cardErrors.cardCvc && <p className="text-sm text-destructive">{cardErrors.cardCvc}</p>}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewCardDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCard} disabled={verifyingCard}>
-              {verifyingCard ? (
-                <>
-                  <span className="mr-2">Verifying</span>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                </>
-              ) : (
-                "Add Card"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Add Payment Method Modal */}
+      <AddPaymentMethodModal
+        open={showAddPaymentModal}
+        onOpenChange={setShowAddPaymentModal}
+      />
 
       {/* Logo - Full Width */}
       <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
@@ -365,54 +233,22 @@ export default function CheckoutPage() {
               )}
 
               <form onSubmit={handleSubmit}>
-                {/* Payment Method */}
-                <Card className="mb-6">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Payment Methods</CardTitle>
-                    <HelpCircle className="h-5 w-5 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="border rounded-md">
-                      <div className="p-4 flex items-center justify-between border-b">
-                        <div className="flex items-center gap-3">
-                          <CreditCard className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-medium">Debit / credit card</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          className="font-medium text-primary"
-                          onClick={() => setShowNewCardDialog(true)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          ADD A NEW CARD
-                        </Button>
-                      </div>
+                {/* Error Display */}
+                {checkoutError && (
+                  <Alert variant="destructive" className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{checkoutError}</AlertDescription>
+                  </Alert>
+                )}
 
-                      {savedCards.length > 0 && (
-                        <div className="p-4 space-y-3">
-                          {savedCards.map((card) => (
-                            <div
-                              key={card.id}
-                              className={`p-3 border rounded-md flex items-center justify-between cursor-pointer ${
-                                selectedCard === card.id ? "border-primary bg-primary/5" : ""
-                              }`}
-                              onClick={() => setSelectedCard(card.id)}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-5 h-5 rounded-full border flex items-center justify-center">
-                                  {selectedCard === card.id && <div className="w-3 h-3 rounded-full bg-primary"></div>}
-                                </div>
-                                <span>
-                                  {card.brand} ending in {card.last4} (expires {card.expiry})
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Payment Method */}
+                <div className="mb-6">
+                  <PaymentMethodSelector
+                    selectedMethodId={selectedPaymentMethodId}
+                    onSelectMethod={setSelectedPaymentMethodId}
+                    onAddNewCard={() => setShowAddPaymentModal(true)}
+                  />
+                </div>
 
                 <div className="space-y-4">
                   <div className="pt-2">

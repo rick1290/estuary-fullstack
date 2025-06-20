@@ -72,6 +72,7 @@ services:
       - NEXT_PUBLIC_SITE_URL=http://localhost:3001
       - NEXTAUTH_URL_INTERNAL=http://admin:8000
       - PORT=3001
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51RYVT4I79x8ltrHuOxx5PkP7sQf42FQAtUPmJyaREnFwPwgU8WPdQxqM2P6Ll8q5cI5uYBc0EpW9OpVApVcubE5Z004JjhTdrq
     depends_on:
       - admin
 
