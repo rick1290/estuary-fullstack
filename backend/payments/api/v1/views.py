@@ -363,25 +363,144 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                             description=f"Applied to {service.name}"
                         )
                     
-                    # Create booking record
-                    from bookings.models import Booking
-                    booking = Booking.objects.create(
-                        user=user,
-                        service=service,
-                        practitioner=service.primary_practitioner,
-                        price_charged_cents=amount_to_charge_cents + credits_to_apply_cents,
-                        discount_amount_cents=credits_to_apply_cents,
-                        final_amount_cents=amount_to_charge_cents,
-                        status='confirmed',
-                        payment_status='paid',
-                        client_notes=data.get('special_requests', ''),
-                        start_time=timezone.now(),  # TODO: Get actual booking time from frontend
-                        end_time=timezone.now() + timezone.timedelta(hours=1),  # TODO: Get actual duration
-                        service_name_snapshot=service.name,
-                        service_description_snapshot=service.description or '',
-                        practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
-                        confirmed_at=timezone.now()
-                    )
+                    # Create booking based on service type
+                    from bookings.models import Booking, BookingFactory
+                    from services.models import ServiceSession
+                    
+                    service_type_code = service.service_type.code
+                    
+                    if service_type_code == 'session':
+                        # Individual session booking
+                        booking = Booking.objects.create(
+                            user=user,
+                            service=service,
+                            practitioner=service.primary_practitioner,
+                            price_charged_cents=amount_to_charge_cents + credits_to_apply_cents,
+                            discount_amount_cents=credits_to_apply_cents,
+                            final_amount_cents=amount_to_charge_cents,
+                            status='confirmed',
+                            payment_status='paid',
+                            client_notes=data.get('special_requests', ''),
+                            start_time=data['start_time'],
+                            end_time=data['end_time'],
+                            timezone=data.get('timezone', 'UTC'),
+                            service_name_snapshot=service.name,
+                            service_description_snapshot=service.description or '',
+                            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
+                            confirmed_at=timezone.now()
+                        )
+                    
+                    elif service_type_code == 'workshop':
+                        # Workshop booking with service session
+                        service_session = get_object_or_404(ServiceSession, id=data['service_session_id'])
+                        booking = Booking.objects.create(
+                            user=user,
+                            service=service,
+                            practitioner=service.primary_practitioner,
+                            service_session=service_session,
+                            price_charged_cents=amount_to_charge_cents + credits_to_apply_cents,
+                            discount_amount_cents=credits_to_apply_cents,
+                            final_amount_cents=amount_to_charge_cents,
+                            status='confirmed',
+                            payment_status='paid',
+                            client_notes=data.get('special_requests', ''),
+                            start_time=service_session.start_time,
+                            end_time=service_session.end_time,
+                            timezone=data.get('timezone', 'UTC'),
+                            service_name_snapshot=service.name,
+                            service_description_snapshot=service.description or '',
+                            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
+                            confirmed_at=timezone.now(),
+                            max_participants=service_session.max_participants
+                        )
+                    
+                    elif service_type_code == 'course':
+                        # Course enrollment - use BookingFactory
+                        booking = BookingFactory.create_course_booking(
+                            user=user,
+                            course=service,
+                            payment_intent_id=order.stripe_payment_intent_id,
+                            client_notes=data.get('special_requests', '')
+                        )
+                        booking.payment_status = 'paid'
+                        booking.save()
+                    
+                    elif service_type_code == 'package':
+                        # Package purchase - use BookingFactory
+                        # For packages, we need the first session time if provided
+                        first_session_time = data.get('start_time')
+                        booking = BookingFactory.create_package_booking(
+                            user=user,
+                            package=service,
+                            payment_intent_id=order.stripe_payment_intent_id,
+                            client_notes=data.get('special_requests', '')
+                        )
+                        booking.payment_status = 'paid'
+                        booking.save()
+                        
+                        # If first session time provided, update the first child booking
+                        if first_session_time and booking.child_bookings.exists():
+                            first_child = booking.child_bookings.first()
+                            first_child.start_time = first_session_time
+                            first_child.end_time = data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+                            first_child.status = 'scheduled'
+                            first_child.save()
+                    
+                    elif service_type_code == 'bundle':
+                        # Bundle purchase - use BookingFactory
+                        # For bundles, we need the first session time if provided
+                        first_session_time = data.get('start_time')
+                        booking = BookingFactory.create_bundle_booking(
+                            user=user,
+                            bundle=service,
+                            payment_intent_id=order.stripe_payment_intent_id,
+                            client_notes=data.get('special_requests', '')
+                        )
+                        booking.payment_status = 'paid'
+                        booking.save()
+                        
+                        # Create the first scheduled booking if time provided
+                        if first_session_time:
+                            # Create first booking from bundle
+                            first_booking = Booking.objects.create(
+                                user=user,
+                                service=service,
+                                practitioner=service.primary_practitioner,
+                                parent_booking=booking,
+                                price_charged_cents=0,  # Using bundle credits
+                                discount_amount_cents=0,
+                                final_amount_cents=0,
+                                status='scheduled',
+                                payment_status='paid',
+                                client_notes=data.get('special_requests', ''),
+                                start_time=first_session_time,
+                                end_time=data.get('end_time', first_session_time + timezone.timedelta(hours=1)),
+                                timezone=data.get('timezone', 'UTC'),
+                                service_name_snapshot=service.name,
+                                service_description_snapshot=service.description or '',
+                                practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else ''
+                            )
+                    
+                    else:
+                        # Default case - standard booking
+                        booking = Booking.objects.create(
+                            user=user,
+                            service=service,
+                            practitioner=service.primary_practitioner,
+                            price_charged_cents=amount_to_charge_cents + credits_to_apply_cents,
+                            discount_amount_cents=credits_to_apply_cents,
+                            final_amount_cents=amount_to_charge_cents,
+                            status='confirmed',
+                            payment_status='paid',
+                            client_notes=data.get('special_requests', ''),
+                            start_time=data.get('start_time', timezone.now()),
+                            end_time=data.get('end_time', timezone.now() + timezone.timedelta(hours=1)),
+                            timezone=data.get('timezone', 'UTC'),
+                            service_name_snapshot=service.name,
+                            service_description_snapshot=service.description or '',
+                            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
+                            confirmed_at=timezone.now()
+                        )
                     
                     # Create earnings for practitioner
                     if service.primary_practitioner:
@@ -444,25 +563,70 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                     description=f"Applied to {service.name}"
                 )
                 
-                # Create booking
-                from bookings.models import Booking
-                booking = Booking.objects.create(
-                    user=user,
-                    service=service,
-                    practitioner=service.primary_practitioner,
-                    price_charged_cents=credits_to_apply_cents,
-                    discount_amount_cents=0,
-                    final_amount_cents=0,  # Paid entirely with credits
-                    status='confirmed',
-                    payment_status='paid',
-                    client_notes=data.get('special_requests', ''),
-                    start_time=timezone.now(),  # TODO: Get actual booking time from frontend
-                    end_time=timezone.now() + timezone.timedelta(hours=1),  # TODO: Get actual duration
-                    service_name_snapshot=service.name,
-                    service_description_snapshot=service.description or '',
-                    practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
-                    confirmed_at=timezone.now()
-                )
+                # Create booking using same logic as paid bookings
+                from bookings.models import Booking, BookingFactory
+                from services.models import ServiceSession
+                
+                service_type_code = service.service_type.code
+                
+                # Use the same booking creation logic but with credits-only pricing
+                booking_params = {
+                    'user': user,
+                    'service': service,
+                    'practitioner': service.primary_practitioner,
+                    'price_charged_cents': credits_to_apply_cents,
+                    'discount_amount_cents': 0,
+                    'final_amount_cents': 0,  # Paid entirely with credits
+                    'status': 'confirmed',
+                    'payment_status': 'paid',
+                    'client_notes': data.get('special_requests', ''),
+                    'service_name_snapshot': service.name,
+                    'service_description_snapshot': service.description or '',
+                    'practitioner_name_snapshot': service.primary_practitioner.display_name if service.primary_practitioner else '',
+                    'confirmed_at': timezone.now()
+                }
+                
+                if service_type_code == 'session':
+                    # Individual session booking
+                    booking_params.update({
+                        'start_time': data['start_time'],
+                        'end_time': data['end_time'],
+                        'timezone': data.get('timezone', 'UTC')
+                    })
+                    booking = Booking.objects.create(**booking_params)
+                
+                elif service_type_code == 'workshop':
+                    # Workshop booking with service session
+                    service_session = get_object_or_404(ServiceSession, id=data['service_session_id'])
+                    booking_params.update({
+                        'service_session': service_session,
+                        'start_time': service_session.start_time,
+                        'end_time': service_session.end_time,
+                        'timezone': data.get('timezone', 'UTC'),
+                        'max_participants': service_session.max_participants
+                    })
+                    booking = Booking.objects.create(**booking_params)
+                
+                elif service_type_code in ['course', 'package', 'bundle']:
+                    # Use BookingFactory for complex service types
+                    # These methods need to be updated to handle credits-only payments
+                    # For now, create a simple booking for complex types
+                    # TODO: Implement proper complex booking handling
+                    booking_params.update({
+                        'start_time': data.get('start_time', timezone.now()),
+                        'end_time': data.get('end_time', timezone.now() + timezone.timedelta(hours=1)),
+                        'timezone': data.get('timezone', 'UTC')
+                    })
+                    booking = Booking.objects.create(**booking_params)
+                
+                else:
+                    # Default case - standard booking
+                    booking_params.update({
+                        'start_time': data.get('start_time', timezone.now()),
+                        'end_time': data.get('end_time', timezone.now() + timezone.timedelta(hours=1)),
+                        'timezone': data.get('timezone', 'UTC')
+                    })
+                    booking = Booking.objects.create(**booking_params)
                 
                 return Response({
                     'status': 'success',

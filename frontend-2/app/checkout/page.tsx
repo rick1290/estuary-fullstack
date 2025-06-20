@@ -162,14 +162,55 @@ export default function CheckoutPage() {
     const cancelUrl = `${currentOrigin}/checkout?serviceId=${serviceId}&type=${serviceType}`
 
     try {
+      // Prepare booking details based on service type
+      const bookingDetails: any = {
+        service_id: serviceId,
+        payment_method_id: parseInt(selectedPaymentMethodId),
+        apply_credits: applyCredits,
+        special_requests: specialRequests,
+      }
+      
+      // Add booking-specific details based on service type
+      if (serviceType === 'session') {
+        // For sessions, we need start and end time
+        if (selectedDate && selectedTime) {
+          // Parse the date and time to create proper datetime
+          const [hours, minutes] = selectedTime.split(':')
+          const startDateTime = new Date(selectedDate)
+          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          
+          // Assume 1 hour duration for now
+          const endDateTime = new Date(startDateTime)
+          endDateTime.setHours(endDateTime.getHours() + 1)
+          
+          bookingDetails.start_time = startDateTime.toISOString()
+          bookingDetails.end_time = endDateTime.toISOString()
+          bookingDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      } else if (serviceType === 'workshop') {
+        // For workshops, we need the service session ID
+        if (selectedSessionIds.length > 0) {
+          bookingDetails.service_session_id = selectedSessionIds[0]
+        }
+      } else if (serviceType === 'package' || serviceType === 'bundle') {
+        // For packages and bundles, optionally include first session time
+        if (selectedDate && selectedTime) {
+          const [hours, minutes] = selectedTime.split(':')
+          const startDateTime = new Date(selectedDate)
+          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          
+          const endDateTime = new Date(startDateTime)
+          endDateTime.setHours(endDateTime.getHours() + 1)
+          
+          bookingDetails.start_time = startDateTime.toISOString()
+          bookingDetails.end_time = endDateTime.toISOString()
+          bookingDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      }
+      
       // Use direct payment with saved payment method
       await directPayment.mutateAsync({
-        body: {
-          service_id: serviceId,
-          payment_method_id: parseInt(selectedPaymentMethodId),
-          apply_credits: applyCredits,
-          special_requests: specialRequests,
-        }
+        body: bookingDetails
       })
     } catch (error) {
       // Error is handled by onError
