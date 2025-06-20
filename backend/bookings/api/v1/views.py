@@ -306,14 +306,24 @@ class BookingViewSet(viewsets.ModelViewSet):
         
         # Get available slots
         available_slots = get_practitioner_availability(
-            practitioner=practitioner,
-            date=date,
-            service_duration=service.duration_minutes,
-            timezone_str=serializer.validated_data['timezone']
+            service_id=service.id,
+            start_date=date,
+            end_date=date,
+            days_ahead=1
         )
         
+        # Transform slots to match serializer expectations
+        formatted_slots = []
+        for slot in available_slots:
+            formatted_slots.append({
+                'start_time': slot['start_datetime'],
+                'end_time': slot['end_datetime'],
+                'duration_minutes': service.duration_minutes,
+                'is_available': slot.get('is_available', True)
+            })
+        
         # Format response
-        slot_serializer = AvailableSlotSerializer(available_slots, many=True)
+        slot_serializer = AvailableSlotSerializer(formatted_slots, many=True)
         return Response({
             'practitioner_id': practitioner.id,
             'service_id': service.id,

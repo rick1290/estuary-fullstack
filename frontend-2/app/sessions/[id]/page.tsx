@@ -124,6 +124,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
   })
 
   // Transform API data to component format
+  console.log('Service data from API:', serviceData)
   const session = serviceData ? {
     id: serviceData.public_uuid || serviceData.id,
     title: serviceData.name || 'Session',
@@ -547,7 +548,11 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ id: s
           {/* Right Column - Sticky Booking Panel */}
           <div className="space-y-8">
             <div className="lg:sticky lg:top-24">
-              <SessionBookingPanel session={session} />
+              <SessionBookingPanel session={{
+                ...session,
+                primary_practitioner: serviceData?.primary_practitioner || serviceData?.practitioner,
+                id: serviceData?.id || serviceData?.public_uuid
+              }} />
               
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">

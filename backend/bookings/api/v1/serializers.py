@@ -478,7 +478,8 @@ class AvailabilityCheckSerializer(serializers.Serializer):
         try:
             practitioner = Practitioner.objects.get(
                 id=data['practitioner_id'],
-                is_active=True
+                practitioner_status='active',
+                is_verified=True
             )
             data['practitioner'] = practitioner
         except Practitioner.DoesNotExist:
@@ -495,8 +496,10 @@ class AvailabilityCheckSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid service")
         
         # Validate service belongs to practitioner
-        if not service.practitioners.filter(id=practitioner.id).exists():
-            raise serializers.ValidationError("Service not offered by this practitioner")
+        if service.primary_practitioner.id != practitioner.id:
+            # Also check if practitioner is in additional practitioners
+            if not service.additional_practitioners.filter(id=practitioner.id).exists():
+                raise serializers.ValidationError("Service not offered by this practitioner")
         
         return data
 
