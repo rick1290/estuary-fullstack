@@ -246,21 +246,32 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                 ))}
               </div>
             ) : timeSlots.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {displayedTimeSlots.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => handleTimeSelect(time)}
-                    className={`p-2 rounded-lg border-2 text-center text-xs font-medium transition-all ${
-                      selectedTime === time
-                        ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
-                        : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className={`grid grid-cols-3 gap-2 mb-4 ${
+                  showAllTimes && timeSlots.length > 9 
+                    ? 'max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sage-300 scrollbar-track-sage-50' 
+                    : ''
+                }`}>
+                  {displayedTimeSlots.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => handleTimeSelect(time)}
+                      className={`p-2 rounded-lg border-2 text-center text-xs font-medium transition-all ${
+                        selectedTime === time
+                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
+                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+                {showAllTimes && timeSlots.length > 9 && (
+                  <p className="text-xs text-olive-600 text-center mb-2">
+                    Scroll to see all {timeSlots.length} available times
+                  </p>
+                )}
+              </>
             ) : (
               <div className="text-center py-8 text-olive-600">
                 <p className="text-sm">No available time slots for this date.</p>
@@ -274,7 +285,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
               onClick={toggleShowAllTimes}
               className="text-xs text-primary hover:underline text-center w-full mb-4"
             >
-              {showAllTimes ? "Show fewer times" : "Show more times"}
+              {showAllTimes ? `Show fewer times (${timeSlots.length} total)` : `Show all ${timeSlots.length} times`}
             </button>
           )}
 
