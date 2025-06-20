@@ -1,10 +1,15 @@
-import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check } from "lucide-react"
+"use client"
+import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useQuery } from "@tanstack/react-query"
+import { publicServicesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -144,8 +149,135 @@ This course is perfect for anyone interested in improving their health through b
 }
 
 export default function CourseDetailsPage({ params }: { params: { id: string } }) {
-  // In a real application, you would fetch the course data based on the ID
-  const course = MOCK_COURSE
+  // Fetch course data from API using public_uuid
+  const { data: serviceData, isLoading, error } = useQuery({
+    ...publicServicesRetrieveOptions({ path: { public_uuid: params.id } }),
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  })
+
+  // Transform API data to component format
+  const course = serviceData ? {
+    id: serviceData.public_uuid || serviceData.id,
+    title: serviceData.name || 'Course',
+    type: "courses",
+    description: serviceData.short_description || serviceData.description || 'A transformative learning experience.',
+    longDescription: serviceData.description || serviceData.long_description || 'This comprehensive course will guide you through a transformative learning journey.',
+    price: serviceData.price_cents ? Math.floor(serviceData.price_cents / 100) : 0,
+    duration: serviceData.duration_display || serviceData.duration_text || "4 weeks",
+    sessionCount: serviceData.session_count || serviceData.total_sessions || 8,
+    location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Virtual',
+    rating: serviceData.average_rating || 4.6,
+    reviewCount: serviceData.total_reviews || 0,
+    categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Wellness'],
+    image: serviceData.image_url || serviceData.featured_image || '/course-image-1.jpg',
+    experienceLevel: serviceData.experience_level || "beginner",
+    whatYoullLearn: serviceData.learning_objectives || serviceData.what_youll_learn || [
+      "Fundamental concepts and principles",
+      "Practical techniques and strategies",
+      "How to apply learnings in daily life",
+      "Advanced methods for continued growth",
+      "Sustainable practices for long-term success",
+    ],
+    benefits: serviceData.benefits || [
+      {
+        id: 1,
+        title: "Comprehensive Learning",
+        description: "Gain deep understanding through structured curriculum.",
+        icon: "favorite",
+      },
+      {
+        id: 2,
+        title: "Expert Guidance",
+        description: "Learn from experienced practitioners and instructors.",
+        icon: "person",
+      },
+      {
+        id: 3,
+        title: "Practical Application",
+        description: "Apply knowledge through hands-on exercises and projects.",
+        icon: "restaurant",
+      },
+    ],
+    sessions: serviceData.course_sessions || serviceData.sessions || [
+      {
+        id: 1,
+        title: "Introduction and Foundations",
+        description: "Overview of course fundamentals and key concepts.",
+        date: "TBD",
+        startTime: "18:00",
+        endTime: "19:30",
+        agenda: [
+          "Welcome and course overview",
+          "Introduction to core principles",
+          "Setting intentions and goals",
+          "Q&A session",
+        ],
+      },
+    ],
+    practitioners: serviceData.instructors || (serviceData.practitioner || serviceData.primary_practitioner) ? [{
+      id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
+      name: (serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Instructor'),
+      title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Course Instructor'),
+      bio: (serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced instructor dedicated to your learning journey.'),
+      image: (serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/placeholder.svg?height=200&width=200'),
+      isPrimary: true,
+      rating: (serviceData.practitioner?.average_rating || serviceData.primary_practitioner?.average_rating || 4.7),
+      reviewCount: (serviceData.practitioner?.total_reviews || serviceData.primary_practitioner?.total_reviews || 0),
+    }] : [],
+  } : MOCK_COURSE
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <section className="relative min-h-[80vh] bg-gradient-to-b from-terracotta-50 via-sage-50 to-cream-50">
+          <div className="relative container max-w-7xl py-12">
+            <Skeleton className="h-6 w-96 mb-12" />
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <div className="flex gap-8">
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-12" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Skeleton className="h-12 w-40" />
+                  <Skeleton className="h-12 w-32" />
+                </div>
+              </div>
+              <Skeleton className="aspect-[4/5] rounded-3xl" />
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <Alert className="border-red-200 bg-red-50 max-w-md">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Failed to load course details. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-cream-50">

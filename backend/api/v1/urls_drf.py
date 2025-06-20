@@ -18,7 +18,7 @@ from bookings.api.v1.views import BookingViewSet
 
 # Service catalog
 from services.api.v1.views import (
-    ServiceCategoryViewSet, ServiceViewSet, PackageViewSet,
+    ServiceCategoryViewSet, ServiceViewSet, PublicServiceViewSet, PackageViewSet,
     BundleViewSet, ServiceSessionViewSet, ServiceResourceViewSet,
     PractitionerServiceCategoryViewSet
 )
@@ -68,7 +68,8 @@ router.register(r'bookings', BookingViewSet, basename='booking')
 # Services
 router.register(r'service-categories', ServiceCategoryViewSet, basename='service-category')
 router.register(r'practitioner-categories', PractitionerServiceCategoryViewSet, basename='practitioner-category')
-router.register(r'services', ServiceViewSet, basename='service')
+router.register(r'services', ServiceViewSet, basename='service')  # Internal CRUD (uses PK)
+router.register(r'public-services', PublicServiceViewSet, basename='public-service')  # Public API (uses public_uuid)
 router.register(r'packages', PackageViewSet, basename='package')
 router.register(r'bundles', BundleViewSet, basename='bundle')
 router.register(r'service-sessions', ServiceSessionViewSet, basename='service-session')

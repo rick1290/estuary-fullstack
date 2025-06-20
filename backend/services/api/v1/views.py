@@ -145,8 +145,8 @@ class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
 )
 class ServiceViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for services.
-    Includes filtering, search, and special endpoints.
+    ViewSet for services - Internal CRUD operations using primary keys.
+    Used by practitioner dashboard and admin interfaces.
     """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsServiceOwner]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -588,3 +588,46 @@ class ServiceResourceViewSet(viewsets.ModelViewSet):
             serializer.save(uploaded_by=self.request.user.practitioner_profile)
         else:
             raise PermissionDenied("Only practitioners can upload resources")
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['Public Services']),
+    retrieve=extend_schema(tags=['Public Services'])
+)
+class PublicServiceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Public-facing ViewSet for services using public_uuid for lookup.
+    Used by marketing pages and public service discovery.
+    Read-only access with public-friendly URLs.
+    """
+    serializer_class = ServiceDetailSerializer
+    permission_classes = [permissions.AllowAny]  # Public access
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ServiceFilter
+    search_fields = ['name', 'description', 'tags']
+    ordering_fields = ['created_at', 'price_cents', 'name']
+    ordering = ['-is_featured', '-created_at']
+    lookup_field = 'public_uuid'
+    lookup_url_kwarg = 'public_uuid'
+    
+    def get_queryset(self):
+        """Get active, public services with optimized queries"""
+        return Service.objects.filter(
+            is_active=True,
+            is_public=True
+        ).select_related(
+            'service_type', 'category', 'practitioner_category',
+            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'schedule'
+        ).prefetch_related(
+            'additional_practitioners',
+            'languages',
+            'benefits',
+            'agenda_items',
+            'sessions__agenda_items',
+            'sessions__benefits',
+            'practitioner_relationships__practitioner__user',
+            'child_relationships__child_service',
+            'resources',
+            'waitlist_entries'
+        )

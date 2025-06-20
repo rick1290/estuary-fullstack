@@ -1,10 +1,15 @@
+"use client"
 import Link from "next/link"
 import Image from "next/image"
-import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check } from "lucide-react"
+import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import SessionBookingPanel from "@/components/sessions/session-booking-panel"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useQuery } from "@tanstack/react-query"
+import { publicServicesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -109,8 +114,113 @@ Each session includes personalized guidance, feedback on your technique, and rec
 }
 
 export default function SessionDetailsPage({ params }: { params: { id: string } }) {
-  // In a real application, you would fetch the session data based on the ID
-  const session = MOCK_SESSION
+  // Fetch session data from API using public_uuid
+  const { data: serviceData, isLoading, error } = useQuery({
+    ...publicServicesRetrieveOptions({ path: { public_uuid: params.id } }),
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  })
+
+  // Transform API data to component format
+  const session = serviceData ? {
+    id: serviceData.public_uuid || serviceData.id,
+    title: serviceData.name || 'Session',
+    type: "one-on-one",
+    description: serviceData.short_description || serviceData.description || 'A personalized session experience.',
+    longDescription: serviceData.description || serviceData.long_description || 'This personalized session is designed to support your wellness journey.',
+    price: serviceData.price_cents ? Math.floor(serviceData.price_cents / 100) : 0,
+    duration: serviceData.duration_minutes || 60,
+    location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Location TBD',
+    platform: serviceData.platform || 'Zoom',
+    rating: serviceData.average_rating || 4.8,
+    reviewCount: serviceData.total_reviews || 0,
+    categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Wellness'],
+    image: serviceData.image_url || serviceData.featured_image || '/session-image-1.jpg',
+    experienceLevel: serviceData.experience_level || "all_levels",
+    whatToExpect: serviceData.what_to_expect || [
+      "Personalized assessment of your goals and needs",
+      "Guided practice tailored to your experience level",
+      "Professional instruction and technique guidance",
+      "Discussion of how to integrate learnings into daily life",
+      "Personalized recommendations for continued growth",
+    ],
+    benefits: serviceData.benefits || [
+      {
+        id: 1,
+        title: "Personal Growth",
+        description: "Experience meaningful transformation through personalized guidance.",
+        icon: "spa",
+      },
+      {
+        id: 2,
+        title: "Expert Support",
+        description: "Work one-on-one with a certified practitioner.",
+        icon: "center_focus_strong",
+      },
+      {
+        id: 3,
+        title: "Lasting Change",
+        description: "Develop skills and insights for long-term wellbeing.",
+        icon: "balance",
+      },
+    ],
+    practitioner: {
+      id: serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id,
+      name: serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Practitioner',
+      title: serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Wellness Practitioner',
+      bio: serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced practitioner dedicated to supporting your wellness journey.',
+      image: serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/placeholder.svg?height=200&width=200',
+      rating: serviceData.practitioner?.average_rating || serviceData.primary_practitioner?.average_rating || 4.8,
+      reviewCount: serviceData.practitioner?.total_reviews || serviceData.primary_practitioner?.total_reviews || 0,
+    },
+  } : MOCK_SESSION
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <section className="relative min-h-[70vh] bg-gradient-to-b from-sage-50 via-cream-100 to-cream-50">
+          <div className="relative container max-w-7xl py-12">
+            <Skeleton className="h-6 w-96 mb-12" />
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8">
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <div className="flex gap-6">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-28" />
+                </div>
+                <Skeleton className="h-6 w-40" />
+                <div className="flex gap-4">
+                  <Skeleton className="h-12 w-32" />
+                  <Skeleton className="h-12 w-36" />
+                </div>
+              </div>
+              <Skeleton className="h-[500px] rounded-3xl" />
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <Alert className="border-red-200 bg-red-50 max-w-md">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Failed to load session details. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-cream-50">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
 import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
-import CourseListings from "@/components/courses/course-listings"
+import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata: Metadata = {
   title: "Courses | Estuary Marketplace",
@@ -30,7 +30,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       sidebar={<MarketplaceFilters />}
       patternType="leaf"
     >
-      <CourseListings query={query} location={location} categories={categories} />
+      <ServiceListings query={query} serviceType="course" location={location} categories={categories} />
     </MarketplaceLayout>
   )
 }

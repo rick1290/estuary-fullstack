@@ -1,12 +1,17 @@
+"use client"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles } from "lucide-react"
+import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles, AlertCircle } from "lucide-react"
 import WorkshopBookingPanel from "@/components/workshops/workshop-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useQuery } from "@tanstack/react-query"
+import { publicServicesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -443,7 +448,118 @@ const getWorkshopById = (id: string) => {
 }
 
 export default function WorkshopPage({ params }: { params: { id: string } }) {
-  const workshop = getWorkshopById(params.id)
+  // Fetch workshop data from API using public_uuid
+  const { data: serviceData, isLoading, error } = useQuery({
+    ...publicServicesRetrieveOptions({ path: { public_uuid: params.id } }),
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  })
+
+  // Transform API data to component format
+  const workshop = serviceData ? {
+    id: serviceData.public_uuid || serviceData.id,
+    title: serviceData.name || 'Workshop',
+    description: serviceData.short_description || serviceData.description || 'A transformative workshop experience.',
+    image: serviceData.image_url || serviceData.featured_image || '/workshop-image-1.jpg',
+    startTime: serviceData.start_time || "9:00 AM",
+    endTime: serviceData.end_time || "5:00 PM", 
+    duration: serviceData.duration_minutes || 480,
+    location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location_type === 'hybrid' ? 'Hybrid (In-person & Online)' : 'In-person',
+    venue: serviceData.venue_name || 'Workshop Center',
+    address: serviceData.venue_address || serviceData.location || 'Location TBD',
+    capacity: serviceData.max_participants || serviceData.capacity || 20,
+    spotsRemaining: serviceData.spots_remaining || serviceData.available_spots || serviceData.capacity || 20,
+    experienceLevel: serviceData.experience_level || 'all-levels',
+    price: serviceData.price_cents ? Math.floor(serviceData.price_cents / 100) : 0,
+    categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Workshop'],
+    practitioners: serviceData.instructors || (serviceData.practitioner || serviceData.primary_practitioner) ? [{
+      id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
+      name: (serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Workshop Leader'),
+      image: (serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/practitioner-1.jpg'),
+      title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Workshop Facilitator'),
+      bio: (serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced facilitator dedicated to your transformation.'),
+    }] : [],
+    agenda: serviceData.workshop_agenda || serviceData.agenda || [
+      {
+        day: "Workshop Day",
+        sessions: [
+          {
+            time: "9:00 AM - 12:00 PM",
+            title: "Morning Session",
+            description: "Introduction and foundational concepts",
+          },
+          {
+            time: "1:00 PM - 5:00 PM", 
+            title: "Afternoon Session",
+            description: "Practical application and integration",
+          },
+        ],
+      },
+    ],
+    benefits: serviceData.benefits || [
+      { id: "1", title: "Personal Growth", description: "Experience meaningful transformation and insights." },
+      { id: "2", title: "Practical Skills", description: "Learn techniques you can apply immediately." },
+      { id: "3", title: "Community", description: "Connect with like-minded individuals on similar journeys." },
+      { id: "4", title: "Expert Guidance", description: "Benefit from professional facilitation and support." },
+    ],
+    dates: serviceData.workshop_dates || serviceData.upcoming_dates || [
+      {
+        id: 1,
+        date: serviceData.start_date ? new Date(serviceData.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'TBD',
+        startTime: serviceData.start_time || "9:00 AM",
+        endTime: serviceData.end_time || "5:00 PM",
+        spotsRemaining: serviceData.spots_remaining || serviceData.available_spots || serviceData.capacity || 20,
+      },
+    ],
+  } : null
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <section className="relative min-h-[85vh] bg-gradient-to-b from-sage-50 via-terracotta-50 to-cream-50">
+          <div className="relative container max-w-7xl py-12">
+            <Skeleton className="h-6 w-96 mb-12" />
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <div className="flex gap-8">
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Skeleton className="h-12 w-40" />
+                  <Skeleton className="h-12 w-32" />
+                </div>
+              </div>
+              <Skeleton className="aspect-[4/5] rounded-3xl" />
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <Alert className="border-red-200 bg-red-50 max-w-md">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Failed to load workshop details. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   if (!workshop) {
     notFound()

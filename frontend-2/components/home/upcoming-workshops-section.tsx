@@ -1,116 +1,56 @@
 "use client"
 import { useRef } from "react"
 import Link from "next/link"
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useQuery } from "@tanstack/react-query"
+import { publicServicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import ServiceCard from "@/components/ui/service-card"
 
-// Sample upcoming workshops data
-const UPCOMING_WORKSHOPS = [
-  {
-    id: 1,
-    title: "Mindful Presence Workshop",
-    type: "workshops" as const,
-    practitioner: {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      image: "https://i.pravatar.cc/150?img=47",
-    },
-    date: "April 25",
-    capacity: 5,
-    location: "Virtual",
-    price: 45,
-    duration: 120,
-    categories: ["Mindfulness", "Meditation"],
-    description: "Learn to cultivate deep presence and awareness in this transformative workshop.",
-    rating: 4.9,
-    reviewCount: 87,
-    image: "https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?w=400&h=300&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Sound Healing Journey",
-    type: "workshops" as const,
-    practitioner: {
-      id: 2,
-      name: "James Wilson",
-      image: "https://i.pravatar.cc/150?img=12",
-    },
-    date: "April 30",
-    capacity: 10,
-    location: "In-person",
-    price: 60,
-    duration: 180,
-    categories: ["Sound Healing", "Energy Work"],
-    description: "Experience the healing power of sound frequencies and vibrations.",
-    rating: 4.8,
-    reviewCount: 65,
-    image: "https://images.unsplash.com/photo-1593697820980-0254db11e436?w=400&h=300&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Forest Bathing Retreat",
-    type: "workshops" as const,
-    practitioner: {
-      id: 3,
-      name: "Elena Rodriguez",
-      image: "https://i.pravatar.cc/150?img=32",
-    },
-    date: "May 15",
-    capacity: 8,
-    location: "In-person",
-    price: 95,
-    duration: 240,
-    categories: ["Nature", "Mindfulness"],
-    description: "Immerse yourself in nature's healing embrace through forest bathing practices.",
-    rating: 5.0,
-    reviewCount: 42,
-    image: "https://images.unsplash.com/photo-1511497584788-876760111969?w=400&h=300&fit=crop",
-  },
-  {
-    id: 4,
-    title: "Breathwork Fundamentals",
-    type: "workshops" as const,
-    practitioner: {
-      id: 4,
-      name: "Michael Chen",
-      image: "https://i.pravatar.cc/150?img=33",
-    },
-    date: "May 2",
-    capacity: 12,
-    location: "Virtual",
-    price: 40,
-    duration: 90,
-    categories: ["Breathwork", "Wellness"],
-    description: "Master the fundamentals of conscious breathing for stress relief and vitality.",
-    rating: 4.7,
-    reviewCount: 124,
-    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&h=300&fit=crop",
-  },
-  {
-    id: 5,
-    title: "Intuitive Movement",
-    type: "workshops" as const,
-    practitioner: {
-      id: 5,
-      name: "Aisha Patel",
-      image: "https://i.pravatar.cc/150?img=44",
-    },
-    date: "May 8",
-    capacity: 6,
-    location: "In-person",
-    price: 55,
-    duration: 150,
-    categories: ["Movement", "Dance"],
-    description: "Explore the wisdom of your body through intuitive movement and expression.",
-    rating: 4.9,
-    reviewCount: 56,
-    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=300&fit=crop",
-  },
-]
 
 export default function UpcomingWorkshopsSection() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Fetch upcoming workshops from API
+  const { data: servicesData, isLoading, error } = useQuery({
+    ...publicServicesListOptions({
+      query: {
+        service_type: 'workshop',
+        ordering: 'start_date',
+        limit: 5,
+        upcoming: true
+      }
+    }),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  })
+
+  // Extract services array and handle both paginated and direct responses
+  const services = Array.isArray(servicesData) ? servicesData : 
+                  (servicesData?.results && Array.isArray(servicesData.results)) ? servicesData.results : []
+
+  // Transform API data to component format
+  const upcomingWorkshops = services.map(service => ({
+    id: service.id, // Use numeric ID for URL routing
+    title: service.name || service.title || 'Workshop',
+    type: 'workshops' as const,
+    practitioner: {
+      id: service.practitioner?.public_uuid || service.practitioner?.id || service.primary_practitioner?.public_uuid || service.primary_practitioner?.id,
+      name: service.practitioner?.display_name || service.primary_practitioner?.display_name || 'Practitioner',
+      image: service.practitioner?.profile_image_url || service.primary_practitioner?.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+    },
+    date: service.start_date ? new Date(service.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
+    capacity: service.max_participants || service.capacity || 10,
+    location: service.location_type === 'virtual' ? 'Virtual' : 'In-person',
+    price: service.price_cents ? Math.floor(service.price_cents / 100) : service.price || 50,
+    duration: service.duration_minutes || service.duration || 120,
+    categories: service.categories?.map(c => c.name) || service.category ? [service.category.name] : ['Workshop'],
+    description: service.description || 'Join this transformative workshop experience.',
+    rating: service.average_rating || 4.8,
+    reviewCount: service.total_reviews || 0,
+    image: service.image_url || service.featured_image || `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=400&h=300&fit=crop`,
+  }))
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -162,23 +102,68 @@ export default function UpcomingWorkshopsSection() {
           </div>
         </div>
 
-        <div className="relative">
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {UPCOMING_WORKSHOPS.map((workshop, index) => (
-              <div key={workshop.id} className="min-w-[350px] max-w-[350px] flex">
-                <ServiceCard
-                  {...workshop}
-                  href={`/workshops/${workshop.id}`}
-                  index={index}
-                />
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="min-w-[350px] max-w-[350px] flex">
+                <div className="w-full bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <Skeleton className="w-full h-48" />
+                  <div className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-4" />
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Alert className="border-red-200 bg-red-50 max-w-md mx-auto">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              Unable to load upcoming workshops. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Content */}
+        {!isLoading && !error && (
+          <div className="relative">
+            <div
+              ref={scrollContainerRef}
+              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {upcomingWorkshops.length > 0 ? (
+                upcomingWorkshops.map((workshop, index) => (
+                  <div key={workshop.id} className="min-w-[350px] max-w-[350px] flex">
+                    <ServiceCard
+                      {...workshop}
+                      href={`/workshops/${workshop.id}`}
+                      index={index}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="w-full text-center py-12">
+                  <p className="text-olive-600 text-lg">No upcoming workshops available at the moment.</p>
+                  <Button asChild className="mt-4">
+                    <Link href="/marketplace/workshops">Browse All Workshops</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )
