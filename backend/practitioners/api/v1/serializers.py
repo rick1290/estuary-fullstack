@@ -10,7 +10,7 @@ from decimal import Decimal
 from practitioners.models import (
     Practitioner, Specialize, Style, Topic, Certification, Education,
     Schedule, ScheduleTimeSlot, SchedulePreference, OutOfOffice,
-    VerificationDocument, PractitionerOnboardingProgress
+    VerificationDocument, PractitionerOnboardingProgress, Question
 )
 from locations.models import PractitionerLocation
 from services.models import Service, ServiceType
@@ -564,6 +564,14 @@ class PractitionerSearchSerializer(serializers.Serializer):
             attrs['radius_km'] = 10  # Default 10km radius
         
         return attrs
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner questions"""
+    class Meta:
+        model = Question
+        fields = ['id', 'title', 'order']
+        read_only_fields = ['id']
 
 
 class PractitionerClientSerializer(serializers.ModelSerializer):

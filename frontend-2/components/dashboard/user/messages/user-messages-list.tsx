@@ -10,11 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Search, ListFilterIcon as FilterList, X, Circle } from "lucide-react"
+import { Search, ListFilterIcon as FilterList, X, Circle, AlertCircle } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { conversationsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function UserMessagesList() {
   const router = useRouter()
@@ -25,12 +26,14 @@ export default function UserMessagesList() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(conversationId)
 
   // Fetch conversations
-  const { data: conversations, isLoading } = useQuery({
+  const { data: conversations, isLoading, error, refetch } = useQuery({
     ...conversationsListOptions({
       query: {
         unread_only: false
       }
-    })
+    }),
+    retry: 3,
+    staleTime: 1000 * 60 * 2, // 2 minutes for messages
   })
 
   // Filter conversations based on search

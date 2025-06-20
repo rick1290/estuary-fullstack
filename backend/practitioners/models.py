@@ -121,14 +121,14 @@ class Practitioner(PublicModel):
     @property
     def total_services(self):
         """Count total active services."""
-        return self.services.filter(is_active=True).count()
+        return self.primary_services.filter(is_active=True).count()
     
     @property
     def price_range(self):
         """Get min and max price from active services."""
-        result = self.services.filter(is_active=True).aggregate(
-            min_price=Min('price'),
-            max_price=Max('price')
+        result = self.primary_services.filter(is_active=True).aggregate(
+            min_price=Min('price_cents'),
+            max_price=Max('price_cents')
         )
         return {
             'min': result['min_price'],

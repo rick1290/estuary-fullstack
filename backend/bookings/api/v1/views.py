@@ -18,9 +18,10 @@ from bookings.api.v1.serializers import (
     BookingListSerializer, BookingDetailSerializer,
     BookingCreateSerializer, BookingUpdateSerializer,
     BookingStatusChangeSerializer, BookingRescheduleSerializer,
-    BookingFilterSerializer, BookingNoteSerializer,
+    BookingNoteSerializer,
     AvailabilityCheckSerializer, AvailableSlotSerializer
 )
+from bookings.api.v1.filters import BookingFilter
 from services.models import Service
 from core.api.permissions import IsPractitioner
 from practitioners.utils.availability import get_practitioner_availability
@@ -65,7 +66,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingDetailSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'payment_status', 'practitioner', 'service']
+    filterset_class = BookingFilter
     search_fields = ['title', 'description', 'service__name', 'practitioner__user__first_name',
                      'practitioner__user__last_name', 'practitioner__display_name']
     ordering_fields = ['start_time', 'created_at', 'price_charged_cents']
@@ -96,55 +97,6 @@ class BookingViewSet(viewsets.ModelViewSet):
         else:
             # Regular users see only their bookings
             queryset = queryset.filter(user=user)
-        
-        # Apply additional filters from query params
-        filter_serializer = BookingFilterSerializer(data=self.request.query_params)
-        if filter_serializer.is_valid():
-            filters = filter_serializer.validated_data
-            
-            # Status filter
-            if 'status' in filters:
-                queryset = queryset.filter(status__in=filters['status'])
-            
-            # Payment status filter
-            if 'payment_status' in filters:
-                queryset = queryset.filter(payment_status__in=filters['payment_status'])
-            
-            # Date range filter
-            if 'start_date' in filters:
-                queryset = queryset.filter(start_time__date__gte=filters['start_date'])
-            if 'end_date' in filters:
-                queryset = queryset.filter(start_time__date__lte=filters['end_date'])
-            
-            # Booking type filter
-            if 'booking_type' in filters:
-                booking_type = filters['booking_type']
-                if booking_type == 'individual':
-                    queryset = queryset.filter(
-                        service_session__isnull=True,
-                        is_package_purchase=False,
-                        is_bundle_purchase=False,
-                        service__is_course=False
-                    )
-                elif booking_type == 'group':
-                    queryset = queryset.filter(service_session__isnull=False)
-                elif booking_type == 'package':
-                    queryset = queryset.filter(
-                        Q(is_package_purchase=True) | Q(service__is_package=True)
-                    )
-                elif booking_type == 'bundle':
-                    queryset = queryset.filter(
-                        Q(is_bundle_purchase=True) | Q(service__is_bundle=True)
-                    )
-                elif booking_type == 'course':
-                    queryset = queryset.filter(service__is_course=True)
-            
-            # Upcoming filter
-            if filters.get('is_upcoming'):
-                queryset = queryset.filter(
-                    start_time__gt=timezone.now(),
-                    status='confirmed'
-                )
         
         return queryset
     

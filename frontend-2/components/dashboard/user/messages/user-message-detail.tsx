@@ -21,9 +21,9 @@ import { Send, Paperclip, MoreVertical, Phone, Video, Info, Calendar, FileText, 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   conversationsRetrieveOptions,
-  conversationsMessagesOptions,
-  conversationsSendMessageOptions,
-  conversationsMarkReadOptions
+  conversationsMessagesRetrieveOptions,
+  conversationsSendMessageCreateMutation,
+  conversationsMarkReadCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -54,7 +54,7 @@ export default function UserMessageDetail() {
 
   // Fetch messages
   const { data: messages, isLoading: messagesLoading } = useQuery({
-    ...conversationsMessagesOptions({
+    ...conversationsMessagesRetrieveOptions({
       path: { id: conversationId || "" }
     }),
     enabled: !!conversationId
@@ -62,7 +62,7 @@ export default function UserMessageDetail() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    ...conversationsSendMessageOptions(),
+    ...conversationsSendMessageCreateMutation(),
     onSuccess: () => {
       setNewMessage("")
       setSelectedFile(null)
@@ -79,7 +79,7 @@ export default function UserMessageDetail() {
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
-    ...conversationsMarkReadOptions(),
+    ...conversationsMarkReadCreateMutation(),
     onSuccess: () => {
       // Invalidate conversation list to update unread counts
       queryClient.invalidateQueries({ queryKey: ['conversations'] })

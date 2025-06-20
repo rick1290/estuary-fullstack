@@ -23,7 +23,6 @@ const profileFormSchema = z.object({
   professional_title: z.string().min(2, { message: "Title must be at least 2 characters." }),
   quote: z.string().optional(),
   bio: z.string().min(10, { message: "Bio must be at least 10 characters." }),
-  description: z.string().min(20, { message: "Description must be at least 20 characters." }),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
@@ -49,7 +48,6 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
       professional_title: "",
       quote: "",
       bio: "",
-      description: "",
     },
   })
 
@@ -61,7 +59,6 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
         professional_title: practitioner.professional_title || "",
         quote: practitioner.quote || "",
         bio: practitioner.bio || "",
-        description: practitioner.description || "",
       })
       setVideoUrl(practitioner.profile_video_url || null)
     }
@@ -273,26 +270,6 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="A detailed description of your practice, approach, and philosophy..."
-                        className="min-h-[200px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      A comprehensive description of your practice that appears on your profile page.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={updateMutation.isPending}>

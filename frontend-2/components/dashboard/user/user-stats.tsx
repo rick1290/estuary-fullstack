@@ -2,13 +2,38 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Calendar, Heart, Star, TrendingUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Calendar, Heart, Star, TrendingUp, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
-import { usersUserStatsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { userStatsOptions } from "@/src/client/@tanstack/react-query.gen"
 
 export default function UserStats() {
-  const { data: statsData, isLoading } = useQuery(usersUserStatsRetrieveOptions())
+  const { data: statsData, isLoading, error, refetch } = useQuery({
+    ...userStatsOptions(),
+    retry: 3,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  // Handle error state
+  if (error) {
+    return (
+      <Alert className="border-red-200 bg-red-50">
+        <AlertCircle className="h-4 w-4 text-red-600" />
+        <AlertDescription className="text-red-800">
+          Failed to load your stats. 
+          <Button 
+            variant="link" 
+            className="text-red-600 p-0 h-auto text-sm ml-1" 
+            onClick={() => refetch()}
+          >
+            Try again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
 
   if (isLoading) {
     return (

@@ -4,6 +4,8 @@ import type React from "react"
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
+import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -35,9 +37,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 
-// Mock data for bookings
-const bookings = [
+// Mock data for bookings (fallback)
+const mockBookings = [
   {
     id: 1,
     serviceName: "Mindfulness Meditation Session",
@@ -173,11 +176,51 @@ const bookings = [
 type BookingStatus = "all" | "unscheduled" | "upcoming" | "completed" | "cancelled"
 type ServiceType = "all" | "session" | "course" | "workshop" | "package"
 
-// Extract unique practitioner names for the filter
-const uniquePractitioners = Array.from(new Set(bookings.map((booking) => booking.practitionerName)))
-
 export default function UserBookingsList() {
   const router = useRouter()
+  
+  // Fetch bookings from API with error handling
+  const { data: bookingsData, isLoading, error, refetch } = useQuery({
+    ...bookingsListOptions(),
+    retry: 3,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+  
+  // Use API data or fallback to mock data for development
+  const bookings = useMemo(() => {
+    if (bookingsData) {
+      // Handle both direct arrays and paginated responses
+      const results = Array.isArray(bookingsData) ? bookingsData : 
+                     (bookingsData?.results && Array.isArray(bookingsData.results)) ? bookingsData.results : []
+      
+      // Transform API data to match component structure
+      return results.map((booking: any) => ({
+        id: booking.id,
+        serviceName: booking.service?.name || booking.service_name || 'Service',
+        practitionerName: booking.practitioner?.display_name || booking.practitioner_name || 'Practitioner',
+        practitionerImage: booking.practitioner?.profile_image_url || '/abstract-user-icon.png',
+        date: booking.booking_date || booking.date,
+        time: booking.start_time || booking.time,
+        duration: `${booking.duration || 60} min`,
+        location: booking.location_type === 'virtual' ? 'Virtual' : 'In-person',
+        address: booking.address,
+        status: booking.status,
+        serviceType: booking.service?.service_type?.name || booking.service_type || 'session',
+        description: booking.service?.description || booking.description || '',
+        price: booking.total_amount ? `$${(booking.total_amount / 100).toFixed(2)}` : undefined,
+        bookingDate: booking.created_at,
+        bookingReference: `EST-${booking.id}`,
+        expiryDate: booking.expires_at,
+        purchaseType: booking.booking_type || 'Single Session',
+        sessionsRemaining: booking.sessions_remaining,
+        sessionsTotal: booking.sessions_total,
+      }))
+    }
+    return mockBookings // Fallback to mock data during development
+  }, [bookingsData])
+  
+  // Extract unique practitioner names for the filter
+  const uniquePractitioners = Array.from(new Set(bookings.map((booking) => booking.practitionerName)))
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("all")
   const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType>("all")
   const [selectedPractitioners, setSelectedPractitioners] = useState<string[]>([])
@@ -550,6 +593,27 @@ export default function UserBookingsList() {
             </Card>
           ))}
         </div>
+      </div>
+    )
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Failed to load your bookings. 
+            <Button 
+              variant="link" 
+              className="text-red-600 p-0 h-auto text-sm ml-1" 
+              onClick={() => refetch()}
+            >
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     )
   }

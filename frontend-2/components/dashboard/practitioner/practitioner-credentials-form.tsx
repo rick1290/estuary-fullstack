@@ -19,41 +19,34 @@ import { Badge } from "@/components/ui/badge"
 import { Save, CheckCircle, Plus, Pencil, Trash2, MoveUp, MoveDown } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import LoadingSpinner from "@/components/ui/loading-spinner"
-import type { Certification, Education } from "@/types/practitioner"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { 
+  practitionersMyProfileRetrieveOptions,
+  practitionersCertificationsRetrieveOptions,
+  practitionersEducationsRetrieveOptions,
+  practitionersCertificationsCreateMutation,
+  practitionersCertificationsUpdateMutation,
+  practitionersCertificationsDestroyMutation,
+  practitionersEducationsCreateMutation,
+  practitionersEducationsUpdateMutation,
+  practitionersEducationsDestroyMutation
+} from "@/src/client/@tanstack/react-query.gen"
 
-// Mock function to get practitioner credentials
-const getPractitionerCredentials = async () => {
-  // In a real app, this would fetch from an API
-  return {
-    certifications: [
-      {
-        id: "3563b688-4d4e-41f2-be33-0ab1067aff99",
-        certificate: "Certified Personal Trainer",
-        institution: "National Academy of Sports Medicine",
-        order: 1,
-      },
-      {
-        id: "d7480e8b-1e5e-4a4f-b896-f8d64f8be980",
-        certificate: "Life Coach Certification",
-        institution: "International Coaching Federation",
-        order: 2,
-      },
-    ],
-    educations: [
-      {
-        id: "e8f045be-d8d5-40cb-b6cb-8d0c51e279ed",
-        degree: "Doctorate in Physical Therapy",
-        educational_institute: "University of California",
-        order: 1,
-      },
-      {
-        id: "f9a12c34-5678-90ab-cdef-ghijklmnopqr",
-        degree: "Bachelor of Science in Nutrition",
-        educational_institute: "Stanford University",
-        order: 2,
-      },
-    ],
-  }
+// Define types based on actual API structure
+interface Certification {
+  id: number
+  certificate: string
+  institution: string
+  order: number
+  issue_date?: string
+  expiry_date?: string
+}
+
+interface Education {
+  id: number
+  degree: string
+  educational_institute: string
+  order: number
 }
 
 interface PractitionerCredentialsFormProps {
@@ -61,13 +54,7 @@ interface PractitionerCredentialsFormProps {
 }
 
 export default function PractitionerCredentialsForm({ isOnboarding = false }: PractitionerCredentialsFormProps) {
-  const [certifications, setCertifications] = useState<Certification[]>([])
-  const [educations, setEducations] = useState<Education[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-
-  // Dialog states
   const [certDialogOpen, setCertDialogOpen] = useState(false)
   const [eduDialogOpen, setEduDialogOpen] = useState(false)
   const [editingCert, setEditingCert] = useState<Certification | null>(null)
@@ -80,62 +67,112 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
   const [eduInstitution, setEduInstitution] = useState("")
 
   const { toast } = useToast()
+  const queryClient = useQueryClient()
 
-  // Load practitioner credentials
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await getPractitionerCredentials()
-        setCertifications(data.certifications)
-        setEducations(data.educations)
-        setIsLoading(false)
-      } catch (error) {
-        console.error("Failed to load practitioner credentials:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load your credentials. Please try again.",
-          variant: "destructive",
-        })
-        setIsLoading(false)
-      }
-    }
+  // Fetch practitioner profile to get ID
+  const { data: practitioner } = useQuery(practitionersMyProfileRetrieveOptions())
+  
+  // Fetch certifications and educations
+  const { data: certificationsData, isLoading: certsLoading, refetch: refetchCertifications } = useQuery({
+    ...practitionersCertificationsRetrieveOptions({ path: { id: practitioner?.id || "" } }),
+    enabled: !!practitioner?.id
+  })
+  
+  const { data: educationsData, isLoading: edusLoading, refetch: refetchEducations } = useQuery({
+    ...practitionersEducationsRetrieveOptions({ path: { id: practitioner?.id || "" } }),
+    enabled: !!practitioner?.id
+  })
 
-    loadData()
-  }, [toast])
+  // Ensure data is always an array - handle both direct arrays and paginated responses
+  const certifications = Array.isArray(certificationsData) ? certificationsData : 
+                         (certificationsData?.results && Array.isArray(certificationsData.results)) ? certificationsData.results : []
+  const educations = Array.isArray(educationsData) ? educationsData : 
+                     (educationsData?.results && Array.isArray(educationsData.results)) ? educationsData.results : []
+  const isLoading = certsLoading || edusLoading
 
-  // Save all changes
-  const saveChanges = async () => {
-    setIsSaving(true)
-    try {
-      // In a real app, this would send data to an API
-      console.log("Saving credentials:", { certifications, educations })
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Show success message
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
-
-      toast({
-        title: "Credentials Updated",
-        description: "Your credentials have been saved successfully.",
-      })
-    } catch (error) {
-      console.error("Failed to save credentials:", error)
-      toast({
-        title: "Error",
-        description: "Failed to save your credentials. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSaving(false)
-    }
+  // Utility function to refresh all data
+  const refreshAllData = () => {
+    refetchCertifications()
+    refetchEducations()
+    queryClient.invalidateQueries()
   }
 
+  // Setup mutations
+  const createCertMutation = useMutation({
+    ...practitionersCertificationsCreateMutation(),
+    onSuccess: () => {
+      refreshAllData()
+      toast({
+        title: "Certification Added",
+        description: "Your certification has been added successfully.",
+      })
+    }
+  })
+
+  const updateCertMutation = useMutation({
+    ...practitionersCertificationsUpdateMutation(),
+    onSuccess: () => {
+      refreshAllData()
+      toast({
+        title: "Certification Updated",
+        description: "Your certification has been updated successfully.",
+      })
+    }
+  })
+
+  const deleteCertMutation = useMutation({
+    ...practitionersCertificationsDestroyMutation(),
+    onSuccess: () => {
+      refreshAllData()
+      toast({
+        title: "Certification Removed",
+        description: "The certification has been removed.",
+      })
+    }
+  })
+
+  const createEduMutation = useMutation({
+    ...practitionersEducationsCreateMutation(),
+    onSuccess: () => {
+      refreshAllData()
+      queryClient.invalidateQueries({ queryKey: ['practitionersMyProfileRetrieve'] })
+      queryClient.invalidateQueries()
+      toast({
+        title: "Education Added",
+        description: "Your education has been added successfully.",
+      })
+    }
+  })
+
+  const updateEduMutation = useMutation({
+    ...practitionersEducationsUpdateMutation(),
+    onSuccess: () => {
+      refreshAllData()
+      queryClient.invalidateQueries({ queryKey: ['practitionersMyProfileRetrieve'] })
+      queryClient.invalidateQueries()
+      toast({
+        title: "Education Updated",
+        description: "Your education has been updated successfully.",
+      })
+    }
+  })
+
+  const deleteEduMutation = useMutation({
+    ...practitionersEducationsDestroyMutation(),
+    onSuccess: () => {
+      refreshAllData()
+      queryClient.invalidateQueries({ queryKey: ['practitionersMyProfileRetrieve'] })
+      queryClient.invalidateQueries()
+      toast({
+        title: "Education Removed",
+        description: "The education entry has been removed.",
+      })
+    }
+  })
+
   // Add or update certification
-  const saveCertification = () => {
-    if (!certName || !certInstitution) {
+  const saveCertification = async () => {
+    if (!certName || !certInstitution || !practitioner?.id) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -144,22 +181,24 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
       return
     }
 
+    const certData = {
+      certificate: certName,
+      institution: certInstitution,
+      order: editingCert ? editingCert.order : certifications.length + 1
+    }
+
     if (editingCert) {
       // Update existing certification
-      setCertifications((prev) =>
-        prev.map((cert) =>
-          cert.id === editingCert.id ? { ...cert, certificate: certName, institution: certInstitution } : cert,
-        ),
-      )
+      updateCertMutation.mutate({
+        path: { id: practitioner.id, cert_id: editingCert.id },
+        body: certData
+      })
     } else {
       // Add new certification
-      const newCert: Certification = {
-        id: `cert-${Date.now()}`,
-        certificate: certName,
-        institution: certInstitution,
-        order: certifications.length + 1,
-      }
-      setCertifications((prev) => [...prev, newCert])
+      createCertMutation.mutate({
+        path: { id: practitioner.id },
+        body: certData
+      })
     }
 
     // Reset form and close dialog
@@ -170,8 +209,8 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
   }
 
   // Add or update education
-  const saveEducation = () => {
-    if (!eduDegree || !eduInstitution) {
+  const saveEducation = async () => {
+    if (!eduDegree || !eduInstitution || !practitioner?.id) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -180,22 +219,24 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
       return
     }
 
+    const eduData = {
+      degree: eduDegree,
+      educational_institute: eduInstitution,
+      order: editingEdu ? editingEdu.order : educations.length + 1
+    }
+
     if (editingEdu) {
       // Update existing education
-      setEducations((prev) =>
-        prev.map((edu) =>
-          edu.id === editingEdu.id ? { ...edu, degree: eduDegree, educational_institute: eduInstitution } : edu,
-        ),
-      )
+      updateEduMutation.mutate({
+        path: { id: practitioner.id, edu_id: editingEdu.id },
+        body: eduData
+      })
     } else {
       // Add new education
-      const newEdu: Education = {
-        id: `edu-${Date.now()}`,
-        degree: eduDegree,
-        educational_institute: eduInstitution,
-        order: educations.length + 1,
-      }
-      setEducations((prev) => [...prev, newEdu])
+      createEduMutation.mutate({
+        path: { id: practitioner.id },
+        body: eduData
+      })
     }
 
     // Reset form and close dialog
@@ -222,85 +263,95 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
   }
 
   // Delete certification
-  const deleteCertification = (id: string) => {
-    setCertifications((prev) => prev.filter((cert) => cert.id !== id))
-    toast({
-      title: "Certification Removed",
-      description: "The certification has been removed.",
+  const deleteCertification = (id: string | number) => {
+    if (!practitioner?.id) return
+    deleteCertMutation.mutate({
+      path: { id: practitioner.id, cert_id: id.toString() }
     })
   }
 
   // Delete education
-  const deleteEducation = (id: string) => {
-    setEducations((prev) => prev.filter((edu) => edu.id !== id))
-    toast({
-      title: "Education Removed",
-      description: "The education entry has been removed.",
+  const deleteEducation = (id: string | number) => {
+    if (!practitioner?.id) return
+    deleteEduMutation.mutate({
+      path: { id: practitioner.id, edu_id: id.toString() }
     })
   }
 
   // Move certification up in order
-  const moveCertUp = (index: number) => {
-    if (index <= 0) return
-    const newCerts = [...certifications]
-    const temp = newCerts[index]
-    newCerts[index] = newCerts[index - 1]
-    newCerts[index - 1] = temp
-
-    // Update order values
-    newCerts.forEach((cert, i) => {
-      cert.order = i + 1
+  const moveCertUp = async (index: number) => {
+    if (index <= 0 || !practitioner?.id) return
+    const cert1 = certifications[index]
+    const cert2 = certifications[index - 1]
+    
+    // Update both certifications with swapped order values
+    await updateCertMutation.mutateAsync({
+      path: { id: practitioner.id, cert_id: cert1.id },
+      body: { ...cert1, order: cert2.order }
     })
-
-    setCertifications(newCerts)
+    await updateCertMutation.mutateAsync({
+      path: { id: practitioner.id, cert_id: cert2.id },
+      body: { ...cert2, order: cert1.order }
+    })
+    
+    queryClient.invalidateQueries({ queryKey: ['practitionersCertificationsList'] })
   }
 
   // Move certification down in order
-  const moveCertDown = (index: number) => {
-    if (index >= certifications.length - 1) return
-    const newCerts = [...certifications]
-    const temp = newCerts[index]
-    newCerts[index] = newCerts[index + 1]
-    newCerts[index + 1] = temp
-
-    // Update order values
-    newCerts.forEach((cert, i) => {
-      cert.order = i + 1
+  const moveCertDown = async (index: number) => {
+    if (index >= certifications.length - 1 || !practitioner?.id) return
+    const cert1 = certifications[index]
+    const cert2 = certifications[index + 1]
+    
+    // Update both certifications with swapped order values
+    await updateCertMutation.mutateAsync({
+      path: { id: practitioner.id, cert_id: cert1.id },
+      body: { ...cert1, order: cert2.order }
     })
-
-    setCertifications(newCerts)
+    await updateCertMutation.mutateAsync({
+      path: { id: practitioner.id, cert_id: cert2.id },
+      body: { ...cert2, order: cert1.order }
+    })
+    
+    queryClient.invalidateQueries({ queryKey: ['practitionersCertificationsList'] })
   }
 
   // Move education up in order
-  const moveEduUp = (index: number) => {
-    if (index <= 0) return
-    const newEdus = [...educations]
-    const temp = newEdus[index]
-    newEdus[index] = newEdus[index - 1]
-    newEdus[index - 1] = temp
-
-    // Update order values
-    newEdus.forEach((edu, i) => {
-      edu.order = i + 1
+  const moveEduUp = async (index: number) => {
+    if (index <= 0 || !practitioner?.id) return
+    const edu1 = educations[index]
+    const edu2 = educations[index - 1]
+    
+    // Update both education entries with swapped order values
+    await updateEduMutation.mutateAsync({
+      path: { id: practitioner.id, edu_id: edu1.id },
+      body: { ...edu1, order: edu2.order }
     })
-
-    setEducations(newEdus)
+    await updateEduMutation.mutateAsync({
+      path: { id: practitioner.id, edu_id: edu2.id },
+      body: { ...edu2, order: edu1.order }
+    })
+    
+    queryClient.invalidateQueries({ queryKey: ['practitionersEducationsList'] })
   }
 
   // Move education down in order
-  const moveEduDown = (index: number) => {
-    if (index >= educations.length - 1) return
-    const newEdus = [...educations]
-    const temp = newEdus[index]
-    newEdus[index] = newEdus[index + 1]
-    newEdus[index + 1] = temp
-
-    // Update order values
-    newEdus.forEach((edu, i) => {
-      edu.order = i + 1
+  const moveEduDown = async (index: number) => {
+    if (index >= educations.length - 1 || !practitioner?.id) return
+    const edu1 = educations[index]
+    const edu2 = educations[index + 1]
+    
+    // Update both education entries with swapped order values
+    await updateEduMutation.mutateAsync({
+      path: { id: practitioner.id, edu_id: edu1.id },
+      body: { ...edu1, order: edu2.order }
     })
-
-    setEducations(newEdus)
+    await updateEduMutation.mutateAsync({
+      path: { id: practitioner.id, edu_id: edu2.id },
+      body: { ...edu2, order: edu1.order }
+    })
+    
+    queryClient.invalidateQueries({ queryKey: ['practitionersEducationsList'] })
   }
 
   if (isLoading) {
@@ -530,23 +581,6 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={saveChanges} disabled={isSaving}>
-          {isSaving ? (
-            <>Saving...</>
-          ) : showSuccess ? (
-            <>
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Saved
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Save All Changes
-            </>
-          )}
-        </Button>
-      </div>
     </div>
   )
 }

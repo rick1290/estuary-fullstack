@@ -26,7 +26,8 @@ from services.api.v1.views import (
 # Practitioner endpoints
 from practitioners.api.v1.views import (
     PractitionerViewSet, ScheduleViewSet, AvailabilityViewSet,
-    CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet
+    CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet,
+    SpecializationViewSet, StyleViewSet, TopicViewSet, ModalityViewSet
 )
 
 # Payment system
@@ -80,6 +81,10 @@ router.register(r'availability', AvailabilityViewSet, basename='availability')
 router.register(r'certifications', CertificationViewSet, basename='certification')
 router.register(r'education', EducationViewSet, basename='education')
 router.register(r'practitioner-applications', PractitionerApplicationViewSet, basename='practitioner-application')
+router.register(r'specializations', SpecializationViewSet, basename='specialization')
+router.register(r'styles', StyleViewSet, basename='style')
+router.register(r'topics', TopicViewSet, basename='topic')
+router.register(r'modalities', ModalityViewSet, basename='modality')
 
 # Payments
 router.register(r'payment-methods', PaymentMethodViewSet, basename='payment-method')

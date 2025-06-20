@@ -13,6 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Save, CheckCircle, Plus } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import LoadingSpinner from "@/components/ui/loading-spinner"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { 
+  practitionersMyProfileRetrieveOptions, 
+  practitionersPartialUpdateMutation,
+  specializationsListOptions,
+  stylesListOptions,
+  topicsListOptions,
+  modalitiesListOptions
+} from "@/src/client/@tanstack/react-query.gen"
 
 // Form schema with validation
 const professionalFormSchema = z.object({
@@ -26,72 +35,34 @@ const professionalFormSchema = z.object({
 
 type ProfessionalFormValues = z.infer<typeof professionalFormSchema>
 
-// Mock data for dropdowns
-const SPECIALIZATIONS = [
-  { id: "1", content: "Meditation Coach" },
-  { id: "2", content: "Yoga Instructor" },
-  { id: "3", content: "Nutritionist" },
-  { id: "4", content: "Life Coach" },
-  { id: "5", content: "Fitness Trainer" },
-  { id: "6", content: "Mental Health Counselor" },
-  { id: "7", content: "Career Coach" },
-  { id: "8", content: "Relationship Counselor" },
-]
-
-const STYLES = [
-  { id: "1", content: "Gentle" },
-  { id: "2", content: "Energetic" },
-  { id: "3", content: "Analytical" },
-  { id: "4", content: "Focused" },
-  { id: "5", content: "Intuitive" },
-  { id: "6", content: "Structured" },
-  { id: "7", content: "Holistic" },
-  { id: "8", content: "Practical" },
-]
-
-const TOPICS = [
-  { id: "1", content: "Wellness" },
-  { id: "2", content: "Mental Health" },
-  { id: "3", content: "Fitness" },
-  { id: "4", content: "Nutrition" },
-  { id: "5", content: "Career Development" },
-  { id: "6", content: "Relationships" },
-  { id: "7", content: "Stress Management" },
-  { id: "8", content: "Personal Growth" },
-]
-
-const MODALITIES = [
-  { id: "1", name: "Virtual", description: "Virtual sessions" },
-  { id: "2", name: "In-Person", description: "In-Person sessions" },
-  { id: "3", name: "Chat", description: "Chat sessions" },
-  { id: "4", name: "Group", description: "Group sessions" },
-]
-
-// Mock function to get practitioner data
-const getPractitionerProfessionalData = async () => {
-  // In a real app, this would fetch from an API
-  return {
-    years_of_experience: 5,
-    buffer_time: 15,
-    specializations: ["1", "3"],
-    styles: ["1", "4"],
-    topics: ["1", "2", "3"],
-    modalities: ["1", "2", "3"],
-  }
-}
 
 interface PractitionerAvailabilityFormProps {
   isOnboarding?: boolean
 }
 
 export default function PractitionerAvailabilityForm({ isOnboarding = false }: PractitionerAvailabilityFormProps) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [newSpecialization, setNewSpecialization] = useState("")
-  const [newStyle, setNewStyle] = useState("")
-  const [newTopic, setNewTopic] = useState("")
   const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  // Fetch data from API
+  const { data: practitioner, isLoading: practitionerLoading } = useQuery(practitionersMyProfileRetrieveOptions())
+  const { data: specializationsData, isLoading: specializationsLoading } = useQuery(specializationsListOptions())
+  const { data: stylesData, isLoading: stylesLoading } = useQuery(stylesListOptions())
+  const { data: topicsData, isLoading: topicsLoading } = useQuery(topicsListOptions())
+  const { data: modalitiesData, isLoading: modalitiesLoading } = useQuery(modalitiesListOptions())
+
+  // Ensure data is always an array - handle both direct arrays and paginated responses
+  const specializations = Array.isArray(specializationsData) ? specializationsData : 
+                         (specializationsData?.results && Array.isArray(specializationsData.results)) ? specializationsData.results : []
+  const styles = Array.isArray(stylesData) ? stylesData : 
+                 (stylesData?.results && Array.isArray(stylesData.results)) ? stylesData.results : []
+  const topics = Array.isArray(topicsData) ? topicsData : 
+                 (topicsData?.results && Array.isArray(topicsData.results)) ? topicsData.results : []
+  const modalities = Array.isArray(modalitiesData) ? modalitiesData : 
+                     (modalitiesData?.results && Array.isArray(modalitiesData.results)) ? modalitiesData.results : []
+
+  const isLoading = practitionerLoading || specializationsLoading || stylesLoading || topicsLoading || modalitiesLoading
 
   // Initialize form with default values
   const form = useForm<ProfessionalFormValues>({
@@ -106,96 +77,71 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
     },
   })
 
-  // Load practitioner data
+  // Update form when data is loaded
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await getPractitionerProfessionalData()
-        form.reset({
-          years_of_experience: data.years_of_experience,
-          buffer_time: data.buffer_time,
-          specializations: data.specializations,
-          styles: data.styles,
-          topics: data.topics,
-          modalities: data.modalities,
-        })
-        setIsLoading(false)
-      } catch (error) {
-        console.error("Failed to load practitioner professional data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load your professional details. Please try again.",
-          variant: "destructive",
-        })
-        setIsLoading(false)
-      }
+    if (practitioner) {
+      const specializationIds = practitioner.specializations?.map(s => s.id.toString()) || []
+      const styleIds = practitioner.styles?.map(s => s.id.toString()) || []
+      const topicIds = practitioner.topics?.map(s => s.id.toString()) || []
+      const modalityIds = practitioner.modalities?.map(m => m.id.toString()) || []
+
+      form.reset({
+        years_of_experience: practitioner.years_of_experience || 0,
+        buffer_time: practitioner.buffer_time || 15,
+        specializations: specializationIds,
+        styles: styleIds,
+        topics: topicIds,
+        modalities: modalityIds,
+      })
     }
+  }, [practitioner, form])
 
-    loadData()
-  }, [form, toast])
-
-  // Handle form submission
-  const onSubmit = async (data: ProfessionalFormValues) => {
-    setIsSaving(true)
-    try {
-      // In a real app, this would send data to an API
-      console.log("Saving professional data:", data)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Show success message
+  // Setup mutation for updating profile
+  const updateMutation = useMutation({
+    ...practitionersPartialUpdateMutation(),
+    onSuccess: () => {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
-
       toast({
         title: "Professional Details Updated",
         description: "Your professional information has been saved successfully.",
       })
-    } catch (error) {
+      // Invalidate and refetch the profile data
+      queryClient.invalidateQueries({ queryKey: ['practitionersMyProfileRetrieve'] })
+    },
+    onError: (error) => {
       console.error("Failed to save professional details:", error)
       toast({
         title: "Error",
         description: "Failed to save your professional details. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsSaving(false)
     }
+  })
+
+  // Handle form submission
+  const onSubmit = async (data: ProfessionalFormValues) => {
+    if (!practitioner?.id) return
+    
+    // Convert string IDs to numbers for the API
+    const specialization_ids = data.specializations.map(id => parseInt(id))
+    const style_ids = data.styles.map(id => parseInt(id))
+    const topic_ids = data.topics.map(id => parseInt(id))
+    const modality_ids = data.modalities.map(id => parseInt(id))
+
+    updateMutation.mutate({
+      path: { id: practitioner.id },
+      body: {
+        years_of_experience: data.years_of_experience,
+        buffer_time: data.buffer_time,
+        specialization_ids,
+        style_ids,
+        topic_ids,
+        modality_ids
+      }
+    })
   }
 
-  // Add custom specialization
-  const addSpecialization = () => {
-    if (newSpecialization.trim()) {
-      const customId = `custom-${Date.now()}`
-      SPECIALIZATIONS.push({ id: customId, content: newSpecialization.trim() })
-      const currentValues = form.getValues().specializations
-      form.setValue("specializations", [...currentValues, customId])
-      setNewSpecialization("")
-    }
-  }
-
-  // Add custom style
-  const addStyle = () => {
-    if (newStyle.trim()) {
-      const customId = `custom-${Date.now()}`
-      STYLES.push({ id: customId, content: newStyle.trim() })
-      const currentValues = form.getValues().styles
-      form.setValue("styles", [...currentValues, customId])
-      setNewStyle("")
-    }
-  }
-
-  // Add custom topic
-  const addTopic = () => {
-    if (newTopic.trim()) {
-      const customId = `custom-${Date.now()}`
-      TOPICS.push({ id: customId, content: newTopic.trim() })
-      const currentValues = form.getValues().topics
-      form.setValue("topics", [...currentValues, customId])
-      setNewTopic("")
-    }
-  }
 
   if (isLoading) {
     return <LoadingSpinner />
@@ -270,7 +216,7 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                       <FormDescription>Select your areas of specialization.</FormDescription>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {SPECIALIZATIONS.map((item) => (
+                      {specializations.map((item) => (
                         <FormField
                           key={item.id}
                           control={form.control}
@@ -280,11 +226,11 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                               <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
                                 <FormControl>
                                   <Checkbox
-                                    checked={field.value?.includes(item.id)}
+                                    checked={field.value?.includes(item.id.toString())}
                                     onCheckedChange={(checked) => {
                                       return checked
-                                        ? field.onChange([...field.value, item.id])
-                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                        ? field.onChange([...field.value, item.id.toString()])
+                                        : field.onChange(field.value?.filter((value) => value !== item.id.toString()))
                                     }}
                                   />
                                 </FormControl>
@@ -294,17 +240,6 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                           }}
                         />
                       ))}
-                    </div>
-                    <div className="flex items-center mt-4">
-                      <Input
-                        placeholder="Add custom specialization"
-                        value={newSpecialization}
-                        onChange={(e) => setNewSpecialization(e.target.value)}
-                        className="max-w-sm mr-2"
-                      />
-                      <Button type="button" variant="outline" size="sm" onClick={addSpecialization}>
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -325,7 +260,7 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                       <FormDescription>Select the styles that best describe your approach.</FormDescription>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {STYLES.map((item) => (
+                      {styles.map((item) => (
                         <FormField
                           key={item.id}
                           control={form.control}
@@ -335,11 +270,11 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                               <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
                                 <FormControl>
                                   <Checkbox
-                                    checked={field.value?.includes(item.id)}
+                                    checked={field.value?.includes(item.id.toString())}
                                     onCheckedChange={(checked) => {
                                       return checked
-                                        ? field.onChange([...field.value, item.id])
-                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                        ? field.onChange([...field.value, item.id.toString()])
+                                        : field.onChange(field.value?.filter((value) => value !== item.id.toString()))
                                     }}
                                   />
                                 </FormControl>
@@ -349,17 +284,6 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                           }}
                         />
                       ))}
-                    </div>
-                    <div className="flex items-center mt-4">
-                      <Input
-                        placeholder="Add custom style"
-                        value={newStyle}
-                        onChange={(e) => setNewStyle(e.target.value)}
-                        className="max-w-sm mr-2"
-                      />
-                      <Button type="button" variant="outline" size="sm" onClick={addStyle}>
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -380,7 +304,7 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                       <FormDescription>Select the topics you cover in your practice.</FormDescription>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {TOPICS.map((item) => (
+                      {topics.map((item) => (
                         <FormField
                           key={item.id}
                           control={form.control}
@@ -390,11 +314,11 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                               <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
                                 <FormControl>
                                   <Checkbox
-                                    checked={field.value?.includes(item.id)}
+                                    checked={field.value?.includes(item.id.toString())}
                                     onCheckedChange={(checked) => {
                                       return checked
-                                        ? field.onChange([...field.value, item.id])
-                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                        ? field.onChange([...field.value, item.id.toString()])
+                                        : field.onChange(field.value?.filter((value) => value !== item.id.toString()))
                                     }}
                                   />
                                 </FormControl>
@@ -404,17 +328,6 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                           }}
                         />
                       ))}
-                    </div>
-                    <div className="flex items-center mt-4">
-                      <Input
-                        placeholder="Add custom topic"
-                        value={newTopic}
-                        onChange={(e) => setNewTopic(e.target.value)}
-                        className="max-w-sm mr-2"
-                      />
-                      <Button type="button" variant="outline" size="sm" onClick={addTopic}>
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -435,7 +348,7 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                       <FormDescription>Select the ways you offer your services.</FormDescription>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {MODALITIES.map((item) => (
+                      {modalities.map((item) => (
                         <FormField
                           key={item.id}
                           control={form.control}
@@ -445,11 +358,11 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
                               <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
                                 <FormControl>
                                   <Checkbox
-                                    checked={field.value?.includes(item.id)}
+                                    checked={field.value?.includes(item.id.toString())}
                                     onCheckedChange={(checked) => {
                                       return checked
-                                        ? field.onChange([...field.value, item.id])
-                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                        ? field.onChange([...field.value, item.id.toString()])
+                                        : field.onChange(field.value?.filter((value) => value !== item.id.toString()))
                                     }}
                                   />
                                 </FormControl>
@@ -471,8 +384,8 @@ export default function PractitionerAvailabilityForm({ isOnboarding = false }: P
           </Card>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? (
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? (
                 <>Saving...</>
               ) : showSuccess ? (
                 <>

@@ -15,7 +15,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from practitioners.models import (
     Practitioner, Schedule, ScheduleTimeSlot, SchedulePreference,
-    OutOfOffice, VerificationDocument, PractitionerOnboardingProgress
+    OutOfOffice, VerificationDocument, PractitionerOnboardingProgress,
+    Certification, Education
 )
 # from practitioners.utils.availability import AvailabilityCalculator
 from bookings.models import Booking
@@ -27,10 +28,12 @@ from .serializers import (
     PractitionerPrivateSerializer, PractitionerUpdateSerializer,
     PractitionerApplicationSerializer, ScheduleSerializer,
     ScheduleCreateSerializer, SchedulePreferenceSerializer,
-    OutOfOfficeSerializer, OnboardingProgressSerializer,
-    AvailabilitySlotSerializer, AvailabilityQuerySerializer,
-    PractitionerSearchSerializer, VerificationDocumentSerializer,
-    CertificationSerializer, EducationSerializer
+    ScheduleTimeSlotSerializer, OutOfOfficeSerializer, 
+    OnboardingProgressSerializer, AvailabilitySlotSerializer, 
+    AvailabilityQuerySerializer, PractitionerSearchSerializer, 
+    VerificationDocumentSerializer, CertificationSerializer, 
+    EducationSerializer, SpecializationSerializer, StyleSerializer, 
+    TopicSerializer, ModalitySerializer, PractitionerClientSerializer
 )
 from .permissions import IsPractitionerOwner, IsPractitionerOrReadOnly
 from .filters import PractitionerFilter
@@ -57,7 +60,13 @@ from .filters import PractitionerFilter
     balance=extend_schema(tags=['Practitioners']),
     payouts=extend_schema(tags=['Practitioners']),
     request_payout=extend_schema(tags=['Practitioners']),
-    analytics=extend_schema(tags=['Practitioners'])
+    analytics=extend_schema(tags=['Practitioners']),
+    certifications=extend_schema(tags=['Practitioners']),
+    certification_detail=extend_schema(tags=['Practitioners']),
+    educations=extend_schema(tags=['Practitioners']),
+    education_detail=extend_schema(tags=['Practitioners']),
+    questions=extend_schema(tags=['Practitioners']),
+    question_detail=extend_schema(tags=['Practitioners'])
 )
 class PractitionerViewSet(viewsets.ModelViewSet):
     """
@@ -1024,6 +1033,205 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         }
         
         return Response(analytics_data)
+    
+    @action(detail=True, methods=['get', 'post'])
+    def certifications(self, request, pk=None):
+        """
+        Manage practitioner's certifications.
+        GET: List all certifications for the practitioner
+        POST: Add a new certification to the practitioner
+        """
+        practitioner = self.get_object()
+        
+        if request.method == 'GET':
+            certifications = practitioner.certifications.all().order_by('order')
+            serializer = CertificationSerializer(certifications, many=True)
+            return Response(serializer.data)
+        
+        else:  # POST
+            # Check permissions
+            if practitioner.user != request.user and not request.user.is_staff:
+                return Response(
+                    {"detail": "You don't have permission to modify this practitioner's certifications"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = CertificationSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            cert = serializer.save()
+            practitioner.certifications.add(cert)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['put', 'delete'], url_path='certifications/(?P<cert_id>[^/.]+)')
+    def certification_detail(self, request, pk=None, cert_id=None):
+        """
+        Update or delete a specific certification.
+        PUT: Update certification details
+        DELETE: Remove certification from practitioner
+        """
+        practitioner = self.get_object()
+        
+        # Check permissions
+        if practitioner.user != request.user and not request.user.is_staff:
+            return Response(
+                {"detail": "You don't have permission to modify this practitioner's certifications"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            cert = practitioner.certifications.get(id=cert_id)
+        except Certification.DoesNotExist:
+            return Response(
+                {"detail": "Certification not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if request.method == 'PUT':
+            serializer = CertificationSerializer(cert, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        
+        else:  # DELETE
+            practitioner.certifications.remove(cert)
+            # If no other practitioners have this cert, delete it
+            if not cert.practitioners.exists():
+                cert.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=True, methods=['get', 'post'])
+    def educations(self, request, pk=None):
+        """
+        Manage practitioner's education entries.
+        GET: List all education entries for the practitioner
+        POST: Add a new education entry to the practitioner
+        """
+        practitioner = self.get_object()
+        
+        if request.method == 'GET':
+            educations = practitioner.educations.all().order_by('order')
+            serializer = EducationSerializer(educations, many=True)
+            return Response(serializer.data)
+        
+        else:  # POST
+            # Check permissions
+            if practitioner.user != request.user and not request.user.is_staff:
+                return Response(
+                    {"detail": "You don't have permission to modify this practitioner's education"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = EducationSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            edu = serializer.save()
+            practitioner.educations.add(edu)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['put', 'delete'], url_path='educations/(?P<edu_id>[^/.]+)')
+    def education_detail(self, request, pk=None, edu_id=None):
+        """
+        Update or delete a specific education entry.
+        PUT: Update education details
+        DELETE: Remove education from practitioner
+        """
+        practitioner = self.get_object()
+        
+        # Check permissions
+        if practitioner.user != request.user and not request.user.is_staff:
+            return Response(
+                {"detail": "You don't have permission to modify this practitioner's education"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            edu = practitioner.educations.get(id=edu_id)
+        except Education.DoesNotExist:
+            return Response(
+                {"detail": "Education entry not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if request.method == 'PUT':
+            serializer = EducationSerializer(edu, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        
+        else:  # DELETE
+            practitioner.educations.remove(edu)
+            # If no other practitioners have this education, delete it
+            if not edu.practitioners.exists():
+                edu.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=True, methods=['get', 'post'])
+    def questions(self, request, pk=None):
+        """
+        Manage practitioner's questions.
+        GET: List all questions for the practitioner
+        POST: Add a new question to the practitioner
+        """
+        practitioner = self.get_object()
+        
+        if request.method == 'GET':
+            questions = practitioner.questions.all().order_by('order')
+            from .serializers import QuestionSerializer
+            serializer = QuestionSerializer(questions, many=True)
+            return Response(serializer.data)
+        
+        else:  # POST
+            # Check permissions
+            if practitioner.user != request.user and not request.user.is_staff:
+                return Response(
+                    {"detail": "You don't have permission to modify this practitioner's questions"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            from .serializers import QuestionSerializer
+            serializer = QuestionSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            question = serializer.save()
+            practitioner.questions.add(question)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['put', 'delete'], url_path='questions/(?P<question_id>[^/.]+)')
+    def question_detail(self, request, pk=None, question_id=None):
+        """
+        Update or delete a specific question.
+        PUT: Update question details
+        DELETE: Remove question from practitioner
+        """
+        practitioner = self.get_object()
+        
+        # Check permissions
+        if practitioner.user != request.user and not request.user.is_staff:
+            return Response(
+                {"detail": "You don't have permission to modify this practitioner's questions"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            from practitioners.models import Question
+            question = practitioner.questions.get(id=question_id)
+        except Question.DoesNotExist:
+            return Response(
+                {"detail": "Question not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if request.method == 'PUT':
+            from .serializers import QuestionSerializer
+            serializer = QuestionSerializer(question, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        
+        else:  # DELETE
+            practitioner.questions.remove(question)
+            # If no other practitioners have this question, delete it
+            if not question.practitioners.exists():
+                question.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ScheduleViewSet(viewsets.ModelViewSet):
@@ -1156,14 +1364,18 @@ class AvailabilityViewSet(viewsets.ViewSet):
             )
         
         # Calculate availability
-        calculator = AvailabilityCalculator(practitioner)
-        available_slots = calculator.get_available_slots(
-            start_date=query_params['start_date'],
-            end_date=query_params['end_date'],
-            service_id=query_params.get('service_id'),
-            duration_minutes=query_params.get('duration_minutes'),
-            timezone_str=query_params.get('timezone', 'UTC')
-        )
+        # TODO: Implement AvailabilityCalculator
+        # calculator = AvailabilityCalculator(practitioner)
+        # available_slots = calculator.get_available_slots(
+        #     start_date=query_params['start_date'],
+        #     end_date=query_params['end_date'],
+        #     service_id=query_params.get('service_id'),
+        #     duration_minutes=query_params.get('duration_minutes'),
+        #     timezone_str=query_params.get('timezone', 'UTC')
+        # )
+        
+        # For now, return empty availability
+        available_slots = []
         
         # Serialize results
         serializer = AvailabilitySlotSerializer(available_slots, many=True)
@@ -1244,8 +1456,12 @@ class AvailabilityViewSet(viewsets.ViewSet):
             )
         
         # Calculate next available date
-        calculator = AvailabilityCalculator(practitioner)
-        next_available = calculator.calculate_next_available_date()
+        # TODO: Implement AvailabilityCalculator
+        # calculator = AvailabilityCalculator(practitioner)
+        # next_available = calculator.calculate_next_available_date()
+        
+        # For now, set next available to tomorrow
+        next_available = timezone.now() + timedelta(days=1)
         
         # Update practitioner
         practitioner.next_available_date = next_available
@@ -1262,16 +1478,47 @@ class CertificationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        """Get all certifications (read-only for non-staff)"""
+        """
+        Get certifications based on user role:
+        - Practitioners: Get their own certifications
+        - Staff: Get all certifications
+        - Others: Get all certifications (read-only)
+        """
         from practitioners.models import Certification
-        return Certification.objects.all()
+        user = self.request.user
+        
+        if hasattr(user, 'practitioner_profile'):
+            # For practitioners, return their own certifications
+            return user.practitioner_profile.certifications.all().order_by('order')
+        elif user.is_staff:
+            # Staff can see all certifications
+            return Certification.objects.all()
+        else:
+            # Others can see all certifications (read-only)
+            return Certification.objects.all()
     
     def get_permissions(self):
-        """Only staff can create/update/delete certifications"""
+        """Allow practitioners to manage their own certifications"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            from rest_framework.permissions import IsAdminUser
-            return [IsAdminUser()]
+            # Check if user is a practitioner or admin
+            if hasattr(self.request.user, 'practitioner_profile') or self.request.user.is_staff:
+                return [IsAuthenticated()]
+            else:
+                from rest_framework.permissions import IsAdminUser
+                return [IsAdminUser()]
         return super().get_permissions()
+    
+    def perform_create(self, serializer):
+        """Create certification and associate with practitioner if applicable"""
+        cert = serializer.save()
+        if hasattr(self.request.user, 'practitioner_profile'):
+            self.request.user.practitioner_profile.certifications.add(cert)
+    
+    def perform_destroy(self, instance):
+        """Remove certification from practitioner before deleting"""
+        if hasattr(self.request.user, 'practitioner_profile'):
+            self.request.user.practitioner_profile.certifications.remove(instance)
+        instance.delete()
 
 
 class EducationViewSet(viewsets.ModelViewSet):
@@ -1280,16 +1527,47 @@ class EducationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        """Get all education entries (read-only for non-staff)"""
+        """
+        Get education entries based on user role:
+        - Practitioners: Get their own education entries
+        - Staff: Get all education entries
+        - Others: Get all education entries (read-only)
+        """
         from practitioners.models import Education
-        return Education.objects.all()
+        user = self.request.user
+        
+        if hasattr(user, 'practitioner_profile'):
+            # For practitioners, return their own education entries
+            return user.practitioner_profile.educations.all().order_by('order')
+        elif user.is_staff:
+            # Staff can see all education entries
+            return Education.objects.all()
+        else:
+            # Others can see all education entries (read-only)
+            return Education.objects.all()
     
     def get_permissions(self):
-        """Only staff can create/update/delete education entries"""
+        """Allow practitioners to manage their own education entries"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            from rest_framework.permissions import IsAdminUser
-            return [IsAdminUser()]
+            # Check if user is a practitioner or admin
+            if hasattr(self.request.user, 'practitioner_profile') or self.request.user.is_staff:
+                return [IsAuthenticated()]
+            else:
+                from rest_framework.permissions import IsAdminUser
+                return [IsAdminUser()]
         return super().get_permissions()
+    
+    def perform_create(self, serializer):
+        """Create education entry and associate with practitioner if applicable"""
+        edu = serializer.save()
+        if hasattr(self.request.user, 'practitioner_profile'):
+            self.request.user.practitioner_profile.educations.add(edu)
+    
+    def perform_destroy(self, instance):
+        """Remove education entry from practitioner before deleting"""
+        if hasattr(self.request.user, 'practitioner_profile'):
+            self.request.user.practitioner_profile.educations.remove(instance)
+        instance.delete()
 
 
 class PractitionerApplicationViewSet(viewsets.ViewSet):
@@ -1387,3 +1665,51 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
                 {"detail": "No practitioner application found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class SpecializationViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing specializations"""
+    serializer_class = SpecializationSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        """Get all specializations"""
+        from practitioners.models import Specialize
+        return Specialize.objects.all().order_by('content')
+
+
+class StyleViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing styles"""
+    serializer_class = StyleSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        """Get all styles"""
+        from practitioners.models import Style
+        return Style.objects.all().order_by('content')
+
+
+class TopicViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing topics"""
+    serializer_class = TopicSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        """Get all topics"""
+        from practitioners.models import Topic
+        return Topic.objects.all().order_by('content')
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['Common']),
+    retrieve=extend_schema(tags=['Common'])
+)
+class ModalityViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing modalities"""
+    serializer_class = ModalitySerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        """Get all modalities"""
+        from common.models import Modality
+        return Modality.objects.all().order_by('name')
