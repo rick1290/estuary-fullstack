@@ -112,6 +112,45 @@ class ConversationParticipantSerializer(serializers.ModelSerializer):
                   'last_read_at']
 
 
+class ConversationListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for conversation list."""
+    other_user = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Conversation
+        fields = ['id', 'other_user', 'last_message', 'unread_count', 'created_at', 'updated_at']
+    
+    def get_other_user(self, obj):
+        """Get the other user in the conversation."""
+        request_user = self.context.get('request').user
+        # For direct conversations, get the other participant
+        if obj.conversation_type == 'direct':
+            other_user = obj.participants.exclude(id=request_user.id).first()
+            if other_user:
+                return UserSummarySerializer(other_user).data
+        return None
+    
+    def get_last_message(self, obj):
+        """Get the last message in the conversation."""
+        # This is prefetched in the view
+        messages = list(obj.messages.all())
+        if messages:
+            return {
+                'id': messages[0].id,
+                'content': messages[0].content[:100] + '...' if len(messages[0].content) > 100 else messages[0].content,
+                'sender_id': messages[0].sender_id,
+                'created_at': messages[0].created_at,
+                'is_read': messages[0].is_read
+            }
+        return None
+    
+    def get_unread_count(self, obj):
+        """Get unread count from annotation."""
+        return getattr(obj, 'unread_count', 0)
+
+
 class ConversationSerializer(serializers.ModelSerializer):
     """Base serializer for conversations."""
     participants = serializers.SerializerMethodField()
@@ -273,3 +312,10 @@ class UnreadCountResponseSerializer(serializers.Serializer):
         child=serializers.DictField(),
         required=False
     )
+
+
+# Simplified serializers for basic messaging
+class SimpleConversationCreateSerializer(serializers.Serializer):
+    """Simple serializer for creating direct conversations."""
+    other_user_id = serializers.IntegerField()
+    initial_message = serializers.CharField(required=False, allow_blank=True)

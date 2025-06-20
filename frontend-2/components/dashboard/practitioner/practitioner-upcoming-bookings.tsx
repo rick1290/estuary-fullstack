@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -14,49 +14,67 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-// Mock data for upcoming bookings
-const UPCOMING_BOOKINGS = [
-  {
-    id: 1,
-    client: {
-      name: "John Smith",
-      avatar: "/diverse-group-city.png",
-    },
-    service: "Mindfulness Meditation Session",
-    date: "Today",
-    time: "2:00 PM - 3:00 PM",
-    type: "Virtual",
-    status: "confirmed",
-  },
-  {
-    id: 2,
-    client: {
-      name: "Emily Johnson",
-      avatar: "/diverse-group-city.png",
-    },
-    service: "Yoga for Beginners",
-    date: "Tomorrow",
-    time: "10:00 AM - 11:00 AM",
-    type: "In-Person",
-    status: "confirmed",
-  },
-  {
-    id: 3,
-    client: {
-      name: "Michael Chen",
-      avatar: "/diverse-group-city.png",
-    },
-    service: "Life Coaching Session",
-    date: "May 15, 2023",
-    time: "4:00 PM - 5:00 PM",
-    type: "Virtual",
-    status: "pending",
-  },
-]
-
+import { useQuery } from "@tanstack/react-query"
+import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { format, isToday, isTomorrow, parseISO } from "date-fns"
+import { Skeleton } from "@/components/ui/skeleton"
 export default function PractitionerUpcomingBookings() {
   const [tabValue, setTabValue] = useState("upcoming")
+  
+  // Fetch upcoming bookings
+  const { data: bookingsData, isLoading } = useQuery(
+    bookingsListOptions({
+      query: {
+        status: tabValue === "pending" ? "pending_payment" : "confirmed",
+        ordering: "start_time",
+        page_size: 5
+      }
+    })
+  )
+
+  const bookings = useMemo(() => {
+    if (!bookingsData?.results) return []
+    
+    const now = new Date()
+    
+    return bookingsData.results
+      .filter(booking => {
+        const startTime = parseISO(booking.start_time)
+        
+        if (tabValue === "today") {
+          return isToday(startTime)
+        } else if (tabValue === "upcoming") {
+          return startTime > now
+        } else if (tabValue === "pending") {
+          return booking.status === "pending_payment"
+        }
+        return true
+      })
+      .map(booking => {
+        const startTime = parseISO(booking.start_time)
+        const endTime = parseISO(booking.end_time)
+        
+        let dateDisplay = format(startTime, "MMM d, yyyy")
+        if (isToday(startTime)) {
+          dateDisplay = "Today"
+        } else if (isTomorrow(startTime)) {
+          dateDisplay = "Tomorrow"
+        }
+        
+        return {
+          id: booking.id,
+          client: {
+            name: booking.user?.full_name || booking.user?.email || "Unknown Client",
+            avatar: booking.user?.avatar_url
+          },
+          service: booking.service?.title || "Service",
+          date: dateDisplay,
+          time: `${format(startTime, "h:mm a")} - ${format(endTime, "h:mm a")}`,
+          type: booking.service?.delivery_method === "online" ? "Virtual" : "In-Person",
+          status: booking.status
+        }
+      })
+  }, [bookingsData, tabValue])
 
   return (
     <div className="space-y-4">
@@ -68,9 +86,22 @@ export default function PractitionerUpcomingBookings() {
         </TabsList>
       </Tabs>
 
-      {UPCOMING_BOOKINGS.length > 0 ? (
+      {isLoading ? (
         <div className="space-y-3">
-          {UPCOMING_BOOKINGS.map((booking) => (
+          {[...Array(3)].map((_, index) => (
+            <div key={index} className="flex items-start space-x-4 p-3 rounded-lg border">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : bookings.length > 0 ? (
+        <div className="space-y-3">
+          {bookings.map((booking) => (
             <div
               key={booking.id}
               className="flex items-start space-x-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"

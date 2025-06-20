@@ -57,6 +57,9 @@ from streams.api.v1.views import (
     StreamViewSet, LiveStreamViewSet, StreamScheduleViewSet, StreamCategoryViewSet
 )
 
+# Messaging
+from messaging.api.v1.views import ConversationViewSet, MessageViewSet
+
 # Register all ViewSets properly
 # Bookings
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -111,6 +114,10 @@ router.register(r'streams', StreamViewSet, basename='stream')
 router.register(r'live-streams', LiveStreamViewSet, basename='live-stream')
 router.register(r'stream-schedules', StreamScheduleViewSet, basename='stream-schedule')
 router.register(r'stream-categories', StreamCategoryViewSet, basename='stream-category')
+
+# Messaging
+router.register(r'conversations', ConversationViewSet, basename='conversation')
+router.register(r'messages', MessageViewSet, basename='message')
 
 # Import documentation views
 from api.v1.docs import (

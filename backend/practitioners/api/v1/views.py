@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Avg, Count, Min, Max, Prefetch
+from django.db.models import Q, Avg, Count, Min, Max, Prefetch, F, Sum, OuterRef, Subquery
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -20,6 +20,7 @@ from practitioners.models import (
 # from practitioners.utils.availability import AvailabilityCalculator
 from bookings.models import Booking
 from services.models import Service
+from users.models import User
 
 from .serializers import (
     PractitionerListSerializer, PractitionerDetailSerializer,
@@ -48,8 +49,15 @@ from .filters import PractitionerFilter
     upload_document=extend_schema(tags=['Practitioners']),
     services=extend_schema(tags=['Practitioners']),
     availability=extend_schema(tags=['Practitioners']),
+    search=extend_schema(tags=['Practitioners']),
     stats=extend_schema(tags=['Practitioners']),
-    search=extend_schema(tags=['Practitioners'])
+    clients=extend_schema(tags=['Practitioners']),
+    earnings=extend_schema(tags=['Practitioners']),
+    transactions=extend_schema(tags=['Practitioners']),
+    balance=extend_schema(tags=['Practitioners']),
+    payouts=extend_schema(tags=['Practitioners']),
+    request_payout=extend_schema(tags=['Practitioners']),
+    analytics=extend_schema(tags=['Practitioners'])
 )
 class PractitionerViewSet(viewsets.ModelViewSet):
     """
@@ -308,6 +316,714 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         
         serializer = PractitionerListSerializer(queryset, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def stats(self, request):
+        """
+        Get dashboard statistics for the practitioner.
+        Returns bookings, revenue, clients, and rating stats.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Calculate date ranges
+        now = timezone.now()
+        current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+        
+        # Get current month stats
+        current_month_bookings = Booking.objects.filter(
+            practitioner=practitioner,
+            created_at__gte=current_month_start,
+            status__in=['completed', 'confirmed']
+        )
+        
+        # Get last month stats for comparison
+        last_month_bookings = Booking.objects.filter(
+            practitioner=practitioner,
+            created_at__gte=last_month_start,
+            created_at__lt=current_month_start,
+            status__in=['completed', 'confirmed']
+        )
+        
+        # Calculate stats
+        total_bookings = current_month_bookings.count()
+        total_bookings_last = last_month_bookings.count()
+        
+        total_revenue = current_month_bookings.filter(
+            status='completed'
+        ).aggregate(
+            total=Sum('final_amount_cents')
+        )['total'] or 0
+        
+        total_revenue_last = last_month_bookings.filter(
+            status='completed'
+        ).aggregate(
+            total=Sum('final_amount_cents')
+        )['total'] or 0
+        
+        # Active clients (unique users with bookings in the last 30 days)
+        active_clients = User.objects.filter(
+            bookings__practitioner=practitioner,
+            bookings__created_at__gte=now - timedelta(days=30),
+            bookings__status__in=['completed', 'confirmed']
+        ).distinct().count()
+        
+        active_clients_last = User.objects.filter(
+            bookings__practitioner=practitioner,
+            bookings__created_at__gte=now - timedelta(days=60),
+            bookings__created_at__lt=now - timedelta(days=30),
+            bookings__status__in=['completed', 'confirmed']
+        ).distinct().count()
+        
+        # Average rating
+        from reviews.models import Review
+        rating_data = Review.objects.filter(
+            practitioner=practitioner,
+            is_published=True
+        ).aggregate(
+            avg_rating=Avg('rating'),
+            total_reviews=Count('id')
+        )
+        
+        # Calculate percentage changes
+        def calculate_change(current, previous):
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return round(((current - previous) / previous) * 100, 1)
+        
+        stats = {
+            'total_bookings': {
+                'value': total_bookings,
+                'change': calculate_change(total_bookings, total_bookings_last),
+                'is_positive': total_bookings >= total_bookings_last
+            },
+            'total_revenue': {
+                'value': total_revenue,
+                'value_display': f"${total_revenue / 100:,.2f}",
+                'change': calculate_change(total_revenue, total_revenue_last),
+                'is_positive': total_revenue >= total_revenue_last
+            },
+            'active_clients': {
+                'value': active_clients,
+                'change': calculate_change(active_clients, active_clients_last),
+                'is_positive': active_clients >= active_clients_last
+            },
+            'average_rating': {
+                'value': round(rating_data['avg_rating'] or 0, 1),
+                'total_reviews': rating_data['total_reviews'],
+                'change': 0,  # Rating changes are calculated differently
+                'is_positive': True
+            }
+        }
+        
+        return Response(stats)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def clients(self, request):
+        """
+        Get list of clients who have booked with the practitioner.
+        Returns unique clients with booking statistics.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get unique users who have bookings with this practitioner
+        # Annotate with booking statistics
+        clients = User.objects.filter(
+            bookings__practitioner=practitioner,
+            bookings__status__in=['completed', 'confirmed', 'in_progress']
+        ).distinct().annotate(
+            total_bookings=Count('bookings', filter=Q(
+                bookings__practitioner=practitioner,
+                bookings__status__in=['completed', 'confirmed', 'in_progress']
+            )),
+            total_spent=Sum('bookings__final_amount_cents', filter=Q(
+                bookings__practitioner=practitioner,
+                bookings__status='completed'
+            )),
+            last_booking_date=Max('bookings__start_time', filter=Q(
+                bookings__practitioner=practitioner
+            )),
+            # Get next upcoming booking
+            next_booking_date=Subquery(
+                Booking.objects.filter(
+                    user=OuterRef('pk'),
+                    practitioner=practitioner,
+                    status='confirmed',
+                    start_time__gte=timezone.now()
+                ).order_by('start_time').values('start_time')[:1]
+            )
+        ).select_related('profile').order_by('-last_booking_date')
+        
+        # Apply filters
+        search = request.query_params.get('search')
+        if search:
+            clients = clients.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(profile__display_name__icontains=search)
+            )
+        
+        # Serialize the results
+        from .serializers import PractitionerClientSerializer
+        
+        # Paginate
+        page = self.paginate_queryset(clients)
+        if page is not None:
+            serializer = PractitionerClientSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = PractitionerClientSerializer(clients, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def earnings(self, request):
+        """
+        Get practitioner earnings with filtering options.
+        Supports date range filtering and grouping by period.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get query parameters
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        group_by = request.query_params.get('group_by', 'day')  # day, week, month, year
+        
+        # Base queryset
+        bookings = Booking.objects.filter(
+            practitioner=practitioner,
+            status='completed'
+        )
+        
+        # Apply date filters
+        if start_date:
+            bookings = bookings.filter(completed_at__gte=start_date)
+        if end_date:
+            bookings = bookings.filter(completed_at__lte=end_date)
+        
+        # Calculate totals
+        totals = bookings.aggregate(
+            gross_amount=Sum('final_amount_cents'),
+            commission_amount=Sum('commission_amount_cents'),
+            net_amount=Sum(F('final_amount_cents') - F('commission_amount_cents')),
+            total_bookings=Count('id')
+        )
+        
+        # Get earnings by service type
+        by_service_type = bookings.values('service__service_type').annotate(
+            amount=Sum('final_amount_cents'),
+            count=Count('id')
+        ).order_by('-amount')
+        
+        # Get time series data based on grouping
+        from django.db.models import Trunc
+        if group_by == 'day':
+            trunc_fn = 'day'
+        elif group_by == 'week':
+            trunc_fn = 'week'
+        elif group_by == 'month':
+            trunc_fn = 'month'
+        else:
+            trunc_fn = 'year'
+        
+        time_series = bookings.annotate(
+            period=Trunc('completed_at', trunc_fn)
+        ).values('period').annotate(
+            gross_amount=Sum('final_amount_cents'),
+            commission_amount=Sum('commission_amount_cents'),
+            net_amount=Sum(F('final_amount_cents') - F('commission_amount_cents')),
+            booking_count=Count('id')
+        ).order_by('period')
+        
+        # Get available balance from PractitionerEarnings model
+        from payments.models import PractitionerEarnings
+        try:
+            earnings = PractitionerEarnings.objects.get(practitioner=practitioner)
+            available_balance = earnings.available_balance_cents
+        except PractitionerEarnings.DoesNotExist:
+            available_balance = 0
+        
+        # Format response
+        response_data = {
+            'totals': {
+                'gross_amount': totals['gross_amount'] or 0,
+                'gross_amount_display': f"${(totals['gross_amount'] or 0) / 100:,.2f}",
+                'commission_amount': totals['commission_amount'] or 0,
+                'commission_amount_display': f"${(totals['commission_amount'] or 0) / 100:,.2f}",
+                'net_amount': totals['net_amount'] or 0,
+                'net_amount_display': f"${(totals['net_amount'] or 0) / 100:,.2f}",
+                'total_bookings': totals['total_bookings']
+            },
+            'available_balance': available_balance,
+            'available_balance_display': f"${available_balance / 100:,.2f}",
+            'by_service_type': [
+                {
+                    'service_type': item['service__service_type'],
+                    'amount': item['amount'],
+                    'amount_display': f"${item['amount'] / 100:,.2f}",
+                    'count': item['count']
+                }
+                for item in by_service_type
+            ],
+            'time_series': [
+                {
+                    'period': item['period'].isoformat() if item['period'] else None,
+                    'gross_amount': item['gross_amount'],
+                    'gross_amount_display': f"${item['gross_amount'] / 100:,.2f}",
+                    'commission_amount': item['commission_amount'],
+                    'commission_amount_display': f"${item['commission_amount'] / 100:,.2f}",
+                    'net_amount': item['net_amount'],
+                    'net_amount_display': f"${item['net_amount'] / 100:,.2f}",
+                    'booking_count': item['booking_count']
+                }
+                for item in time_series
+            ]
+        }
+        
+        return Response(response_data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def transactions(self, request):
+        """
+        Get practitioner transactions with extensive filtering.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get all bookings for this practitioner
+        bookings = Booking.objects.filter(
+            practitioner=practitioner
+        ).exclude(
+            status__in=['draft', 'pending_payment']
+        ).select_related(
+            'user', 'service'
+        ).order_by('-created_at')
+        
+        # Apply filters
+        status = request.query_params.get('status')
+        if status:
+            bookings = bookings.filter(status=status)
+        
+        service_type = request.query_params.get('service_type')
+        if service_type:
+            bookings = bookings.filter(service__service_type=service_type)
+        
+        client_id = request.query_params.get('client')
+        if client_id:
+            bookings = bookings.filter(user_id=client_id)
+        
+        start_date = request.query_params.get('start_date')
+        if start_date:
+            bookings = bookings.filter(created_at__gte=start_date)
+        
+        end_date = request.query_params.get('end_date')
+        if end_date:
+            bookings = bookings.filter(created_at__lte=end_date)
+        
+        # Paginate
+        page = self.paginate_queryset(bookings)
+        
+        # Format transactions
+        transactions = []
+        for booking in (page if page is not None else bookings):
+            transaction = {
+                'id': f"TXN-{booking.id}",
+                'booking_id': booking.id,
+                'date': booking.created_at,
+                'type': 'booking',
+                'status': booking.status,
+                'client': {
+                    'id': booking.user.id,
+                    'name': booking.user.get_full_name() or booking.user.email,
+                    'email': booking.user.email
+                },
+                'service': {
+                    'id': booking.service.id,
+                    'title': booking.service.title,
+                    'type': booking.service.service_type
+                },
+                'amount': booking.final_amount_cents,
+                'amount_display': f"${booking.final_amount_cents / 100:,.2f}",
+                'commission': booking.commission_amount_cents,
+                'commission_display': f"${booking.commission_amount_cents / 100:,.2f}",
+                'net_amount': booking.final_amount_cents - booking.commission_amount_cents,
+                'net_amount_display': f"${(booking.final_amount_cents - booking.commission_amount_cents) / 100:,.2f}",
+            }
+            transactions.append(transaction)
+        
+        if page is not None:
+            return self.get_paginated_response(transactions)
+        
+        return Response(transactions)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def balance(self, request):
+        """
+        Get practitioner's current balance and commission information.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        from payments.models import PractitionerEarnings, EarningsTransaction
+        
+        # Get or create earnings record
+        earnings, created = PractitionerEarnings.objects.get_or_create(
+            practitioner=practitioner
+        )
+        
+        # Get pending earnings (not yet available)
+        pending_earnings = EarningsTransaction.objects.filter(
+            practitioner=practitioner,
+            status='pending'
+        ).aggregate(
+            total=Sum('net_amount_cents')
+        )['total'] or 0
+        
+        # Get commission information
+        commission_rate = practitioner.commission_rate if hasattr(practitioner, 'commission_rate') else 5.0
+        
+        # Get next payout date (assuming weekly payouts on Mondays)
+        from datetime import timedelta
+        today = timezone.now().date()
+        days_until_monday = (7 - today.weekday()) % 7
+        if days_until_monday == 0:
+            days_until_monday = 7
+        next_payout_date = today + timedelta(days=days_until_monday)
+        
+        response_data = {
+            'available_balance': earnings.available_balance_cents,
+            'available_balance_display': f"${earnings.available_balance_cents / 100:,.2f}",
+            'pending_balance': earnings.pending_balance_cents,
+            'pending_balance_display': f"${earnings.pending_balance_cents / 100:,.2f}",
+            'lifetime_earnings': earnings.lifetime_earnings_cents,
+            'lifetime_earnings_display': f"${earnings.lifetime_earnings_cents / 100:,.2f}",
+            'lifetime_payouts': earnings.lifetime_payouts_cents,
+            'lifetime_payouts_display': f"${earnings.lifetime_payouts_cents / 100:,.2f}",
+            'last_payout_date': earnings.last_payout_date,
+            'next_payout_date': next_payout_date,
+            'minimum_payout_amount': 5000,  # $50 minimum
+            'minimum_payout_display': "$50.00",
+            'commission_rate': commission_rate,
+            'can_request_payout': earnings.available_balance_cents >= 5000
+        }
+        
+        return Response(response_data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def payouts(self, request):
+        """
+        Get practitioner's payout history.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        from payments.models import PractitionerPayout
+        
+        # Get payouts
+        payouts = PractitionerPayout.objects.filter(
+            practitioner=practitioner
+        ).order_by('-created_at')
+        
+        # Apply filters
+        status = request.query_params.get('status')
+        if status:
+            payouts = payouts.filter(status=status)
+        
+        start_date = request.query_params.get('start_date')
+        if start_date:
+            payouts = payouts.filter(created_at__gte=start_date)
+        
+        end_date = request.query_params.get('end_date')
+        if end_date:
+            payouts = payouts.filter(created_at__lte=end_date)
+        
+        # Paginate
+        page = self.paginate_queryset(payouts)
+        
+        # Format payouts
+        payout_data = []
+        for payout in (page if page is not None else payouts):
+            data = {
+                'id': payout.id,
+                'reference_number': f"PO-{payout.id:06d}",
+                'amount': payout.credits_payout_cents,
+                'amount_display': f"${payout.credits_payout_cents / 100:,.2f}",
+                'fee': payout.transaction_fee_cents,
+                'fee_display': f"${payout.transaction_fee_cents / 100:,.2f}",
+                'net_amount': payout.credits_payout_cents - payout.transaction_fee_cents,
+                'net_amount_display': f"${(payout.credits_payout_cents - payout.transaction_fee_cents) / 100:,.2f}",
+                'status': payout.status,
+                'payment_method': payout.payment_method,
+                'created_at': payout.created_at,
+                'completed_at': payout.completed_at,
+                'stripe_transfer_id': payout.stripe_transfer_id,
+                'failure_reason': payout.failure_reason,
+            }
+            payout_data.append(data)
+        
+        if page is not None:
+            return self.get_paginated_response(payout_data)
+        
+        return Response(payout_data)
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def request_payout(self, request):
+        """
+        Request a payout of available balance.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        from payments.models import PractitionerEarnings, PractitionerPayout, EarningsTransaction
+        
+        # Get current balance
+        try:
+            earnings = PractitionerEarnings.objects.get(practitioner=practitioner)
+        except PractitionerEarnings.DoesNotExist:
+            return Response(
+                {"detail": "No earnings balance found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check minimum payout amount
+        if earnings.available_balance_cents < 5000:  # $50 minimum
+            return Response(
+                {"detail": "Minimum payout amount is $50.00"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if practitioner has Stripe account
+        if not hasattr(practitioner, 'stripe_account_id') or not practitioner.stripe_account_id:
+            return Response(
+                {"detail": "Please complete your payout setup first"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get payout method from request
+        payout_method = request.data.get('method', 'standard')  # standard or instant
+        
+        # Calculate fees
+        if payout_method == 'instant':
+            fee_cents = 250  # $2.50 instant fee
+        else:
+            fee_cents = 0  # No fee for standard payouts
+        
+        # Create payout
+        with transaction.atomic():
+            # Get all available earnings transactions
+            available_transactions = EarningsTransaction.objects.filter(
+                practitioner=practitioner,
+                status='available'
+            )
+            
+            if not available_transactions.exists():
+                return Response(
+                    {"detail": "No available earnings to pay out"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create payout record
+            payout = PractitionerPayout.objects.create(
+                practitioner=practitioner,
+                credits_payout_cents=earnings.available_balance_cents,
+                transaction_fee_cents=fee_cents,
+                payment_method=payout_method,
+                status='pending'
+            )
+            
+            # Link earnings transactions to payout
+            available_transactions.update(
+                payout=payout,
+                status='processing'
+            )
+            
+            # Update earnings balance
+            earnings.available_balance_cents = 0
+            earnings.save()
+            
+            # TODO: Trigger Stripe payout via Temporal workflow
+            
+        return Response({
+            'id': payout.id,
+            'reference_number': f"PO-{payout.id:06d}",
+            'amount': payout.credits_payout_cents,
+            'amount_display': f"${payout.credits_payout_cents / 100:,.2f}",
+            'fee': payout.transaction_fee_cents,
+            'fee_display': f"${payout.transaction_fee_cents / 100:,.2f}",
+            'net_amount': payout.credits_payout_cents - payout.transaction_fee_cents,
+            'net_amount_display': f"${(payout.credits_payout_cents - payout.transaction_fee_cents) / 100:,.2f}",
+            'status': payout.status,
+            'payment_method': payout.payment_method,
+            'created_at': payout.created_at,
+            'message': "Payout request submitted successfully"
+        }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def analytics(self, request):
+        """
+        Get analytics data for the practitioner dashboard.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get date range from query params
+        days = int(request.query_params.get('days', 30))
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=days)
+        
+        # Profile views (simulated for now)
+        import random
+        profile_views = {
+            'total': random.randint(100, 500),
+            'trend': random.uniform(-10, 20),
+            'daily_average': random.randint(3, 15)
+        }
+        
+        # Booking analytics
+        bookings = Booking.objects.filter(
+            practitioner=practitioner,
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        )
+        
+        total_bookings = bookings.count()
+        completed_bookings = bookings.filter(status='completed').count()
+        canceled_bookings = bookings.filter(status='canceled').count()
+        
+        # Conversion rate (views to bookings)
+        conversion_rate = (total_bookings / profile_views['total'] * 100) if profile_views['total'] > 0 else 0
+        
+        # Service popularity
+        service_popularity = bookings.values(
+            'service__title', 'service__service_type'
+        ).annotate(
+            count=Count('id'),
+            revenue=Sum('final_amount_cents')
+        ).order_by('-count')[:5]
+        
+        # Customer retention (repeat customers)
+        unique_customers = bookings.values('user').distinct().count()
+        repeat_customers = bookings.values('user').annotate(
+            booking_count=Count('id')
+        ).filter(booking_count__gt=1).count()
+        
+        retention_rate = (repeat_customers / unique_customers * 100) if unique_customers > 0 else 0
+        
+        # Time series data for charts
+        from django.db.models.functions import TruncDate
+        booking_trend = bookings.annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            count=Count('id'),
+            revenue=Sum('final_amount_cents')
+        ).order_by('date')
+        
+        # Peak booking times
+        from django.db.models.functions import ExtractHour, ExtractWeekDay
+        peak_hours = bookings.annotate(
+            hour=ExtractHour('start_time')
+        ).values('hour').annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        
+        peak_days = bookings.annotate(
+            weekday=ExtractWeekDay('start_time')
+        ).values('weekday').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Format response
+        analytics_data = {
+            'overview': {
+                'profile_views': profile_views,
+                'total_bookings': total_bookings,
+                'completed_bookings': completed_bookings,
+                'canceled_bookings': canceled_bookings,
+                'cancellation_rate': (canceled_bookings / total_bookings * 100) if total_bookings > 0 else 0,
+                'conversion_rate': round(conversion_rate, 2),
+                'unique_customers': unique_customers,
+                'repeat_customers': repeat_customers,
+                'retention_rate': round(retention_rate, 2)
+            },
+            'service_popularity': [
+                {
+                    'title': item['service__title'],
+                    'type': item['service__service_type'],
+                    'bookings': item['count'],
+                    'revenue': item['revenue'],
+                    'revenue_display': f"${item['revenue'] / 100:,.2f}" if item['revenue'] else "$0.00"
+                }
+                for item in service_popularity
+            ],
+            'booking_trend': [
+                {
+                    'date': item['date'].isoformat() if item['date'] else None,
+                    'bookings': item['count'],
+                    'revenue': item['revenue'],
+                    'revenue_display': f"${item['revenue'] / 100:,.2f}" if item['revenue'] else "$0.00"
+                }
+                for item in booking_trend
+            ],
+            'peak_hours': [
+                {
+                    'hour': item['hour'],
+                    'bookings': item['count']
+                }
+                for item in peak_hours
+            ],
+            'peak_days': [
+                {
+                    'weekday': ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][item['weekday'] - 1],
+                    'bookings': item['count']
+                }
+                for item in peak_days
+            ]
+        }
+        
+        return Response(analytics_data)
 
 
 class ScheduleViewSet(viewsets.ModelViewSet):

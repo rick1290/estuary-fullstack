@@ -29,6 +29,8 @@ interface CancelBookingDialogProps {
   price: string
   open: boolean
   onOpenChange: (open: boolean) => void
+  onConfirmCancel?: () => void
+  isLoading?: boolean
 }
 
 export function CancelBookingDialog({
@@ -40,6 +42,8 @@ export function CancelBookingDialog({
   price,
   open,
   onOpenChange,
+  onConfirmCancel,
+  isLoading,
 }: CancelBookingDialogProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -59,12 +63,16 @@ export function CancelBookingDialog({
     }
 
     setError(null)
-    setStep("processing")
-
-    // Simulate API call
-    setTimeout(() => {
-      setStep("success")
-    }, 1500)
+    
+    if (onConfirmCancel) {
+      onConfirmCancel()
+    } else {
+      // Fallback to simulation if no handler provided
+      setStep("processing")
+      setTimeout(() => {
+        setStep("success")
+      }, 1500)
+    }
   }
 
   const handleClose = () => {

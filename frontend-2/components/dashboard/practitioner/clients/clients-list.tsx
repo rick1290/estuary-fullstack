@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { Star, Eye } from "lucide-react"
@@ -11,81 +11,35 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent } from "@/components/ui/card"
+import { useQuery } from "@tanstack/react-query"
+import { practitionersClientsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import ClientFilters, { type ClientFilters as ClientFiltersType } from "./client-filters"
 
-// Update the mock data to include more fields for sorting
-const mockClients = [
-  {
-    id: "1",
-    name: "Emma Johnson",
-    email: "emma.johnson@example.com",
-    profilePicture: "/practitioner-1.jpg",
-    totalBookings: 12,
-    totalSpent: "$1,240",
-    totalSpentNumeric: 1240,
-    nextBooking: "2023-05-15T10:00:00",
-    lastBooking: "2023-04-28T14:30:00",
-    isFavorite: true,
-    sessionTypes: ["Coaching", "Workshop"],
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    email: "michael.chen@example.com",
-    profilePicture: "/practitioner-2.jpg",
-    totalBookings: 5,
-    totalSpent: "$550",
-    totalSpentNumeric: 550,
-    nextBooking: null,
-    lastBooking: "2023-04-10T11:00:00",
-    isFavorite: false,
-    sessionTypes: ["Therapy"],
-  },
-  {
-    id: "3",
-    name: "Sophia Rodriguez",
-    email: "sophia.rodriguez@example.com",
-    profilePicture: "/practitioner-3.jpg",
-    totalBookings: 8,
-    totalSpent: "$920",
-    totalSpentNumeric: 920,
-    nextBooking: "2023-05-20T15:00:00",
-    lastBooking: "2023-04-25T09:30:00",
-    isFavorite: true,
-    sessionTypes: ["Coaching", "Course"],
-  },
-  {
-    id: "4",
-    name: "James Wilson",
-    email: "james.wilson@example.com",
-    profilePicture: "/practitioner-4.jpg",
-    totalBookings: 3,
-    totalSpent: "$330",
-    totalSpentNumeric: 330,
-    nextBooking: null,
-    lastBooking: "2023-03-15T13:00:00",
-    isFavorite: false,
-    sessionTypes: ["Workshop"],
-  },
-  {
-    id: "5",
-    name: "Olivia Brown",
-    email: "olivia.brown@example.com",
-    profilePicture: null,
-    totalBookings: 1,
-    totalSpent: "$110",
-    totalSpentNumeric: 110,
-    nextBooking: "2023-05-10T16:30:00",
-    lastBooking: "2023-04-05T10:00:00",
-    isFavorite: false,
-    sessionTypes: ["Therapy"],
-  },
-]
+
+interface ClientData {
+  id: number
+  email: string
+  full_name?: string
+  display_name?: string
+  avatar_url?: string
+  phone_number?: string
+  total_bookings: number
+  total_spent: number
+  total_spent_display: string
+  last_booking_date?: string
+  next_booking_date?: string
+  session_types: string[]
+  isFavorite?: boolean
+}
+
+interface PaginatedClientResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: ClientData[]
+}
 
 export default function ClientsList() {
-  const [clients, setClients] = useState<any[]>([])
-  const [filteredClients, setFilteredClients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [filters, setFilters] = useState<ClientFiltersType>({
@@ -95,34 +49,38 @@ export default function ClientsList() {
     sortDirection: "asc",
     showFavoritesOnly: false,
   })
+  const [favoriteClients, setFavoriteClients] = useState<Set<number>>(new Set())
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchClients = async () => {
-      setLoading(true)
-      // Replace with actual API call
-      setTimeout(() => {
-        setClients(mockClients)
-        setLoading(false)
-      }, 1000)
-    }
+  // Fetch clients from API using generated client
+  const { data: clientsData, isLoading, error } = useQuery(
+    practitionersClientsRetrieveOptions({
+      query: {
+        search: filters.searchTerm || undefined,
+        page: page + 1,
+        page_size: rowsPerPage
+      }
+    })
+  )
 
-    fetchClients()
-  }, [])
+  const clients = useMemo(() => {
+    const data = clientsData as unknown as PaginatedClientResponse
+    if (!data?.results) return []
+    
+    return data.results.map((client) => ({
+      ...client,
+      name: client.full_name || client.display_name || client.email,
+      isFavorite: favoriteClients.has(client.id),
+      totalSpent: client.total_spent_display,
+      totalSpentNumeric: client.total_spent,
+      sessionTypes: client.session_types || []
+    }))
+  }, [clientsData, favoriteClients])
 
-  // Apply filters and sorting whenever clients or filters change
-  useEffect(() => {
-    if (clients.length === 0) return
-
+  // Apply client-side filtering and sorting
+  const filteredClients = useMemo(() => {
+    if (!clients) return []
+    
     let result = [...clients]
-
-    // Apply search filter
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase()
-      result = result.filter(
-        (client) => client.name.toLowerCase().includes(searchLower) || client.email.toLowerCase().includes(searchLower),
-      )
-    }
 
     // Apply session type filter
     if (filters.sessionTypes.length > 0) {
@@ -142,25 +100,25 @@ export default function ClientsList() {
 
       switch (filters.sortBy) {
         case "name":
-          comparison = a.name.localeCompare(b.name)
+          comparison = (a.name || '').localeCompare(b.name || '')
           break
         case "lastBooking":
           // Handle null values
-          if (!a.lastBooking) return 1
-          if (!b.lastBooking) return -1
-          comparison = new Date(a.lastBooking).getTime() - new Date(b.lastBooking).getTime()
+          if (!a.last_booking_date) return 1
+          if (!b.last_booking_date) return -1
+          comparison = new Date(a.last_booking_date).getTime() - new Date(b.last_booking_date).getTime()
           break
         case "nextBooking":
           // Handle null values
-          if (!a.nextBooking) return 1
-          if (!b.nextBooking) return -1
-          comparison = new Date(a.nextBooking).getTime() - new Date(b.nextBooking).getTime()
+          if (!a.next_booking_date) return 1
+          if (!b.next_booking_date) return -1
+          comparison = new Date(a.next_booking_date).getTime() - new Date(b.next_booking_date).getTime()
           break
         case "totalBookings":
-          comparison = a.totalBookings - b.totalBookings
+          comparison = (a.total_bookings || 0) - (b.total_bookings || 0)
           break
         case "totalSpent":
-          comparison = a.totalSpentNumeric - b.totalSpentNumeric
+          comparison = (a.totalSpentNumeric || 0) - (b.totalSpentNumeric || 0)
           break
         default:
           comparison = 0
@@ -170,9 +128,7 @@ export default function ClientsList() {
       return filters.sortDirection === "asc" ? comparison : -comparison
     })
 
-    setFilteredClients(result)
-    // Reset to first page when filters change
-    setPage(0)
+    return result
   }, [clients, filters])
 
   const handleChangePage = (newPage: number) => {
@@ -184,22 +140,28 @@ export default function ClientsList() {
     setPage(0)
   }
 
-  const toggleFavorite = (clientId: string) => {
-    setClients(
-      clients.map((client) => (client.id === clientId ? { ...client, isFavorite: !client.isFavorite } : client)),
-    )
+  const toggleFavorite = (clientId: number) => {
+    setFavoriteClients(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId)
+      } else {
+        newSet.add(clientId)
+      }
+      return newSet
+    })
   }
 
   const handleFilterChange = (newFilters: ClientFiltersType) => {
     setFilters(newFilters)
   }
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "N/A"
     return formatDistanceToNow(new Date(dateString), { addSuffix: true })
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div>
         <div className="mb-6">
@@ -213,7 +175,19 @@ export default function ClientsList() {
     )
   }
 
-  if (clients.length === 0) {
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-lg font-semibold">Failed to load clients</h2>
+        <p className="text-muted-foreground">Please try again later.</p>
+        <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
+  if (!isLoading && (!clients || clients.length === 0)) {
     return (
       <div className="text-center py-8">
         <h2 className="text-lg font-semibold">No clients found</h2>
@@ -250,7 +224,7 @@ export default function ClientsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client) => (
+                {filteredClients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-muted/50">
                     <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleFavorite(client.id)}>
@@ -265,10 +239,10 @@ export default function ClientsList() {
                       <div className="flex items-center">
                         <Avatar className="h-9 w-9 mr-3">
                           <AvatarImage
-                            src={client.profilePicture || "/generic-media-placeholder.png"}
+                            src={client.avatar_url || "/generic-media-placeholder.png"}
                             alt={client.name}
                           />
-                          <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+                          <AvatarFallback>{client.name?.charAt(0) || '?'}</AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{client.name}</p>
@@ -278,18 +252,18 @@ export default function ClientsList() {
                     </TableCell>
                     <TableCell>
                       <p className="text-sm">
-                        {client.totalBookings} bookings · {client.totalSpent}
+                        {client.total_bookings} bookings · {client.totalSpent}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {client.sessionTypes.map((type: string) => (
                           <Badge key={type} variant="outline" className="text-xs">
-                            {type}
+                            {type || 'Unknown'}
                           </Badge>
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell>{formatDate(client.nextBooking)}</TableCell>
-                    <TableCell>{formatDate(client.lastBooking)}</TableCell>
+                    <TableCell>{formatDate(client.next_booking_date)}</TableCell>
+                    <TableCell>{formatDate(client.last_booking_date)}</TableCell>
                     <TableCell>
                       <TooltipProvider>
                         <Tooltip>
@@ -328,7 +302,7 @@ export default function ClientsList() {
           </select>
         </div>
         <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          Page {page + 1} of {Math.ceil(filteredClients.length / rowsPerPage)}
+          Page {page + 1} of {Math.ceil(((clientsData as unknown as PaginatedClientResponse)?.count || 0) / rowsPerPage)}
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -359,7 +333,7 @@ export default function ClientsList() {
             size="icon"
             className="h-8 w-8"
             onClick={() => handleChangePage(page + 1)}
-            disabled={page >= Math.ceil(filteredClients.length / rowsPerPage) - 1}
+            disabled={!(clientsData as unknown as PaginatedClientResponse)?.next}
           >
             <span className="sr-only">Next page</span>
             <svg

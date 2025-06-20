@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
+from django.db.models import Count, Q
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -236,3 +237,191 @@ def logout_simple(request):
         "message": "Logged out successfully",
         "success": True
     }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id='user_stats',
+    summary='Get user statistics',
+    description='Get statistics for the authenticated user including bookings, favorites, and activity',
+    responses={
+        200: OpenApiResponse(description='User statistics'),
+        401: OpenApiResponse(description='Not authenticated'),
+    },
+    tags=['User']
+)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_stats(request):
+    """Get user dashboard statistics"""
+    user = request.user
+    
+    # Import models we need
+    from bookings.models import Booking
+    from users.models import UserFavoritePractitioner
+    from services.models import Service
+    
+    # Get booking statistics
+    total_bookings = Booking.objects.filter(user=user).count()
+    completed_bookings = Booking.objects.filter(
+        user=user,
+        status='completed'
+    ).count()
+    upcoming_bookings = Booking.objects.filter(
+        user=user,
+        status='confirmed',
+        start_time__gte=timezone.now()
+    ).count()
+    
+    # Get favorites count
+    favorite_practitioners = UserFavoritePractitioner.objects.filter(user=user).count()
+    
+    # Get saved services count (if this exists)
+    # For now, we'll use a placeholder
+    favorite_services = 0
+    
+    # Calculate a simple wellness score based on activity
+    # This is a placeholder - you might want to implement a more sophisticated algorithm
+    wellness_score = min(100, (completed_bookings * 10) + (upcoming_bookings * 5))
+    
+    stats = {
+        'total_bookings': total_bookings,
+        'completed_bookings': completed_bookings,
+        'upcoming_bookings': upcoming_bookings,
+        'favorite_practitioners': favorite_practitioners,
+        'favorite_services': favorite_services,
+        'wellness_score': wellness_score,
+        'member_since': user.date_joined.isoformat(),
+        'last_booking': None
+    }
+    
+    # Get last booking date
+    last_booking = Booking.objects.filter(
+        user=user
+    ).order_by('-created_at').first()
+    
+    if last_booking:
+        stats['last_booking'] = last_booking.created_at.isoformat()
+    
+    return Response(stats, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id='user_favorites',
+    summary='Get user favorite practitioners',
+    description='Get list of practitioners favorited by the authenticated user',
+    responses={
+        200: OpenApiResponse(description='List of favorite practitioners'),
+        401: OpenApiResponse(description='Not authenticated'),
+    },
+    tags=['User']
+)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_favorites(request):
+    """Get user's favorite practitioners"""
+    from users.models import UserFavoritePractitioner
+    from practitioners.api.v1.serializers import PractitionerListSerializer
+    
+    favorites = UserFavoritePractitioner.objects.filter(
+        user=request.user
+    ).select_related('practitioner__user').order_by('-created_at')
+    
+    # Extract practitioners and serialize them
+    practitioners = [fav.practitioner for fav in favorites]
+    serializer = PractitionerListSerializer(practitioners, many=True)
+    
+    return Response({
+        'count': len(practitioners),
+        'results': serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id='user_add_favorite',
+    summary='Add practitioner to favorites',
+    description='Add a practitioner to the authenticated user favorites',
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'practitioner_id': {'type': 'integer', 'description': 'ID of the practitioner to favorite'}
+            },
+            'required': ['practitioner_id']
+        }
+    },
+    responses={
+        201: OpenApiResponse(description='Practitioner added to favorites'),
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Not authenticated'),
+        404: OpenApiResponse(description='Practitioner not found'),
+    },
+    tags=['User']
+)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_favorite(request):
+    """Add a practitioner to favorites"""
+    from users.models import UserFavoritePractitioner
+    from practitioners.models import Practitioner
+    
+    practitioner_id = request.data.get('practitioner_id')
+    if not practitioner_id:
+        return Response(
+            {'error': 'practitioner_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        practitioner = Practitioner.objects.get(id=practitioner_id)
+    except Practitioner.DoesNotExist:
+        return Response(
+            {'error': 'Practitioner not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    favorite, created = UserFavoritePractitioner.objects.get_or_create(
+        user=request.user,
+        practitioner=practitioner
+    )
+    
+    if created:
+        return Response(
+            {'message': 'Practitioner added to favorites'},
+            status=status.HTTP_201_CREATED
+        )
+    else:
+        return Response(
+            {'message': 'Practitioner already in favorites'},
+            status=status.HTTP_200_OK
+        )
+
+
+@extend_schema(
+    operation_id='user_remove_favorite',
+    summary='Remove practitioner from favorites',
+    description='Remove a practitioner from the authenticated user favorites',
+    responses={
+        204: OpenApiResponse(description='Practitioner removed from favorites'),
+        401: OpenApiResponse(description='Not authenticated'),
+        404: OpenApiResponse(description='Favorite not found'),
+    },
+    tags=['User']
+)
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def remove_favorite(request, practitioner_id):
+    """Remove a practitioner from favorites"""
+    from users.models import UserFavoritePractitioner
+    
+    try:
+        favorite = UserFavoritePractitioner.objects.get(
+            user=request.user,
+            practitioner_id=practitioner_id
+        )
+        favorite.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except UserFavoritePractitioner.DoesNotExist:
+        return Response(
+            {'error': 'Favorite not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )

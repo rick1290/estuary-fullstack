@@ -402,7 +402,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             </Card>
 
             {/* Action buttons */}
-            {booking.status === "upcoming" && (
+            {booking.status === "confirmed" && (
               <div className="flex flex-wrap gap-3">
                 {booking.location === "Virtual" && booking.joinUrl && (
                   <Button
@@ -462,7 +462,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             )}
 
             {/* Rescheduling and cancellation policy note */}
-            {booking.status === "upcoming" && (
+            {booking.status === "confirmed" && (
               <div className="text-sm text-muted-foreground space-y-1">
                 <p>
                   <span className="font-medium">Rescheduling policy:</span> You can reschedule this session up to 24
@@ -475,7 +475,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
               </div>
             )}
 
-            {booking.status === "completed" && !booking.feedback && <Button variant="secondary">Leave Feedback</Button>}
+            {booking.status === "completed" && !bookingData.review && <Button variant="secondary">Leave Feedback</Button>}
           </div>
 
           {/* Practitioner info */}
@@ -521,7 +521,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
               </CardContent>
             </Card>
 
-            {booking.status === "upcoming" && (
+            {booking.status === "confirmed" && (
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="text-lg">Cancellation Policy</CardTitle>

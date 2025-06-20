@@ -564,3 +564,57 @@ class PractitionerSearchSerializer(serializers.Serializer):
             attrs['radius_km'] = 10  # Default 10km radius
         
         return attrs
+
+
+class PractitionerClientSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner's client list"""
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    display_name = serializers.CharField(source='profile.display_name', read_only=True)
+    avatar_url = serializers.CharField(source='profile.avatar_url', read_only=True)
+    
+    # Annotated fields from the query
+    total_bookings = serializers.IntegerField(read_only=True)
+    total_spent = serializers.IntegerField(read_only=True)  # In cents
+    total_spent_display = serializers.SerializerMethodField()
+    last_booking_date = serializers.DateTimeField(read_only=True)
+    next_booking_date = serializers.DateTimeField(read_only=True)
+    
+    # Session types the client has booked
+    session_types = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'full_name', 'display_name', 'avatar_url',
+            'phone_number', 'total_bookings', 'total_spent', 'total_spent_display',
+            'last_booking_date', 'next_booking_date', 'session_types'
+        ]
+        read_only_fields = fields
+    
+    def get_total_spent_display(self, obj):
+        """Convert cents to dollar display"""
+        if obj.total_spent:
+            return f"${obj.total_spent / 100:.2f}"
+        return "$0.00"
+    
+    def get_session_types(self, obj):
+        """Get unique service types the client has booked"""
+        from bookings.models import Booking
+        
+        # Get practitioner from context
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'practitioner_profile'):
+            return []
+        
+        practitioner = request.user.practitioner_profile
+        
+        # Get unique service types
+        service_types = Booking.objects.filter(
+            user=obj,
+            practitioner=practitioner,
+            status__in=['completed', 'confirmed']
+        ).select_related('service__service_type').values_list(
+            'service__service_type__name', flat=True
+        ).distinct()
+        
+        return list(service_types)

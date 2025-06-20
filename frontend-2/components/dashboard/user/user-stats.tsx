@@ -3,16 +3,36 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Calendar, Heart, Star, TrendingUp } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useQuery } from "@tanstack/react-query"
+import { usersUserStatsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 
 export default function UserStats() {
-  // Mock data for user stats
+  const { data: statsData, isLoading } = useQuery(usersUserStatsRetrieveOptions())
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="border-2 border-sage-200">
+            <CardContent className="p-6">
+              <Skeleton className="h-12 w-12 rounded-full mb-3" />
+              <Skeleton className="h-8 w-24 mb-2" />
+              <Skeleton className="h-4 w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   const stats = {
-    totalSessions: 12,
-    upcomingSessions: 3,
-    favoriteServices: 5,
-    completedGoals: 2,
-    totalGoals: 5,
-    wellnessScore: 78,
+    totalSessions: statsData?.total_bookings || 0,
+    upcomingSessions: statsData?.upcoming_bookings || 0,
+    favoriteServices: statsData?.favorite_practitioners || 0,
+    completedGoals: statsData?.completed_bookings || 0,
+    totalGoals: statsData?.total_bookings || 0,
+    wellnessScore: statsData?.wellness_score || 0,
   }
 
   return (

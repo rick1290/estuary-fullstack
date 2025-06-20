@@ -34,218 +34,19 @@ import {
   User,
   GraduationCap,
   Users,
+  MessageSquare,
 } from "lucide-react"
-
-// Mock data for the selected client
-const mockClients = {
-  "1": {
-    id: "1",
-    name: "Emma Johnson",
-    avatar: "/practitioner-1.jpg",
-    online: true,
-    lastActive: "Just now",
-    email: "emma.johnson@example.com",
-    phone: "+1 (555) 123-4567",
-    joinedDate: "March 2023",
-    totalSessions: 8,
-  },
-  "2": {
-    id: "2",
-    name: "Michael Chen",
-    avatar: "/practitioner-2.jpg",
-    online: false,
-    lastActive: "2 hours ago",
-    email: "michael.chen@example.com",
-    phone: "+1 (555) 987-6543",
-    joinedDate: "January 2023",
-    totalSessions: 5,
-  },
-  "3": {
-    id: "3",
-    name: "Sophia Rodriguez",
-    avatar: "/practitioner-3.jpg",
-    online: false,
-    lastActive: "5 hours ago",
-    email: "sophia.rodriguez@example.com",
-    phone: "+1 (555) 456-7890",
-    joinedDate: "April 2023",
-    totalSessions: 3,
-  },
-  "4": {
-    id: "4",
-    name: "James Wilson",
-    avatar: "/practitioner-4.jpg",
-    online: true,
-    lastActive: "Just now",
-    email: "james.wilson@example.com",
-    phone: "+1 (555) 789-0123",
-    joinedDate: "February 2023",
-    totalSessions: 12,
-  },
-  "5": {
-    id: "5",
-    name: "Olivia Taylor",
-    avatar: "/practitioner-profile.jpg",
-    online: false,
-    lastActive: "1 day ago",
-    email: "olivia.taylor@example.com",
-    phone: "+1 (555) 234-5678",
-    joinedDate: "May 2023",
-    totalSessions: 2,
-  },
-}
-
-// Mock data for messages
-const mockMessages = {
-  "1": [
-    {
-      id: "1",
-      sender: "client",
-      text: "Hi there! I wanted to thank you for the amazing session yesterday.",
-      timestamp: "10:15 AM",
-      date: "Today",
-    },
-    {
-      id: "2",
-      sender: "practitioner",
-      text: "You're welcome, Emma! I'm glad you found it helpful. How are you feeling today?",
-      timestamp: "10:20 AM",
-      date: "Today",
-    },
-    {
-      id: "3",
-      sender: "client",
-      text: "Much better! The breathing techniques you taught me really helped with my anxiety.",
-      timestamp: "10:25 AM",
-      date: "Today",
-    },
-    {
-      id: "4",
-      sender: "practitioner",
-      text: "That's wonderful to hear! Remember to practice them daily, especially when you feel stressed.",
-      timestamp: "10:28 AM",
-      date: "Today",
-    },
-    {
-      id: "5",
-      sender: "client",
-      text: "I will! By the way, do you have any availability next week for another session?",
-      timestamp: "10:30 AM",
-      date: "Today",
-    },
-  ],
-  "2": [
-    {
-      id: "1",
-      sender: "client",
-      text: "Hello, I need to reschedule my appointment for next week.",
-      timestamp: "3:45 PM",
-      date: "Yesterday",
-    },
-    {
-      id: "2",
-      sender: "practitioner",
-      text: "Hi Michael, no problem. What day works better for you?",
-      timestamp: "4:00 PM",
-      date: "Yesterday",
-    },
-    {
-      id: "3",
-      sender: "client",
-      text: "Would Thursday at 2 PM work?",
-      timestamp: "4:05 PM",
-      date: "Yesterday",
-    },
-    {
-      id: "4",
-      sender: "practitioner",
-      text: "Let me check my calendar... Yes, Thursday at 2 PM works for me. I'll update your booking.",
-      timestamp: "4:10 PM",
-      date: "Yesterday",
-    },
-    {
-      id: "5",
-      sender: "client",
-      text: "Perfect, thank you!",
-      timestamp: "4:12 PM",
-      date: "Yesterday",
-    },
-  ],
-  "3": [
-    {
-      id: "1",
-      sender: "client",
-      text: "Hi, I'm interested in booking a session this weekend. Do you have any availability?",
-      timestamp: "5:30 PM",
-      date: "Yesterday",
-    },
-    {
-      id: "2",
-      sender: "practitioner",
-      text: "Hello Sophia! I have a few slots open on Saturday. Would morning or afternoon work better for you?",
-      timestamp: "5:45 PM",
-      date: "Yesterday",
-    },
-    {
-      id: "3",
-      sender: "client",
-      text: "Morning would be perfect!",
-      timestamp: "6:00 PM",
-      date: "Yesterday",
-    },
-  ],
-  "4": [
-    {
-      id: "1",
-      sender: "client",
-      text: "Hello, I've completed the assessment form you sent.",
-      timestamp: "2:15 PM",
-      date: "Monday",
-    },
-    {
-      id: "2",
-      sender: "client",
-      text: "Here's the attachment.",
-      timestamp: "2:16 PM",
-      date: "Monday",
-      attachment: {
-        type: "file",
-        name: "assessment_form.pdf",
-        size: "1.2 MB",
-      },
-    },
-    {
-      id: "3",
-      sender: "practitioner",
-      text: "Thank you, James! I'll review it before our next session.",
-      timestamp: "2:30 PM",
-      date: "Monday",
-    },
-  ],
-  "5": [
-    {
-      id: "1",
-      sender: "practitioner",
-      text: "Hi Olivia, just confirming our session tomorrow at 3 PM.",
-      timestamp: "11:00 AM",
-      date: "Monday",
-    },
-    {
-      id: "2",
-      sender: "client",
-      text: "Yes, I'll be there! Looking forward to it.",
-      timestamp: "11:15 AM",
-      date: "Monday",
-    },
-    {
-      id: "3",
-      sender: "practitioner",
-      text: "Great! Don't forget to bring your journal.",
-      timestamp: "11:20 AM",
-      date: "Monday",
-    },
-  ],
-}
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { 
+  conversationsRetrieveOptions,
+  conversationsMessagesOptions,
+  conversationsSendMessageOptions,
+  conversationsMarkReadOptions
+} from "@/src/client/@tanstack/react-query.gen"
+import { formatDistanceToNow } from "date-fns"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useAuth } from "@/hooks/use-auth"
+import { toast } from "sonner"
 
 // Mock data for services
 const mockServices = [
@@ -280,9 +81,9 @@ const mockServices = [
 
 export default function PractitionerMessageDetail() {
   const searchParams = useSearchParams()
-  const clientId = searchParams.get("clientId") || "1"
-  const client = mockClients[clientId as keyof typeof mockClients]
-  const messages = mockMessages[clientId as keyof typeof mockMessages] || []
+  const conversationId = searchParams.get("conversationId")
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   const [newMessage, setNewMessage] = useState("")
   const [showClientInfo, setShowClientInfo] = useState(false)
@@ -293,9 +94,65 @@ export default function PractitionerMessageDetail() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Fetch conversation details
+  const { data: conversation, isLoading: conversationLoading } = useQuery({
+    ...conversationsRetrieveOptions({
+      path: { id: conversationId || "" }
+    }),
+    enabled: !!conversationId
+  })
+
+  // Fetch messages
+  const { data: messages, isLoading: messagesLoading } = useQuery({
+    ...conversationsMessagesOptions({
+      path: { id: conversationId || "" }
+    }),
+    enabled: !!conversationId
+  })
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    ...conversationsSendMessageOptions(),
+    onSuccess: () => {
+      setNewMessage("")
+      setSelectedFile(null)
+      setPreviewUrl(null)
+      // Invalidate messages query to refetch
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations', conversationId, 'messages'] 
+      })
+    },
+    onError: () => {
+      toast.error("Failed to send message")
+    }
+  })
+
+  // Mark as read mutation
+  const markAsReadMutation = useMutation({
+    ...conversationsMarkReadOptions(),
+    onSuccess: () => {
+      // Invalidate conversation list to update unread counts
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    }
+  })
+
+  // Get the other user from conversation
+  const otherUser = conversation?.participants?.find(
+    (p) => p.user?.id !== user?.id
+  )?.user
+
   useEffect(() => {
     scrollToBottom()
-  }, [messages, clientId])
+  }, [messages])
+
+  useEffect(() => {
+    // Mark messages as read when viewing conversation
+    if (conversationId && conversation) {
+      markAsReadMutation.mutate({
+        path: { id: conversationId }
+      })
+    }
+  }, [conversationId, conversation])
 
   useEffect(() => {
     if (selectedFile && selectedFile.type.startsWith("image/")) {
@@ -315,14 +172,15 @@ export default function PractitionerMessageDetail() {
 
   const handleSendMessage = () => {
     if (newMessage.trim() === "" && !selectedFile) return
+    if (!conversationId) return
 
-    // In a real app, you would send the message to the server here
-    console.log("Sending message:", newMessage, selectedFile)
-
-    // Clear the input
-    setNewMessage("")
-    setSelectedFile(null)
-    setPreviewUrl(null)
+    sendMessageMutation.mutate({
+      path: { id: conversationId },
+      body: {
+        content: newMessage,
+        message_type: "text"
+      }
+    })
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -353,7 +211,7 @@ export default function PractitionerMessageDetail() {
     setShowShareService(false)
   }
 
-  if (!client) {
+  if (!conversationId) {
     return (
       <div className="flex flex-col justify-center items-center h-full p-6 text-center">
         <div className="mb-4">
@@ -365,6 +223,38 @@ export default function PractitionerMessageDetail() {
     )
   }
 
+  if (conversationLoading || messagesLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="ml-3 space-y-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="mb-4">
+              <Skeleton className="h-16 w-3/4" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!conversation || !otherUser) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full p-6 text-center">
+        <h3 className="text-lg font-medium">Conversation not found</h3>
+      </div>
+    )
+  }
+
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -372,17 +262,21 @@ export default function PractitionerMessageDetail() {
         <div className="flex items-center">
           <div className="relative">
             <Avatar>
-              <AvatarImage src={client.avatar || "/placeholder.svg"} alt={client.name} />
-              <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+              <AvatarImage 
+                src={otherUser?.avatar_url || "/placeholder.svg"} 
+                alt={`${otherUser?.first_name} ${otherUser?.last_name}`} 
+              />
+              <AvatarFallback>
+                {otherUser?.first_name?.charAt(0) || 'U'}
+              </AvatarFallback>
             </Avatar>
-            {client.online && (
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
-            )}
           </div>
           <div className="ml-3">
-            <h3 className="font-medium">{client.name}</h3>
+            <h3 className="font-medium">
+              {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'Unknown User'}
+            </h3>
             <p className="text-xs text-muted-foreground">
-              {client.online ? "Online" : `Last active: ${client.lastActive}`}
+              {otherUser?.email || 'No email'}
             </p>
           </div>
         </div>
@@ -423,66 +317,86 @@ export default function PractitionerMessageDetail() {
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4 bg-accent/20">
-        {messages.map((message, index) => {
-          const isFirstMessageOfDay = index === 0 || message.date !== messages[index - 1].date
+        {messages && messages.length > 0 ? (
+          messages.map((message, index) => {
+            const isSentByMe = message.sender?.id === user?.id
+            const messageSender = message.sender
+            const messageDate = new Date(message.created_at)
+            const prevMessageDate = index > 0 ? new Date(messages[index - 1].created_at) : null
+            const showDateSeparator = !prevMessageDate || 
+              messageDate.toDateString() !== prevMessageDate.toDateString()
 
-          return (
-            <div key={message.id}>
-              {isFirstMessageOfDay && (
-                <div className="flex justify-center my-4">
-                  <Badge variant="outline" className="bg-background">
-                    {message.date}
-                  </Badge>
-                </div>
-              )}
-
-              <div className={`flex mb-4 ${message.sender === "practitioner" ? "justify-end" : "justify-start"}`}>
-                {message.sender === "client" && (
-                  <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
-                    <AvatarImage src={client.avatar || "/placeholder.svg"} alt={client.name} />
-                    <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                )}
-
-                <div className="max-w-[70%]">
-                  <div
-                    className={`p-3 rounded-lg ${
-                      message.sender === "practitioner" ? "bg-primary text-primary-foreground" : "bg-card"
-                    }`}
-                  >
-                    {message.text && <p>{message.text}</p>}
-
-                    {message.attachment && message.attachment.type === "file" && (
-                      <div className="flex items-center mt-2 p-2 bg-background/50 rounded">
-                        <FileText className="h-4 w-4 mr-2" />
-                        <div>
-                          <p className="text-sm">{message.attachment.name}</p>
-                          <p className="text-xs text-muted-foreground">{message.attachment.size}</p>
-                        </div>
-                        <Button size="sm" variant="ghost" className="ml-auto">
-                          Download
-                        </Button>
-                      </div>
-                    )}
+            return (
+              <div key={message.id}>
+                {showDateSeparator && (
+                  <div className="flex justify-center my-4">
+                    <Badge variant="outline" className="bg-background">
+                      {formatDistanceToNow(messageDate, { addSuffix: true })}
+                    </Badge>
                   </div>
-                  <p
-                    className={`text-xs text-muted-foreground mt-1 ${
-                      message.sender === "practitioner" ? "text-right" : "text-left"
-                    }`}
-                  >
-                    {message.timestamp}
-                  </p>
-                </div>
-
-                {message.sender === "practitioner" && (
-                  <Avatar className="h-8 w-8 ml-2 mt-1 flex-shrink-0">
-                    <AvatarFallback>Me</AvatarFallback>
-                  </Avatar>
                 )}
+
+                <div className={`flex mb-4 ${isSentByMe ? "justify-end" : "justify-start"}`}>
+                  {!isSentByMe && (
+                    <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
+                      <AvatarImage 
+                        src={messageSender?.avatar_url || "/placeholder.svg"} 
+                        alt={`${messageSender?.first_name} ${messageSender?.last_name}`} 
+                      />
+                      <AvatarFallback>
+                        {messageSender?.first_name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+
+                  <div className="max-w-[70%]">
+                    <div
+                      className={`p-3 rounded-lg ${
+                        isSentByMe ? "bg-primary text-primary-foreground" : "bg-card"
+                      }`}
+                    >
+                      <p>{message.content}</p>
+
+                      {message.attachments && message.attachments.length > 0 && (
+                        message.attachments.map((attachment: any, idx: number) => (
+                          <div key={idx} className="flex items-center mt-2 p-2 bg-background/50 rounded">
+                            <FileText className="h-4 w-4 mr-2" />
+                            <div>
+                              <p className="text-sm">{attachment.filename}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <Button size="sm" variant="ghost" className="ml-auto">
+                              Download
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <p
+                      className={`text-xs text-muted-foreground mt-1 ${
+                        isSentByMe ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {formatDistanceToNow(messageDate, { addSuffix: true })}
+                    </p>
+                  </div>
+
+                  {isSentByMe && (
+                    <Avatar className="h-8 w-8 ml-2 mt-1 flex-shrink-0">
+                      <AvatarFallback>Me</AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </ScrollArea>
 
@@ -533,7 +447,7 @@ export default function PractitionerMessageDetail() {
             size="icon"
             className="flex-shrink-0"
             onClick={handleSendMessage}
-            disabled={newMessage.trim() === "" && !selectedFile}
+            disabled={newMessage.trim() === "" && !selectedFile || sendMessageMutation.isPending}
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -549,11 +463,23 @@ export default function PractitionerMessageDetail() {
 
           <div className="flex flex-col items-center mb-6">
             <Avatar className="h-20 w-20 mb-4">
-              <AvatarImage src={client.avatar || "/placeholder.svg"} alt={client.name} />
-              <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+              <AvatarImage 
+                src={otherUser?.avatar_url || "/placeholder.svg"} 
+                alt={`${otherUser?.first_name} ${otherUser?.last_name}`} 
+              />
+              <AvatarFallback>
+                {otherUser?.first_name?.charAt(0) || 'U'}
+              </AvatarFallback>
             </Avatar>
-            <h3 className="text-xl font-semibold">{client.name}</h3>
-            <p className="text-sm text-muted-foreground">Client since {client.joinedDate}</p>
+            <h3 className="text-xl font-semibold">
+              {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'Unknown User'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Client since {otherUser?.created_at ? 
+                new Date(otherUser.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 
+                'Unknown'
+              }
+            </p>
           </div>
 
           <Tabs defaultValue="info">
@@ -566,25 +492,18 @@ export default function PractitionerMessageDetail() {
             <TabsContent value="info" className="space-y-4">
               <div>
                 <h4 className="text-sm font-medium mb-1">Email</h4>
-                <p className="text-sm">{client.email}</p>
+                <p className="text-sm">{otherUser?.email || 'No email'}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium mb-1">Phone</h4>
-                <p className="text-sm">{client.phone}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium mb-1">Last Active</h4>
-                <p className="text-sm">{client.lastActive}</p>
+                <h4 className="text-sm font-medium mb-1">User ID</h4>
+                <p className="text-sm">{otherUser?.id || 'Unknown'}</p>
               </div>
             </TabsContent>
 
             <TabsContent value="sessions">
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Session History</h4>
-                <p className="text-sm">Total Sessions: {client.totalSessions}</p>
-                <p className="text-sm">Last Session: 3 days ago</p>
-                <h4 className="text-sm font-medium mt-4">Upcoming Bookings</h4>
-                <p className="text-sm text-muted-foreground">No upcoming bookings</p>
+                <p className="text-sm text-muted-foreground">Session history will be available soon</p>
               </div>
             </TabsContent>
 
@@ -612,7 +531,7 @@ export default function PractitionerMessageDetail() {
             <DialogTitle>Share a Service</DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm mb-4">Select a service to share with {client.name}:</p>
+          <p className="text-sm mb-4">Select a service to share with {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'this client'}:</p>
 
           <div className="space-y-3">
             {mockServices.map((service) => (
@@ -654,25 +573,5 @@ export default function PractitionerMessageDetail() {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
-
-// This is a placeholder component in case it's needed
-function MessageSquare(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
   )
 }

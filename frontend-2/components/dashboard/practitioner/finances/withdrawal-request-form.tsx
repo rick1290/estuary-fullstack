@@ -12,10 +12,11 @@ import { formatCurrency } from "@/lib/utils"
 
 interface WithdrawalRequestFormProps {
   availableBalance: number
-  onSubmit: () => void
+  onSubmit: (amount: number) => void
+  isLoading?: boolean
 }
 
-export function WithdrawalRequestForm({ availableBalance, onSubmit }: WithdrawalRequestFormProps) {
+export function WithdrawalRequestForm({ availableBalance, onSubmit, isLoading }: WithdrawalRequestFormProps) {
   const [amount, setAmount] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("bank")
   const [notes, setNotes] = useState("")
@@ -49,14 +50,13 @@ export function WithdrawalRequestForm({ availableBalance, onSubmit }: Withdrawal
       return
     }
 
-    // Process withdrawal request
-    console.log("Withdrawal requested:", {
-      amount: numAmount,
-      paymentMethod,
-      notes,
-    })
+    if (numAmount < 50) {
+      setError("Minimum withdrawal amount is $50")
+      return
+    }
 
-    onSubmit()
+    // Process withdrawal request
+    onSubmit(numAmount)
   }
 
   return (
@@ -96,10 +96,12 @@ export function WithdrawalRequestForm({ availableBalance, onSubmit }: Withdrawal
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onSubmit}>
+        <Button type="button" variant="outline" onClick={() => onSubmit(0)} disabled={isLoading}>
           Cancel
         </Button>
-        <Button type="submit">Request Withdrawal</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Processing..." : "Request Withdrawal"}
+        </Button>
       </div>
     </form>
   )

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -14,11 +15,12 @@ import { Label } from "@/components/ui/label"
 import { ImagePlus, Upload, X, Save, CheckCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import LoadingSpinner from "@/components/ui/loading-spinner"
+import { practitionersMyProfileRetrieveOptions, practitionersPartialUpdateMutation } from "@/src/client/@tanstack/react-query.gen"
 
 // Form schema with validation
 const profileFormSchema = z.object({
   display_name: z.string().min(2, { message: "Display name must be at least 2 characters." }),
-  title: z.string().min(2, { message: "Title must be at least 2 characters." }),
+  professional_title: z.string().min(2, { message: "Title must be at least 2 characters." }),
   quote: z.string().optional(),
   bio: z.string().min(10, { message: "Bio must be at least 10 characters." }),
   description: z.string().min(20, { message: "Description must be at least 20 characters." }),
@@ -26,104 +28,76 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-// Mock function to get practitioner data
-const getPractitionerData = async () => {
-  // In a real app, this would fetch from an API
-  return {
-    id: "practitioner-1",
-    display_name: "Dr. Sarah Johnson",
-    title: "Wellness Coach & Nutritional Therapist",
-    email: "sarah.johnson@example.com",
-    profile_image_url: "/practitioner-1.jpg",
-    profile_video_url: null,
-    quote: "Wellness is not a destination, it's a journey we take together.",
-    bio: "With over 10 years of experience in wellness coaching, I help clients achieve balance in their physical and mental health through personalized programs.",
-    description:
-      "I specialize in holistic approaches to wellness, combining nutritional therapy with mindfulness practices. My approach is client-centered, focusing on sustainable lifestyle changes rather than quick fixes. I believe that true wellness comes from addressing the whole person - mind, body, and spirit.",
-  }
-}
-
 interface PractitionerProfileFormProps {
   isOnboarding?: boolean
 }
 
 export default function PractitionerProfileForm({ isOnboarding = false }: PractitionerProfileFormProps) {
-  const [practitioner, setPractitioner] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  // Fetch practitioner profile data
+  const { data: practitioner, isLoading, error } = useQuery(practitionersMyProfileRetrieveOptions())
 
   // Initialize form with default values
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       display_name: "",
-      title: "",
+      professional_title: "",
       quote: "",
       bio: "",
       description: "",
     },
   })
 
-  // Load practitioner data
+  // Update form when data is loaded
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await getPractitionerData()
-        setPractitioner(data)
-        form.reset({
-          display_name: data.display_name,
-          title: data.title,
-          quote: data.quote || "",
-          bio: data.bio,
-          description: data.description,
-        })
-        setVideoUrl(data.profile_video_url)
-        setIsLoading(false)
-      } catch (error) {
-        console.error("Failed to load practitioner data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load your profile data. Please try again.",
-          variant: "destructive",
-        })
-        setIsLoading(false)
-      }
+    if (practitioner) {
+      form.reset({
+        display_name: practitioner.display_name || "",
+        professional_title: practitioner.professional_title || "",
+        quote: practitioner.quote || "",
+        bio: practitioner.bio || "",
+        description: practitioner.description || "",
+      })
+      setVideoUrl(practitioner.profile_video_url || null)
     }
+  }, [practitioner, form])
 
-    loadData()
-  }, [form, toast])
-
-  // Handle form submission
-  const onSubmit = async (data: ProfileFormValues) => {
-    setIsSaving(true)
-    try {
-      // In a real app, this would send data to an API
-      console.log("Saving profile data:", data)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Show success message
+  // Setup mutation for updating profile
+  const updateMutation = useMutation({
+    ...practitionersPartialUpdateMutation(),
+    onSuccess: () => {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
-
       toast({
         title: "Profile Updated",
         description: "Your profile information has been saved successfully.",
       })
-    } catch (error) {
+      // Invalidate and refetch the profile data
+      queryClient.invalidateQueries({ queryKey: ['practitionersMyProfileRetrieve'] })
+    },
+    onError: (error) => {
       console.error("Failed to save profile:", error)
       toast({
         title: "Error",
         description: "Failed to save your profile. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsSaving(false)
     }
+  })
+
+  // Handle form submission
+  const onSubmit = async (data: ProfileFormValues) => {
+    if (!practitioner?.id) return
+    
+    updateMutation.mutate({
+      path: { id: practitioner.id },
+      body: data
+    })
   }
 
   // Handle profile image upload
@@ -152,6 +126,15 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
 
   if (isLoading) {
     return <LoadingSpinner />
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-lg font-semibold">Failed to load profile</h2>
+        <p className="text-muted-foreground">Please try refreshing the page.</p>
+      </div>
+    )
   }
 
   return (
@@ -211,7 +194,7 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
 
                 <div className="w-full pt-4 border-t">
                   <Label className="block mb-2">Email Address</Label>
-                  <p className="text-sm text-muted-foreground">{practitioner?.email}</p>
+                  <p className="text-sm text-muted-foreground">{practitioner?.user?.email || 'Not available'}</p>
                   <p className="text-xs text-muted-foreground mt-1">Contact support to change your email address.</p>
                 </div>
               </div>
@@ -239,7 +222,7 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
 
               <FormField
                 control={form.control}
-                name="title"
+                name="professional_title"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Professional Title</FormLabel>
@@ -312,8 +295,8 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
               />
 
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving ? (
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? (
                     <>Saving...</>
                   ) : showSuccess ? (
                     <>

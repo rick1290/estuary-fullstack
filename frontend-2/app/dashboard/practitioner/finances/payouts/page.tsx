@@ -16,13 +16,70 @@ import { PayoutHistoryTable } from "@/components/dashboard/practitioner/finances
 import { PayoutDetails } from "@/components/dashboard/practitioner/finances/payout-details"
 import { WithdrawalRequestForm } from "@/components/dashboard/practitioner/finances/withdrawal-request-form"
 import { PendingPayouts } from "@/components/dashboard/practitioner/finances/pending-payouts"
-import { mockPayouts, mockPendingPayouts } from "@/lib/mock-payout-data"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { practitionersBalanceRetrieveOptions, practitionersPayoutsRetrieveOptions } from "@/api-client/query-client/@tanstack/react-query.gen"
+import { practitionersRequestPayoutCreate } from "@/api-client/openapi-client/requests/services.gen"
 import type { Payout } from "@/types/payout"
+import { toast } from "sonner"
 
 export default function PayoutsPage() {
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null)
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false)
   const [isPayoutDetailsOpen, setIsPayoutDetailsOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const queryClient = useQueryClient()
+
+  // Fetch balance data
+  const { data: balanceData, isLoading: balanceLoading } = useQuery(practitionersBalanceRetrieveOptions())
+
+  // Fetch payouts data
+  const { data: payoutsData, isLoading: payoutsLoading } = useQuery(
+    practitionersPayoutsRetrieveOptions({
+      query: {
+        ...(statusFilter !== "all" && { status: statusFilter }),
+        ordering: "-created_at",
+      },
+    })
+  )
+
+  // Request payout mutation
+  const requestPayoutMutation = useMutation({
+    mutationFn: (amount: number) => 
+      practitionersRequestPayoutCreate({
+        requestBody: {
+          amount_cents: Math.round(amount * 100),
+          payment_method: "bank_transfer",
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Payout request submitted successfully")
+      setIsWithdrawalDialogOpen(false)
+      queryClient.invalidateQueries({ queryKey: ["practitioners", "balance"] })
+      queryClient.invalidateQueries({ queryKey: ["practitioners", "payouts"] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || "Failed to request payout")
+    },
+  })
+
+  const handleWithdrawalSubmit = (amount: number) => {
+    requestPayoutMutation.mutate(amount)
+  }
+
+  // Transform API payouts to match component expectations
+  const transformedPayouts = payoutsData?.results?.map((payout) => ({
+    id: payout.id.toString(),
+    date: new Date(payout.created_at),
+    amount: payout.amount / 100,
+    status: payout.status as "pending" | "processing" | "completed" | "failed",
+    method: payout.payment_method || "bank_transfer",
+    reference: payout.stripe_transfer_id || `PAY-${payout.id}`,
+    fee: payout.platform_fee ? payout.platform_fee / 100 : 0,
+    netAmount: (payout.amount - (payout.platform_fee || 0)) / 100,
+  })) || []
+
+  const pendingPayouts = transformedPayouts.filter((p) => p.status === "pending" || p.status === "processing")
 
   const handlePayoutClick = (payout: Payout) => {
     setSelectedPayout(payout)
@@ -42,38 +99,53 @@ export default function PayoutsPage() {
             <CardDescription>Amount available for withdrawal</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <p className="text-3xl font-bold text-primary">$50,767.89</p>
-              <Dialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Request Withdrawal</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Request Withdrawal</DialogTitle>
-                    <DialogDescription>
-                      Enter the amount you would like to withdraw and select your payment method.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <WithdrawalRequestForm
-                    availableBalance={50767.89}
-                    onSubmit={() => setIsWithdrawalDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
+            {balanceLoading ? (
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-9 w-32" />
+                <Skeleton className="h-10 w-40" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <p className="text-3xl font-bold text-primary">
+                  ${((balanceData?.available_balance || 0) / 100).toFixed(2)}
+                </p>
+                <Dialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      disabled={(balanceData?.available_balance || 0) < 5000}
+                      title={(balanceData?.available_balance || 0) < 5000 ? "Minimum balance of $50 required" : ""}
+                    >
+                      Request Withdrawal
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Request Withdrawal</DialogTitle>
+                      <DialogDescription>
+                        Enter the amount you would like to withdraw. Minimum withdrawal amount is $50.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <WithdrawalRequestForm
+                      availableBalance={(balanceData?.available_balance || 0) / 100}
+                      onSubmit={handleWithdrawalSubmit}
+                      isLoading={requestPayoutMutation.isPending}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {mockPendingPayouts.length > 0 && (
+      {pendingPayouts.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium">Pending Payouts</CardTitle>
             <CardDescription>Payouts that are currently being processed</CardDescription>
           </CardHeader>
           <CardContent>
-            <PendingPayouts payouts={mockPendingPayouts} />
+            <PendingPayouts payouts={pendingPayouts} />
           </CardContent>
         </Card>
       )}
@@ -84,35 +156,47 @@ export default function PayoutsPage() {
           <CardDescription>View all your past payouts</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="processing">Processing</TabsTrigger>
-              <TabsTrigger value="failed">Failed</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all">
-              <PayoutHistoryTable payouts={mockPayouts} onPayoutClick={handlePayoutClick} />
-            </TabsContent>
-            <TabsContent value="completed">
-              <PayoutHistoryTable
-                payouts={mockPayouts.filter((p) => p.status === "completed")}
-                onPayoutClick={handlePayoutClick}
-              />
-            </TabsContent>
-            <TabsContent value="processing">
-              <PayoutHistoryTable
-                payouts={mockPayouts.filter((p) => p.status === "processing")}
-                onPayoutClick={handlePayoutClick}
-              />
-            </TabsContent>
-            <TabsContent value="failed">
-              <PayoutHistoryTable
-                payouts={mockPayouts.filter((p) => p.status === "failed")}
-                onPayoutClick={handlePayoutClick}
-              />
-            </TabsContent>
-          </Tabs>
+          {payoutsLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <Tabs 
+              value={statusFilter} 
+              onValueChange={setStatusFilter}
+              className="w-full"
+            >
+              <TabsList className="mb-4">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+                <TabsTrigger value="processing">Processing</TabsTrigger>
+                <TabsTrigger value="failed">Failed</TabsTrigger>
+              </TabsList>
+              <TabsContent value="all">
+                <PayoutHistoryTable payouts={transformedPayouts} onPayoutClick={handlePayoutClick} />
+              </TabsContent>
+              <TabsContent value="completed">
+                <PayoutHistoryTable
+                  payouts={transformedPayouts.filter((p) => p.status === "completed")}
+                  onPayoutClick={handlePayoutClick}
+                />
+              </TabsContent>
+              <TabsContent value="processing">
+                <PayoutHistoryTable
+                  payouts={transformedPayouts.filter((p) => p.status === "processing")}
+                  onPayoutClick={handlePayoutClick}
+                />
+              </TabsContent>
+              <TabsContent value="failed">
+                <PayoutHistoryTable
+                  payouts={transformedPayouts.filter((p) => p.status === "failed")}
+                  onPayoutClick={handlePayoutClick}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
 

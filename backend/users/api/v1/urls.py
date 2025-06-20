@@ -10,6 +10,10 @@ from .views import (
     CurrentUserView,
     ChangePasswordView,
     logout_simple,
+    user_stats,
+    user_favorites,
+    add_favorite,
+    remove_favorite,
 )
 
 app_name = 'users_api_v1'
@@ -25,4 +29,10 @@ urlpatterns = [
     # User profile endpoints
     path('me/', CurrentUserView.as_view(), name='current_user'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('stats/', user_stats, name='user_stats'),
+    
+    # Favorites endpoints
+    path('favorites/', user_favorites, name='user_favorites'),
+    path('favorites/add/', add_favorite, name='add_favorite'),
+    path('favorites/<int:practitioner_id>/remove/', remove_favorite, name='remove_favorite'),
 ]
