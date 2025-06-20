@@ -146,40 +146,44 @@ export interface Location {
 }
 
 export interface Practitioner {
-  id: string
-  user: User
-  title: string
-  bio: string
-  description: string
-  quote: string
-  profile_image_url: string
-  profile_video_url: string | null
-  average_rating: string
-  average_rating_float: number
-  total_reviews: number
-  years_of_experience: number
-  is_verified: boolean
-  featured: boolean
-  practitioner_status: string
-  specializations: Specialization[]
-  styles: Style[]
-  topics: Topic[]
-  modalities: Modality[]
-  certifications: Certification[]
-  educations: Education[]
-  questions: any[]
-  buffer_time: number
-  next_available_date: string | null
-  completed_sessions: number
-  cancellation_rate: string
-  book_times: number
-  min_price: string
-  max_price: string
-  total_services: number
-  display_name: string
-  services: Service[]
-  services_by_category: ServicesByCategory[]
-  services_by_type: ServicesByType[]
-  service_categories: ServiceCategory[]
-  locations: Location[]
+  id: string | number
+  public_uuid?: string
+  user?: User
+  title?: string
+  professional_title?: string
+  bio?: string
+  bio_short?: string
+  description?: string
+  quote?: string
+  profile_image_url?: string
+  profile_video_url?: string | null
+  average_rating?: string | number
+  average_rating_float?: number
+  total_reviews?: number
+  years_of_experience?: number
+  is_verified?: boolean
+  featured?: boolean
+  practitioner_status?: string
+  specializations?: Specialization[]
+  styles?: Style[]
+  topics?: Topic[]
+  modalities?: Modality[]
+  certifications?: Certification[]
+  educations?: Education[]
+  questions?: any[]
+  buffer_time?: number
+  next_available_date?: string | null
+  completed_sessions?: number
+  cancellation_rate?: string
+  book_times?: number
+  min_price?: string
+  max_price?: string
+  total_services?: number
+  display_name?: string
+  services?: Service[]
+  services_by_category?: ServicesByCategory[]
+  services_by_type?: ServicesByType[]
+  service_categories?: ServiceCategory[]
+  locations?: Location[]
+  primary_location?: Location | null
 }

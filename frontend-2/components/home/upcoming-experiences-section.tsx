@@ -5,6 +5,7 @@ import { ArrowRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Upcoming experiences
 const UPCOMING_EXPERIENCES = [
@@ -154,7 +155,7 @@ export default function UpcomingExperiencesSection() {
                 </CardContent>
                 <div className="p-3 pt-0">
                   <Button variant="outline" className="w-full rounded-full" asChild>
-                    <Link href={`/marketplace/${experience.type.toLowerCase()}s/${experience.id}`}>Learn More</Link>
+                    <Link href={getServiceDetailUrl({ id: experience.id, service_type_code: experience.type.toLowerCase() })}>Learn More</Link>
                   </Button>
                 </div>
               </Card>

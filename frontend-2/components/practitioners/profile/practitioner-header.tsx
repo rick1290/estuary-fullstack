@@ -67,7 +67,13 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-4 w-4 text-sage-600" />
                     <span className="text-olive-700">
-                      {practitioner.locations.find((loc) => loc.is_primary)?.city_name || "Virtual"}
+                      {(() => {
+                        // Handle both API structures: primary_location object or locations array
+                        const primaryLocation = practitioner.primary_location || 
+                          (practitioner.locations && practitioner.locations.find((loc) => loc.is_primary)) ||
+                          (practitioner.locations && practitioner.locations[0]);
+                        return primaryLocation?.city_name || "Virtual";
+                      })()}
                     </span>
                   </div>
                 </div>

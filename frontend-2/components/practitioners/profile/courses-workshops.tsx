@@ -8,9 +8,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Clock, MapPin, ChevronLeft, ChevronRight, Calendar, Sparkles } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
+import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 interface Service {
-  id: string
+  id: string | number
+  public_uuid?: string
   name: string
   description: string
   price: string
@@ -20,7 +22,10 @@ interface Service {
   service_type: {
     id: string
     name: string
+    code?: string
   }
+  service_type_code?: string
+  service_type_display?: string
 }
 
 interface CoursesWorkshopsProps {
@@ -118,8 +123,8 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
                 <p className="text-2xl font-bold text-olive-900">{item.price ? item.price : "Free"}</p>
 
                 <Button asChild size="sm" className="shadow-md hover:shadow-lg">
-                  <Link href={`/${(item.service_type_code || item.service_type?.name)}s/${item.id}`}>
-                    {(item.service_type_code || item.service_type?.name) === "course" ? "Start Journey" : "Reserve Spot"}
+                  <Link href={getServiceDetailUrl(item)}>
+                    {getServiceCtaText(item.service_type_code || item.service_type?.name)}
                   </Link>
                 </Button>
               </div>

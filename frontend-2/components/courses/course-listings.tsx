@@ -1,6 +1,7 @@
 "use client"
 
 import ServiceCard from "@/components/ui/service-card"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Mock data for course listings
 const MOCK_COURSES = [
@@ -113,7 +114,7 @@ export default function CourseListings({ query, location, categories = [] }: Cou
           <ServiceCard
             key={course.id}
             {...course}
-            href={`/courses/${course.id}`}
+            href={getServiceDetailUrl({ id: course.id, service_type_code: 'course' })}
             index={index}
           />
         ))}

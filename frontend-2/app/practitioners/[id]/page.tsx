@@ -1,8 +1,10 @@
-import { Suspense } from "react"
+"use client"
+import React, { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import { useQuery } from "@tanstack/react-query"
+import { publicPractitionersRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import PractitionerBookingPanel from "@/components/practitioners/practitioner-booking-panel"
-import { getPractitionerById } from "@/lib/practitioners"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,12 +12,56 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight, Star, Sparkles } from "lucide-react"
+import { ChevronRight, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import ClientPractitionerProfile from "@/components/practitioners/client-practitioner-profile"
 
-export default async function PractitionerPage({ params }: { params: { id: string } }) {
-  const practitioner = await getPractitionerById(params.id)
+export default function PractitionerPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
+  
+  // Fetch practitioner data from API using public_uuid  
+  const { data: practitioner, isLoading, error } = useQuery({
+    ...publicPractitionersRetrieveOptions({ path: { public_uuid: id } }),
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  })
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <div className="bg-gradient-to-b from-sage-50/50 to-cream-50 pb-8">
+          <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
+            <Skeleton className="h-6 w-96 mb-6" />
+          </div>
+        </div>
+        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="grid lg:grid-cols-[1fr,340px] gap-6 lg:gap-8">
+            <div className="w-full min-w-0">
+              <ProfileSkeleton />
+            </div>
+            <div className="w-full">
+              <Skeleton className="h-96 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <Alert className="border-red-200 bg-red-50 max-w-md">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Failed to load practitioner details. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   if (!practitioner) {
     notFound()
@@ -46,7 +92,7 @@ export default async function PractitionerPage({ params }: { params: { id: strin
                 <ChevronRight className="h-3.5 w-3.5 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <span className="text-olive-800 font-medium text-sm">{practitioner.display_name}</span>
+                <span className="text-olive-800 font-medium text-sm">{practitioner.display_name || `${practitioner.user.first_name} ${practitioner.user.last_name}`.trim() || 'Practitioner'}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

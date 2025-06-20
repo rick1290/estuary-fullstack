@@ -1,6 +1,7 @@
 "use client"
 
 import ServiceCard from "@/components/ui/service-card"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Mock data for workshop listings
 const MOCK_WORKSHOPS = [
@@ -116,7 +117,7 @@ export default function WorkshopListings({ query, location, categories = [] }: W
           <ServiceCard
             key={workshop.id}
             {...workshop}
-            href={`/workshops/${workshop.id}`}
+            href={getServiceDetailUrl({ id: workshop.id, service_type_code: 'workshop' })}
             index={index}
           />
         ))}

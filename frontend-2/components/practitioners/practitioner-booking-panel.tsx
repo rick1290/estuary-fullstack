@@ -162,7 +162,14 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
             <div className="flex items-center justify-between text-sm">
               <span className="text-olive-600">Location</span>
               <span className="font-medium text-olive-800">
-                {practitioner.locations.some(l => l.is_virtual) ? "Virtual Available" : "In-Person"}
+                {(() => {
+                  // Handle both API structures: primary_location object or locations array
+                  if (practitioner.primary_location?.is_virtual) return "Virtual Available";
+                  if (practitioner.locations && practitioner.locations.some(l => l.is_virtual)) return "Virtual Available";
+                  if (practitioner.primary_location?.is_in_person || 
+                      (practitioner.locations && practitioner.locations.some(l => l.is_in_person))) return "In-Person";
+                  return "Contact for Details";
+                })()}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">

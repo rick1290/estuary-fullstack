@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
 import { publicServicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import ServiceCard from "@/components/ui/service-card"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 
 export default function UpcomingWorkshopsSection() {
@@ -148,7 +149,7 @@ export default function UpcomingWorkshopsSection() {
                   <div key={workshop.id} className="min-w-[350px] max-w-[350px] flex">
                     <ServiceCard
                       {...workshop}
-                      href={`/workshops/${workshop.id}`}
+                      href={getServiceDetailUrl({ id: workshop.id, service_type_code: 'workshop' })}
                       index={index}
                     />
                   </div>

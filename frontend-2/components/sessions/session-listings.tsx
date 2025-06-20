@@ -1,6 +1,7 @@
 "use client"
 
 import ServiceCard from "@/components/ui/service-card"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Mock data for session listings
 const MOCK_SESSIONS = [
@@ -110,7 +111,7 @@ export default function SessionListings({ query, location, categories = [] }: Se
           <ServiceCard
             key={session.id}
             {...session}
-            href={`/sessions/${session.id}`}
+            href={getServiceDetailUrl({ id: session.id, service_type_code: 'session' })}
             index={index}
           />
         ))}

@@ -19,12 +19,13 @@ interface PractitionerRowCardProps {
 export default function PractitionerRowCard({ practitioner, initialLiked = false }: PractitionerRowCardProps) {
   const [isLiked, setIsLiked] = useState(initialLiked)
 
-  // Determine location type
-  const hasVirtual = practitioner.locations.some((loc) => loc.is_virtual)
-  const hasInPerson = practitioner.locations.some((loc) => loc.is_in_person)
+  // Handle location data - API might return primary_location object or locations array
+  const locations = practitioner.locations || (practitioner.primary_location ? [practitioner.primary_location] : [])
+  const hasVirtual = locations.some((loc) => loc.is_virtual)
+  const hasInPerson = locations.some((loc) => loc.is_in_person)
   
   // Get primary location
-  const primaryLocation = practitioner.locations.find((loc) => loc.is_primary)
+  const primaryLocation = practitioner.primary_location || locations.find((loc) => loc.is_primary) || locations[0]
 
   const handleLikeToggle = useCallback(
     (e: React.MouseEvent) => {
@@ -35,7 +36,8 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
         const newValue = !prev
         try {
           const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-          savedLikes[practitioner.id] = newValue
+          const practitionerId = practitioner.public_uuid || practitioner.id
+          savedLikes[practitionerId] = newValue
           localStorage.setItem("likedPractitioners", JSON.stringify(savedLikes))
         } catch (error) {
           console.error("Error saving like:", error)
@@ -43,14 +45,15 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
         return newValue
       })
     },
-    [practitioner.id],
+    [practitioner.public_uuid, practitioner.id],
   )
 
   // Dummy avatar images for different practitioners
-  const getDummyAvatar = (practitionerId: string) => {
+  const getDummyAvatar = (practitionerId: string | number) => {
     // Use consistent pravatar.cc images based on practitioner ID
     const imageNumbers = [47, 33, 44, 12, 32, 52, 48, 68, 91, 15]
-    const index = practitioner.id.charCodeAt(0) % imageNumbers.length
+    const idString = String(practitionerId)
+    const index = idString.charCodeAt(0) % imageNumbers.length
     return `https://i.pravatar.cc/200?img=${imageNumbers[index]}`
   }
 
@@ -74,7 +77,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                   {/* Name and Title */}
                   <div className="flex items-center gap-2">
                     <h3 className="text-xl font-semibold text-olive-900 group-hover:text-sage-700 transition-colors">
-                      {practitioner.display_name}
+                      {practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'}
                     </h3>
                     {practitioner.is_verified && (
                       <Badge className="gap-1 bg-sage-100 text-olive-700 hover:bg-sage-200 rounded-full">
@@ -83,15 +86,15 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                       </Badge>
                     )}
                   </div>
-                  <p className="text-olive-600 mt-1">{practitioner.title}</p>
+                  <p className="text-olive-600 mt-1">{practitioner.professional_title || practitioner.title}</p>
                   
                   {/* Rating */}
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
-                      <span className="ml-1 font-medium text-sm text-olive-800">{practitioner.average_rating_float}</span>
+                      <span className="ml-1 font-medium text-sm text-olive-800">{practitioner.average_rating || practitioner.average_rating_float || 4.5}</span>
                     </div>
-                    <span className="text-sm text-olive-500">({practitioner.total_reviews} reviews)</span>
+                    <span className="text-sm text-olive-500">({practitioner.total_reviews || 0} reviews)</span>
                   </div>
                 </div>
 
@@ -109,7 +112,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
 
               {/* Bio */}
               <p className="text-olive-600 mb-4 line-clamp-2 leading-relaxed">
-                {practitioner.bio_short ||
+                {(practitioner.bio_short || (practitioner.bio && practitioner.bio.length > 150 ? practitioner.bio.substring(0, 150) + "..." : practitioner.bio)) ||
                   "Experienced practitioner dedicated to helping clients achieve their wellness goals through personalized approaches and evidence-based techniques."}
               </p>
 
@@ -155,33 +158,37 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
               </div>
 
               {/* Specializations */}
-              <div className="flex items-start gap-2 mb-4">
-                <span className="text-sm text-olive-500 mt-0.5">Specializes in:</span>
-                <div className="flex flex-wrap gap-1.5 flex-1">
-                  {practitioner.specializations.slice(0, 4).map((specialization) => (
-                    <span key={specialization.id} className="text-xs px-2.5 py-1 bg-sage-100 text-olive-700 rounded-full">
-                      {specialization.content}
-                    </span>
-                  ))}
-                  {practitioner.specializations.length > 4 && (
-                    <span className="text-xs px-2.5 py-1 bg-sage-100 text-olive-500 rounded-full">
-                      +{practitioner.specializations.length - 4} more
-                    </span>
-                  )}
+              {practitioner.specializations && practitioner.specializations.length > 0 && (
+                <div className="flex items-start gap-2 mb-4">
+                  <span className="text-sm text-olive-500 mt-0.5">Specializes in:</span>
+                  <div className="flex flex-wrap gap-1.5 flex-1">
+                    {practitioner.specializations.slice(0, 4).map((specialization) => (
+                      <span key={specialization.id} className="text-xs px-2.5 py-1 bg-sage-100 text-olive-700 rounded-full">
+                        {specialization.content}
+                      </span>
+                    ))}
+                    {practitioner.specializations.length > 4 && (
+                      <span className="text-xs px-2.5 py-1 bg-sage-100 text-olive-500 rounded-full">
+                        +{practitioner.specializations.length - 4} more
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Modalities */}
-              <div className="flex items-start gap-2 mb-6">
-                <span className="text-sm text-olive-500 mt-0.5">Approaches:</span>
-                <p className="text-sm text-olive-600 flex-1 line-clamp-1">
-                  {practitioner.modalities.map((m) => m.name).join(", ")}
-                </p>
-              </div>
+              {practitioner.modalities && practitioner.modalities.length > 0 && (
+                <div className="flex items-start gap-2 mb-6">
+                  <span className="text-sm text-olive-500 mt-0.5">Approaches:</span>
+                  <p className="text-sm text-olive-600 flex-1 line-clamp-1">
+                    {practitioner.modalities.map((m) => m.name).join(", ")}
+                  </p>
+                </div>
+              )}
               
               {/* View Profile Button */}
               <div className="flex justify-end">
-                <Link href={`/practitioners/${practitioner.id}`}>
+                <Link href={`/practitioners/${practitioner.public_uuid || practitioner.id}`}>
                   <Button className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl px-6 shadow-lg">
                     View Profile
                   </Button>

@@ -15,11 +15,12 @@ export default function ClientPractitionerProfile({ practitioner }: ClientPracti
   useEffect(() => {
     try {
       const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-      setIsLiked(!!savedLikes[practitioner.id])
+      const practitionerId = practitioner.public_uuid || practitioner.id
+      setIsLiked(!!savedLikes[practitionerId])
     } catch (error) {
       console.error("Error loading liked state:", error)
     }
-  }, [practitioner.id])
+  }, [practitioner.public_uuid, practitioner.id])
 
   return <PractitionerProfile practitioner={practitioner} initialLiked={isLiked} />
 }

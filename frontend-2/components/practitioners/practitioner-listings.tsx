@@ -1,7 +1,7 @@
 "use client"
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { practitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -40,9 +40,9 @@ export default function PractitionerListings({
     return params
   }, [query, location, categories, page, sortBy])
 
-  // Fetch practitioners from API
+  // Fetch practitioners from API using public endpoint
   const { data: practitionersData, isLoading, error, refetch } = useQuery({
-    ...practitionersListOptions({ query: queryParams }),
+    ...publicPractitionersListOptions({ query: queryParams }),
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   })
 
@@ -150,7 +150,7 @@ export default function PractitionerListings({
 
       <div className="flex flex-col gap-4">
         {apiPractitioners.map((practitioner) => (
-          <ClientPractitionerRowCard key={practitioner.id || practitioner.public_uuid} practitioner={practitioner} />
+          <ClientPractitionerRowCard key={practitioner.public_uuid || practitioner.id} practitioner={practitioner} />
         ))}
       </div>
 

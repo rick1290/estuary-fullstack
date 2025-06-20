@@ -25,7 +25,7 @@ from services.api.v1.views import (
 
 # Practitioner endpoints
 from practitioners.api.v1.views import (
-    PractitionerViewSet, ScheduleViewSet, AvailabilityViewSet,
+    PractitionerViewSet, PublicPractitionerViewSet, ScheduleViewSet, AvailabilityViewSet,
     CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet,
     SpecializationViewSet, StyleViewSet, TopicViewSet, ModalityViewSet
 )
@@ -76,7 +76,8 @@ router.register(r'service-sessions', ServiceSessionViewSet, basename='service-se
 router.register(r'service-resources', ServiceResourceViewSet, basename='service-resource')
 
 # Practitioners
-router.register(r'practitioners', PractitionerViewSet, basename='practitioner')
+router.register(r'practitioners', PractitionerViewSet, basename='practitioner')  # Internal CRUD (uses PK)
+router.register(r'public-practitioners', PublicPractitionerViewSet, basename='public-practitioner')  # Public API (uses public_uuid)
 router.register(r'schedules', ScheduleViewSet, basename='schedule')
 router.register(r'availability', AvailabilityViewSet, basename='availability')
 router.register(r'certifications', CertificationViewSet, basename='certification')

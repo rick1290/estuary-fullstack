@@ -1234,6 +1234,49 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=['Public Practitioners']),
+    retrieve=extend_schema(tags=['Public Practitioners'])
+)
+class PublicPractitionerViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Public-facing ViewSet for practitioners using public_uuid for lookup.
+    Used by marketing pages and public practitioner discovery.
+    Read-only access with public-friendly URLs.
+    """
+    serializer_class = PractitionerDetailSerializer
+    permission_classes = [AllowAny]  # Public access
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PractitionerFilter
+    search_fields = ['display_name', 'bio', 'professional_title']
+    ordering_fields = ['created_at', 'years_of_experience', 'featured']
+    ordering = ['-featured', '-created_at']
+    lookup_field = 'public_uuid'
+    lookup_url_kwarg = 'public_uuid'
+    
+    def get_queryset(self):
+        """Get public practitioners only - active and verified"""
+        return Practitioner.objects.filter(
+            is_verified=True,
+            practitioner_status='active'
+        ).select_related(
+            'user', 'primary_location'
+        ).prefetch_related(
+            'specializations', 'styles', 'topics', 'modalities',
+            'certifications', 'educations',
+            Prefetch(
+                'primary_services',
+                queryset=Service.objects.filter(is_active=True, is_public=True)
+            )
+        )
+    
+    def get_serializer_class(self):
+        """Always use public serializers"""
+        if self.action == 'list':
+            return PractitionerListSerializer
+        return PractitionerDetailSerializer
+
+
 class ScheduleViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing practitioner schedules.
