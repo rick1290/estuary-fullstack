@@ -5,8 +5,9 @@ services:
     runtime: node
     region: oregon # or your preferred region
     plan: starter # or standard for production
-    buildCommand: cd frontend-2 && npm install -g pnpm && pnpm install && pnpm run build
-    startCommand: cd frontend-2 && pnpm start:production
+    rootDir: frontend-2
+    buildCommand: npm install -g pnpm && pnpm install && pnpm run build
+    startCommand: pnpm start:production
     envVars:
       - key: NODE_ENV
         value: production
@@ -46,6 +47,7 @@ services:
     runtime: python
     region: oregon # same region as frontend
     plan: starter # or standard for production
+    rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: uvicorn estuary.asgi:application --host 0.0.0.0 --port $PORT
     envVars:
