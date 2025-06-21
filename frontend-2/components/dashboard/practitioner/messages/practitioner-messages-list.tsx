@@ -60,7 +60,8 @@ export default function PractitionerMessagesList() {
   })
 
   // Filter conversations based on search
-  const filteredConversations = conversations?.filter((conversation) => {
+  const conversationsList = conversations?.results || []
+  const filteredConversations = conversationsList.filter((conversation) => {
     if (!searchQuery) return true
     const otherUser = conversation.other_user
     if (!otherUser) return false
@@ -68,7 +69,7 @@ export default function PractitionerMessagesList() {
     const email = otherUser.email?.toLowerCase() || ''
     const searchLower = searchQuery.toLowerCase()
     return fullName.includes(searchLower) || email.includes(searchLower)
-  }) || []
+  })
 
   useEffect(() => {
     if (conversationId) {

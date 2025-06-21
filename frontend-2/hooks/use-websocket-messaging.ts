@@ -236,9 +236,18 @@ export function useWebSocketMessaging({
     }
 
     return () => {
-      disconnect()
+      // Clean disconnect without dependencies
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = undefined
+      }
+      
+      if (ws.current && ws.current.readyState !== WebSocket.CLOSED) {
+        ws.current.close(1000, 'Component unmounting')
+        ws.current = null
+      }
     }
-  }, [conversationId, user, connect, disconnect])
+  }, [conversationId, user, connect])
 
   // Set mounted status on mount/unmount
   useEffect(() => {
@@ -246,16 +255,14 @@ export function useWebSocketMessaging({
     
     return () => {
       isMountedRef.current = false
-      disconnect()
     }
-  }, [disconnect])
+  }, [])
 
   return {
     connectionStatus,
     typingUsers,
     sendTypingIndicator,
     markAsRead,
-    reconnect: connect,
-    disconnect
+    reconnect: connect
   }
 }
