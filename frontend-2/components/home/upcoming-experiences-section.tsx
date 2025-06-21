@@ -131,23 +131,28 @@ export default function UpcomingExperiencesSection() {
                 key={experience.id}
                 className="h-full flex flex-col rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-8px] hover:shadow-md"
               >
-                <div className="relative">
-                  <img
+                <div className="relative h-[160px]">
+                  <Image
                     src={experience.image || "/placeholder.svg"}
                     alt={experience.title}
-                    className="h-[160px] w-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   <Badge className="absolute top-3 right-3 bg-background/90 text-foreground hover:bg-background/80">
                     {experience.type}
                   </Badge>
                 </div>
-                <CardContent className="flex-grow p-4">
-                  <h3 className="text-lg font-medium truncate">{experience.title}</h3>
-                  <p className="text-muted-foreground text-sm mb-2">with {experience.practitioner}</p>
+                <CardContent className="flex-grow flex flex-col p-4">
+                  <div className="flex-grow">
+                    <div className="min-h-[3rem] mb-2">
+                      <h3 className="text-lg font-medium leading-snug">{experience.title}</h3>
+                    </div>
+                    <p className="text-muted-foreground text-sm mb-2">with {experience.practitioner}</p>
 
-                  <div className="flex items-center mb-1 mt-3">
-                    <Calendar className="h-4 w-4 text-muted-foreground mr-1" />
-                    <p className="text-sm text-muted-foreground">Starts {experience.date}</p>
+                    <div className="flex items-center mb-1 mt-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground mr-1" />
+                      <p className="text-sm text-muted-foreground">Starts {experience.date}</p>
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center mt-3">

@@ -228,3 +228,28 @@ class UserFavoriteService(BaseModel):
     
     def __str__(self):
         return f"{self.user.email} saved {self.service}"
+
+
+class UserModalityPreference(BaseModel):
+    """
+    Track user's preferred modalities (wellness interests).
+    Allows users to indicate which types of wellness services they're interested in.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='modality_preferences')
+    modality = models.ForeignKey('common.Modality', on_delete=models.CASCADE,
+                                related_name='interested_users')
+    priority = models.PositiveIntegerField(default=0, 
+                                         help_text=_('Priority order (0 = highest priority)'))
+    
+    class Meta:
+        verbose_name = _('user modality preference')
+        verbose_name_plural = _('user modality preferences')
+        unique_together = ['user', 'modality']
+        ordering = ['priority', 'created_at']
+        indexes = [
+            models.Index(fields=['user', 'priority']),
+            models.Index(fields=['modality']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email} prefers {self.modality.name}"

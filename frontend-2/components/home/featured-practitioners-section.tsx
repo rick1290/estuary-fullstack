@@ -1,6 +1,6 @@
 "use client"
 import Link from "next/link"
-import { ArrowRight, Star, MapPin, Sparkles, AlertCircle } from "lucide-react"
+import { ArrowRight, Star, MapPin, Sparkles, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
 import { practitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useRef, useState, useEffect } from "react"
 
 // Fallback mock data for development
 const MOCK_PRACTITIONERS = [
@@ -58,12 +59,16 @@ const MOCK_PRACTITIONERS = [
 ]
 
 export default function FeaturedPractitionersSection() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
   // Fetch featured practitioners from API
   const { data: practitionersData, isLoading, error } = useQuery({
     ...practitionersListOptions({
       query: {
         featured: true,
-        limit: 4,
+        limit: 8,
         ordering: '-is_featured,-average_rating'
       }
     }),
@@ -90,6 +95,37 @@ export default function FeaturedPractitionersSection() {
 
   // Use API data if available, otherwise fallback to mock data
   const featuredPractitioners = transformedPractitioners.length > 0 ? transformedPractitioners : MOCK_PRACTITIONERS
+
+  const checkScrollButtons = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0)
+      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth - 10)
+    }
+  }
+
+  const scrollLeft = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollBy({ left: -300, behavior: 'smooth' })
+      setTimeout(checkScrollButtons, 300)
+    }
+  }
+
+  const scrollRight = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollBy({ left: 300, behavior: 'smooth' })
+      setTimeout(checkScrollButtons, 300)
+    }
+  }
+
+  // Initialize scroll button state
+  useEffect(() => {
+    checkScrollButtons()
+    window.addEventListener('resize', checkScrollButtons)
+    return () => window.removeEventListener('resize', checkScrollButtons)
+  }, [featuredPractitioners])
 
   return (
     <section className="py-20 bg-gradient-to-b from-white via-sage-50/30 to-cream-50 relative overflow-hidden">
@@ -147,67 +183,96 @@ export default function FeaturedPractitionersSection() {
 
         {/* Content */}
         {!isLoading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {featuredPractitioners.map((practitioner, index) => (
-              <div
-                key={practitioner.id}
-                className="animate-slide-up flex"
-                style={{animationDelay: `${index * 0.1}s`}}
+          <div className="relative">
+            {/* Scroll buttons */}
+            {canScrollLeft && (
+              <button
+                onClick={scrollLeft}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-all duration-200"
+                aria-label="Scroll left"
               >
-                <Link
-                  href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                  className="group block w-full transform transition-all duration-300 hover:scale-105"
-                >
-                  <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
-                    {/* Avatar section */}
-                    <div className="p-8 pb-4 text-center flex-grow flex flex-col">
-                      <div className="w-24 h-24 mx-auto rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white ring-2 ring-sage-200">
-                        <img 
-                          src={practitioner.image} 
-                          alt={practitioner.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      
-                      <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
-                      <p className="text-olive-600 text-sm mb-3">{practitioner.specialty}</p>
-                      
-                      <div className="flex items-center justify-center gap-1 text-sm text-olive-600 mb-4">
-                        <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
-                        <span className="font-medium">{practitioner.rating}</span>
-                        <span className="text-olive-400">•</span>
-                        <span>{practitioner.location}</span>
-                      </div>
-                      
-                      <div className="flex flex-wrap justify-center gap-2 mt-auto">
-                        {practitioner.modalities.slice(0, 2).map((modality) => (
-                          <span 
-                            key={modality} 
-                            className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full"
-                          >
-                            {modality}
-                          </span>
-                        ))}
-                        {practitioner.modalities.length > 2 && (
-                          <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
-                        )}
-                      </div>
-                    </div>
+                <ChevronLeft className="h-5 w-5 text-olive-700" />
+              </button>
+            )}
+            
+            {canScrollRight && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-all duration-200"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="h-5 w-5 text-olive-700" />
+              </button>
+            )}
 
-                    {/* Bottom section */}
-                    <div className="px-8 pb-8">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400"
-                      >
-                        View Profile
-                      </Button>
-                    </div>
-                  </Card>
-                </Link>
-              </div>
-            ))}
+            {/* Scrollable container */}
+            <div 
+              ref={scrollContainerRef}
+              onScroll={checkScrollButtons}
+              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {featuredPractitioners.map((practitioner, index) => (
+                <div
+                  key={practitioner.id}
+                  className="animate-slide-up flex-shrink-0 w-[280px]"
+                  style={{animationDelay: `${index * 0.1}s`}}
+                >
+                  <Link
+                    href={`/practitioners/${practitioner.slug || practitioner.id}`}
+                    className="group block w-full transform transition-all duration-300 hover:scale-105"
+                  >
+                    <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
+                      {/* Avatar section */}
+                      <div className="p-8 pb-4 text-center flex-grow flex flex-col">
+                        <div className="w-24 h-24 mx-auto rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white ring-2 ring-sage-200">
+                          <img 
+                            src={practitioner.image} 
+                            alt={practitioner.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        
+                        <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
+                        <p className="text-olive-600 text-sm mb-3">{practitioner.specialty}</p>
+                        
+                        <div className="flex items-center justify-center gap-1 text-sm text-olive-600 mb-4">
+                          <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
+                          <span className="font-medium">{practitioner.rating}</span>
+                          <span className="text-olive-400">•</span>
+                          <span>{practitioner.location}</span>
+                        </div>
+                        
+                        <div className="flex flex-wrap justify-center gap-2 mt-auto">
+                          {practitioner.modalities.slice(0, 2).map((modality) => (
+                            <span 
+                              key={modality} 
+                              className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full"
+                            >
+                              {modality}
+                            </span>
+                          ))}
+                          {practitioner.modalities.length > 2 && (
+                            <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom section */}
+                      <div className="px-8 pb-8">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400"
+                        >
+                          View Profile
+                        </Button>
+                      </div>
+                    </Card>
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
