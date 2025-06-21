@@ -39,9 +39,9 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   conversationsRetrieveOptions,
-  conversationsMessagesOptions,
-  conversationsSendMessageOptions,
-  conversationsMarkReadOptions
+  conversationsMessagesRetrieveOptions,
+  conversationsSendMessageCreateMutation,
+  conversationsMarkReadCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
