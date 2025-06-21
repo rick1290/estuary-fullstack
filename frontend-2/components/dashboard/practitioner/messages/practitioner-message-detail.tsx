@@ -104,7 +104,7 @@ export default function PractitionerMessageDetail() {
 
   // Fetch messages
   const { data: messages, isLoading: messagesLoading } = useQuery({
-    ...conversationsMessagesOptions({
+    ...conversationsMessagesRetrieveOptions({
       path: { id: conversationId || "" }
     }),
     enabled: !!conversationId
@@ -112,7 +112,7 @@ export default function PractitionerMessageDetail() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    ...conversationsSendMessageOptions(),
+    ...conversationsSendMessageCreateMutation(),
     onSuccess: () => {
       setNewMessage("")
       setSelectedFile(null)
@@ -129,7 +129,7 @@ export default function PractitionerMessageDetail() {
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
-    ...conversationsMarkReadOptions(),
+    ...conversationsMarkReadCreateMutation(),
     onSuccess: () => {
       // Invalidate conversation list to update unread counts
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
