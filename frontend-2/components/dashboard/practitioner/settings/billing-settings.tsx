@@ -298,31 +298,6 @@ export function BillingSettings() {
               </AlertDescription>
             </Alert>
           )}
-
-          <div className="flex justify-center">
-            <div className="inline-flex items-center rounded-full border p-1 text-sm">
-              <Button
-                variant={billingPeriod === "monthly" ? "default" : "ghost"}
-                size="sm"
-                className="rounded-full"
-                onClick={() => setBillingPeriod("monthly")}
-              >
-                Monthly
-              </Button>
-              <Button
-                variant={billingPeriod === "yearly" ? "default" : "ghost"}
-                size="sm"
-                className="rounded-full"
-                onClick={() => setBillingPeriod("yearly")}
-              >
-                Yearly
-                <Badge variant="outline" className="ml-1 rounded-full px-2 py-0 text-xs">
-                  Save 15%
-                </Badge>
-              </Button>
-            </div>
-          </div>
-
         </CardContent>
         {currentSubscription && (
           <CardFooter className="flex justify-between border-t pt-6">
@@ -348,7 +323,30 @@ export function BillingSettings() {
         )}
       </Card>
 
-      <h3 className="text-lg font-medium mt-8 mb-4">Available Plans</h3>
+      <div className="flex items-center justify-between mt-8 mb-4">
+        <h3 className="text-lg font-medium">Available Plans</h3>
+        <div className="inline-flex items-center rounded-full border p-1 text-sm">
+          <Button
+            variant={billingPeriod === "monthly" ? "default" : "ghost"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setBillingPeriod("monthly")}
+          >
+            Monthly
+          </Button>
+          <Button
+            variant={billingPeriod === "yearly" ? "default" : "ghost"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setBillingPeriod("yearly")}
+          >
+            Yearly
+            <Badge variant="outline" className="ml-1 rounded-full px-2 py-0 text-xs">
+              Save 15%
+            </Badge>
+          </Button>
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         {tiers.map((tier) => {
@@ -360,10 +358,10 @@ export function BillingSettings() {
           const features = getTierFeatures(tier.code)
 
           return (
-            <Card key={tier.id} className={`relative ${tier.code === 'professional' ? "border-primary" : ""}`}>
+            <Card key={tier.id} className={`relative overflow-visible ${tier.code === 'professional' ? "border-primary" : ""}`}>
               {tier.code === 'professional' && (
-                <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                <div className="absolute -top-3 left-0 right-0 flex justify-center z-10">
+                  <Badge className="bg-primary text-primary-foreground px-3 py-1">Most Popular</Badge>
                 </div>
               )}
               <CardHeader>
