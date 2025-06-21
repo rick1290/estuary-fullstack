@@ -33,7 +33,8 @@ export default function UpcomingWorkshopsSection() {
 
   // Transform API data to component format
   const upcomingWorkshops = services.map(service => ({
-    id: service.id, // Use numeric ID for URL routing
+    id: service.id, // Keep for key prop
+    slug: service.slug, // Add slug for URL routing
     title: service.name || service.title || 'Workshop',
     type: 'workshops' as const,
     practitioner: {
@@ -149,7 +150,7 @@ export default function UpcomingWorkshopsSection() {
                   <div key={workshop.id} className="min-w-[350px] max-w-[350px] flex">
                     <ServiceCard
                       {...workshop}
-                      href={getServiceDetailUrl({ id: workshop.id, service_type_code: 'workshop' })}
+                      href={getServiceDetailUrl({ id: workshop.id, slug: workshop.slug, service_type_code: 'workshop' })}
                       index={index}
                     />
                   </div>

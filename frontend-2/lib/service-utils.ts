@@ -3,13 +3,14 @@
  */
 export function getServiceDetailUrl(service: {
   id?: string | number;
+  slug?: string;
   public_uuid?: string;
   service_type?: { name?: string; code?: string };
   service_type_code?: string;
   service_type_display?: string;
 }): string {
-  // Get the service ID (prefer public_uuid)
-  const serviceId = service.public_uuid || service.id;
+  // Get the service slug (prefer slug over public_uuid or id)
+  const serviceSlug = service.slug || service.public_uuid || service.id;
   
   // Get the service type from various possible fields
   const serviceType = 
@@ -21,18 +22,18 @@ export function getServiceDetailUrl(service: {
   // Map service types to URL paths
   switch (serviceType.toLowerCase()) {
     case 'session':
-      return `/sessions/${serviceId}`;
+      return `/sessions/${serviceSlug}`;
     case 'workshop':
-      return `/workshops/${serviceId}`;
+      return `/workshops/${serviceSlug}`;
     case 'course':
-      return `/courses/${serviceId}`;
+      return `/courses/${serviceSlug}`;
     case 'package':
-      return `/packages/${serviceId}`;
+      return `/packages/${serviceSlug}`;
     case 'bundle':
-      return `/bundles/${serviceId}`;
+      return `/bundles/${serviceSlug}`;
     default:
       // Fallback for unknown types
-      return `/services/${serviceId}`;
+      return `/services/${serviceSlug}`;
   }
 }
 

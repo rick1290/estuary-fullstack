@@ -2,7 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import type { UserProfileReadable } from "@/src/client/types.gen"
 
 // Define user types
@@ -52,14 +52,34 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
 
+  // Handle logout using useCallback to avoid dependency issues
+  const logout = useCallback(async () => {
+    try {
+      localStorage.removeItem("userRole")
+      await signOut({ redirect: false })
+      router.push("/")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }, [router])
+
   // Convert session user to our User type
   useEffect(() => {
+    // Check for session errors first
+    if (session?.error === "RefreshAccessTokenError") {
+      console.error("Session refresh failed, logging out...")
+      setUser(null)
+      // Automatically log out on refresh error
+      logout()
+      return
+    }
+    
     if (session?.user && typeof session.user === 'object' && 'id' in session.user) {
       setUser(convertAPIUser(session.user as UserProfileReadable))
     } else {
       setUser(null)
     }
-  }, [session])
+  }, [session, logout])
 
   const login = async (email: string, password: string) => {
     setIsLoading(true)
@@ -93,15 +113,6 @@ export function useAuth() {
     }
   }
 
-  const logout = async () => {
-    try {
-      localStorage.removeItem("userRole")
-      await signOut({ redirect: false })
-      router.push("/")
-    } catch (error) {
-      console.error("Logout error:", error)
-    }
-  }
 
   const refreshUser = async () => {
     await update()

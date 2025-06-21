@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
-import { servicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { publicServicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -453,7 +453,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   
   // Fetch workshop data from API using slug
   const { data: serviceData, isLoading, error } = useQuery({
-    ...servicesBySlugRetrieveOptions({ path: { slug } }),
+    ...publicServicesBySlugRetrieveOptions({ path: { slug } }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 

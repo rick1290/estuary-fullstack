@@ -645,3 +645,16 @@ class PublicServiceViewSet(viewsets.ReadOnlyModelViewSet):
             'resources',
             'waitlist_entries'
         )
+    
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get service by slug - public access"""
+        try:
+            service = self.get_queryset().get(slug=slug)
+            serializer = ServiceDetailSerializer(service, context={'request': request})
+            return Response(serializer.data)
+        except Service.DoesNotExist:
+            return Response(
+                {"detail": "Service not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )

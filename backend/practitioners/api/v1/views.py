@@ -129,7 +129,7 @@ class PractitionerViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         """Get permissions based on action"""
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve', 'by_slug']:
             permission_classes = [AllowAny]
         elif self.action == 'apply':
             permission_classes = [IsAuthenticated]
@@ -1289,6 +1289,19 @@ class PublicPractitionerViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'list':
             return PractitionerListSerializer
         return PractitionerDetailSerializer
+    
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get practitioner by slug - public access"""
+        try:
+            practitioner = self.get_queryset().get(slug=slug)
+            serializer = PractitionerDetailSerializer(practitioner, context={'request': request})
+            return Response(serializer.data)
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "Practitioner not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class ScheduleViewSet(viewsets.ModelViewSet):

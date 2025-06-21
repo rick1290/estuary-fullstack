@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { AuthModalProvider } from '@/components/auth/auth-provider';
+import '@/lib/token-monitor'; // Import to start token monitoring
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(

@@ -1,6 +1,10 @@
 import type { CreateClientConfig } from './client/client.gen';
 import { getSession } from 'next-auth/react';
 
+// Track if we're currently refreshing to avoid multiple refresh attempts
+let isRefreshing = false;
+let refreshPromise: Promise<any> | null = null;
+
 export const createClientConfig: CreateClientConfig = (config) => {
   // Create the base configuration
   // Always use localhost for client-side requests
@@ -19,14 +23,36 @@ export const createClientConfig: CreateClientConfig = (config) => {
       
       // Add request interceptor for auth
       client.interceptors.request.use(async (request: Request) => {
-        // Force session refresh to get latest token
-        const session = await getSession();
+        // Get the current session
+        let session = await getSession();
         
-        // Check if token is expired
-        if (session?.accessTokenExpires && Date.now() >= session.accessTokenExpires) {
-          // Token is expired, trigger a session refresh
-          // NextAuth should handle this automatically in the JWT callback
-          console.warn('Access token expired, refreshing session...');
+        // Check if token is expired or about to expire (within 5 minutes)
+        if (session?.accessTokenExpires) {
+          const tokenExpiresIn = session.accessTokenExpires - Date.now();
+          const fiveMinutes = 5 * 60 * 1000;
+          
+          if (tokenExpiresIn <= fiveMinutes) {
+            console.log('Access token expired or expiring soon, refreshing...');
+            
+            // If we're not already refreshing, start a refresh
+            if (!isRefreshing) {
+              isRefreshing = true;
+              refreshPromise = getSession({ req: { headers: {} } }); // Force refresh
+              
+              try {
+                session = await refreshPromise;
+                console.log('Token refreshed successfully');
+              } catch (error) {
+                console.error('Failed to refresh token:', error);
+              } finally {
+                isRefreshing = false;
+                refreshPromise = null;
+              }
+            } else if (refreshPromise) {
+              // If already refreshing, wait for the existing refresh
+              session = await refreshPromise;
+            }
+          }
         }
         
         if (session?.accessToken) {
@@ -59,16 +85,48 @@ export const createClientConfig: CreateClientConfig = (config) => {
         async (error: any) => {
           // Check if it's a 401 error (unauthorized)
           if (error instanceof Response && error.status === 401) {
-            console.warn('Received 401 error, token might be invalid');
+            console.warn('Received 401 error, attempting to refresh token...');
             
-            // Try to get a fresh session
-            const { signIn } = await import('next-auth/react');
-            const session = await getSession();
+            // Clone the original request
+            const originalRequest = (error as any).request;
             
-            // If we have a refresh token, NextAuth should handle the refresh
-            // If not, we might need to re-authenticate
-            if (!session || session.error === "RefreshAccessTokenError") {
-              // Redirect to login or show auth modal
+            // Avoid infinite loops - don't retry if this is already a retry
+            if (!originalRequest || originalRequest.headers.get('X-Retry-After-401')) {
+              throw error;
+            }
+            
+            try {
+              // Force a session refresh
+              const newSession = await getSession({ req: { headers: {} } });
+              
+              if (newSession?.accessToken) {
+                console.log('Token refreshed after 401, retrying request...');
+                
+                // Clone the request and add new token
+                const retryRequest = originalRequest.clone();
+                retryRequest.headers.set('Authorization', `Bearer ${newSession.accessToken}`);
+                retryRequest.headers.set('X-Retry-After-401', 'true');
+                
+                // Retry the request
+                return await fetch(retryRequest);
+              } else {
+                console.error('No valid session after refresh attempt');
+                // Clear any invalid session data
+                const { signOut } = await import('next-auth/react');
+                await signOut({ redirect: false });
+                
+                // Redirect to login
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/auth/signin';
+                }
+              }
+            } catch (refreshError) {
+              console.error('Failed to refresh token after 401:', refreshError);
+              
+              // Clear session and redirect to login
+              const { signOut } = await import('next-auth/react');
+              await signOut({ redirect: false });
+              
               if (typeof window !== 'undefined') {
                 window.location.href = '/auth/signin';
               }

@@ -53,6 +53,7 @@ export interface Language {
 // Update the Session interface to allow for string service IDs
 export interface Session {
   id: number
+  slug?: string
   service: number | string
   title: string | null
   description: string | null
@@ -76,6 +77,7 @@ export interface Session {
 // Update the Service interface to allow for string IDs
 export interface Service {
   id: number | string
+  slug?: string
   name: string
   description: string
   price: string

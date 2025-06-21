@@ -157,7 +157,7 @@ export default function SessionsList({ sessions, serviceType }: SessionsListProp
                   variant="outlined"
                   endIcon={<EventIcon />}
                   component={Link}
-                  href={getServiceDetailUrl({ id: session.id, service_type_code: 'session' })}
+                  href={getServiceDetailUrl({ id: session.id, slug: session.slug, service_type_code: 'session' })}
                 >
                   Session Details
                 </Button>

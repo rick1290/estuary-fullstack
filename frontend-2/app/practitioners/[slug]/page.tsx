@@ -3,7 +3,7 @@ import React, { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
-import { practitionersBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { publicPractitionersBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import PractitionerBookingPanel from "@/components/practitioners/practitioner-booking-panel"
 import {
   Breadcrumb,
@@ -22,7 +22,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
   
   // Fetch practitioner data from API using slug  
   const { data: practitioner, isLoading, error } = useQuery({
-    ...practitionersBySlugRetrieveOptions({ path: { slug } }),
+    ...publicPractitionersBySlugRetrieveOptions({ path: { slug } }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 

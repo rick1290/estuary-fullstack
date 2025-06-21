@@ -7,6 +7,7 @@ import { getServiceDetailUrl } from "@/lib/service-utils"
 const MOCK_SESSIONS = [
   {
     id: 1,
+    slug: "mindfulness-meditation-session",
     title: "Mindfulness Meditation Session",
     type: "one-on-one" as const,
     practitioner: {
@@ -25,6 +26,7 @@ const MOCK_SESSIONS = [
   },
   {
     id: 5,
+    slug: "therapeutic-massage",
     title: "Therapeutic Massage",
     type: "one-on-one" as const,
     practitioner: {
@@ -43,6 +45,7 @@ const MOCK_SESSIONS = [
   },
   {
     id: 11,
+    slug: "energy-healing-session",
     title: "Energy Healing Session",
     type: "one-on-one" as const,
     practitioner: {
@@ -111,7 +114,7 @@ export default function SessionListings({ query, location, categories = [] }: Se
           <ServiceCard
             key={session.id}
             {...session}
-            href={getServiceDetailUrl({ id: session.id, service_type_code: 'session' })}
+            href={getServiceDetailUrl({ id: session.id, slug: session.slug, service_type_code: 'session' })}
             index={index}
           />
         ))}

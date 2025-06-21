@@ -7,6 +7,7 @@ import { getServiceDetailUrl } from "@/lib/service-utils"
 const MOCK_WORKSHOPS = [
   {
     id: 3,
+    slug: "life-transformation-workshop",
     title: "Life Transformation Workshop",
     type: "workshops" as const,
     practitioner: {
@@ -27,6 +28,7 @@ const MOCK_WORKSHOPS = [
   },
   {
     id: 8,
+    slug: "sound-healing-workshop",
     title: "Sound Healing Workshop",
     type: "workshops" as const,
     practitioner: {
@@ -47,6 +49,7 @@ const MOCK_WORKSHOPS = [
   },
   {
     id: 10,
+    slug: "creative-expression-workshop",
     title: "Creative Expression Workshop",
     type: "workshops" as const,
     practitioner: {
@@ -117,7 +120,7 @@ export default function WorkshopListings({ query, location, categories = [] }: W
           <ServiceCard
             key={workshop.id}
             {...workshop}
-            href={getServiceDetailUrl({ id: workshop.id, service_type_code: 'workshop' })}
+            href={getServiceDetailUrl({ id: workshop.id, slug: workshop.slug, service_type_code: 'workshop' })}
             index={index}
           />
         ))}

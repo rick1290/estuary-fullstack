@@ -10,6 +10,7 @@ import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 interface Session {
   id: string | number
+  slug?: string
   public_uuid?: string
   name: string
   description?: string

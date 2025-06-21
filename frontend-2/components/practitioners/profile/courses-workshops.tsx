@@ -12,6 +12,7 @@ import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 interface Service {
   id: string | number
+  slug?: string
   public_uuid?: string
   name: string
   description: string

@@ -9,6 +9,7 @@ declare module "next-auth" {
     accessToken?: string
     refreshToken?: string
     accessTokenExpires?: number
+    error?: string
     user: UserProfileReadable & {
       id: string
       email: string
@@ -54,7 +55,18 @@ const getApiUrl = () => {
 
 async function refreshAccessToken(token: any) {
   try {
+    // Don't attempt refresh if we don't have a refresh token
+    if (!token.refreshToken) {
+      console.error("No refresh token available")
+      return {
+        ...token,
+        error: "RefreshAccessTokenError",
+      }
+    }
+    
     const apiUrl = getApiUrl()
+    console.log("Attempting to refresh token...")
+    
     const response = await fetch(`${apiUrl}/api/v1/auth/token/refresh/`, {
       method: 'POST',
       headers: {
@@ -64,22 +76,38 @@ async function refreshAccessToken(token: any) {
     })
     
     if (!response.ok) {
-      throw new Error('Failed to refresh token')
+      const errorText = await response.text()
+      console.error(`Token refresh failed with status ${response.status}: ${errorText}`)
+      
+      // If refresh token is invalid (401), we need to log the user out
+      if (response.status === 401 || response.status === 403) {
+        return {
+          ...token,
+          error: "RefreshAccessTokenError",
+          accessToken: undefined,
+          refreshToken: undefined,
+          accessTokenExpires: undefined,
+        }
+      }
+      
+      throw new Error(`Failed to refresh token: ${response.status}`)
     }
     
     const data = await response.json()
     
     if (data && data.access) {
+      console.log("Token refreshed successfully")
       return {
         ...token,
         accessToken: data.access,
         accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes
+        error: undefined, // Clear any previous errors
       }
     }
     
-    throw new Error("Failed to refresh token")
+    throw new Error("Invalid refresh response format")
   } catch (error) {
-    console.error("RefreshAccessTokenError", error)
+    console.error("RefreshAccessTokenError:", error)
     return {
       ...token,
       error: "RefreshAccessTokenError",
@@ -161,7 +189,7 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       // Initial sign in
       if (account && user) {
         if (account.provider === "credentials") {
@@ -179,16 +207,37 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
+      // Force refresh if explicitly triggered (e.g., from getSession({ req: { headers: {} } }))
+      if (trigger === "update" && token.refreshToken) {
+        console.log("Force refreshing token due to update trigger");
+        return refreshAccessToken(token);
+      }
+      
       // Return previous token if the access token has not expired yet
-      if (Date.now() < (token.accessTokenExpires as number)) {
+      // Add a 5 minute buffer to ensure we refresh before actual expiration
+      const fiveMinutes = 5 * 60 * 1000;
+      if (Date.now() < ((token.accessTokenExpires as number) - fiveMinutes)) {
         return token
       }
       
-      // Access token has expired, try to update it
+      // Access token has expired or is about to expire, try to update it
+      console.log("Token expired or expiring soon, refreshing...");
       return refreshAccessToken(token)
     },
     async session({ session, token }) {
       if (token) {
+        // Check for refresh errors
+        if (token.error === "RefreshAccessTokenError") {
+          // Return an error session that the client can handle
+          return {
+            ...session,
+            error: "RefreshAccessTokenError",
+            accessToken: undefined,
+            refreshToken: undefined,
+            accessTokenExpires: undefined,
+          }
+        }
+        
         session.accessToken = token.accessToken
         session.refreshToken = token.refreshToken
         session.accessTokenExpires = token.accessTokenExpires
