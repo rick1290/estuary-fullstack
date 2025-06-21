@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     
     # Third party apps
+    "channels",
     "rest_framework",
     "django_filters",
     "drf_spectacular",
@@ -101,6 +102,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "estuary.wsgi.application"
+ASGI_APPLICATION = "estuary.asgi.application"
 
 
 # Database
@@ -167,6 +169,40 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = 'users.User'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'messaging': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'channels': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 # Django REST Framework configuration
 # Django REST Framework configuration
@@ -483,6 +519,27 @@ TEMPORAL_TASK_QUEUE = os.getenv('TEMPORAL_TASK_QUEUE', 'estuary-main')
 # Worker configuration
 TEMPORAL_MAX_CONCURRENT_ACTIVITIES = int(os.getenv('TEMPORAL_MAX_CONCURRENT_ACTIVITIES', '100'))
 TEMPORAL_MAX_CACHED_WORKFLOWS = int(os.getenv('TEMPORAL_MAX_CACHED_WORKFLOWS', '500'))
+
+# ============================================================================
+# Django Channels Configuration
+# ============================================================================
+
+# Use Redis for channel layer
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.getenv('REDIS_HOST', 'redis'), int(os.getenv('REDIS_PORT', 6379)))],
+        },
+    },
+}
+
+# Fallback to in-memory for development without Redis
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels.layers.InMemoryChannelLayer',
+#     },
+# }
 
 # ============================================================================
 # CORS Configuration

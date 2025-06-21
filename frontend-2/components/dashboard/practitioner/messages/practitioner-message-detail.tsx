@@ -118,7 +118,7 @@ export default function PractitionerMessageDetail() {
     },
     onTyping: (event) => {
       // Handle typing indicators from other users
-      if (event.user_id !== user?.id) {
+      if (event.user_id !== user?.numericId) {
         setIsTyping(event.is_typing)
       }
     }
@@ -147,9 +147,15 @@ export default function PractitionerMessageDetail() {
       setNewMessage("")
       setSelectedFile(null)
       setPreviewUrl(null)
-      // Invalidate messages query to refetch
+      // Invalidate and refetch messages immediately
       queryClient.invalidateQueries({ 
         queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.refetchQueries({ 
+        queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations'] 
       })
     },
     onError: () => {

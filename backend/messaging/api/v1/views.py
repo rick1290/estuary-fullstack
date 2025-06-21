@@ -1,6 +1,8 @@
 """
 Messaging API views
 """
+import logging
+
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -21,6 +23,8 @@ from messaging.api.v1.serializers import (
 from users.models import User, UserFavoritePractitioner
 from practitioners.models import Practitioner
 from bookings.models import Booking
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema_view(
@@ -91,7 +95,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             'participants__practitioner_profile',
             Prefetch(
                 'messages',
-                queryset=Message.objects.select_related('sender').order_by('-created_at')[:1]
+                queryset=Message.objects.select_related('sender').order_by('-created_at')
             )
         ).annotate(
             last_message_time=Max('messages__created_at'),
@@ -259,6 +263,47 @@ class ConversationViewSet(viewsets.ModelViewSet):
             content=serializer.validated_data['content']
         )
         
+        # Send WebSocket notification
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                group_name = f"chat_{conversation.id}"
+                
+                # Prepare message data for WebSocket
+                message_data = {
+                    'id': str(message.id),
+                    'conversation_id': str(conversation.id),
+                    'sender': {
+                        'id': message.sender.id,
+                        'first_name': message.sender.first_name,
+                        'last_name': message.sender.last_name,
+                        'email': message.sender.email,
+                    },
+                    'content': message.content,
+                    'message_type': message.message_type,
+                    'created_at': message.created_at.isoformat(),
+                }
+                
+                logger.info(f"Sending WebSocket message to group {group_name}: {message_data}")
+                
+                # Send to WebSocket group
+                async_to_sync(channel_layer.group_send)(
+                    group_name,
+                    {
+                        'type': 'chat_message',
+                        'data': message_data
+                    }
+                )
+                logger.info(f"WebSocket message sent successfully to group {group_name}")
+            else:
+                logger.warning("Channel layer is not configured. WebSocket notification not sent.")
+        except Exception as e:
+            logger.error(f"Error sending WebSocket notification: {e}")
+            # Don't fail the request if WebSocket notification fails
+        
         response_serializer = MessageSerializer(message)
         return Response(
             response_serializer.data,
@@ -376,6 +421,9 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
         """Get list of users the practitioner can message"""
         eligible_users = set()
         
+        logger.info(f"Getting eligible users for practitioner: {practitioner} (ID: {practitioner.id})")
+        logger.info(f"Permissions: {permissions}")
+        
         # 1. Clients (users with completed or confirmed bookings)
         if permissions['can_message_clients']:
             client_bookings = Booking.objects.filter(
@@ -383,8 +431,11 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
                 status__in=['confirmed', 'completed']
             ).select_related('user').distinct()
             
+            logger.info(f"Found {client_bookings.count()} client bookings")
+            
             for booking in client_bookings:
                 eligible_users.add(booking.user)
+                logger.info(f"Added client: {booking.user.email}")
         
         # 2. Users who favorited this practitioner
         if permissions['can_message_favorites']:
@@ -393,10 +444,14 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
                     practitioner=practitioner
                 ).select_related('user')
                 
+                logger.info(f"Found {favorites.count()} users who favorited practitioner")
+                
                 for favorite in favorites:
                     eligible_users.add(favorite.user)
-            except Exception:
+                    logger.info(f"Added favorite user: {favorite.user.email}")
+            except Exception as e:
                 # Handle case where UserFavoritePractitioner model might be in different app
+                logger.error(f"Error querying UserFavoritePractitioner: {e}")
                 pass
         
         # 3. Stream subscribers (if streams app exists)
@@ -404,8 +459,6 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
             try:
                 from streams.models import StreamSubscription, Stream
                 # Debug: Log the query
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.info(f"Querying StreamSubscription with practitioner={practitioner}")
                 
                 # First check if practitioner has a stream
@@ -428,16 +481,16 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
                     
             except ImportError as e:
                 # Streams app doesn't exist yet
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.info(f"Could not import StreamSubscription: {e}")
             except Exception as e:
                 # Log any other errors
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.error(f"Error querying StreamSubscription: {e}")
                 # Don't raise, just continue without stream subscribers
                 pass
+        
+        logger.info(f"Total eligible users: {len(eligible_users)}")
+        for user in eligible_users:
+            logger.info(f"Eligible user: {user.email}")
         
         return list(eligible_users)
     

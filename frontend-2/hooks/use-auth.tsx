@@ -10,6 +10,7 @@ type UserRole = "user" | "practitioner"
 
 interface User {
   id: string
+  numericId?: number
   firstName: string
   lastName: string
   email: string
@@ -35,6 +36,7 @@ function convertAPIUser(apiUser: UserProfileReadable): User {
   
   return {
     id: apiUser.id.toString(),
+    numericId: apiUser.id,
     firstName: apiUser.first_name || "",
     lastName: apiUser.last_name || "",
     email: apiUser.email,

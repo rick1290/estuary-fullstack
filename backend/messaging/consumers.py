@@ -1,5 +1,6 @@
 import json
 import uuid
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
@@ -8,6 +9,7 @@ from django.contrib.auth import get_user_model
 from messaging.models import Conversation, Message, MessageReceipt, TypingIndicator
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -18,11 +20,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         # Check if user is authenticated
         if not self.user.is_authenticated:
+            logger.warning(f"WebSocket connection rejected: user not authenticated")
             await self.close(code=4001)
             return
         
+        logger.info(f"WebSocket connect attempt: user_id={self.user.id}, conversation={self.conversation_id}")
+        
         # Check if conversation exists and user is a participant
         if not await self.is_conversation_participant():
+            logger.warning(f"WebSocket connection rejected: user {self.user.id} not participant in conversation {self.conversation_id}")
             await self.close(code=4002)
             return
         
@@ -32,15 +38,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         
+        logger.info(f"WebSocket connected: user {self.user.id} joined group {self.conversation_group_name}")
         await self.accept()
         
         # Notify other participants that user is online
+        user_name = await self.get_user_name()
         await self.channel_layer.group_send(
             self.conversation_group_name,
             {
                 "type": "user_status",
                 "user_id": str(self.user.id),
-                "username": self.user.get_full_name() or self.user.email,
+                "username": user_name,
                 "status": "online"
             }
         )
@@ -54,12 +62,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             
             # Notify other participants that user is offline
+            user_name = await self.get_user_name()
             await self.channel_layer.group_send(
                 self.conversation_group_name,
                 {
                     "type": "user_status",
                     "user_id": str(self.user.id),
-                    "username": self.user.get_full_name() or self.user.email,
+                    "username": user_name,
                     "status": "offline"
                 }
             )
@@ -94,13 +103,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = await self.create_message(content, message_type, metadata)
         
         # Send message to conversation group
+        user_name = await self.get_user_name()
         await self.channel_layer.group_send(
             self.conversation_group_name,
             {
                 "type": "chat_message",
                 "message_id": str(message.id),
                 "sender_id": str(self.user.id),
-                "sender_name": self.user.get_full_name() or self.user.email,
+                "sender_name": user_name,
                 "content": content,
                 "message_type": message_type,
                 "metadata": metadata,
@@ -115,12 +125,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.update_typing_indicator(is_typing)
         
         # Send typing indicator to conversation group
+        user_name = await self.get_user_name()
         await self.channel_layer.group_send(
             self.conversation_group_name,
             {
                 "type": "typing_indicator",
                 "user_id": str(self.user.id),
-                "username": self.user.get_full_name() or self.user.email,
+                "username": user_name,
                 "is_typing": is_typing
             }
         )
@@ -136,12 +147,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         if success:
             # Send read receipt to conversation group
+            user_name = await self.get_user_name()
             await self.channel_layer.group_send(
                 self.conversation_group_name,
                 {
                     "type": "read_receipt",
                     "user_id": str(self.user.id),
-                    "username": self.user.get_full_name() or self.user.email,
+                    "username": user_name,
                     "message_id": message_id
                 }
             )
@@ -180,6 +192,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         result = await self.process_interactive_action(action_type, action_id, message_id)
         
         # Send action result to conversation group
+        user_name = await self.get_user_name()
         await self.channel_layer.group_send(
             self.conversation_group_name,
             {
@@ -189,17 +202,46 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "message_id": message_id,
                 "result": result,
                 "user_id": str(self.user.id),
-                "username": self.user.get_full_name() or self.user.email,
+                "username": user_name,
             }
         )
 
     async def chat_message(self, event):
+        logger.info(f"[Consumer {self.channel_name}] Received chat_message event: {event}")
+        
+        # Format message for frontend
+        formatted_event = {
+            'type': 'chat_message',
+            'data': event.get('data', {
+                'message_id': event.get('message_id'),
+                'sender_id': event.get('sender_id'),
+                'sender_name': event.get('sender_name'),
+                'content': event.get('content'),
+                'message_type': event.get('message_type'),
+                'metadata': event.get('metadata'),
+                'timestamp': event.get('timestamp'),
+            })
+        }
+        
+        logger.info(f"[Consumer {self.channel_name}] Sending formatted event to WebSocket client: {json.dumps(formatted_event)}")
+        
         # Send message to WebSocket
-        await self.send(text_data=json.dumps(event))
+        await self.send(text_data=json.dumps(formatted_event))
+        logger.info(f"[Consumer {self.channel_name}] Message sent to WebSocket client")
 
     async def typing_indicator(self, event):
+        # Format typing indicator for frontend
+        formatted_event = {
+            'type': 'typing_indicator',
+            'data': {
+                'user_id': event.get('user_id'),
+                'user_name': event.get('username'),
+                'is_typing': event.get('is_typing'),
+                'conversation_id': self.conversation_id
+            }
+        }
         # Send typing indicator to WebSocket
-        await self.send(text_data=json.dumps(event))
+        await self.send(text_data=json.dumps(formatted_event))
 
     async def read_receipt(self, event):
         # Send read receipt to WebSocket
@@ -300,3 +342,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return {"status": "success", "message": "Link click recorded"}
             
         return {"status": "error", "message": "Unknown action type"}
+    
+    @database_sync_to_async
+    def get_user_name(self):
+        """Get user's display name in a sync-safe way"""
+        try:
+            return self.user.get_full_name() or self.user.email
+        except Exception:
+            return self.user.email

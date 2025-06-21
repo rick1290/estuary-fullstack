@@ -13,6 +13,12 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+
   admin:
     build:
       context: backend
@@ -24,9 +30,13 @@ services:
       - ./backend:/app
     env_file:
       - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     command: uvicorn estuary.asgi:application --host 0.0.0.0 --reload
     depends_on:
       - postgres
+      - redis
 
   api:
     build:

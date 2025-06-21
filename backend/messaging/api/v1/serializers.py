@@ -137,12 +137,21 @@ class ConversationListSerializer(serializers.ModelSerializer):
         # This is prefetched in the view
         messages = list(obj.messages.all())
         if messages:
+            last_message = messages[0]
+            # Check if message is read by current user
+            user = self.context['request'].user
+            is_read = MessageReceipt.objects.filter(
+                message=last_message,
+                user=user,
+                is_read=True
+            ).exists()
+            
             return {
-                'id': messages[0].id,
-                'content': messages[0].content[:100] + '...' if len(messages[0].content) > 100 else messages[0].content,
-                'sender_id': messages[0].sender_id,
-                'created_at': messages[0].created_at,
-                'is_read': messages[0].is_read
+                'id': last_message.id,
+                'content': last_message.content[:100] + '...' if len(last_message.content) > 100 else last_message.content,
+                'sender_id': last_message.sender_id,
+                'created_at': last_message.created_at,
+                'is_read': is_read
             }
         return None
     
