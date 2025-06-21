@@ -52,6 +52,74 @@ paths:
           description: Validation error
         '401':
           description: Not authenticated
+  /api/v1/auth/favorite-services/:
+    get:
+      operationId: user_favorite_services
+      description: Get list of authenticated user favorite services
+      summary: List favorite services
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: List of favorite services
+        '401':
+          description: Not authenticated
+  /api/v1/auth/favorite-services/{service_id}/remove/:
+    delete:
+      operationId: user_remove_favorite_service
+      description: Remove a service from the authenticated user favorites
+      summary: Remove service from favorites
+      parameters:
+      - in: path
+        name: service_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: Service removed from favorites
+        '401':
+          description: Not authenticated
+        '404':
+          description: Favorite not found
+  /api/v1/auth/favorite-services/add/:
+    post:
+      operationId: user_add_favorite_service
+      description: Add a service to the authenticated user favorites
+      summary: Add service to favorites
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_id:
+                  type: integer
+                  description: ID of the service to favorite
+              required:
+              - service_id
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Service added to favorites
+        '400':
+          description: Validation error
+        '401':
+          description: Not authenticated
+        '404':
+          description: Service not found
   /api/v1/auth/favorites/:
     get:
       operationId: user_favorites
@@ -243,6 +311,104 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfile'
           description: Profile updated
+        '400':
+          description: Validation error
+        '401':
+          description: Not authenticated
+  /api/v1/auth/modality-preferences/:
+    get:
+      operationId: user_modality_preferences
+      description: Get list of authenticated user modality preferences (wellness interests)
+      summary: List user modality preferences
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: List of user modality preferences
+        '401':
+          description: Not authenticated
+  /api/v1/auth/modality-preferences/{modality_id}/remove/:
+    delete:
+      operationId: user_remove_modality_preference
+      description: Remove a modality from user preferences
+      summary: Remove modality from preferences
+      parameters:
+      - in: path
+        name: modality_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: Modality removed from preferences
+        '401':
+          description: Not authenticated
+        '404':
+          description: Preference not found
+  /api/v1/auth/modality-preferences/add/:
+    post:
+      operationId: user_add_modality_preference
+      description: Add a single modality to user preferences
+      summary: Add modality to preferences
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                modality_id:
+                  type: integer
+                  description: ID of the modality to add
+              required:
+              - modality_id
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Modality added to preferences
+        '400':
+          description: Validation error or limit reached
+        '401':
+          description: Not authenticated
+        '404':
+          description: Modality not found
+  /api/v1/auth/modality-preferences/set/:
+    post:
+      operationId: user_set_modality_preferences
+      description: Set all user modality preferences (replaces existing preferences)
+      summary: Set user modality preferences
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                modality_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: List of modality IDs in priority order (max 6)
+              required:
+              - modality_ids
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Preferences updated successfully
         '400':
           description: Validation error
         '401':
@@ -4968,6 +5134,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerUpdateRequest'
+        required: true
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -5485,6 +5652,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
           description: ''
+  /api/v1/practitioners/by-slug/{slug}/:
+    get:
+      operationId: practitioners_by_slug_retrieve
+      description: Get practitioner by slug
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          pattern: ^[-\w]+$
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
   /api/v1/practitioners/clients/:
     get:
       operationId: practitioners_clients_retrieve
@@ -5503,6 +5694,122 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
           description: ''
+  /api/v1/practitioners/clients/{client_id}/notes/:
+    get:
+      operationId: practitioners_clients_notes_retrieve
+      description: |-
+        Get or create notes for a specific client.
+        Only the practitioner who created the notes can view/edit them.
+      parameters:
+      - in: path
+        name: client_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
+    post:
+      operationId: practitioners_clients_notes_create
+      description: Create a new note for a specific client
+      parameters:
+      - in: path
+        name: client_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - Practitioners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: The note content
+              required:
+              - content
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /api/v1/practitioners/clients/notes/{note_id}/:
+    put:
+      operationId: practitioners_clients_notes_update
+      description: Update a specific client note
+      parameters:
+      - in: path
+        name: note_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - Practitioners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: The note content
+              required:
+              - content
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+    delete:
+      operationId: practitioners_clients_notes_destroy
+      description: |-
+        Update or delete a specific client note.
+        Only the practitioner who created the note can modify it.
+      parameters:
+      - in: path
+        name: note_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/practitioners/earnings/:
     get:
       operationId: practitioners_earnings_retrieve
@@ -5821,6 +6128,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
           description: ''
+  /api/v1/public-practitioners/by-slug/{slug}/:
+    get:
+      operationId: public_practitioners_by_slug_retrieve
+      description: Get practitioner by slug - public access
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          pattern: ^[-\w]+$
+        required: true
+      tags:
+      - public-practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
   /api/v1/public-services/:
     get:
       operationId: public_services_list
@@ -6009,6 +6340,30 @@ paths:
         required: true
       tags:
       - Public Services
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDetail'
+          description: ''
+  /api/v1/public-services/by-slug/{slug}/:
+    get:
+      operationId: public_services_by_slug_retrieve
+      description: Get service by slug - public access
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          pattern: ^[-\w]+$
+        required: true
+      tags:
+      - public-services
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -7720,6 +8075,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceDetail'
           description: ''
+  /api/v1/services/by-slug/{slug}/:
+    get:
+      operationId: services_by_slug_retrieve
+      description: Get service by slug
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          pattern: ^[-\w]+$
+        required: true
+      tags:
+      - Services
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDetail'
+          description: ''
   /api/v1/services/featured/:
     get:
       operationId: services_featured_retrieve
@@ -8716,10 +9095,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerSubscription'
           description: ''
-  /api/v1/subscriptions/tiers/:
+  /api/v1/subscriptions/current/:
     get:
-      operationId: subscriptions_tiers_retrieve
-      description: List available subscription tiers
+      operationId: subscriptions_current_retrieve
+      description: Get current subscription for the authenticated practitioner
       tags:
       - Subscriptions
       security:
@@ -8731,6 +9110,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PractitionerSubscription'
+          description: ''
+  /api/v1/subscriptions/tiers/:
+    get:
+      operationId: subscriptions_tiers_retrieve
+      description: List available subscription tiers with structured response
+      tags:
+      - Subscriptions
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionTiersResponse'
           description: ''
   /api/v1/topics/:
     get:
@@ -10025,6 +10420,11 @@ components:
           type: string
           description: Service name
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         short_description:
           type: string
           nullable: true
@@ -10649,6 +11049,16 @@ components:
       required:
       - name
       - state
+    CodeEnum:
+      enum:
+      - basic
+      - professional
+      - premium
+      type: string
+      description: |-
+        * `basic` - Basic
+        * `professional` - Professional
+        * `premium` - Premium
     ConversationDetail:
       type: object
       description: Detailed serializer for conversations including messages.
@@ -12056,6 +12466,11 @@ components:
           type: string
           description: Service name
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         short_description:
           type: string
           nullable: true
@@ -14038,6 +14453,12 @@ components:
           nullable: true
           description: Professional display name shown to clients
           maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          description: URL-friendly version of name
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
         professional_title:
           type: string
           nullable: true
@@ -15227,6 +15648,11 @@ components:
           readOnly: true
           nullable: true
           description: Professional display name shown to clients
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         professional_title:
           type: string
           readOnly: true
@@ -15340,6 +15766,11 @@ components:
           readOnly: true
           nullable: true
           description: Professional display name shown to clients
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         professional_title:
           type: string
           readOnly: true
@@ -15716,6 +16147,11 @@ components:
           readOnly: true
           nullable: true
           description: Professional display name shown to clients
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         professional_title:
           type: string
           readOnly: true
@@ -16028,6 +16464,11 @@ components:
           nullable: true
           description: Professional display name shown to clients
           maxLength: 255
+        slug:
+          type: string
+          description: URL-friendly version of name
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
         professional_title:
           type: string
           nullable: true
@@ -16066,6 +16507,8 @@ components:
           maximum: 2147483647
           minimum: 0
           description: Buffer time between sessions in minutes
+      required:
+      - slug
     PractitionerUpdateRequest:
       type: object
       description: Serializer for updating practitioner profile
@@ -16075,6 +16518,12 @@ components:
           nullable: true
           description: Professional display name shown to clients
           maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          description: URL-friendly version of name
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
         professional_title:
           type: string
           nullable: true
@@ -16149,6 +16598,8 @@ components:
             type: integer
             writeOnly: true
           writeOnly: true
+      required:
+      - slug
     QuestionTypeEnum:
       enum:
       - rating
@@ -18598,6 +19049,11 @@ components:
           type: string
           description: Service name
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         description:
           type: string
           nullable: true
@@ -18948,6 +19404,11 @@ components:
           type: string
           description: Service name
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         short_description:
           type: string
           nullable: true
@@ -19384,6 +19845,11 @@ components:
           type: string
           description: Service name
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         short_description:
           type: string
           nullable: true
@@ -21369,8 +21835,7 @@ components:
       description: Serializer for creating subscriptions
       properties:
         tier_id:
-          type: string
-          format: uuid
+          type: integer
         is_annual:
           type: boolean
           default: false
@@ -21383,8 +21848,7 @@ components:
       description: Serializer for creating subscriptions
       properties:
         tier_id:
-          type: string
-          format: uuid
+          type: integer
         is_annual:
           type: boolean
           default: false
@@ -21393,6 +21857,73 @@ components:
           minLength: 1
       required:
       - tier_id
+    SubscriptionTier:
+      type: object
+      description: Serializer for subscription tiers
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          allOf:
+          - $ref: '#/components/schemas/CodeEnum'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        monthly_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        annual_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        features: {}
+        is_active:
+          type: boolean
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        stripe_product_id:
+          type: string
+          nullable: true
+          description: Stripe Product ID
+          maxLength: 255
+        stripe_monthly_price_id:
+          type: string
+          nullable: true
+          description: Stripe Price ID for monthly billing
+          maxLength: 255
+        stripe_annual_price_id:
+          type: string
+          nullable: true
+          description: Stripe Price ID for annual billing
+          maxLength: 255
+        monthly_savings:
+          type: string
+          readOnly: true
+        annual_savings:
+          type: string
+          readOnly: true
+        is_most_popular:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - monthly_price
+      - name
     SubscriptionTierRequest:
       type: object
       description: Serializer for subscription tiers
@@ -21437,6 +21968,34 @@ components:
       required:
       - monthly_price
       - name
+    SubscriptionTiersResponse:
+      type: object
+      description: Response serializer for subscription tiers endpoint
+      properties:
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionTier'
+        tiersByCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SubscriptionTier'
+          description: Subscription tiers indexed by code
+        availableCodes:
+          type: array
+          items:
+            type: string
+          description: List of available tier codes
+        codeLabels:
+          type: object
+          additionalProperties:
+            type: string
+          description: Mapping of tier codes to display labels
+      required:
+      - availableCodes
+      - codeLabels
+      - tiers
+      - tiersByCode
     TierLevelEnum:
       enum:
       - free

@@ -140,25 +140,140 @@ class UserCreditBalanceAdmin(admin.ModelAdmin):
 
 
 @admin.register(SubscriptionTier)
-class SubscriptionTierAdmin(admin.ModelAdmin):
-    list_display = ('name', 'monthly_price', 'annual_price', 'order', 'is_active')
-    list_filter = ('is_active',)
-    search_fields = ('name', 'description')
+class SubscriptionTierAdmin(BaseModelAdmin):
+    list_display = ('code', 'name', 'monthly_price_display', 'annual_price_display', 
+                    'order', 'is_active', 'get_subscriber_count')
+    list_filter = ('is_active', 'code')
+    search_fields = ('name', 'description', 'code')
     ordering = ('order', 'monthly_price')
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('id', 'created_at', 'updated_at', 'get_subscriber_count', 
+                       'annual_savings_display')
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('id', 'code', 'name', 'description', 'order', 'is_active')
+        }),
+        ('Pricing', {
+            'fields': ('monthly_price', 'annual_price', 'annual_savings_display')
+        }),
+        ('Features', {
+            'fields': ('features',),
+            'description': 'Enter features as a JSON list, e.g., ["Feature 1", "Feature 2"]'
+        }),
+        ('Stripe Integration', {
+            'fields': ('stripe_product_id', 'stripe_monthly_price_id', 'stripe_annual_price_id'),
+            'classes': ('collapse',)
+        }),
+        ('System Info', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
     
     def get_subscriber_count(self, obj):
-        return obj.subscribers.filter(status='active').count()
+        count = obj.subscribers.filter(status='active').count()
+        return format_html('<strong>{}</strong>', count)
     get_subscriber_count.short_description = 'Active Subscribers'
+    
+    def monthly_price_display(self, obj):
+        return f"${obj.monthly_price}/mo"
+    monthly_price_display.short_description = 'Monthly Price'
+    monthly_price_display.admin_order_field = 'monthly_price'
+    
+    def annual_price_display(self, obj):
+        if obj.annual_price:
+            return f"${obj.annual_price}/yr"
+        return "-"
+    annual_price_display.short_description = 'Annual Price'
+    annual_price_display.admin_order_field = 'annual_price'
+    
+    def annual_savings_display(self, obj):
+        if obj.annual_price and obj.monthly_price:
+            yearly_monthly = obj.monthly_price * 12
+            savings = yearly_monthly - obj.annual_price
+            percentage = (savings / yearly_monthly * 100) if yearly_monthly > 0 else 0
+            if savings > 0:
+                return format_html(
+                    '<span style="color: green;">Save ${:.2f} ({:.0f}% off)</span>',
+                    savings, percentage
+                )
+        return "No annual discount"
+    annual_savings_display.short_description = 'Annual Savings'
 
 
 @admin.register(PractitionerSubscription)
-class PractitionerSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'practitioner', 'tier', 'status', 'start_date', 'end_date', 'is_annual')
-    list_filter = ('status', 'tier', 'is_annual')
-    search_fields = ('practitioner__user__email', 'stripe_subscription_id')
+class PractitionerSubscriptionAdmin(BaseModelAdmin):
+    list_display = ('practitioner_email', 'tier_display', 'status_display', 
+                    'billing_period', 'start_date', 'end_date', 'is_active')
+    list_filter = ('status', 'tier', 'is_annual', 'auto_renew')
+    search_fields = ('practitioner__user__email', 'practitioner__display_name', 
+                     'stripe_subscription_id')
     date_hierarchy = 'start_date'
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('id', 'created_at', 'updated_at', 'is_active', 
+                       'subscription_value_display')
+    
+    fieldsets = (
+        ('Subscription Details', {
+            'fields': ('id', 'practitioner', 'tier', 'status', 'is_active')
+        }),
+        ('Billing', {
+            'fields': ('is_annual', 'auto_renew', 'subscription_value_display')
+        }),
+        ('Period', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Stripe Integration', {
+            'fields': ('stripe_subscription_id',),
+            'classes': ('collapse',)
+        }),
+        ('System Info', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def practitioner_email(self, obj):
+        return obj.practitioner.user.email
+    practitioner_email.short_description = 'Practitioner'
+    practitioner_email.admin_order_field = 'practitioner__user__email'
+    
+    def tier_display(self, obj):
+        if obj.tier:
+            return format_html(
+                '<strong>{}</strong><br><small>{}</small>',
+                obj.tier.name,
+                obj.tier.code if hasattr(obj.tier, 'code') else ''
+            )
+        return '-'
+    tier_display.short_description = 'Tier'
+    
+    def status_display(self, obj):
+        colors = {
+            'active': 'green',
+            'canceled': 'red',
+            'past_due': 'orange',
+            'trialing': 'blue',
+            'unpaid': 'red'
+        }
+        color = colors.get(obj.status, 'gray')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_display.short_description = 'Status'
+    
+    def billing_period(self, obj):
+        return "Annual" if obj.is_annual else "Monthly"
+    billing_period.short_description = 'Billing'
+    
+    def subscription_value_display(self, obj):
+        if obj.tier:
+            if obj.is_annual:
+                return f"${obj.tier.annual_price}/year" if obj.tier.annual_price else "N/A"
+            else:
+                return f"${obj.tier.monthly_price}/month"
+        return "N/A"
+    subscription_value_display.short_description = 'Subscription Value'
 
 
 @admin.register(ServiceTypeCommission)

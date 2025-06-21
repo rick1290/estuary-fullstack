@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal
 from utils.models import BaseModel, PublicModel
+from .constants import SubscriptionTierCode
 
 
 class Order(PublicModel):
@@ -741,6 +742,12 @@ class SubscriptionTier(BaseModel):
     Model representing subscription tiers for practitioners.
     Different tiers can have different commission rates.
     """
+    code = models.CharField(
+        max_length=20, 
+        choices=SubscriptionTierCode.choices,
+        unique=True,
+        help_text="Fixed tier identifier used in code"
+    )
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     monthly_price = models.DecimalField(
@@ -788,6 +795,20 @@ class SubscriptionTier(BaseModel):
     
     def __str__(self):
         return self.name
+    
+    @classmethod
+    def get_by_code(cls, code):
+        """Get tier by code, with caching"""
+        from django.core.cache import cache
+        cache_key = f'subscription_tier_{code}'
+        tier = cache.get(cache_key)
+        if not tier:
+            try:
+                tier = cls.objects.get(code=code, is_active=True)
+                cache.set(cache_key, tier, 3600)  # Cache for 1 hour
+            except cls.DoesNotExist:
+                return None
+        return tier
 
 
 class PractitionerSubscription(models.Model):
