@@ -1,0 +1,13 @@
+[2025-06-21T19:36:40.335Z] Error: Missing $ref pointer "#/components/schemas/SubscriptionTier". Token "SubscriptionTier" does not exist.
+Stack:
+JSONParserError: Missing $ref pointer "#/components/schemas/SubscriptionTier". Token "SubscriptionTier" does not exist.
+    at Pointer.resolve (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/pointer.js:113:23)
+    at $Ref.resolve (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/ref.js:79:24)
+    at $Refs._resolve (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/refs.js:168:21)
+    at inventory$Ref (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:66:27)
+    at crawl (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:157:21)
+    at crawl (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:169:21)
+    at crawl (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:169:21)
+    at crawl (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:169:21)
+    at crawl (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:169:21)
+    at crawl (/Users/ricknielsen/Documents/GitHub/estuary-fullstack/frontend-2/node_modules/.pnpm/@hey-api+json-schema-ref-parser@1.0.6/node_modules/@hey-api/json-schema-ref-parser/dist/lib/bundle.js:169:21)

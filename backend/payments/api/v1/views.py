@@ -21,6 +21,7 @@ from payments.models import (
     EarningsTransaction, PractitionerEarnings, PractitionerPayout,
     SubscriptionTier, PractitionerSubscription
 )
+from payments.constants import SubscriptionTierCode
 from users.models import User
 from practitioners.models import Practitioner
 from services.models import Service, ServiceType
@@ -40,7 +41,7 @@ from .serializers import (
     PractitionerPayoutSerializer, PayoutRequestSerializer,
     # Subscriptions
     SubscriptionTierSerializer, PractitionerSubscriptionSerializer,
-    SubscriptionCreateSerializer,
+    SubscriptionCreateSerializer, SubscriptionTiersResponseSerializer,
     # Others
     CommissionRateSerializer, CommissionCalculationSerializer,
     RefundSerializer, WebhookEventSerializer
@@ -901,7 +902,10 @@ class PayoutViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=['Subscriptions']),
     destroy=extend_schema(tags=['Subscriptions']),
     current=extend_schema(tags=['Subscriptions']),
-    tiers=extend_schema(tags=['Subscriptions']),
+    tiers=extend_schema(
+        tags=['Subscriptions'],
+        responses={200: SubscriptionTiersResponseSerializer}
+    ),
     upgrade=extend_schema(tags=['Subscriptions']),
     cancel=extend_schema(tags=['Subscriptions']),
     reactivate=extend_schema(tags=['Subscriptions'])
@@ -929,11 +933,49 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         return PractitionerSubscriptionSerializer
     
     @action(detail=False, methods=['get'])
+    def current(self, request):
+        """Get current subscription for the authenticated practitioner"""
+        if not hasattr(request.user, 'practitioner_profile'):
+            return Response(
+                {'error': 'Not a practitioner'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        practitioner = request.user.practitioner_profile
+        if practitioner.current_subscription and practitioner.current_subscription.is_active:
+            serializer = PractitionerSubscriptionSerializer(practitioner.current_subscription)
+            return Response(serializer.data)
+        
+        return Response(
+            {'message': 'No active subscription'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    @action(detail=False, methods=['get'])
     def tiers(self, request):
-        """List available subscription tiers"""
+        """List available subscription tiers with structured response"""
+        from payments.constants import SubscriptionTierCode
+        
         tiers = SubscriptionTier.objects.filter(is_active=True).order_by('order')
         serializer = SubscriptionTierSerializer(tiers, many=True)
-        return Response(serializer.data)
+        
+        # Create a structured response with tier codes as keys
+        tier_data = {}
+        for tier in tiers:
+            if hasattr(tier, 'code'):
+                tier_data[tier.code] = SubscriptionTierSerializer(tier).data
+        
+        # Ensure all tier codes are present (even if not in DB)
+        for code in SubscriptionTierCode.values:
+            if code not in tier_data:
+                tier_data[code] = None
+        
+        return Response({
+            'tiers': serializer.data,  # Array format for compatibility
+            'tiersByCode': tier_data,   # Object format for easy access
+            'availableCodes': list(SubscriptionTierCode.values),
+            'codeLabels': dict(SubscriptionTierCode.choices)
+        })
     
     def create(self, request, *args, **kwargs):
         """Create a new subscription"""
@@ -961,8 +1003,10 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             # Cancel in Stripe
             if existing.stripe_subscription_id:
                 stripe_client = StripeClient()
+                stripe_client.initialize()
                 try:
-                    stripe_client.subscriptions.delete(existing.stripe_subscription_id)
+                    import stripe
+                    stripe.Subscription.delete(existing.stripe_subscription_id)
                 except Exception as e:
                     logger.error(f"Failed to cancel Stripe subscription: {e}")
             
@@ -972,13 +1016,31 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         
         # Create Stripe subscription
         stripe_client = StripeClient()
+        stripe_client.initialize()
+        
         price_id = (
             tier.stripe_annual_price_id 
             if serializer.validated_data.get('is_annual') 
             else tier.stripe_monthly_price_id
         )
         
-        stripe_subscription = stripe_client.subscriptions.create(
+        if not price_id:
+            return Response(
+                {'error': 'Stripe pricing not configured for this tier. Please contact support.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Ensure user has payment profile
+        if not hasattr(request.user, 'payment_profile') or not request.user.payment_profile.stripe_customer_id:
+            # Create Stripe customer if needed
+            customer = stripe_client.create_customer(request.user)
+            from users.models import UserPaymentProfile
+            profile, created = UserPaymentProfile.objects.get_or_create(user=request.user)
+            profile.stripe_customer_id = customer.id
+            profile.save()
+        
+        import stripe
+        stripe_subscription = stripe.Subscription.create(
             customer=request.user.payment_profile.stripe_customer_id,
             items=[{'price': price_id}],
             payment_behavior='default_incomplete',
@@ -997,6 +1059,11 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             is_annual=serializer.validated_data.get('is_annual', False),
             stripe_subscription_id=stripe_subscription.id
         )
+        
+        # Update practitioner's current subscription
+        practitioner = request.user.practitioner_profile
+        practitioner.current_subscription = subscription
+        practitioner.save(update_fields=['current_subscription'])
         
         response_serializer = PractitionerSubscriptionSerializer(subscription)
         return Response(
@@ -1021,8 +1088,10 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         # Cancel in Stripe
         if subscription.stripe_subscription_id:
             stripe_client = StripeClient()
+            stripe_client.initialize()
             try:
-                stripe_client.subscriptions.update(
+                import stripe
+                stripe.Subscription.modify(
                     subscription.stripe_subscription_id,
                     cancel_at_period_end=True
                 )
@@ -1096,6 +1165,8 @@ class WebhookView(APIView):
                 self._handle_payment_failure(event_data)
             elif event_type == 'customer.subscription.created':
                 self._handle_subscription_created(event_data)
+            elif event_type == 'customer.subscription.updated':
+                self._handle_subscription_updated(event_data)
             elif event_type == 'customer.subscription.deleted':
                 self._handle_subscription_deleted(event_data)
             elif event_type == 'charge.refunded':
@@ -1170,6 +1241,41 @@ class WebhookView(APIView):
             if sub:
                 sub.status = 'active'
                 sub.save()
+                
+                # Update practitioner's current subscription
+                practitioner = sub.practitioner
+                practitioner.current_subscription = sub
+                practitioner.save(update_fields=['current_subscription'])
+    
+    def _handle_subscription_updated(self, subscription):
+        """Handle subscription update"""
+        sub = PractitionerSubscription.objects.filter(
+            stripe_subscription_id=subscription['id']
+        ).first()
+        
+        if sub:
+            # Update subscription status
+            stripe_status_map = {
+                'active': 'active',
+                'canceled': 'canceled',
+                'past_due': 'past_due',
+                'trialing': 'trialing',
+                'unpaid': 'unpaid'
+            }
+            
+            new_status = stripe_status_map.get(subscription['status'], 'active')
+            sub.status = new_status
+            sub.save()
+            
+            # Update practitioner's current subscription if status changed
+            practitioner = sub.practitioner
+            if new_status in ['canceled', 'past_due', 'unpaid']:
+                if practitioner.current_subscription == sub:
+                    practitioner.current_subscription = None
+                    practitioner.save(update_fields=['current_subscription'])
+            elif new_status == 'active':
+                practitioner.current_subscription = sub
+                practitioner.save(update_fields=['current_subscription'])
     
     def _handle_subscription_deleted(self, subscription):
         """Handle subscription cancellation"""
@@ -1181,6 +1287,12 @@ class WebhookView(APIView):
             sub.status = 'canceled'
             sub.end_date = timezone.now()
             sub.save()
+            
+            # Clear practitioner's current subscription if this was it
+            practitioner = sub.practitioner
+            if practitioner.current_subscription == sub:
+                practitioner.current_subscription = None
+                practitioner.save(update_fields=['current_subscription'])
     
     def _handle_refund(self, charge):
         """Handle refund"""

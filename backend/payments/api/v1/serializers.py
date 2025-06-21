@@ -361,15 +361,58 @@ class PayoutRequestSerializer(serializers.Serializer):
 
 class SubscriptionTierSerializer(serializers.ModelSerializer):
     """Serializer for subscription tiers"""
+    code = serializers.ChoiceField(
+        choices=[('basic', 'Basic'), ('professional', 'Professional'), ('premium', 'Premium')],
+        read_only=True
+    )
+    monthly_savings = serializers.SerializerMethodField()
+    annual_savings = serializers.SerializerMethodField()
+    is_most_popular = serializers.SerializerMethodField()
+    
     class Meta:
         model = SubscriptionTier
         fields = [
-            'id', 'name', 'description', 'monthly_price', 'annual_price',
+            'id', 'code', 'name', 'description', 'monthly_price', 'annual_price',
             'features', 'is_active', 'order', 'stripe_product_id',
             'stripe_monthly_price_id', 'stripe_annual_price_id',
+            'monthly_savings', 'annual_savings', 'is_most_popular',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'code', 'created_at', 'updated_at']
+    
+    def get_monthly_savings(self, obj):
+        """Calculate monthly savings compared to basic tier"""
+        # This would typically compare commission rates
+        return 0
+    
+    def get_annual_savings(self, obj):
+        """Calculate annual savings when paying yearly"""
+        if obj.annual_price and obj.monthly_price:
+            yearly_monthly = obj.monthly_price * 12
+            return float(yearly_monthly - obj.annual_price)
+        return 0
+    
+    def get_is_most_popular(self, obj):
+        """Mark professional tier as most popular"""
+        from payments.constants import SubscriptionTierCode
+        return hasattr(obj, 'code') and obj.code == SubscriptionTierCode.PROFESSIONAL
+
+
+class SubscriptionTiersResponseSerializer(serializers.Serializer):
+    """Response serializer for subscription tiers endpoint"""
+    tiers = SubscriptionTierSerializer(many=True)
+    tiersByCode = serializers.DictField(
+        child=SubscriptionTierSerializer(),
+        help_text="Subscription tiers indexed by code"
+    )
+    availableCodes = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="List of available tier codes"
+    )
+    codeLabels = serializers.DictField(
+        child=serializers.CharField(),
+        help_text="Mapping of tier codes to display labels"
+    )
 
 
 class PractitionerSubscriptionSerializer(serializers.ModelSerializer):
@@ -394,7 +437,7 @@ class PractitionerSubscriptionSerializer(serializers.ModelSerializer):
 
 class SubscriptionCreateSerializer(serializers.Serializer):
     """Serializer for creating subscriptions"""
-    tier_id = serializers.UUIDField()
+    tier_id = serializers.IntegerField()
     is_annual = serializers.BooleanField(default=False)
     payment_method_id = serializers.CharField(required=False)
     

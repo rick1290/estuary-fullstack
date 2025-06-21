@@ -79,6 +79,11 @@ class Practitioner(PublicModel):
     primary_location = models.ForeignKey('locations.PractitionerLocation', on_delete=models.SET_NULL,
                                        blank=True, null=True, related_name='primary_practitioners')
     
+    # Subscription
+    current_subscription = models.ForeignKey('payments.PractitionerSubscription', on_delete=models.SET_NULL,
+                                           blank=True, null=True, related_name='+',
+                                           help_text="Current active subscription")
+    
     class Meta:
         verbose_name = 'Practitioner'
         verbose_name_plural = 'Practitioners'
