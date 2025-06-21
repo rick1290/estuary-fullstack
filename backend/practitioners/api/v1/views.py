@@ -69,7 +69,11 @@ from .filters import PractitionerFilter
     education_detail=extend_schema(tags=['Practitioners']),
     questions=extend_schema(tags=['Practitioners']),
     question_detail=extend_schema(tags=['Practitioners']),
-    by_slug=extend_schema(tags=['Practitioners'])
+    by_slug=extend_schema(tags=['Practitioners']),
+    stripe_connect_status=extend_schema(tags=['Practitioners']),
+    stripe_connect_create=extend_schema(tags=['Practitioners']),
+    stripe_connect_refresh=extend_schema(tags=['Practitioners']),
+    stripe_connect_disconnect=extend_schema(tags=['Practitioners'])
 )
 class PractitionerViewSet(viewsets.ModelViewSet):
     """
@@ -1849,6 +1853,188 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
         except Practitioner.DoesNotExist:
             return Response(
                 {"detail": "No practitioner application found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def stripe_connect_status(self, request):
+        """Get the current Stripe Connect status for the practitioner"""
+        try:
+            practitioner = request.user.practitioner_profile
+            payment_profile = request.user.payment_profile
+            
+            # Check if Stripe account exists
+            has_stripe_account = bool(payment_profile.stripe_account_id)
+            
+            response_data = {
+                'has_stripe_account': has_stripe_account,
+                'stripe_account_id': payment_profile.stripe_account_id if has_stripe_account else None,
+                'is_connected': False,
+                'charges_enabled': False,
+                'payouts_enabled': False,
+                'requirements': None
+            }
+            
+            # If account exists, get details from Stripe
+            if has_stripe_account:
+                try:
+                    from integrations.stripe.client import StripeClient
+                    import stripe
+                    
+                    stripe_client = StripeClient()
+                    stripe_client.initialize()
+                    
+                    account = stripe.Account.retrieve(payment_profile.stripe_account_id)
+                    
+                    response_data.update({
+                        'is_connected': True,
+                        'charges_enabled': account.charges_enabled,
+                        'payouts_enabled': account.payouts_enabled,
+                        'requirements': {
+                            'currently_due': account.requirements.currently_due,
+                            'eventually_due': account.requirements.eventually_due,
+                            'current_deadline': account.requirements.current_deadline
+                        } if account.requirements else None
+                    })
+                except Exception as e:
+                    # Account might be invalid or disconnected
+                    pass
+            
+            return Response(response_data)
+            
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def stripe_connect_create(self, request):
+        """Create a Stripe Connect account link for onboarding"""
+        try:
+            practitioner = request.user.practitioner_profile
+            payment_profile = request.user.payment_profile
+            
+            from integrations.stripe.client import StripeClient
+            import stripe
+            from django.conf import settings
+            
+            stripe_client = StripeClient()
+            stripe_client.initialize()
+            
+            # Create Stripe account if doesn't exist
+            if not payment_profile.stripe_account_id:
+                account = stripe.Account.create(
+                    type='express',
+                    country='US',  # TODO: Make this dynamic based on user location
+                    email=request.user.email,
+                    capabilities={
+                        'card_payments': {'requested': True},
+                        'transfers': {'requested': True},
+                    },
+                    metadata={
+                        'practitioner_id': str(practitioner.id),
+                        'user_id': str(request.user.id)
+                    }
+                )
+                
+                # Save the account ID
+                payment_profile.stripe_account_id = account.id
+                payment_profile.save()
+            
+            # Create account link
+            account_link = stripe.AccountLink.create(
+                account=payment_profile.stripe_account_id,
+                refresh_url=f"{settings.FRONTEND_URL}/dashboard/practitioner/settings?tab=payment&refresh=true",
+                return_url=f"{settings.FRONTEND_URL}/dashboard/practitioner/settings?tab=payment&success=true",
+                type='account_onboarding'
+            )
+            
+            return Response({
+                'url': account_link.url,
+                'expires_at': account_link.expires_at
+            })
+            
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Failed to create Stripe Connect link: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def stripe_connect_refresh(self, request):
+        """Create a new account link to continue onboarding or update account"""
+        try:
+            practitioner = request.user.practitioner_profile
+            payment_profile = request.user.payment_profile
+            
+            if not payment_profile.stripe_account_id:
+                return Response(
+                    {"detail": "No Stripe account found. Please create one first."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            from integrations.stripe.client import StripeClient
+            import stripe
+            from django.conf import settings
+            
+            stripe_client = StripeClient()
+            stripe_client.initialize()
+            
+            # Create account link for updating
+            account_link = stripe.AccountLink.create(
+                account=payment_profile.stripe_account_id,
+                refresh_url=f"{settings.FRONTEND_URL}/dashboard/practitioner/settings?tab=payment&refresh=true",
+                return_url=f"{settings.FRONTEND_URL}/dashboard/practitioner/settings?tab=payment&success=true",
+                type='account_onboarding'
+            )
+            
+            return Response({
+                'url': account_link.url,
+                'expires_at': account_link.expires_at
+            })
+            
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Failed to create Stripe Connect link: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def stripe_connect_disconnect(self, request):
+        """Disconnect the Stripe Connect account"""
+        try:
+            practitioner = request.user.practitioner_profile
+            payment_profile = request.user.payment_profile
+            
+            if not payment_profile.stripe_account_id:
+                return Response(
+                    {"detail": "No Stripe account to disconnect"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Note: In production, you might want to check for pending payouts
+            # before allowing disconnection
+            
+            # Clear the stripe account ID
+            payment_profile.stripe_account_id = None
+            payment_profile.save()
+            
+            return Response({"detail": "Stripe account disconnected successfully"})
+            
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
