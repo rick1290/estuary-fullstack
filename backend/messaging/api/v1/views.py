@@ -402,16 +402,41 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
         # 3. Stream subscribers (if streams app exists)
         if permissions['can_message_subscribers']:
             try:
-                from streams.models import StreamSubscription
-                subscriptions = StreamSubscription.objects.filter(
-                    stream__practitioner=practitioner,
-                    status='active'
-                ).select_related('user')
+                from streams.models import StreamSubscription, Stream
+                # Debug: Log the query
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Querying StreamSubscription with practitioner={practitioner}")
                 
-                for subscription in subscriptions:
-                    eligible_users.add(subscription.user)
-            except ImportError:
+                # First check if practitioner has a stream
+                try:
+                    stream = Stream.objects.get(practitioner=practitioner)
+                    logger.info(f"Found stream: {stream.id}")
+                    
+                    # Then get active subscriptions for that stream
+                    subscriptions = StreamSubscription.objects.filter(
+                        stream=stream,
+                        status='active'
+                    ).select_related('user')
+                    
+                    logger.info(f"Found {subscriptions.count()} active subscriptions")
+                    
+                    for subscription in subscriptions:
+                        eligible_users.add(subscription.user)
+                except Stream.DoesNotExist:
+                    logger.info("Practitioner has no stream")
+                    
+            except ImportError as e:
                 # Streams app doesn't exist yet
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Could not import StreamSubscription: {e}")
+            except Exception as e:
+                # Log any other errors
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error querying StreamSubscription: {e}")
+                # Don't raise, just continue without stream subscribers
                 pass
         
         return list(eligible_users)
