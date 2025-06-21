@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CreditCard, Plus, Trash2, AlertCircle, CheckCircle, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
+import AddPaymentMethodModal from "@/components/checkout/add-payment-method-modal"
 
 // Map Stripe brand names to display names
 const brandDisplayNames: Record<string, string> = {
@@ -41,8 +41,8 @@ const brandColors: Record<string, string> = {
 
 export default function PaymentMethodsTab() {
   const queryClient = useQueryClient()
-  const router = useRouter()
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [showAddCardModal, setShowAddCardModal] = useState(false)
 
   // Fetch payment methods
   const { data: paymentMethods, isLoading, error } = useQuery({
@@ -88,8 +88,7 @@ export default function PaymentMethodsTab() {
   }
 
   const handleAddCard = () => {
-    // Navigate to checkout page with a return URL
-    router.push('/checkout?add_payment_method=true&return_url=/dashboard/user/profile')
+    setShowAddCardModal(true)
   }
 
   // Check if a card is expired
@@ -249,6 +248,11 @@ export default function PaymentMethodsTab() {
           </div>
         </>
       )}
+      
+      <AddPaymentMethodModal
+        open={showAddCardModal}
+        onOpenChange={setShowAddCardModal}
+      />
     </div>
   )
 }

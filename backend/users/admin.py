@@ -9,7 +9,7 @@ class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     verbose_name_plural = 'Profile'
-    fields = ['display_name', 'bio', 'avatar_url', 'gender', 'birthdate', 'location']
+    fields = ['display_name', 'bio', 'avatar_url', 'gender', 'birthdate', 'address']
 
 
 class UserSocialLinksInline(admin.StackedInline):
