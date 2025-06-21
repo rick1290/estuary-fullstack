@@ -1,40 +1,128 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw } from "lucide-react"
+import { AlertCircle, CheckCircle2, ExternalLink, RefreshCw, Loader2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/use-toast"
+import { useRouter, useSearchParams } from "next/navigation"
+import {
+  practitionersStripeConnectStatusRetrieveOptions,
+  practitionersStripeConnectCreateCreateMutation,
+  practitionersStripeConnectRefreshCreateMutation,
+  practitionersStripeConnectDisconnectCreateMutation,
+} from "@/src/client/@tanstack/react-query.gen"
 
 export function PaymentIntegrationSettings() {
-  const [isConnected, setIsConnected] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+  
+  // Check for success/refresh params from Stripe redirect
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast({
+        title: "Success!",
+        description: "Your Stripe account has been connected successfully.",
+      })
+      // Clean up URL
+      router.replace('/dashboard/practitioner/settings')
+    } else if (searchParams.get('refresh') === 'true') {
+      toast({
+        title: "Session Expired",
+        description: "Please try connecting your account again.",
+        variant: "destructive",
+      })
+    }
+  }, [searchParams, router, toast])
+
+  // Fetch Stripe Connect status
+  const { data: connectStatus, isLoading: statusLoading, refetch } = useQuery({
+    ...practitionersStripeConnectStatusRetrieveOptions(),
+  })
+
+  // Create Stripe Connect account mutation
+  const createConnectMutation = useMutation({
+    ...practitionersStripeConnectCreateCreateMutation(),
+    onSuccess: (data) => {
+      // Redirect to Stripe onboarding
+      if (data.url) {
+        window.location.href = data.url
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || "Failed to create Stripe Connect link",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Refresh/update Stripe Connect account mutation
+  const refreshConnectMutation = useMutation({
+    ...practitionersStripeConnectRefreshCreateMutation(),
+    onSuccess: (data) => {
+      // Redirect to Stripe dashboard
+      if (data.url) {
+        window.location.href = data.url
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || "Failed to create Stripe Connect link",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Disconnect Stripe Connect account mutation
+  const disconnectMutation = useMutation({
+    ...practitionersStripeConnectDisconnectCreateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Your Stripe account has been disconnected.",
+      })
+      refetch()
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || "Failed to disconnect Stripe account",
+        variant: "destructive",
+      })
+    },
+  })
 
   const handleConnect = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsConnected(true)
-      setIsLoading(false)
-    }, 1500)
+    createConnectMutation.mutate({})
   }
 
   const handleDisconnect = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsConnected(false)
-      setIsLoading(false)
-    }, 1500)
+    disconnectMutation.mutate({})
   }
 
   const handleUpdate = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
+    refreshConnectMutation.mutate({})
+  }
+
+  const isConnected = connectStatus?.is_connected && connectStatus?.charges_enabled && connectStatus?.payouts_enabled
+  const hasAccount = connectStatus?.has_stripe_account
+  const isLoading = createConnectMutation.isPending || refreshConnectMutation.isPending || disconnectMutation.isPending
+
+  if (statusLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -82,11 +170,24 @@ export function PaymentIntegrationSettings() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Account Details</AlertTitle>
               <AlertDescription>
-                Connected account: <strong>acct_1N9XYZKJn8U9WXYZ</strong>
+                Connected account: <strong>{connectStatus?.stripe_account_id}</strong>
                 <br />
-                Last updated: <strong>May 10, 2025</strong>
+                Charges enabled: <strong>{connectStatus?.charges_enabled ? 'Yes' : 'No'}</strong>
+                <br />
+                Payouts enabled: <strong>{connectStatus?.payouts_enabled ? 'Yes' : 'No'}</strong>
               </AlertDescription>
             </Alert>
+            
+            {connectStatus?.requirements?.currently_due && connectStatus.requirements.currently_due.length > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Action Required</AlertTitle>
+                <AlertDescription>
+                  Additional information is required to complete your account setup.
+                  Please update your Stripe account.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -111,12 +212,12 @@ export function PaymentIntegrationSettings() {
         )}
       </CardContent>
       <CardFooter className="flex justify-between">
-        {isConnected ? (
+        {hasAccount ? (
           <>
             <Button variant="outline" onClick={handleDisconnect} disabled={isLoading}>
-              {isLoading ? (
+              {disconnectMutation.isPending ? (
                 <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Disconnecting...
                 </>
               ) : (
@@ -124,9 +225,9 @@ export function PaymentIntegrationSettings() {
               )}
             </Button>
             <Button onClick={handleUpdate} disabled={isLoading}>
-              {isLoading ? (
+              {refreshConnectMutation.isPending ? (
                 <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Updating...
                 </>
               ) : (
@@ -136,9 +237,9 @@ export function PaymentIntegrationSettings() {
           </>
         ) : (
           <Button onClick={handleConnect} disabled={isLoading} className="w-full">
-            {isLoading ? (
+            {createConnectMutation.isPending ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Connecting...
               </>
             ) : (
