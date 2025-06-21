@@ -75,19 +75,18 @@ export function BillingSettings() {
   const tiersByCode = tiersResponse?.tiersByCode || {}
 
   // Fetch payment methods
-  const { data: paymentMethods, isLoading: loadingPaymentMethods } = useQuery({
+  const { data: paymentMethodsResponse, isLoading: loadingPaymentMethods } = useQuery({
     ...paymentMethodsListOptions(),
     enabled: isUpgradeDialogOpen,
-  }) as {
-    data: PaymentMethodReadable[] | undefined,
-    isLoading: boolean
-  }
+  })
+
+  const paymentMethods = paymentMethodsResponse?.results || []
 
   // Set default payment method when dialog opens
   useEffect(() => {
-    if (isUpgradeDialogOpen && paymentMethods && paymentMethods.length > 0 && !selectedPaymentMethodId) {
+    if (isUpgradeDialogOpen && paymentMethods.length > 0 && !selectedPaymentMethodId) {
       const defaultMethod = paymentMethods.find(m => m.is_default) || paymentMethods[0]
-      setSelectedPaymentMethodId(defaultMethod.id)
+      setSelectedPaymentMethodId(defaultMethod.id?.toString() || null)
     }
   }, [isUpgradeDialogOpen, paymentMethods, selectedPaymentMethodId])
 
@@ -431,19 +430,19 @@ export function BillingSettings() {
                         <RadioGroup value={selectedPaymentMethodId || ""} onValueChange={setSelectedPaymentMethodId}>
                           {paymentMethods.map((method) => (
                             <div key={method.id} className="flex items-center space-x-3 rounded-md border p-3">
-                              <RadioGroupItem value={method.id} id={method.id} />
+                              <RadioGroupItem value={method.id?.toString() || ""} id={method.id?.toString() || ""} />
                               <Label
-                                htmlFor={method.id}
+                                htmlFor={method.id?.toString() || ""}
                                 className="flex flex-1 cursor-pointer items-center justify-between"
                               >
                                 <div className="flex items-center space-x-3">
                                   <CreditCard className="h-4 w-4 text-muted-foreground" />
                                   <div>
                                     <p className="text-sm font-medium">
-                                      {method.card?.brand?.toUpperCase()} •••• {method.card?.last4}
+                                      {method.brand?.toUpperCase() || 'CARD'} •••• {method.last4}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      Expires {method.card?.exp_month}/{method.card?.exp_year}
+                                      Expires {method.exp_month}/{method.exp_year}
                                     </p>
                                   </div>
                                 </div>
