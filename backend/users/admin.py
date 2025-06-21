@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django_use_email_as_username.admin import BaseUserAdmin
 
-from .models import User, UserProfile, UserSocialLinks, UserPaymentProfile, UserFavoritePractitioner
+from .models import User, UserProfile, UserSocialLinks, UserPaymentProfile, UserFavoritePractitioner, UserFavoriteService, UserModalityPreference
 
 
 class UserProfileInline(admin.StackedInline):
@@ -137,3 +137,40 @@ class UserFavoritePractitionerAdmin(admin.ModelAdmin):
     def practitioner_name(self, obj):
         return str(obj.practitioner)
     practitioner_name.short_description = 'Practitioner'
+
+
+@admin.register(UserFavoriteService)
+class UserFavoriteServiceAdmin(admin.ModelAdmin):
+    list_display = ['user_email', 'service_title', 'service_type', 'created_at']
+    list_filter = ['created_at', 'service__service_type']
+    search_fields = ['user__email', 'service__title']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'User Email'
+    
+    def service_title(self, obj):
+        return obj.service.title
+    service_title.short_description = 'Service'
+    
+    def service_type(self, obj):
+        return obj.service.service_type
+    service_type.short_description = 'Type'
+
+
+@admin.register(UserModalityPreference)
+class UserModalityPreferenceAdmin(admin.ModelAdmin):
+    list_display = ['user_email', 'modality_name', 'priority', 'created_at']
+    list_filter = ['priority', 'created_at', 'modality__category']
+    search_fields = ['user__email', 'modality__name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['user', 'priority']
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'User Email'
+    
+    def modality_name(self, obj):
+        return obj.modality.name
+    modality_name.short_description = 'Modality'

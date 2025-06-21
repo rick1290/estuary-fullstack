@@ -550,3 +550,224 @@ def remove_favorite_service(request, service_id):
             {'error': 'Favorite not found'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+# User modality preferences endpoints
+@extend_schema(
+    operation_id='user_modality_preferences',
+    summary='List user modality preferences',
+    description='Get list of authenticated user modality preferences (wellness interests)',
+    responses={
+        200: OpenApiResponse(description='List of user modality preferences'),
+        401: OpenApiResponse(description='Not authenticated'),
+    },
+    tags=['User']
+)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_modality_preferences(request):
+    """Get user's modality preferences"""
+    from users.models import UserModalityPreference
+    from practitioners.api.v1.serializers import ModalitySerializer
+    
+    preferences = UserModalityPreference.objects.filter(
+        user=request.user
+    ).select_related('modality').order_by('priority', 'created_at')
+    
+    # Extract modalities with priority info
+    results = []
+    for pref in preferences:
+        modality_data = ModalitySerializer(pref.modality).data
+        modality_data['priority'] = pref.priority
+        results.append(modality_data)
+    
+    return Response({
+        'count': len(results),
+        'results': results
+    }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id='user_set_modality_preferences',
+    summary='Set user modality preferences',
+    description='Set all user modality preferences (replaces existing preferences)',
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'modality_ids': {
+                    'type': 'array',
+                    'items': {'type': 'integer'},
+                    'description': 'List of modality IDs in priority order (max 6)'
+                }
+            },
+            'required': ['modality_ids']
+        }
+    },
+    responses={
+        200: OpenApiResponse(description='Preferences updated successfully'),
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Not authenticated'),
+    },
+    tags=['User']
+)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def set_modality_preferences(request):
+    """Set user's modality preferences (replaces all existing)"""
+    from users.models import UserModalityPreference
+    from common.models import Modality
+    
+    modality_ids = request.data.get('modality_ids', [])
+    
+    # Validate input
+    if not isinstance(modality_ids, list):
+        return Response(
+            {'error': 'modality_ids must be a list'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if len(modality_ids) > 6:
+        return Response(
+            {'error': 'Maximum 6 modalities allowed'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Validate all modalities exist
+    valid_modalities = Modality.objects.filter(
+        id__in=modality_ids,
+        is_active=True
+    ).values_list('id', flat=True)
+    
+    invalid_ids = set(modality_ids) - set(valid_modalities)
+    if invalid_ids:
+        return Response(
+            {'error': f'Invalid modality IDs: {list(invalid_ids)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Delete existing preferences
+    UserModalityPreference.objects.filter(user=request.user).delete()
+    
+    # Create new preferences with priority
+    for priority, modality_id in enumerate(modality_ids):
+        UserModalityPreference.objects.create(
+            user=request.user,
+            modality_id=modality_id,
+            priority=priority
+        )
+    
+    return Response({
+        'message': 'Modality preferences updated successfully',
+        'count': len(modality_ids)
+    }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id='user_add_modality_preference',
+    summary='Add modality to preferences',
+    description='Add a single modality to user preferences',
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'modality_id': {'type': 'integer', 'description': 'ID of the modality to add'}
+            },
+            'required': ['modality_id']
+        }
+    },
+    responses={
+        201: OpenApiResponse(description='Modality added to preferences'),
+        400: OpenApiResponse(description='Validation error or limit reached'),
+        401: OpenApiResponse(description='Not authenticated'),
+        404: OpenApiResponse(description='Modality not found'),
+    },
+    tags=['User']
+)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_modality_preference(request):
+    """Add a modality to preferences"""
+    from users.models import UserModalityPreference
+    from common.models import Modality
+    
+    modality_id = request.data.get('modality_id')
+    if not modality_id:
+        return Response(
+            {'error': 'modality_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Check current count
+    current_count = UserModalityPreference.objects.filter(user=request.user).count()
+    if current_count >= 6:
+        return Response(
+            {'error': 'Maximum 6 modalities allowed'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        modality = Modality.objects.get(id=modality_id, is_active=True)
+    except Modality.DoesNotExist:
+        return Response(
+            {'error': 'Modality not found or inactive'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    preference, created = UserModalityPreference.objects.get_or_create(
+        user=request.user,
+        modality=modality,
+        defaults={'priority': current_count}
+    )
+    
+    if created:
+        return Response(
+            {'message': 'Modality added to preferences'},
+            status=status.HTTP_201_CREATED
+        )
+    else:
+        return Response(
+            {'message': 'Modality already in preferences'},
+            status=status.HTTP_200_OK
+        )
+
+
+@extend_schema(
+    operation_id='user_remove_modality_preference',
+    summary='Remove modality from preferences',
+    description='Remove a modality from user preferences',
+    responses={
+        204: OpenApiResponse(description='Modality removed from preferences'),
+        401: OpenApiResponse(description='Not authenticated'),
+        404: OpenApiResponse(description='Preference not found'),
+    },
+    tags=['User']
+)
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def remove_modality_preference(request, modality_id):
+    """Remove a modality from preferences"""
+    from users.models import UserModalityPreference
+    
+    try:
+        preference = UserModalityPreference.objects.get(
+            user=request.user,
+            modality_id=modality_id
+        )
+        preference.delete()
+        
+        # Reorder remaining preferences
+        remaining = UserModalityPreference.objects.filter(
+            user=request.user
+        ).order_by('priority')
+        
+        for i, pref in enumerate(remaining):
+            pref.priority = i
+            pref.save(update_fields=['priority'])
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except UserModalityPreference.DoesNotExist:
+        return Response(
+            {'error': 'Preference not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )

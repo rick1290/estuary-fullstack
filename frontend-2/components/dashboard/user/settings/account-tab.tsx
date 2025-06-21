@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,31 +10,79 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Camera, MapPin, Heart } from "lucide-react"
-
-// Mock data for modality interests
-const MODALITY_OPTIONS = [
-  "Meditation",
-  "Yoga",
-  "Coaching",
-  "Therapy",
-  "Fitness",
-  "Nutrition",
-  "Art Therapy",
-  "Sound Healing",
-  "Breathwork",
-  "Dance",
-  "Mindfulness",
-  "Energy Healing",
-]
+import { Camera, MapPin, Heart, Loader2 } from "lucide-react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { authMeOptions, modalitiesListOptions, userModalityPreferencesOptions, userSetModalityPreferencesMutation } from "@/src/client/@tanstack/react-query.gen"
+import { authMeUpdate } from "@/src/client/sdk.gen"
+import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AccountTab() {
+  const queryClient = useQueryClient()
   const [profileImage, setProfileImage] = useState<string | null>(null)
-  const [firstName, setFirstName] = useState("Rick")
-  const [lastName, setLastName] = useState("Nielsen")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [selectedModalities, setSelectedModalities] = useState<string[]>(["Meditation", "Yoga", "Mindfulness"])
-  const [bio, setBio] = useState("I'm passionate about wellness and personal growth. Looking forward to exploring new practices and connecting with practitioners.")
+  const [selectedModalities, setSelectedModalities] = useState<number[]>([])
+  const [bio, setBio] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Fetch user profile data
+  const { data: userProfile, isLoading: profileLoading } = useQuery(authMeOptions())
+
+  // Fetch available modalities
+  const { data: modalitiesData, isLoading: modalitiesLoading } = useQuery(modalitiesListOptions())
+
+  // Fetch user's modality preferences
+  const { data: userModalityPrefs, isLoading: prefsLoading } = useQuery(userModalityPreferencesOptions())
+
+  // Update modality preferences mutation
+  const updateModalitiesMutation = useMutation({
+    ...userSetModalityPreferencesMutation(),
+    onSuccess: () => {
+      toast.success("Wellness interests updated successfully")
+      queryClient.invalidateQueries({ queryKey: ["userModalityPreferences"] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || "Failed to update wellness interests")
+    }
+  })
+
+  // Update user profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { first_name: string; last_name: string; phone_number: string | null }) => {
+      return authMeUpdate({
+        body: data
+      })
+    },
+    onSuccess: () => {
+      toast.success("Profile updated successfully")
+      queryClient.invalidateQueries({ queryKey: ["authMe"] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || "Failed to update profile")
+    }
+  })
+
+  // Load user data when component mounts or data changes
+  useEffect(() => {
+    if (userProfile) {
+      setFirstName(userProfile.first_name || "")
+      setLastName(userProfile.last_name || "")
+      setPhoneNumber(userProfile.phone_number || "")
+      // Note: Bio would need backend support
+    }
+  }, [userProfile])
+
+  // Load user's modality preferences when data is available
+  useEffect(() => {
+    console.log("User modality preferences response:", userModalityPrefs)
+    if (userModalityPrefs?.results) {
+      const modalityIds = userModalityPrefs.results.map((pref: any) => pref.id)
+      console.log("Setting selected modality IDs:", modalityIds)
+      setSelectedModalities(modalityIds)
+    }
+  }, [userModalityPrefs])
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -47,14 +95,51 @@ export default function AccountTab() {
     }
   }
 
-  const handleModalityToggle = (modality: string) => {
-    if (selectedModalities.includes(modality)) {
-      setSelectedModalities(selectedModalities.filter((m) => m !== modality))
+  const handleModalityToggle = (modalityId: number) => {
+    console.log("Toggling modality:", modalityId)
+    console.log("Current selected:", selectedModalities)
+    
+    if (selectedModalities.includes(modalityId)) {
+      setSelectedModalities(selectedModalities.filter((id) => id !== modalityId))
     } else {
       if (selectedModalities.length < 6) {
-        setSelectedModalities([...selectedModalities, modality])
+        setSelectedModalities([...selectedModalities, modalityId])
       }
     }
+  }
+
+  const handleSaveChanges = async () => {
+    setIsLoading(true)
+    try {
+      // Update basic profile info
+      await updateProfileMutation.mutateAsync({
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: phoneNumber || null
+      })
+      
+      // Update modality preferences
+      await updateModalitiesMutation.mutateAsync({
+        body: {
+          modality_ids: selectedModalities
+        }
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (profileLoading || modalitiesLoading || prefsLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    )
   }
 
   return (
@@ -72,7 +157,7 @@ export default function AccountTab() {
           <Avatar className="h-24 w-24 ring-4 ring-gray-100">
             <AvatarImage src={profileImage || undefined} alt="Profile" />
             <AvatarFallback className="bg-warm-100 text-warm-600 text-2xl font-medium">
-              {firstName.charAt(0)}
+              {firstName.charAt(0) || userProfile?.email?.charAt(0)?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -180,28 +265,33 @@ export default function AccountTab() {
         <p className="text-sm text-gray-600 mb-4">Select up to 6 types of services you're interested in</p>
         
         <div className="flex flex-wrap gap-2">
-          {MODALITY_OPTIONS.map((modality) => (
-            <Badge
-              key={modality}
-              variant={selectedModalities.includes(modality) ? "default" : "outline"}
-              className={`cursor-pointer transition-all ${
-                selectedModalities.includes(modality) 
-                  ? "bg-warm-200 text-warm-800 border-warm-300 hover:bg-warm-300" 
-                  : "hover:bg-gray-50"
-              } ${
-                selectedModalities.length >= 6 && !selectedModalities.includes(modality)
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
-              onClick={() => handleModalityToggle(modality)}
-            >
-              {modality}
-            </Badge>
-          ))}
+          {modalitiesData?.results?.map((modality) => {
+            console.log("Modality:", modality.id, modality.name, "Selected:", selectedModalities.includes(modality.id))
+            return (
+              <Badge
+                key={modality.id}
+                variant={selectedModalities.includes(modality.id) ? "terracotta" : "outline"}
+                className={`cursor-pointer transition-all ${
+                  selectedModalities.length >= 6 && !selectedModalities.includes(modality.id)
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+                onClick={() => handleModalityToggle(modality.id)}
+                title={modality.description || modality.name}
+              >
+                {modality.name}
+              </Badge>
+            )
+          })}
         </div>
         
+        {selectedModalities.length > 0 && (
+          <p className="text-sm text-gray-600 mt-3">
+            {selectedModalities.length} of 6 interests selected
+          </p>
+        )}
         {selectedModalities.length >= 6 && (
-          <p className="text-sm text-amber-600 mt-3">Maximum of 6 interests selected</p>
+          <p className="text-sm text-amber-600 mt-1">Maximum interests selected</p>
         )}
       </div>
 
@@ -226,8 +316,20 @@ export default function AccountTab() {
 
       {/* Save Button */}
       <div className="flex justify-end pt-4">
-        <Button size="lg" className="px-8">
-          Save Changes
+        <Button 
+          size="lg" 
+          className="px-8"
+          onClick={handleSaveChanges}
+          disabled={isLoading || updateProfileMutation.isPending || updateModalitiesMutation.isPending}
+        >
+          {isLoading || updateProfileMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Changes"
+          )}
         </Button>
       </div>
     </div>
