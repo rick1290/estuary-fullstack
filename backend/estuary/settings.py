@@ -490,6 +490,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",  # Frontend development
     "http://localhost:8000",  # API development
     "http://localhost:8001",  # Alternative API port
+    "estuary-backend.onrender.com",  # Alternative API port
 ]
 
 # Allow credentials to be included in CORS requests (for cookies/auth)
