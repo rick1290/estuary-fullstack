@@ -405,7 +405,7 @@ class PractitionerMessagingViewSet(viewsets.GenericViewSet):
                 from streams.models import StreamSubscription
                 subscriptions = StreamSubscription.objects.filter(
                     stream__practitioner=practitioner,
-                    is_active=True
+                    status='active'
                 ).select_related('user')
                 
                 for subscription in subscriptions:
