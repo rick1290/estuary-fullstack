@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
-import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
+import MarketplaceFiltersWrapper from "@/components/marketplace/marketplace-filters-wrapper"
 import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
       title="Personalized Sessions"
       description="Connect with practitioners for one-on-one guidance and support"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters />}
+      sidebar={<MarketplaceFiltersWrapper />}
       patternType="wave"
     >
       <ServiceListings query={query} serviceType="session" location={location} categories={categories} />
