@@ -18,8 +18,8 @@ import { WithdrawalRequestForm } from "@/components/dashboard/practitioner/finan
 import { PendingPayouts } from "@/components/dashboard/practitioner/finances/pending-payouts"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { practitionersBalanceRetrieveOptions, practitionersPayoutsRetrieveOptions } from "@/client/query-client/@tanstack/react-query.gen"
-import { practitionersRequestPayoutCreate } from "@/client/openapi-client/requests/services.gen"
+import { practitionersBalanceRetrieveOptions, practitionersPayoutsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { practitionersRequestPayoutCreate } from "@/src/client/sdk.gen"
 import type { Payout } from "@/types/payout"
 import { toast } from "sonner"
 
