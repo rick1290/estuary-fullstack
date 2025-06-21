@@ -6,6 +6,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
+import { useMessageNotifications } from "@/hooks/use-message-notifications"
 import PractitionerDashboardBreadcrumb from "@/components/dashboard/practitioner/practitioner-dashboard-breadcrumb"
 import {
   Menu,
@@ -66,6 +67,9 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout, switchRole } = useAuth()
+  const { unreadCount } = useMessageNotifications({
+    enabled: !!user && user.is_practitioner
+  })
 
   const handleLogout = () => {
     logout()
@@ -92,7 +96,18 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
     { text: "Availability", icon: <Clock className="h-4 w-4" />, path: "/dashboard/practitioner/availability" },
     { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
     { text: "Clients", icon: <Users className="h-4 w-4" />, path: "/dashboard/practitioner/clients" },
-    { text: "Messages", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/messages" },
+    { 
+      text: "Messages", 
+      icon: (
+        <div className="relative">
+          <MessageSquare className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+          )}
+        </div>
+      ), 
+      path: "/dashboard/practitioner/messages" 
+    },
     {
       text: "Manage Finances",
       icon: <DollarSign className="h-4 w-4" />,

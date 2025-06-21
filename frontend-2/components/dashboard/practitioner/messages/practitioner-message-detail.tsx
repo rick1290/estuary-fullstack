@@ -35,6 +35,8 @@ import {
   GraduationCap,
   Users,
   MessageSquare,
+  Wifi,
+  WifiOff,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
@@ -46,6 +48,7 @@ import {
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/hooks/use-auth"
+import { useWebSocketMessaging } from "@/hooks/use-websocket-messaging"
 import { toast } from "sonner"
 
 // Mock data for services
@@ -90,9 +93,36 @@ export default function PractitionerMessageDetail() {
   const [showShareService, setShowShareService] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isTyping, setIsTyping] = useState(false)
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // WebSocket connection for real-time messaging
+  const { 
+    connectionStatus, 
+    typingUsers, 
+    sendTypingIndicator, 
+    markAsRead 
+  } = useWebSocketMessaging({
+    conversationId: conversationId || undefined,
+    onMessage: (message) => {
+      // Refresh messages when new message received
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations'] 
+      })
+    },
+    onTyping: (event) => {
+      // Handle typing indicators from other users
+      if (event.user_id !== user?.id) {
+        setIsTyping(event.is_typing)
+      }
+    }
+  })
 
   // Fetch conversation details
   const { data: conversation, isLoading: conversationLoading } = useQuery({
@@ -190,6 +220,36 @@ export default function PractitionerMessageDetail() {
     }
   }
 
+  const handleTyping = (value: string) => {
+    setNewMessage(value)
+    
+    // Send typing indicator
+    if (value.length > 0 && !typingTimeout) {
+      sendTypingIndicator(true)
+      
+      // Stop typing indicator after 3 seconds of inactivity
+      const timeout = setTimeout(() => {
+        sendTypingIndicator(false)
+        setTypingTimeout(null)
+      }, 3000)
+      
+      setTypingTimeout(timeout)
+    } else if (value.length === 0 && typingTimeout) {
+      // User cleared the input
+      sendTypingIndicator(false)
+      clearTimeout(typingTimeout)
+      setTypingTimeout(null)
+    } else if (typingTimeout) {
+      // Reset typing timeout
+      clearTimeout(typingTimeout)
+      const timeout = setTimeout(() => {
+        sendTypingIndicator(false)
+        setTypingTimeout(null)
+      }, 3000)
+      setTypingTimeout(timeout)
+    }
+  }
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0])
@@ -272,9 +332,20 @@ export default function PractitionerMessageDetail() {
             </Avatar>
           </div>
           <div className="ml-3">
-            <h3 className="font-medium">
-              {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'Unknown User'}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">
+                {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'Unknown User'}
+              </h3>
+              {connectionStatus === 'connected' && (
+                <Wifi className="h-3 w-3 text-green-500" title="Connected" />
+              )}
+              {connectionStatus === 'disconnected' && (
+                <WifiOff className="h-3 w-3 text-red-500" title="Disconnected" />
+              )}
+              {connectionStatus === 'connecting' && (
+                <div className="h-3 w-3 rounded-full bg-yellow-500 animate-pulse" title="Connecting..." />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               {otherUser?.email || 'No email'}
             </p>
@@ -433,14 +504,21 @@ export default function PractitionerMessageDetail() {
             <Smile className="h-5 w-5" />
           </Button>
 
-          <Textarea
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="min-h-[40px] resize-none"
-            rows={1}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => handleTyping(e.target.value)}
+              onKeyDown={handleKeyPress}
+              className="min-h-[40px] resize-none"
+              rows={1}
+            />
+            {isTyping && (
+              <div className="absolute -top-6 left-0 text-xs text-muted-foreground">
+                {otherUser?.first_name || 'User'} is typing...
+              </div>
+            )}
+          </div>
 
           <Button
             variant="default"
