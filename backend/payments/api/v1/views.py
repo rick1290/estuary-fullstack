@@ -908,6 +908,7 @@ class PayoutViewSet(viewsets.ModelViewSet):
     ),
     confirm_payment=extend_schema(tags=['Subscriptions']),
     cancel=extend_schema(tags=['Subscriptions'])
+)
 class SubscriptionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for practitioner subscriptions
