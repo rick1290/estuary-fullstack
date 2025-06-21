@@ -2,7 +2,7 @@
 
 import { DialogFooter } from "@/components/ui/dialog"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,13 +17,15 @@ import {
   subscriptionsTiersRetrieveOptions, 
   subscriptionsCurrentRetrieveOptions, 
   subscriptionsCreateMutation,
-  subscriptionsCancelCreateMutation 
+  subscriptionsCancelCreateMutation,
+  paymentMethodsListOptions 
 } from "@/src/client/@tanstack/react-query.gen"
 import type { 
   SubscriptionTiersResponseReadable, 
   SubscriptionTierReadable, 
   PractitionerSubscriptionReadable,
-  CodeEnum 
+  CodeEnum,
+  PaymentMethodReadable 
 } from "@/src/client/types.gen"
 import { useToast } from "@/components/ui/use-toast"
 import { loadStripe } from "@stripe/stripe-js"
@@ -36,6 +38,7 @@ export function BillingSettings() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly")
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false)
   const [selectedTierId, setSelectedTierId] = useState<number | null>(null)
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null)
   const [isBillingHistoryOpen, setIsBillingHistoryOpen] = useState(false)
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -70,6 +73,23 @@ export function BillingSettings() {
 
   const tiers = tiersResponse?.tiers || []
   const tiersByCode = tiersResponse?.tiersByCode || {}
+
+  // Fetch payment methods
+  const { data: paymentMethods, isLoading: loadingPaymentMethods } = useQuery({
+    ...paymentMethodsListOptions(),
+    enabled: isUpgradeDialogOpen,
+  }) as {
+    data: PaymentMethodReadable[] | undefined,
+    isLoading: boolean
+  }
+
+  // Set default payment method when dialog opens
+  useEffect(() => {
+    if (isUpgradeDialogOpen && paymentMethods && paymentMethods.length > 0 && !selectedPaymentMethodId) {
+      const defaultMethod = paymentMethods.find(m => m.is_default) || paymentMethods[0]
+      setSelectedPaymentMethodId(defaultMethod.id)
+    }
+  }, [isUpgradeDialogOpen, paymentMethods, selectedPaymentMethodId])
 
   // Create subscription mutation
   const createSubscriptionMutation = useMutation({
@@ -139,12 +159,18 @@ export function BillingSettings() {
   const confirmUpgrade = () => {
     if (!selectedTierId) return
 
-    createSubscriptionMutation.mutate({
+    const mutationData: any = {
       body: {
         tier_id: selectedTierId,
         is_annual: billingPeriod === "yearly",
       }
-    })
+    }
+
+    if (selectedPaymentMethodId) {
+      mutationData.body.payment_method_id = selectedPaymentMethodId
+    }
+
+    createSubscriptionMutation.mutate(mutationData)
   }
 
   const handleCancel = () => {
@@ -370,7 +396,7 @@ export function BillingSettings() {
           </DialogHeader>
 
           {selectedTierId && (
-            <div className="py-4">
+            <div className="space-y-4 py-4">
               {(() => {
                 const selectedTier = tiers.find(t => t.id === selectedTierId)
                 if (!selectedTier) return null
@@ -380,19 +406,65 @@ export function BillingSettings() {
                   : selectedTier.monthly_price
 
                 return (
-                  <div className="rounded-md border p-4 mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium">New Plan:</h4>
-                      <Badge>{selectedTier.name}</Badge>
+                  <>
+                    <div className="rounded-md border p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-medium">New Plan:</h4>
+                        <Badge>{selectedTier.name}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {selectedTier.description}
+                      </p>
+                      <div className="text-sm">
+                        <span className="font-medium">{formatPrice(price)}</span>
+                        <span className="text-muted-foreground">/{billingPeriod === "monthly" ? "month" : "year"}</span>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {selectedTier.description}
-                    </p>
-                    <div className="text-sm">
-                      <span className="font-medium">{formatPrice(price)}</span>
-                      <span className="text-muted-foreground">/{billingPeriod === "monthly" ? "month" : "year"}</span>
+
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm">Select Payment Method</h4>
+                      {loadingPaymentMethods ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : paymentMethods && paymentMethods.length > 0 ? (
+                        <RadioGroup value={selectedPaymentMethodId || ""} onValueChange={setSelectedPaymentMethodId}>
+                          {paymentMethods.map((method) => (
+                            <div key={method.id} className="flex items-center space-x-3 rounded-md border p-3">
+                              <RadioGroupItem value={method.id} id={method.id} />
+                              <Label
+                                htmlFor={method.id}
+                                className="flex flex-1 cursor-pointer items-center justify-between"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {method.card?.brand?.toUpperCase()} •••• {method.card?.last4}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Expires {method.card?.exp_month}/{method.card?.exp_year}
+                                    </p>
+                                  </div>
+                                </div>
+                                {method.is_default && (
+                                  <Badge variant="secondary" className="text-xs">Default</Badge>
+                                )}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      ) : (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>No Payment Methods</AlertTitle>
+                          <AlertDescription>
+                            You need to add a payment method before subscribing. Please add one in your profile settings.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
-                  </div>
+                  </>
                 )
               })()}
             </div>
@@ -402,7 +474,10 @@ export function BillingSettings() {
             <Button variant="outline" onClick={() => setIsUpgradeDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmUpgrade} disabled={createSubscriptionMutation.isPending}>
+            <Button 
+              onClick={confirmUpgrade} 
+              disabled={createSubscriptionMutation.isPending || !selectedPaymentMethodId || (paymentMethods?.length === 0)}
+            >
               {createSubscriptionMutation.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
