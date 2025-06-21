@@ -69,11 +69,7 @@ from .filters import PractitionerFilter
     education_detail=extend_schema(tags=['Practitioners']),
     questions=extend_schema(tags=['Practitioners']),
     question_detail=extend_schema(tags=['Practitioners']),
-    by_slug=extend_schema(tags=['Practitioners']),
-    stripe_connect_status=extend_schema(tags=['Practitioners']),
-    stripe_connect_create=extend_schema(tags=['Practitioners']),
-    stripe_connect_refresh=extend_schema(tags=['Practitioners']),
-    stripe_connect_disconnect=extend_schema(tags=['Practitioners'])
+    by_slug=extend_schema(tags=['Practitioners'])
 )
 class PractitionerViewSet(viewsets.ModelViewSet):
     """
@@ -1760,6 +1756,15 @@ class EducationViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+@extend_schema_view(
+    start=extend_schema(tags=['Practitioner Applications']),
+    status=extend_schema(tags=['Practitioner Applications']),
+    complete_step=extend_schema(tags=['Practitioner Applications']),
+    stripe_connect_status=extend_schema(tags=['Practitioner Applications']),
+    stripe_connect_create=extend_schema(tags=['Practitioner Applications']),
+    stripe_connect_refresh=extend_schema(tags=['Practitioner Applications']),
+    stripe_connect_disconnect=extend_schema(tags=['Practitioner Applications'])
+)
 class PractitionerApplicationViewSet(viewsets.ViewSet):
     """
     ViewSet for practitioner application process.

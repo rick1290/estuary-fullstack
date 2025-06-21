@@ -10,10 +10,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  practitionersStripeConnectStatusRetrieveOptions,
-  practitionersStripeConnectCreateCreateMutation,
-  practitionersStripeConnectRefreshCreateMutation,
-  practitionersStripeConnectDisconnectCreateMutation,
+  practitionerApplicationsStripeConnectStatusRetrieveOptions,
+  practitionerApplicationsStripeConnectCreateCreateMutation,
+  practitionerApplicationsStripeConnectRefreshCreateMutation,
+  practitionerApplicationsStripeConnectDisconnectCreateMutation,
 } from "@/src/client/@tanstack/react-query.gen"
 
 export function PaymentIntegrationSettings() {
@@ -41,12 +41,12 @@ export function PaymentIntegrationSettings() {
 
   // Fetch Stripe Connect status
   const { data: connectStatus, isLoading: statusLoading, refetch } = useQuery({
-    ...practitionersStripeConnectStatusRetrieveOptions(),
+    ...practitionerApplicationsStripeConnectStatusRetrieveOptions(),
   })
 
   // Create Stripe Connect account mutation
   const createConnectMutation = useMutation({
-    ...practitionersStripeConnectCreateCreateMutation(),
+    ...practitionerApplicationsStripeConnectCreateCreateMutation(),
     onSuccess: (data) => {
       // Redirect to Stripe onboarding
       if (data.url) {
@@ -64,7 +64,7 @@ export function PaymentIntegrationSettings() {
 
   // Refresh/update Stripe Connect account mutation
   const refreshConnectMutation = useMutation({
-    ...practitionersStripeConnectRefreshCreateMutation(),
+    ...practitionerApplicationsStripeConnectRefreshCreateMutation(),
     onSuccess: (data) => {
       // Redirect to Stripe dashboard
       if (data.url) {
@@ -82,7 +82,7 @@ export function PaymentIntegrationSettings() {
 
   // Disconnect Stripe Connect account mutation
   const disconnectMutation = useMutation({
-    ...practitionersStripeConnectDisconnectCreateMutation(),
+    ...practitionerApplicationsStripeConnectDisconnectCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Disconnected",
