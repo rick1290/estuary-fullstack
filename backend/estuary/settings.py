@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-rxts$d4^xi5us3dc21bi8o_25if^vd7=idqjnfn(kf+s)behcl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'admin', 'api']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'admin', 'api', 'estuary-backend.onrender.com', '.onrender.com']
 
 
 # Application definition
@@ -490,7 +490,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",  # Frontend development
     "http://localhost:8000",  # API development
     "http://localhost:8001",  # Alternative API port
-    "estuary-backend.onrender.com",  # Alternative API port
+    "https://estuary-backend.onrender.com",  # Backend on Render
+    "https://estuary-frontend.onrender.com",  # Frontend on Render
 ]
 
 # Allow credentials to be included in CORS requests (for cookies/auth)
