@@ -7,10 +7,15 @@ let refreshPromise: Promise<any> | null = null;
 
 export const createClientConfig: CreateClientConfig = (config) => {
   // Create the base configuration
-  // Use NEXT_PUBLIC_API_URL for both client and server
+  // Use NEXT_PUBLIC_API_URL for client-side, INTERNAL_API_URL for server-side
+  const isServer = typeof window === 'undefined';
+  const apiUrl = isServer 
+    ? (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+  
   const baseConfig = {
     ...config,
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    baseUrl: apiUrl,
   };
 
   // Add auth interceptor after client is created
