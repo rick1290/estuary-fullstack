@@ -256,7 +256,7 @@ export function PractitionerTransactionsTable() {
               <SelectValue placeholder="Client" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Clients</SelectItem>
+              <SelectItem value="">All Clients</SelectItem>
               {clients.map((client) => (
                 <SelectItem key={client} value={client}>
                   {client}
@@ -271,10 +271,10 @@ export function PractitionerTransactionsTable() {
               <SelectValue placeholder="Service Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Service Types</SelectItem>
+              <SelectItem value="">All Service Types</SelectItem>
               {serviceTypes.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type}
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -286,10 +286,10 @@ export function PractitionerTransactionsTable() {
               <SelectValue placeholder="Transaction Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Transaction Types</SelectItem>
+              <SelectItem value="">All Transaction Types</SelectItem>
               {transactionTypes.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type}
+                  {transactionTypeDisplay[type] || type}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -187,7 +187,7 @@ export default function SessionDetails({ session, service }: SessionDetailsProps
                 href={`/services/${service.id}/book`}
                 sx={{ mt: 2 }}
               >
-                Book Full {service.service_type.name}
+                Book Full {service.service_type_display || service.service_type_code || 'Service'}
               </Button>
             </CardContent>
           </Card>
@@ -220,7 +220,7 @@ export default function SessionDetails({ session, service }: SessionDetailsProps
                 variant="text"
                 startIcon={<PersonIcon />}
                 component={Link}
-                href={`/practitioners/${service.primary_practitioner.id}`}
+                href={`/practitioners/${service.primary_practitioner.slug || service.primary_practitioner.id}`}
                 fullWidth
               >
                 View Profile

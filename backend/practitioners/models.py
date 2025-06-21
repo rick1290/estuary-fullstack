@@ -37,6 +37,7 @@ class Practitioner(PublicModel):
     # Professional details
     display_name = models.CharField(max_length=255, blank=True, null=True, 
                                   help_text="Professional display name shown to clients")
+    slug = models.SlugField(max_length=255, unique=True, help_text="URL-friendly version of name")
     professional_title = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Professional title/designation")
     bio = models.TextField(blank=True, null=True, max_length=2000,
@@ -82,6 +83,7 @@ class Practitioner(PublicModel):
         verbose_name = 'Practitioner'
         verbose_name_plural = 'Practitioners'
         indexes = [
+            models.Index(fields=['slug']),
             models.Index(fields=['is_verified', 'practitioner_status']),
             models.Index(fields=['featured']),
             models.Index(fields=['practitioner_status']),
@@ -121,14 +123,14 @@ class Practitioner(PublicModel):
     @property
     def total_services(self):
         """Count total active services."""
-        return self.services.filter(is_active=True).count()
+        return self.primary_services.filter(is_active=True).count()
     
     @property
     def price_range(self):
         """Get min and max price from active services."""
-        result = self.services.filter(is_active=True).aggregate(
-            min_price=Min('price'),
-            max_price=Max('price')
+        result = self.primary_services.filter(is_active=True).aggregate(
+            min_price=Min('price_cents'),
+            max_price=Max('price_cents')
         )
         return {
             'min': result['min_price'],
@@ -159,6 +161,25 @@ class Practitioner(PublicModel):
         self.is_onboarded = True
         self.onboarding_completed_at = timezone.now()
         self.save(update_fields=['is_onboarded', 'onboarding_completed_at'])
+    
+    def save(self, *args, **kwargs):
+        """Override save to auto-generate slug if not provided."""
+        if not self.slug:
+            from django.utils.text import slugify
+            # Use display_name if available, otherwise use user's full name
+            if self.display_name:
+                base_slug = slugify(self.display_name)
+            else:
+                base_slug = slugify(self.user.full_name)
+            
+            slug = base_slug
+            counter = 1
+            # Ensure slug is unique
+            while Practitioner.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class SchedulePreference(BaseModel):
@@ -636,3 +657,51 @@ class PractitionerOnboardingProgress(models.Model):
         }
         
         return step_descriptions.get(self.current_step, 'Continue onboarding process')
+
+
+class ClientNote(BaseModel):
+    """
+    Model for storing practitioner's private notes about clients.
+    These notes are only visible to the practitioner who created them.
+    """
+    practitioner = models.ForeignKey(
+        Practitioner, 
+        on_delete=models.CASCADE, 
+        related_name='client_notes',
+        help_text="The practitioner who created this note"
+    )
+    client = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='practitioner_notes_about',
+        help_text="The client this note is about"
+    )
+    content = models.TextField(
+        help_text="The note content"
+    )
+    
+    class Meta:
+        verbose_name = 'Client Note'
+        verbose_name_plural = 'Client Notes'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['practitioner', 'client', '-created_at']),
+            models.Index(fields=['practitioner', '-created_at']),
+            models.Index(fields=['client']),
+        ]
+        # Ensure each practitioner can only see their own notes
+        permissions = [
+            ("view_own_client_notes", "Can view own client notes"),
+        ]
+    
+    def __str__(self):
+        return f"Note by {self.practitioner} about {self.client.email} - {self.created_at.date()}"
+    
+    def clean(self):
+        """Validate that practitioner isn't making notes about themselves."""
+        if self.practitioner.user == self.client:
+            raise ValidationError("Practitioners cannot create notes about themselves")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

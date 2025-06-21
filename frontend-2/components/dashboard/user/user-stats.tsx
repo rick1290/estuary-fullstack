@@ -2,17 +2,62 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Calendar, Heart, Star, TrendingUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Calendar, Heart, Star, TrendingUp, AlertCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useQuery } from "@tanstack/react-query"
+import { userStatsOptions } from "@/src/client/@tanstack/react-query.gen"
 
 export default function UserStats() {
-  // Mock data for user stats
+  const { data: statsData, isLoading, error, refetch } = useQuery({
+    ...userStatsOptions(),
+    retry: 3,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  // Handle error state
+  if (error) {
+    return (
+      <Alert className="border-red-200 bg-red-50">
+        <AlertCircle className="h-4 w-4 text-red-600" />
+        <AlertDescription className="text-red-800">
+          Failed to load your stats. 
+          <Button 
+            variant="link" 
+            className="text-red-600 p-0 h-auto text-sm ml-1" 
+            onClick={() => refetch()}
+          >
+            Try again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="border-2 border-sage-200">
+            <CardContent className="p-6">
+              <Skeleton className="h-12 w-12 rounded-full mb-3" />
+              <Skeleton className="h-8 w-24 mb-2" />
+              <Skeleton className="h-4 w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   const stats = {
-    totalSessions: 12,
-    upcomingSessions: 3,
-    favoriteServices: 5,
-    completedGoals: 2,
-    totalGoals: 5,
-    wellnessScore: 78,
+    totalSessions: statsData?.total_bookings || 0,
+    upcomingSessions: statsData?.upcoming_bookings || 0,
+    favoriteServices: statsData?.favorite_practitioners || 0,
+    completedGoals: statsData?.completed_bookings || 0,
+    totalGoals: statsData?.total_bookings || 0,
+    wellnessScore: statsData?.wellness_score || 0,
   }
 
   return (

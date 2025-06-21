@@ -1,11 +1,13 @@
 "use client"
 
 import ServiceCard from "@/components/ui/service-card"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Mock data for session listings
 const MOCK_SESSIONS = [
   {
     id: 1,
+    slug: "mindfulness-meditation-session",
     title: "Mindfulness Meditation Session",
     type: "one-on-one" as const,
     practitioner: {
@@ -24,6 +26,7 @@ const MOCK_SESSIONS = [
   },
   {
     id: 5,
+    slug: "therapeutic-massage",
     title: "Therapeutic Massage",
     type: "one-on-one" as const,
     practitioner: {
@@ -42,6 +45,7 @@ const MOCK_SESSIONS = [
   },
   {
     id: 11,
+    slug: "energy-healing-session",
     title: "Energy Healing Session",
     type: "one-on-one" as const,
     practitioner: {
@@ -110,7 +114,7 @@ export default function SessionListings({ query, location, categories = [] }: Se
           <ServiceCard
             key={session.id}
             {...session}
-            href={`/sessions/${session.id}`}
+            href={getServiceDetailUrl({ id: session.id, slug: session.slug, service_type_code: 'session' })}
             index={index}
           />
         ))}

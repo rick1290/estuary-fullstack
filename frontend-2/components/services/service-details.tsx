@@ -29,7 +29,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
     const tabs = [{ id: "overview", label: "Overview", icon: <Star className="h-4 w-4 mr-1" /> }]
 
     // Add Sessions tab for courses and workshops
-    if (service.service_type.name === "course" || service.service_type.name === "workshop") {
+    if (service.service_type_code === "course" || service.service_type_code === "workshop") {
       tabs.push({ id: "sessions", label: "Sessions", icon: <Calendar className="h-4 w-4 mr-1" /> })
     }
 
@@ -57,7 +57,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
                 {category}
               </Badge>
             ))}
-            <ServiceTypeBadge type={service.service_type.name} />
+            <ServiceTypeBadge type={service.service_type_code || service.service_type.name} />
           </div>
 
           <div className="flex items-center gap-1">
@@ -132,7 +132,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
         <TabsContent value="sessions" className="mt-4">
           <div>
             {service.sessions && service.sessions.length > 0 ? (
-              <SessionsList sessions={service.sessions} serviceType={service.service_type.name} />
+              <SessionsList sessions={service.sessions} serviceType={service.service_type_code || service.service_type.name} />
             ) : (
               <p>No sessions scheduled yet.</p>
             )}
@@ -147,7 +147,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
       </Tabs>
 
       {/* Mobile accordion view for sessions */}
-      {(service.service_type.name === "course" || service.service_type.name === "workshop") && (
+      {(service.service_type_code === "course" || service.service_type_code === "workshop") && (
         <div className="block sm:hidden mb-6">
           <h3 className="text-lg font-semibold mb-2">Sessions</h3>
           <Accordion type="single" collapsible className="w-full">
@@ -203,7 +203,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
             {service.primary_practitioner.bio || "Experienced practitioner specializing in this field."}
           </p>
           <Button variant="outline" asChild>
-            <Link href={`/practitioners/${service.primary_practitioner.id}`}>View Full Profile</Link>
+            <Link href={`/practitioners/${service.primary_practitioner.slug || service.primary_practitioner.id}`}>View Full Profile</Link>
           </Button>
         </CardContent>
       </Card>

@@ -20,7 +20,8 @@ export default function ServiceHeader({ service }: ServiceHeaderProps) {
     name,
     price,
     duration,
-    service_type,
+    service_type_code,
+    service_type_display,
     category,
     location_type,
     max_participants,
@@ -36,7 +37,7 @@ export default function ServiceHeader({ service }: ServiceHeaderProps) {
     <Box sx={{ mb: 6 }}>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
         <Chip
-          label={service_type.name.charAt(0).toUpperCase() + service_type.name.slice(1)}
+          label={service_type_display || (service_type_code && service_type_code.charAt(0).toUpperCase() + service_type_code.slice(1)) || 'Service'}
           color="primary"
           size="small"
         />
@@ -106,7 +107,7 @@ export default function ServiceHeader({ service }: ServiceHeaderProps) {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <AccessTimeIcon color="action" fontSize="small" />
                 <Typography variant="body2">
-                  {duration} minutes {service_type.name === "course" && "per session"}
+                  {duration} minutes {service_type_code === "course" && "per session"}
                 </Typography>
               </Box>
 
@@ -144,7 +145,7 @@ export default function ServiceHeader({ service }: ServiceHeaderProps) {
         <Box>
           <Typography variant="h4" component="p" color="primary.main" gutterBottom>
             ${Number.parseFloat(price).toFixed(2)}
-            {service_type.name === "course" && " per session"}
+            {service_type_code === "course" && " per session"}
           </Typography>
           {service.is_package && service.total_package_price && (
             <Typography variant="body2" color="success.main">
@@ -158,11 +159,11 @@ export default function ServiceHeader({ service }: ServiceHeaderProps) {
           )}
         </Box>
         <Button variant="contained" size="large" component={Link} href={`/services/${service.id}/book`}>
-          {service_type.name === "one_on_one"
+          {service_type_code === "session"
             ? "Book Session"
-            : service_type.name === "package"
+            : service_type_code === "package"
               ? "Book Package"
-              : service_type.name === "workshop"
+              : service_type_code === "workshop"
                 ? "Register"
                 : "Enroll Now"}
         </Button>

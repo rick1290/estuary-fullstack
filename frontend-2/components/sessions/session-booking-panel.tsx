@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
+import { bookingsCheckAvailabilityCreate } from "@/src/client"
+import { format, addDays, startOfDay } from "date-fns"
 
 interface SessionBookingPanelProps {
   session: any
@@ -21,41 +23,75 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   const { openAuthModal } = useAuthModal()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [visibleDates, setVisibleDates] = useState<Array<{ day: string; date: string }>>([])
+  const [visibleDates, setVisibleDates] = useState<Array<{ day: string; date: string; dateObj: Date }>>([])
   const [showAllTimes, setShowAllTimes] = useState(false)
+  const [timeSlots, setTimeSlots] = useState<string[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
-  // Mock dates for the date selector
-  const allDates = [
-    { day: "Mon", date: "Apr 22" },
-    { day: "Tue", date: "Apr 23" },
-    { day: "Wed", date: "Apr 24" },
-    { day: "Thu", date: "Apr 25" },
-    { day: "Fri", date: "Apr 26" },
-    { day: "Sat", date: "Apr 27" },
-    { day: "Sun", date: "Apr 28" },
-    { day: "Mon", date: "Apr 29" },
-    { day: "Tue", date: "Apr 30" },
-  ]
+  // Generate dates for the next 30 days
+  const generateDates = () => {
+    const dates = []
+    const today = startOfDay(new Date())
+    
+    for (let i = 0; i < 30; i++) {
+      const date = addDays(today, i)
+      dates.push({
+        day: format(date, 'EEE'),
+        date: format(date, 'MMM dd'),
+        dateObj: date
+      })
+    }
+    
+    return dates
+  }
 
-  // Mock time slots
-  const timeSlots = [
-    "8:00 AM",
-    "9:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "1:00 PM",
-    "2:00 PM",
-    "3:00 PM",
-    "4:00 PM",
-    "5:00 PM",
-  ]
+  const allDates = generateDates()
+
+  // Fetch availability when date changes
+  const fetchAvailability = async (dateObj: Date) => {
+    console.log('Session data:', session)
+    console.log('Checking:', {
+      practitioner_id: session?.primary_practitioner?.id,
+      service_id: session?.id
+    })
+    if (!session?.primary_practitioner?.id || !session?.id) return
+    
+    setIsLoadingSlots(true)
+    setTimeSlots([])
+    
+    try {
+      const response = await bookingsCheckAvailabilityCreate({
+        body: {
+          practitioner_id: session.primary_practitioner.id,
+          service_id: session.id,
+          date: format(dateObj, 'yyyy-MM-dd') as any,  // Format as YYYY-MM-DD string
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      })
+      
+      if (response.data && 'available_slots' in response.data) {
+        // Format time slots from the response
+        const slots = (response.data as any).available_slots.map((slot: any) => {
+          const time = new Date(slot.start_time)
+          return format(time, 'h:mm a')
+        })
+        setTimeSlots(slots)
+      }
+    } catch (error) {
+      console.error('Failed to fetch availability:', error)
+      setTimeSlots([])
+    } finally {
+      setIsLoadingSlots(false)
+    }
+  }
 
   // Initialize with first date selected
   useEffect(() => {
     if (allDates.length > 0 && !selectedDate) {
-      setSelectedDate(`${allDates[0].day}, ${allDates[0].date}`)
+      const firstDate = allDates[0]
+      setSelectedDate(`${firstDate.day}, ${firstDate.date}`)
       updateVisibleDates(0)
+      fetchAvailability(firstDate.dateObj)
     }
   }, [])
 
@@ -89,6 +125,12 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   const handleDateSelect = (date: string) => {
     setSelectedDate(date)
     setSelectedTime(null) // Reset time when date changes
+    
+    // Find the date object and fetch availability
+    const selectedDateObj = allDates.find(d => `${d.day}, ${d.date}` === date)
+    if (selectedDateObj) {
+      fetchAvailability(selectedDateObj.dateObj)
+    }
   }
 
   const handleTimeSelect = (time: string) => {
@@ -156,8 +198,8 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                           : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
                       }`}
                     >
-                      <p className="font-medium text-xs">{date.day}</p>
-                      <p className="text-xs mt-1">{date.date}</p>
+                      <p className={`font-medium text-xs ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : ''}`}>{date.day}</p>
+                      <p className={`text-xs mt-1 ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : ''}`}>{date.date}</p>
                     </div>
                   ))}
                 </div>
@@ -197,29 +239,53 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
               Select Your Time
             </Label>
 
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {displayedTimeSlots.map((time) => (
-                <button
-                  key={time}
-                  onClick={() => handleTimeSelect(time)}
-                  className={`p-2 rounded-lg border-2 text-center text-xs font-medium transition-all ${
-                    selectedTime === time
-                      ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
-                      : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
-                  }`}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+            {isLoadingSlots ? (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-10 bg-sage-100 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : timeSlots.length > 0 ? (
+              <>
+                <div className={`grid grid-cols-3 gap-2 mb-4 ${
+                  showAllTimes && timeSlots.length > 9 
+                    ? 'max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sage-300 scrollbar-track-sage-50' 
+                    : ''
+                }`}>
+                  {displayedTimeSlots.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => handleTimeSelect(time)}
+                      className={`p-2 rounded-lg border-2 text-center text-xs font-medium transition-all ${
+                        selectedTime === time
+                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
+                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+                {showAllTimes && timeSlots.length > 9 && (
+                  <p className="text-xs text-olive-600 text-center mb-2">
+                    Scroll to see all {timeSlots.length} available times
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8 text-olive-600">
+                <p className="text-sm">No available time slots for this date.</p>
+                <p className="text-xs mt-2">Please select another date.</p>
+              </div>
+            )}
           </div>
 
-          {timeSlots.length > 6 && (
+          {!isLoadingSlots && timeSlots.length > 6 && (
             <button
               onClick={toggleShowAllTimes}
               className="text-xs text-primary hover:underline text-center w-full mb-4"
             >
-              {showAllTimes ? "Show fewer times" : "Show more times"}
+              {showAllTimes ? `Show fewer times (${timeSlots.length} total)` : `Show all ${timeSlots.length} times`}
             </button>
           )}
 

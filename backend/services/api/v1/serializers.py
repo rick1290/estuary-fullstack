@@ -5,13 +5,14 @@ from rest_framework import serializers
 from django.db import transaction
 from django.db.models import Count, Avg, Q
 from decimal import Decimal
+from django.utils.dateparse import parse_datetime
 
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceRelationship,
     ServiceSession, ServiceResource, PractitionerServiceCategory,
-    ServicePractitioner, Waitlist
+    ServicePractitioner, Waitlist, ServiceBenefit, SessionAgendaItem
 )
-from practitioners.models import Practitioner
+from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
 from users.models import User
 
@@ -92,6 +93,14 @@ class SimplePractitionerSerializer(serializers.ModelSerializer):
         fields = ['id', 'display_name', 'slug', 'profile_image_url']
 
 
+class SimpleScheduleSerializer(serializers.ModelSerializer):
+    """Simple schedule serializer for nested responses"""
+    
+    class Meta:
+        model = Schedule
+        fields = ['id', 'name', 'is_default', 'timezone', 'description']
+
+
 class ServicePractitionerSerializer(serializers.ModelSerializer):
     """Serializer for service-practitioner relationships"""
     practitioner = SimplePractitionerSerializer(read_only=True)
@@ -132,19 +141,52 @@ class ServiceRelationshipSerializer(serializers.ModelSerializer):
         return None
 
 
+class ServiceBenefitSerializer(serializers.ModelSerializer):
+    """Serializer for service benefits"""
+    
+    class Meta:
+        model = ServiceBenefit
+        fields = [
+            'id', 'title', 'description', 'icon', 'order',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class SessionAgendaItemSerializer(serializers.ModelSerializer):
+    """Serializer for session agenda items"""
+    
+    class Meta:
+        model = SessionAgendaItem
+        fields = [
+            'id', 'title', 'description', 'start_time', 'end_time',
+            'order'
+        ]
+        read_only_fields = ['id']
+
+
 class ServiceSessionSerializer(serializers.ModelSerializer):
     """Serializer for service sessions (workshops/courses)"""
     room_url = serializers.CharField(source='room.room_url', read_only=True)
+    agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
+    benefits = ServiceBenefitSerializer(many=True, read_only=True)
+    participant_count = serializers.IntegerField(source='current_participants', read_only=True)
+    waitlist_count = serializers.SerializerMethodField()
     
     class Meta:
         model = ServiceSession
         fields = [
             'id', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
-            'sequence_number', 'room_url', 'status', 'agenda',
+            'participant_count', 'waitlist_count', 'sequence_number', 
+            'room_url', 'status', 'agenda', 'agenda_items', 'benefits',
             'what_youll_learn', 'address', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'current_participants', 'room_url', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'current_participants', 'participant_count', 'room_url', 'created_at', 'updated_at']
+    
+    def get_waitlist_count(self, obj):
+        """Get count of waiting users for this session"""
+        return obj.waitlist_entries.filter(status='waiting').count()
 
 
 class ServiceResourceSerializer(serializers.ModelSerializer):
@@ -173,33 +215,26 @@ class ServiceListSerializer(serializers.ModelSerializer):
     category = ServiceCategorySerializer(read_only=True)
     primary_practitioner = SimplePractitionerSerializer(read_only=True)
     service_type_display = serializers.CharField(source='service_type.name', read_only=True)
-    average_rating = serializers.SerializerMethodField()
-    total_reviews = serializers.SerializerMethodField()
-    total_bookings = serializers.SerializerMethodField()
+    service_type_code = serializers.CharField(read_only=True)
+    average_rating = serializers.ReadOnlyField()
+    total_reviews = serializers.ReadOnlyField()
+    total_bookings = serializers.ReadOnlyField()
     duration_display = serializers.CharField(read_only=True)
     primary_image = serializers.SerializerMethodField()
+    schedule = SimpleScheduleSerializer(read_only=True)
     
     class Meta:
         model = Service
         fields = [
-            'id', 'public_uuid', 'name', 'short_description', 'price_cents',
+            'id', 'public_uuid', 'name', 'slug', 'short_description', 'price_cents',
             'price', 'duration_minutes', 'duration_display', 'service_type',
-            'service_type_display', 'category', 'primary_practitioner',
-            'max_participants', 'experience_level', 'location_type',
-            'is_active', 'is_featured', 'is_public', 'status',
+            'service_type_display', 'service_type_code', 'category', 
+            'primary_practitioner', 'max_participants', 'experience_level', 
+            'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
             'primary_image', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'public_uuid', 'created_at', 'updated_at']
-    
-    def get_average_rating(self, obj):
-        return obj.average_rating
-    
-    def get_total_reviews(self, obj):
-        return obj.total_reviews
-    
-    def get_total_bookings(self, obj):
-        return obj.total_bookings
+        read_only_fields = ['id', 'public_uuid', 'slug', 'created_at', 'updated_at']
     
     def get_primary_image(self, obj):
         """Get primary image for the service"""
@@ -220,7 +255,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
     practitioner_category = PractitionerServiceCategorySerializer(read_only=True)
     additional_practitioners = serializers.SerializerMethodField()
     media_attachments = serializers.SerializerMethodField()
-    child_services = serializers.SerializerMethodField()
+    child_relationships = serializers.SerializerMethodField()
     sessions = ServiceSessionSerializer(many=True, read_only=True)
     resources = serializers.SerializerMethodField()
     price_per_session = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
@@ -228,19 +263,26 @@ class ServiceDetailSerializer(ServiceListSerializer):
     savings_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     savings_percentage = serializers.FloatField(read_only=True)
     total_sessions = serializers.IntegerField(read_only=True)
+    benefits = ServiceBenefitSerializer(many=True, read_only=True)
+    agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
+    requirements = serializers.CharField(source='prerequisites', read_only=True)
+    waitlist_count = serializers.SerializerMethodField()
+    practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
+    cancellation_policy = serializers.SerializerMethodField()
     
     class Meta(ServiceListSerializer.Meta):
         fields = ServiceListSerializer.Meta.fields + [
             'description', 'practitioner_category', 'additional_practitioners',
             'min_participants', 'age_min', 'age_max', 'what_youll_learn',
-            'prerequisites', 'includes', 'address', 'image_url', 'video_url',
+            'prerequisites', 'requirements', 'includes', 'address', 'image',
             'tags', 'languages', 'published_at', 'validity_days',
             'is_transferable', 'is_shareable', 'sessions_included',
             'bonus_sessions', 'max_per_customer', 'available_from',
             'available_until', 'highlight_text', 'terms_conditions',
-            'media_attachments', 'child_services', 'sessions', 'resources',
+            'media_attachments', 'child_relationships', 'sessions', 'resources',
             'price_per_session', 'original_price', 'savings_amount',
-            'savings_percentage', 'total_sessions'
+            'savings_percentage', 'total_sessions', 'benefits', 'agenda_items',
+            'waitlist_count', 'practitioner_relationships', 'cancellation_policy'
         ]
     
     def get_additional_practitioners(self, obj):
@@ -256,7 +298,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
         ).order_by('display_order', '-created_at')
         return MediaAttachmentSerializer(media, many=True).data
     
-    def get_child_services(self, obj):
+    def get_child_relationships(self, obj):
         """Get child services for packages/bundles"""
         if obj.is_package or obj.is_bundle:
             relationships = obj.child_relationships.all().order_by('order')
@@ -269,6 +311,18 @@ class ServiceDetailSerializer(ServiceListSerializer):
             access_level__in=['public', 'registered']
         ).order_by('order', '-created_at')
         return ServiceResourceSerializer(resources, many=True).data
+    
+    def get_waitlist_count(self, obj):
+        """Get count of waiting users for this service"""
+        return obj.waitlist_entries.filter(status='waiting').count()
+    
+    def get_cancellation_policy(self, obj):
+        """Get cancellation policy from terms_conditions or return default"""
+        # Check if cancellation policy is mentioned in terms_conditions
+        if obj.terms_conditions and 'cancel' in obj.terms_conditions.lower():
+            return obj.terms_conditions
+        # Return a default policy or None
+        return "Standard cancellation policy applies. Please contact the practitioner for details."
 
 
 class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
@@ -288,23 +342,30 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         allow_empty=True,
         help_text="List of dicts with child_service_id, quantity, discount_percentage, etc."
     )
+    sessions = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        allow_empty=True,
+        write_only=True,
+        help_text="List of session data for workshops/courses"
+    )
     
     class Meta:
         model = Service
         fields = [
-            'name', 'description', 'short_description', 'price', 'price_cents',
+            'id', 'public_uuid', 'name', 'slug', 'description', 'short_description', 'price', 'price_cents',
             'duration_minutes', 'service_type_id', 'category_id',
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
-            'address', 'what_youll_learn', 'prerequisites', 'includes',
-            'image_url', 'video_url', 'tags', 'is_active', 'is_featured',
+            'address', 'schedule', 'what_youll_learn', 'prerequisites', 'includes',
+            'image', 'tags', 'is_active', 'is_featured',
             'is_public', 'status', 'validity_days', 'is_transferable',
             'is_shareable', 'sessions_included', 'bonus_sessions',
             'max_per_customer', 'available_from', 'available_until',
             'highlight_text', 'terms_conditions', 'additional_practitioner_ids',
-            'child_service_configs'
+            'child_service_configs', 'sessions'
         ]
-        read_only_fields = ['price_cents']
+        read_only_fields = ['id', 'public_uuid', 'price_cents', 'slug']
     
     def validate_price(self, value):
         """Ensure price is positive"""
@@ -355,6 +416,10 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', [])
         child_service_configs = validated_data.pop('child_service_configs', [])
+        sessions_data = validated_data.pop('sessions', [])
+        # Remove reverse relationships that can't be directly assigned
+        validated_data.pop('agenda_items', None)
+        validated_data.pop('benefits', None)
         
         # Set primary practitioner
         practitioner = self.context['request'].user.practitioner_profile
@@ -400,6 +465,38 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
                 except Service.DoesNotExist:
                     pass
         
+        # Create sessions if provided (for workshops/courses)
+        if sessions_data and service.service_type.code in ['workshop', 'course']:
+            for session_data in sessions_data:
+                # Valid fields for ServiceSession model (based on the model definition)
+                valid_fields = {
+                    'title', 'description', 'start_time', 'end_time', 
+                    'duration', 'max_participants', 'sequence_number',
+                    'status', 'agenda', 'what_youll_learn', 'price_cents',
+                    'current_participants', 'room', 'address'
+                }
+                
+                # Filter to only include valid fields
+                filtered_data = {k: v for k, v in session_data.items() if k in valid_fields}
+                
+                # Parse datetime strings (they come as ISO strings from frontend)
+                if 'start_time' in filtered_data:
+                    if isinstance(filtered_data['start_time'], str):
+                        filtered_data['start_time'] = parse_datetime(filtered_data['start_time'])
+                        if not filtered_data['start_time']:
+                            raise serializers.ValidationError(f"Invalid start_time format")
+                
+                if 'end_time' in filtered_data:
+                    if isinstance(filtered_data['end_time'], str):
+                        filtered_data['end_time'] = parse_datetime(filtered_data['end_time'])
+                        if not filtered_data['end_time']:
+                            raise serializers.ValidationError(f"Invalid end_time format")
+                
+                ServiceSession.objects.create(
+                    service=service,
+                    **filtered_data
+                )
+        
         return service
     
     @transaction.atomic
@@ -408,6 +505,10 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', None)
         child_service_configs = validated_data.pop('child_service_configs', None)
+        sessions_data = validated_data.pop('sessions', None)
+        # Remove reverse relationships that can't be directly assigned
+        validated_data.pop('agenda_items', None)
+        validated_data.pop('benefits', None)
         
         # Update service
         service = super().update(instance, validated_data)
@@ -430,6 +531,14 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
                     pass
         
         # Update child services if provided
+        print(f"\n=== Update Debug ===")
+        print(f"Service ID: {service.id}")
+        print(f"Service type: {service.service_type.code if service.service_type else 'None'}")
+        print(f"Is package: {service.is_package}")
+        print(f"Is bundle: {service.is_bundle}")
+        print(f"child_service_configs provided: {child_service_configs is not None}")
+        print(f"child_service_configs value: {child_service_configs}")
+        
         if child_service_configs is not None and (service.is_package or service.is_bundle):
             # Remove existing relationships
             service.child_relationships.all().delete()
@@ -449,6 +558,42 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
                     )
                 except Service.DoesNotExist:
                     pass
+        
+        # Update sessions if provided (for workshops/courses)
+        if sessions_data is not None and service.service_type.code in ['workshop', 'course']:
+            # Remove existing sessions
+            service.sessions.all().delete()
+            
+            # Add new sessions
+            for session_data in sessions_data:
+                # Valid fields for ServiceSession model (based on the model definition)
+                valid_fields = {
+                    'title', 'description', 'start_time', 'end_time', 
+                    'duration', 'max_participants', 'sequence_number',
+                    'status', 'agenda', 'what_youll_learn', 'price_cents',
+                    'current_participants', 'room', 'address'
+                }
+                
+                # Filter to only include valid fields
+                filtered_data = {k: v for k, v in session_data.items() if k in valid_fields}
+                
+                # Parse datetime strings (they come as ISO strings from frontend)
+                if 'start_time' in filtered_data:
+                    if isinstance(filtered_data['start_time'], str):
+                        filtered_data['start_time'] = parse_datetime(filtered_data['start_time'])
+                        if not filtered_data['start_time']:
+                            raise serializers.ValidationError(f"Invalid start_time format")
+                
+                if 'end_time' in filtered_data:
+                    if isinstance(filtered_data['end_time'], str):
+                        filtered_data['end_time'] = parse_datetime(filtered_data['end_time'])
+                        if not filtered_data['end_time']:
+                            raise serializers.ValidationError(f"Invalid end_time format")
+                
+                ServiceSession.objects.create(
+                    service=service,
+                    **filtered_data
+                )
         
         return service
 

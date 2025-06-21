@@ -1,7 +1,15 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, MapPin, Star, Users, Check, Heart, MessageCircle, Share2, Sparkles } from "lucide-react"
 import type { Practitioner } from "@/types/practitioner"
+import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
+import { userAddFavorite, userRemoveFavorite } from "@/src/client/sdk.gen"
+import { toast } from "sonner"
+import { useUserFavorites } from "@/hooks/use-user-favorites"
 
 interface PractitionerHeaderProps {
   practitioner: Practitioner
@@ -9,6 +17,54 @@ interface PractitionerHeaderProps {
 }
 
 export default function PractitionerHeader({ practitioner, onMessageClick }: PractitionerHeaderProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
+  const { favoritePractitionerIds, refetch: refetchFavorites } = useUserFavorites()
+  
+  // Check if this practitioner is favorited
+  const isLiked = favoritePractitionerIds.has(practitioner.id || practitioner.public_uuid)
+
+
+  const handleLikeToggle = useCallback(async () => {
+    if (!isAuthenticated) {
+      openAuthModal({
+        defaultTab: "login",
+        title: "Sign in to Save Practitioners",
+        description: "Create an account to save your favorite practitioners and receive updates"
+      })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      if (!isLiked) {
+        // Add to favorites
+        await userAddFavorite({
+          body: {
+            practitioner_id: practitioner.id
+          }
+        })
+        toast.success("Practitioner saved to favorites")
+      } else {
+        // Remove from favorites
+        await userRemoveFavorite({
+          path: {
+            practitioner_id: practitioner.id
+          }
+        })
+        toast.success("Practitioner removed from favorites")
+      }
+      
+      // Refetch favorites to update the UI
+      await refetchFavorites()
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+      toast.error("Failed to update favorite status")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [practitioner.id, isLiked, isAuthenticated, openAuthModal, refetchFavorites])
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-sage-100 overflow-hidden">
       {/* Compact Header Section */}
@@ -67,7 +123,13 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-4 w-4 text-sage-600" />
                     <span className="text-olive-700">
-                      {practitioner.locations.find((loc) => loc.is_primary)?.city_name || "Virtual"}
+                      {(() => {
+                        // Handle both API structures: primary_location object or locations array
+                        const primaryLocation = practitioner.primary_location || 
+                          (practitioner.locations && practitioner.locations.find((loc) => loc.is_primary)) ||
+                          (practitioner.locations && practitioner.locations[0]);
+                        return primaryLocation?.city_name || "Virtual";
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -96,8 +158,11 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   variant="ghost"
                   size="icon"
                   className="rounded-full hover:bg-rose-50"
+                  onClick={handleLikeToggle}
+                  disabled={isLoading}
+                  aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
                 >
-                  <Heart className="h-4 w-4 hover:text-rose-500 transition-colors" />
+                  <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "hover:text-rose-500"}`} />
                 </Button>
               </div>
             </div>

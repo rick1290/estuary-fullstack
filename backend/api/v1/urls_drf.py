@@ -18,15 +18,16 @@ from bookings.api.v1.views import BookingViewSet
 
 # Service catalog
 from services.api.v1.views import (
-    ServiceCategoryViewSet, ServiceViewSet, PackageViewSet,
+    ServiceCategoryViewSet, ServiceViewSet, PublicServiceViewSet, PackageViewSet,
     BundleViewSet, ServiceSessionViewSet, ServiceResourceViewSet,
     PractitionerServiceCategoryViewSet
 )
 
 # Practitioner endpoints
 from practitioners.api.v1.views import (
-    PractitionerViewSet, ScheduleViewSet, AvailabilityViewSet,
-    CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet
+    PractitionerViewSet, PublicPractitionerViewSet, ScheduleViewSet, AvailabilityViewSet,
+    CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet,
+    SpecializationViewSet, StyleViewSet, TopicViewSet, ModalityViewSet
 )
 
 # Payment system
@@ -57,6 +58,9 @@ from streams.api.v1.views import (
     StreamViewSet, LiveStreamViewSet, StreamScheduleViewSet, StreamCategoryViewSet
 )
 
+# Messaging
+from messaging.api.v1.views import ConversationViewSet, MessageViewSet
+
 # Register all ViewSets properly
 # Bookings
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -64,19 +68,25 @@ router.register(r'bookings', BookingViewSet, basename='booking')
 # Services
 router.register(r'service-categories', ServiceCategoryViewSet, basename='service-category')
 router.register(r'practitioner-categories', PractitionerServiceCategoryViewSet, basename='practitioner-category')
-router.register(r'services', ServiceViewSet, basename='service')
+router.register(r'services', ServiceViewSet, basename='service')  # Internal CRUD (uses PK)
+router.register(r'public-services', PublicServiceViewSet, basename='public-service')  # Public API (uses public_uuid)
 router.register(r'packages', PackageViewSet, basename='package')
 router.register(r'bundles', BundleViewSet, basename='bundle')
 router.register(r'service-sessions', ServiceSessionViewSet, basename='service-session')
 router.register(r'service-resources', ServiceResourceViewSet, basename='service-resource')
 
 # Practitioners
-router.register(r'practitioners', PractitionerViewSet, basename='practitioner')
+router.register(r'practitioners', PractitionerViewSet, basename='practitioner')  # Internal CRUD (uses PK)
+router.register(r'public-practitioners', PublicPractitionerViewSet, basename='public-practitioner')  # Public API (uses public_uuid)
 router.register(r'schedules', ScheduleViewSet, basename='schedule')
 router.register(r'availability', AvailabilityViewSet, basename='availability')
 router.register(r'certifications', CertificationViewSet, basename='certification')
 router.register(r'education', EducationViewSet, basename='education')
 router.register(r'practitioner-applications', PractitionerApplicationViewSet, basename='practitioner-application')
+router.register(r'specializations', SpecializationViewSet, basename='specialization')
+router.register(r'styles', StyleViewSet, basename='style')
+router.register(r'topics', TopicViewSet, basename='topic')
+router.register(r'modalities', ModalityViewSet, basename='modality')
 
 # Payments
 router.register(r'payment-methods', PaymentMethodViewSet, basename='payment-method')
@@ -111,6 +121,10 @@ router.register(r'streams', StreamViewSet, basename='stream')
 router.register(r'live-streams', LiveStreamViewSet, basename='live-stream')
 router.register(r'stream-schedules', StreamScheduleViewSet, basename='stream-schedule')
 router.register(r'stream-categories', StreamCategoryViewSet, basename='stream-category')
+
+# Messaging
+router.register(r'conversations', ConversationViewSet, basename='conversation')
+router.register(r'messages', MessageViewSet, basename='message')
 
 # Import documentation views
 from api.v1.docs import (

@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg, Count
 from utils.models import BaseModel, PublicModel, Address
+from .enums import ServiceTypeEnum, ServiceStatusEnum
 
 # Experience level choices
 EXPERIENCE_LEVEL_CHOICES = [
@@ -137,6 +138,7 @@ class Service(PublicModel):
     """
     # Basic service information
     name = models.CharField(max_length=255, help_text="Service name")
+    slug = models.SlugField(max_length=255, unique=True, help_text="URL-friendly version of name")
     description = models.TextField(blank=True, null=True, help_text="Detailed service description")
     short_description = models.CharField(max_length=500, blank=True, null=True, 
                                        help_text="Brief description for listings")
@@ -190,6 +192,11 @@ class Service(PublicModel):
                                null=True, blank=True, related_name='services',
                                help_text="Physical address for in-person/hybrid services")
     
+    # Scheduling (for session-type services)
+    schedule = models.ForeignKey('practitioners.Schedule', on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name='services',
+                               help_text="Availability schedule for session-type services")
+    
     # Content and learning
     what_youll_learn = models.TextField(blank=True, null=True, 
                                        help_text="Learning outcomes and benefits")
@@ -199,8 +206,13 @@ class Service(PublicModel):
                               help_text="What's included in the service")
     
     # Media and presentation
-    image_url = models.URLField(blank=True, null=True, help_text="Service image")
-    video_url = models.URLField(blank=True, null=True, help_text="Promotional video")
+    image = models.ImageField(
+        upload_to='services/images/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text="Service cover image"
+    )
+    # Note: Videos should be handled through ServiceResource, not directly on Service
     tags = models.JSONField(blank=True, null=True, help_text="Searchable tags")
     
     # Multi-language support
@@ -212,14 +224,12 @@ class Service(PublicModel):
     is_public = models.BooleanField(default=True, help_text="Whether service is publicly visible")
     
     # Service lifecycle and status
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('published', 'Published'),
-        ('paused', 'Paused'),
-        ('discontinued', 'Discontinued'),
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft',
-                            help_text="Service publication status")
+    status = models.CharField(
+        max_length=20, 
+        choices=ServiceStatusEnum.choices, 
+        default=ServiceStatusEnum.DRAFT,
+        help_text="Service publication status"
+    )
     published_at = models.DateTimeField(blank=True, null=True, 
                                       help_text="When service was first published")
     
@@ -271,13 +281,15 @@ class Service(PublicModel):
         verbose_name = 'Service'
         verbose_name_plural = 'Services'
         ordering = ['-created_at']
+        # Using Django's default naming convention (services_service)
         indexes = [
+            models.Index(fields=['slug']),
             models.Index(fields=['service_type', 'is_active']),
             models.Index(fields=['primary_practitioner', 'is_active']),
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['location_type']),
             models.Index(fields=['is_featured', 'is_active']),
-            models.Index(fields=['price']),
+            models.Index(fields=['price_cents']),
             models.Index(fields=['experience_level']),
         ]
 
@@ -288,6 +300,11 @@ class Service(PublicModel):
     def price(self):
         """Get price in dollars as Decimal."""
         return Decimal(self.price_cents) / 100
+    
+    @property
+    def service_type_code(self):
+        """Get the service type code for API consistency."""
+        return self.service_type.code if self.service_type else None
     
     @property
     def average_rating(self):
@@ -350,19 +367,6 @@ class Service(PublicModel):
                 return False
         
         return True
-    
-    class Meta:
-        # Using Django's default naming convention (services_service)
-        indexes = [
-            models.Index(fields=['service_type']),
-            models.Index(fields=['category']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_featured']),
-            models.Index(fields=['experience_level']),
-        ]
-
-    def __str__(self):
-        return self.name
         
     @property
     def is_course(self):
@@ -513,6 +517,20 @@ class Service(PublicModel):
             return False
             
         return True
+    
+    def save(self, *args, **kwargs):
+        """Override save to auto-generate slug if not provided."""
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            # Ensure slug is unique
+            while Service.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class ServicePractitioner(models.Model):

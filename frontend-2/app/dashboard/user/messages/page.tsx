@@ -7,7 +7,7 @@ import UserMessageDetail from "@/components/dashboard/user/messages/user-message
 
 export default function UserMessagesPage() {
   const searchParams = useSearchParams()
-  const practitionerId = searchParams.get("practitionerId")
+  const conversationId = searchParams.get("conversationId")
 
   return (
     <UserDashboardLayout title="Messages" fullWidth>

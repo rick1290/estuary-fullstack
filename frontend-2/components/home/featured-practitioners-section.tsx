@@ -1,12 +1,16 @@
 "use client"
 import Link from "next/link"
-import { ArrowRight, Star, MapPin, Sparkles } from "lucide-react"
+import { ArrowRight, Star, MapPin, Sparkles, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useQuery } from "@tanstack/react-query"
+import { practitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 
-// Sample featured practitioners
-const FEATURED_PRACTITIONERS = [
+// Fallback mock data for development
+const MOCK_PRACTITIONERS = [
   {
     id: 1,
     name: "Dr. Sarah Johnson",
@@ -54,6 +58,39 @@ const FEATURED_PRACTITIONERS = [
 ]
 
 export default function FeaturedPractitionersSection() {
+  // Fetch featured practitioners from API
+  const { data: practitionersData, isLoading, error } = useQuery({
+    ...practitionersListOptions({
+      query: {
+        featured: true,
+        limit: 4,
+        ordering: '-is_featured,-average_rating'
+      }
+    }),
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  })
+
+  // Extract practitioners array and handle both paginated and direct responses
+  const apiPractitioners = Array.isArray(practitionersData) ? practitionersData : 
+                          (practitionersData?.results && Array.isArray(practitionersData.results)) ? practitionersData.results : []
+
+  // Transform API data to component format
+  const transformedPractitioners = apiPractitioners.map(practitioner => ({
+    id: practitioner.public_uuid || practitioner.id,
+    slug: practitioner.slug,
+    name: practitioner.display_name || practitioner.full_name || 'Practitioner',
+    specialty: practitioner.primary_specialty || practitioner.title || 'Wellness Practitioner',
+    location: practitioner.location || 'Location TBD',
+    image: practitioner.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+    rating: practitioner.average_rating || 4.8,
+    reviews: practitioner.total_reviews || 0,
+    modalities: practitioner.modalities?.map(m => m.name) || practitioner.primary_services?.slice(0,3).map(s => s.name) || ['Wellness'],
+    nextAvailable: 'Available',
+  }))
+
+  // Use API data if available, otherwise fallback to mock data
+  const featuredPractitioners = transformedPractitioners.length > 0 ? transformedPractitioners : MOCK_PRACTITIONERS
+
   return (
     <section className="py-20 bg-gradient-to-b from-white via-sage-50/30 to-cream-50 relative overflow-hidden">
       {/* Decorative elements */}
@@ -79,69 +116,100 @@ export default function FeaturedPractitionersSection() {
           </Button>
         </div>
 
-        {/* Clean aligned grid like MasterClass */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {FEATURED_PRACTITIONERS.map((practitioner, index) => (
-            <div
-              key={practitioner.id}
-              className="animate-slide-up flex"
-              style={{animationDelay: `${index * 0.1}s`}}
-            >
-              <Link
-                href={`/practitioners/practitioner-${practitioner.id}`}
-                className="group block w-full transform transition-all duration-300 hover:scale-105"
-              >
-                <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
-                  {/* Avatar section */}
-                  <div className="p-8 pb-4 text-center flex-grow flex flex-col">
-                    <div className="w-24 h-24 mx-auto rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white ring-2 ring-sage-200">
-                      <img 
-                        src={practitioner.image} 
-                        alt={practitioner.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    
-                    <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
-                    <p className="text-olive-600 text-sm mb-3">{practitioner.specialty}</p>
-                    
-                    <div className="flex items-center justify-center gap-1 text-sm text-olive-600 mb-4">
-                      <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
-                      <span className="font-medium">{practitioner.rating}</span>
-                      <span className="text-olive-400">•</span>
-                      <span>{practitioner.location}</span>
-                    </div>
-                    
-                    <div className="flex flex-wrap justify-center gap-2 mt-auto">
-                      {practitioner.modalities.slice(0, 2).map((modality) => (
-                        <span 
-                          key={modality} 
-                          className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full"
-                        >
-                          {modality}
-                        </span>
-                      ))}
-                      {practitioner.modalities.length > 2 && (
-                        <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
-                      )}
-                    </div>
-                  </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-lg p-8 pb-4 text-center">
+                <Skeleton className="w-24 h-24 mx-auto rounded-full mb-4" />
+                <Skeleton className="h-6 w-3/4 mx-auto mb-2" />
+                <Skeleton className="h-4 w-1/2 mx-auto mb-3" />
+                <Skeleton className="h-4 w-2/3 mx-auto mb-4" />
+                <div className="flex justify-center gap-2 mb-6">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+                <Skeleton className="h-8 w-full rounded" />
+              </div>
+            ))}
+          </div>
+        )}
 
-                  {/* Bottom section */}
-                  <div className="px-8 pb-8">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400"
-                    >
-                      View Profile
-                    </Button>
-                  </div>
-                </Card>
-              </Link>
-            </div>
-          ))}
-        </div>
+        {/* Error State */}
+        {error && (
+          <Alert className="border-red-200 bg-red-50 max-w-md mx-auto">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              Unable to load featured practitioners. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Content */}
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {featuredPractitioners.map((practitioner, index) => (
+              <div
+                key={practitioner.id}
+                className="animate-slide-up flex"
+                style={{animationDelay: `${index * 0.1}s`}}
+              >
+                <Link
+                  href={`/practitioners/${practitioner.slug || practitioner.id}`}
+                  className="group block w-full transform transition-all duration-300 hover:scale-105"
+                >
+                  <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
+                    {/* Avatar section */}
+                    <div className="p-8 pb-4 text-center flex-grow flex flex-col">
+                      <div className="w-24 h-24 mx-auto rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white ring-2 ring-sage-200">
+                        <img 
+                          src={practitioner.image} 
+                          alt={practitioner.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
+                      <p className="text-olive-600 text-sm mb-3">{practitioner.specialty}</p>
+                      
+                      <div className="flex items-center justify-center gap-1 text-sm text-olive-600 mb-4">
+                        <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
+                        <span className="font-medium">{practitioner.rating}</span>
+                        <span className="text-olive-400">•</span>
+                        <span>{practitioner.location}</span>
+                      </div>
+                      
+                      <div className="flex flex-wrap justify-center gap-2 mt-auto">
+                        {practitioner.modalities.slice(0, 2).map((modality) => (
+                          <span 
+                            key={modality} 
+                            className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full"
+                          >
+                            {modality}
+                          </span>
+                        ))}
+                        {practitioner.modalities.length > 2 && (
+                          <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom section */}
+                    <div className="px-8 pb-8">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400"
+                      >
+                        View Profile
+                      </Button>
+                    </div>
+                  </Card>
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

@@ -14,7 +14,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceSession,
     ServiceResource, PractitionerServiceCategory, Waitlist,
-    ServicePractitioner, ServiceRelationship
+    ServicePractitioner, ServiceRelationship, ServiceBenefit,
+    SessionAgendaItem
 )
 from media.models import Media, MediaEntityType
 from reviews.models import Review
@@ -140,12 +141,13 @@ class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
     reorder_media=extend_schema(tags=['Services']),
     add_resources=extend_schema(tags=['Services']),
     add_practitioners=extend_schema(tags=['Services']),
-    join_waitlist=extend_schema(tags=['Services'])
+    join_waitlist=extend_schema(tags=['Services']),
+    by_slug=extend_schema(tags=['Services'])
 )
 class ServiceViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for services.
-    Includes filtering, search, and special endpoints.
+    ViewSet for services - Internal CRUD operations using primary keys.
+    Used by practitioner dashboard and admin interfaces.
     """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsServiceOwner]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -158,10 +160,19 @@ class ServiceViewSet(viewsets.ModelViewSet):
         """Get services with optimized queries"""
         queryset = Service.objects.select_related(
             'service_type', 'category', 'practitioner_category',
-            'primary_practitioner', 'primary_practitioner__user', 'address'
+            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'schedule'
         ).prefetch_related(
             'additional_practitioners',
             'languages',
+            'benefits',
+            'agenda_items',
+            'sessions__agenda_items',
+            'sessions__benefits',
+            'practitioner_relationships__practitioner__user',
+            'child_relationships__child_service',
+            'resources',
+            'waitlist_entries',
             Prefetch('reviews', queryset=Review.objects.filter(is_published=True))
         )
         
@@ -189,6 +200,19 @@ class ServiceViewSet(viewsets.ModelViewSet):
             return ServiceCreateUpdateSerializer
         return ServiceDetailSerializer
     
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get service by slug"""
+        try:
+            service = self.get_queryset().get(slug=slug)
+            serializer = ServiceDetailSerializer(service, context={'request': request})
+            return Response(serializer.data)
+        except Service.DoesNotExist:
+            return Response(
+                {"detail": "Service not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get featured services"""
@@ -210,7 +234,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             status='published'
         ).annotate(
             booking_count=Count('bookings'),
-            avg_rating=Avg('reviews__rating')
+            avg_rating_annotated=Avg('reviews__rating')
         ).order_by('-booking_count', '-avg_rating')[:20]
         
         serializer = ServiceListSerializer(popular, many=True, context={'request': request})
@@ -266,9 +290,9 @@ class ServiceViewSet(viewsets.ModelViewSet):
         # Apply sorting
         sort_by = params.get('sort_by', '-created_at')
         if sort_by == 'rating':
-            queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+            queryset = queryset.annotate(avg_rating_sort=Avg('reviews__rating')).order_by('-avg_rating_sort')
         elif sort_by == '-rating':
-            queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('avg_rating')
+            queryset = queryset.annotate(avg_rating_sort=Avg('reviews__rating')).order_by('avg_rating_sort')
         elif sort_by == 'popularity':
             queryset = queryset.annotate(booking_count=Count('bookings')).order_by('-booking_count')
         elif sort_by == 'price':
@@ -578,3 +602,59 @@ class ServiceResourceViewSet(viewsets.ModelViewSet):
             serializer.save(uploaded_by=self.request.user.practitioner_profile)
         else:
             raise PermissionDenied("Only practitioners can upload resources")
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['Public Services']),
+    retrieve=extend_schema(tags=['Public Services'])
+)
+class PublicServiceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Public-facing ViewSet for services using public_uuid for lookup.
+    Used by marketing pages and public service discovery.
+    Read-only access with public-friendly URLs.
+    """
+    serializer_class = ServiceDetailSerializer
+    permission_classes = [permissions.AllowAny]  # Public access
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ServiceFilter
+    search_fields = ['name', 'description', 'tags']
+    ordering_fields = ['created_at', 'price_cents', 'name']
+    ordering = ['-is_featured', '-created_at']
+    lookup_field = 'public_uuid'
+    lookup_url_kwarg = 'public_uuid'
+    
+    def get_queryset(self):
+        """Get active, public services with optimized queries"""
+        return Service.objects.filter(
+            is_active=True,
+            is_public=True
+        ).select_related(
+            'service_type', 'category', 'practitioner_category',
+            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'schedule'
+        ).prefetch_related(
+            'additional_practitioners',
+            'languages',
+            'benefits',
+            'agenda_items',
+            'sessions__agenda_items',
+            'sessions__benefits',
+            'practitioner_relationships__practitioner__user',
+            'child_relationships__child_service',
+            'resources',
+            'waitlist_entries'
+        )
+    
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get service by slug - public access"""
+        try:
+            service = self.get_queryset().get(slug=slug)
+            serializer = ServiceDetailSerializer(service, context={'request': request})
+            return Response(serializer.data)
+        except Service.DoesNotExist:
+            return Response(
+                {"detail": "Service not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )

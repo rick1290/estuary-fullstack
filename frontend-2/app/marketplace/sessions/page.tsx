@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
 import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
-import SessionListings from "@/components/sessions/session-listings"
+import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata: Metadata = {
   title: "Sessions | Estuary Marketplace",
@@ -30,7 +30,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
       sidebar={<MarketplaceFilters />}
       patternType="wave"
     >
-      <SessionListings query={query} location={location} categories={categories} />
+      <ServiceListings query={query} serviceType="session" location={location} categories={categories} />
     </MarketplaceLayout>
   )
 }

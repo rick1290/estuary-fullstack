@@ -1,0 +1,53 @@
+import { withAuth } from "next-auth/middleware"
+import { NextResponse } from "next/server"
+
+export default withAuth(
+  function middleware(req) {
+    // Custom logic can go here
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Allow public routes
+        const publicPaths = [
+          "/",
+          "/marketplace",
+          "/practitioners",
+          "/services",
+          "/streams",
+          "/about",
+          "/contact",
+        ]
+        
+        const path = req.nextUrl.pathname
+        
+        // Check if it's a public path or starts with a public path
+        const isPublic = publicPaths.some(publicPath => 
+          path === publicPath || path.startsWith(`${publicPath}/`)
+        )
+        
+        if (isPublic) {
+          return true
+        }
+        
+        // Protected routes require authentication
+        return !!token
+      },
+    },
+  }
+)
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/auth (auth endpoints)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|public).*)",
+  ],
+}

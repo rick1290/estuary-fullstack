@@ -67,18 +67,34 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """User profile serializer"""
     full_name = serializers.ReadOnlyField()
     display_name = serializers.ReadOnlyField()
+    practitioner_public_id = serializers.SerializerMethodField()
+    practitioner_id = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = (
             'id', 'uuid', 'email', 'first_name', 'last_name', 'full_name', 'display_name',
             'phone_number', 'phone_number_verified', 'timezone', 'is_practitioner',
+            'practitioner_public_id', 'practitioner_id',
             'account_status', 'last_login', 'date_joined', 'is_active', 'is_staff', 'is_superuser'
         )
         read_only_fields = (
             'id', 'uuid', 'email', 'phone_number_verified', 'is_practitioner',
+            'practitioner_public_id', 'practitioner_id',
             'account_status', 'last_login', 'date_joined', 'is_active', 'is_staff', 'is_superuser'
         )
+    
+    def get_practitioner_public_id(self, obj):
+        """Get practitioner public ID if user is a practitioner"""
+        if hasattr(obj, 'practitioner_profile') and obj.practitioner_profile:
+            return str(obj.practitioner_profile.public_uuid)
+        return None
+    
+    def get_practitioner_id(self, obj):
+        """Get practitioner ID if user is a practitioner"""
+        if hasattr(obj, 'practitioner_profile') and obj.practitioner_profile:
+            return obj.practitioner_profile.id
+        return None
 
 
 class TokenResponseSerializer(serializers.Serializer):

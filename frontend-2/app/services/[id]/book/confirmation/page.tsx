@@ -153,7 +153,7 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
                 {service.name}
               </Typography>
               <Typography variant="body2">
-                {service.service_type.name.charAt(0).toUpperCase() + service.service_type.name.slice(1)}
+                {(service.service_type_display || service.service_type_code || service.service_type?.name || 'Service').charAt(0).toUpperCase() + (service.service_type_display || service.service_type_code || service.service_type?.name || 'Service').slice(1)}
               </Typography>
             </Box>
 

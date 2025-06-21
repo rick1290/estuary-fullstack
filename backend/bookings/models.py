@@ -455,7 +455,7 @@ class BookingFactory:
             final_amount_cents=course.price_cents,
             status=kwargs.get('status', 'confirmed'),
             max_participants=course.max_participants,
-            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
+            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
         )
         
         return booking
@@ -487,7 +487,7 @@ class BookingFactory:
             final_amount_cents=package_service.price_cents,
             status=kwargs.get('status', 'confirmed'),
             is_package_purchase=True,
-            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
+            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
         )
         
         # Create child bookings for each included service
@@ -535,7 +535,7 @@ class BookingFactory:
             final_amount_cents=bundle_service.price_cents,
             status=kwargs.get('status', 'confirmed'),
             is_bundle_purchase=True,
-            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status']}
+            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
         )
         
         return bundle_booking

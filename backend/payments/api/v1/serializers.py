@@ -46,7 +46,7 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
         """Validate the stripe payment method exists"""
         try:
             stripe_client = StripeClient()
-            stripe_client.payment_methods.retrieve(value)
+            stripe_client.retrieve_payment_method(value)
         except Exception as e:
             raise serializers.ValidationError(f"Invalid Stripe payment method: {str(e)}")
         return value
@@ -57,7 +57,7 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
         stripe_client = StripeClient()
         
         # Retrieve payment method details
-        stripe_pm = stripe_client.payment_methods.retrieve(
+        stripe_pm = stripe_client.retrieve_payment_method(
             validated_data['stripe_payment_method_id']
         )
         
@@ -66,17 +66,14 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
             from users.models import UserPaymentProfile
             profile, created = UserPaymentProfile.objects.get_or_create(user=user)
             if not profile.stripe_customer_id:
-                customer = stripe_client.customers.create(
-                    email=user.email,
-                    name=user.get_full_name()
-                )
+                customer = stripe_client.create_customer(user)
                 profile.stripe_customer_id = customer.id
                 profile.save()
         
         # Attach payment method to customer
-        stripe_client.payment_methods.attach(
+        stripe_client.attach_payment_method(
             validated_data['stripe_payment_method_id'],
-            customer=user.payment_profile.stripe_customer_id
+            user.payment_profile.stripe_customer_id
         )
         
         # Create payment method record
@@ -118,6 +115,57 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'public_uuid', 'user', 'stripe_payment_intent_id',
             'created_at', 'updated_at'
         ]
+
+
+class DirectPaymentSerializer(serializers.Serializer):
+    """Serializer for direct payment with saved payment method"""
+    service_id = serializers.UUIDField()
+    payment_method_id = serializers.IntegerField()  # ID of saved PaymentMethod
+    apply_credits = serializers.BooleanField(default=True)
+    special_requests = serializers.CharField(required=False, allow_blank=True)
+    
+    # Booking details for different service types
+    # For sessions (1-on-1)
+    start_time = serializers.DateTimeField(required=False, help_text="Start time for session booking")
+    end_time = serializers.DateTimeField(required=False, help_text="End time for session booking")
+    timezone = serializers.CharField(default='UTC', required=False, help_text="Timezone for booking")
+    
+    # For workshops
+    service_session_id = serializers.UUIDField(required=False, help_text="Service session ID for workshop booking")
+    
+    def validate_payment_method_id(self, value):
+        """Validate payment method belongs to user"""
+        user = self.context['request'].user
+        if not PaymentMethod.objects.filter(id=value, user=user, is_active=True).exists():
+            raise serializers.ValidationError("Invalid payment method")
+        return value
+    
+    def validate(self, attrs):
+        """Validate booking details based on service type"""
+        service_id = attrs.get('service_id')
+        
+        # Get the service to check its type
+        try:
+            service = Service.objects.get(public_uuid=service_id)
+        except Service.DoesNotExist:
+            raise serializers.ValidationError("Invalid service")
+        
+        # Validate based on service type
+        if service.service_type.code == 'session':
+            # For sessions, we need start and end time
+            if not attrs.get('start_time') or not attrs.get('end_time'):
+                raise serializers.ValidationError(
+                    "Start time and end time are required for session bookings"
+                )
+        elif service.service_type.code == 'workshop':
+            # For workshops, we need service_session_id
+            if not attrs.get('service_session_id'):
+                raise serializers.ValidationError(
+                    "Service session is required for workshop bookings"
+                )
+        # For courses, packages, and bundles, we'll handle them in the view
+        
+        return attrs
 
 
 class CheckoutSessionSerializer(serializers.Serializer):

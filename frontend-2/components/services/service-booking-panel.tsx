@@ -20,7 +20,7 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
   const { openAuthModal } = useAuthModal()
 
   const getBookingButtonText = () => {
-    switch (service.service_type.name) {
+    switch (service.service_type_code || service.service_type?.name) {
       case "course":
         return "Enroll Now"
       case "workshop":
@@ -36,8 +36,8 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
     if (!isAuthenticated) {
       openAuthModal({
         defaultTab: "login",
-        redirectUrl: `/checkout?serviceId=${service.id}&type=${service.service_type.name}`,
-        serviceType: service.service_type.name,
+        redirectUrl: `/checkout?serviceId=${service.id}&type=${service.service_type_code || service.service_type?.name}`,
+        serviceType: service.service_type_code || service.service_type?.name,
         title: `Sign in to ${getBookingButtonText()}`,
         description: "Please sign in to book this service"
       })
@@ -45,7 +45,7 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
     }
 
     // Redirect to checkout page with service details
-    router.push(`/checkout?serviceId=${service.id}&type=${service.service_type.name}`)
+    router.push(`/checkout?serviceId=${service.id}&type=${service.service_type_code || service.service_type?.name}`)
   }
 
   return (
@@ -76,7 +76,7 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
             )}
           </div>
 
-          {service.service_type.name === "course" && service.sessions && (
+          {(service.service_type_code || service.service_type?.name) === "course" && service.sessions && (
             <p className="text-sm mb-4">
               Total for course: ${(Number.parseFloat(service.price) * service.sessions.length).toFixed(2)}
             </p>

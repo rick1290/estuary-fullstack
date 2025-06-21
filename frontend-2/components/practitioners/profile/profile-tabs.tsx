@@ -70,10 +70,14 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
                   practitioner_status={practitioner.practitioner_status}
                 />
               </div>
-              {(practitioner.educations.length > 0 || practitioner.certifications.length > 0) && (
+              {((practitioner.educations && practitioner.educations.length > 0) || 
+                (practitioner.certifications && practitioner.certifications.length > 0)) && (
                 <div>
                   <h3 className="text-lg font-semibold text-olive-900 mb-4">Education & Certifications</h3>
-                  <CredentialsTab educations={practitioner.educations} certifications={practitioner.certifications} />
+                  <CredentialsTab 
+                    educations={practitioner.educations || []} 
+                    certifications={practitioner.certifications || []} 
+                  />
                 </div>
               )}
             </div>
@@ -81,10 +85,10 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
 
           <TabsContent value="specialties" className="p-6 lg:p-8 m-0">
             <SpecialtiesTab
-              specializations={practitioner.specializations}
-              styles={practitioner.styles}
-              topics={practitioner.topics}
-              modalities={practitioner.modalities}
+              specializations={practitioner.specializations || []}
+              styles={practitioner.styles || []}
+              topics={practitioner.topics || []}
+              modalities={practitioner.modalities || []}
             />
           </TabsContent>
 

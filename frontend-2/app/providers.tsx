@@ -3,7 +3,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
+import { SessionProvider } from 'next-auth/react';
 import { AuthModalProvider } from '@/components/auth/auth-provider';
+import { Toaster } from 'sonner';
+import '@/lib/token-monitor'; // Import to start token monitoring
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -21,13 +24,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthModalProvider>
-        {children}
-      </AuthModalProvider>
-      {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
-    </QueryClientProvider>
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthModalProvider>
+          {children}
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: '#333',
+                color: '#fff',
+              },
+              className: 'sonner-toast',
+            }}
+          />
+        </AuthModalProvider>
+        {process.env.NODE_ENV === 'development' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }

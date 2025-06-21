@@ -59,7 +59,7 @@ export default function BookServicePage({ params }: { params: { id: string } }) 
         setService(serviceData)
 
         // For courses and workshops, preselect all sessions
-        if (serviceData.service_type.name === "course" || serviceData.service_type.name === "workshop") {
+        if (serviceData.service_type_code === "course" || serviceData.service_type_code === "workshop") {
           setSelectedSessions(serviceData.sessions.map((s: any) => s.id))
         }
 
@@ -161,7 +161,7 @@ export default function BookServicePage({ params }: { params: { id: string } }) 
 
   // Get steps based on service type
   const getSteps = () => {
-    if (service?.service_type.name === "one_on_one") {
+    if (service?.service_type_code === "session") {
       return ["Select Time", "Your Information", "Confirmation"]
     } else {
       return ["Select Sessions", "Your Information", "Confirmation"]
@@ -185,7 +185,7 @@ export default function BookServicePage({ params }: { params: { id: string } }) 
 
       <Box sx={{ mb: 3 }}>
         <Button startIcon={<ArrowBackIcon />} component={Link} href={`/services/${service?.id}`} variant="text">
-          Back to {service?.service_type.name}
+          Back to {service?.service_type_display || service?.service_type_code}
         </Button>
       </Box>
 
@@ -211,13 +211,13 @@ export default function BookServicePage({ params }: { params: { id: string } }) 
         {activeStep === 0 && (
           <Box>
             <Typography variant="h5" gutterBottom>
-              {service?.service_type.name === "one_on_one" ? "Select Time" : "Select Sessions"}
+              {service?.service_type_code === "session" ? "Select Time" : "Select Sessions"}
             </Typography>
 
             <Typography variant="body1" paragraph>
-              {service?.service_type.name === "one_on_one"
+              {service?.service_type_code === "session"
                 ? "Choose a time that works for you."
-                : service?.service_type.name === "course"
+                : service?.service_type_code === "course"
                   ? "This course includes the following sessions. You can select which ones you'd like to attend."
                   : "Select the sessions you'd like to attend."}
             </Typography>

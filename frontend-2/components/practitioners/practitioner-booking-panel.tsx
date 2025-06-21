@@ -11,42 +11,66 @@ import { Separator } from "@/components/ui/separator"
 import type { Practitioner } from "@/types/practitioner"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
+import { userAddFavorite, userRemoveFavorite } from "@/src/client/sdk.gen"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { useUserFavorites } from "@/hooks/use-user-favorites"
 
 interface PractitionerBookingPanelProps {
   practitioner: Practitioner
 }
 
 export default function PractitionerBookingPanel({ practitioner }: PractitionerBookingPanelProps) {
-  const [isLiked, setIsLiked] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
+  const { favoritePractitionerIds, refetch: refetchFavorites } = useUserFavorites()
+  
+  // Check if this practitioner is favorited
+  const isLiked = favoritePractitionerIds.has(practitioner.id || practitioner.public_uuid)
 
-  // Load liked state from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-      setIsLiked(!!savedLikes[practitioner.id])
-    } catch (error) {
-      console.error("Error loading liked state:", error)
+
+  const handleLikeToggle = useCallback(async () => {
+    if (!isAuthenticated) {
+      openAuthModal({
+        defaultTab: "login",
+        title: "Sign in to Save Practitioners",
+        description: "Create an account to save your favorite practitioners and receive updates"
+      })
+      return
     }
-  }, [practitioner.id])
 
-  const handleLikeToggle = useCallback(() => {
-    setIsLiked((prev) => {
-      const newValue = !prev
-      // Save to localStorage
-      try {
-        const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-        savedLikes[practitioner.id] = newValue
-        localStorage.setItem("likedPractitioners", JSON.stringify(savedLikes))
-      } catch (error) {
-        console.error("Error saving like:", error)
+    setIsLoading(true)
+    try {
+      if (!isLiked) {
+        // Add to favorites
+        await userAddFavorite({
+          body: {
+            practitioner_id: practitioner.id
+          }
+        })
+        toast.success("Practitioner saved to favorites")
+      } else {
+        // Remove from favorites
+        await userRemoveFavorite({
+          path: {
+            practitioner_id: practitioner.id
+          }
+        })
+        toast.success("Practitioner removed from favorites")
       }
-      return newValue
-    })
-  }, [practitioner.id])
+      
+      // Refetch favorites to update the UI
+      await refetchFavorites()
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+      toast.error("Failed to update favorite status")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [practitioner.id, isLiked, isAuthenticated, openAuthModal, refetchFavorites])
 
   // Function to handle the Book a Session button click
   const handleBookSessionClick = (e: React.MouseEvent) => {
@@ -162,7 +186,14 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
             <div className="flex items-center justify-between text-sm">
               <span className="text-olive-600">Location</span>
               <span className="font-medium text-olive-800">
-                {practitioner.locations.some(l => l.is_virtual) ? "Virtual Available" : "In-Person"}
+                {(() => {
+                  // Handle both API structures: primary_location object or locations array
+                  if (practitioner.primary_location?.is_virtual) return "Virtual Available";
+                  if (practitioner.locations && practitioner.locations.some(l => l.is_virtual)) return "Virtual Available";
+                  if (practitioner.primary_location?.is_in_person || 
+                      (practitioner.locations && practitioner.locations.some(l => l.is_in_person))) return "In-Person";
+                  return "Contact for Details";
+                })()}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -180,8 +211,9 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
               isLiked && "text-rose-600 hover:text-rose-700"
             )}
             onClick={handleLikeToggle}
+            disabled={isLoading}
           >
-            <Heart className={cn("mr-2 h-4 w-4", isLiked && "fill-current")} />
+            <Heart className={cn("mr-2 h-4 w-4 transition-colors", isLiked && "fill-current")} />
             {isLiked ? "Saved" : "Save Practitioner"}
           </Button>
 
@@ -206,6 +238,3 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
     </>
   )
 }
-
-// Add cn utility import
-import { cn } from "@/lib/utils"

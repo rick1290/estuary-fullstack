@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import React, { Suspense, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,13 +11,13 @@ import ClientNotes from "@/components/dashboard/practitioner/clients/client-note
 import LoadingSpinner from "@/components/ui/loading-spinner"
 
 interface ClientDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function ClientDetailPage({ params }: ClientDetailPageProps) {
-  const { id } = params
+  const { id } = React.use(params)
   const [activeTab, setActiveTab] = useState("history")
 
   return (

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { Plus, Edit, Trash, Save, X } from "lucide-react"
+import { useState } from "react"
+import { format, parseISO } from "date-fns"
+import { Plus, Edit, Trash, Save, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,75 +15,93 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  practitionersClientsNotesRetrieveOptions,
+  practitionersClientsNotesCreateMutation,
+  practitionersClientsNotesUpdateMutation,
+  practitionersClientsNotesDestroyMutation,
+} from "@/src/client/@tanstack/react-query.gen"
+import { toast } from "sonner"
 
 interface ClientNotesProps {
   clientId: string
 }
 
 interface Note {
-  id: string
+  id: string | number
   content: string
-  createdAt: string
-  updatedAt: string | null
+  created_at: string
+  updated_at: string
 }
 
-// Mock data - replace with actual API call
-const mockNotes = [
-  {
-    id: "1",
-    content:
-      "Client expressed interest in group workshops for team building. Follow up with corporate package options.",
-    createdAt: "2023-04-28T14:30:00",
-    updatedAt: null,
-  },
-  {
-    id: "2",
-    content: "Prefers morning sessions. Has mentioned stress related to work-life balance.",
-    createdAt: "2023-03-15T10:00:00",
-    updatedAt: "2023-03-16T09:45:00",
-  },
-  {
-    id: "3",
-    content: "Allergic to lavender - avoid using this essential oil during sessions.",
-    createdAt: "2023-02-10T13:00:00",
-    updatedAt: null,
-  },
-]
-
 export default function ClientNotes({ clientId }: ClientNotesProps) {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
   const [newNote, setNewNote] = useState("")
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
+  const [noteToDelete, setNoteToDelete] = useState<string | number | null>(null)
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchNotes = async () => {
-      setLoading(true)
-      // Replace with actual API call
-      setTimeout(() => {
-        setNotes(mockNotes)
-        setLoading(false)
-      }, 1000)
-    }
+  // Fetch notes from API
+  const { data: notes = [], isLoading, error } = useQuery({
+    ...practitionersClientsNotesRetrieveOptions({
+      path: { client_id: clientId },
+    }),
+  })
 
-    fetchNotes()
-  }, [clientId])
+  // Create note mutation
+  const createNoteMutation = useMutation({
+    ...practitionersClientsNotesCreateMutation(),
+    onSuccess: () => {
+      toast.success("Note added successfully")
+      setNewNote("")
+      queryClient.invalidateQueries({ 
+        queryKey: ['practitionersClientsNotesRetrieve', { path: { client_id: clientId } }] 
+      })
+    },
+    onError: () => {
+      toast.error("Failed to add note")
+    },
+  })
+
+  // Update note mutation
+  const updateNoteMutation = useMutation({
+    ...practitionersClientsNotesUpdateMutation(),
+    onSuccess: () => {
+      toast.success("Note updated successfully")
+      setEditingNote(null)
+      queryClient.invalidateQueries({ 
+        queryKey: ['practitionersClientsNotesRetrieve', { path: { client_id: clientId } }] 
+      })
+    },
+    onError: () => {
+      toast.error("Failed to update note")
+    },
+  })
+
+  // Delete note mutation
+  const deleteNoteMutation = useMutation({
+    ...practitionersClientsNotesDestroyMutation(),
+    onSuccess: () => {
+      toast.success("Note deleted successfully")
+      setDeleteDialogOpen(false)
+      setNoteToDelete(null)
+      queryClient.invalidateQueries({ 
+        queryKey: ['practitionersClientsNotesRetrieve', { path: { client_id: clientId } }] 
+      })
+    },
+    onError: () => {
+      toast.error("Failed to delete note")
+    },
+  })
 
   const handleAddNote = () => {
     if (!newNote.trim()) return
 
-    const newNoteObj = {
-      id: Date.now().toString(),
-      content: newNote,
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
-    }
-
-    setNotes([newNoteObj, ...notes])
-    setNewNote("")
+    createNoteMutation.mutate({
+      path: { client_id: clientId },
+      body: { content: newNote },
+    })
   }
 
   const handleEditNote = (note: Note) => {
@@ -93,19 +111,17 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
   const handleSaveEdit = () => {
     if (!editingNote) return
 
-    const updatedNotes = notes.map((note) =>
-      note.id === editingNote.id ? { ...editingNote, updatedAt: new Date().toISOString() } : note,
-    )
-
-    setNotes(updatedNotes)
-    setEditingNote(null)
+    updateNoteMutation.mutate({
+      path: { note_id: String(editingNote.id) },
+      body: { content: editingNote.content },
+    })
   }
 
   const handleCancelEdit = () => {
     setEditingNote(null)
   }
 
-  const handleDeletePrompt = (noteId: string) => {
+  const handleDeletePrompt = (noteId: string | number) => {
     setNoteToDelete(noteId)
     setDeleteDialogOpen(true)
   }
@@ -113,10 +129,9 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
   const handleDeleteConfirm = () => {
     if (!noteToDelete) return
 
-    const updatedNotes = notes.filter((note) => note.id !== noteToDelete)
-    setNotes(updatedNotes)
-    setDeleteDialogOpen(false)
-    setNoteToDelete(null)
+    deleteNoteMutation.mutate({
+      path: { note_id: String(noteToDelete) },
+    })
   }
 
   const handleDeleteCancel = () => {
@@ -124,7 +139,7 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
     setNoteToDelete(null)
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-24 w-full mb-4" />
@@ -144,8 +159,16 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
           onChange={(e) => setNewNote(e.target.value)}
           className="mb-2 min-h-[100px]"
         />
-        <Button onClick={handleAddNote} disabled={!newNote.trim()} className="flex items-center">
-          <Plus className="mr-2 h-4 w-4" />
+        <Button 
+          onClick={handleAddNote} 
+          disabled={!newNote.trim() || createNoteMutation.isPending} 
+          className="flex items-center"
+        >
+          {createNoteMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="mr-2 h-4 w-4" />
+          )}
           Add Note
         </Button>
       </div>
@@ -172,8 +195,16 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
                         <X className="mr-2 h-3 w-3" />
                         Cancel
                       </Button>
-                      <Button size="sm" onClick={handleSaveEdit} disabled={!editingNote.content.trim()}>
-                        <Save className="mr-2 h-3 w-3" />
+                      <Button 
+                        size="sm" 
+                        onClick={handleSaveEdit} 
+                        disabled={!editingNote.content.trim() || updateNoteMutation.isPending}
+                      >
+                        {updateNoteMutation.isPending ? (
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Save className="mr-2 h-3 w-3" />
+                        )}
                         Save
                       </Button>
                     </div>
@@ -197,8 +228,10 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {format(new Date(note.createdAt), "MMM d, yyyy 'at' h:mm a")}
-                      {note.updatedAt && ` (Edited ${format(new Date(note.updatedAt), "MMM d, yyyy 'at' h:mm a")})`}
+                      {format(parseISO(note.created_at), "MMM d, yyyy 'at' h:mm a")}
+                      {note.updated_at && note.updated_at !== note.created_at && 
+                        ` (Edited ${format(parseISO(note.updated_at), "MMM d, yyyy 'at' h:mm a")})`
+                      }
                     </p>
                   </div>
                 )}
@@ -220,7 +253,14 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
             <Button variant="outline" onClick={handleDeleteCancel}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteConfirm}
+              disabled={deleteNoteMutation.isPending}
+            >
+              {deleteNoteMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Delete
             </Button>
           </DialogFooter>

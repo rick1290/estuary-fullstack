@@ -9,6 +9,7 @@ import {
 } from "@mui/icons-material"
 import type { Session } from "@/types/service"
 import { formatDate, formatTime } from "@/lib/utils"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 interface SessionsListProps {
   sessions: Session[]
@@ -156,7 +157,7 @@ export default function SessionsList({ sessions, serviceType }: SessionsListProp
                   variant="outlined"
                   endIcon={<EventIcon />}
                   component={Link}
-                  href={`/services/${session.service}/sessions/${session.id}`}
+                  href={getServiceDetailUrl({ id: session.id, slug: session.slug, service_type_code: 'session' })}
                 >
                   Session Details
                 </Button>

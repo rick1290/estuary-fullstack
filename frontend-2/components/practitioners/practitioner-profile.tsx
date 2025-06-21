@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { publicServicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import type { Practitioner } from "@/types/practitioner"
 import PractitionerHeader from "./profile/practitioner-header"
 import ProfileTabs from "./profile/profile-tabs"
@@ -8,7 +10,6 @@ import CoursesWorkshops from "./profile/courses-workshops"
 import SessionOfferings from "./profile/session-offerings"
 import ClientReviews from "./profile/client-reviews"
 import EstuaryPromise from "./profile/estuary-promise"
-import { mockPractitionerData, mockServiceData } from "./profile/mock-data"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 
@@ -23,15 +24,27 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
 
+  // Fetch practitioner's services from API
+  const { data: servicesData } = useQuery({
+    ...publicServicesListOptions({
+      query: {
+        practitioner: practitioner.id as any,
+        is_active: true,
+      }
+    }),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  })
+
   // Load liked state from localStorage on mount
   useEffect(() => {
     try {
       const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-      setIsLiked(!!savedLikes[practitioner.id])
+      const practitionerId = practitioner.public_uuid || practitioner.id
+      setIsLiked(!!savedLikes[practitionerId])
     } catch (error) {
       console.error("Error loading liked state:", error)
     }
-  }, [practitioner.id])
+  }, [practitioner.public_uuid, practitioner.id])
 
   // Handle service type filter change
   const handleServiceTypeChange = (categoryId: string | null) => {
@@ -44,14 +57,15 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
       // Save to localStorage
       try {
         const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-        savedLikes[practitioner.id] = newValue
+        const practitionerId = practitioner.public_uuid || practitioner.id
+        savedLikes[practitionerId] = newValue
         localStorage.setItem("likedPractitioners", JSON.stringify(savedLikes))
       } catch (error) {
         console.error("Error saving like:", error)
       }
       return newValue
     })
-  }, [practitioner.id])
+  }, [practitioner.public_uuid, practitioner.id])
 
   const handleMessageClick = useCallback(() => {
     if (!isAuthenticated) {
@@ -70,30 +84,31 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
 
   // Filter services by type
   const getServicesByType = (type: string) => {
-    // First try to get from practitioner data
-    if (practitioner.services_by_type && practitioner.services_by_type.length > 0) {
-      return practitioner.services_by_type.find((group) => group.service_type.name === type)?.services || []
+    if (servicesData?.results) {
+      return servicesData.results.filter(service => 
+        (service.service_type_code || service.service_type?.code || service.service_type?.name) === type
+      )
     }
-
-    // Fall back to mock data if practitioner data is empty
-    return mockServiceData.services_by_type.find((group) => group.service_type.name === type)?.services || []
+    return []
   }
 
   // Get upcoming sessions across all services
   const getUpcomingSessions = () => {
     const sessions: any[] = []
-    if (!practitioner.services) return sessions
-
-    practitioner.services.forEach((service) => {
-      if (service.upcoming_sessions && service.upcoming_sessions.length > 0) {
-        service.upcoming_sessions.forEach((session) => {
-          sessions.push({
-            ...session,
-            service,
+    
+    // Use real API data if available
+    if (servicesData?.results) {
+      servicesData.results.forEach((service) => {
+        if (service.upcoming_sessions && service.upcoming_sessions.length > 0) {
+          service.upcoming_sessions.forEach((session) => {
+            sessions.push({
+              ...session,
+              service,
+            })
           })
-        })
-      }
-    })
+        }
+      })
+    }
 
     // Sort by start time
     return sessions.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
@@ -103,11 +118,19 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
   const coursesAndWorkshops = [...(getServicesByType("course") || []), ...(getServicesByType("workshop") || [])]
   const oneOnOneSessions = getServicesByType("session") || []
 
-  // Add service categories from mock data if practitioner data is empty
-  const serviceCategories =
-    practitioner.service_categories && practitioner.service_categories.length > 0
-      ? practitioner.service_categories
-      : mockServiceData.service_categories
+  // Get unique service categories from API data
+  const serviceCategories = (() => {
+    if (servicesData?.results && servicesData.results.length > 0) {
+      const categories = new Map()
+      servicesData.results.forEach(service => {
+        if (service.category) {
+          categories.set(service.category.id, service.category)
+        }
+      })
+      return Array.from(categories.values())
+    }
+    return []
+  })()
 
   return (
     <div>
@@ -131,7 +154,7 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
       </div>
 
       {/* Client Reviews */}
-      <ClientReviews practitioner={practitioner} testimonials={mockPractitionerData.testimonials} />
+      <ClientReviews practitioner={practitioner} />
 
       {/* Estuary Promise */}
       <EstuaryPromise />

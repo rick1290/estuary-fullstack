@@ -74,9 +74,12 @@ export default function ServicePreview({ data = {} }: ServicePreviewProps) {
         <div>
           <h3 className="font-medium mb-2">Benefits</h3>
           <ul className="list-disc pl-5 space-y-1">
-            {data.benefits.map((benefit: string, index: number) => (
+            {data.benefits.map((benefit: any, index: number) => (
               <li key={index} className="text-sm">
-                {benefit}
+                {typeof benefit === 'string' ? benefit : benefit.title}
+                {typeof benefit === 'object' && benefit.description && (
+                  <span className="text-muted-foreground ml-1">- {benefit.description}</span>
+                )}
               </li>
             ))}
           </ul>

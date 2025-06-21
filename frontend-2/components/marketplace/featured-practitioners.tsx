@@ -159,7 +159,7 @@ export default function FeaturedPractitioners() {
               <Button
                 variant="outlined"
                 component={Link}
-                href={`/marketplace/practitioners/${practitioner.id}`}
+                href={`/practitioners/${practitioner.slug || practitioner.id}`}
                 sx={{
                   borderRadius: "28px",
                   borderColor: "#9575cd",

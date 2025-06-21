@@ -10,7 +10,7 @@ from decimal import Decimal
 from practitioners.models import (
     Practitioner, Specialize, Style, Topic, Certification, Education,
     Schedule, ScheduleTimeSlot, SchedulePreference, OutOfOffice,
-    VerificationDocument, PractitionerOnboardingProgress
+    VerificationDocument, PractitionerOnboardingProgress, Question, ClientNote
 )
 from locations.models import PractitionerLocation
 from services.models import Service, ServiceType
@@ -121,7 +121,7 @@ class PractitionerListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = [
-            'id', 'public_uuid', 'display_name', 'professional_title',
+            'id', 'public_uuid', 'display_name', 'slug', 'professional_title',
             'profile_image_url', 'years_of_experience', 'is_verified',
             'featured', 'full_name', 'average_rating', 'total_reviews',
             'total_services', 'price_range', 'primary_location',
@@ -180,7 +180,7 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = [
-            'id', 'public_uuid', 'display_name', 'professional_title',
+            'id', 'public_uuid', 'display_name', 'slug', 'professional_title',
             'bio', 'quote', 'profile_image_url', 'profile_video_url',
             'years_of_experience', 'is_verified', 'featured', 'is_active',
             'full_name', 'average_rating', 'total_reviews', 'total_services',
@@ -268,7 +268,7 @@ class PractitionerUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Practitioner
         fields = [
-            'display_name', 'professional_title', 'bio', 'quote',
+            'display_name', 'slug', 'professional_title', 'bio', 'quote',
             'profile_image_url', 'profile_video_url', 'years_of_experience',
             'buffer_time', 'specialization_ids', 'style_ids', 'topic_ids',
             'modality_ids', 'certification_ids', 'education_ids'
@@ -564,3 +564,85 @@ class PractitionerSearchSerializer(serializers.Serializer):
             attrs['radius_km'] = 10  # Default 10km radius
         
         return attrs
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner questions"""
+    class Meta:
+        model = Question
+        fields = ['id', 'title', 'order']
+        read_only_fields = ['id']
+
+
+class PractitionerClientSerializer(serializers.ModelSerializer):
+    """Serializer for practitioner's client list"""
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    display_name = serializers.CharField(source='profile.display_name', read_only=True)
+    avatar_url = serializers.CharField(source='profile.avatar_url', read_only=True)
+    
+    # Annotated fields from the query
+    total_bookings = serializers.IntegerField(read_only=True)
+    total_spent = serializers.IntegerField(read_only=True)  # In cents
+    total_spent_display = serializers.SerializerMethodField()
+    last_booking_date = serializers.DateTimeField(read_only=True)
+    next_booking_date = serializers.DateTimeField(read_only=True)
+    
+    # Session types the client has booked
+    session_types = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'full_name', 'display_name', 'avatar_url',
+            'phone_number', 'total_bookings', 'total_spent', 'total_spent_display',
+            'last_booking_date', 'next_booking_date', 'session_types'
+        ]
+        read_only_fields = fields
+    
+    def get_total_spent_display(self, obj):
+        """Convert cents to dollar display"""
+        if obj.total_spent:
+            return f"${obj.total_spent / 100:.2f}"
+        return "$0.00"
+    
+    def get_session_types(self, obj):
+        """Get unique service types the client has booked"""
+        from bookings.models import Booking
+        
+        # Get practitioner from context
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'practitioner_profile'):
+            return []
+        
+        practitioner = request.user.practitioner_profile
+        
+        # Get unique service types
+        service_types = Booking.objects.filter(
+            user=obj,
+            practitioner=practitioner,
+            status__in=['completed', 'confirmed']
+        ).select_related('service__service_type').values_list(
+            'service__service_type__name', flat=True
+        ).distinct()
+        
+        return list(service_types)
+
+
+class ClientNoteSerializer(serializers.ModelSerializer):
+    """Serializer for client notes created by practitioners"""
+    practitioner_name = serializers.CharField(source='practitioner.display_name', read_only=True)
+    
+    class Meta:
+        model = ClientNote
+        fields = ['id', 'content', 'created_at', 'updated_at', 'practitioner_name']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'practitioner_name']
+    
+    def create(self, validated_data):
+        """Create a new client note"""
+        # Get practitioner from request user
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'practitioner_profile'):
+            raise serializers.ValidationError("You must be a practitioner to create notes")
+        
+        validated_data['practitioner'] = request.user.practitioner_profile
+        return super().create(validated_data)

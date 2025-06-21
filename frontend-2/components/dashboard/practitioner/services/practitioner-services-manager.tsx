@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,18 +13,19 @@ import { Separator } from "@/components/ui/separator"
 import { Plus, Search, SlidersHorizontal, X, LayoutGrid, List } from "lucide-react"
 import ServiceCard from "./service-card"
 import ServiceListItem from "./service-list-item"
-import { fetchPractitionerServices } from "@/lib/services"
-import type { Service } from "@/types/service"
+import { servicesListOptions, servicesPartialUpdateMutation, servicesDestroyMutation } from "@/src/client/@tanstack/react-query.gen"
+import type { ServiceListReadable } from "@/src/client/types.gen"
 import EmptyState from "./empty-state"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { useAuth } from "@/hooks/use-auth"
 
 // Service types for filtering
 const SERVICE_TYPES = [
   { value: "all", label: "All Services" },
-  { value: "course", label: "Courses" },
+  { value: "session", label: "Sessions" },
   { value: "workshop", label: "Workshops" },
-  { value: "one_on_one", label: "1-on-1 Sessions" },
+  { value: "course", label: "Courses" },
   { value: "package", label: "Packages" },
   { value: "bundle", label: "Bundles" },
 ]
@@ -41,20 +43,63 @@ const SORT_OPTIONS = [
 // Status options for filtering
 const STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
-  { value: "published", label: "Published" },
+  { value: "active", label: "Active" },
   { value: "draft", label: "Draft" },
+  { value: "inactive", label: "Inactive" },
+  { value: "archived", label: "Archived" },
 ]
 
 // View options
 type ViewMode = "grid" | "list"
 
+// Convert API service to display format
+const convertServiceForDisplay = (service: ServiceListReadable): any => {
+  const priceValue = service.price ? parseFloat(service.price.replace(/[^0-9.-]+/g,"")) : (service.price_cents / 100)
+  
+  // Map service type codes to our expected types
+  let serviceType = service.service_type_code || 'session'
+  if (serviceType === 'in-person_session' || serviceType === 'online_session') {
+    serviceType = 'session'
+  }
+  
+  return {
+    id: service.id?.toString() || '',
+    name: service.name,
+    description: service.short_description || '',
+    price: priceValue.toFixed(2),
+    duration: service.duration_minutes,
+    type: serviceType, // Map to 'type' property
+    service_type: {
+      id: service.service_type,
+      name: service.service_type_display || '',
+      code: service.service_type_code || ''
+    },
+    category: service.category ? {
+      id: service.category.id?.toString() || '',
+      name: service.category.name,
+      slug: service.category.slug || '',
+      description: service.category.description || ''
+    } : null,
+    is_active: service.is_active || false,
+    is_featured: service.is_featured || false,
+    status: service.status || 'draft',
+    image_url: service.primary_image || '/images/placeholder-service.jpg',
+    average_rating: service.average_rating || null,
+    total_reviews: parseInt(service.total_reviews || '0'),
+    total_bookings: parseInt(service.total_bookings || '0'),
+    bookings: parseInt(service.total_bookings || '0'),
+    sessions: 1, // Default sessions count
+    updatedAt: service.updated_at || new Date().toISOString(),
+    created_at: service.created_at || new Date().toISOString()
+  }
+}
+
 export default function PractitionerServicesManager() {
   const isMobile = useMediaQuery("(max-width: 640px)")
   const isTablet = useMediaQuery("(max-width: 768px)")
+  const queryClient = useQueryClient()
+  const { user, isPractitioner } = useAuth()
 
-  const [services, setServices] = useState<Service[]>([])
-  const [filteredServices, setFilteredServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("all")
@@ -62,93 +107,117 @@ export default function PractitionerServicesManager() {
   const [showFilters, setShowFilters] = useState(!isMobile)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
 
-  // Fetch services on component mount
-  useEffect(() => {
-    const loadServices = async () => {
-      try {
-        setLoading(true)
-        // In a real app, this would fetch from your API with the practitioner's ID
-        const data = await fetchPractitionerServices()
-        setServices(data)
-        setFilteredServices(data)
-      } catch (error) {
-        console.error("Failed to load services:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  // Build query parameters based on filters
+  const queryParams = {
+    ...(user?.practitionerId && { practitioner: user.practitionerId }), // Filter by current practitioner
+    ...(activeTab !== "all" && { service_type: activeTab }),
+    ...(selectedStatus !== "all" && { status: selectedStatus }),
+    ...(searchQuery && { search: searchQuery }),
+  }
 
-    loadServices()
-  }, [])
+  // Fetch services using React Query
+  const { data: servicesData, isLoading, error } = useQuery({
+    ...servicesListOptions({ query: queryParams }),
+    enabled: !!user, // Fetch when we have user data
+  })
 
-  // Apply filters and sorting when any filter changes
-  useEffect(() => {
-    let result = [...services]
-
-    // Apply type filter
-    if (activeTab !== "all") {
-      result = result.filter((service) => service.type === activeTab)
-    }
-
-    // Apply status filter
-    if (selectedStatus !== "all") {
-      result = result.filter((service) => service.status === selectedStatus)
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(
-        (service) => service.name.toLowerCase().includes(query) || service.description.toLowerCase().includes(query),
-      )
-    }
-
-    // Apply sorting
-    result = sortServices(result, sortBy)
-
-    setFilteredServices(result)
-  }, [services, activeTab, selectedStatus, searchQuery, sortBy])
+  // Get services from the API response  
+  const services = servicesData?.data?.results || servicesData?.results || []
+  
+  // Additional debug logging for data extraction
+  console.log('Data extraction debug:', {
+    servicesData,
+    servicesDataKeys: servicesData ? Object.keys(servicesData) : [],
+    hasData: !!servicesData?.data,
+    hasResults: !!servicesData?.results,
+    hasDataResults: !!servicesData?.data?.results,
+    dataResultsLength: servicesData?.data?.results?.length,
+    directResultsLength: servicesData?.results?.length,
+    servicesLength: services.length,
+    firstService: services[0]
+  })
 
   // Sort services based on selected option
-  const sortServices = (services: Service[], sortOption: string) => {
+  const sortServices = (services: ServiceListReadable[], sortOption: string) => {
     const sorted = [...services]
 
     switch (sortOption) {
       case "newest":
-        return sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        return sorted.sort((a, b) => new Date(b.updated_at || '').getTime() - new Date(a.updated_at || '').getTime())
       case "oldest":
-        return sorted.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime())
+        return sorted.sort((a, b) => new Date(a.updated_at || '').getTime() - new Date(b.updated_at || '').getTime())
       case "name_asc":
         return sorted.sort((a, b) => a.name.localeCompare(b.name))
       case "name_desc":
         return sorted.sort((a, b) => b.name.localeCompare(a.name))
       case "price_high":
-        return sorted.sort((a, b) => b.price - a.price)
+        return sorted.sort((a, b) => b.price_cents - a.price_cents)
       case "price_low":
-        return sorted.sort((a, b) => a.price - b.price)
+        return sorted.sort((a, b) => a.price_cents - b.price_cents)
       default:
         return sorted
     }
   }
 
+  // Apply sorting to services
+  const sortedServices = useMemo(() => sortServices(services, sortBy), [services, sortBy])
+
+  // Debug logging
+  console.log('PractitionerServicesManager:', {
+    user: user,
+    practitionerId: user?.practitionerId,
+    isPractitioner: isPractitioner,
+    hasPractitionerAccount: user?.hasPractitionerAccount,
+    queryParams,
+    servicesData,
+    servicesCount: services.length,
+    sortedServicesCount: sortedServices.length,
+    isLoading,
+    error
+  })
+
+  // Delete service mutation
+  const deleteMutation = useMutation({
+    ...servicesDestroyMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: servicesListOptions({ query: queryParams }).queryKey })
+    },
+  })
+
+  // Update service mutation for status toggle
+  const updateMutation = useMutation({
+    ...servicesPartialUpdateMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: servicesListOptions({ query: queryParams }).queryKey })
+    },
+  })
+
   // Handle service deletion
   const handleDeleteService = (serviceId: string) => {
-    // In a real app, this would call your API to delete the service
-    setServices((prevServices) => prevServices.filter((service) => service.id !== serviceId))
+    if (confirm("Are you sure you want to delete this service?")) {
+      deleteMutation.mutate({ path: { id: parseInt(serviceId) } })
+    }
   }
 
-  // Handle service status toggle (publish/unpublish)
+  // Handle service status toggle
   const handleToggleStatus = (serviceId: string) => {
-    setServices((prevServices) =>
-      prevServices.map((service) =>
-        service.id === serviceId
-          ? {
-              ...service,
-              status: service.status === "published" ? "draft" : "published",
-            }
-          : service,
-      ),
-    )
+    const service = services.find(s => s.id?.toString() === serviceId)
+    if (service) {
+      // Toggle between draft and active status
+      const newStatus = service.status === 'active' ? 'draft' : 'active'
+      const newIsActive = newStatus === 'active'
+      
+      updateMutation.mutate({ 
+        path: { id: parseInt(serviceId) },
+        body: { 
+          status: newStatus,
+          is_active: newIsActive,
+          is_public: newIsActive,
+          // Set published_at when first activating
+          ...(newStatus === 'active' && !service.published_at ? { published_at: new Date().toISOString() } : {})
+        }
+      })
+    }
   }
 
   // Toggle view mode between grid and list
@@ -157,17 +226,13 @@ export default function PractitionerServicesManager() {
   }
 
   return (
-    <div className="py-6 space-y-6">
-      {/* Header with title and create button */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">My Services</h1>
-          <p className="text-muted-foreground">Manage your offerings and packages</p>
-        </div>
+    <div className="space-y-6">
+      {/* Create button */}
+      <div className="flex justify-end">
         <Button asChild>
-          <Link href="/dashboard/practitioner/services/create">
+          <Link href="/dashboard/practitioner/services/new">
             <Plus className="mr-2 h-4 w-4" />
-            Create New Service
+            New Service
           </Link>
         </Button>
       </div>
@@ -176,7 +241,7 @@ export default function PractitionerServicesManager() {
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="all">All Services</TabsTrigger>
-          <TabsTrigger value="one_on_one">One-on-One</TabsTrigger>
+          <TabsTrigger value="session">Sessions</TabsTrigger>
           <TabsTrigger value="workshop">Workshops</TabsTrigger>
           <TabsTrigger value="course">Courses</TabsTrigger>
           <TabsTrigger value="package">Packages</TabsTrigger>
@@ -213,8 +278,10 @@ export default function PractitionerServicesManager() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -273,8 +340,10 @@ export default function PractitionerServicesManager() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -284,7 +353,7 @@ export default function PractitionerServicesManager() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Services</SelectItem>
-                    <SelectItem value="one_on_one">One-on-One</SelectItem>
+                    <SelectItem value="session">Sessions</SelectItem>
                     <SelectItem value="workshop">Workshops</SelectItem>
                     <SelectItem value="course">Courses</SelectItem>
                     <SelectItem value="package">Packages</SelectItem>
@@ -300,7 +369,7 @@ export default function PractitionerServicesManager() {
       {/* Results summary */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">
-          {filteredServices.length} {filteredServices.length === 1 ? "service" : "services"} found
+          {sortedServices.length} {sortedServices.length === 1 ? "service" : "services"} found
         </p>
 
         {/* Active filters */}
@@ -333,45 +402,72 @@ export default function PractitionerServicesManager() {
       </div>
 
       {/* Service cards or list */}
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner />
-        </div>
-      ) : filteredServices.length > 0 ? (
-        viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredServices.map((service) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                onDelete={handleDeleteService}
-                onToggleStatus={handleToggleStatus}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredServices.map((service) => (
-              <ServiceListItem
-                key={service.id}
-                service={service}
-                onDelete={handleDeleteService}
-                onToggleStatus={handleToggleStatus}
-              />
-            ))}
-          </div>
+      {(() => {
+        console.log('Render condition check:', { isLoading, sortedServicesLength: sortedServices.length })
+        
+        if (isLoading) {
+          console.log('Showing loading spinner')
+          return (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          )
+        }
+        
+        if (sortedServices.length > 0) {
+          console.log('Showing services:', sortedServices.length)
+          return viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedServices.map((service) => {
+                try {
+                  return (
+                    <ServiceCard
+                      key={service.id}
+                      service={convertServiceForDisplay(service)}
+                      onDelete={handleDeleteService}
+                      onToggleStatus={handleToggleStatus}
+                    />
+                  )
+                } catch (error) {
+                  console.error('Error rendering service card:', service, error)
+                  return null
+                }
+              })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sortedServices.map((service) => {
+                try {
+                  return (
+                    <ServiceListItem
+                      key={service.id}
+                      service={convertServiceForDisplay(service)}
+                      onDelete={handleDeleteService}
+                      onToggleStatus={handleToggleStatus}
+                    />
+                  )
+                } catch (error) {
+                  console.error('Error rendering service list item:', service, error)
+                  return null
+                }
+              })}
+            </div>
+          )
+        }
+        
+        console.log('Showing empty state')
+        return (
+          <EmptyState
+            selectedType={activeTab}
+            hasFilters={searchQuery !== "" || selectedStatus !== "all" || activeTab !== "all"}
+            onClearFilters={() => {
+              setSearchQuery("")
+              setSelectedStatus("all")
+              setActiveTab("all")
+            }}
+          />
         )
-      ) : (
-        <EmptyState
-          selectedType={activeTab}
-          hasFilters={searchQuery !== "" || selectedStatus !== "all" || activeTab !== "all"}
-          onClearFilters={() => {
-            setSearchQuery("")
-            setSelectedStatus("all")
-            setActiveTab("all")
-          }}
-        />
-      )}
+      })()}
     </div>
   )
 }

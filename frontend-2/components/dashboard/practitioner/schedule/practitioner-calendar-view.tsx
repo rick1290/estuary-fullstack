@@ -1,12 +1,18 @@
 "use client"
 
 import React from "react"
-import { useState } from "react"
-import { ChevronLeft, ChevronRight, CalendarIcon, Video, User, Users } from "lucide-react"
+import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
+import { ChevronLeft, ChevronRight, CalendarIcon, Video, User, Users, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useAuth } from "@/hooks/use-auth"
+import type { BookingListReadable } from "@/src/client/types.gen"
+import { startOfMonth, endOfMonth, addDays, format } from "date-fns"
 
 // Mock data for calendar events
 const mockEvents = (() => {
@@ -195,12 +201,93 @@ interface PractitionerCalendarViewProps {
   view: "week" | "month"
 }
 
-export default function PractitionerCalendarView({ view }: PractitionerCalendarViewProps) {
+export default function PractitionerCalendarView({ view = "week" }: Partial<PractitionerCalendarViewProps>) {
   const [currentDate, setCurrentDate] = useState(new Date())
+  const router = useRouter()
+  const { user } = useAuth()
   const timeSlots = generateTimeSlots()
 
   const weekDays = generateWeekDays(currentDate)
   const monthDays = generateMonthDays(currentDate)
+
+  // Calculate date range for API query
+  const dateRange = useMemo(() => {
+    if (view === "week") {
+      const start = weekDays[0]
+      const end = weekDays[weekDays.length - 1]
+      return { start, end }
+    } else {
+      const start = startOfMonth(currentDate)
+      const end = addDays(endOfMonth(currentDate), 7) // Include some days from next month
+      return { start, end }
+    }
+  }, [currentDate, view, weekDays])
+
+  // Fetch bookings for the current view
+  const { data: bookingsData, isLoading } = useQuery(
+    bookingsListOptions({
+      query: {
+        practitioner_id: user?.practitioner_profile?.id,
+        start_date: format(dateRange.start, 'yyyy-MM-dd'),
+        end_date: format(dateRange.end, 'yyyy-MM-dd'),
+        status: 'confirmed,completed',
+        page_size: 100
+      }
+    })
+  )
+
+  // Transform bookings into calendar events
+  const events = useMemo(() => {
+    if (!bookingsData?.results) return []
+    
+    return bookingsData.results.map((booking: BookingListReadable) => ({
+      id: booking.id?.toString() || '',
+      bookingId: booking.id,
+      title: booking.service?.name || 'Unknown Service',
+      clientName: booking.user?.full_name || booking.user?.email || 'Unknown Client',
+      clientAvatar: booking.user?.avatar_url,
+      start: new Date(booking.start_time),
+      end: new Date(booking.end_time),
+      type: booking.service?.service_type_code || 'session',
+      location: booking.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person',
+      status: booking.status
+    }))
+  }, [bookingsData])
+
+  // Update helper functions to use real events
+  const getEventsForDay = (day: Date) => {
+    return events.filter((event) => {
+      const eventDate = new Date(event.start)
+      return (
+        eventDate.getDate() === day.getDate() &&
+        eventDate.getMonth() === day.getMonth() &&
+        eventDate.getFullYear() === day.getFullYear()
+      )
+    })
+  }
+
+  const getEventsForTimeSlot = (day: Date, timeSlot: string) => {
+    const [hour] = timeSlot.split(":").map(Number)
+
+    return events.filter((event) => {
+      const eventDate = new Date(event.start)
+      const eventEndDate = new Date(event.end)
+
+      return (
+        eventDate.getDate() === day.getDate() &&
+        eventDate.getMonth() === day.getMonth() &&
+        eventDate.getFullYear() === day.getFullYear() &&
+        eventDate.getHours() <= hour &&
+        eventEndDate.getHours() > hour
+      )
+    })
+  }
+
+  const handleEventClick = (bookingId: number | undefined) => {
+    if (bookingId) {
+      router.push(`/dashboard/practitioner/bookings/${bookingId}`)
+    }
+  }
 
   const handlePrevious = () => {
     const newDate = new Date(currentDate)
@@ -252,6 +339,14 @@ export default function PractitionerCalendarView({ view }: PractitionerCalendarV
 
   const isCurrentMonth = (date: Date) => {
     return date.getMonth() === currentDate.getMonth()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -309,13 +404,14 @@ export default function PractitionerCalendarView({ view }: PractitionerCalendarV
                       {events.map((event) => (
                         <Card
                           key={event.id}
-                          className={`p-2 mb-1 ${
+                          className={`p-2 mb-1 cursor-pointer hover:shadow-md transition-shadow ${
                             event.type === "session"
                               ? "bg-primary/10"
                               : event.type === "workshop"
                                 ? "bg-secondary/10"
                                 : "bg-green-100"
                           } flex flex-col gap-0.5`}
+                          onClick={() => handleEventClick(event.bookingId)}
                         >
                           <div className="flex justify-between items-center">
                             <p className="text-sm font-medium truncate">{event.title}</p>
@@ -386,13 +482,14 @@ export default function PractitionerCalendarView({ view }: PractitionerCalendarV
                     ? events.slice(0, 3).map((event) => (
                         <Card
                           key={event.id}
-                          className={`p-1 mb-1 ${
+                          className={`p-1 mb-1 cursor-pointer hover:shadow-md transition-shadow ${
                             event.type === "session"
                               ? "bg-primary/10"
                               : event.type === "workshop"
                                 ? "bg-secondary/10"
                                 : "bg-green-100"
                           }`}
+                          onClick={() => handleEventClick(event.bookingId)}
                         >
                           <span className="text-xs block truncate">
                             {event.start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}

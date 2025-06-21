@@ -5,11 +5,13 @@ import { ArrowRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Upcoming experiences
 const UPCOMING_EXPERIENCES = [
   {
     id: 1,
+    slug: "mindful-presence-workshop",
     title: "Mindful Presence Workshop",
     practitioner: "Dr. Sarah Johnson",
     image: "/serene-meditation.png",
@@ -21,6 +23,7 @@ const UPCOMING_EXPERIENCES = [
   },
   {
     id: 2,
+    slug: "holistic-nutrition-foundations",
     title: "Holistic Nutrition Foundations",
     practitioner: "Michael Chen",
     image: "/diverse-medical-team.png",
@@ -32,6 +35,7 @@ const UPCOMING_EXPERIENCES = [
   },
   {
     id: 3,
+    slug: "transformative-life-coaching",
     title: "Transformative Life Coaching",
     practitioner: "Aisha Patel",
     image: "/confident-professional.png",
@@ -43,6 +47,7 @@ const UPCOMING_EXPERIENCES = [
   },
   {
     id: 4,
+    slug: "healing-sound-journey",
     title: "Healing Sound Journey",
     practitioner: "James Wilson",
     image: "/mindful-moments.png",
@@ -154,7 +159,7 @@ export default function UpcomingExperiencesSection() {
                 </CardContent>
                 <div className="p-3 pt-0">
                   <Button variant="outline" className="w-full rounded-full" asChild>
-                    <Link href={`/marketplace/${experience.type.toLowerCase()}s/${experience.id}`}>Learn More</Link>
+                    <Link href={getServiceDetailUrl({ id: experience.id, slug: experience.slug, service_type_code: experience.type.toLowerCase() })}>Learn More</Link>
                   </Button>
                 </div>
               </Card>

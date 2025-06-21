@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Clock, MapPin } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
+import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 interface Session {
-  id: string
+  id: string | number
+  slug?: string
+  public_uuid?: string
   name: string
   description?: string
   price: string
@@ -18,7 +21,10 @@ interface Session {
   service_type: {
     id: string
     name: string
+    code?: string
   }
+  service_type_code?: string
+  service_type_display?: string
   category?: {
     id: string
     name: string
@@ -91,9 +97,9 @@ export default function SessionOfferings({
                     {/* Replace category badge with service type badge */}
                     <Badge
                       className="mb-3 capitalize"
-                      variant={getServiceTypeConfig(session.service_type.name).variant}
+                      variant={getServiceTypeConfig(session.service_type_code || session.service_type?.name).variant}
                     >
-                      {session.service_type.name}
+                      {session.service_type_display || session.service_type_code || session.service_type?.name}
                     </Badge>
 
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -113,7 +119,9 @@ export default function SessionOfferings({
                     <p className="font-semibold text-primary">{session.price ? session.price : "Free"}</p>
 
                     <Button asChild variant="outline">
-                      <Link href={`/sessions/${session.id}`}>Book Session</Link>
+                      <Link href={getServiceDetailUrl(session)}>
+                        {getServiceCtaText(session.service_type_code || session.service_type?.name)}
+                      </Link>
                     </Button>
                   </div>
                 </div>

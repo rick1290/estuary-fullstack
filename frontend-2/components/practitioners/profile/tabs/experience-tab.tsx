@@ -55,7 +55,7 @@ export default function ExperienceTab({
           <div>
             <p className="font-medium">Practitioner Status</p>
             <p className="text-sm text-muted-foreground">
-              {practitioner_status.charAt(0).toUpperCase() + practitioner_status.slice(1)}
+              {practitioner_status ? practitioner_status.charAt(0).toUpperCase() + practitioner_status.slice(1) : 'Not specified'}
             </p>
           </div>
         </li>

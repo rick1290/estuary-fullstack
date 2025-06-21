@@ -15,11 +15,12 @@ export default function ClientPractitionerRowCard({ practitioner }: ClientPracti
     // Check if this practitioner is liked
     try {
       const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-      setIsLiked(savedLikes[practitioner.id] || false)
+      const practitionerId = practitioner.public_uuid || practitioner.id
+      setIsLiked(savedLikes[practitionerId] || false)
     } catch (error) {
       console.error("Error loading liked status:", error)
     }
-  }, [practitioner.id])
+  }, [practitioner.public_uuid, practitioner.id])
 
   return <PractitionerRowCard practitioner={practitioner} initialLiked={isLiked} />
 }

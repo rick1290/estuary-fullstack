@@ -24,11 +24,14 @@ import {
 import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 
 // Status variants
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  published: "default",
-  draft: "outline",
+  active: "default",     // Green/primary color for published/active
+  draft: "secondary",    // Gray for draft  
+  inactive: "outline",   // Outline for inactive
+  archived: "destructive", // Red for archived
 }
 
 interface ServiceCardProps {
@@ -82,7 +85,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
         <div className="absolute top-3 left-3 right-3 flex justify-between">
           <ServiceTypeBadge type={service.type} />
           <Badge variant={STATUS_VARIANTS[service.status] || "outline"}>
-            {service.status === "published" ? "Published" : "Draft"}
+            {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
           </Badge>
         </div>
       </div>
@@ -127,7 +130,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
             </Link>
           </Button>
           <Button variant="outline" size="icon" asChild>
-            <Link href={`/services/${service.id}`} target="_blank">
+            <Link href={getServiceDetailUrl(service)} target="_blank">
               <Eye className="h-4 w-4" />
             </Link>
           </Button>
@@ -141,7 +144,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
-              {service.status === "published" ? (
+              {service.status === "active" ? (
                 <>
                   <EyeOff className="mr-2 h-4 w-4" />
                   <span>Unpublish</span>
@@ -199,18 +202,18 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{service.status === "published" ? "Unpublish Service?" : "Publish Service?"}</DialogTitle>
+            <DialogTitle>{service.status === "active" ? "Unpublish Service?" : "Publish Service?"}</DialogTitle>
             <DialogDescription>
-              {service.status === "published"
-                ? "This service will no longer be visible to clients. Are you sure you want to unpublish it?"
-                : "This service will be visible to clients. Are you sure you want to publish it?"}
+              {service.status === "active"
+                ? "This service will no longer be visible to clients and will return to draft status. Are you sure you want to unpublish it?"
+                : "This service will become active and visible to clients. Are you sure you want to publish it?"}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleStatusConfirm}>{service.status === "published" ? "Unpublish" : "Publish"}</Button>
+            <Button onClick={handleStatusConfirm}>{service.status === "active" ? "Unpublish" : "Publish"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
