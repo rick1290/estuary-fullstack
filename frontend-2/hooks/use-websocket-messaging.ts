@@ -47,6 +47,7 @@ export function useWebSocketMessaging({
   const queryClient = useQueryClient()
   const ws = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>()
+  const isMountedRef = useRef(true)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected')
   const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set())
   
@@ -70,10 +71,14 @@ export function useWebSocketMessaging({
     if (!conversationId || !user) return
 
     try {
-      setConnectionStatus('connecting')
+      if (isMountedRef.current) {
+        setConnectionStatus('connecting')
+      }
       const url = await getWebSocketUrl()
       if (!url) {
-        setConnectionStatus('error')
+        if (isMountedRef.current) {
+          setConnectionStatus('error')
+        }
         return
       }
 
@@ -81,7 +86,9 @@ export function useWebSocketMessaging({
 
       ws.current.onopen = () => {
         console.log(`WebSocket connected to conversation ${conversationId}`)
-        setConnectionStatus('connected')
+        if (isMountedRef.current) {
+          setConnectionStatus('connected')
+        }
         reconnectAttempts.current = 0
       }
 
@@ -107,15 +114,17 @@ export function useWebSocketMessaging({
               const typingEvent: TypingEvent = messageEvent.data
               onTyping?.(typingEvent)
               
-              setTypingUsers(prev => {
-                const newSet = new Set(prev)
-                if (typingEvent.is_typing) {
-                  newSet.add(typingEvent.user_id)
-                } else {
-                  newSet.delete(typingEvent.user_id)
-                }
-                return newSet
-              })
+              if (isMountedRef.current) {
+                setTypingUsers(prev => {
+                  const newSet = new Set(prev)
+                  if (typingEvent.is_typing) {
+                    newSet.add(typingEvent.user_id)
+                  } else {
+                    newSet.delete(typingEvent.user_id)
+                  }
+                  return newSet
+                })
+              }
               break
 
             case 'read_receipt':
@@ -140,43 +149,60 @@ export function useWebSocketMessaging({
 
       ws.current.onclose = (event) => {
         console.log(`WebSocket disconnected from conversation ${conversationId}`, event.code, event.reason)
-        setConnectionStatus('disconnected')
+        if (isMountedRef.current) {
+          setConnectionStatus('disconnected')
+        }
         
-        // Auto-reconnect if not a normal closure
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+        // Auto-reconnect if not a normal closure and component is still mounted
+        if (isMountedRef.current && event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           const delay = baseReconnectDelay * Math.pow(2, reconnectAttempts.current)
           reconnectAttempts.current++
           
           console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts.current})`)
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect()
+            if (isMountedRef.current) {
+              connect()
+            }
           }, delay)
         }
       }
 
       ws.current.onerror = (error) => {
         console.error('WebSocket error:', error)
-        setConnectionStatus('error')
+        if (isMountedRef.current) {
+          setConnectionStatus('error')
+        }
       }
 
     } catch (error) {
       console.error('Error connecting to WebSocket:', error)
-      setConnectionStatus('error')
+      if (isMountedRef.current) {
+        setConnectionStatus('error')
+      }
     }
   }, [conversationId, user, getWebSocketUrl, onMessage, onTyping, onUserStatus, queryClient])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = undefined
     }
     
-    if (ws.current) {
+    if (ws.current && ws.current.readyState !== WebSocket.CLOSED) {
       ws.current.close(1000, 'Component unmounting')
       ws.current = null
     }
     
-    setConnectionStatus('disconnected')
-    setTypingUsers(new Set())
+    // Only update state if component is still mounted
+    if (isMountedRef.current) {
+      setConnectionStatus(prev => {
+        if (prev !== 'disconnected') {
+          return 'disconnected'
+        }
+        return prev
+      })
+      setTypingUsers(new Set())
+    }
   }, [])
 
   const sendTypingIndicator = useCallback((isTyping: boolean) => {
@@ -214,9 +240,12 @@ export function useWebSocketMessaging({
     }
   }, [conversationId, user, connect, disconnect])
 
-  // Cleanup on unmount
+  // Set mounted status on mount/unmount
   useEffect(() => {
+    isMountedRef.current = true
+    
     return () => {
+      isMountedRef.current = false
       disconnect()
     }
   }, [disconnect])
