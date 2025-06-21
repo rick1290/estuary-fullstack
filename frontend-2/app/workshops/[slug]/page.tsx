@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { publicServicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
@@ -455,7 +455,6 @@ const getWorkshopById = (id: string) => {
 
 export default function WorkshopPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
-  const [isSaveLoading, setIsSaveLoading] = useState(false)
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
@@ -523,6 +522,53 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
       },
     ],
   } : null
+
+  // Get the service ID for API calls
+  const serviceId = serviceData?.id
+  const isSaved = serviceId ? favoriteServiceIds.has(serviceId.toString()) : false
+  
+  // Mutations for save/unsave
+  const { mutate: addFavorite, isPending: isAddingFavorite } = useMutation({
+    mutationFn: () => userAddFavoriteService({ body: { service_id: serviceId } }),
+    onSuccess: () => {
+      toast.success("Workshop saved to favorites")
+      refetchFavorites()
+    },
+    onError: () => {
+      toast.error("Failed to save workshop")
+    },
+  })
+
+  const { mutate: removeFavorite, isPending: isRemovingFavorite } = useMutation({
+    mutationFn: () => userRemoveFavoriteService({ path: { service_id: serviceId } }),
+    onSuccess: () => {
+      toast.success("Workshop removed from favorites")
+      refetchFavorites()
+    },
+    onError: () => {
+      toast.error("Failed to remove workshop")
+    },
+  })
+
+  const handleSaveToggle = () => {
+    if (!isAuthenticated) {
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/workshops/${slug}`,
+        title: "Sign in Required",
+        description: "Please sign in to save this workshop to your favorites"
+      })
+      return
+    }
+
+    if (isSaved) {
+      removeFavorite()
+    } else {
+      addFavorite()
+    }
+  }
+
+  const isProcessing = isAddingFavorite || isRemovingFavorite
 
   // Loading state
   if (isLoading) {
@@ -705,9 +751,22 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                   <Button size="lg" className="shadow-xl hover:shadow-2xl px-8">
                     Reserve Your Spot - ${workshop.price}
                   </Button>
-                  <Button size="lg" variant="outline" className="group">
-                    <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" strokeWidth="1.5" />
-                    Save Workshop
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="group"
+                    onClick={handleSaveToggle}
+                    disabled={isProcessing}
+                  >
+                    <Heart 
+                      className={`h-5 w-5 mr-2 transition-colors ${
+                        isSaved 
+                          ? 'text-rose-500 fill-rose-500' 
+                          : 'group-hover:text-rose-500'
+                      }`} 
+                      strokeWidth="1.5" 
+                    />
+                    {isSaved ? 'Saved' : 'Save Workshop'}
                   </Button>
                 </div>
                 <p className="text-sm text-olive-600">

@@ -9,8 +9,13 @@ import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { publicServicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { userAddFavoriteService, userRemoveFavoriteService } from "@/src/client"
+import { useUserFavoriteServices } from "@/hooks/use-user-favorite-services"
+import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
+import { toast } from "sonner"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -229,6 +234,58 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
     }] : [],
   } : MOCK_COURSE
 
+  // Auth and favorites state
+  const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
+  const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
+  
+  // Get the service ID for API calls
+  const serviceId = serviceData?.id
+  const isSaved = serviceId ? favoriteServiceIds.has(serviceId.toString()) : false
+  
+  // Mutations for save/unsave
+  const { mutate: addFavorite, isPending: isAddingFavorite } = useMutation({
+    mutationFn: () => userAddFavoriteService({ body: { service_id: serviceId } }),
+    onSuccess: () => {
+      toast.success("Course saved to favorites")
+      refetchFavorites()
+    },
+    onError: () => {
+      toast.error("Failed to save course")
+    },
+  })
+
+  const { mutate: removeFavorite, isPending: isRemovingFavorite } = useMutation({
+    mutationFn: () => userRemoveFavoriteService({ path: { service_id: serviceId } }),
+    onSuccess: () => {
+      toast.success("Course removed from favorites")
+      refetchFavorites()
+    },
+    onError: () => {
+      toast.error("Failed to remove course")
+    },
+  })
+
+  const handleSaveToggle = () => {
+    if (!isAuthenticated) {
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/courses/${slug}`,
+        title: "Sign in Required",
+        description: "Please sign in to save this course to your favorites"
+      })
+      return
+    }
+
+    if (isSaved) {
+      removeFavorite()
+    } else {
+      addFavorite()
+    }
+  }
+
+  const isProcessing = isAddingFavorite || isRemovingFavorite
+
   // Loading state
   if (isLoading) {
     return (
@@ -370,9 +427,22 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                   <Button size="lg" className="shadow-xl hover:shadow-2xl px-8">
                     Enroll Now - ${course.price}
                   </Button>
-                  <Button size="lg" variant="outline" className="group">
-                    <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" strokeWidth="1.5" />
-                    Save Course
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="group"
+                    onClick={handleSaveToggle}
+                    disabled={isProcessing}
+                  >
+                    <Heart 
+                      className={`h-5 w-5 mr-2 transition-colors ${
+                        isSaved 
+                          ? 'text-rose-500 fill-rose-500' 
+                          : 'group-hover:text-rose-500'
+                      }`} 
+                      strokeWidth="1.5" 
+                    />
+                    {isSaved ? 'Saved' : 'Save Course'}
                   </Button>
                 </div>
                 <p className="text-sm text-olive-600">
