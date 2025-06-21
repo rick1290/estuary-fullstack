@@ -150,4 +150,7 @@ urlpatterns = [
     
     # Additional auth endpoints (login, refresh, etc.)
     path('auth/', include('users.api.v1.urls')),
+    
+    # Include payment URLs (for webhooks)
+    path('', include('payments.api.v1.urls')),
 ]
