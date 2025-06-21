@@ -1060,26 +1060,45 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                     }
                 )
         
-        stripe_subscription = stripe.Subscription.create(
-            customer=request.user.payment_profile.stripe_customer_id,
-            items=[{'price': price_id}],
-            payment_behavior='default_incomplete',
-            payment_settings={
-                'payment_method_types': ['card'],
-                'save_default_payment_method': 'on_subscription'
-            },
-            expand=['latest_invoice.payment_intent'],
-            metadata={
-                'practitioner_id': str(request.user.practitioner_profile.id),
-                'tier_id': str(tier.id)
-            }
-        )
+        # Check if this is a free tier (price is 0)
+        is_free_tier = False
+        if tier.monthly_price == 0 and tier.annual_price == 0:
+            is_free_tier = True
+        
+        # Create subscription with different behavior for free vs paid
+        if is_free_tier:
+            # For free subscriptions, we don't need payment
+            stripe_subscription = stripe.Subscription.create(
+                customer=request.user.payment_profile.stripe_customer_id,
+                items=[{'price': price_id}],
+                expand=['latest_invoice.payment_intent'],
+                metadata={
+                    'practitioner_id': str(request.user.practitioner_profile.id),
+                    'tier_id': str(tier.id)
+                }
+            )
+        else:
+            # For paid subscriptions, require payment
+            stripe_subscription = stripe.Subscription.create(
+                customer=request.user.payment_profile.stripe_customer_id,
+                items=[{'price': price_id}],
+                payment_behavior='default_incomplete',
+                payment_settings={
+                    'payment_method_types': ['card'],
+                    'save_default_payment_method': 'on_subscription'
+                },
+                expand=['latest_invoice.payment_intent'],
+                metadata={
+                    'practitioner_id': str(request.user.practitioner_profile.id),
+                    'tier_id': str(tier.id)
+                }
+            )
         
         # Create subscription record
         subscription = PractitionerSubscription.objects.create(
             practitioner=request.user.practitioner_profile,
             tier=tier,
-            status='active',
+            status='active' if is_free_tier else 'incomplete',
             is_annual=serializer.validated_data.get('is_annual', False),
             stripe_subscription_id=stripe_subscription.id
         )
@@ -1090,13 +1109,19 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         practitioner.save(update_fields=['current_subscription'])
         
         response_serializer = PractitionerSubscriptionSerializer(subscription)
-        return Response(
-            {
-                'subscription': response_serializer.data,
-                'client_secret': stripe_subscription.latest_invoice.payment_intent.client_secret
-            },
-            status=status.HTTP_201_CREATED
-        )
+        
+        # Build response based on whether payment is needed
+        response_data = {
+            'subscription': response_serializer.data,
+        }
+        
+        # Only include client_secret if there's a payment intent
+        if (stripe_subscription.latest_invoice and 
+            stripe_subscription.latest_invoice.payment_intent and
+            stripe_subscription.latest_invoice.payment_intent.client_secret):
+            response_data['client_secret'] = stripe_subscription.latest_invoice.payment_intent.client_secret
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):

@@ -95,6 +95,7 @@ export function BillingSettings() {
     ...subscriptionsCreateMutation(),
     onSuccess: async (data: any) => {
       if (data.client_secret) {
+        // Paid subscription - need to confirm payment
         const stripe = await stripePromise
         if (!stripe) {
           toast({
@@ -120,12 +121,20 @@ export function BillingSettings() {
           queryClient.invalidateQueries({ queryKey: ["subscriptions"] })
           setIsUpgradeDialogOpen(false)
         }
+      } else {
+        // Free subscription - no payment needed
+        toast({
+          title: "Success!",
+          description: "Your subscription has been updated.",
+        })
+        queryClient.invalidateQueries({ queryKey: ["subscriptions"] })
+        setIsUpgradeDialogOpen(false)
       }
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.response?.data?.detail || "Failed to update subscription",
+        description: error.response?.data?.detail || error.response?.data?.error || "Failed to update subscription",
         variant: "destructive",
       })
     },
