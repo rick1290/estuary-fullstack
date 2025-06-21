@@ -36,19 +36,12 @@ declare module "next-auth/jwt" {
 
 // Get the API URL based on environment
 const getApiUrl = () => {
-  // NEXTAUTH_URL_INTERNAL is used for server-to-server communication
-  // This is useful when your frontend and backend are in different containers/networks
-  if (process.env.NEXTAUTH_URL_INTERNAL) {
-    return process.env.NEXTAUTH_URL_INTERNAL
+  // Use INTERNAL_API_URL for server-side API calls (Docker internal hostname)
+  if (process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL
   }
   
-  // When running in Docker, use the service name
-  // Check if we're in a Docker environment by looking at the hostname
-  if (process.env.HOSTNAME && process.env.HOSTNAME.includes('estuary-fullstack')) {
-    return 'http://admin:8000'
-  }
-  
-  // Use NEXT_PUBLIC_API_URL if set (for production)
+  // Fallback to NEXT_PUBLIC_API_URL
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
