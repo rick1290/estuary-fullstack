@@ -360,10 +360,10 @@ export function BillingSettings() {
           const features = getTierFeatures(tier.code)
 
           return (
-            <Card key={tier.id} className={`relative ${tier.code === 'professional' ? "border-primary" : ""}`}>
+            <Card key={tier.id} className={`relative overflow-visible ${tier.code === 'professional' ? "border-primary" : ""}`}>
               {tier.code === 'professional' && (
-                <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                <div className="absolute -top-3 left-0 right-0 flex justify-center z-10">
+                  <Badge className="bg-primary text-primary-foreground px-3 py-1">Most Popular</Badge>
                 </div>
               )}
               <CardHeader>

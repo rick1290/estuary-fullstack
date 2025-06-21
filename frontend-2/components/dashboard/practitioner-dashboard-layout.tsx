@@ -93,7 +93,6 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
     { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
     { text: "Clients", icon: <Users className="h-4 w-4" />, path: "/dashboard/practitioner/clients" },
     { text: "Messages", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/messages" },
-    { text: "Subscription", icon: <CreditCard className="h-4 w-4" />, path: "/dashboard/practitioner/subscription" },
     {
       text: "Manage Finances",
       icon: <DollarSign className="h-4 w-4" />,
