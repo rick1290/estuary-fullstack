@@ -1,0 +1,72 @@
+services:
+  # Next.js Frontend with Docker
+  - type: web
+    name: estuary-frontend
+    runtime: docker
+    dockerfilePath: ./frontend-2/Dockerfile.render
+    dockerContext: ./frontend-2
+    region: oregon
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      # Build-time variables (passed as ARG in Dockerfile)
+      - key: NEXT_PUBLIC_API_URL
+        value: https://estuary-backend.onrender.com  # Replace with your actual backend URL
+      - key: NEXTAUTH_URL
+        value: https://estuary-frontend.onrender.com # Replace with your actual frontend URL
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://estuary-frontend.onrender.com # Replace with your actual frontend URL
+      # Runtime variables
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      # If you need internal communication between services
+      - key: NEXTAUTH_URL_INTERNAL
+        value: http://estuary-backend:8000
+
+  # Django Backend API
+  - type: web
+    name: estuary-backend
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn estuary.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: estuary.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        value: estuary-backend.onrender.com,localhost
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estuary-db
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://estuary-frontend.onrender.com
+      # Add other backend environment variables as needed
+
+  # Redis for Caching
+  - type: redis
+    name: estuary-redis
+    region: oregon
+    plan: starter
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+
+databases:
+  # PostgreSQL Database
+  - name: estuary-db
+    region: oregon
+    plan: free
+    databaseName: estuary
+    user: estuary
+    postgresMajorVersion: 15
