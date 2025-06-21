@@ -7,12 +7,10 @@ let refreshPromise: Promise<any> | null = null;
 
 export const createClientConfig: CreateClientConfig = (config) => {
   // Create the base configuration
-  // Always use localhost for client-side requests
+  // Use NEXT_PUBLIC_API_URL for both client and server
   const baseConfig = {
     ...config,
-    baseUrl: typeof window !== 'undefined' 
-      ? 'http://localhost:8000'  // Client-side: use localhost
-      : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'), // Server-side: can use Docker service name
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   };
 
   // Add auth interceptor after client is created

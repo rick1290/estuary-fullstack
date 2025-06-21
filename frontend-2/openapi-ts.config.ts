@@ -1,5 +1,7 @@
 export default {
-  input: 'http://localhost:8000/api/v1/schema/',
+  input: process.env.OPENAPI_CONFIG_ENV === 'production' 
+    ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') + '/api/v1/schema/'
+    : 'http://localhost:8000/api/v1/schema/',
   output: 'src/client',
   plugins: [
     {

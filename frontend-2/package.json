@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "pnpm run generate:prod",
     "start": "next start",
     "start:production": "node start-production.js",
     "lint": "next lint",
     "generate": "openapi-ts",
     "generate:safe": "openapi-ts || echo 'Warning: Could not generate API client. Using cached version if available.'",
+    "generate:prod": "OPENAPI_CONFIG_ENV=production openapi-ts || echo 'Warning: Could not generate API client. Using cached version if available.'",
     "predev": "pnpm run generate:safe"
   },
   "dependencies": {
