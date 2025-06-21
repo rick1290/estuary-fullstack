@@ -86,7 +86,7 @@ export function BillingSettings() {
   useEffect(() => {
     if (isUpgradeDialogOpen && paymentMethods.length > 0 && !selectedPaymentMethodId) {
       const defaultMethod = paymentMethods.find(m => m.is_default) || paymentMethods[0]
-      setSelectedPaymentMethodId(defaultMethod.id?.toString() || null)
+      setSelectedPaymentMethodId(defaultMethod.stripe_payment_method_id || null)
     }
   }, [isUpgradeDialogOpen, paymentMethods, selectedPaymentMethodId])
 
@@ -430,9 +430,9 @@ export function BillingSettings() {
                         <RadioGroup value={selectedPaymentMethodId || ""} onValueChange={setSelectedPaymentMethodId}>
                           {paymentMethods.map((method) => (
                             <div key={method.id} className="flex items-center space-x-3 rounded-md border p-3">
-                              <RadioGroupItem value={method.id?.toString() || ""} id={method.id?.toString() || ""} />
+                              <RadioGroupItem value={method.stripe_payment_method_id || ""} id={method.stripe_payment_method_id || ""} />
                               <Label
-                                htmlFor={method.id?.toString() || ""}
+                                htmlFor={method.stripe_payment_method_id || ""}
                                 className="flex flex-1 cursor-pointer items-center justify-between"
                               >
                                 <div className="flex items-center space-x-3">

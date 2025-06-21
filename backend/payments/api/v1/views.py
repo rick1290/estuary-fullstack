@@ -1040,10 +1040,34 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             profile.save()
         
         import stripe
+        
+        # Set default payment method if provided
+        payment_method_id = serializer.validated_data.get('payment_method_id')
+        if payment_method_id:
+            # Verify payment method belongs to user
+            payment_method = PaymentMethod.objects.filter(
+                user=request.user,
+                stripe_payment_method_id=payment_method_id,
+                is_active=True
+            ).first()
+            
+            if payment_method:
+                # Set as default payment method for the customer
+                stripe.Customer.modify(
+                    request.user.payment_profile.stripe_customer_id,
+                    invoice_settings={
+                        'default_payment_method': payment_method_id
+                    }
+                )
+        
         stripe_subscription = stripe.Subscription.create(
             customer=request.user.payment_profile.stripe_customer_id,
             items=[{'price': price_id}],
             payment_behavior='default_incomplete',
+            payment_settings={
+                'payment_method_types': ['card'],
+                'save_default_payment_method': 'on_subscription'
+            },
             expand=['latest_invoice.payment_intent'],
             metadata={
                 'practitioner_id': str(request.user.practitioner_profile.id),
