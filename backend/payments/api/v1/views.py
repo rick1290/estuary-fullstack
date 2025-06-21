@@ -906,10 +906,8 @@ class PayoutViewSet(viewsets.ModelViewSet):
         tags=['Subscriptions'],
         responses={200: SubscriptionTiersResponseSerializer}
     ),
-    upgrade=extend_schema(tags=['Subscriptions']),
-    cancel=extend_schema(tags=['Subscriptions']),
-    reactivate=extend_schema(tags=['Subscriptions'])
-)
+    confirm_payment=extend_schema(tags=['Subscriptions']),
+    cancel=extend_schema(tags=['Subscriptions'])
 class SubscriptionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for practitioner subscriptions
@@ -1122,6 +1120,60 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             response_data['client_secret'] = stripe_subscription.latest_invoice.payment_intent.client_secret
         
         return Response(response_data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'])
+    def confirm_payment(self, request, pk=None):
+        """Confirm payment for a subscription after frontend payment confirmation"""
+        subscription = self.get_object()
+        
+        # Only confirm if subscription is incomplete
+        if subscription.status != 'incomplete':
+            return Response(
+                {'message': 'Subscription is already active or does not need confirmation'},
+                status=status.HTTP_200_OK
+            )
+        
+        # Verify with Stripe that the subscription is actually paid
+        stripe_client = StripeClient()
+        stripe_client.initialize()
+        
+        try:
+            import stripe
+            stripe_subscription = stripe.Subscription.retrieve(
+                subscription.stripe_subscription_id,
+                expand=['latest_invoice.payment_intent']
+            )
+            
+            # Check if the subscription is active in Stripe
+            if stripe_subscription.status == 'active':
+                # Update our subscription to active
+                subscription.status = 'active'
+                subscription.save()
+                
+                # Update practitioner's current subscription
+                practitioner = subscription.practitioner
+                practitioner.current_subscription = subscription
+                practitioner.save(update_fields=['current_subscription'])
+                
+                serializer = self.get_serializer(subscription)
+                return Response({
+                    'subscription': serializer.data,
+                    'message': 'Subscription activated successfully'
+                })
+            else:
+                # Payment might still be processing
+                return Response({
+                    'subscription': self.get_serializer(subscription).data,
+                    'message': f'Subscription is {stripe_subscription.status} in Stripe',
+                    'stripe_status': stripe_subscription.status
+                }, status=status.HTTP_202_ACCEPTED)
+                
+        except Exception as e:
+            logger.error(f"Error confirming subscription payment: {e}")
+            return Response(
+                {'error': 'Failed to confirm subscription status'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):

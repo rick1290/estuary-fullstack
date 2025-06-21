@@ -114,10 +114,33 @@ export function BillingSettings() {
             variant: "destructive",
           })
         } else {
-          toast({
-            title: "Success!",
-            description: "Your subscription has been updated.",
-          })
+          // Payment successful - confirm with backend immediately
+          try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscriptions/${data.subscription.id}/confirm_payment/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+              },
+            })
+            
+            if (response.ok) {
+              toast({
+                title: "Success!",
+                description: "Your subscription has been activated.",
+              })
+            } else {
+              // Still show success - webhook will handle it eventually
+              toast({
+                title: "Success!",
+                description: "Your payment was successful. Subscription will be activated shortly.",
+              })
+            }
+          } catch (err) {
+            // Don't show error - webhook will handle it
+            console.error('Failed to confirm payment:', err)
+          }
+          
           queryClient.invalidateQueries({ queryKey: ["subscriptions"] })
           setIsUpgradeDialogOpen(false)
         }
