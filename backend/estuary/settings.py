@@ -453,6 +453,9 @@ STRIPE_CURRENCY = 'usd'
 STRIPE_AUTOMATIC_TAX_ENABLED = os.getenv('STRIPE_AUTOMATIC_TAX_ENABLED', 'False').lower() == 'true'
 STRIPE_STATEMENT_DESCRIPTOR = 'ESTUARY'
 
+# Frontend URL for redirects
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3001')
+
 # Payment settings
 PAYMENT_MINIMUM_AMOUNT_CENTS = 100  # $1.00 minimum
 PAYMENT_HOLD_PERIOD_HOURS = 48  # Hold period before practitioner can withdraw
