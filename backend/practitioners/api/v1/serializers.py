@@ -10,7 +10,7 @@ from decimal import Decimal
 from practitioners.models import (
     Practitioner, Specialize, Style, Topic, Certification, Education,
     Schedule, ScheduleTimeSlot, SchedulePreference, OutOfOffice,
-    VerificationDocument, PractitionerOnboardingProgress, Question
+    VerificationDocument, PractitionerOnboardingProgress, Question, ClientNote
 )
 from locations.models import PractitionerLocation
 from services.models import Service, ServiceType
@@ -626,3 +626,23 @@ class PractitionerClientSerializer(serializers.ModelSerializer):
         ).distinct()
         
         return list(service_types)
+
+
+class ClientNoteSerializer(serializers.ModelSerializer):
+    """Serializer for client notes created by practitioners"""
+    practitioner_name = serializers.CharField(source='practitioner.display_name', read_only=True)
+    
+    class Meta:
+        model = ClientNote
+        fields = ['id', 'content', 'created_at', 'updated_at', 'practitioner_name']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'practitioner_name']
+    
+    def create(self, validated_data):
+        """Create a new client note"""
+        # Get practitioner from request user
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'practitioner_profile'):
+            raise serializers.ValidationError("You must be a practitioner to create notes")
+        
+        validated_data['practitioner'] = request.user.practitioner_profile
+        return super().create(validated_data)

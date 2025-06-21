@@ -55,6 +55,8 @@ from .filters import PractitionerFilter
     search=extend_schema(tags=['Practitioners']),
     stats=extend_schema(tags=['Practitioners']),
     clients=extend_schema(tags=['Practitioners']),
+    client_notes=extend_schema(tags=['Practitioners']),
+    client_note_detail=extend_schema(tags=['Practitioners']),
     earnings=extend_schema(tags=['Practitioners']),
     transactions=extend_schema(tags=['Practitioners']),
     balance=extend_schema(tags=['Practitioners']),
@@ -510,6 +512,120 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         
         serializer = PractitionerClientSerializer(clients, many=True)
         return Response(serializer.data)
+    
+    @extend_schema(
+        methods=['POST'],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'content': {
+                        'type': 'string',
+                        'description': 'The note content'
+                    }
+                },
+                'required': ['content']
+            }
+        },
+        responses={201: 'ClientNote'},
+        description="Create a new note for a specific client"
+    )
+    @action(detail=False, methods=['get', 'post'], url_path='clients/(?P<client_id>[^/]+)/notes', permission_classes=[IsAuthenticated])
+    def client_notes(self, request, client_id=None):
+        """
+        Get or create notes for a specific client.
+        Only the practitioner who created the notes can view/edit them.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get the client
+        client = get_object_or_404(User, pk=client_id)
+        
+        # Verify the practitioner has had bookings with this client
+        has_bookings = Booking.objects.filter(
+            practitioner=practitioner,
+            user=client,
+            status__in=['completed', 'confirmed', 'in_progress']
+        ).exists()
+        
+        if not has_bookings:
+            return Response(
+                {"detail": "You have not had any bookings with this client"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if request.method == 'GET':
+            # Get all notes for this client by this practitioner
+            from practitioners.models import ClientNote
+            notes = practitioner.client_notes.filter(client=client).order_by('-created_at')
+            
+            from .serializers import ClientNoteSerializer
+            serializer = ClientNoteSerializer(notes, many=True, context={'request': request})
+            return Response(serializer.data)
+        
+        else:  # POST
+            # Create a new note
+            from .serializers import ClientNoteSerializer
+            serializer = ClientNoteSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            
+            # Add the client to the validated data
+            serializer.save(client=client)
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @extend_schema(
+        methods=['PUT'],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'content': {
+                        'type': 'string',
+                        'description': 'The note content'
+                    }
+                },
+                'required': ['content']
+            }
+        },
+        responses={200: 'ClientNote'},
+        description="Update a specific client note"
+    )
+    @action(detail=False, methods=['put', 'delete'], url_path='clients/notes/(?P<note_id>[^/]+)', permission_classes=[IsAuthenticated])
+    def client_note_detail(self, request, note_id=None):
+        """
+        Update or delete a specific client note.
+        Only the practitioner who created the note can modify it.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get the note and verify ownership
+        from practitioners.models import ClientNote
+        note = get_object_or_404(ClientNote, pk=note_id, practitioner=practitioner)
+        
+        if request.method == 'PUT':
+            # Update the note
+            from .serializers import ClientNoteSerializer
+            serializer = ClientNoteSerializer(note, data=request.data, partial=True, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        
+        else:  # DELETE
+            note.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def earnings(self, request):

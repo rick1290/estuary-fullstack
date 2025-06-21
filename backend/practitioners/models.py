@@ -705,4 +705,3 @@ class ClientNote(BaseModel):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-EOF < /dev/null
