@@ -10,9 +10,13 @@ export default function UserDashboardPage() {
       <div className="space-y-6">
         <UserStats />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <UserUpcomingBookings />
-          <UserRecommendations />
-          <UserDashboardFavorites />
+          <div className="lg:col-span-2">
+            <UserUpcomingBookings />
+          </div>
+          <div className="space-y-6">
+            <UserRecommendations />
+            <UserDashboardFavorites />
+          </div>
         </div>
       </div>
     </UserDashboardLayout>

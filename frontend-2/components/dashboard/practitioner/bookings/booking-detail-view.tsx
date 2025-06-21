@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   bookingsRetrieveOptions, 
-  bookingsCancelMutation,
-  bookingsCompleteMutation,
-  bookingsConfirmMutation
+  bookingsCancelCreateMutation,
+  bookingsCompleteCreateMutation,
+  bookingsConfirmCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -66,7 +66,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
 
   // Mutations
   const cancelMutation = useMutation({
-    ...bookingsCancelMutation(),
+    ...bookingsCancelCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Booking canceled",
@@ -84,7 +84,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   })
 
   const completeMutation = useMutation({
-    ...bookingsCompleteMutation(),
+    ...bookingsCompleteCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Booking completed",
@@ -102,7 +102,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   })
 
   const confirmMutation = useMutation({
-    ...bookingsConfirmMutation(),
+    ...bookingsConfirmCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Booking confirmed",

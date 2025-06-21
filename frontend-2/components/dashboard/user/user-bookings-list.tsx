@@ -38,556 +38,131 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { format, parseISO, isPast, isFuture } from "date-fns"
+import Link from "next/link"
 
-// Mock data for bookings (fallback)
-const mockBookings = [
-  {
-    id: 1,
-    serviceName: "Mindfulness Meditation Session",
-    practitionerName: "Dr. Sarah Johnson",
-    practitionerImage: "/practitioner-1.jpg",
-    date: "2023-06-15",
-    time: "10:00 AM",
-    duration: "60 min",
-    location: "Virtual",
-    status: "upcoming",
-    serviceType: "session",
-    description:
-      "A guided meditation session focused on mindfulness techniques for stress reduction and improved focus.",
-  },
-  {
-    id: 2,
-    serviceName: "Stress Management Workshop",
-    practitionerName: "Michael Chen",
-    practitionerImage: "/practitioner-2.jpg",
-    date: "2023-06-18",
-    time: "2:00 PM",
-    duration: "90 min",
-    location: "In-person",
-    address: "123 Wellness Center, Suite 200, San Francisco, CA",
-    status: "upcoming",
-    serviceType: "workshop",
-    description: "Learn practical techniques to manage stress in your daily life and work environment.",
-  },
-  // Adding unscheduled bookings
-  {
-    id: 8,
-    serviceName: "Personal Wellness Consultation",
-    practitionerName: "Dr. Emily Parker",
-    practitionerImage: "/practitioner-3.jpg",
-    status: "unscheduled",
-    serviceType: "session",
-    description: "A personalized wellness consultation to help you create a balanced lifestyle plan.",
-    price: "$95.00",
-    bookingDate: "2023-06-08",
-    bookingReference: "EST-WEL-4321",
-    expiryDate: "2023-09-08", // 3 months from purchase
-    duration: "60 min",
-    location: "Virtual or In-person (your choice)",
-    purchaseType: "Single Session",
-  },
-  {
-    id: 9,
-    serviceName: "Yoga Therapy Package",
-    practitionerName: "James Wilson",
-    practitionerImage: "/practitioner-4.jpg",
-    status: "unscheduled",
-    serviceType: "package",
-    description: "A series of 5 personalized yoga therapy sessions to address specific health concerns.",
-    price: "$275.00",
-    bookingDate: "2023-06-05",
-    bookingReference: "EST-YOG-8765",
-    expiryDate: "2024-06-05", // 1 year from purchase
-    duration: "60 min per session",
-    location: "Virtual",
-    purchaseType: "Package (5 sessions)",
-    sessionsRemaining: 5,
-    sessionsTotal: 5,
-  },
-  {
-    id: 3,
-    serviceName: "Yoga for Beginners",
-    practitionerName: "Emma Wilson",
-    practitionerImage: "/practitioner-3.jpg",
-    date: "2023-06-10",
-    time: "9:00 AM",
-    duration: "60 min",
-    location: "Virtual",
-    status: "completed",
-    serviceType: "course",
-    description: "An introduction to basic yoga poses and breathing techniques suitable for beginners.",
-  },
-  {
-    id: 4,
-    serviceName: "Nutritional Consultation",
-    practitionerName: "Dr. Robert Smith",
-    practitionerImage: "/practitioner-4.jpg",
-    date: "2023-06-05",
-    time: "3:30 PM",
-    duration: "45 min",
-    location: "In-person",
-    address: "456 Health Center, Room 102, San Francisco, CA",
-    status: "completed",
-    serviceType: "session",
-    description: "A personalized nutrition consultation to help you develop healthy eating habits.",
-  },
-  {
-    id: 5,
-    serviceName: "Life Coaching Session",
-    practitionerName: "Jessica Brown",
-    practitionerImage: "/abstract-user-icon.png",
-    date: "2023-06-20",
-    time: "11:00 AM",
-    duration: "60 min",
-    location: "Virtual",
-    status: "upcoming",
-    serviceType: "session",
-    description: "A one-on-one coaching session to help you identify and achieve your personal and professional goals.",
-  },
-  {
-    id: 6,
-    serviceName: "Career Guidance Workshop",
-    practitionerName: "David Wilson",
-    practitionerImage: "/abstract-user-icon.png",
-    date: "2023-06-01",
-    time: "2:00 PM",
-    duration: "120 min",
-    location: "Virtual",
-    status: "cancelled",
-    serviceType: "workshop",
-    description: "A workshop designed to help you navigate career transitions and identify new opportunities.",
-  },
-  {
-    id: 7,
-    serviceName: "Meditation Retreat",
-    practitionerName: "Lisa Chen",
-    practitionerImage: "/practitioner-2.jpg",
-    date: new Date(Date.now() + 30 * 60000).toLocaleDateString(), // 30 minutes from now
-    time: new Date(Date.now() + 30 * 60000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    duration: "180 min",
-    location: "Virtual",
-    status: "upcoming",
-    serviceType: "course",
-    description:
-      "An immersive meditation experience to help you disconnect from daily stressors and reconnect with yourself.",
-  },
-]
-
-type BookingStatus = "all" | "unscheduled" | "upcoming" | "completed" | "cancelled"
-type ServiceType = "all" | "session" | "course" | "workshop" | "package"
+type BookingStatus = "all" | "upcoming" | "unscheduled" | "past" | "cancelled"
+type ServiceType = "all" | "session" | "workshop" | "course" | "package"
 
 export default function UserBookingsList() {
   const router = useRouter()
-  
-  // Fetch bookings from API with error handling
-  const { data: bookingsData, isLoading, error, refetch } = useQuery({
-    ...bookingsListOptions(),
-    retry: 3,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  })
-  
-  // Use API data or fallback to mock data for development
-  const bookings = useMemo(() => {
-    if (bookingsData) {
-      // Handle both direct arrays and paginated responses
-      const results = Array.isArray(bookingsData) ? bookingsData : 
-                     (bookingsData?.results && Array.isArray(bookingsData.results)) ? bookingsData.results : []
-      
-      // Transform API data to match component structure
-      return results.map((booking: any) => ({
-        id: booking.id,
-        serviceName: booking.service?.name || booking.service_name || 'Service',
-        practitionerName: booking.practitioner?.display_name || booking.practitioner_name || 'Practitioner',
-        practitionerImage: booking.practitioner?.profile_image_url || '/abstract-user-icon.png',
-        date: booking.booking_date || booking.date,
-        time: booking.start_time || booking.time,
-        duration: `${booking.duration || 60} min`,
-        location: booking.location_type === 'virtual' ? 'Virtual' : 'In-person',
-        address: booking.address,
-        status: booking.status,
-        serviceType: booking.service?.service_type_code || booking.service_type || 'session',
-        description: booking.service?.description || booking.description || '',
-        price: booking.total_amount ? `$${(booking.total_amount / 100).toFixed(2)}` : undefined,
-        bookingDate: booking.created_at,
-        bookingReference: `EST-${booking.id}`,
-        expiryDate: booking.expires_at,
-        purchaseType: booking.booking_type || 'Single Session',
-        sessionsRemaining: booking.sessions_remaining,
-        sessionsTotal: booking.sessions_total,
-      }))
-    }
-    return mockBookings // Fallback to mock data during development
-  }, [bookingsData])
-  
-  // Extract unique practitioner names for the filter
-  const uniquePractitioners = Array.from(new Set(bookings.map((booking) => booking.practitionerName)))
-  const [statusFilter, setStatusFilter] = useState<BookingStatus>("all")
-  const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType>("all")
-  const [selectedPractitioners, setSelectedPractitioners] = useState<string[]>([])
+  const [activeTab, setActiveTab] = useState<BookingStatus>("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
+  const [selectedServiceTypes, setSelectedServiceTypes] = useState<ServiceType[]>(["all"])
 
-  // Apply all filters to get filtered bookings
+  // Fetch bookings from API
+  const { data, isLoading, error } = useQuery({
+    ...bookingsListOptions({
+      query: {
+        ordering: "-created_at"
+      }
+    }),
+  })
+
+  const bookings = data?.results || []
+
+  // Filter bookings based on status
   const filteredBookings = useMemo(() => {
-    return bookings.filter((booking) => {
-      // Status filter
-      if (statusFilter !== "all" && booking.status !== statusFilter) {
-        return false
-      }
+    let filtered = bookings
 
-      // Service type filter
-      if (serviceTypeFilter !== "all" && booking.serviceType !== serviceTypeFilter) {
-        return false
-      }
-
-      // Practitioner filter
-      if (selectedPractitioners.length > 0 && !selectedPractitioners.includes(booking.practitionerName)) {
-        return false
-      }
-
-      // Search query (search in service name and practitioner name)
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        return (
-          booking.serviceName.toLowerCase().includes(query) || booking.practitionerName.toLowerCase().includes(query)
-        )
-      }
-
-      return true
-    })
-  }, [statusFilter, serviceTypeFilter, selectedPractitioners, searchQuery])
-
-  // Navigate to booking details page
-  const handleViewDetails = (bookingId: number) => {
-    router.push(`/dashboard/user/bookings/${bookingId}`)
-  }
-
-  // Navigate to scheduling page
-  const handleScheduleBooking = (e: React.MouseEvent, bookingId: number) => {
-    e.stopPropagation()
-    router.push(`/dashboard/user/bookings/${bookingId}/schedule`)
-  }
-
-  // Toggle practitioner selection
-  const togglePractitioner = (practitioner: string) => {
-    setSelectedPractitioners((prev) =>
-      prev.includes(practitioner) ? prev.filter((p) => p !== practitioner) : [...prev, practitioner],
-    )
-  }
-
-  // Clear all filters
-  const clearFilters = () => {
-    setServiceTypeFilter("all")
-    setSelectedPractitioners([])
-    setSearchQuery("")
-  }
-
-  // Check if any filters are active
-  const hasActiveFilters = serviceTypeFilter !== "all" || selectedPractitioners.length > 0 || searchQuery !== ""
-
-  // Check if a session is joinable (within 1 hour of start time)
-  const isSessionJoinable = (booking: (typeof bookings)[0]) => {
-    if (booking.status !== "upcoming") return false
-    if (!booking.date || !booking.time) return false
-
-    // Parse the date and time
-    const bookingDate = new Date(`${booking.date} ${booking.time}`)
-    const now = new Date()
-
-    // Calculate time difference in milliseconds
-    const timeDiff = bookingDate.getTime() - now.getTime()
-
-    // Check if within 1 hour (3600000 milliseconds)
-    return timeDiff > 0 && timeDiff <= 3600000
-  }
-
-  // Get the current timezone for display
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const timezoneAbbr = new Date().toLocaleTimeString("en-us", { timeZoneName: "short" }).split(" ")[2]
-
-  // Function to get badge variant based on status
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "unscheduled":
-        return "outline"
-      case "upcoming":
-        return "default"
-      case "completed":
-        return "success"
-      case "cancelled":
-        return "destructive"
-      default:
-        return "secondary"
+    // Filter by status
+    if (activeTab !== "all") {
+      filtered = filtered.filter((booking: any) => {
+        if (activeTab === "upcoming") {
+          return booking.status === "confirmed" && isFuture(parseISO(booking.start_time))
+        } else if (activeTab === "past") {
+          return booking.status === "completed" || isPast(parseISO(booking.start_time))
+        } else if (activeTab === "cancelled") {
+          return booking.status === "cancelled"
+        } else if (activeTab === "unscheduled") {
+          return booking.status === "pending" || !booking.start_time
+        }
+        return true
+      })
     }
-  }
 
-  // Function to get badge for service type
-  const getServiceTypeBadge = (type: string) => {
-    switch (type) {
-      case "session":
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter((booking: any) => {
+        const service = booking.service
+        const practitioner = service?.practitioner || service?.primary_practitioner
+        const searchLower = searchQuery.toLowerCase()
+        
         return (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
-            Session
-          </Badge>
+          service?.name?.toLowerCase().includes(searchLower) ||
+          practitioner?.display_name?.toLowerCase().includes(searchLower) ||
+          booking.booking_reference?.toLowerCase().includes(searchLower)
         )
-      case "course":
-        return (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-blue-100 text-blue-800 hover:bg-blue-100">
-            Course
-          </Badge>
-        )
-      case "workshop":
-        return (
-          <Badge
-            variant="secondary"
-            className="text-xs px-1.5 py-0 h-4 bg-purple-100 text-purple-800 hover:bg-purple-100"
-          >
-            Workshop
-          </Badge>
-        )
-      case "package":
-        return (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-green-100 text-green-800 hover:bg-green-100">
-            Package
-          </Badge>
-        )
-      default:
-        return null
+      })
     }
-  }
 
-  // Function to render the appropriate booking card based on status
-  const renderBookingCard = (booking: (typeof bookings)[0]) => {
-    if (booking.status === "unscheduled") {
-      return renderUnscheduledBookingCard(booking)
+    // Filter by service type
+    if (!selectedServiceTypes.includes("all") && selectedServiceTypes.length > 0) {
+      filtered = filtered.filter((booking: any) => {
+        const serviceType = booking.service?.service_type || "session"
+        return selectedServiceTypes.includes(serviceType)
+      })
     }
-    return renderScheduledBookingCard(booking)
+
+    return filtered
+  }, [bookings, activeTab, searchQuery, selectedServiceTypes])
+
+  const getStatusBadge = (booking: any) => {
+    if (booking.status === "cancelled") {
+      return <Badge variant="destructive">Cancelled</Badge>
+    } else if (booking.status === "completed") {
+      return <Badge variant="outline">Completed</Badge>
+    } else if (booking.status === "confirmed" && booking.start_time) {
+      if (isFuture(parseISO(booking.start_time))) {
+        return <Badge variant="default">Upcoming</Badge>
+      } else {
+        return <Badge variant="outline">Past</Badge>
+      }
+    } else if (booking.status === "pending" || !booking.start_time) {
+      return <Badge variant="secondary">Unscheduled</Badge>
+    }
+    return <Badge variant="outline">{booking.status}</Badge>
   }
 
-  // Render a card for an unscheduled booking
-  const renderUnscheduledBookingCard = (booking: (typeof bookings)[0]) => {
-    return (
-      <Card
-        key={booking.id}
-        className="overflow-hidden transition-all hover:shadow-md cursor-pointer border-dashed group"
-        onClick={() => handleViewDetails(booking.id)}
-      >
-        <CardContent className="p-0">
-          <div className="flex flex-col sm:flex-row">
-            {/* Status Indicator - dotted border for unscheduled */}
-            <div className="w-full sm:w-1 h-1 sm:h-auto bg-amber-400" />
-
-            <div className="flex-1 p-3 sm:p-4">
-              <div className="flex items-start justify-between gap-2">
-                {/* Left side - Booking info */}
-                <div className="flex items-start gap-2">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={booking.practitionerImage || "/placeholder.svg"} alt={booking.practitionerName} />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <h3 className="font-medium text-base leading-tight">{booking.serviceName}</h3>
-                      <Badge variant="outline" className="border-amber-400 text-amber-600 text-xs px-1.5 py-0 h-4">
-                        Schedule
-                      </Badge>
-                      {getServiceTypeBadge(booking.serviceType)}
-                    </div>
-                    <p className="text-muted-foreground text-sm">with {booking.practitionerName}</p>
-
-                    {/* Purchase info - combined into fewer lines */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs">
-                      <div className="flex items-center">
-                        <Calendar className="h-3 w-3 mr-1 text-amber-500" />
-                        <span>Purchased {booking.bookingDate}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1 text-amber-500" />
-                        <span>{booking.duration}</span>
-                      </div>
-                      {booking.expiryDate && (
-                        <div className="flex items-center">
-                          <AlertCircle className="h-3 w-3 mr-1 text-amber-500" />
-                          <span>Expires {booking.expiryDate}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right side - Actions */}
-                <div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-amber-500 hover:bg-amber-600 flex items-center gap-1 h-7 px-2 text-xs"
-                    onClick={(e) => handleScheduleBooking(e, booking.id)}
-                  >
-                    <CalendarPlus className="h-3 w-3" />
-                    Schedule
-                  </Button>
-                </div>
-              </div>
-
-              {/* View details indicator - only show on hover */}
-              <div className="flex justify-end mt-1 text-xs text-muted-foreground items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span>View details</span>
-                <ChevronRight className="h-3 w-3 ml-1" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // Render a card for a scheduled booking
-  const renderScheduledBookingCard = (booking: (typeof bookings)[0]) => {
-    const joinable = isSessionJoinable(booking)
-
-    return (
-      <Card
-        key={booking.id}
-        className="overflow-hidden transition-all hover:shadow-md cursor-pointer group"
-        onClick={() => handleViewDetails(booking.id)}
-      >
-        <CardContent className="p-0">
-          <div className="flex flex-col sm:flex-row">
-            {/* Status Indicator */}
-            <div
-              className={`w-full sm:w-1 h-1 sm:h-auto ${
-                booking.status === "upcoming"
-                  ? "bg-primary"
-                  : booking.status === "completed"
-                    ? "bg-green-500"
-                    : "bg-red-500"
-              }`}
-            />
-
-            <div className="flex-1 p-3 sm:p-4">
-              <div className="flex items-start justify-between gap-2">
-                {/* Left side - Booking info */}
-                <div className="flex items-start gap-2">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={booking.practitionerImage || "/placeholder.svg"} alt={booking.practitionerName} />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <h3 className="font-medium text-base leading-tight">{booking.serviceName}</h3>
-                      {getServiceTypeBadge(booking.serviceType)}
-                    </div>
-                    <p className="text-muted-foreground text-sm">with {booking.practitionerName}</p>
-
-                    {/* Date, Time, Location - combined into fewer lines */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs">
-                      <div className="flex items-center">
-                        <Calendar className="h-3 w-3 mr-1 text-primary" />
-                        <span>{booking.date}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1 text-primary" />
-                        <span>
-                          {booking.time} • {booking.duration}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="h-3 w-3 mr-1 text-primary" />
-                        <span>{booking.location}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right side - Status and Actions */}
-                <div className="flex flex-col items-end gap-2">
-                  <Badge variant={getStatusBadgeVariant(booking.status)} className="text-xs px-2 py-0 h-5">
-                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                  </Badge>
-
-                  {booking.status === "upcoming" &&
-                    booking.location === "Virtual" &&
-                    (joinable ? (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 flex items-center gap-1 h-7 px-2 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          // Handle join action
-                        }}
-                      >
-                        <Video className="h-3 w-3" />
-                        Join Now
-                      </Button>
-                    ) : (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1 h-7 px-2 text-xs"
-                              disabled
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Video className="h-3 w-3" />
-                              Join
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>You can join this session up to 1 hour before it begins</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ))}
-                </div>
-              </div>
-
-              {/* View details indicator - only show on hover */}
-              <div className="flex justify-end mt-1 text-xs text-muted-foreground items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span>View details</span>
-                <ChevronRight className="h-3 w-3 ml-1" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  const handleServiceTypeChange = (type: ServiceType) => {
+    if (type === "all") {
+      setSelectedServiceTypes(["all"])
+    } else {
+      const newTypes = selectedServiceTypes.filter((t) => t !== "all")
+      if (newTypes.includes(type)) {
+        const filtered = newTypes.filter((t) => t !== type)
+        setSelectedServiceTypes(filtered.length === 0 ? ["all"] : filtered)
+      } else {
+        setSelectedServiceTypes([...newTypes, type])
+      }
+    }
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <Skeleton className="h-10 w-full sm:w-96" />
-          <div className="flex gap-2">
-            <Skeleton className="h-8 w-32" />
-            <Skeleton className="h-8 w-20" />
-          </div>
+      <div className="space-y-6">
+        {/* Search and Filters Skeleton */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-32" />
         </div>
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
+
+        {/* Tabs Skeleton */}
+        <Skeleton className="h-10 w-full max-w-md" />
+
+        {/* Bookings Skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex gap-4">
+                  <Skeleton className="h-24 w-24 rounded-lg" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
-                    <div className="flex gap-4">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
+                    <Skeleton className="h-4 w-1/3" />
                   </div>
-                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-10 w-28" />
                 </div>
               </CardContent>
             </Card>
@@ -597,262 +172,262 @@ export default function UserBookingsList() {
     )
   }
 
-  // Handle error state
   if (error) {
     return (
-      <div className="space-y-4">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            Failed to load your bookings. 
-            <Button 
-              variant="link" 
-              className="text-red-600 p-0 h-auto text-sm ml-1" 
-              onClick={() => refetch()}
-            >
-              Try again
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>Failed to load bookings. Please try again later.</AlertDescription>
+      </Alert>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        {/* Status Filter Tabs */}
-        <Tabs
-          defaultValue={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as BookingStatus)}
-          className="w-full sm:w-auto"
-        >
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="unscheduled">Unscheduled</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Search and Filter Toggle */}
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search bookings..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-[200px] pl-8 h-8 text-sm"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-2 py-0"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="h-3.5 w-3.5" />
-                <span className="sr-only">Clear search</span>
-              </Button>
-            )}
-          </div>
-
-          <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => setShowFilters(!showFilters)}>
-            <Filter className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Filters</span>
-            <ChevronDown className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Expanded Filters */}
-      {showFilters && (
-        <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/30 rounded-md">
-          {/* Service Type Filter */}
-          <div>
-            <span className="text-xs font-medium mr-2">Service Type:</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  {serviceTypeFilter === "all"
-                    ? "All Types"
-                    : serviceTypeFilter.charAt(0).toUpperCase() + serviceTypeFilter.slice(1)}
-                  <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[180px]">
-                <DropdownMenuCheckboxItem
-                  checked={serviceTypeFilter === "all"}
-                  onCheckedChange={() => setServiceTypeFilter("all")}
-                >
-                  All Types
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={serviceTypeFilter === "session"}
-                  onCheckedChange={() => setServiceTypeFilter("session")}
-                >
-                  Sessions
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={serviceTypeFilter === "course"}
-                  onCheckedChange={() => setServiceTypeFilter("course")}
-                >
-                  Courses
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={serviceTypeFilter === "workshop"}
-                  onCheckedChange={() => setServiceTypeFilter("workshop")}
-                >
-                  Workshops
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={serviceTypeFilter === "package"}
-                  onCheckedChange={() => setServiceTypeFilter("package")}
-                >
-                  Packages
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Practitioner Filter */}
-          <div>
-            <span className="text-xs font-medium mr-2">Practitioner:</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  {selectedPractitioners.length === 0
-                    ? "All Practitioners"
-                    : selectedPractitioners.length === 1
-                      ? selectedPractitioners[0]
-                      : `${selectedPractitioners.length} Selected`}
-                  <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[220px]">
-                <DropdownMenuLabel>Select Practitioners</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {uniquePractitioners.map((practitioner) => (
-                  <DropdownMenuCheckboxItem
-                    key={practitioner}
-                    checked={selectedPractitioners.includes(practitioner)}
-                    onCheckedChange={() => togglePractitioner(practitioner)}
-                  >
-                    {practitioner}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Clear Filters Button */}
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs ml-auto">
-              Clear Filters
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Active Filters Display */}
-      {hasActiveFilters && !showFilters && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Active filters:</span>
-
-          {serviceTypeFilter !== "all" && (
-            <Badge variant="outline" className="text-xs px-2 py-0.5 h-5 gap-1">
-              {serviceTypeFilter.charAt(0).toUpperCase() + serviceTypeFilter.slice(1)}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setServiceTypeFilter("all")}
-                className="h-4 w-4 p-0 ml-1"
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove filter</span>
-              </Button>
-            </Badge>
-          )}
-
-          {selectedPractitioners.map((practitioner) => (
-            <Badge key={practitioner} variant="outline" className="text-xs px-2 py-0.5 h-5 gap-1">
-              {practitioner}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => togglePractitioner(practitioner)}
-                className="h-4 w-4 p-0 ml-1"
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove filter</span>
-              </Button>
-            </Badge>
-          ))}
-
+    <div className="space-y-6">
+      {/* Search and Filters */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search bookings..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
           {searchQuery && (
-            <Badge variant="outline" className="text-xs px-2 py-0.5 h-5 gap-1">
-              "{searchQuery}"
-              <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")} className="h-4 w-4 p-0 ml-1">
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove search</span>
-              </Button>
-            </Badge>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
           )}
-
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs ml-auto">
-            Clear All
-          </Button>
         </div>
-      )}
 
-      {/* Timezone Note */}
-      <div className="mb-2">
-        <div className="flex items-center text-xs text-muted-foreground">
-          <Info className="h-3 w-3 mr-1" />
-          All times shown in your local time zone ({timezoneAbbr})
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="min-w-[140px] justify-between">
+              <Filter className="h-4 w-4 mr-2" />
+              Service Type
+              <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Filter by Service Type</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={selectedServiceTypes.includes("all")}
+              onCheckedChange={() => handleServiceTypeChange("all")}
+            >
+              All Types
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={selectedServiceTypes.includes("session")}
+              onCheckedChange={() => handleServiceTypeChange("session")}
+            >
+              Sessions
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={selectedServiceTypes.includes("workshop")}
+              onCheckedChange={() => handleServiceTypeChange("workshop")}
+            >
+              Workshops
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={selectedServiceTypes.includes("course")}
+              onCheckedChange={() => handleServiceTypeChange("course")}
+            >
+              Courses
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={selectedServiceTypes.includes("package")}
+              onCheckedChange={() => handleServiceTypeChange("package")}
+            >
+              Packages
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Unscheduled Bookings Alert - show only when there are unscheduled bookings and not filtering */}
-      {statusFilter !== "unscheduled" && bookings.some((booking) => booking.status === "unscheduled") && (
-        <Alert className="bg-amber-50 border-amber-200 mb-3 py-2">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-            <AlertDescription className="text-amber-800 text-sm">
-              You have {bookings.filter((b) => b.status === "unscheduled").length} unscheduled{" "}
-              {bookings.filter((b) => b.status === "unscheduled").length === 1 ? "booking" : "bookings"} that need
-              attention.
-              <Button
-                variant="link"
-                className="text-amber-600 p-0 h-auto text-sm ml-1"
-                onClick={() => setStatusFilter("unscheduled")}
+      {/* Status Tabs */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as BookingStatus)}>
+        <TabsList className="grid w-full grid-cols-5 max-w-[600px]">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="unscheduled">Unscheduled</TabsTrigger>
+          <TabsTrigger value="past">Past</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Results Count */}
+      <p className="text-sm text-muted-foreground">
+        {filteredBookings.length} {filteredBookings.length === 1 ? "booking" : "bookings"} found
+      </p>
+
+      {/* Bookings List */}
+      {filteredBookings.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="text-center space-y-3">
+              <CalendarPlus className="h-12 w-12 text-gray-300 mx-auto" />
+              <h3 className="text-lg font-medium">No bookings found</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {activeTab === "upcoming"
+                  ? "You don't have any upcoming bookings."
+                  : activeTab === "unscheduled"
+                  ? "You don't have any unscheduled services to book."
+                  : activeTab === "past"
+                  ? "You don't have any past bookings."
+                  : activeTab === "cancelled"
+                  ? "You don't have any cancelled bookings."
+                  : "You haven't made any bookings yet."}
+              </p>
+              {(activeTab === "all" || activeTab === "upcoming") && (
+                <Button asChild className="mt-4">
+                  <Link href="/marketplace">Explore Services</Link>
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredBookings.map((booking: any) => {
+            const service = booking.service
+            const practitioner = service?.practitioner || service?.primary_practitioner
+            const isUnscheduled = booking.status === "pending" || !booking.start_time
+
+            return (
+              <Card
+                key={booking.id}
+                className="overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                onClick={() => router.push(`/dashboard/user/bookings/${booking.id}`)}
               >
-                View
-              </Button>
-            </AlertDescription>
-          </div>
-        </Alert>
-      )}
+                <CardContent className="p-6">
+                  <div className="flex gap-4">
+                    {/* Service Image/Icon */}
+                    <div className="flex-shrink-0">
+                      <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                        {service?.service_type === "workshop" ? (
+                          <Users className="h-10 w-10 text-sage-600" />
+                        ) : service?.service_type === "course" ? (
+                          <Calendar className="h-10 w-10 text-terracotta-600" />
+                        ) : (
+                          <User className="h-10 w-10 text-olive-600" />
+                        )}
+                      </div>
+                    </div>
 
-      {/* Empty State */}
-      {filteredBookings.length === 0 && (
-        <Alert className="my-3 py-2">
-          <AlertDescription className="text-sm">
-            No bookings found matching your filters.
-            {hasActiveFilters && (
-              <Button variant="link" className="text-primary p-0 h-auto text-sm ml-1" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
+                    {/* Booking Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-medium text-lg text-gray-900 line-clamp-1">
+                            {service?.name || "Service"}
+                          </h3>
+                          {practitioner && (
+                            <div className="flex items-center mt-1">
+                              <Avatar className="h-5 w-5 mr-2">
+                                <AvatarImage
+                                  src={practitioner.profile_image_url}
+                                  alt={practitioner.display_name}
+                                />
+                                <AvatarFallback>
+                                  {practitioner.display_name?.charAt(0) || "P"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm text-gray-600">
+                                {practitioner.display_name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {getStatusBadge(booking)}
+                      </div>
 
-      {/* Bookings Cards */}
-      <div className="space-y-2">{filteredBookings.map((booking) => renderBookingCard(booking))}</div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        {isUnscheduled ? (
+                          <>
+                            <div className="flex items-center">
+                              <Info className="h-4 w-4 mr-2 text-amber-500" />
+                              <span className="text-amber-700">
+                                Needs scheduling - expires{" "}
+                                {booking.expires_at
+                                  ? format(parseISO(booking.expires_at), "MMM d, yyyy")
+                                  : "soon"}
+                              </span>
+                            </div>
+                            {booking.booking_reference && (
+                              <div className="flex items-center">
+                                <span className="font-medium">Reference:</span>
+                                <span className="ml-2">{booking.booking_reference}</span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {booking.start_time && (
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                {format(parseISO(booking.start_time), "EEEE, MMMM d, yyyy")}
+                              </div>
+                            )}
+                            {booking.start_time && (
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 mr-2" />
+                                {format(parseISO(booking.start_time), "h:mm a")}
+                                {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
+                              </div>
+                            )}
+                            <div className="flex items-center">
+                              {booking.location_type === "virtual" ? (
+                                <>
+                                  <Video className="h-4 w-4 mr-2" />
+                                  Virtual Session
+                                </>
+                              ) : (
+                                <>
+                                  <MapPin className="h-4 w-4 mr-2" />
+                                  {booking.location || "In-person"}
+                                </>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="flex-shrink-0 flex items-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/dashboard/user/bookings/${booking.id}`)
+                              }}
+                            >
+                              View Details
+                              <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View booking details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

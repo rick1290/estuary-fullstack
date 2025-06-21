@@ -657,3 +657,52 @@ class PractitionerOnboardingProgress(models.Model):
         }
         
         return step_descriptions.get(self.current_step, 'Continue onboarding process')
+
+
+class ClientNote(BaseModel):
+    """
+    Model for storing practitioner's private notes about clients.
+    These notes are only visible to the practitioner who created them.
+    """
+    practitioner = models.ForeignKey(
+        Practitioner, 
+        on_delete=models.CASCADE, 
+        related_name='client_notes',
+        help_text="The practitioner who created this note"
+    )
+    client = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='practitioner_notes_about',
+        help_text="The client this note is about"
+    )
+    content = models.TextField(
+        help_text="The note content"
+    )
+    
+    class Meta:
+        verbose_name = 'Client Note'
+        verbose_name_plural = 'Client Notes'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['practitioner', 'client', '-created_at']),
+            models.Index(fields=['practitioner', '-created_at']),
+            models.Index(fields=['client']),
+        ]
+        # Ensure each practitioner can only see their own notes
+        permissions = [
+            ("view_own_client_notes", "Can view own client notes"),
+        ]
+    
+    def __str__(self):
+        return f"Note by {self.practitioner} about {self.client.email} - {self.created_at.date()}"
+    
+    def clean(self):
+        """Validate that practitioner isn't making notes about themselves."""
+        if self.practitioner.user == self.client:
+            raise ValidationError("Practitioners cannot create notes about themselves")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+EOF < /dev/null
