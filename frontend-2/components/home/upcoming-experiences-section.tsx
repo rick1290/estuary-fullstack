@@ -144,7 +144,9 @@ export default function UpcomingExperiencesSection() {
                 </div>
                 <CardContent className="flex-grow flex flex-col p-4">
                   <div className="flex-grow">
-                    <h3 className="text-lg font-medium line-clamp-2 mb-1">{experience.title}</h3>
+                    <div className="min-h-[3rem] mb-2">
+                      <h3 className="text-lg font-medium leading-snug">{experience.title}</h3>
+                    </div>
                     <p className="text-muted-foreground text-sm mb-2">with {experience.practitioner}</p>
 
                     <div className="flex items-center mb-1 mt-3">
