@@ -257,7 +257,7 @@ def user_stats(request):
     
     # Import models we need
     from bookings.models import Booking
-    from users.models import UserFavoritePractitioner
+    from users.models import UserFavoritePractitioner, UserFavoriteService
     from services.models import Service
     
     # Get booking statistics
@@ -275,9 +275,8 @@ def user_stats(request):
     # Get favorites count
     favorite_practitioners = UserFavoritePractitioner.objects.filter(user=user).count()
     
-    # Get saved services count (if this exists)
-    # For now, we'll use a placeholder
-    favorite_services = 0
+    # Get saved services count
+    favorite_services = UserFavoriteService.objects.filter(user=user).count()
     
     # Calculate a simple wellness score based on activity
     # This is a placeholder - you might want to implement a more sophisticated algorithm
@@ -421,6 +420,132 @@ def remove_favorite(request, practitioner_id):
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     except UserFavoritePractitioner.DoesNotExist:
+        return Response(
+            {'error': 'Favorite not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+# Service favorites endpoints
+@extend_schema(
+    operation_id='user_favorite_services',
+    summary='List favorite services',
+    description='Get list of authenticated user favorite services',
+    responses={
+        200: OpenApiResponse(description='List of favorite services'),
+        401: OpenApiResponse(description='Not authenticated'),
+    },
+    tags=['User']
+)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_favorite_services(request):
+    """Get user's favorite services"""
+    from users.models import UserFavoriteService
+    from services.api.v1.serializers import ServiceListSerializer
+    
+    favorites = UserFavoriteService.objects.filter(
+        user=request.user
+    ).select_related(
+        'service__primary_practitioner',
+        'service__category'
+    ).order_by('-created_at')
+    
+    # Extract services and serialize them
+    services = [fav.service for fav in favorites]
+    serializer = ServiceListSerializer(services, many=True, context={'request': request})
+    
+    return Response({
+        'count': len(services),
+        'results': serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id='user_add_favorite_service',
+    summary='Add service to favorites',
+    description='Add a service to the authenticated user favorites',
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'service_id': {'type': 'integer', 'description': 'ID of the service to favorite'}
+            },
+            'required': ['service_id']
+        }
+    },
+    responses={
+        201: OpenApiResponse(description='Service added to favorites'),
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Not authenticated'),
+        404: OpenApiResponse(description='Service not found'),
+    },
+    tags=['User']
+)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_favorite_service(request):
+    """Add a service to favorites"""
+    from users.models import UserFavoriteService
+    from services.models import Service
+    
+    service_id = request.data.get('service_id')
+    if not service_id:
+        return Response(
+            {'error': 'service_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        service = Service.objects.get(id=service_id)
+    except Service.DoesNotExist:
+        return Response(
+            {'error': 'Service not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    favorite, created = UserFavoriteService.objects.get_or_create(
+        user=request.user,
+        service=service
+    )
+    
+    if created:
+        return Response(
+            {'message': 'Service added to favorites'},
+            status=status.HTTP_201_CREATED
+        )
+    else:
+        return Response(
+            {'message': 'Service already in favorites'},
+            status=status.HTTP_200_OK
+        )
+
+
+@extend_schema(
+    operation_id='user_remove_favorite_service',
+    summary='Remove service from favorites',
+    description='Remove a service from the authenticated user favorites',
+    responses={
+        204: OpenApiResponse(description='Service removed from favorites'),
+        401: OpenApiResponse(description='Not authenticated'),
+        404: OpenApiResponse(description='Favorite not found'),
+    },
+    tags=['User']
+)
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def remove_favorite_service(request, service_id):
+    """Remove a service from favorites"""
+    from users.models import UserFavoriteService
+    
+    try:
+        favorite = UserFavoriteService.objects.get(
+            user=request.user,
+            service_id=service_id
+        )
+        favorite.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except UserFavoriteService.DoesNotExist:
         return Response(
             {'error': 'Favorite not found'},
             status=status.HTTP_404_NOT_FOUND

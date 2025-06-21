@@ -1,5 +1,5 @@
 "use client"
-import React from "react"
+import React, { useState, useCallback } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles, AlertCircle } from "lucide-react"
@@ -13,6 +13,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
 import { publicServicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
+import { userAddFavoriteService, userRemoveFavoriteService } from "@/src/client/sdk.gen"
+import { toast } from "sonner"
+import { useUserFavoriteServices } from "@/hooks/use-user-favorite-services"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -450,6 +455,10 @@ const getWorkshopById = (id: string) => {
 
 export default function WorkshopPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
+  const [isSaveLoading, setIsSaveLoading] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
+  const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
   
   // Fetch workshop data from API using slug
   const { data: serviceData, isLoading, error } = useQuery({

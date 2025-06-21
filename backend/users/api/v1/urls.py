@@ -14,6 +14,9 @@ from .views import (
     user_favorites,
     add_favorite,
     remove_favorite,
+    user_favorite_services,
+    add_favorite_service,
+    remove_favorite_service,
 )
 
 app_name = 'users_api_v1'
@@ -31,8 +34,13 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('stats/', user_stats, name='user_stats'),
     
-    # Favorites endpoints
+    # Practitioner favorites endpoints
     path('favorites/', user_favorites, name='user_favorites'),
     path('favorites/add/', add_favorite, name='add_favorite'),
     path('favorites/<int:practitioner_id>/remove/', remove_favorite, name='remove_favorite'),
+    
+    # Service favorites endpoints
+    path('favorite-services/', user_favorite_services, name='user_favorite_services'),
+    path('favorite-services/add/', add_favorite_service, name='add_favorite_service'),
+    path('favorite-services/<int:service_id>/remove/', remove_favorite_service, name='remove_favorite_service'),
 ]

@@ -206,3 +206,25 @@ class UserFavoritePractitioner(BaseModel):
     
     def __str__(self):
         return f"{self.user.email} favorites {self.practitioner}"
+
+
+class UserFavoriteService(BaseModel):
+    """
+    Track user's favorite/saved services.
+    Allows users to save services for later consideration.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_services')
+    service = models.ForeignKey('services.Service', on_delete=models.CASCADE,
+                               related_name='favorited_by')
+    
+    class Meta:
+        verbose_name = _('user favorite service')
+        verbose_name_plural = _('user favorite services')
+        unique_together = ['user', 'service']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['service']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email} saved {self.service}"

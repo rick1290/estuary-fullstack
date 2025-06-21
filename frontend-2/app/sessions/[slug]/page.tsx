@@ -1,5 +1,5 @@
 "use client"
-import React from "react"
+import React, { useState, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
@@ -11,6 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
 import { publicServicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
+import { userAddFavoriteService, userRemoveFavoriteService } from "@/src/client/sdk.gen"
+import { toast } from "sonner"
+import { useUserFavoriteServices } from "@/hooks/use-user-favorite-services"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -116,6 +121,10 @@ Each session includes personalized guidance, feedback on your technique, and rec
 
 export default function SessionDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
+  const [isSaveLoading, setIsSaveLoading] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
+  const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
   
   // Fetch session data from API using slug
   const { data: serviceData, isLoading, error } = useQuery({
@@ -177,6 +186,52 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       reviewCount: serviceData.practitioner?.total_reviews || serviceData.primary_practitioner?.total_reviews || 0,
     },
   } : MOCK_SESSION
+
+  // Check if this service is favorited
+  const isFavorited = serviceData && favoriteServiceIds.has(serviceData.id?.toString() || serviceData.public_uuid)
+
+  // Handle save for later
+  const handleSaveForLater = useCallback(async () => {
+    if (!isAuthenticated) {
+      openAuthModal({
+        defaultTab: "login",
+        title: "Sign in to Save Services",
+        description: "Create an account to save services for later"
+      })
+      return
+    }
+
+    if (!serviceData) return
+
+    setIsSaveLoading(true)
+    try {
+      if (!isFavorited) {
+        // Add to favorites
+        await userAddFavoriteService({
+          body: {
+            service_id: serviceData.id
+          }
+        })
+        toast.success("Service saved for later")
+      } else {
+        // Remove from favorites
+        await userRemoveFavoriteService({
+          path: {
+            service_id: serviceData.id
+          }
+        })
+        toast.success("Service removed from saved")
+      }
+      
+      // Refetch favorites to update the UI
+      await refetchFavorites()
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+      toast.error("Failed to update saved status")
+    } finally {
+      setIsSaveLoading(false)
+    }
+  }, [serviceData, isFavorited, isAuthenticated, openAuthModal, refetchFavorites])
 
   // Loading state
   if (isLoading) {
@@ -324,9 +379,20 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 <Button size="lg" className="shadow-lg">
                   Book Your Session
                 </Button>
-                <Button size="lg" variant="ghost" className="group">
-                  <Heart className="h-5 w-5 mr-2 group-hover:text-rose-500 transition-colors" strokeWidth="1.5" />
-                  Save for Later
+                <Button 
+                  size="lg" 
+                  variant="ghost" 
+                  className="group"
+                  onClick={handleSaveForLater}
+                  disabled={isSaveLoading}
+                >
+                  <Heart 
+                    className={`h-5 w-5 mr-2 transition-colors ${
+                      isFavorited ? 'fill-rose-500 text-rose-500' : 'group-hover:text-rose-500'
+                    }`} 
+                    strokeWidth="1.5" 
+                  />
+                  {isFavorited ? 'Saved' : 'Save for Later'}
                 </Button>
               </div>
             </div>
