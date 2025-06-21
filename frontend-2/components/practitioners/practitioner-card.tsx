@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { CheckCircle, MapPin, Globe, GraduationCap, Star, Heart } from "lucide-react"
 import type { Practitioner } from "@/types/practitioner"
+import { useAuth } from "@/hooks/use-auth"
+import { useAuthModal } from "@/components/auth/auth-provider"
+import { userAddFavorite, userRemoveFavorite } from "@/src/client/sdk.gen"
+import { toast } from "sonner"
+import { useUserFavorites } from "@/hooks/use-user-favorites"
 
 interface PractitionerCardProps {
   practitioner: Practitioner
@@ -18,7 +23,22 @@ interface PractitionerCardProps {
 }
 
 export default function PractitionerCard({ practitioner, initialLiked = false }: PractitionerCardProps) {
-  const [isLiked, setIsLiked] = useState(initialLiked)
+  const [isLoading, setIsLoading] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const { openAuthModal } = useAuthModal()
+  const { favoritePractitionerIds, refetch: refetchFavorites } = useUserFavorites()
+  
+  // Determine if practitioner is liked based on auth state
+  const isLiked = isAuthenticated 
+    ? favoritePractitionerIds.has(practitioner.id)
+    : (() => {
+        try {
+          const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
+          return !!savedLikes[practitioner.id]
+        } catch {
+          return initialLiked
+        }
+      })()
 
   // Determine location type
   const hasVirtual = practitioner.locations.some((loc) => loc.is_virtual)
@@ -37,24 +57,63 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
   const primaryLocation = practitioner.locations.find((loc) => loc.is_primary)
 
   const handleLikeToggle = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
 
-      setIsLiked((prev) => {
-        const newValue = !prev
-        // In a real app, you would save this to the user's profile/database
+      if (!isAuthenticated) {
+        // Save to localStorage and open auth modal
         try {
           const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
-          savedLikes[practitioner.id] = newValue
+          savedLikes[practitioner.id] = !isLiked
           localStorage.setItem("likedPractitioners", JSON.stringify(savedLikes))
         } catch (error) {
-          console.error("Error saving like:", error)
+          console.error("Error saving like to localStorage:", error)
         }
-        return newValue
-      })
+        
+        openAuthModal({
+          defaultTab: "login",
+          title: "Sign in to Save Practitioners",
+          description: "Create an account to save your favorite practitioners and receive updates"
+        })
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        if (!isLiked) {
+          // Add to favorites
+          await userAddFavorite({
+            body: {
+              practitioner_id: practitioner.id
+            }
+          })
+          toast.success("Practitioner saved to favorites")
+        } else {
+          // Remove from favorites
+          await userRemoveFavorite({
+            path: {
+              practitioner_id: practitioner.id
+            }
+          })
+          toast.success("Practitioner removed from favorites")
+        }
+        
+        // Update localStorage for consistency
+        const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
+        savedLikes[practitioner.id] = !isLiked
+        localStorage.setItem("likedPractitioners", JSON.stringify(savedLikes))
+        
+        // Refetch favorites to update the UI
+        await refetchFavorites()
+      } catch (error) {
+        console.error("Error toggling favorite:", error)
+        toast.error("Failed to update favorite status")
+      } finally {
+        setIsLoading(false)
+      }
     },
-    [practitioner.id],
+    [practitioner.id, isLiked, isAuthenticated, openAuthModal, refetchFavorites],
   )
 
   return (
@@ -93,9 +152,10 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
           size="icon"
           className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full h-8 w-8 hover:bg-white"
           onClick={handleLikeToggle}
+          disabled={isLoading}
           aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
         >
-          <Heart className={`h-4 w-4 ${isLiked ? "fill-rose-500 text-rose-500" : "text-gray-600"}`} />
+          <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-gray-600"}`} />
         </Button>
       </div>
 

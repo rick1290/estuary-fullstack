@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { AuthModalProvider } from '@/components/auth/auth-provider';
+import { Toaster } from 'sonner';
 import '@/lib/token-monitor'; // Import to start token monitoring
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AuthModalProvider>
           {children}
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: '#333',
+                color: '#fff',
+              },
+              className: 'sonner-toast',
+            }}
+          />
         </AuthModalProvider>
         {process.env.NODE_ENV === 'development' && (
           <ReactQueryDevtools initialIsOpen={false} />
