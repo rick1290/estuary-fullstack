@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -105,15 +106,20 @@ WSGI_APPLICATION = "estuary.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# Use DATABASE_URL if provided, otherwise fall back to individual settings
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", default="estuary"),
-        "USER": os.getenv("POSTGRES_USER", default="estuary"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", default="estuary"),
-        "HOST": os.getenv("POSTGRES_HOST", default="postgres"),
-        "PORT": os.getenv("POSTGRES_PORT", default="5432"),
-    }
+    "default": dj_database_url.config(
+        default={
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB", default="estuary"),
+            "USER": os.getenv("POSTGRES_USER", default="estuary"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", default="estuary"),
+            "HOST": os.getenv("POSTGRES_HOST", default="postgres"),
+            "PORT": os.getenv("POSTGRES_PORT", default="5432"),
+        },
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 # Password validation
