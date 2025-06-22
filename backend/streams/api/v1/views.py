@@ -1174,8 +1174,8 @@ class StreamPostViewSet(viewsets.ModelViewSet):
             # Combine own posts (all) and accessible posts
             queryset = queryset.filter(Q(id__in=own_posts) | accessible_posts)
         else:
-            # Not authenticated, only free published posts
-            queryset = queryset.filter(tier_level='free', is_published=True)
+            # Not authenticated, show all published posts (but can_access will be false for premium)
+            queryset = queryset.filter(is_published=True)
         
         return queryset.select_related('stream__practitioner').prefetch_related('media')
     

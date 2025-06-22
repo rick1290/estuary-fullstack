@@ -56,7 +56,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
         page_size: 20
       }
     }),
-    enabled: !!stream?.id
+    enabled: !!stream?.id && typeof stream.id === 'number'
   })
 
   // Subscribe mutation
@@ -169,11 +169,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       tags: apiPost.tags || [],
       isLiked: false,
       isSaved: false,
-      hasAccess: apiPost.tier_level === 'free' || 
-        (stream?.user_subscription && 
-         (stream.user_subscription.tier_level === apiPost.tier_level ||
-          (stream.user_subscription.tier_level === 'premium') ||
-          (stream.user_subscription.tier_level === 'entry' && apiPost.tier_level !== 'premium'))),
+      hasAccess: apiPost.can_access || false,
       userSubscriptionTier: stream?.user_subscription?.tier_level || null
     }
   }

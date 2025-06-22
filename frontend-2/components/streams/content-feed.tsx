@@ -115,8 +115,8 @@ export default function ContentFeed({
       tags: apiPost.tags || [],
       isLiked: false, // TODO: Implement user like status
       isSaved: false, // TODO: Implement user save status
-      // For non-authenticated users, premium content should always be locked
-      hasAccess: !user && apiPost.tier_level !== 'free' ? false : apiPost.has_access !== false,
+      // Use the has_access value from the API which already handles authentication logic
+      hasAccess: apiPost.can_access || false,
       userSubscriptionTier: apiPost.user_subscription_tier || null,
     }
   }
