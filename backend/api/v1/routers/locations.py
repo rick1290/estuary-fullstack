@@ -329,7 +329,10 @@ def get_popular_cities(country_code, state_code, limit):
         practitioner_count=Count(
             'practitioner_locations__practitioner',
             distinct=True,
-            filter=Q(practitioner_locations__practitioner__is_active=True)
+            filter=Q(
+                practitioner_locations__practitioner__practitioner_status='active',
+                practitioner_locations__practitioner__is_verified=True
+            )
         )
     )
     
@@ -458,7 +461,8 @@ def count_practitioners_in_cities(cities_in_area):
     """Count practitioners in cities"""
     return PractitionerLocation.objects.filter(
         city__in=cities_in_area,
-        practitioner__is_active=True
+        practitioner__practitioner_status='active',
+        practitioner__is_verified=True
     ).values('practitioner').distinct().count()
 
 

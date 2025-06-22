@@ -59,7 +59,7 @@ from streams.api.v1.views import (
 )
 
 # Messaging
-from messaging.api.v1.views import ConversationViewSet, MessageViewSet
+from messaging.api.v1.views import ConversationViewSet, MessageViewSet, PractitionerMessagingViewSet
 
 # Register all ViewSets properly
 # Bookings
@@ -125,6 +125,7 @@ router.register(r'stream-categories', StreamCategoryViewSet, basename='stream-ca
 # Messaging
 router.register(r'conversations', ConversationViewSet, basename='conversation')
 router.register(r'messages', MessageViewSet, basename='message')
+router.register(r'practitioner-messaging', PractitionerMessagingViewSet, basename='practitioner-messaging')
 
 # Import documentation views
 from api.v1.docs import (

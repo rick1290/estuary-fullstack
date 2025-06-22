@@ -35,6 +35,8 @@ import {
   GraduationCap,
   Users,
   MessageSquare,
+  Wifi,
+  WifiOff,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
@@ -43,9 +45,11 @@ import {
   conversationsSendMessageCreateMutation,
   conversationsMarkReadCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
+import type { MessageReadable } from "@/src/client/types.gen"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/hooks/use-auth"
+import { useWebSocketMessaging } from "@/hooks/use-websocket-messaging"
 import { toast } from "sonner"
 
 // Mock data for services
@@ -90,9 +94,38 @@ export default function PractitionerMessageDetail() {
   const [showShareService, setShowShareService] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isTyping, setIsTyping] = useState(false)
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // WebSocket connection for real-time messaging
+  const { 
+    connectionStatus, 
+    typingUsers, 
+    sendTypingIndicator, 
+    markAsRead 
+  } = useWebSocketMessaging({
+    conversationId: conversationId || undefined,
+    onMessage: (message) => {
+      console.log('PractitionerMessageDetail received WebSocket message:', message)
+      
+      // Force a complete refetch of messages
+      refetchMessages()
+      
+      // Also invalidate conversations list to update last message
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations'] 
+      })
+    },
+    onTyping: (event) => {
+      // Handle typing indicators from other users
+      if (event.user_id !== user?.numericId) {
+        setIsTyping(event.is_typing)
+      }
+    }
+  })
 
   // Fetch conversation details
   const { data: conversation, isLoading: conversationLoading } = useQuery({
@@ -103,11 +136,13 @@ export default function PractitionerMessageDetail() {
   })
 
   // Fetch messages
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  const { data: messages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
     ...conversationsMessagesRetrieveOptions({
       path: { id: conversationId || "" }
     }),
-    enabled: !!conversationId
+    enabled: !!conversationId,
+    staleTime: 0, // Always consider data stale
+    refetchInterval: false, // Don't auto-refetch
   })
 
   // Send message mutation
@@ -117,9 +152,15 @@ export default function PractitionerMessageDetail() {
       setNewMessage("")
       setSelectedFile(null)
       setPreviewUrl(null)
-      // Invalidate messages query to refetch
+      // Invalidate and refetch messages immediately
       queryClient.invalidateQueries({ 
         queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.refetchQueries({ 
+        queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations'] 
       })
     },
     onError: () => {
@@ -142,7 +183,11 @@ export default function PractitionerMessageDetail() {
   )?.user
 
   useEffect(() => {
-    scrollToBottom()
+    // Add a small delay to ensure DOM has updated
+    const timer = setTimeout(() => {
+      scrollToBottom()
+    }, 100)
+    return () => clearTimeout(timer)
   }, [messages])
 
   useEffect(() => {
@@ -187,6 +232,36 @@ export default function PractitionerMessageDetail() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
+    }
+  }
+
+  const handleTyping = (value: string) => {
+    setNewMessage(value)
+    
+    // Send typing indicator
+    if (value.length > 0 && !typingTimeout) {
+      sendTypingIndicator(true)
+      
+      // Stop typing indicator after 3 seconds of inactivity
+      const timeout = setTimeout(() => {
+        sendTypingIndicator(false)
+        setTypingTimeout(null)
+      }, 3000)
+      
+      setTypingTimeout(timeout)
+    } else if (value.length === 0 && typingTimeout) {
+      // User cleared the input
+      sendTypingIndicator(false)
+      clearTimeout(typingTimeout)
+      setTypingTimeout(null)
+    } else if (typingTimeout) {
+      // Reset typing timeout
+      clearTimeout(typingTimeout)
+      const timeout = setTimeout(() => {
+        sendTypingIndicator(false)
+        setTypingTimeout(null)
+      }, 3000)
+      setTypingTimeout(timeout)
     }
   }
 
@@ -272,9 +347,20 @@ export default function PractitionerMessageDetail() {
             </Avatar>
           </div>
           <div className="ml-3">
-            <h3 className="font-medium">
-              {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'Unknown User'}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">
+                {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'Unknown User'}
+              </h3>
+              {connectionStatus === 'connected' && (
+                <Wifi className="h-3 w-3 text-green-500" title="Connected" />
+              )}
+              {connectionStatus === 'disconnected' && (
+                <WifiOff className="h-3 w-3 text-red-500" title="Disconnected" />
+              )}
+              {connectionStatus === 'connecting' && (
+                <div className="h-3 w-3 rounded-full bg-yellow-500 animate-pulse" title="Connecting..." />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               {otherUser?.email || 'No email'}
             </p>
@@ -316,13 +402,13 @@ export default function PractitionerMessageDetail() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4 bg-accent/20">
+      <ScrollArea className="flex-1 p-4 bg-accent/20" key={messages?.length || 0}>
         {messages && messages.length > 0 ? (
           messages.map((message, index) => {
             const isSentByMe = message.sender?.id === user?.id
             const messageSender = message.sender
-            const messageDate = new Date(message.created_at)
-            const prevMessageDate = index > 0 ? new Date(messages[index - 1].created_at) : null
+            const messageDate = message.created_at ? new Date(message.created_at) : new Date()
+            const prevMessageDate = index > 0 && messages[index - 1].created_at ? new Date(messages[index - 1].created_at) : null
             const showDateSeparator = !prevMessageDate || 
               messageDate.toDateString() !== prevMessageDate.toDateString()
 
@@ -433,14 +519,21 @@ export default function PractitionerMessageDetail() {
             <Smile className="h-5 w-5" />
           </Button>
 
-          <Textarea
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="min-h-[40px] resize-none"
-            rows={1}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => handleTyping(e.target.value)}
+              onKeyDown={handleKeyPress}
+              className="min-h-[40px] resize-none"
+              rows={1}
+            />
+            {isTyping && (
+              <div className="absolute -top-6 left-0 text-xs text-muted-foreground">
+                {otherUser?.first_name || 'User'} is typing...
+              </div>
+            )}
+          </div>
 
           <Button
             variant="default"
