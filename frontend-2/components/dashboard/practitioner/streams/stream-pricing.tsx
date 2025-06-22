@@ -12,7 +12,7 @@ import { useMutation } from "@tanstack/react-query"
 import { streamsPricingPartialUpdateMutation } from "@/src/client/@tanstack/react-query.gen"
 
 interface StreamPricingProps {
-  streamId: string
+  streamId: number
   currentEntryPrice?: number
   currentPremiumPrice?: number
   onPricingUpdate?: () => void
