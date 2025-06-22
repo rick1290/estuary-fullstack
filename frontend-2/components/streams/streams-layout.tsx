@@ -3,7 +3,7 @@
 import type React from "react"
 import { type ReactNode, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { Search, Filter, TrendingUp, Clock, Users, Sparkles } from "lucide-react"
+import { Search, Filter, Users, Sparkles } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -37,11 +37,8 @@ export default function StreamsLayout({
 
   // Determine which tab is active based on the current path
   const getActiveTab = () => {
-    if (pathname === "/streams") return "all"
     if (pathname === "/streams/following") return "following"
-    if (pathname === "/streams/trending") return "trending"
-    if (pathname === "/streams/recent") return "recent"
-    return "all"
+    return "foryou"
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -55,10 +52,8 @@ export default function StreamsLayout({
 
   const handleTabChange = (value: string) => {
     const routes: Record<string, string> = {
-      all: "/streams",
+      foryou: "/streams",
       following: "/streams/following",
-      trending: "/streams/trending",
-      recent: "/streams/recent",
     }
     router.push(routes[value])
   }
@@ -85,23 +80,16 @@ export default function StreamsLayout({
           </div>
 
           {/* Tabs Navigation - Warm design */}
-          <div className="max-w-2xl mx-auto mb-8">
+          <div className="max-w-md mx-auto mb-8">
             <Tabs value={getActiveTab()} onValueChange={handleTabChange} className="w-full">
               <TabsList className="w-full bg-white/80 backdrop-blur-sm p-1 rounded-2xl shadow-lg border border-sage-200">
-                <TabsTrigger value="all" className="flex-1 flex items-center gap-2 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl">
-                  <span className="hidden sm:inline">All</span> Streams
+                <TabsTrigger value="foryou" className="flex-1 flex items-center gap-2 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl">
+                  <Sparkles className="h-4 w-4" strokeWidth="1.5" />
+                  For You
                 </TabsTrigger>
                 <TabsTrigger value="following" className="flex-1 flex items-center gap-2 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl">
                   <Users className="h-4 w-4" strokeWidth="1.5" />
-                  <span className="hidden sm:inline">Following</span>
-                </TabsTrigger>
-                <TabsTrigger value="trending" className="flex-1 flex items-center gap-2 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl">
-                  <TrendingUp className="h-4 w-4" strokeWidth="1.5" />
-                  <span className="hidden sm:inline">Trending</span>
-                </TabsTrigger>
-                <TabsTrigger value="recent" className="flex-1 flex items-center gap-2 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl">
-                  <Clock className="h-4 w-4" strokeWidth="1.5" />
-                  <span className="hidden sm:inline">Recent</span>
+                  Following
                 </TabsTrigger>
               </TabsList>
             </Tabs>

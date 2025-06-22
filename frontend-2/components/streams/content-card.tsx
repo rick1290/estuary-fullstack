@@ -165,7 +165,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                     })
                   } else {
                     // Navigate to subscription page or open subscription modal
-                    router.push(`/streams/${post.streamId}/subscribe?tier=${post.tierLevel}`)
+                    router.push(`/streams/${post.streamId}?subscribe=${post.tierLevel}`)
                   }
                 }} 
                 className="font-medium text-sage-700 p-0 h-auto"
@@ -202,7 +202,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                             description: "Sign in to access exclusive video content"
                           })
                         } else {
-                          router.push(`/streams/${post.streamId}/subscribe?tier=${post.tierLevel}`)
+                          router.push(`/streams/${post.streamId}?subscribe=${post.tierLevel}`)
                         }
                       }}
                     >
@@ -252,7 +252,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                             description: "Sign in to access exclusive image content"
                           })
                         } else {
-                          router.push(`/streams/${post.streamId}/subscribe?tier=${post.tierLevel}`)
+                          router.push(`/streams/${post.streamId}?subscribe=${post.tierLevel}`)
                         }
                       }}
                     >
