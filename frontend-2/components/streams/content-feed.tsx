@@ -98,11 +98,11 @@ export default function ContentFeed({
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
     return {
       id: apiPost.public_uuid || apiPost.id,
-      practitionerId: apiPost.stream?.practitioner?.public_uuid || '',
-      practitionerName: apiPost.stream?.practitioner?.display_name || 'Unknown Practitioner',
-      practitionerImage: apiPost.stream?.practitioner?.profile_image_url || '/placeholder.svg',
-      streamId: apiPost.stream?.public_uuid || apiPost.stream?.id,
-      streamTitle: apiPost.stream?.title || '',
+      practitionerId: apiPost.practitioner_id || '',
+      practitionerName: apiPost.practitioner_name || 'Unknown Practitioner',
+      practitionerImage: apiPost.practitioner_image || '/placeholder.svg',
+      streamId: apiPost.stream || '',
+      streamTitle: apiPost.stream_title || '',
       content: apiPost.content || '',
       mediaUrls: apiPost.media?.map((m: any) => m.media_url) || [],
       contentType: apiPost.post_type as any || 'article',
