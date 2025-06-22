@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
+import { useMutation } from "@tanstack/react-query"
+import { streamsPricingPartialUpdateMutation } from "@/src/client/@tanstack/react-query.gen"
 
 interface StreamPricingProps {
   streamId: string
@@ -25,9 +27,29 @@ export default function StreamPricing({
   const { toast } = useToast()
   const [entryPrice, setEntryPrice] = useState(currentEntryPrice / 100) // Convert cents to dollars
   const [premiumPrice, setPremiumPrice] = useState(currentPremiumPrice / 100)
-  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async () => {
+  const updatePricingMutation = useMutation({
+    ...streamsPricingPartialUpdateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Pricing updated",
+        description: "Your stream pricing has been updated successfully. Stripe products will be created automatically.",
+      })
+      
+      if (onPricingUpdate) {
+        onPricingUpdate()
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.body?.detail || "Failed to update pricing. Please try again.",
+        variant: "destructive",
+      })
+    }
+  })
+
+  const handleSubmit = () => {
     // Validation
     if (entryPrice < 1) {
       toast({
@@ -47,37 +69,24 @@ export default function StreamPricing({
       return
     }
 
-    setLoading(true)
-    
-    try {
-      // TODO: Replace with actual API call when api-client is available
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock successful response
-      console.log("Updating pricing:", {
-        id: streamId,
-        entry_tier_price_cents: Math.round(entryPrice * 100),
-        premium_tier_price_cents: Math.round(premiumPrice * 100),
-      })
-      
-      toast({
-        title: "Pricing updated",
-        description: "Your stream pricing has been updated successfully",
-      })
-      
-      if (onPricingUpdate) {
-        onPricingUpdate()
-      }
-    } catch (error) {
+    if (!streamId) {
       toast({
         title: "Error",
-        description: "Failed to update pricing. Please try again.",
+        description: "Stream ID is required",
         variant: "destructive",
       })
-    } finally {
-      setLoading(false)
+      return
     }
+
+    updatePricingMutation.mutate({
+      path: {
+        id: streamId
+      },
+      body: {
+        entry_tier_price_cents: Math.round(entryPrice * 100),
+        premium_tier_price_cents: Math.round(premiumPrice * 100),
+      }
+    })
   }
 
   return (
@@ -193,10 +202,10 @@ export default function StreamPricing({
       <div className="flex justify-end">
         <Button 
           onClick={handleSubmit} 
-          disabled={loading}
+          disabled={updatePricingMutation.isPending || !streamId}
           className="gap-2"
         >
-          {loading ? (
+          {updatePricingMutation.isPending ? (
             <>Saving...</>
           ) : (
             <>

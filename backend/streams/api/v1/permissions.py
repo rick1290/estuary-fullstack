@@ -11,15 +11,16 @@ class IsPractitionerOwner(permissions.BasePermission):
         # User must be authenticated and have a practitioner profile
         return (
             request.user.is_authenticated and
-            hasattr(request.user, 'practitioner')
+            hasattr(request.user, 'practitioner_profile') and
+            request.user.practitioner_profile is not None
         )
     
     def has_object_permission(self, request, view, obj):
         # Check if the practitioner owns the object
         if hasattr(obj, 'practitioner'):
-            return obj.practitioner == request.user.practitioner
+            return obj.practitioner == request.user.practitioner_profile
         elif hasattr(obj, 'stream'):
-            return obj.stream.practitioner == request.user.practitioner
+            return obj.stream.practitioner == request.user.practitioner_profile
         return False
 
 
@@ -37,14 +38,14 @@ class IsStreamOwner(permissions.BasePermission):
             return True
         
         # Check if user has practitioner profile
-        if not hasattr(request.user, 'practitioner'):
+        if not hasattr(request.user, 'practitioner_profile'):
             return False
         
         # Check ownership based on object type
         if isinstance(obj, Stream):
-            return obj.practitioner == request.user.practitioner
+            return obj.practitioner == request.user.practitioner_profile
         elif hasattr(obj, 'stream'):
-            return obj.stream.practitioner == request.user.practitioner
+            return obj.stream.practitioner == request.user.practitioner_profile
         
         return False
 
@@ -63,10 +64,10 @@ class CanAccessStream(permissions.BasePermission):
             return False
         
         # Owner can always access
-        if hasattr(request.user, 'practitioner'):
-            if hasattr(obj, 'practitioner') and obj.practitioner == request.user.practitioner:
+        if hasattr(request.user, 'practitioner_profile') and request.user.practitioner_profile:
+            if hasattr(obj, 'practitioner') and obj.practitioner == request.user.practitioner_profile:
                 return True
-            elif hasattr(obj, 'stream') and obj.stream.practitioner == request.user.practitioner:
+            elif hasattr(obj, 'stream') and obj.stream.practitioner == request.user.practitioner_profile:
                 return True
         
         # Check subscription for content access

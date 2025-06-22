@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -64,6 +64,13 @@ class StreamViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsPractitionerOwner()]
         return [IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        """Set the practitioner from the authenticated user when creating a stream."""
+        if hasattr(self.request.user, 'practitioner_profile') and self.request.user.practitioner_profile:
+            serializer.save(practitioner=self.request.user.practitioner_profile)
+        else:
+            raise serializers.ValidationError("User must be a practitioner to create streams")
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsStreamOwner])
     def launch(self, request, pk=None):
