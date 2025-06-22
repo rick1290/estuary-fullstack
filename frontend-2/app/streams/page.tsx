@@ -1,4 +1,4 @@
-import { Suspense } from "react"
+import { Suspense, use } from "react"
 import StreamsLayout from "@/components/streams/streams-layout"
 import StreamsFilters from "@/components/streams/streams-filters"
 import ContentFeed from "@/components/streams/content-feed"
@@ -8,15 +8,19 @@ import FeaturedPractitioners from "@/components/streams/featured-practitioners"
 export default function StreamsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  // Unwrap searchParams with React.use()
+  const params = use(searchParams)
+  
   // Extract search parameters
-  const query = searchParams.q as string | undefined
-  const contentType = searchParams.type as string | undefined
-  const practitionerId = searchParams.practitioner as string | undefined
-  const tags = Array.isArray(searchParams.tag) ? searchParams.tag : searchParams.tag ? [searchParams.tag] : []
-  const showLocked = searchParams.locked === "true"
-  const sort = (searchParams.sort as string | undefined) || "recent"
+  const query = params.q as string | undefined
+  const contentType = params.type as string | undefined
+  const practitionerId = params.practitioner as string | undefined
+  const tags = Array.isArray(params.tag) ? params.tag : params.tag ? [params.tag] : []
+  const showLocked = params.locked === "true"
+  const showSubscribed = params.subscribed === "true"
+  const sort = (params.sort as string | undefined) || "recent"
 
   return (
     <StreamsLayout
@@ -29,6 +33,7 @@ export default function StreamsPage({
           initialTags={tags as string[]}
           initialShowLocked={showLocked}
           initialSort={sort}
+          initialSubscribed={showSubscribed}
         />
       }
       rightSidebar={
@@ -56,6 +61,7 @@ export default function StreamsPage({
             practitionerId={practitionerId}
             tags={tags as string[]}
             showLocked={showLocked}
+            showSubscribed={showSubscribed}
             sort={sort}
           />
         </Suspense>

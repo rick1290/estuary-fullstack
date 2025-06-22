@@ -56,7 +56,7 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
 
   const handleDeleteConfirm = () => {
     if (selectedPost) {
-      onDeletePost(selectedPost.id)
+      onDeletePost(selectedPost.public_uuid || selectedPost.id)
       setDeleteDialogOpen(false)
       setSelectedPost(null)
     }
@@ -112,11 +112,11 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-lg">{post.title}</h3>
-                  <Badge variant="outline" className={getTierColor(post.tier)}>
-                    {post.tier}
+                  <Badge variant="outline" className={getTierColor(post.tier_level)}>
+                    {post.tier_level}
                   </Badge>
-                  <Badge variant="outline" className={getStatusColor(post.status)}>
-                    {post.status}
+                  <Badge variant="outline" className={getStatusColor(post.is_published ? 'published' : 'draft')}>
+                    {post.is_published ? 'published' : 'draft'}
                   </Badge>
                 </div>
 
@@ -125,20 +125,20 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
-                    {post.stats.views} views
+                    {post.view_count || 0} views
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    {post.stats.unlocks} unlocks
+                    {post.unique_view_count || 0} unique views
                   </div>
-                  {post.status === "scheduled" && post.scheduledAt && (
+                  {!post.is_published && post.published_at && (
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      Scheduled for {formatDistanceToNow(new Date(post.scheduledAt), { addSuffix: true })}
+                      Scheduled for {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
                     </div>
                   )}
-                  {post.status === "published" && post.publishedAt && (
-                    <span>Published {formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}</span>
+                  {post.is_published && post.published_at && (
+                    <span>Published {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}</span>
                   )}
                 </div>
 
@@ -178,19 +178,19 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
             </div>
           </CardHeader>
 
-          {post.mediaUrls.length > 0 && (
+          {post.media && post.media.length > 0 && (
             <CardContent className="pt-0">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {post.mediaUrls.slice(0, 4).map((url, index) => (
+                {post.media.slice(0, 4).map((media, index) => (
                   <div key={index} className="aspect-square relative rounded-md overflow-hidden bg-muted">
                     <img
-                      src={url || "/placeholder.svg"}
-                      alt={`Post media ${index + 1}`}
+                      src={media.media_url || "/placeholder.svg"}
+                      alt={media.caption || `Post media ${index + 1}`}
                       className="object-cover w-full h-full"
                     />
-                    {post.mediaUrls.length > 4 && index === 3 && (
+                    {post.media.length > 4 && index === 3 && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium">
-                        +{post.mediaUrls.length - 4} more
+                        +{post.media.length - 4} more
                       </div>
                     )}
                   </div>

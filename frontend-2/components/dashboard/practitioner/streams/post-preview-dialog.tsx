@@ -29,7 +29,7 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
     }
   }
 
-  const isContentLocked = post.tier !== "free"
+  const isContentLocked = post.tier_level !== "free"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,15 +49,15 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">Dr. Sarah Wilson</h3>
-                <Badge variant="outline" className={getTierColor(post.tier)}>
-                  {post.tier}
+                <Badge variant="outline" className={getTierColor(post.tier_level)}>
+                  {post.tier_level}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                {post.status === "published" && post.publishedAt
-                  ? formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })
-                  : post.status === "scheduled" && post.scheduledAt
-                    ? `Scheduled for ${formatDistanceToNow(new Date(post.scheduledAt), { addSuffix: true })}`
+                {post.is_published && post.published_at
+                  ? formatDistanceToNow(new Date(post.published_at), { addSuffix: true })
+                  : !post.is_published && post.published_at
+                    ? `Scheduled for ${formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}`
                     : "Draft"}
               </p>
             </div>
@@ -75,21 +75,21 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white flex items-end justify-center pb-4">
                   <div className="text-center">
                     <Lock className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Subscribe to {post.tier} tier to read full content</p>
+                    <p className="text-sm text-muted-foreground">Subscribe to {post.tier_level} tier to read full content</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Media */}
-            {post.mediaUrls && post.mediaUrls.length > 0 && (
+            {post.media && post.media.length > 0 && (
               <div className="relative">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {post.mediaUrls.slice(0, 4).map((url, index) => (
+                  {post.media.slice(0, 4).map((media, index) => (
                     <div key={index} className="aspect-video relative rounded-lg overflow-hidden bg-muted">
                       <img
-                        src={url || "/placeholder.svg"}
-                        alt={`Post media ${index + 1}`}
+                        src={media.media_url || "/placeholder.svg"}
+                        alt={media.caption || `Post media ${index + 1}`}
                         className="object-cover w-full h-full"
                       />
                     </div>
@@ -151,15 +151,15 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
             <div className="flex items-center gap-4 pt-2 border-t">
               <Button variant="ghost" size="sm" className="gap-1">
                 <Heart className="h-4 w-4" />
-                {post.stats.likes}
+                {post.like_count || 0}
               </Button>
               <Button variant="ghost" size="sm" className="gap-1">
                 <MessageCircle className="h-4 w-4" />
-                {post.stats.comments}
+                {post.comment_count || 0}
               </Button>
               <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
                 <Eye className="h-4 w-4" />
-                {post.stats.views} views
+                {post.view_count || 0} views
               </div>
             </div>
           </div>

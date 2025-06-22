@@ -323,6 +323,39 @@ class ConversationViewSet(viewsets.ModelViewSet):
         ).update(is_read=True, read_at=timezone.now())
         
         return Response({"status": "Messages marked as read"})
+    
+    @action(detail=False, methods=['get'])
+    def messageable_practitioners(self, request):
+        """Get list of practitioners the user can message (has bookings with)"""
+        # Get all practitioners the user has booked with
+        booked_practitioners = Practitioner.objects.filter(
+            bookings__user=request.user,
+            bookings__status__in=['confirmed', 'completed']
+        ).distinct().select_related('user')
+        
+        # Serialize practitioner data
+        practitioner_data = []
+        for practitioner in booked_practitioners:
+            # Check if conversation exists
+            conversation = Conversation.objects.filter(
+                participants=request.user
+            ).filter(
+                participants=practitioner.user
+            ).first()
+            
+            practitioner_data.append({
+                'id': practitioner.id,
+                'user_id': practitioner.user.id,
+                'first_name': practitioner.user.first_name,
+                'last_name': practitioner.user.last_name,
+                'email': practitioner.user.email,
+                'avatar_url': getattr(practitioner.user, 'avatar_url', None),
+                'display_name': practitioner.display_name,
+                'conversation_id': conversation.id if conversation else None,
+                'has_conversation': conversation is not None
+            })
+        
+        return Response(practitioner_data)
 
 
 @extend_schema_view(

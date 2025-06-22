@@ -29,24 +29,24 @@ interface EditPostDialogProps {
 
 export default function EditPostDialog({ open, onOpenChange, post, onUpdatePost }: EditPostDialogProps) {
   const [formData, setFormData] = useState({
-    title: post.title,
-    content: post.content,
-    tier: post.tier,
-    tags: post.tags,
-    status: post.status,
-    scheduledAt: post.scheduledAt || "",
+    title: post.title || "",
+    content: post.content || "",
+    tier: post.tier_level || "free",
+    tags: post.tags || [],
+    status: post.is_published ? "published" : "draft",
+    scheduledAt: post.published_at || "",
   })
   const [newTag, setNewTag] = useState("")
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     setFormData({
-      title: post.title,
-      content: post.content,
-      tier: post.tier,
-      tags: post.tags,
-      status: post.status,
-      scheduledAt: post.scheduledAt || "",
+      title: post.title || "",
+      content: post.content || "",
+      tier: post.tier_level || "free",
+      tags: post.tags || [],
+      status: post.is_published ? "published" : "draft",
+      scheduledAt: post.published_at || "",
     })
   }, [post])
 
@@ -55,10 +55,15 @@ export default function EditPostDialog({ open, onOpenChange, post, onUpdatePost 
     setLoading(true)
 
     try {
-      const updatedPost: StreamPost = {
+      const updatedPost: any = {
         ...post,
-        ...formData,
-        updatedAt: new Date().toISOString(),
+        title: formData.title,
+        content: formData.content,
+        tier_level: formData.tier,
+        tags: formData.tags,
+        is_published: formData.status === "published",
+        published_at: formData.scheduledAt || (formData.status === "published" ? new Date().toISOString() : null),
+        updated_at: new Date().toISOString(),
       }
 
       onUpdatePost(updatedPost)

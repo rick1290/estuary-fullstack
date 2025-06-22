@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -64,6 +64,13 @@ class StreamViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsPractitionerOwner()]
         return [IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        """Set the practitioner from the authenticated user when creating a stream."""
+        if hasattr(self.request.user, 'practitioner_profile') and self.request.user.practitioner_profile:
+            serializer.save(practitioner=self.request.user.practitioner_profile)
+        else:
+            raise serializers.ValidationError("User must be a practitioner to create streams")
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsStreamOwner])
     def launch(self, request, pk=None):
@@ -136,6 +143,455 @@ class StreamViewSet(viewsets.ModelViewSet):
         
         serializer = LiveStreamSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsStreamOwner])
+    def pricing(self, request, pk=None):
+        """Update stream pricing."""
+        stream = self.get_object()
+        
+        # Validate pricing data
+        entry_price = request.data.get('entry_tier_price_cents')
+        premium_price = request.data.get('premium_tier_price_cents')
+        
+        if entry_price is None or premium_price is None:
+            return Response(
+                {'error': 'Both entry_tier_price_cents and premium_tier_price_cents are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate prices
+        try:
+            entry_price = int(entry_price)
+            premium_price = int(premium_price)
+        except (ValueError, TypeError):
+            return Response(
+                {'error': 'Prices must be integers (in cents)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if entry_price < 100:  # Minimum $1
+            return Response(
+                {'error': 'Entry tier price must be at least $1 (100 cents)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if premium_price <= entry_price:
+            return Response(
+                {'error': 'Premium tier price must be higher than entry tier price'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Initialize Stripe
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Create or update Stripe Product
+            if not stream.stripe_product_id:
+                # Create new product
+                product = stripe.Product.create(
+                    name=f"{stream.title} Subscription",
+                    description=f"Subscription to {stream.practitioner.display_name}'s stream",
+                    metadata={
+                        'stream_id': str(stream.id),
+                        'practitioner_id': str(stream.practitioner.id)
+                    }
+                )
+                stream.stripe_product_id = product.id
+            
+            # Create new Price objects (prices are immutable in Stripe)
+            # Entry tier
+            entry_stripe_price = stripe.Price.create(
+                product=stream.stripe_product_id,
+                unit_amount=entry_price,
+                currency='usd',
+                recurring={'interval': 'month'},
+                metadata={
+                    'tier': 'entry',
+                    'stream_id': str(stream.id)
+                }
+            )
+            
+            # Premium tier
+            premium_stripe_price = stripe.Price.create(
+                product=stream.stripe_product_id,
+                unit_amount=premium_price,
+                currency='usd',
+                recurring={'interval': 'month'},
+                metadata={
+                    'tier': 'premium',
+                    'stream_id': str(stream.id)
+                }
+            )
+            
+            # Update stream with new prices
+            stream.entry_tier_price_cents = entry_price
+            stream.premium_tier_price_cents = premium_price
+            stream.stripe_entry_price_id = entry_stripe_price.id
+            stream.stripe_premium_price_id = premium_stripe_price.id
+            stream.save()
+            
+            return Response({
+                'message': 'Pricing updated successfully',
+                'entry_tier_price_cents': stream.entry_tier_price_cents,
+                'premium_tier_price_cents': stream.premium_tier_price_cents
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Stripe error: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def subscribe(self, request, pk=None):
+        """Subscribe to a stream."""
+        stream = self.get_object()
+        
+        # Get tier
+        tier = request.data.get('tier')
+        if tier not in ['free', 'entry', 'premium']:
+            return Response(
+                {'error': 'Invalid tier. Must be free, entry, or premium'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if already subscribed
+        existing_sub = StreamSubscription.objects.filter(
+            user=request.user,
+            stream=stream,
+            status__in=['active', 'past_due']
+        ).first()
+        
+        if existing_sub:
+            return Response(
+                {'error': 'You already have an active subscription to this stream'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Handle free tier
+        if tier == 'free':
+            subscription = StreamSubscription.objects.create(
+                user=request.user,
+                stream=stream,
+                tier='free',
+                status='active',
+                started_at=timezone.now()
+            )
+            
+            # Update subscriber counts
+            stream.subscriber_count = stream.subscriptions.filter(status='active').count()
+            stream.save()
+            
+            serializer = StreamSubscriptionSerializer(subscription)
+            return Response({
+                'message': 'Successfully subscribed to free tier',
+                'subscription': serializer.data
+            })
+        
+        # Handle paid tiers
+        # Validate payment method
+        payment_method_id = request.data.get('payment_method_id')
+        if not payment_method_id:
+            return Response(
+                {'error': 'Payment method is required for paid tiers'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get the appropriate price ID
+        if tier == 'entry':
+            price_id = stream.stripe_entry_price_id
+            price_cents = stream.entry_tier_price_cents
+        else:  # premium
+            price_id = stream.stripe_premium_price_id
+            price_cents = stream.premium_tier_price_cents
+        
+        if not price_id:
+            return Response(
+                {'error': 'Pricing not configured for this stream. Please contact the practitioner.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Initialize Stripe
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Ensure user has Stripe customer
+            from users.models import UserPaymentProfile
+            payment_profile, created = UserPaymentProfile.objects.get_or_create(
+                user=request.user
+            )
+            
+            if not payment_profile.stripe_customer_id:
+                # Create Stripe customer
+                customer = stripe.Customer.create(
+                    email=request.user.email,
+                    name=request.user.get_full_name(),
+                    metadata={'user_id': str(request.user.id)}
+                )
+                payment_profile.stripe_customer_id = customer.id
+                payment_profile.save()
+            
+            # Create Stripe subscription
+            stripe_subscription = stripe.Subscription.create(
+                customer=payment_profile.stripe_customer_id,
+                items=[{'price': price_id}],
+                payment_behavior='default_incomplete',
+                payment_settings={
+                    'payment_method_types': ['card'],
+                    'save_default_payment_method': 'on_subscription'
+                },
+                expand=['latest_invoice.payment_intent'],
+                metadata={
+                    'type': 'stream',
+                    'stream_id': str(stream.id),
+                    'user_id': str(request.user.id),
+                    'tier': tier
+                },
+                application_fee_percent=15  # Platform takes 15%
+            )
+            
+            # Create local subscription record
+            subscription = StreamSubscription.objects.create(
+                user=request.user,
+                stream=stream,
+                tier=tier,
+                status='incomplete',
+                stripe_subscription_id=stripe_subscription.id,
+                stripe_customer_id=payment_profile.stripe_customer_id,
+                stripe_price_id=price_id,
+                price_cents=price_cents,
+                current_period_start=timezone.datetime.fromtimestamp(
+                    stripe_subscription.current_period_start,
+                    tz=timezone.utc
+                ),
+                current_period_end=timezone.datetime.fromtimestamp(
+                    stripe_subscription.current_period_end,
+                    tz=timezone.utc
+                ),
+                started_at=timezone.now()
+            )
+            
+            serializer = StreamSubscriptionSerializer(subscription)
+            
+            # Return with client secret for payment confirmation
+            return Response({
+                'subscription': serializer.data,
+                'client_secret': stripe_subscription.latest_invoice.payment_intent.client_secret
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Payment error: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def unsubscribe(self, request, pk=None):
+        """Cancel subscription to a stream."""
+        stream = self.get_object()
+        
+        # Find active subscription
+        subscription = StreamSubscription.objects.filter(
+            user=request.user,
+            stream=stream,
+            status__in=['active', 'past_due']
+        ).first()
+        
+        if not subscription:
+            return Response(
+                {'error': 'No active subscription found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Handle free tier cancellation
+        if subscription.tier == 'free':
+            subscription.status = 'canceled'
+            subscription.canceled_at = timezone.now()
+            subscription.ends_at = timezone.now()
+            subscription.save()
+            
+            # Update subscriber counts
+            stream.subscriber_count = stream.subscriptions.filter(status='active').count()
+            stream.save()
+            
+            return Response({'message': 'Successfully unsubscribed'})
+        
+        # Handle paid tier cancellation
+        if not subscription.stripe_subscription_id:
+            return Response(
+                {'error': 'Invalid subscription state'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Cancel in Stripe
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Cancel at period end
+            stripe_subscription = stripe.Subscription.modify(
+                subscription.stripe_subscription_id,
+                cancel_at_period_end=True
+            )
+            
+            # Update local subscription
+            subscription.canceled_at = timezone.now()
+            subscription.ends_at = subscription.current_period_end
+            subscription.save()
+            
+            return Response({
+                'message': 'Subscription will be canceled at the end of the current billing period',
+                'ends_at': subscription.ends_at
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Failed to cancel subscription: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], 
+            url_path='subscription/change-tier',
+            permission_classes=[IsAuthenticated])
+    def change_tier(self, request, pk=None):
+        """Change subscription tier."""
+        stream = self.get_object()
+        
+        # Get new tier
+        new_tier = request.data.get('tier')
+        if new_tier not in ['free', 'entry', 'premium']:
+            return Response(
+                {'error': 'Invalid tier. Must be free, entry, or premium'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Find active subscription
+        subscription = StreamSubscription.objects.filter(
+            user=request.user,
+            stream=stream,
+            status='active'
+        ).first()
+        
+        if not subscription:
+            return Response(
+                {'error': 'No active subscription found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if subscription.tier == new_tier:
+            return Response(
+                {'error': 'Already subscribed to this tier'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Store previous tier
+        previous_tier = subscription.tier
+        
+        # Handle downgrade to free
+        if new_tier == 'free':
+            if subscription.stripe_subscription_id:
+                # Cancel Stripe subscription
+                import stripe
+                from django.conf import settings
+                stripe.api_key = settings.STRIPE_SECRET_KEY
+                
+                try:
+                    stripe.Subscription.delete(subscription.stripe_subscription_id)
+                except stripe.error.StripeError as e:
+                    return Response(
+                        {'error': f'Failed to cancel paid subscription: {str(e)}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Update subscription
+            subscription.previous_tier = previous_tier
+            subscription.tier = 'free'
+            subscription.tier_changed_at = timezone.now()
+            subscription.stripe_subscription_id = None
+            subscription.stripe_price_id = None
+            subscription.price_cents = 0
+            subscription.save()
+            
+            return Response({
+                'message': 'Successfully downgraded to free tier',
+                'subscription': StreamSubscriptionSerializer(subscription).data
+            })
+        
+        # Handle paid tier changes
+        if subscription.tier == 'free':
+            # Upgrade from free - create new subscription
+            return self.subscribe(request, pk=pk)
+        
+        # Change between paid tiers
+        if not subscription.stripe_subscription_id:
+            return Response(
+                {'error': 'Invalid subscription state'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get new price ID
+        if new_tier == 'entry':
+            new_price_id = stream.stripe_entry_price_id
+            new_price_cents = stream.entry_tier_price_cents
+        else:  # premium
+            new_price_id = stream.stripe_premium_price_id
+            new_price_cents = stream.premium_tier_price_cents
+        
+        if not new_price_id:
+            return Response(
+                {'error': 'Pricing not configured for this tier'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update Stripe subscription
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Retrieve current subscription
+            stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
+            
+            # Update subscription item with new price
+            stripe.Subscription.modify(
+                subscription.stripe_subscription_id,
+                items=[{
+                    'id': stripe_subscription['items']['data'][0].id,
+                    'price': new_price_id
+                }],
+                proration_behavior='always_invoice'  # Prorate the change
+            )
+            
+            # Update local subscription
+            subscription.previous_tier = previous_tier
+            subscription.tier = new_tier
+            subscription.tier_changed_at = timezone.now()
+            subscription.stripe_price_id = new_price_id
+            subscription.price_cents = new_price_cents
+            subscription.save()
+            
+            # Update subscriber counts
+            stream.paid_subscriber_count = stream.subscriptions.filter(
+                status='active',
+                tier__in=['entry', 'premium']
+            ).count()
+            stream.save()
+            
+            return Response({
+                'message': f'Successfully changed to {new_tier} tier',
+                'subscription': StreamSubscriptionSerializer(subscription).data
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Failed to change subscription: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LiveStreamViewSet(viewsets.ModelViewSet):
@@ -618,3 +1074,224 @@ class StreamCategoryViewSet(viewsets.ReadOnlyModelViewSet):
         
         serializer = StreamSerializer(streams, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class UserStreamSubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for user's stream subscriptions.
+    """
+    serializer_class = StreamSubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'tier', 'stream__practitioner']
+    ordering_fields = ['created_at', 'current_period_end', 'stream__title']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Get subscriptions for the authenticated user."""
+        return StreamSubscription.objects.filter(
+            user=self.request.user
+        ).select_related('stream__practitioner').prefetch_related('stream__categories')
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get only active subscriptions."""
+        queryset = self.get_queryset().filter(status='active')
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def expiring_soon(self, request):
+        """Get subscriptions expiring in the next 7 days."""
+        cutoff = timezone.now() + timezone.timedelta(days=7)
+        queryset = self.get_queryset().filter(
+            status='active',
+            current_period_end__lte=cutoff,
+            canceled_at__isnull=True  # Not already canceled
+        )
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class StreamPostViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing stream posts.
+    """
+    serializer_class = StreamPostSerializer
+    lookup_field = 'public_uuid'
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['tier_level', 'post_type', 'is_published', 'is_pinned']
+    search_fields = ['title', 'content', 'tags']
+    ordering_fields = ['created_at', 'published_at', 'like_count', 'view_count']
+    ordering = ['-published_at', '-created_at']
+    
+    def get_queryset(self):
+        """Get posts for a specific stream."""
+        # Get stream_id from query params
+        stream_id = self.request.query_params.get('stream')
+        
+        # Base queryset
+        if stream_id:
+            queryset = StreamPost.objects.filter(stream_id=stream_id)
+        else:
+            # If no stream specified, return all posts user can access
+            queryset = StreamPost.objects.all()
+        
+        # Filter based on permissions and subscriptions
+        if self.request.user.is_authenticated:
+            # Get practitioner's own posts
+            own_posts = queryset.filter(stream__practitioner=self.request.user.practitioner_profile) if hasattr(self.request.user, 'practitioner_profile') else StreamPost.objects.none()
+            
+            # Get posts from subscribed streams
+            subscribed_streams = StreamSubscription.objects.filter(
+                user=self.request.user,
+                status='active'
+            ).values_list('stream_id', 'tier')
+            
+            # Build query for accessible posts
+            accessible_posts = Q(tier_level='free', is_published=True)  # Free posts
+            
+            for stream_id, tier in subscribed_streams:
+                if tier == 'premium':
+                    accessible_posts |= Q(stream_id=stream_id, is_published=True)
+                elif tier == 'entry':
+                    accessible_posts |= Q(stream_id=stream_id, tier_level__in=['free', 'entry'], is_published=True)
+                else:  # free
+                    accessible_posts |= Q(stream_id=stream_id, tier_level='free', is_published=True)
+            
+            # Combine own posts (all) and accessible posts
+            queryset = queryset.filter(Q(id__in=own_posts) | accessible_posts)
+        else:
+            # Not authenticated, show all published posts (but can_access will be false for premium)
+            queryset = queryset.filter(is_published=True)
+        
+        return queryset.select_related('stream__practitioner').prefetch_related('media')
+    
+    def get_permissions(self):
+        """Set permissions based on action."""
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), IsStreamOwner()]
+        return [IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        """Set the stream when creating a post."""
+        # Get stream_id from request data
+        stream_id = self.request.data.get('stream')
+        if not stream_id:
+            raise serializers.ValidationError("Stream ID is required")
+            
+        stream = get_object_or_404(Stream, pk=stream_id)
+        
+        # Verify user owns the stream
+        if not (hasattr(self.request.user, 'practitioner_profile') and 
+                stream.practitioner == self.request.user.practitioner_profile):
+            raise serializers.ValidationError("You can only create posts for your own stream")
+        
+        # Set published_at if publishing now
+        extra_kwargs = {}
+        if serializer.validated_data.get('is_published', False):
+            extra_kwargs['published_at'] = timezone.now()
+        
+        serializer.save(stream=stream, **extra_kwargs)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def like(self, request, public_uuid=None):
+        """Like or unlike a post."""
+        post = self.get_object()
+        
+        # Check if user can access this post
+        if not self._can_access_post(request.user, post):
+            return Response(
+                {'error': 'You need a higher subscription tier to access this post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Toggle like
+        from streams.models import StreamPostLike
+        like, created = StreamPostLike.objects.get_or_create(
+            user=request.user,
+            post=post
+        )
+        
+        if not created:
+            like.delete()
+            post.like_count = F('like_count') - 1
+            post.save(update_fields=['like_count'])
+            return Response({'liked': False, 'like_count': post.like_count})
+        else:
+            post.like_count = F('like_count') + 1
+            post.save(update_fields=['like_count'])
+            return Response({'liked': True, 'like_count': post.like_count})
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def view(self, request, public_uuid=None):
+        """Track a view on the post."""
+        post = self.get_object()
+        
+        # Check if user can access this post
+        if not self._can_access_post(request.user, post):
+            return Response(
+                {'error': 'You need a higher subscription tier to access this post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Track view
+        from streams.models import StreamPostView
+        view, created = StreamPostView.objects.get_or_create(
+            user=request.user,
+            post=post,
+            defaults={'last_viewed_at': timezone.now()}
+        )
+        
+        if not created:
+            view.last_viewed_at = timezone.now()
+            view.save(update_fields=['last_viewed_at'])
+        else:
+            # Update counts
+            post.view_count = F('view_count') + 1
+            post.unique_view_count = StreamPostView.objects.filter(post=post).count()
+            post.save(update_fields=['view_count', 'unique_view_count'])
+        
+        return Response({'viewed': True})
+    
+    def _can_access_post(self, user, post):
+        """Check if user can access a post based on subscription tier."""
+        # Owner can always access
+        if (hasattr(user, 'practitioner_profile') and 
+            post.stream.practitioner == user.practitioner_profile):
+            return True
+        
+        # Free posts are always accessible
+        if post.tier_level == 'free':
+            return True
+        
+        # Check subscription
+        subscription = StreamSubscription.objects.filter(
+            user=user,
+            stream=post.stream,
+            status='active'
+        ).first()
+        
+        if not subscription:
+            return False
+        
+        # Check tier access
+        if subscription.tier == 'premium':
+            return True
+        elif subscription.tier == 'entry':
+            return post.tier_level in ['free', 'entry']
+        else:  # free
+            return post.tier_level == 'free'

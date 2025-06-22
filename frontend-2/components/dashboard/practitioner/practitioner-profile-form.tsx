@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { ImagePlus, Upload, X, Save, CheckCircle } from "lucide-react"
+import { ImagePlus, Upload, X, Save, CheckCircle, Copy } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { practitionersMyProfileRetrieveOptions, practitionersPartialUpdateMutation } from "@/src/client/@tanstack/react-query.gen"
@@ -187,6 +187,30 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
                       Upload Video
                     </Button>
                   )}
+                </div>
+
+                <div className="w-full pt-4 border-t">
+                  <Label className="block mb-2">Profile URL Slug</Label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground">{practitioner?.slug || 'Not available'}</p>
+                    {practitioner?.slug && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/practitioners/${practitioner.slug}`)
+                          toast({
+                            title: "Copied!",
+                            description: "Profile URL copied to clipboard",
+                          })
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Your unique profile URL identifier.</p>
                 </div>
 
                 <div className="w-full pt-4 border-t">

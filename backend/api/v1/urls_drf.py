@@ -55,7 +55,7 @@ from notifications.api.v1.views import (
 
 # Streaming content
 from streams.api.v1.views import (
-    StreamViewSet, LiveStreamViewSet, StreamScheduleViewSet, StreamCategoryViewSet
+    StreamViewSet, StreamPostViewSet, LiveStreamViewSet, StreamScheduleViewSet, StreamCategoryViewSet
 )
 
 # Messaging
@@ -118,6 +118,7 @@ router.register(r'notification-templates', NotificationTemplateViewSet, basename
 
 # Streams
 router.register(r'streams', StreamViewSet, basename='stream')
+router.register(r'stream-posts', StreamPostViewSet, basename='stream-post')
 router.register(r'live-streams', LiveStreamViewSet, basename='live-stream')
 router.register(r'stream-schedules', StreamScheduleViewSet, basename='stream-schedule')
 router.register(r'stream-categories', StreamCategoryViewSet, basename='stream-category')

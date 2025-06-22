@@ -1279,6 +1279,10 @@ class WebhookView(APIView):
                 self._handle_payout_paid(event_data)
             elif event_type == 'payout.failed':
                 self._handle_payout_failed(event_data)
+            elif event_type == 'invoice.payment_succeeded':
+                self._handle_invoice_payment_succeeded(event_data)
+            elif event_type == 'invoice.payment_failed':
+                self._handle_invoice_payment_failed(event_data)
         except Exception as e:
             logger.error(f"Error processing webhook {event_type}: {e}")
             return Response(
@@ -1331,9 +1335,59 @@ class WebhookView(APIView):
     def _handle_subscription_created(self, subscription):
         """Handle subscription creation"""
         metadata = subscription.get('metadata', {})
-        practitioner_id = metadata.get('practitioner_id')
+        subscription_type = metadata.get('type')
         
-        if practitioner_id:
+        if subscription_type == 'stream':
+            # Handle stream subscription
+            stream_id = metadata.get('stream_id')
+            user_id = metadata.get('user_id')
+            tier = metadata.get('tier')
+            
+            if stream_id and user_id:
+                from streams.models import Stream, StreamSubscription
+                
+                # Get the price from subscription items
+                price_id = subscription['items']['data'][0]['price']['id']
+                price_cents = subscription['items']['data'][0]['price']['unit_amount']
+                
+                # Create or update stream subscription
+                stream_sub, created = StreamSubscription.objects.update_or_create(
+                    user_id=user_id,
+                    stream_id=stream_id,
+                    defaults={
+                        'tier': tier,
+                        'status': 'active',
+                        'stripe_subscription_id': subscription['id'],
+                        'stripe_customer_id': subscription['customer'],
+                        'stripe_price_id': price_id,
+                        'price_cents': price_cents,
+                        'current_period_start': timezone.datetime.fromtimestamp(
+                            subscription['current_period_start'], 
+                            tz=timezone.utc
+                        ),
+                        'current_period_end': timezone.datetime.fromtimestamp(
+                            subscription['current_period_end'], 
+                            tz=timezone.utc
+                        ),
+                        'started_at': timezone.now()
+                    }
+                )
+                
+                # Update stream subscriber counts
+                stream = Stream.objects.get(id=stream_id)
+                stream.subscriber_count = stream.subscriptions.filter(
+                    status='active'
+                ).count()
+                stream.paid_subscriber_count = stream.subscriptions.filter(
+                    status='active',
+                    tier__in=['entry', 'premium']
+                ).count()
+                stream.save()
+                
+        elif metadata.get('practitioner_id'):
+            # Handle practitioner platform subscription (existing code)
+            practitioner_id = metadata.get('practitioner_id')
+            
             # Update subscription record
             sub = PractitionerSubscription.objects.filter(
                 practitioner_id=practitioner_id,
@@ -1351,50 +1405,134 @@ class WebhookView(APIView):
     
     def _handle_subscription_updated(self, subscription):
         """Handle subscription update"""
-        sub = PractitionerSubscription.objects.filter(
-            stripe_subscription_id=subscription['id']
-        ).first()
+        metadata = subscription.get('metadata', {})
+        subscription_type = metadata.get('type')
         
-        if sub:
-            # Update subscription status
-            stripe_status_map = {
-                'active': 'active',
-                'canceled': 'canceled',
-                'past_due': 'past_due',
-                'trialing': 'trialing',
-                'unpaid': 'unpaid'
-            }
+        if subscription_type == 'stream':
+            # Handle stream subscription update
+            from streams.models import StreamSubscription
             
-            new_status = stripe_status_map.get(subscription['status'], 'active')
-            sub.status = new_status
-            sub.save()
+            stream_sub = StreamSubscription.objects.filter(
+                stripe_subscription_id=subscription['id']
+            ).first()
             
-            # Update practitioner's current subscription if status changed
-            practitioner = sub.practitioner
-            if new_status in ['canceled', 'past_due', 'unpaid']:
-                if practitioner.current_subscription == sub:
-                    practitioner.current_subscription = None
+            if stream_sub:
+                # Update subscription status
+                stripe_status_map = {
+                    'active': 'active',
+                    'canceled': 'canceled',
+                    'past_due': 'past_due',
+                    'trialing': 'active',  # Map trialing to active for streams
+                    'unpaid': 'past_due'
+                }
+                
+                new_status = stripe_status_map.get(subscription['status'], 'active')
+                stream_sub.status = new_status
+                
+                # Update period dates
+                stream_sub.current_period_start = timezone.datetime.fromtimestamp(
+                    subscription['current_period_start'], 
+                    tz=timezone.utc
+                )
+                stream_sub.current_period_end = timezone.datetime.fromtimestamp(
+                    subscription['current_period_end'], 
+                    tz=timezone.utc
+                )
+                
+                # Handle cancellation
+                if subscription.get('cancel_at_period_end'):
+                    stream_sub.canceled_at = timezone.now()
+                    stream_sub.ends_at = stream_sub.current_period_end
+                
+                stream_sub.save()
+                
+                # Update stream subscriber counts
+                stream = stream_sub.stream
+                stream.subscriber_count = stream.subscriptions.filter(
+                    status='active'
+                ).count()
+                stream.paid_subscriber_count = stream.subscriptions.filter(
+                    status='active',
+                    tier__in=['entry', 'premium']
+                ).count()
+                stream.save()
+                
+        else:
+            # Handle practitioner platform subscription (existing code)
+            sub = PractitionerSubscription.objects.filter(
+                stripe_subscription_id=subscription['id']
+            ).first()
+            
+            if sub:
+                # Update subscription status
+                stripe_status_map = {
+                    'active': 'active',
+                    'canceled': 'canceled',
+                    'past_due': 'past_due',
+                    'trialing': 'trialing',
+                    'unpaid': 'unpaid'
+                }
+                
+                new_status = stripe_status_map.get(subscription['status'], 'active')
+                sub.status = new_status
+                sub.save()
+                
+                # Update practitioner's current subscription if status changed
+                practitioner = sub.practitioner
+                if new_status in ['canceled', 'past_due', 'unpaid']:
+                    if practitioner.current_subscription == sub:
+                        practitioner.current_subscription = None
+                        practitioner.save(update_fields=['current_subscription'])
+                elif new_status == 'active':
+                    practitioner.current_subscription = sub
                     practitioner.save(update_fields=['current_subscription'])
-            elif new_status == 'active':
-                practitioner.current_subscription = sub
-                practitioner.save(update_fields=['current_subscription'])
     
     def _handle_subscription_deleted(self, subscription):
         """Handle subscription cancellation"""
-        sub = PractitionerSubscription.objects.filter(
-            stripe_subscription_id=subscription['id']
-        ).first()
+        metadata = subscription.get('metadata', {})
+        subscription_type = metadata.get('type')
         
-        if sub:
-            sub.status = 'canceled'
-            sub.end_date = timezone.now()
-            sub.save()
+        if subscription_type == 'stream':
+            # Handle stream subscription deletion
+            from streams.models import StreamSubscription
             
-            # Clear practitioner's current subscription if this was it
-            practitioner = sub.practitioner
-            if practitioner.current_subscription == sub:
-                practitioner.current_subscription = None
-                practitioner.save(update_fields=['current_subscription'])
+            stream_sub = StreamSubscription.objects.filter(
+                stripe_subscription_id=subscription['id']
+            ).first()
+            
+            if stream_sub:
+                stream_sub.status = 'canceled'
+                stream_sub.canceled_at = timezone.now()
+                stream_sub.ends_at = timezone.now()
+                stream_sub.save()
+                
+                # Update stream subscriber counts
+                stream = stream_sub.stream
+                stream.subscriber_count = stream.subscriptions.filter(
+                    status='active'
+                ).count()
+                stream.paid_subscriber_count = stream.subscriptions.filter(
+                    status='active',
+                    tier__in=['entry', 'premium']
+                ).count()
+                stream.save()
+                
+        else:
+            # Handle practitioner platform subscription (existing code)
+            sub = PractitionerSubscription.objects.filter(
+                stripe_subscription_id=subscription['id']
+            ).first()
+            
+            if sub:
+                sub.status = 'canceled'
+                sub.end_date = timezone.now()
+                sub.save()
+                
+                # Clear practitioner's current subscription if this was it
+                practitioner = sub.practitioner
+                if practitioner.current_subscription == sub:
+                    practitioner.current_subscription = None
+                    practitioner.save(update_fields=['current_subscription'])
     
     def _handle_refund(self, charge):
         """Handle refund"""
@@ -1449,6 +1587,143 @@ class WebhookView(APIView):
             payout_record.status = 'failed'
             payout_record.error_message = payout.get('failure_message', 'Unknown error')
             payout_record.save()
+    
+    def _handle_invoice_payment_succeeded(self, invoice):
+        """Handle successful invoice payment (subscription renewals)"""
+        subscription_id = invoice.get('subscription')
+        if not subscription_id:
+            return
+        
+        # Check subscription metadata to determine type
+        try:
+            import stripe
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            metadata = subscription.get('metadata', {})
+            subscription_type = metadata.get('type')
+            
+            if subscription_type == 'stream':
+                # Handle stream subscription renewal
+                from streams.models import StreamSubscription
+                
+                stream_sub = StreamSubscription.objects.filter(
+                    stripe_subscription_id=subscription_id
+                ).first()
+                
+                if stream_sub:
+                    # Update subscription period dates
+                    stream_sub.current_period_start = timezone.datetime.fromtimestamp(
+                        subscription['current_period_start'], 
+                        tz=timezone.utc
+                    )
+                    stream_sub.current_period_end = timezone.datetime.fromtimestamp(
+                        subscription['current_period_end'], 
+                        tz=timezone.utc
+                    )
+                    stream_sub.status = 'active'
+                    stream_sub.save()
+                    
+                    # Create earnings transaction for practitioner
+                    stream = stream_sub.stream
+                    practitioner = stream.practitioner
+                    
+                    # Calculate commission (platform takes 15%)
+                    gross_amount_cents = invoice['amount_paid']
+                    commission_rate = 15.0  # Platform commission for streams
+                    commission_amount_cents = int(gross_amount_cents * commission_rate / 100)
+                    net_amount_cents = gross_amount_cents - commission_amount_cents
+                    
+                    # Create earnings transaction
+                    EarningsTransaction.objects.create(
+                        practitioner=practitioner,
+                        gross_amount_cents=gross_amount_cents,
+                        commission_rate=commission_rate,
+                        commission_amount_cents=commission_amount_cents,
+                        net_amount_cents=net_amount_cents,
+                        status='pending',
+                        available_after=timezone.now() + timezone.timedelta(hours=48),
+                        description=f"Stream subscription renewal - {stream_sub.user.get_full_name() or stream_sub.user.email} ({stream_sub.tier} tier)",
+                        metadata={
+                            'type': 'stream_subscription',
+                            'stream_id': str(stream.id),
+                            'subscription_id': str(stream_sub.id),
+                            'user_id': str(stream_sub.user.id),
+                            'tier': stream_sub.tier,
+                            'invoice_id': invoice['id']
+                        }
+                    )
+                    
+            else:
+                # Handle practitioner platform subscription renewal
+                sub = PractitionerSubscription.objects.filter(
+                    stripe_subscription_id=subscription_id
+                ).first()
+                
+                if sub:
+                    # Ensure subscription is marked as active
+                    sub.status = 'active'
+                    sub.save()
+                    
+        except Exception as e:
+            logger.error(f"Error handling invoice.payment_succeeded: {e}")
+    
+    def _handle_invoice_payment_failed(self, invoice):
+        """Handle failed invoice payment (subscription payment failures)"""
+        subscription_id = invoice.get('subscription')
+        if not subscription_id:
+            return
+        
+        # Check subscription metadata to determine type
+        try:
+            import stripe
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            metadata = subscription.get('metadata', {})
+            subscription_type = metadata.get('type')
+            
+            if subscription_type == 'stream':
+                # Handle stream subscription payment failure
+                from streams.models import StreamSubscription
+                
+                stream_sub = StreamSubscription.objects.filter(
+                    stripe_subscription_id=subscription_id
+                ).first()
+                
+                if stream_sub:
+                    # Mark subscription as past due
+                    stream_sub.status = 'past_due'
+                    stream_sub.save()
+                    
+                    # Update stream subscriber counts
+                    stream = stream_sub.stream
+                    stream.subscriber_count = stream.subscriptions.filter(
+                        status='active'
+                    ).count()
+                    stream.paid_subscriber_count = stream.subscriptions.filter(
+                        status='active',
+                        tier__in=['entry', 'premium']
+                    ).count()
+                    stream.save()
+                    
+                    # TODO: Send notification to user about payment failure
+                    
+            else:
+                # Handle practitioner platform subscription payment failure
+                sub = PractitionerSubscription.objects.filter(
+                    stripe_subscription_id=subscription_id
+                ).first()
+                
+                if sub:
+                    # Mark subscription as past due
+                    sub.status = 'past_due'
+                    sub.save()
+                    
+                    # Clear practitioner's current subscription if this was it
+                    practitioner = sub.practitioner
+                    if practitioner.current_subscription == sub:
+                        practitioner.current_subscription = None
+                        practitioner.save(update_fields=['current_subscription'])
+                        
+        except Exception as e:
+            logger.error(f"Error handling invoice.payment_failed: {e}")
 
 
 @extend_schema_view(

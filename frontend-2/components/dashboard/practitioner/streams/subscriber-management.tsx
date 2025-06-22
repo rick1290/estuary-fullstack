@@ -1,18 +1,25 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Users, Crown, Star, Mail, Calendar } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import type { StreamSubscriber } from "@/types/stream-management"
 
 interface SubscriberManagementProps {
-  subscribers: StreamSubscriber[]
+  streamId: string | number
 }
 
-export default function SubscriberManagement({ subscribers }: SubscriberManagementProps) {
+export default function SubscriberManagement({ streamId }: SubscriberManagementProps) {
+  // TODO: Replace with actual API call when endpoint is available
+  const [subscribers, setSubscribers] = useState<any[]>([])
+  
+  useEffect(() => {
+    // For now, use empty array until subscribers endpoint is implemented
+    setSubscribers([])
+  }, [streamId])
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case "premium":
@@ -48,7 +55,12 @@ export default function SubscriberManagement({ subscribers }: SubscriberManageme
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {subscribers.map((subscriber) => (
+            {subscribers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No subscribers yet. Share your stream to start growing your audience!
+              </p>
+            ) : (
+              subscribers.map((subscriber) => (
               <div key={subscriber.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
@@ -91,7 +103,7 @@ export default function SubscriberManagement({ subscribers }: SubscriberManageme
                   </Button>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </CardContent>
       </Card>
@@ -104,8 +116,8 @@ export default function SubscriberManagement({ subscribers }: SubscriberManageme
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">127</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Start sharing to grow</p>
           </CardContent>
         </Card>
 
@@ -115,8 +127,8 @@ export default function SubscriberManagement({ subscribers }: SubscriberManageme
             <Star className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">70% of total subscribers</p>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">0% of total subscribers</p>
           </CardContent>
         </Card>
 
@@ -126,8 +138,8 @@ export default function SubscriberManagement({ subscribers }: SubscriberManageme
             <Crown className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">38</div>
-            <p className="text-xs text-muted-foreground">30% of total subscribers</p>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">0% of total subscribers</p>
           </CardContent>
         </Card>
 
@@ -137,8 +149,8 @@ export default function SubscriberManagement({ subscribers }: SubscriberManageme
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94%</div>
-            <p className="text-xs text-muted-foreground">Monthly retention</p>
+            <div className="text-2xl font-bold">-</div>
+            <p className="text-xs text-muted-foreground">No data yet</p>
           </CardContent>
         </Card>
       </div>

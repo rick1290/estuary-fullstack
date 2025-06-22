@@ -3,7 +3,7 @@
 import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Heart, Home, MessageSquare, MoreHorizontal, RssIcon, Settings } from "lucide-react"
+import { Calendar, Heart, Home, MessageSquare, MoreHorizontal, RssIcon, Settings, Crown } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -26,6 +26,7 @@ export default function UserDashboardNav() {
     { label: "Messages", path: "/dashboard/user/messages", icon: <MessageSquare className="h-4 w-4 mr-2" /> },
     { label: "My Bookings", path: "/dashboard/user/bookings", icon: <Calendar className="h-4 w-4 mr-2" /> },
     { label: "My Streams", path: "/dashboard/user/streams", icon: <RssIcon className="h-4 w-4 mr-2" /> },
+    { label: "Subscriptions", path: "/dashboard/user/subscriptions", icon: <Crown className="h-4 w-4 mr-2" /> },
     { label: "My Favorites", path: "/dashboard/user/favorites", icon: <Heart className="h-4 w-4 mr-2" /> },
     { label: "Settings", path: "/dashboard/user/profile", icon: <Settings className="h-4 w-4 mr-2" /> },
   ]

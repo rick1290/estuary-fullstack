@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
-import { Video, ImageIcon, FileText, Mic, TrendingUp, Clock, Heart } from "lucide-react"
+import { Video, ImageIcon, FileText, Mic, TrendingUp, Clock, Heart, Crown } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 interface StreamsFiltersProps {
   initialContentType?: string
   initialTags?: string[]
   initialShowLocked?: boolean
   initialSort?: string
+  initialSubscribed?: boolean
 }
 
 export default function StreamsFilters({
@@ -21,14 +23,17 @@ export default function StreamsFilters({
   initialTags = [],
   initialShowLocked = false,
   initialSort = "recent",
+  initialSubscribed = false,
 }: StreamsFiltersProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { isAuthenticated } = useAuth()
 
   const [contentType, setContentType] = useState<string | undefined>(initialContentType)
   const [tags, setTags] = useState<string[]>(initialTags)
   const [showLocked, setShowLocked] = useState<boolean>(initialShowLocked)
   const [sort, setSort] = useState<string>(initialSort)
+  const [showSubscribed, setShowSubscribed] = useState<boolean>(initialSubscribed)
 
   // Available content types
   const contentTypes = [
@@ -79,6 +84,10 @@ export default function StreamsFilters({
       params.set("sort", sort)
     }
 
+    if (showSubscribed) {
+      params.set("subscribed", "true")
+    }
+
     router.push(`${pathname}?${params.toString()}`)
   }
 
@@ -88,6 +97,7 @@ export default function StreamsFilters({
     setTags([])
     setShowLocked(false)
     setSort("recent")
+    setShowSubscribed(false)
     router.push(pathname)
   }
 
@@ -153,6 +163,26 @@ export default function StreamsFilters({
       </div>
 
       <Separator className="bg-sage-200" />
+
+      {/* My Subscriptions Section */}
+      {isAuthenticated && (
+        <>
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <Checkbox 
+                checked={showSubscribed} 
+                onCheckedChange={(checked) => setShowSubscribed(checked as boolean)}
+                className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+              />
+              <span className="flex items-center gap-2 text-sm text-olive-700 group-hover:text-olive-900">
+                <Crown className="h-4 w-4 text-sage-600" />
+                <span>My Subscriptions</span>
+              </span>
+            </label>
+          </div>
+          <Separator className="bg-sage-200" />
+        </>
+      )}
 
       {/* Topics Section */}
       <div>

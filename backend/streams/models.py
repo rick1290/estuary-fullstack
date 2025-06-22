@@ -135,6 +135,26 @@ class Stream(PublicModel):
         help_text="Platform commission percentage"
     )
     
+    # Stripe integration fields
+    stripe_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Stripe Product ID for this stream"
+    )
+    stripe_entry_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Stripe Price ID for entry tier monthly subscription"
+    )
+    stripe_premium_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Stripe Price ID for premium tier monthly subscription"
+    )
+    
     # Launch date
     launched_at = models.DateTimeField(blank=True, null=True)
     
@@ -342,6 +362,16 @@ class StreamSubscription(BaseModel):
         unique=True
     )
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The Stripe Price ID this subscription is using"
+    )
+    price_cents = models.IntegerField(
+        default=0,
+        help_text="The actual price being paid monthly (captures price at subscription time)"
+    )
     
     # Subscription history
     previous_tier = models.CharField(

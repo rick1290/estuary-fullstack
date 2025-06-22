@@ -355,9 +355,17 @@ class StreamPostSerializer(BaseSerializer):
         ]
     
     def get_can_access(self, obj):
+        # Free content is accessible to everyone
+        if obj.tier_level == 'free':
+            return True
+            
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
+        
+        # Check if user is the stream owner
+        if hasattr(request.user, 'practitioner_profile') and obj.stream.practitioner == request.user.practitioner_profile:
+            return True
         
         subscription = obj.stream.subscriptions.filter(
             user=request.user,

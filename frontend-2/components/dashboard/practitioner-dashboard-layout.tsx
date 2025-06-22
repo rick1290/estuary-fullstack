@@ -227,7 +227,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         <div className="px-2 py-2 border-t">
           <nav className="space-y-1">
             <Link
-              href={`/practitioners/${user?.id || "1"}`}
+              href={`/practitioners/${user?.practitioner_slug || user?.practitionerPublicId || user?.id || "1"}`}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <ExternalLink className="h-4 w-4" />
@@ -237,7 +237,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               variant="ghost"
               className="w-full justify-start gap-3 px-3 py-2 h-auto font-medium"
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.id || "1"}`)
+                navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.practitioner_slug || user?.practitionerPublicId || user?.id || "1"}`)
               }}
             >
               <Copy className="h-4 w-4" />
@@ -334,7 +334,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               <div className="mt-auto px-3 py-4 border-t">
                 <nav className="space-y-1">
                   <Link
-                    href={`/practitioners/${user?.id || "1"}`}
+                    href={`/practitioners/${user?.practitioner_slug || user?.practitionerPublicId || user?.id || "1"}`}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -344,7 +344,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                     variant="ghost"
                     className="w-full justify-start gap-3 px-3 py-2 h-auto font-medium"
                     onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.id || "1"}`)
+                      navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.practitioner_slug || user?.practitionerPublicId || user?.id || "1"}`)
                     }}
                   >
                     <Copy className="h-4 w-4" />
@@ -446,14 +446,14 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
                   <Badge
                     variant="destructive"
                     className="absolute -right-1 -top-1 h-4 w-4 p-0 flex items-center justify-center"
                   >
                     4
                   </Badge>
-                  <Bell className="h-5 w-5" />
                   <span className="sr-only">Notifications</span>
                 </Button>
               </DropdownMenuTrigger>

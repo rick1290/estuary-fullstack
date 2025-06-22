@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import ContentCard from "./content-card"
-import { getMockStreamPosts } from "@/lib/mock-stream-data"
 import type { StreamPost } from "@/types/stream"
-import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { Button } from "@/components/ui/button"
+import { useInfiniteQuery } from "@tanstack/react-query"
+import { streamPostsList } from "@/src/client/sdk.gen"
+import { useAuth } from "@/hooks/use-auth"
 
 interface ContentFeedProps {
   query?: string
@@ -13,6 +14,7 @@ interface ContentFeedProps {
   practitionerId?: string
   tags?: string[]
   showLocked?: boolean
+  showSubscribed?: boolean
   sort?: string
 }
 
@@ -22,121 +24,107 @@ export default function ContentFeed({
   practitionerId,
   tags = [],
   showLocked = false,
+  showSubscribed = false,
   sort = "recent",
 }: ContentFeedProps) {
-  const [posts, setPosts] = useState<StreamPost[]>([])
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
+  const { user } = useAuth()
+  const pageSize = 10
 
-  // Fetch posts
-  useEffect(() => {
-    setLoading(true)
-    setPosts([])
-    setPage(1)
-    setHasMore(true)
-
-    // In a real app, this would be an API call with filters
-    const fetchedPosts = getMockStreamPosts()
-      .filter((post) => {
-        // Filter by content type
-        if (contentType && post.contentType !== contentType) {
-          return false
-        }
-
-        // Filter by practitioner
-        if (practitionerId && post.practitionerId !== practitionerId) {
-          return false
-        }
-
-        // Filter by tags
-        if (tags.length > 0 && !tags.some((tag) => post.tags.includes(tag))) {
-          return false
-        }
-
-        // Filter by locked status
-        if (!showLocked && post.isPremium) {
-          return false
-        }
-
-        // Filter by search query
-        if (query) {
-          const searchTerms = query.toLowerCase().split(" ")
-          const searchableText = `${post.practitionerName} ${post.content} ${post.tags.join(" ")}`.toLowerCase()
-          return searchTerms.every((term) => searchableText.includes(term))
-        }
-
-        return true
-      })
-      .sort((a, b) => {
-        // Sort by selected option
-        if (sort === "recent") {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        } else if (sort === "trending") {
-          return b.views - a.views
-        } else if (sort === "engagement") {
-          return b.likes + b.comments * 2 - (a.likes + a.comments * 2)
-        }
-        return 0
-      })
-      .slice(0, 10) // Initial page
-
-    setTimeout(() => {
-      setPosts(fetchedPosts)
-      setLoading(false)
-      setHasMore(fetchedPosts.length === 10) // If we got less than 10, there's no more
-    }, 1000) // Simulate network delay
-  }, [query, contentType, practitionerId, tags, showLocked, sort])
-
-  // Load more posts
-  const loadMore = () => {
-    setLoading(true)
-    const nextPage = page + 1
-
-    // In a real app, this would be an API call with pagination
-    const morePosts = getMockStreamPosts()
-      .filter((post) => {
-        // Same filters as above
-        if (contentType && post.contentType !== contentType) {
-          return false
-        }
-        if (practitionerId && post.practitionerId !== practitionerId) {
-          return false
-        }
-        if (tags.length > 0 && !tags.some((tag) => post.tags.includes(tag))) {
-          return false
-        }
-        if (!showLocked && post.isPremium) {
-          return false
-        }
-        if (query) {
-          const searchTerms = query.toLowerCase().split(" ")
-          const searchableText = `${post.practitionerName} ${post.content} ${post.tags.join(" ")}`.toLowerCase()
-          return searchTerms.every((term) => searchableText.includes(term))
-        }
-        return true
-      })
-      .sort((a, b) => {
-        if (sort === "recent") {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        } else if (sort === "trending") {
-          return b.views - a.views
-        } else if (sort === "engagement") {
-          return b.likes + b.comments * 2 - (a.likes + a.comments * 2)
-        }
-        return 0
-      })
-      .slice(nextPage * 10 - 10, nextPage * 10)
-
-    setTimeout(() => {
-      setPosts([...posts, ...morePosts])
-      setPage(nextPage)
-      setLoading(false)
-      setHasMore(morePosts.length === 10)
-    }, 1000)
+  // Build query parameters
+  const queryParams: any = {
+    page_size: pageSize,
+    is_published: true, // Only show published posts
   }
 
-  if (loading && posts.length === 0) {
+  // Add search query
+  if (query) {
+    queryParams.search = query
+  }
+
+  // Add content type filter
+  if (contentType) {
+    queryParams.post_type = contentType
+  }
+
+  // Add tags filter
+  if (tags.length > 0) {
+    queryParams.tags = tags.join(',')
+  }
+
+  // Add sorting
+  if (sort === "recent") {
+    queryParams.ordering = "-published_at"
+  } else if (sort === "trending") {
+    queryParams.ordering = "-view_count"
+  } else if (sort === "engagement") {
+    queryParams.ordering = "-like_count,-comment_count"
+  }
+
+  // Add subscribed filter
+  if (showSubscribed && user) {
+    queryParams.subscribed_only = true
+  }
+
+  // Fetch posts from API with infinite scroll
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteQuery({
+    queryKey: ['streamPosts', query, contentType, tags, sort, showSubscribed, user?.id],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await streamPostsList({
+        query: {
+          ...queryParams,
+          page: pageParam
+        }
+      })
+      return response.data
+    },
+    getNextPageParam: (lastPage, pages) => {
+      // Check if there's a next page
+      if (lastPage?.next) {
+        return pages.length + 1
+      }
+      return undefined
+    },
+    initialPageParam: 1,
+  })
+
+  // Map API response to StreamPost format
+  const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
+    return {
+      id: apiPost.public_uuid || apiPost.id,
+      practitionerId: apiPost.stream?.practitioner?.public_uuid || '',
+      practitionerName: apiPost.stream?.practitioner?.display_name || 'Unknown Practitioner',
+      practitionerImage: apiPost.stream?.practitioner?.profile_image_url || '/placeholder.svg',
+      streamId: apiPost.stream?.public_uuid || apiPost.stream?.id,
+      streamTitle: apiPost.stream?.title || '',
+      content: apiPost.content || '',
+      mediaUrls: apiPost.media?.map((m: any) => m.media_url) || [],
+      contentType: apiPost.post_type as any || 'article',
+      isPremium: apiPost.tier_level !== 'free',
+      tierLevel: apiPost.tier_level,
+      createdAt: apiPost.published_at || apiPost.created_at,
+      likes: apiPost.like_count || 0,
+      comments: apiPost.comment_count || 0,
+      views: apiPost.view_count || 0,
+      tags: apiPost.tags || [],
+      isLiked: false, // TODO: Implement user like status
+      isSaved: false, // TODO: Implement user save status
+      // Use the has_access value from the API which already handles authentication logic
+      hasAccess: apiPost.can_access || false,
+      userSubscriptionTier: apiPost.user_subscription_tier || null,
+    }
+  }
+
+  // Flatten pages of results
+  const posts = data?.pages.flatMap(page => page.results?.map(mapApiPostToStreamPost) || []) || []
+
+  if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <Spinner className="h-8 w-8" />
@@ -144,11 +132,24 @@ export default function ContentFeed({
     )
   }
 
+  if (isError) {
+    return (
+      <div className="py-8 text-center">
+        <h3 className="mb-2 text-lg font-semibold text-muted-foreground">Error loading content</h3>
+        <p className="text-muted-foreground">Please try again later</p>
+      </div>
+    )
+  }
+
   if (posts.length === 0) {
     return (
       <div className="py-8 text-center">
-        <h3 className="mb-2 text-lg font-semibold text-muted-foreground">No content found</h3>
-        <p className="text-muted-foreground">Try adjusting your filters or search query</p>
+        <h3 className="mb-2 text-lg font-semibold text-muted-foreground">
+          {showSubscribed ? "No posts from practitioners you follow" : "No content found"}
+        </h3>
+        <p className="text-muted-foreground">
+          {showSubscribed ? "Follow some practitioners to see their content here" : "Try adjusting your filters or search query"}
+        </p>
       </div>
     )
   }
@@ -161,10 +162,22 @@ export default function ContentFeed({
         ))}
       </div>
 
-      {hasMore && (
+      {/* Load more button */}
+      {hasNextPage && (
         <div className="mt-6 flex justify-center">
-          <Button variant="outline" onClick={loadMore} disabled={loading} className="px-4 py-1">
-            {loading ? <Spinner className="h-6 w-6" /> : "Load More"}
+          <Button
+            variant="outline"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Spinner className="mr-2 h-4 w-4" />
+                Loading...
+              </>
+            ) : (
+              "Load More"
+            )}
           </Button>
         </div>
       )}
