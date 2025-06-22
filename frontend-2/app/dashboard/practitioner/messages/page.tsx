@@ -1,26 +1,34 @@
-import type { Metadata } from "next"
+"use client"
+
 import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import PractitionerMessagesList from "@/components/dashboard/practitioner/messages/practitioner-messages-list"
 import PractitionerMessageDetail from "@/components/dashboard/practitioner/messages/practitioner-message-detail"
-
-export const metadata: Metadata = {
-  title: "Messages | Practitioner Portal",
-  description: "Manage your client communications",
-}
 
 export default function PractitionerMessagesPage() {
   return (
     <PractitionerDashboardPageLayout 
       title="Messages" 
-      description="Manage your client communications"
       fullWidth={true}
     >
-      <div className="flex h-[calc(100vh-10rem)] -mt-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden border-2 border-sage-200 rounded-xl bg-white/80 backdrop-blur-sm">
-        <div className="w-full md:w-1/3 border-r border-sage-200 overflow-hidden">
-          <PractitionerMessagesList />
-        </div>
-        <div className="hidden md:block w-2/3 overflow-hidden">
-          <PractitionerMessageDetail />
+      <style jsx>{`
+        .messages-container {
+          height: calc(100vh - 3.5rem - 10rem);
+          display: grid;
+          grid-template-rows: 1fr;
+        }
+      `}</style>
+      
+      <div className="messages-container">
+        <div className="flex bg-white border border-sage-200 rounded-lg shadow-sm overflow-hidden min-h-0">
+          {/* Conversations List */}
+          <div className="w-full md:w-1/3 border-r border-sage-200 overflow-hidden min-h-0">
+            <PractitionerMessagesList />
+          </div>
+          
+          {/* Message Thread */}
+          <div className="hidden md:block flex-1 overflow-hidden min-h-0">
+            <PractitionerMessageDetail />
+          </div>
         </div>
       </div>
     </PractitionerDashboardPageLayout>
