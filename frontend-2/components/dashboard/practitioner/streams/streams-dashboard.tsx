@@ -10,6 +10,7 @@ import StreamPostsList from "./stream-posts-list"
 import CreatePostDialog from "./create-post-dialog"
 import StreamAnalytics from "./stream-analytics"
 import SubscriberManagement from "./subscriber-management"
+import StreamPricing from "./stream-pricing"
 import { mockStreamPosts, mockStreamAnalytics } from "@/lib/mock-stream-management-data"
 import type { StreamPost, StreamAnalytics as StreamAnalyticsType } from "@/types/stream-management"
 
@@ -161,6 +162,7 @@ export default function StreamsDashboard() {
           <TabsTrigger value="posts">Posts</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="posts" className="space-y-4">
@@ -206,6 +208,18 @@ export default function StreamsDashboard() {
 
         <TabsContent value="subscribers">
           {analytics && <SubscriberManagement subscribers={analytics.recentSubscribers} />}
+        </TabsContent>
+
+        <TabsContent value="pricing">
+          <StreamPricing 
+            streamId="stream-1" // This would come from the actual stream data
+            currentEntryPrice={analytics?.revenue.entryTierPrice}
+            currentPremiumPrice={analytics?.revenue.premiumTierPrice}
+            onPricingUpdate={() => {
+              // Refresh analytics or stream data
+              console.log("Pricing updated")
+            }}
+          />
         </TabsContent>
       </Tabs>
 

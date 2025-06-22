@@ -130,6 +130,61 @@ Daily snapshots track:
 
 ## Subscription Management
 
+### Stripe Integration (Monthly Subscriptions)
+Each Stream has its own Stripe Product with custom pricing:
+
+#### Stream Model Fields:
+- `stripe_product_id` - The Stripe Product representing this stream
+- `stripe_entry_price_id` - Stripe Price ID for entry tier monthly subscription
+- `stripe_premium_price_id` - Stripe Price ID for premium tier monthly subscription
+- `entry_tier_price_cents` - Practitioner-set monthly price for entry tier
+- `premium_tier_price_cents` - Practitioner-set monthly price for premium tier
+
+#### StreamSubscription Model Fields:
+- `stripe_subscription_id` - The Stripe Subscription ID
+- `stripe_price_id` - Which specific Price ID this subscription uses
+- `price_cents` - Actual price being paid (for price grandfathering)
+
+#### Pricing Flow:
+1. Practitioner sets tier prices in cents (e.g., 1500 = $15/month)
+2. System creates Stripe Product for the stream
+3. System creates two Stripe Prices (entry and premium)
+4. Price IDs are stored on the Stream model
+5. When user subscribes, use the appropriate Price ID
+
+#### Example Implementation:
+```python
+# When practitioner sets/updates pricing
+stream.entry_tier_price_cents = 1500  # $15/month
+stream.premium_tier_price_cents = 3000  # $30/month
+
+# Create Stripe objects
+product = stripe.Product.create(
+    name=f"{stream.title} Subscription",
+    metadata={'stream_id': stream.id}
+)
+stream.stripe_product_id = product.id
+
+# Create Price objects
+entry_price = stripe.Price.create(
+    product=stream.stripe_product_id,
+    unit_amount=stream.entry_tier_price_cents,
+    currency='usd',
+    recurring={'interval': 'month'}
+)
+stream.stripe_entry_price_id = entry_price.id
+
+# When user subscribes
+subscription = stripe.Subscription.create(
+    customer=user_stripe_customer_id,
+    items=[{'price': stream.stripe_entry_price_id}],
+    application_fee_percent=15,  # Platform takes 15%
+    transfer_data={
+        'destination': practitioner.stripe_account_id
+    }
+)
+```
+
 ### Upgrading/Downgrading
 Users can change tiers with proper proration:
 ```python
@@ -137,7 +192,9 @@ Users can change tiers with proper proration:
 subscription.previous_tier = subscription.tier
 subscription.tier = 'premium'
 subscription.tier_changed_at = timezone.now()
-# Stripe handles proration
+subscription.stripe_price_id = stream.stripe_premium_price_id
+subscription.price_cents = stream.premium_tier_price_cents
+# Update Stripe subscription to new price
 ```
 
 ### Cancellation
@@ -146,7 +203,15 @@ Subscriptions continue until period end:
 subscription.canceled_at = timezone.now()
 subscription.ends_at = subscription.current_period_end
 subscription.status = 'canceled'
+# Cancel in Stripe but let it run until period end
 ```
+
+### Price Changes
+When practitioner changes tier pricing:
+1. Create NEW Stripe Price objects (prices are immutable)
+2. Update stream's price IDs
+3. Existing subscribers keep old pricing (grandfathered)
+4. New subscribers get new pricing
 
 ## Content Visibility Rules
 

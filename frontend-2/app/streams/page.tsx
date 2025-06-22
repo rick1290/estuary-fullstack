@@ -16,6 +16,7 @@ export default function StreamsPage({
   const practitionerId = searchParams.practitioner as string | undefined
   const tags = Array.isArray(searchParams.tag) ? searchParams.tag : searchParams.tag ? [searchParams.tag] : []
   const showLocked = searchParams.locked === "true"
+  const showSubscribed = searchParams.subscribed === "true"
   const sort = (searchParams.sort as string | undefined) || "recent"
 
   return (
@@ -29,6 +30,7 @@ export default function StreamsPage({
           initialTags={tags as string[]}
           initialShowLocked={showLocked}
           initialSort={sort}
+          initialSubscribed={showSubscribed}
         />
       }
       rightSidebar={
@@ -56,6 +58,7 @@ export default function StreamsPage({
             practitionerId={practitionerId}
             tags={tags as string[]}
             showLocked={showLocked}
+            showSubscribed={showSubscribed}
             sort={sort}
           />
         </Suspense>

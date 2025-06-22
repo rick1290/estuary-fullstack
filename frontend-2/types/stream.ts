@@ -3,10 +3,13 @@ export interface StreamPost {
   practitionerId: string
   practitionerName: string
   practitionerImage: string
+  streamId?: string
+  streamTitle?: string
   content: string
   mediaUrls: string[]
   contentType: "video" | "image" | "article" | "audio"
   isPremium: boolean
+  tierLevel?: "free" | "entry" | "premium"
   createdAt: string
   likes: number
   comments: number
@@ -15,6 +18,9 @@ export interface StreamPost {
   isLiked?: boolean
   isSaved?: boolean
   commentsList?: StreamComment[]
+  // User's subscription status to this stream
+  userSubscriptionTier?: "free" | "entry" | "premium" | null
+  hasAccess?: boolean
 }
 
 export interface StreamComment {
@@ -37,4 +43,8 @@ export interface FeaturedPractitioner {
   tags: string[]
   subscriberCount: number
   postCount: number
+  streamId?: string
+  entryPrice?: number
+  premiumPrice?: number
+  userSubscriptionTier?: "free" | "entry" | "premium" | null
 }

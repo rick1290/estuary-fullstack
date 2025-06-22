@@ -13,6 +13,7 @@ interface ContentFeedProps {
   practitionerId?: string
   tags?: string[]
   showLocked?: boolean
+  showSubscribed?: boolean
   sort?: string
 }
 
@@ -22,6 +23,7 @@ export default function ContentFeed({
   practitionerId,
   tags = [],
   showLocked = false,
+  showSubscribed = false,
   sort = "recent",
 }: ContentFeedProps) {
   const [posts, setPosts] = useState<StreamPost[]>([])
@@ -59,6 +61,11 @@ export default function ContentFeed({
           return false
         }
 
+        // Filter by subscription status
+        if (showSubscribed && !post.userSubscriptionTier) {
+          return false
+        }
+
         // Filter by search query
         if (query) {
           const searchTerms = query.toLowerCase().split(" ")
@@ -86,7 +93,7 @@ export default function ContentFeed({
       setLoading(false)
       setHasMore(fetchedPosts.length === 10) // If we got less than 10, there's no more
     }, 1000) // Simulate network delay
-  }, [query, contentType, practitionerId, tags, showLocked, sort])
+  }, [query, contentType, practitionerId, tags, showLocked, showSubscribed, sort])
 
   // Load more posts
   const loadMore = () => {
@@ -107,6 +114,9 @@ export default function ContentFeed({
           return false
         }
         if (!showLocked && post.isPremium) {
+          return false
+        }
+        if (showSubscribed && !post.userSubscriptionTier) {
           return false
         }
         if (query) {

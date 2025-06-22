@@ -136,6 +136,455 @@ class StreamViewSet(viewsets.ModelViewSet):
         
         serializer = LiveStreamSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsStreamOwner])
+    def pricing(self, request, pk=None):
+        """Update stream pricing."""
+        stream = self.get_object()
+        
+        # Validate pricing data
+        entry_price = request.data.get('entry_tier_price_cents')
+        premium_price = request.data.get('premium_tier_price_cents')
+        
+        if entry_price is None or premium_price is None:
+            return Response(
+                {'error': 'Both entry_tier_price_cents and premium_tier_price_cents are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate prices
+        try:
+            entry_price = int(entry_price)
+            premium_price = int(premium_price)
+        except (ValueError, TypeError):
+            return Response(
+                {'error': 'Prices must be integers (in cents)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if entry_price < 100:  # Minimum $1
+            return Response(
+                {'error': 'Entry tier price must be at least $1 (100 cents)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if premium_price <= entry_price:
+            return Response(
+                {'error': 'Premium tier price must be higher than entry tier price'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Initialize Stripe
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Create or update Stripe Product
+            if not stream.stripe_product_id:
+                # Create new product
+                product = stripe.Product.create(
+                    name=f"{stream.title} Subscription",
+                    description=f"Subscription to {stream.practitioner.display_name}'s stream",
+                    metadata={
+                        'stream_id': str(stream.id),
+                        'practitioner_id': str(stream.practitioner.id)
+                    }
+                )
+                stream.stripe_product_id = product.id
+            
+            # Create new Price objects (prices are immutable in Stripe)
+            # Entry tier
+            entry_stripe_price = stripe.Price.create(
+                product=stream.stripe_product_id,
+                unit_amount=entry_price,
+                currency='usd',
+                recurring={'interval': 'month'},
+                metadata={
+                    'tier': 'entry',
+                    'stream_id': str(stream.id)
+                }
+            )
+            
+            # Premium tier
+            premium_stripe_price = stripe.Price.create(
+                product=stream.stripe_product_id,
+                unit_amount=premium_price,
+                currency='usd',
+                recurring={'interval': 'month'},
+                metadata={
+                    'tier': 'premium',
+                    'stream_id': str(stream.id)
+                }
+            )
+            
+            # Update stream with new prices
+            stream.entry_tier_price_cents = entry_price
+            stream.premium_tier_price_cents = premium_price
+            stream.stripe_entry_price_id = entry_stripe_price.id
+            stream.stripe_premium_price_id = premium_stripe_price.id
+            stream.save()
+            
+            return Response({
+                'message': 'Pricing updated successfully',
+                'entry_tier_price_cents': stream.entry_tier_price_cents,
+                'premium_tier_price_cents': stream.premium_tier_price_cents
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Stripe error: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def subscribe(self, request, pk=None):
+        """Subscribe to a stream."""
+        stream = self.get_object()
+        
+        # Get tier
+        tier = request.data.get('tier')
+        if tier not in ['free', 'entry', 'premium']:
+            return Response(
+                {'error': 'Invalid tier. Must be free, entry, or premium'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if already subscribed
+        existing_sub = StreamSubscription.objects.filter(
+            user=request.user,
+            stream=stream,
+            status__in=['active', 'past_due']
+        ).first()
+        
+        if existing_sub:
+            return Response(
+                {'error': 'You already have an active subscription to this stream'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Handle free tier
+        if tier == 'free':
+            subscription = StreamSubscription.objects.create(
+                user=request.user,
+                stream=stream,
+                tier='free',
+                status='active',
+                started_at=timezone.now()
+            )
+            
+            # Update subscriber counts
+            stream.subscriber_count = stream.subscriptions.filter(status='active').count()
+            stream.save()
+            
+            serializer = StreamSubscriptionSerializer(subscription)
+            return Response({
+                'message': 'Successfully subscribed to free tier',
+                'subscription': serializer.data
+            })
+        
+        # Handle paid tiers
+        # Validate payment method
+        payment_method_id = request.data.get('payment_method_id')
+        if not payment_method_id:
+            return Response(
+                {'error': 'Payment method is required for paid tiers'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get the appropriate price ID
+        if tier == 'entry':
+            price_id = stream.stripe_entry_price_id
+            price_cents = stream.entry_tier_price_cents
+        else:  # premium
+            price_id = stream.stripe_premium_price_id
+            price_cents = stream.premium_tier_price_cents
+        
+        if not price_id:
+            return Response(
+                {'error': 'Pricing not configured for this stream. Please contact the practitioner.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Initialize Stripe
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Ensure user has Stripe customer
+            from users.models import UserPaymentProfile
+            payment_profile, created = UserPaymentProfile.objects.get_or_create(
+                user=request.user
+            )
+            
+            if not payment_profile.stripe_customer_id:
+                # Create Stripe customer
+                customer = stripe.Customer.create(
+                    email=request.user.email,
+                    name=request.user.get_full_name(),
+                    metadata={'user_id': str(request.user.id)}
+                )
+                payment_profile.stripe_customer_id = customer.id
+                payment_profile.save()
+            
+            # Create Stripe subscription
+            stripe_subscription = stripe.Subscription.create(
+                customer=payment_profile.stripe_customer_id,
+                items=[{'price': price_id}],
+                payment_behavior='default_incomplete',
+                payment_settings={
+                    'payment_method_types': ['card'],
+                    'save_default_payment_method': 'on_subscription'
+                },
+                expand=['latest_invoice.payment_intent'],
+                metadata={
+                    'type': 'stream',
+                    'stream_id': str(stream.id),
+                    'user_id': str(request.user.id),
+                    'tier': tier
+                },
+                application_fee_percent=15  # Platform takes 15%
+            )
+            
+            # Create local subscription record
+            subscription = StreamSubscription.objects.create(
+                user=request.user,
+                stream=stream,
+                tier=tier,
+                status='incomplete',
+                stripe_subscription_id=stripe_subscription.id,
+                stripe_customer_id=payment_profile.stripe_customer_id,
+                stripe_price_id=price_id,
+                price_cents=price_cents,
+                current_period_start=timezone.datetime.fromtimestamp(
+                    stripe_subscription.current_period_start,
+                    tz=timezone.utc
+                ),
+                current_period_end=timezone.datetime.fromtimestamp(
+                    stripe_subscription.current_period_end,
+                    tz=timezone.utc
+                ),
+                started_at=timezone.now()
+            )
+            
+            serializer = StreamSubscriptionSerializer(subscription)
+            
+            # Return with client secret for payment confirmation
+            return Response({
+                'subscription': serializer.data,
+                'client_secret': stripe_subscription.latest_invoice.payment_intent.client_secret
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Payment error: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def unsubscribe(self, request, pk=None):
+        """Cancel subscription to a stream."""
+        stream = self.get_object()
+        
+        # Find active subscription
+        subscription = StreamSubscription.objects.filter(
+            user=request.user,
+            stream=stream,
+            status__in=['active', 'past_due']
+        ).first()
+        
+        if not subscription:
+            return Response(
+                {'error': 'No active subscription found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Handle free tier cancellation
+        if subscription.tier == 'free':
+            subscription.status = 'canceled'
+            subscription.canceled_at = timezone.now()
+            subscription.ends_at = timezone.now()
+            subscription.save()
+            
+            # Update subscriber counts
+            stream.subscriber_count = stream.subscriptions.filter(status='active').count()
+            stream.save()
+            
+            return Response({'message': 'Successfully unsubscribed'})
+        
+        # Handle paid tier cancellation
+        if not subscription.stripe_subscription_id:
+            return Response(
+                {'error': 'Invalid subscription state'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Cancel in Stripe
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Cancel at period end
+            stripe_subscription = stripe.Subscription.modify(
+                subscription.stripe_subscription_id,
+                cancel_at_period_end=True
+            )
+            
+            # Update local subscription
+            subscription.canceled_at = timezone.now()
+            subscription.ends_at = subscription.current_period_end
+            subscription.save()
+            
+            return Response({
+                'message': 'Subscription will be canceled at the end of the current billing period',
+                'ends_at': subscription.ends_at
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Failed to cancel subscription: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'], 
+            url_path='subscription/change-tier',
+            permission_classes=[IsAuthenticated])
+    def change_tier(self, request, pk=None):
+        """Change subscription tier."""
+        stream = self.get_object()
+        
+        # Get new tier
+        new_tier = request.data.get('tier')
+        if new_tier not in ['free', 'entry', 'premium']:
+            return Response(
+                {'error': 'Invalid tier. Must be free, entry, or premium'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Find active subscription
+        subscription = StreamSubscription.objects.filter(
+            user=request.user,
+            stream=stream,
+            status='active'
+        ).first()
+        
+        if not subscription:
+            return Response(
+                {'error': 'No active subscription found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if subscription.tier == new_tier:
+            return Response(
+                {'error': 'Already subscribed to this tier'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Store previous tier
+        previous_tier = subscription.tier
+        
+        # Handle downgrade to free
+        if new_tier == 'free':
+            if subscription.stripe_subscription_id:
+                # Cancel Stripe subscription
+                import stripe
+                from django.conf import settings
+                stripe.api_key = settings.STRIPE_SECRET_KEY
+                
+                try:
+                    stripe.Subscription.delete(subscription.stripe_subscription_id)
+                except stripe.error.StripeError as e:
+                    return Response(
+                        {'error': f'Failed to cancel paid subscription: {str(e)}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Update subscription
+            subscription.previous_tier = previous_tier
+            subscription.tier = 'free'
+            subscription.tier_changed_at = timezone.now()
+            subscription.stripe_subscription_id = None
+            subscription.stripe_price_id = None
+            subscription.price_cents = 0
+            subscription.save()
+            
+            return Response({
+                'message': 'Successfully downgraded to free tier',
+                'subscription': StreamSubscriptionSerializer(subscription).data
+            })
+        
+        # Handle paid tier changes
+        if subscription.tier == 'free':
+            # Upgrade from free - create new subscription
+            return self.subscribe(request, pk=pk)
+        
+        # Change between paid tiers
+        if not subscription.stripe_subscription_id:
+            return Response(
+                {'error': 'Invalid subscription state'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get new price ID
+        if new_tier == 'entry':
+            new_price_id = stream.stripe_entry_price_id
+            new_price_cents = stream.entry_tier_price_cents
+        else:  # premium
+            new_price_id = stream.stripe_premium_price_id
+            new_price_cents = stream.premium_tier_price_cents
+        
+        if not new_price_id:
+            return Response(
+                {'error': 'Pricing not configured for this tier'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update Stripe subscription
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            # Retrieve current subscription
+            stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
+            
+            # Update subscription item with new price
+            stripe.Subscription.modify(
+                subscription.stripe_subscription_id,
+                items=[{
+                    'id': stripe_subscription['items']['data'][0].id,
+                    'price': new_price_id
+                }],
+                proration_behavior='always_invoice'  # Prorate the change
+            )
+            
+            # Update local subscription
+            subscription.previous_tier = previous_tier
+            subscription.tier = new_tier
+            subscription.tier_changed_at = timezone.now()
+            subscription.stripe_price_id = new_price_id
+            subscription.price_cents = new_price_cents
+            subscription.save()
+            
+            # Update subscriber counts
+            stream.paid_subscriber_count = stream.subscriptions.filter(
+                status='active',
+                tier__in=['entry', 'premium']
+            ).count()
+            stream.save()
+            
+            return Response({
+                'message': f'Successfully changed to {new_tier} tier',
+                'subscription': StreamSubscriptionSerializer(subscription).data
+            })
+            
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Failed to change subscription: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LiveStreamViewSet(viewsets.ModelViewSet):
@@ -617,4 +1066,53 @@ class StreamCategoryViewSet(viewsets.ReadOnlyModelViewSet):
             return self.get_paginated_response(serializer.data)
         
         serializer = StreamSerializer(streams, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class UserStreamSubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for user's stream subscriptions.
+    """
+    serializer_class = StreamSubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'tier', 'stream__practitioner']
+    ordering_fields = ['created_at', 'current_period_end', 'stream__title']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Get subscriptions for the authenticated user."""
+        return StreamSubscription.objects.filter(
+            user=self.request.user
+        ).select_related('stream__practitioner').prefetch_related('stream__categories')
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get only active subscriptions."""
+        queryset = self.get_queryset().filter(status='active')
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def expiring_soon(self, request):
+        """Get subscriptions expiring in the next 7 days."""
+        cutoff = timezone.now() + timezone.timedelta(days=7)
+        queryset = self.get_queryset().filter(
+            status='active',
+            current_period_end__lte=cutoff,
+            canceled_at__isnull=True  # Not already canceled
+        )
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
