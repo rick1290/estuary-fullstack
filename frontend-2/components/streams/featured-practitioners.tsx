@@ -29,9 +29,9 @@ export default function FeaturedPractitioners() {
     router.push(`/practitioners/${practitionerId}`)
   }
 
-  const handleViewStreamClick = (streamPublicUuid: string, event: React.MouseEvent) => {
+  const handleViewStreamClick = (streamId: string | number, event: React.MouseEvent) => {
     event.stopPropagation()
-    router.push(`/streams/${streamPublicUuid}`)
+    router.push(`/streams/${streamId}`)
   }
 
   if (isLoading) {
@@ -99,7 +99,7 @@ export default function FeaturedPractitioners() {
                 variant="outline"
                 size="sm"
                 className="w-full text-xs border-sage-300 text-sage-700 hover:bg-sage-50 rounded-xl"
-                onClick={(e) => handleViewStreamClick(stream.public_uuid || stream.id, e)}
+                onClick={(e) => handleViewStreamClick(stream.id, e)}
               >
                 View Stream
               </Button>

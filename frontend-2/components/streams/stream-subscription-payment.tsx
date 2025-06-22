@@ -84,7 +84,7 @@ export default function StreamSubscriptionPayment({
             description: `You are now subscribed to ${stream.title} (${selectedTier} tier)`,
           })
           queryClient.invalidateQueries({ 
-            queryKey: ['streamsRetrieve', { path: { public_uuid: stream.public_uuid } }] 
+            queryKey: ['streamsRetrieve', { path: { id: stream.id } }] 
           })
           onSuccess()
         }
@@ -117,7 +117,7 @@ export default function StreamSubscriptionPayment({
           id: stream.id
         },
         body: {
-          tier_level: selectedTier,
+          tier: selectedTier,
           payment_method_id: parseInt(selectedPaymentMethodId)
         }
       })

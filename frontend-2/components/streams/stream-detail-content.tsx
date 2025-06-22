@@ -43,7 +43,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
   // Fetch stream details
   const { data: stream, isLoading: streamLoading } = useQuery({
     ...streamsRetrieveOptions({
-      path: { public_uuid: streamId }
+      path: { id: streamId }
     })
   })
 
@@ -69,7 +69,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       })
       queryClient.invalidateQueries({ 
         queryKey: streamsRetrieveOptions({ 
-          path: { public_uuid: streamId } 
+          path: { id: streamId } 
         }).queryKey 
       })
     },
@@ -92,7 +92,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       })
       queryClient.invalidateQueries({ 
         queryKey: streamsRetrieveOptions({ 
-          path: { public_uuid: streamId } 
+          path: { id: streamId } 
         }).queryKey 
       })
     },
@@ -122,7 +122,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
           id: stream?.id!
         },
         body: {
-          tier_level: "free"
+          tier: "free"
         }
       })
     } else {

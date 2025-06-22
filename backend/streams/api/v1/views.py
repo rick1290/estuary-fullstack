@@ -29,7 +29,6 @@ class StreamViewSet(viewsets.ModelViewSet):
     ViewSet for managing content streams.
     """
     serializer_class = StreamSerializer
-    lookup_field = 'public_uuid'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'is_featured', 'practitioner', 'categories']
     search_fields = ['title', 'tagline', 'description', 'practitioner__display_name']

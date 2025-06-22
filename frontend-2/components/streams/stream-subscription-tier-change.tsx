@@ -59,7 +59,7 @@ export default function StreamSubscriptionTierChange({
         description: "Your subscription tier has been changed successfully",
       })
       queryClient.invalidateQueries({ 
-        queryKey: ['streamsRetrieve', { path: { public_uuid: stream.public_uuid } }] 
+        queryKey: ['streamsRetrieve', { path: { id: stream.id } }] 
       })
       onClose()
     },
@@ -82,7 +82,7 @@ export default function StreamSubscriptionTierChange({
         description: "Your subscription has been cancelled",
       })
       queryClient.invalidateQueries({ 
-        queryKey: ['streamsRetrieve', { path: { public_uuid: stream.public_uuid } }] 
+        queryKey: ['streamsRetrieve', { path: { id: stream.id } }] 
       })
       onClose()
     },

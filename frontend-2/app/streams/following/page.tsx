@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import StreamsLayout from "@/components/streams/streams-layout"
 import ContentFeed from "@/components/streams/content-feed"
@@ -11,17 +11,20 @@ import { useAuthModal } from "@/components/auth/auth-provider"
 export default function StreamsFollowingPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { user, isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const router = useRouter()
 
+  // Unwrap searchParams with React.use()
+  const params = use(searchParams)
+  
   // Extract search parameters
-  const query = searchParams.q as string | undefined
-  const contentType = searchParams.type as string | undefined
-  const tags = Array.isArray(searchParams.tag) ? searchParams.tag : searchParams.tag ? [searchParams.tag] : []
-  const sort = (searchParams.sort as string | undefined) || "recent"
+  const query = params.q as string | undefined
+  const contentType = params.type as string | undefined
+  const tags = Array.isArray(params.tag) ? params.tag : params.tag ? [params.tag] : []
+  const sort = (params.sort as string | undefined) || "recent"
 
   useEffect(() => {
     if (!isAuthenticated) {
