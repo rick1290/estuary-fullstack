@@ -152,11 +152,11 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
     return {
       id: apiPost.public_uuid || apiPost.id,
-      practitionerId: stream?.practitioner?.public_uuid || '',
-      practitionerName: stream?.practitioner?.display_name || 'Unknown Practitioner',
-      practitionerImage: stream?.practitioner?.profile_image_url || '/placeholder.svg',
-      streamId: stream?.public_uuid || stream?.id,
-      streamTitle: stream?.title || '',
+      practitionerId: apiPost.practitioner_id || stream?.practitioner_id || '',
+      practitionerName: apiPost.practitioner_name || stream?.practitioner_name || 'Unknown Practitioner',
+      practitionerImage: apiPost.practitioner_image || stream?.profile_image_url || '/placeholder.svg',
+      streamId: apiPost.stream || stream?.id || '',
+      streamTitle: apiPost.stream_title || stream?.title || '',
       content: apiPost.content || '',
       mediaUrls: apiPost.media?.map((m: any) => m.media_url) || [],
       contentType: apiPost.post_type as any || 'article',
@@ -235,21 +235,21 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
               <CardHeader>
                 <div className="flex items-start gap-4">
                   <div className="h-20 w-20 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg overflow-hidden">
-                    {stream.practitioner?.profile_image_url ? (
+                    {stream.profile_image_url ? (
                       <img 
-                        src={stream.practitioner.profile_image_url} 
-                        alt={stream.practitioner.display_name}
+                        src={stream.profile_image_url} 
+                        alt={stream.practitioner_name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <span className="text-2xl font-medium text-olive-800">
-                        {stream.practitioner?.display_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                        {stream.practitioner_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
                       </span>
                     )}
                   </div>
                   <div className="flex-1">
                     <h1 className="text-2xl font-bold mb-1">{stream.title}</h1>
-                    <p className="text-muted-foreground mb-2">by {stream.practitioner?.display_name}</p>
+                    <p className="text-muted-foreground mb-2">by {stream.practitioner_name}</p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
@@ -343,91 +343,102 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                   <CardContent className="space-y-4">
                 {/* Free Tier */}
                 <div 
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
                     selectedTier === 'free' 
-                      ? 'border-sage-600 bg-sage-50' 
+                      ? 'border-sage-600 bg-sage-50 shadow-sm' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setSelectedTier('free')}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Free</h3>
-                    <span className="text-2xl font-bold">$0</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="font-medium text-sm">Free</h3>
+                    <span className="text-sm font-semibold">$0</span>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Access to free content
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Access to free content</span>
                     </li>
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Community updates
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Community updates</span>
                     </li>
                   </ul>
                 </div>
 
                 {/* Entry Tier */}
                 <div 
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
                     selectedTier === 'entry' 
-                      ? 'border-sage-600 bg-sage-50' 
+                      ? 'border-sage-600 bg-sage-50 shadow-sm' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setSelectedTier('entry')}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Entry</h3>
-                    <span className="text-2xl font-bold">
-                      ${((stream.entry_tier_price_cents || 0) / 100).toFixed(2)}/mo
-                    </span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="font-medium text-sm">Entry</h3>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold">
+                        ${((stream.entry_tier_price_cents || 0) / 100).toFixed(0)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">/mo</span>
+                    </div>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Everything in Free
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Everything in Free</span>
                     </li>
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Entry-level exclusive content
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Exclusive content</span>
                     </li>
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Monthly group sessions
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Group sessions</span>
                     </li>
                   </ul>
                 </div>
 
                 {/* Premium Tier */}
                 <div 
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`p-3 rounded-lg border cursor-pointer transition-all relative ${
                     selectedTier === 'premium' 
-                      ? 'border-sage-600 bg-sage-50' 
+                      ? 'border-sage-600 bg-sage-50 shadow-sm' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setSelectedTier('premium')}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Premium</h3>
-                    <span className="text-2xl font-bold">
-                      ${((stream.premium_tier_price_cents || 0) / 100).toFixed(2)}/mo
-                    </span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-medium text-sm">Premium</h3>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        Best Value
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold">
+                        ${((stream.premium_tier_price_cents || 0) / 100).toFixed(0)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">/mo</span>
+                    </div>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Everything in Entry
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Everything in Entry</span>
                     </li>
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      All premium content
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>All premium content</span>
                     </li>
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      1-on-1 monthly check-ins
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>1-on-1 check-ins</span>
                     </li>
-                    <li className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      Priority support
+                    <li className="flex items-start gap-1">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Priority support</span>
                     </li>
                   </ul>
                 </div>
@@ -441,12 +452,14 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                   >
                     {subscribeMutation.isPending ? (
                       <Spinner className="h-4 w-4" />
+                    ) : selectedTier === 'free' ? (
+                      'Subscribe Free'
                     ) : (
-                      `Subscribe - ${selectedTier === 'free' ? 'Free' : `$${
+                      `Subscribe for $${
                         selectedTier === 'entry' 
-                          ? ((stream.entry_tier_price_cents || 0) / 100).toFixed(2)
-                          : ((stream.premium_tier_price_cents || 0) / 100).toFixed(2)
-                      }/mo`}`
+                          ? ((stream.entry_tier_price_cents || 0) / 100).toFixed(0)
+                          : ((stream.premium_tier_price_cents || 0) / 100).toFixed(0)
+                      }/mo`
                     )}
                   </Button>
                 ) : (
