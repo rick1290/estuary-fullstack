@@ -234,7 +234,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         # Get messages
         messages = Message.objects.filter(
             conversation=conversation
-        ).select_related('sender').order_by('-created_at')
+        ).select_related('sender').order_by('created_at')
         
         # Filter by before_id if provided (for pagination)
         before_id = request.query_params.get('before_id')

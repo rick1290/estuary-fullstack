@@ -45,6 +45,7 @@ import {
   conversationsSendMessageCreateMutation,
   conversationsMarkReadCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
+import type { MessageReadable } from "@/src/client/types.gen"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/hooks/use-auth"
@@ -108,10 +109,12 @@ export default function PractitionerMessageDetail() {
   } = useWebSocketMessaging({
     conversationId: conversationId || undefined,
     onMessage: (message) => {
-      // Refresh messages when new message received
-      queryClient.invalidateQueries({ 
-        queryKey: ['conversations', conversationId, 'messages'] 
-      })
+      console.log('PractitionerMessageDetail received WebSocket message:', message)
+      
+      // Force a complete refetch of messages
+      refetchMessages()
+      
+      // Also invalidate conversations list to update last message
       queryClient.invalidateQueries({ 
         queryKey: ['conversations'] 
       })
@@ -133,11 +136,13 @@ export default function PractitionerMessageDetail() {
   })
 
   // Fetch messages
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  const { data: messages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
     ...conversationsMessagesRetrieveOptions({
       path: { id: conversationId || "" }
     }),
-    enabled: !!conversationId
+    enabled: !!conversationId,
+    staleTime: 0, // Always consider data stale
+    refetchInterval: false, // Don't auto-refetch
   })
 
   // Send message mutation
@@ -178,7 +183,11 @@ export default function PractitionerMessageDetail() {
   )?.user
 
   useEffect(() => {
-    scrollToBottom()
+    // Add a small delay to ensure DOM has updated
+    const timer = setTimeout(() => {
+      scrollToBottom()
+    }, 100)
+    return () => clearTimeout(timer)
   }, [messages])
 
   useEffect(() => {
@@ -393,13 +402,13 @@ export default function PractitionerMessageDetail() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4 bg-accent/20">
+      <ScrollArea className="flex-1 p-4 bg-accent/20" key={messages?.length || 0}>
         {messages && messages.length > 0 ? (
           messages.map((message, index) => {
             const isSentByMe = message.sender?.id === user?.id
             const messageSender = message.sender
-            const messageDate = new Date(message.created_at)
-            const prevMessageDate = index > 0 ? new Date(messages[index - 1].created_at) : null
+            const messageDate = message.created_at ? new Date(message.created_at) : new Date()
+            const prevMessageDate = index > 0 && messages[index - 1].created_at ? new Date(messages[index - 1].created_at) : null
             const showDateSeparator = !prevMessageDate || 
               messageDate.toDateString() !== prevMessageDate.toDateString()
 

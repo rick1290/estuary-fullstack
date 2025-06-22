@@ -209,18 +209,35 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         logger.info(f"[Consumer {self.channel_name}] Received chat_message event: {event}")
         
-        # Format message for frontend
+        # Get the message data - could be in 'data' key or directly in event
+        if 'data' in event and isinstance(event['data'], dict):
+            message_data = event['data']
+        else:
+            message_data = event
+        
+        # Format message for frontend to match MessageReadable type
+        formatted_message = {
+            'id': int(message_data.get('id', message_data.get('message_id', 0))),
+            'conversation': int(self.conversation_id),
+            'sender': {
+                'id': int(message_data.get('sender', {}).get('id', message_data.get('sender_id', 0))),
+                'first_name': message_data.get('sender', {}).get('first_name', ''),
+                'last_name': message_data.get('sender', {}).get('last_name', ''),
+                'email': message_data.get('sender', {}).get('email', ''),
+                'avatar_url': message_data.get('sender', {}).get('avatar_url'),
+            },
+            'content': message_data.get('content', ''),
+            'message_type': message_data.get('message_type', 'text'),
+            'created_at': message_data.get('created_at', message_data.get('timestamp', timezone.now().isoformat())),
+            'attachments': message_data.get('attachments', []),
+            'is_edited': message_data.get('is_edited', False),
+            'is_deleted': message_data.get('is_deleted', False),
+        }
+        
+        # Send formatted event matching frontend expectations
         formatted_event = {
             'type': 'chat_message',
-            'data': event.get('data', {
-                'message_id': event.get('message_id'),
-                'sender_id': event.get('sender_id'),
-                'sender_name': event.get('sender_name'),
-                'content': event.get('content'),
-                'message_type': event.get('message_type'),
-                'metadata': event.get('metadata'),
-                'timestamp': event.get('timestamp'),
-            })
+            'data': formatted_message
         }
         
         logger.info(f"[Consumer {self.channel_name}] Sending formatted event to WebSocket client: {json.dumps(formatted_event)}")
