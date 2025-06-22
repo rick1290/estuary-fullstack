@@ -540,7 +540,7 @@ export default function UserMessageDetail() {
             <Button onClick={() => {
               setShowPractitionerInfo(false)
               // Navigate to practitioner profile
-              window.location.href = `/practitioners/${practitioner?.id}`
+              window.location.href = `/practitioners/${conversation?.participants?.find(p => p.user?.id !== user?.id)?.practitioner?.slug || practitioner?.id}`
             }}>
               View Full Profile
             </Button>
