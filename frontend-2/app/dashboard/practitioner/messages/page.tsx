@@ -16,10 +16,10 @@ export default function PractitionerMessagesPage() {
       fullWidth={true}
     >
       <div className="flex h-[calc(100vh-10rem)] -mt-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden border-2 border-sage-200 rounded-xl bg-white/80 backdrop-blur-sm">
-        <div className="w-full md:w-1/3 border-r border-sage-200">
+        <div className="w-full md:w-1/3 border-r border-sage-200 overflow-hidden">
           <PractitionerMessagesList />
         </div>
-        <div className="hidden md:block w-2/3">
+        <div className="hidden md:block w-2/3 overflow-hidden">
           <PractitionerMessageDetail />
         </div>
       </div>

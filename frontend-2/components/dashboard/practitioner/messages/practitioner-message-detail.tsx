@@ -183,12 +183,18 @@ export default function PractitionerMessageDetail() {
   )?.user
 
   useEffect(() => {
-    // Add a small delay to ensure DOM has updated
-    const timer = setTimeout(() => {
-      scrollToBottom()
-    }, 100)
-    return () => clearTimeout(timer)
+    // Scroll to bottom when messages load or change
+    if (messages && messages.length > 0) {
+      scrollToBottom(true) // Instant scroll on initial load
+    }
   }, [messages])
+
+  useEffect(() => {
+    // Scroll to bottom when conversation changes
+    if (conversationId && messages && messages.length > 0) {
+      scrollToBottom(true) // Instant scroll when switching conversations
+    }
+  }, [conversationId])
 
   useEffect(() => {
     // Mark messages as read when viewing conversation
@@ -211,8 +217,16 @@ export default function PractitionerMessageDetail() {
     }
   }, [selectedFile])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  const scrollToBottom = (instant = false) => {
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: instant ? "instant" : "smooth",
+          block: "end",
+          inline: "nearest" // This prevents horizontal scrolling
+        })
+      }
+    }, 50)
   }
 
   const handleSendMessage = () => {
@@ -331,9 +345,9 @@ export default function PractitionerMessageDetail() {
 
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center">
           <div className="relative">
             <Avatar>
@@ -401,8 +415,10 @@ export default function PractitionerMessageDetail() {
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4 bg-accent/20" key={messages?.length || 0}>
+      {/* Messages - Scrollable area */}
+      <div className="flex-1 overflow-hidden bg-accent/20">
+        <ScrollArea className="h-full" key={messages?.length || 0}>
+          <div className="p-4">
         {messages && messages.length > 0 ? (
           messages.map((message, index) => {
             const isSentByMe = message.sender?.id === user?.id
@@ -484,11 +500,13 @@ export default function PractitionerMessageDetail() {
           </div>
         )}
         <div ref={messagesEndRef} />
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
 
-      {/* File preview */}
+      {/* File preview - Fixed */}
       {selectedFile && (
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border flex-shrink-0">
           <div className="flex items-center">
             {previewUrl ? (
               <div className="relative w-20 h-20 mr-2 rounded overflow-hidden">
@@ -507,8 +525,8 @@ export default function PractitionerMessageDetail() {
         </div>
       )}
 
-      {/* Input */}
-      <div className="p-4 border-t border-border">
+      {/* Input - Fixed at bottom */}
+      <div className="p-4 border-t border-border flex-shrink-0">
         <div className="flex items-end gap-2">
           <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={handleFileButtonClick}>
             <Paperclip className="h-5 w-5" />

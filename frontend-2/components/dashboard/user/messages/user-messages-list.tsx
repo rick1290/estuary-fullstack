@@ -36,8 +36,11 @@ export default function UserMessagesList() {
     staleTime: 1000 * 60 * 2, // 2 minutes for messages
   })
 
+  // Extract conversations from paginated response
+  const conversationArray = conversations?.results || []
+  
   // Filter conversations based on search
-  const filteredConversations = conversations?.filter((conversation) => {
+  const filteredConversations = conversationArray.filter((conversation) => {
     if (!searchQuery) return true
     const otherUser = conversation.other_user
     if (!otherUser) return false
@@ -49,7 +52,7 @@ export default function UserMessagesList() {
       return fullName.includes(searchLower) || email.includes(searchLower)
     }
     return false
-  }) || []
+  })
 
   useEffect(() => {
     if (conversationId) {

@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Send, Paperclip, MoreVertical, Phone, Video, Info, Calendar, FileText, X, MessageSquare } from "lucide-react"
+import { Send, Paperclip, MoreVertical, Phone, Video, Info, Calendar, FileText, X, MessageSquare, Wifi, WifiOff } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   conversationsRetrieveOptions,
@@ -28,7 +28,9 @@ import {
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/hooks/use-auth"
+import { useWebSocketMessaging } from "@/hooks/use-websocket-messaging"
 import { toast } from "sonner"
+import type { MessageReadable } from "@/src/client/types.gen"
 
 export default function UserMessageDetail() {
   const searchParams = useSearchParams()
@@ -40,9 +42,38 @@ export default function UserMessageDetail() {
   const [showPractitionerInfo, setShowPractitionerInfo] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isTyping, setIsTyping] = useState(false)
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // WebSocket connection for real-time messaging
+  const { 
+    connectionStatus, 
+    typingUsers, 
+    sendTypingIndicator, 
+    markAsRead 
+  } = useWebSocketMessaging({
+    conversationId: conversationId || undefined,
+    onMessage: (message) => {
+      console.log('UserMessageDetail received WebSocket message:', message)
+      
+      // Force a complete refetch of messages
+      refetchMessages()
+      
+      // Also invalidate conversations list to update last message
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations'] 
+      })
+    },
+    onTyping: (event) => {
+      // Handle typing indicators from other users
+      if (event.user_id !== user?.numericId) {
+        setIsTyping(event.is_typing)
+      }
+    }
+  })
 
   // Fetch conversation details
   const { data: conversation, isLoading: conversationLoading } = useQuery({
@@ -53,11 +84,13 @@ export default function UserMessageDetail() {
   })
 
   // Fetch messages
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  const { data: messages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
     ...conversationsMessagesRetrieveOptions({
       path: { id: conversationId || "" }
     }),
-    enabled: !!conversationId
+    enabled: !!conversationId,
+    staleTime: 0, // Always consider data stale
+    refetchInterval: false, // Don't auto-refetch
   })
 
   // Send message mutation
@@ -67,9 +100,15 @@ export default function UserMessageDetail() {
       setNewMessage("")
       setSelectedFile(null)
       setPreviewUrl(null)
-      // Invalidate messages query to refetch
+      // Invalidate and refetch messages immediately
       queryClient.invalidateQueries({ 
         queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.refetchQueries({ 
+        queryKey: ['conversations', conversationId, 'messages'] 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: ['conversations'] 
       })
     },
     onError: () => {
@@ -92,8 +131,18 @@ export default function UserMessageDetail() {
   )?.user
 
   useEffect(() => {
-    scrollToBottom()
+    // Scroll to bottom when messages load or change
+    if (messages && messages.length > 0) {
+      scrollToBottom(true) // Instant scroll on initial load
+    }
   }, [messages])
+
+  useEffect(() => {
+    // Scroll to bottom when conversation changes
+    if (conversationId && messages && messages.length > 0) {
+      scrollToBottom(true) // Instant scroll when switching conversations
+    }
+  }, [conversationId])
 
   useEffect(() => {
     // Mark messages as read when viewing conversation
@@ -116,8 +165,16 @@ export default function UserMessageDetail() {
     }
   }, [selectedFile])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  const scrollToBottom = (instant = false) => {
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: instant ? "instant" : "smooth",
+          block: "end",
+          inline: "nearest" // This prevents horizontal scrolling
+        })
+      }
+    }, 50)
   }
 
   const handleSendMessage = () => {
@@ -153,6 +210,36 @@ export default function UserMessageDetail() {
   const handleClearFile = () => {
     setSelectedFile(null)
     setPreviewUrl(null)
+  }
+
+  const handleTyping = (value: string) => {
+    setNewMessage(value)
+    
+    // Send typing indicator
+    if (value.length > 0 && !typingTimeout) {
+      sendTypingIndicator(true)
+      
+      // Stop typing indicator after 3 seconds of inactivity
+      const timeout = setTimeout(() => {
+        sendTypingIndicator(false)
+        setTypingTimeout(null)
+      }, 3000)
+      
+      setTypingTimeout(timeout)
+    } else if (value.length === 0 && typingTimeout) {
+      // User cleared the input
+      sendTypingIndicator(false)
+      clearTimeout(typingTimeout)
+      setTypingTimeout(null)
+    } else if (typingTimeout) {
+      // Reset typing timeout
+      clearTimeout(typingTimeout)
+      const timeout = setTimeout(() => {
+        sendTypingIndicator(false)
+        setTypingTimeout(null)
+      }, 3000)
+      setTypingTimeout(timeout)
+    }
   }
 
   if (!conversationId) {
@@ -199,9 +286,9 @@ export default function UserMessageDetail() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center">
           <Avatar>
             <AvatarImage 
@@ -213,9 +300,20 @@ export default function UserMessageDetail() {
             </AvatarFallback>
           </Avatar>
           <div className="ml-3">
-            <h3 className="font-medium">
-              {practitioner ? `${practitioner.first_name || ''} ${practitioner.last_name || ''}`.trim() : 'Unknown Practitioner'}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">
+                {practitioner ? `${practitioner.first_name || ''} ${practitioner.last_name || ''}`.trim() : 'Unknown Practitioner'}
+              </h3>
+              {connectionStatus === 'connected' && (
+                <Wifi className="h-3 w-3 text-green-500" title="Connected" />
+              )}
+              {connectionStatus === 'disconnected' && (
+                <WifiOff className="h-3 w-3 text-red-500" title="Disconnected" />
+              )}
+              {connectionStatus === 'connecting' && (
+                <div className="h-3 w-3 rounded-full bg-yellow-500 animate-pulse" title="Connecting..." />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">Practitioner</p>
           </div>
         </div>
@@ -250,14 +348,16 @@ export default function UserMessageDetail() {
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4 bg-accent/20">
+      {/* Messages - Scrollable area */}
+      <div className="flex-1 overflow-hidden bg-accent/20">
+        <ScrollArea className="h-full" key={messages?.length || 0}>
+          <div className="p-4">
         {messages && messages.length > 0 ? (
           messages.map((message, index) => {
             const isSentByMe = message.sender?.id === user?.id
             const messageSender = message.sender
-            const messageDate = new Date(message.created_at)
-            const prevMessageDate = index > 0 ? new Date(messages[index - 1].created_at) : null
+            const messageDate = message.created_at ? new Date(message.created_at) : new Date()
+            const prevMessageDate = index > 0 && messages[index - 1].created_at ? new Date(messages[index - 1].created_at) : null
             const showDateSeparator = !prevMessageDate || 
               messageDate.toDateString() !== prevMessageDate.toDateString()
 
@@ -333,11 +433,13 @@ export default function UserMessageDetail() {
           </div>
         )}
         <div ref={messagesEndRef} />
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
 
-      {/* File preview */}
+      {/* File preview - Fixed */}
       {selectedFile && (
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border flex-shrink-0">
           <div className="flex items-center">
             {previewUrl ? (
               <div className="relative w-20 h-20 mr-2 rounded overflow-hidden">
@@ -356,22 +458,29 @@ export default function UserMessageDetail() {
         </div>
       )}
 
-      {/* Input */}
-      <div className="p-4 border-t border-border">
+      {/* Input - Fixed at bottom */}
+      <div className="p-4 border-t border-border flex-shrink-0">
         <div className="flex items-end gap-2">
           <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={handleFileButtonClick}>
             <Paperclip className="h-5 w-5" />
           </Button>
           <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
 
-          <Textarea
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="min-h-[40px] resize-none"
-            rows={1}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => handleTyping(e.target.value)}
+              onKeyDown={handleKeyPress}
+              className="min-h-[40px] resize-none"
+              rows={1}
+            />
+            {isTyping && (
+              <div className="absolute -top-6 left-0 text-xs text-muted-foreground">
+                {practitioner?.first_name || 'Practitioner'} is typing...
+              </div>
+            )}
+          </div>
 
           <Button
             variant="default"
