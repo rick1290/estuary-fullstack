@@ -18,7 +18,11 @@ import {
   streamsListOptions, 
   streamsCreateMutation,
   streamsAnalyticsRetrieveOptions,
-  streamsPricingPartialUpdateMutation
+  streamsPricingPartialUpdateMutation,
+  streamPostsCreateMutation,
+  streamPostsListOptions,
+  streamPostsPartialUpdateMutation,
+  streamPostsDestroyMutation
 } from "@/src/client/@tanstack/react-query.gen"
 
 export default function StreamsDashboard() {
@@ -88,51 +92,157 @@ export default function StreamsDashboard() {
     })
   }
 
-  // TODO: Fetch stream posts when API endpoint is available
-  useEffect(() => {
-    if (practitionerStream?.id) {
-      // For now, use empty array until posts endpoint is implemented
-      setPosts([])
-    }
-  }, [practitionerStream?.id])
+  // Fetch stream posts
+  const { data: postsData } = useQuery({
+    ...streamPostsListOptions({
+      query: {
+        stream: practitionerStream?.id
+      }
+    }),
+    enabled: !!practitionerStream?.id
+  })
 
-  const filteredPosts = posts.filter((post) => {
+  useEffect(() => {
+    if (postsData?.results) {
+      setPosts(postsData.results)
+    }
+  }, [postsData])
+
+  const filteredPosts = posts.filter((post: any) => {
     const matchesSearch =
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesTier = filterTier === "all" || post.tier === filterTier
-    const matchesStatus = filterStatus === "all" || post.status === filterStatus
+      (post.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (post.content || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (post.tags || []).some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    const matchesTier = filterTier === "all" || post.tier_level === filterTier
+    const matchesStatus = filterStatus === "all" || 
+      (filterStatus === "published" && post.is_published) ||
+      (filterStatus === "draft" && !post.is_published)
 
     return matchesSearch && matchesTier && matchesStatus
   })
 
+  // Create post mutation
+  const createPostMutation = useMutation({
+    ...streamPostsCreateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Post created!",
+        description: "Your post has been created successfully.",
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: streamPostsListOptions({ 
+          query: { stream: practitionerStream?.id } 
+        }).queryKey 
+      })
+      setCreatePostOpen(false)
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.body?.detail || error?.message || "Failed to create post",
+        variant: "destructive",
+      })
+    }
+  })
+
   const handleCreatePost = async (postData: any) => {
-    // TODO: Implement when stream posts API is available
-    console.log("Post data to be created:", postData)
-    
-    toast({
-      title: "Stream Posts Coming Soon! 🚀",
-      description: "The stream posts API is currently being developed. Your post data has been logged to the console for testing.",
+    if (!practitionerStream?.id) {
+      toast({
+        title: "Error",
+        description: "Stream not found",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Map frontend data to API format
+    const apiData = {
+      stream: practitionerStream.id,
+      title: postData.title,
+      content: postData.content,
+      post_type: 'post', // Default to text post
+      tier_level: postData.tier,
+      is_published: postData.status === 'published',
+      tags: postData.tags,
+      allow_comments: true,
+      allow_tips: true,
+    }
+
+    createPostMutation.mutate({
+      body: apiData
     })
-    
-    // Close the dialog after showing the toast
-    setCreatePostOpen(false)
   }
 
+  // Update post mutation
+  const updatePostMutation = useMutation({
+    ...streamPostsPartialUpdateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Post updated!",
+        description: "Your post has been updated successfully.",
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: streamPostsListOptions({ 
+          query: { stream: practitionerStream?.id } 
+        }).queryKey 
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.body?.detail || error?.message || "Failed to update post",
+        variant: "destructive",
+      })
+    }
+  })
+
+  // Delete post mutation
+  const deletePostMutation = useMutation({
+    ...streamPostsDestroyMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Post deleted!",
+        description: "Your post has been deleted successfully.",
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: streamPostsListOptions({ 
+          query: { stream: practitionerStream?.id } 
+        }).queryKey 
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.body?.detail || error?.message || "Failed to delete post",
+        variant: "destructive",
+      })
+    }
+  })
+
   const handleDeletePost = async (postId: string) => {
-    // TODO: Implement when stream posts API is available
-    toast({
-      title: "Coming soon",
-      description: "Post deletion will be available once the API endpoint is implemented.",
+    deletePostMutation.mutate({
+      path: {
+        public_uuid: postId
+      }
     })
   }
 
   const handleUpdatePost = async (updatedPost: any) => {
-    // TODO: Implement when stream posts API is available
-    toast({
-      title: "Coming soon",
-      description: "Post editing will be available once the API endpoint is implemented.",
+    const updateData = {
+      title: updatedPost.title,
+      content: updatedPost.content,
+      tier_level: updatedPost.tier_level,
+      is_published: updatedPost.is_published,
+      tags: updatedPost.tags,
+      allow_comments: updatedPost.allow_comments !== false,
+      allow_tips: updatedPost.allow_tips !== false,
+    }
+
+    updatePostMutation.mutate({
+      path: {
+        public_uuid: updatedPost.public_uuid
+      },
+      body: updateData
     })
   }
 

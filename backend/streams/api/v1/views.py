@@ -1123,3 +1123,175 @@ class UserStreamSubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
         
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+class StreamPostViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing stream posts.
+    """
+    serializer_class = StreamPostSerializer
+    lookup_field = 'public_uuid'
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['tier_level', 'post_type', 'is_published', 'is_pinned']
+    search_fields = ['title', 'content', 'tags']
+    ordering_fields = ['created_at', 'published_at', 'like_count', 'view_count']
+    ordering = ['-published_at', '-created_at']
+    
+    def get_queryset(self):
+        """Get posts for a specific stream."""
+        # Get stream_id from query params
+        stream_id = self.request.query_params.get('stream')
+        
+        # Base queryset
+        if stream_id:
+            queryset = StreamPost.objects.filter(stream_id=stream_id)
+        else:
+            # If no stream specified, return all posts user can access
+            queryset = StreamPost.objects.all()
+        
+        # Filter based on permissions and subscriptions
+        if self.request.user.is_authenticated:
+            # Get practitioner's own posts
+            own_posts = queryset.filter(stream__practitioner=self.request.user.practitioner_profile) if hasattr(self.request.user, 'practitioner_profile') else StreamPost.objects.none()
+            
+            # Get posts from subscribed streams
+            subscribed_streams = StreamSubscription.objects.filter(
+                user=self.request.user,
+                status='active'
+            ).values_list('stream_id', 'tier')
+            
+            # Build query for accessible posts
+            accessible_posts = Q(tier_level='free', is_published=True)  # Free posts
+            
+            for stream_id, tier in subscribed_streams:
+                if tier == 'premium':
+                    accessible_posts |= Q(stream_id=stream_id, is_published=True)
+                elif tier == 'entry':
+                    accessible_posts |= Q(stream_id=stream_id, tier_level__in=['free', 'entry'], is_published=True)
+                else:  # free
+                    accessible_posts |= Q(stream_id=stream_id, tier_level='free', is_published=True)
+            
+            # Combine own posts (all) and accessible posts
+            queryset = queryset.filter(Q(id__in=own_posts) | accessible_posts)
+        else:
+            # Not authenticated, only free published posts
+            queryset = queryset.filter(tier_level='free', is_published=True)
+        
+        return queryset.select_related('stream__practitioner').prefetch_related('media')
+    
+    def get_permissions(self):
+        """Set permissions based on action."""
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), IsStreamOwner()]
+        return [IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        """Set the stream when creating a post."""
+        # Get stream_id from request data
+        stream_id = self.request.data.get('stream')
+        if not stream_id:
+            raise serializers.ValidationError("Stream ID is required")
+            
+        stream = get_object_or_404(Stream, pk=stream_id)
+        
+        # Verify user owns the stream
+        if not (hasattr(self.request.user, 'practitioner_profile') and 
+                stream.practitioner == self.request.user.practitioner_profile):
+            raise serializers.ValidationError("You can only create posts for your own stream")
+        
+        # Set published_at if publishing now
+        extra_kwargs = {}
+        if serializer.validated_data.get('is_published', False):
+            extra_kwargs['published_at'] = timezone.now()
+        
+        serializer.save(stream=stream, **extra_kwargs)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def like(self, request, public_uuid=None):
+        """Like or unlike a post."""
+        post = self.get_object()
+        
+        # Check if user can access this post
+        if not self._can_access_post(request.user, post):
+            return Response(
+                {'error': 'You need a higher subscription tier to access this post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Toggle like
+        from streams.models import StreamPostLike
+        like, created = StreamPostLike.objects.get_or_create(
+            user=request.user,
+            post=post
+        )
+        
+        if not created:
+            like.delete()
+            post.like_count = F('like_count') - 1
+            post.save(update_fields=['like_count'])
+            return Response({'liked': False, 'like_count': post.like_count})
+        else:
+            post.like_count = F('like_count') + 1
+            post.save(update_fields=['like_count'])
+            return Response({'liked': True, 'like_count': post.like_count})
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def view(self, request, public_uuid=None):
+        """Track a view on the post."""
+        post = self.get_object()
+        
+        # Check if user can access this post
+        if not self._can_access_post(request.user, post):
+            return Response(
+                {'error': 'You need a higher subscription tier to access this post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Track view
+        from streams.models import StreamPostView
+        view, created = StreamPostView.objects.get_or_create(
+            user=request.user,
+            post=post,
+            defaults={'last_viewed_at': timezone.now()}
+        )
+        
+        if not created:
+            view.last_viewed_at = timezone.now()
+            view.save(update_fields=['last_viewed_at'])
+        else:
+            # Update counts
+            post.view_count = F('view_count') + 1
+            post.unique_view_count = StreamPostView.objects.filter(post=post).count()
+            post.save(update_fields=['view_count', 'unique_view_count'])
+        
+        return Response({'viewed': True})
+    
+    def _can_access_post(self, user, post):
+        """Check if user can access a post based on subscription tier."""
+        # Owner can always access
+        if (hasattr(user, 'practitioner_profile') and 
+            post.stream.practitioner == user.practitioner_profile):
+            return True
+        
+        # Free posts are always accessible
+        if post.tier_level == 'free':
+            return True
+        
+        # Check subscription
+        subscription = StreamSubscription.objects.filter(
+            user=user,
+            stream=post.stream,
+            status='active'
+        ).first()
+        
+        if not subscription:
+            return False
+        
+        # Check tier access
+        if subscription.tier == 'premium':
+            return True
+        elif subscription.tier == 'entry':
+            return post.tier_level in ['free', 'entry']
+        else:  # free
+            return post.tier_level == 'free'
