@@ -60,7 +60,13 @@ export default function StreamsDashboard() {
         title: "Stream created!",
         description: "Your stream has been created successfully. Set up your pricing to start accepting subscriptions.",
       })
-      queryClient.invalidateQueries({ queryKey: ['streamsList'] })
+      // Invalidate the streams query to refetch data
+      queryClient.invalidateQueries({ 
+        queryKey: [{ 
+          _id: 'streamsList',
+          query: { practitioner: user?.practitioner_id }
+        }] 
+      })
     },
     onError: (error: any) => {
       toast({
@@ -103,10 +109,14 @@ export default function StreamsDashboard() {
 
   const handleCreatePost = async (postData: any) => {
     // TODO: Implement when stream posts API is available
+    console.log("Post data to be created:", postData)
+    
     toast({
-      title: "Coming soon",
-      description: "Post creation will be available once the API endpoint is implemented.",
+      title: "Stream Posts Coming Soon! 🚀",
+      description: "The stream posts API is currently being developed. Your post data has been logged to the console for testing.",
     })
+    
+    // Close the dialog after showing the toast
     setCreatePostOpen(false)
   }
 
@@ -307,13 +317,24 @@ export default function StreamsDashboard() {
             currentEntryPrice={practitionerStream?.entry_tier_price_cents}
             currentPremiumPrice={practitionerStream?.premium_tier_price_cents}
             onPricingUpdate={() => {
-              queryClient.invalidateQueries({ queryKey: ['streamsList'] })
+              // Invalidate the streams query to refetch data
+      queryClient.invalidateQueries({ 
+        queryKey: [{ 
+          _id: 'streamsList',
+          query: { practitioner: user?.practitioner_id }
+        }] 
+      })
             }}
           />
         </TabsContent>
       </Tabs>
 
-      <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onCreatePost={handleCreatePost} />
+      <CreatePostDialog 
+        open={createPostOpen} 
+        onOpenChange={setCreatePostOpen} 
+        onCreatePost={handleCreatePost}
+        streamId={practitionerStream?.id}
+      />
     </div>
   )
 }

@@ -25,9 +25,10 @@ interface CreatePostDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreatePost: (postData: CreatePostFormData) => void
+  streamId?: string | number
 }
 
-export default function CreatePostDialog({ open, onOpenChange, onCreatePost }: CreatePostDialogProps) {
+export default function CreatePostDialog({ open, onOpenChange, onCreatePost, streamId }: CreatePostDialogProps) {
   const [formData, setFormData] = useState<CreatePostFormData>({
     title: "",
     content: "",
@@ -48,6 +49,7 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost }: C
       // In a real app, you would upload files and create the post via API
       const postData = {
         ...formData,
+        streamId,
         mediaUrls: formData.mediaFiles.map(
           (file, index) => `/placeholder.svg?height=400&width=400&query=stream-media-${index}`,
         ),
