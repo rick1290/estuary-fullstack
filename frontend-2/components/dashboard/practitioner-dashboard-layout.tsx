@@ -446,14 +446,14 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
                   <Badge
                     variant="destructive"
                     className="absolute -right-1 -top-1 h-4 w-4 p-0 flex items-center justify-center"
                   >
                     4
                   </Badge>
-                  <Bell className="h-5 w-5" />
                   <span className="sr-only">Notifications</span>
                 </Button>
               </DropdownMenuTrigger>
