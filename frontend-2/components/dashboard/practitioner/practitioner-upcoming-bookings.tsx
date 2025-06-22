@@ -22,22 +22,26 @@ export default function PractitionerUpcomingBookings() {
   const [tabValue, setTabValue] = useState("upcoming")
   
   // Fetch upcoming bookings
-  const { data: bookingsData, isLoading } = useQuery(
+  const { data: bookingsResponse, isLoading } = useQuery(
     bookingsListOptions({
       query: {
         status: tabValue === "pending" ? "pending_payment" : "confirmed",
         ordering: "start_time",
-        page_size: 5
+        page_size: 5,
+        is_upcoming: true  // Add filter for upcoming bookings only
       }
     })
   )
 
+  // Debug logging
+  console.log('Bookings Response:', bookingsResponse)
+
   const bookings = useMemo(() => {
-    if (!bookingsData?.results) return []
+    if (!bookingsResponse?.results) return []
     
     const now = new Date()
     
-    return bookingsData.results
+    return bookingsResponse.results
       .filter(booking => {
         const startTime = parseISO(booking.start_time)
         
@@ -46,7 +50,7 @@ export default function PractitionerUpcomingBookings() {
         } else if (tabValue === "upcoming") {
           return startTime > now
         } else if (tabValue === "pending") {
-          return booking.status === "pending_payment"
+          return booking.payment_status === "pending" || booking.status === "pending"
         }
         return true
       })
@@ -67,14 +71,14 @@ export default function PractitionerUpcomingBookings() {
             name: booking.user?.full_name || booking.user?.email || "Unknown Client",
             avatar: booking.user?.avatar_url
           },
-          service: booking.service?.title || "Service",
+          service: booking.service?.name || booking.service?.title || "Service",
           date: dateDisplay,
           time: `${format(startTime, "h:mm a")} - ${format(endTime, "h:mm a")}`,
-          type: booking.service?.delivery_method === "online" ? "Virtual" : "In-Person",
+          type: booking.service?.location_type === "virtual" ? "Virtual" : "In-Person",
           status: booking.status
         }
       })
-  }, [bookingsData, tabValue])
+  }, [bookingsResponse, tabValue])
 
   return (
     <div className="space-y-4">
