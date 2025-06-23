@@ -21,7 +21,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { 
-  Settings, 
   Calendar as CalendarIcon,
   Users,
   AlertCircle,
@@ -40,8 +39,6 @@ interface AdvancedSectionProps {
     experience_level?: string
     age_min?: number
     age_max?: number
-    is_featured?: boolean
-    status?: string
     available_from?: Date
     available_until?: Date
     max_per_customer?: number
@@ -61,13 +58,6 @@ const experienceLevels = [
   { value: "intermediate", label: "Intermediate - Some experience helpful" },
   { value: "advanced", label: "Advanced - Experienced participants only" },
   { value: "all_levels", label: "All Levels - Everyone welcome" },
-]
-
-const serviceStatuses = [
-  { value: "draft", label: "Draft - Not visible to customers" },
-  { value: "active", label: "Active - Available for booking" },
-  { value: "inactive", label: "Inactive - Temporarily unavailable" },
-  { value: "archived", label: "Archived - No longer offered" },
 ]
 
 export function AdvancedSection({ 
@@ -95,51 +85,6 @@ export function AdvancedSection({
 
   return (
     <div className="space-y-6">
-      {/* Service Status */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            <h3 className="font-medium">Service Status & Visibility</h3>
-          </div>
-          
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="status">Service Status</Label>
-              <Select
-                value={localData.status || "draft"}
-                onValueChange={(value) => handleChange('status', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceStatuses.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="featured" className="text-base">Featured Service</Label>
-                <p className="text-sm text-muted-foreground">
-                  Display this service prominently in listings
-                </p>
-              </div>
-              <Switch
-                id="featured"
-                checked={localData.is_featured || false}
-                onCheckedChange={(checked) => handleChange('is_featured', checked)}
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {/* Participant Requirements */}
       <Card className="p-6">
         <div className="space-y-4">

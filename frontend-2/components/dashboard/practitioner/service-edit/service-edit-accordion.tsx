@@ -44,6 +44,7 @@ import { AdvancedSection } from "./sections/advanced-section"
 import { ServiceSessionsSection } from "./sections/service-sessions-section"
 import { PackageCompositionSection } from "./sections/package-composition-section"
 import { BundleConfigurationSection } from "./sections/bundle-configuration-section"
+import { StatusVisibilitySection } from "./sections/status-visibility-section"
 
 interface ServiceEditAccordionProps {
   serviceId: string
@@ -138,6 +139,13 @@ const sections = [
     description: "Terms, conditions, and additional options",
     component: AdvancedSection,
     required: false,
+  },
+  {
+    id: "status-visibility",
+    title: "Status & Visibility",
+    description: "Control when and how your service appears to customers",
+    component: StatusVisibilitySection,
+    required: true,
   },
 ]
 
@@ -245,8 +253,12 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
           experience_level: service.experience_level,
           age_min: service.age_min,
           age_max: service.age_max,
-          is_featured: service.is_featured,
+        },
+        "status-visibility": {
           status: service.status,
+          is_featured: service.is_featured,
+          is_active: service.is_active,
+          is_public: service.is_public,
         },
       })
 
@@ -281,6 +293,8 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         return !!data.sessions?.length
       case "location":
         return !!data.location_type
+      case "status-visibility":
+        return !!data.status
       default:
         return true
     }
