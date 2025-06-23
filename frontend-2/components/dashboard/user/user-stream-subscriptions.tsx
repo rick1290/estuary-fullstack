@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useQuery } from "@tanstack/react-query"
-import { streamSubscriptionsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { Spinner } from "@/components/ui/spinner"
 import { Users, Calendar, CreditCard, Settings } from "lucide-react"
@@ -22,16 +21,9 @@ export default function UserStreamSubscriptions() {
   const [selectedSubscription, setSelectedSubscription] = useState<any>(null)
   const [showManageDialog, setShowManageDialog] = useState(false)
 
-  // Fetch user's subscriptions
-  const { data, isLoading } = useQuery({
-    ...streamSubscriptionsListOptions({
-      query: {
-        user: user?.id,
-        page_size: 10
-      }
-    }),
-    enabled: !!user?.id
-  })
+  // TODO: The users/me/stream-subscriptions endpoint is not being generated in the OpenAPI client
+  // For now, we'll show a placeholder
+  const { data, isLoading } = { data: null, isLoading: false }
 
   if (isLoading) {
     return (

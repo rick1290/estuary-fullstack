@@ -13,13 +13,21 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, ArrowLeft } from "lucide-react"
+import { Loader2, ArrowLeft, Plus, Tag } from "lucide-react"
 import { 
   servicesCreateMutation,
   serviceCategoriesListOptions,
   practitionerCategoriesListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import CompactCategoryManager from "../categories/compact-category-manager"
 
 // Form validation schema
 const formSchema = z.object({
@@ -48,13 +56,14 @@ export function QuickServiceCreate() {
   const router = useRouter()
   const { toast } = useToast()
   const [isCreating, setIsCreating] = useState(false)
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
 
   // Fetch categories
-  const { data: globalCategories } = useQuery({
+  const { data: globalCategories, refetch: refetchGlobalCategories } = useQuery({
     ...serviceCategoriesListOptions({}),
   })
 
-  const { data: practitionerCategories } = useQuery({
+  const { data: practitionerCategories, refetch: refetchPractitionerCategories } = useQuery({
     ...practitionerCategoriesListOptions({}),
   })
 
@@ -236,13 +245,17 @@ export function QuickServiceCreate() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
+                        value={field.value || "none"}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="none">No category</SelectItem>
                           {globalCategories?.results?.map((category) => (
                             <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
@@ -261,17 +274,43 @@ export function QuickServiceCreate() {
                   name="practitionerCategoryId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Your Category (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <div className="flex items-center justify-between">
+                        <FormLabel className="flex items-center">
+                          <Tag className="h-4 w-4 mr-2" />
+                          Your Category (Optional)
+                        </FormLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCategoryDialog(true)}
+                          className="text-xs h-7"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Manage
+                        </Button>
+                      </div>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
+                        value={field.value || "none"}
+                        key={practitionerCategories?.results?.length} // Force re-render when categories change
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select your category" />
+                            <SelectValue placeholder="Select or create your category" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="none">No category</SelectItem>
                           {practitionerCategories?.results?.map((category) => (
                             <SelectItem key={category.id} value={category.id.toString()}>
-                              {category.name}
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: category.color || '#9CAF88' }}
+                                />
+                                {category.name}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -330,6 +369,29 @@ export function QuickServiceCreate() {
           </Form>
         </CardContent>
       </Card>
+
+      {/* Category Manager Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={(open) => {
+        setShowCategoryDialog(open)
+        // Refetch categories when dialog closes
+        if (!open) {
+          refetchPractitionerCategories()
+          refetchGlobalCategories()
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Your Categories</DialogTitle>
+            <DialogDescription>
+              Create and organize your personal service categories
+            </DialogDescription>
+          </DialogHeader>
+          <CompactCategoryManager onCategoryChange={() => {
+            refetchPractitionerCategories()
+            refetchGlobalCategories()
+          }} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

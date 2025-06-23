@@ -30,6 +30,7 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
       query: {
         practitioner: practitioner.id as any,
         is_active: true,
+        page_size: 75  // Expanded from default 20 to show all services
       }
     }),
     staleTime: 1000 * 60 * 5, // 5 minutes cache
