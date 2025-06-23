@@ -172,7 +172,7 @@ interface ServiceListingsProps {
 
 export default function ServiceListings({ query, serviceType, location, categories = [] }: ServiceListingsProps) {
   const [page, setPage] = useState(1)
-  const limit = 12
+  const limit = 75  // Expanded from 12 to show more services
 
   // Build query parameters for API
   const queryParams = useMemo(() => {
@@ -180,6 +180,7 @@ export default function ServiceListings({ query, serviceType, location, categori
       limit,
       offset: (page - 1) * limit,
       ordering: '-is_featured,-average_rating',
+      is_active: true,  // Only show active services
     }
 
     if (query) params.search = query
