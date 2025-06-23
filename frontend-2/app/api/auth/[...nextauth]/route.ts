@@ -61,8 +61,17 @@ async function refreshAccessToken(token: any) {
       }
     }
     
+    // Check if we're already refreshing to prevent race conditions
+    if (token.isRefreshing) {
+      console.log("Already refreshing token, skipping...")
+      return token
+    }
+    
     const apiUrl = getApiUrl()
     console.log("Attempting to refresh token...")
+    
+    // Mark as refreshing
+    token.isRefreshing = true
     
     const response = await fetch(`${apiUrl}/api/v1/auth/token/refresh/`, {
       method: 'POST',
@@ -97,8 +106,11 @@ async function refreshAccessToken(token: any) {
       return {
         ...token,
         accessToken: data.access,
+        // If refresh token rotates, update it
+        refreshToken: data.refresh || token.refreshToken,
         accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes
         error: undefined, // Clear any previous errors
+        isRefreshing: false,
       }
     }
     
@@ -108,6 +120,7 @@ async function refreshAccessToken(token: any) {
     return {
       ...token,
       error: "RefreshAccessTokenError",
+      isRefreshing: false,
     }
   }
 }
@@ -204,16 +217,26 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      // Force refresh if explicitly triggered (e.g., from getSession({ req: { headers: {} } }))
-      if (trigger === "update" && token.refreshToken) {
+      // Force refresh if explicitly triggered
+      if (trigger === "update" && token.refreshToken && !token.error) {
         console.log("Force refreshing token due to update trigger");
-        return refreshAccessToken(token);
+        // Only force refresh if we have a valid expiry time and it's close
+        if (token.accessTokenExpires) {
+          const now = Date.now()
+          const expiresIn = token.accessTokenExpires - now
+          const oneMinute = 60 * 1000
+          
+          // Only force refresh if within 1 minute of expiry
+          if (expiresIn <= oneMinute) {
+            return refreshAccessToken(token);
+          }
+        }
       }
       
       // Return previous token if the access token has not expired yet
       // Add a 5 minute buffer to ensure we refresh before actual expiration
       const fiveMinutes = 5 * 60 * 1000;
-      if (Date.now() < ((token.accessTokenExpires as number) - fiveMinutes)) {
+      if (token.accessTokenExpires && Date.now() < ((token.accessTokenExpires as number) - fiveMinutes)) {
         return token
       }
       

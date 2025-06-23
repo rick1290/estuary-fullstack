@@ -65,6 +65,20 @@ export function useAuth() {
     }
   }, [router])
 
+  // Listen for auth refresh failures
+  useEffect(() => {
+    const handleRefreshFailed = () => {
+      console.error("Auth refresh failed event received, logging out...")
+      logout()
+    }
+    
+    window.addEventListener('auth:refresh-failed', handleRefreshFailed)
+    
+    return () => {
+      window.removeEventListener('auth:refresh-failed', handleRefreshFailed)
+    }
+  }, [logout])
+  
   // Convert session user to our User type
   useEffect(() => {
     // Check for session errors first
