@@ -13,8 +13,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
+import { X, Plus, Tag } from "lucide-react"
 import type { ServiceReadable } from "@/src/client/types.gen"
+import { useQuery } from "@tanstack/react-query"
+import { 
+  serviceCategoriesListOptions,
+  practitionerCategoriesListOptions
+} from "@/src/client/@tanstack/react-query.gen"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import CompactCategoryManager from "../../categories/compact-category-manager"
 
 interface BasicInfoSectionProps {
   service: ServiceReadable
@@ -42,6 +55,16 @@ export function BasicInfoSection({
 }: BasicInfoSectionProps) {
   const [localData, setLocalData] = useState(data)
   const [tagInput, setTagInput] = useState("")
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+
+  // Fetch categories
+  const { data: globalCategories, refetch: refetchGlobalCategories } = useQuery({
+    ...serviceCategoriesListOptions({}),
+  })
+
+  const { data: practitionerCategories, refetch: refetchPractitionerCategories } = useQuery({
+    ...practitionerCategoriesListOptions({}),
+  })
 
   useEffect(() => {
     setLocalData(data)
@@ -68,13 +91,10 @@ export function BasicInfoSection({
     handleChange("tags", currentTags.filter(tag => tag !== tagToRemove))
   }
 
-  // Mock categories - replace with actual API call
-  const categories = [
-    { id: 1, name: "Yoga" },
-    { id: 2, name: "Meditation" },
-    { id: 3, name: "Fitness" },
-    { id: 4, name: "Therapy" },
-    { id: 5, name: "Coaching" },
+  // Get all categories (both global and practitioner)
+  const allCategories = [
+    ...(globalCategories?.results || []).map(cat => ({ ...cat, type: 'global' })),
+    ...(practitionerCategories?.results || []).map(cat => ({ ...cat, type: 'practitioner' }))
   ]
 
   return (
@@ -130,22 +150,63 @@ export function BasicInfoSection({
 
         {/* Category */}
         <div className="space-y-2">
-          <Label htmlFor="category">Category*</Label>
+          <div className="flex items-center justify-between max-w-md">
+            <Label htmlFor="category" className="flex items-center">
+              <Tag className="h-4 w-4 mr-2" />
+              Category
+            </Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCategoryDialog(true)}
+              className="text-xs h-7"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Manage Categories
+            </Button>
+          </div>
           <Select
-            value={localData.category_id?.toString() || ""}
-            onValueChange={(value) => handleChange("category_id", parseInt(value))}
+            value={localData.category_id?.toString() || "none"}
+            onValueChange={(value) => handleChange("category_id", value === "none" ? undefined : parseInt(value))}
+            key={allCategories.length} // Force re-render when categories change
           >
             <SelectTrigger className="max-w-md">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  {category.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="none">No category</SelectItem>
+              {globalCategories?.results?.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Global Categories</div>
+                  {globalCategories.results.map((category) => (
+                    <SelectItem key={`global-${category.id}`} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+              {practitionerCategories?.results?.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2">Your Categories</div>
+                  {practitionerCategories.results.map((category) => (
+                    <SelectItem key={`practitioner-${category.id}`} value={category.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: category.color || '#9CAF88' }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </>
+              )}
             </SelectContent>
           </Select>
+          <p className="text-sm text-muted-foreground">
+            Categories help customers find your services
+          </p>
         </div>
 
         {/* Tags */}
@@ -204,6 +265,29 @@ export function BasicInfoSection({
           </Button>
         </div>
       )}
+
+      {/* Category Manager Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={(open) => {
+        setShowCategoryDialog(open)
+        // Refetch categories when dialog closes
+        if (!open) {
+          refetchPractitionerCategories()
+          refetchGlobalCategories()
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Your Categories</DialogTitle>
+            <DialogDescription>
+              Create and organize your personal service categories
+            </DialogDescription>
+          </DialogHeader>
+          <CompactCategoryManager onCategoryChange={() => {
+            refetchPractitionerCategories()
+            refetchGlobalCategories()
+          }} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

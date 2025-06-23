@@ -65,7 +65,11 @@ const initialFormData: CategoryFormData = {
   color: COLOR_OPTIONS[0].value,
 }
 
-export default function CompactCategoryManager() {
+interface CompactCategoryManagerProps {
+  onCategoryChange?: () => void
+}
+
+export default function CompactCategoryManager({ onCategoryChange }: CompactCategoryManagerProps = {}) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<PractitionerCategory | null>(null)
@@ -73,7 +77,7 @@ export default function CompactCategoryManager() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: categoriesData, isLoading } = useQuery(practitionerCategoriesListOptions())
+  const { data: categoriesData, isLoading, refetch } = useQuery(practitionerCategoriesListOptions())
   
   const categories = categoriesData?.results || []
 
@@ -82,6 +86,8 @@ export default function CompactCategoryManager() {
     onSuccess: (data) => {
       console.log('Category created:', data)
       queryClient.invalidateQueries({ queryKey: ['practitionerCategoriesList'] })
+      refetch() // Force immediate refetch
+      onCategoryChange?.() // Notify parent
       setIsCreateDialogOpen(false)
       setFormData(initialFormData)
       toast({
