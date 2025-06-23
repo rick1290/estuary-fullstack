@@ -106,6 +106,8 @@ export default function PractitionerServicesManager() {
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(!isMobile)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 20
 
   // Build query parameters based on filters
   const queryParams = {
@@ -113,6 +115,8 @@ export default function PractitionerServicesManager() {
     ...(activeTab !== "all" && { service_type: activeTab }),
     ...(selectedStatus !== "all" && { status: selectedStatus }),
     ...(searchQuery && { search: searchQuery }),
+    page_size: pageSize,
+    page: currentPage,
   }
 
   // Fetch services using React Query
@@ -123,6 +127,10 @@ export default function PractitionerServicesManager() {
 
   // Get services from the API response  
   const services = servicesData?.data?.results || servicesData?.results || []
+  const totalCount = servicesData?.count || servicesData?.data?.count || 0
+  const totalPages = Math.ceil(totalCount / pageSize)
+  const hasNextPage = servicesData?.next || servicesData?.data?.next
+  const hasPreviousPage = servicesData?.previous || servicesData?.data?.previous
   
   // Additional debug logging for data extraction
   console.log('Data extraction debug:', {
@@ -238,7 +246,10 @@ export default function PractitionerServicesManager() {
       </div>
 
       {/* Tabs for service types */}
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue={activeTab} onValueChange={(value) => {
+        setActiveTab(value)
+        setCurrentPage(1)  // Reset to first page when changing filters
+      }}>
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="all">All Services</TabsTrigger>
           <TabsTrigger value="session">Sessions</TabsTrigger>
@@ -259,7 +270,10 @@ export default function PractitionerServicesManager() {
                 <Input
                   placeholder="Search services..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setCurrentPage(1)  // Reset to first page when searching
+                  }}
                   className="pl-8"
                 />
               </div>
@@ -272,7 +286,10 @@ export default function PractitionerServicesManager() {
               </Button>
 
               <div className="hidden md:block w-full">
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <Select value={selectedStatus} onValueChange={(value) => {
+                  setSelectedStatus(value)
+                  setCurrentPage(1)  // Reset to first page when changing filters
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -334,7 +351,10 @@ export default function PractitionerServicesManager() {
             <div className="md:hidden">
               <Separator className="my-4" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <Select value={selectedStatus} onValueChange={(value) => {
+                  setSelectedStatus(value)
+                  setCurrentPage(1)  // Reset to first page when changing filters
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -347,7 +367,10 @@ export default function PractitionerServicesManager() {
                   </SelectContent>
                 </Select>
 
-                <Select value={activeTab} onValueChange={setActiveTab}>
+                <Select value={activeTab} onValueChange={(value) => {
+                  setActiveTab(value)
+                  setCurrentPage(1)  // Reset to first page when changing filters
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Service Type" />
                   </SelectTrigger>
@@ -369,7 +392,7 @@ export default function PractitionerServicesManager() {
       {/* Results summary */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">
-          {sortedServices.length} {sortedServices.length === 1 ? "service" : "services"} found
+          Showing {sortedServices.length} of {totalCount} {totalCount === 1 ? "service" : "services"}
         </p>
 
         {/* Active filters */}
@@ -468,6 +491,58 @@ export default function PractitionerServicesManager() {
           />
         )
       })()}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={!hasPreviousPage || currentPage === 1}
+          >
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              if (pageNum < 1 || pageNum > totalPages) return null;
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  className="w-10"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={!hasNextPage || currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
