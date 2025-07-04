@@ -4,7 +4,7 @@ import { PractitionerPageHeader } from "@/components/dashboard/practitioner/prac
 import PractitionerMessagesList from "@/components/dashboard/practitioner/messages/practitioner-messages-list"
 import PractitionerMessageDetail from "@/components/dashboard/practitioner/messages/practitioner-message-detail"
 
-export default function MessagesPageV2() {
+export default function MessagesClient() {
   return (
     <>
       {/* Standardized Header */}

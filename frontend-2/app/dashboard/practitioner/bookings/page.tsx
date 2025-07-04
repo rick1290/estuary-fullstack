@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import BookingsPageV2 from "./page-v2"
+import BookingsClient from "./bookings-client"
 
 export const metadata: Metadata = {
   title: "Bookings | Practitioner Dashboard",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function BookingsPage() {
-  return <BookingsPageV2 />
+  return <BookingsClient />
 }

@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { format, parseISO } from "date-fns"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 
-export default function FinancialOverviewPageV2() {
+export default function FinancialOverviewClient() {
   // Fetch financial data
   const { data: earningsData, isLoading: earningsLoading } = useQuery(
     practitionersEarningsRetrieveOptions({

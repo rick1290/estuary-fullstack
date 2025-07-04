@@ -3,7 +3,7 @@
 import { PractitionerPageHeader } from "@/components/dashboard/practitioner/practitioner-page-header"
 import ClientsList from "@/components/dashboard/practitioner/clients/clients-list"
 
-export default function ClientsPageV2() {
+export default function ClientsClient() {
   return (
     <>
       {/* Standardized Header */}

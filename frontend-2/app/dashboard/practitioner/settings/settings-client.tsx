@@ -14,7 +14,7 @@ const SETTINGS_TABS = [
   { value: "notifications", label: "Notifications" },
 ]
 
-export default function SettingsPageV2() {
+export default function SettingsClient() {
   const [activeTab, setActiveTab] = useState("billing")
 
   return (

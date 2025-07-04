@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-export default function AvailabilityPageV2() {
+export default function AvailabilityClient() {
   const [isCreating, setIsCreating] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<ScheduleReadable | null>(null)
   const [deleteScheduleId, setDeleteScheduleId] = useState<number | null>(null)

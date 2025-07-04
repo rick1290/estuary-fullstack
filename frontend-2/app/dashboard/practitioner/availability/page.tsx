@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import AvailabilityPageV2 from "./page-v2"
+import AvailabilityClient from "./availability-client"
 
 export const metadata: Metadata = {
   title: "Availability | Practitioner Dashboard",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function AvailabilityPage() {
-  return <AvailabilityPageV2 />
+  return <AvailabilityClient />
 }

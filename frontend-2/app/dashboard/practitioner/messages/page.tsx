@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import MessagesPageV2 from "./page-v2"
+import MessagesClient from "./messages-client"
 
 export const metadata: Metadata = {
   title: "Messages | Practitioner Dashboard",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function MessagesPage() {
-  return <MessagesPageV2 />
+  return <MessagesClient />
 }

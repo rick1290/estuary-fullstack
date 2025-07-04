@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import CalendarPageV2 from "./page-v2"
+import CalendarClient from "./calendar-client"
 
 export const metadata: Metadata = {
   title: "Calendar | Practitioner Dashboard",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function CalendarPage() {
-  return <CalendarPageV2 />
+  return <CalendarClient />
 }

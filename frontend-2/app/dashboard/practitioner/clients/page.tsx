@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import ClientsPageV2 from "./page-v2"
+import ClientsClient from "./clients-client"
 
 export const metadata: Metadata = {
   title: "Clients | Practitioner Dashboard",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function ClientsPage() {
-  return <ClientsPageV2 />
+  return <ClientsClient />
 }

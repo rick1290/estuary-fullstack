@@ -20,7 +20,7 @@ const PROFILE_TABS = [
   { value: "preview", label: "Preview Profile" },
 ]
 
-export default function ProfilePageV2() {
+export default function ProfileClient() {
   const [activeTab, setActiveTab] = useState("basic-info")
   const { user } = useAuth()
   const router = useRouter()

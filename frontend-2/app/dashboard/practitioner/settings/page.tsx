@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import SettingsPageV2 from "./page-v2"
+import SettingsClient from "./settings-client"
 
 export const metadata: Metadata = {
   title: "Settings | Practitioner Dashboard",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function SettingsPage() {
-  return <SettingsPageV2 />
+  return <SettingsClient />
 }
