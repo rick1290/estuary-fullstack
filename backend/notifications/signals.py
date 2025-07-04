@@ -63,8 +63,8 @@ def handle_booking_notification(sender, instance, created, **kwargs):
             schedule_booking_reminders.delay(instance.id)
             
         elif not created:
-            # Check for status changes
-            if instance.tracker.has_changed('status'):
+            # Check for status changes (only if tracker is available)
+            if hasattr(instance, 'tracker') and instance.tracker.has_changed('status'):
                 previous_status = instance.tracker.previous('status')
                 
                 if instance.status == 'cancelled' and previous_status == 'confirmed':

@@ -119,7 +119,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class DirectPaymentSerializer(serializers.Serializer):
     """Serializer for direct payment with saved payment method"""
-    service_id = serializers.UUIDField()
+    service_id = serializers.IntegerField()  # Changed to integer ID for simplicity
     payment_method_id = serializers.IntegerField()  # ID of saved PaymentMethod
     apply_credits = serializers.BooleanField(default=True)
     special_requests = serializers.CharField(required=False, allow_blank=True)
@@ -131,7 +131,7 @@ class DirectPaymentSerializer(serializers.Serializer):
     timezone = serializers.CharField(default='UTC', required=False, help_text="Timezone for booking")
     
     # For workshops
-    service_session_id = serializers.UUIDField(required=False, help_text="Service session ID for workshop booking")
+    service_session_id = serializers.IntegerField(required=False, help_text="Service session ID for workshop booking")
     
     def validate_payment_method_id(self, value):
         """Validate payment method belongs to user"""
@@ -146,7 +146,7 @@ class DirectPaymentSerializer(serializers.Serializer):
         
         # Get the service to check its type
         try:
-            service = Service.objects.get(public_uuid=service_id)
+            service = Service.objects.get(id=service_id)  # Now using integer ID
         except Service.DoesNotExist:
             raise serializers.ValidationError("Invalid service")
         

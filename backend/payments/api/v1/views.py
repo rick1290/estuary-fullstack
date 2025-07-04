@@ -277,7 +277,7 @@ class CheckoutViewSet(viewsets.GenericViewSet):
         data = serializer.validated_data
         
         # Get service and payment method
-        service = get_object_or_404(Service, public_uuid=data['service_id'])
+        service = get_object_or_404(Service, id=data['service_id'])  # Now using integer ID
         payment_method = get_object_or_404(PaymentMethod, id=data['payment_method_id'], user=user)
         
         # Calculate amounts

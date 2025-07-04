@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { 
-  publicServicesRetrieveOptions, 
+  servicesRetrieveOptions, 
   paymentMethodsListOptions,
   checkoutDirectPaymentCreateMutation 
 } from "@/src/client/@tanstack/react-query.gen"
@@ -105,10 +105,10 @@ export default function CheckoutPage() {
     autoLogin()
   }, [isAuthenticated, login])
 
-  // Fetch service data from API using public_uuid
+  // Fetch service data from API using ID
   const { data: serviceData, isLoading: loadingService, error: serviceError } = useQuery({
-    ...publicServicesRetrieveOptions({ path: { public_uuid: serviceId || '' } }),
-    enabled: !!serviceId,
+    ...servicesRetrieveOptions({ path: { id: parseInt(serviceId || '0') } }),
+    enabled: !!serviceId && !isNaN(parseInt(serviceId)),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
@@ -147,7 +147,7 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!serviceId) {
+    if (!serviceId || !serviceData) {
       setCheckoutError("Service information is missing")
       return
     }
@@ -164,7 +164,7 @@ export default function CheckoutPage() {
     try {
       // Prepare booking details based on service type
       const bookingDetails: any = {
-        service_id: serviceId,
+        service_id: parseInt(serviceId), // Now using integer ID
         payment_method_id: parseInt(selectedPaymentMethodId),
         apply_credits: applyCredits,
         special_requests: specialRequests,
@@ -254,7 +254,7 @@ export default function CheckoutPage() {
 
   // Transform API data to component format
   const service = {
-    id: serviceData.public_uuid || serviceData.id,
+    id: serviceData.id,
     title: serviceData.name || 'Service',
     type: serviceType,
     price: serviceData.price_cents ? serviceData.price_cents / 100 : 0,
