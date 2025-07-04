@@ -478,100 +478,126 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   ).length
   const progressPercentage = totalSections > 0 ? (completedSections / totalSections) * 100 : 0
 
-  // Sidebar content
-  const SidebarContent = () => (
-    <div className="space-y-1">
-      {visibleSections.map((section, index) => {
-        const status = sectionStatus[section.id] || "optional"
-        const hasChanges = unsavedChanges.has(section.id)
-        const isActive = activeSection === section.id
+  // Sidebar content - Compact to fit viewport
+  const SidebarContent = () => {
+    // Calculate dynamic spacing based on number of sections
+    const sectionCount = visibleSections.length
+    const isCompact = sectionCount > 8
+    
+    // Separate required and optional sections
+    const requiredSections = visibleSections.filter(s => s.required)
+    const optionalSections = visibleSections.filter(s => !s.required)
+    const showDivider = requiredSections.length > 0 && optionalSections.length > 0
+    
+    const renderSection = (section: typeof sections[0], index: number) => {
+      const status = sectionStatus[section.id] || "optional"
+      const hasChanges = unsavedChanges.has(section.id)
+      const isActive = activeSection === section.id
 
-        return (
-          <div key={section.id} className="relative">
-            {/* Connection line between sections */}
-            {index < visibleSections.length - 1 && (
-              <div className="absolute left-7 top-12 bottom-0 w-px bg-border/50" />
-            )}
-            
-            <button
-              onClick={() => scrollToSection(section.id)}
-              className={cn(
-                "w-full text-left px-3 py-3 rounded-xl transition-all duration-200 group relative",
-                isActive 
-                  ? "bg-primary/10 shadow-sm scale-[1.02]" 
-                  : "hover:bg-muted/80 hover:shadow-sm"
-              )}
-            >
-              <div className="flex items-start gap-3">
+      return (
+        <button
+          key={section.id}
+          onClick={() => scrollToSection(section.id)}
+          className={cn(
+            "w-full text-left px-2 rounded-lg transition-all duration-200 group relative flex-shrink-0",
+            isCompact ? "py-1.5" : "py-2",
+            isActive 
+              ? "bg-primary/10 shadow-sm" 
+              : "hover:bg-muted/60"
+          )}
+        >
+              <div className="flex items-center gap-2">
+                {/* Status Icon */}
                 <div className={cn(
-                  "mt-0.5 p-1.5 rounded-lg transition-all duration-200",
-                  isActive 
-                    ? "bg-primary text-primary-foreground shadow-sm" 
-                    : status === "complete" 
-                      ? "bg-green-100 text-green-700"
-                      : status === "incomplete"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-muted text-muted-foreground"
+                  "flex-shrink-0 transition-all duration-200",
+                  isActive && "scale-110"
                 )}>
                   {status === "complete" ? (
-                    <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className={cn(
+                      "text-green-600",
+                      isCompact ? "h-3.5 w-3.5" : "h-4 w-4"
+                    )} />
                   ) : status === "incomplete" ? (
-                    <AlertCircle className="h-4 w-4" />
+                    <AlertCircle className={cn(
+                      "text-amber-600",
+                      isCompact ? "h-3.5 w-3.5" : "h-4 w-4"
+                    )} />
                   ) : (
-                    <Circle className="h-4 w-4" />
+                    <Circle className={cn(
+                      "text-muted-foreground",
+                      isCompact ? "h-3.5 w-3.5" : "h-4 w-4"
+                    )} />
                   )}
                 </div>
                 
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className={cn(
-                        "font-medium text-sm leading-tight transition-all duration-200",
-                        isActive ? "text-primary" : "text-foreground"
-                      )}>
-                        {section.title}
-                      </h4>
-                      <p className={cn(
-                        "text-xs text-muted-foreground mt-0.5 transition-all duration-200",
-                        isActive ? "opacity-100" : "opacity-60"
-                      )}>
-                        {section.description}
-                      </p>
-                    </div>
-                    
-                    <div className="flex flex-col gap-1 items-end">
-                      {section.required && (
-                        <Badge 
-                          variant="outline" 
-                          className={cn(
-                            "text-[10px] px-1.5 py-0",
-                            isActive && "border-primary/50"
-                          )}
-                        >
-                          Required
-                        </Badge>
-                      )}
-                      {hasChanges && (
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                          <span className="text-[10px] text-amber-600 font-medium">Modified</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <h4 className={cn(
+                      "font-medium leading-tight transition-colors truncate",
+                      isCompact ? "text-xs" : "text-sm",
+                      isActive ? "text-primary" : "text-foreground"
+                    )}>
+                      {section.title}
+                    </h4>
+                    {hasChanges && (
+                      <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                    )}
                   </div>
+                  {!isCompact && (
+                    <p className={cn(
+                      "text-[10px] text-muted-foreground truncate mt-0.5",
+                      isActive ? "opacity-80" : "opacity-60"
+                    )}>
+                      {section.description}
+                    </p>
+                  )}
                 </div>
+                
+                {/* Required badge - only show if not compact */}
+                {!isCompact && section.required && (
+                  <Badge 
+                    variant="outline" 
+                    className="text-[10px] px-1 py-0 h-4"
+                  >
+                    Req
+                  </Badge>
+                )}
               </div>
               
               {/* Active indicator */}
               {isActive && (
-                <div className="absolute inset-0 ring-2 ring-primary/20 rounded-xl" />
+                <>
+                  <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-primary rounded-r" />
+                  <div className="absolute inset-0 ring-1 ring-primary/20 rounded-lg" />
+                </>
               )}
             </button>
-          </div>
-        )
-      })}
-    </div>
-  )
+      )
+    }
+    
+    return (
+          <div className={cn(
+            "flex flex-col h-full",
+            isCompact ? "space-y-0.5" : "space-y-1"
+          )}>
+            {/* Required sections */}
+            {requiredSections.map((section, index) => renderSection(section, index))}
+            
+            {/* Divider between required and optional */}
+            {showDivider && (
+              <div className="flex items-center gap-2 px-2 py-1">
+                <div className="flex-1 h-px bg-border/50" />
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Optional</span>
+                <div className="flex-1 h-px bg-border/50" />
+              </div>
+            )}
+            
+            {/* Optional sections */}
+            {optionalSections.map((section, index) => renderSection(section, index + requiredSections.length))}
+      </div>
+    )
+  }
 
   return (
     <TooltipProvider>
@@ -594,99 +620,99 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         </div>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:flex w-80 bg-muted/30 border-r">
+        <div className="hidden lg:flex w-72 bg-muted/30 border-r">
           <div className="flex flex-col w-full h-screen">
-            {/* Sidebar Header - Fixed */}
-            <div className="flex-shrink-0 bg-background border-b">
-              <div className="p-6 space-y-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.back()}
-                  className="-ml-2 hover:bg-muted"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Back to Services
-                </Button>
-                
+            {/* Sidebar Header - Compact */}
+            <div className="flex-shrink-0 bg-background border-b p-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="-ml-2 mb-3 text-xs"
+              >
+                <ChevronLeft className="h-3 w-3 mr-1" />
+                Back
+              </Button>
+              
+              <div className="space-y-3">
                 <div>
-                  <h2 className="font-semibold text-lg">Service Configuration</h2>
-                  <p className="text-sm text-muted-foreground truncate mt-1">{service.name}</p>
-                </div>
-                
-                {/* Progress Card */}
-                <div className="bg-primary/5 rounded-lg p-4 space-y-3 border border-primary/10">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Overall Progress</span>
-                      <span className="text-2xl font-bold text-primary">{Math.round(progressPercentage)}%</span>
+                  <h2 className="font-semibold text-sm truncate pr-2">{service.name}</h2>
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <Progress value={progressPercentage} className="h-1.5 w-20" />
+                      <span className="text-xs font-medium text-primary">{Math.round(progressPercentage)}%</span>
                     </div>
-                    <Progress value={progressPercentage} className="h-2 bg-primary/10" />
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-center">
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      </div>
-                      <p className="text-xs font-medium">{Object.values(sectionStatus).filter(s => s === "complete").length}</p>
-                      <p className="text-xs text-muted-foreground">Complete</p>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-center">
-                        <AlertCircle className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <p className="text-xs font-medium">{Object.values(sectionStatus).filter(s => s === "incomplete").length}</p>
-                      <p className="text-xs text-muted-foreground">Required</p>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-center">
-                        <Circle className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <p className="text-xs font-medium">{Object.values(sectionStatus).filter(s => s === "optional").length}</p>
-                      <p className="text-xs text-muted-foreground">Optional</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-0.5">
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
+                        {completedSections}/{totalSections}
+                      </span>
                     </div>
                   </div>
                 </div>
                 
                 {unsavedChanges.size > 0 && (
                   <Button
-                    className="w-full shadow-sm"
+                    size="sm"
+                    className="w-full h-8 text-xs"
                     onClick={handleSaveAll}
                     disabled={updateMutation.isPending}
                   >
                     {updateMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     ) : (
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="h-3 w-3 mr-1" />
                     )}
-                    Save All Changes ({unsavedChanges.size})
+                    Save All ({unsavedChanges.size})
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* Sidebar Navigation - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 mb-3">
-                  Configuration Sections
-                </p>
+            {/* Sidebar Navigation - No scroll needed */}
+            <div className="flex-1 p-3 bg-gradient-to-b from-transparent to-muted/20">
+              <div className="h-full flex flex-col">
                 <SidebarContent />
               </div>
             </div>
             
-            {/* Quick Actions - Fixed at bottom */}
-            <div className="flex-shrink-0 p-4 border-t bg-background">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Copy className="h-4 w-4 mr-2" />
-                  Duplicate
-                </Button>
+            {/* Bottom Actions */}
+            <div className="flex-shrink-0 p-3 pt-2 border-t bg-background/80">
+              <div className="flex gap-1.5">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs">
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs">Preview Service</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs">Duplicate Service</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs">
+                        <Archive className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs">Archive Service</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>
