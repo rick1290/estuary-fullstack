@@ -28,18 +28,17 @@ User = get_user_model()
 def send_welcome_notification(sender, instance, created, **kwargs):
     """
     Send welcome email when a new user is created.
+    Only send client welcome emails to non-practitioner users.
+    Practitioner welcome emails are sent when the practitioner profile is created.
     """
-    if created and instance.email:
+    if created and instance.email and not instance.is_practitioner:
         try:
-            # Check if user is a practitioner
-            if hasattr(instance, 'practitioner_profile'):
-                service = get_practitioner_notification_service()
-                service.send_welcome_email(instance.practitioner_profile)
-            else:
-                service = get_client_notification_service()
-                # Generate verification token if needed
-                verification_token = None  # Implement token generation
-                service.send_welcome_email(instance, verification_token)
+            # Only send client welcome email if user is not marked as practitioner
+            service = get_client_notification_service()
+            # Generate verification token if needed
+            verification_token = None  # TODO: Implement token generation if email verification is needed
+            service.send_welcome_email(instance, verification_token)
+            logger.info(f"Sent client welcome email to {instance.email}")
         except Exception as e:
             logger.error(f"Error sending welcome email to {instance.email}: {str(e)}")
 
@@ -188,21 +187,26 @@ def handle_message_notification(sender, instance, created, **kwargs):
             logger.error(f"Error sending message notification: {str(e)}")
 
 
-# Practitioner verification signals
+# Practitioner signals
 @receiver(post_save, sender=Practitioner)
-def handle_practitioner_verification(sender, instance, created, **kwargs):
+def handle_practitioner_notifications(sender, instance, created, **kwargs):
     """
-    Send notifications for practitioner verification status changes.
+    Send notifications for practitioner events.
     """
-    if not created and instance.tracker.has_changed('verification_status'):
-        try:
-            service = get_practitioner_notification_service()
-            
+    try:
+        service = get_practitioner_notification_service()
+        
+        if created:
+            # Send welcome email when practitioner profile is first created
+            service.send_welcome_email(instance)
+            logger.info(f"Sent practitioner welcome email to {instance.user.email}")
+        elif not created and hasattr(instance, 'tracker') and instance.tracker.has_changed('verification_status'):
+            # Handle verification status changes
             if instance.verification_status == 'verified':
                 # service.send_verification_approved(instance)
                 pass
             elif instance.verification_status == 'rejected':
                 # service.send_verification_rejected(instance)
                 pass
-        except Exception as e:
-            logger.error(f"Error sending verification notification: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error sending practitioner notification: {str(e)}")

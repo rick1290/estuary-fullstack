@@ -65,7 +65,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'profile_setup_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/profile",
             'create_service_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/services/new",
             'help_center_url': f"{settings.FRONTEND_URL}/help/practitioner",
-            'commission_rate': practitioner.commission_rate,
+            'commission_rate': 15.0,  # Default commission rate - TODO: Get from subscription tier
             'onboarding_checklist': [
                 'Complete your profile',
                 'Add your availability schedule',
@@ -115,7 +115,9 @@ class PractitionerNotificationService(BaseNotificationService):
         
         # Calculate earnings
         gross_amount = booking.total_amount
-        commission_amount = gross_amount * Decimal(practitioner.commission_rate) / 100
+        # TODO: Get commission rate from subscription tier
+        commission_rate = Decimal('15.0')  # Default 15%
+        commission_amount = gross_amount * commission_rate / 100
         net_earnings = gross_amount - commission_amount
         
         data = {
@@ -131,7 +133,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'gross_amount': f"${gross_amount:.2f}",
             'commission_amount': f"${commission_amount:.2f}",
             'net_earnings': f"${net_earnings:.2f}",
-            'commission_rate': practitioner.commission_rate,
+            'commission_rate': 15.0,  # Default commission rate - TODO: Get from subscription tier
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
             'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
@@ -236,7 +238,9 @@ class PractitionerNotificationService(BaseNotificationService):
         
         # Calculate lost earnings
         gross_amount = booking.total_amount
-        commission_amount = gross_amount * Decimal(practitioner.commission_rate) / 100
+        # TODO: Get commission rate from subscription tier
+        commission_rate = Decimal('15.0')  # Default 15%
+        commission_amount = gross_amount * commission_rate / 100
         lost_earnings = gross_amount - commission_amount
         
         data = {
