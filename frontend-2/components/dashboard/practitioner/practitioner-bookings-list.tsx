@@ -48,7 +48,7 @@ export default function PractitionerBookingsList() {
   // Build query params based on filters
   const queryParams = useMemo(() => {
     const params: any = {
-      practitioner_id: user?.practitioner_profile?.id,
+      practitioner_id: user?.practitionerId,
       ordering: "-start_time",
       page_size: 50
     }
@@ -96,6 +96,7 @@ export default function PractitionerBookingsList() {
     ...bookingsListOptions({
       query: queryParams
     }),
+    enabled: !!user?.practitionerId
   })
 
   const bookings = data?.results || []

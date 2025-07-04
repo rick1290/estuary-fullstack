@@ -229,7 +229,7 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
   const { data: bookingsData, isLoading } = useQuery(
     bookingsListOptions({
       query: {
-        practitioner_id: user?.practitioner_profile?.id,
+        practitioner_id: user?.practitionerId,
         start_date: format(dateRange.start, 'yyyy-MM-dd'),
         end_date: format(dateRange.end, 'yyyy-MM-dd'),
         status: 'confirmed,completed',

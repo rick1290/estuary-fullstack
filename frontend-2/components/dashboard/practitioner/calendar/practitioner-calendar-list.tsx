@@ -121,7 +121,7 @@ export default function PractitionerCalendarList() {
   // Build query params based on selected tab
   const getQueryParams = () => {
     const params: any = {
-      practitioner_id: user?.practitioner_profile?.id,
+      practitioner_id: user?.practitionerId,
       ordering: '-start_time'
     }
 
