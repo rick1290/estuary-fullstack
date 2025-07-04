@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
@@ -12,14 +12,9 @@ import type { ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { 
   CheckCircle2, 
@@ -32,7 +27,9 @@ import {
   ChevronLeft,
   Loader2,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Menu,
+  X
 } from "lucide-react"
 import {
   Tooltip,
@@ -40,6 +37,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 // Import section components
 import { BasicInfoSection } from "./sections/basic-info-section"
@@ -56,7 +58,7 @@ import { PackageCompositionSection } from "./sections/package-composition-sectio
 import { BundleConfigurationSection } from "./sections/bundle-configuration-section"
 import { StatusVisibilitySection } from "./sections/status-visibility-section"
 
-interface ServiceEditAccordionProps {
+interface ServiceEditSplitViewProps {
   serviceId: string
 }
 
@@ -161,19 +163,22 @@ const sections = [
 
 type SectionStatus = "complete" | "incomplete" | "optional"
 
-export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
+export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   const router = useRouter()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   
   // State
-  const [openSections, setOpenSections] = useState<string[]>(["basic-info"])
+  const [activeSection, setActiveSection] = useState("basic-info")
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
   const [sectionData, setSectionData] = useState<Record<string, any>>({})
   const [sectionStatus, setSectionStatus] = useState<Record<string, SectionStatus>>({})
-  const [autoCollapseEnabled, setAutoCollapseEnabled] = useState(true)
-  const [showHelp, setShowHelp] = useState(true)
-
+  const [mobileOpen, setMobileOpen] = useState(false)
+  
+  // Refs for sections and scroll container
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  
   // Fetch service data
   const { data: service, isLoading, error } = useQuery({
     ...servicesRetrieveOptions({ path: { id: parseInt(serviceId) } }),
@@ -248,7 +253,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         },
         "media": {
           image: service.image,
-          // gallery: service.gallery_images,
         },
         "benefits": {
           what_youll_learn: service.what_youll_learn,
@@ -326,33 +330,9 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         [sectionId]: isComplete ? "complete" : 
                      section?.required ? "incomplete" : "optional"
       }))
-      
-      // Auto-collapse completed sections if enabled
-      if (autoCollapseEnabled && isComplete && openSections.includes(sectionId)) {
-        // Find next incomplete section
-        const currentVisibleSections = sections.filter(section => 
-          !section.conditional || section.conditional(service)
-        )
-        const currentIndex = currentVisibleSections.findIndex(s => s.id === sectionId)
-        const nextSection = currentVisibleSections.slice(currentIndex + 1).find(
-          s => sectionStatus[s.id] !== "complete"
-        )
-        
-        if (nextSection) {
-          setOpenSections([nextSection.id])
-        }
-      }
     }
   }
-  
-  // Get visible sections for keyboard navigation
-  const getVisibleSections = useCallback(() => {
-    if (!service) return []
-    return sections.filter(section => 
-      !section.conditional || section.conditional(service)
-    )
-  }, [service])
-  
+
   // Save specific section
   const handleSaveSection = useCallback(async (sectionId: string) => {
     let updates = { ...sectionData[sectionId] }
@@ -365,14 +345,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
       delete updates.scheduleId
     }
     
-    // Debug logging for package and bundle sections
-    if (sectionId === 'package-composition' || sectionId === 'bundle-configuration') {
-      console.log(`Saving ${sectionId}:`, updates)
-    }
-    
-    // For package, bundle, and service sessions, the data is already properly formatted
-    // No special handling needed
-    
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },
       body: updates,
@@ -384,39 +356,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
       return newSet
     })
   }, [sectionData, updateMutation, serviceId])
-  
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!service) return
-      
-      const currentVisibleSections = getVisibleSections()
-      const currentSection = openSections[0]
-      const currentIndex = currentVisibleSections.findIndex(s => s.id === currentSection)
-      
-      if (e.key === "ArrowDown" && e.ctrlKey) {
-        e.preventDefault()
-        const nextSection = currentVisibleSections[currentIndex + 1]
-        if (nextSection) {
-          setOpenSections([nextSection.id])
-        }
-      } else if (e.key === "ArrowUp" && e.ctrlKey) {
-        e.preventDefault()
-        const prevSection = currentVisibleSections[currentIndex - 1]
-        if (prevSection) {
-          setOpenSections([prevSection.id])
-        }
-      } else if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        if (unsavedChanges.has(currentSection)) {
-          handleSaveSection(currentSection)
-        }
-      }
-    }
-    
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [openSections, getVisibleSections, unsavedChanges, service, handleSaveSection])
 
   // Save all changes
   const handleSaveAll = async () => {
@@ -432,21 +371,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         delete sectionUpdates.scheduleId
       }
       
-      // Handle package composition - child_service_configs is already in correct format
-      if (sectionId === 'package-composition') {
-        // child_service_configs is already properly formatted from the section
-      }
-      
-      // Handle bundle configuration
-      if (sectionId === 'bundle-configuration') {
-        // sessions_included and child_service_configs are already properly formatted
-      }
-      
-      // Handle service sessions
-      if (sectionId === 'service-sessions') {
-        // sessions array is already properly formatted
-      }
-      
       Object.assign(updates, sectionUpdates)
     })
 
@@ -456,6 +380,61 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
     })
   }
 
+  // Scroll to section
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId)
+    const element = sectionRefs.current[sectionId]
+    const container = scrollContainerRef.current
+    
+    if (element && container) {
+      const elementTop = element.offsetTop
+      const containerTop = container.offsetTop
+      const scrollPosition = elementTop - containerTop - 20 // 20px offset from top
+      
+      container.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      })
+    }
+    setMobileOpen(false)
+  }
+
+  const visibleSections = sections.filter(section => 
+    !section.conditional || (service && section.conditional(service))
+  )
+  
+  // Handle scroll spy
+  useEffect(() => {
+    if (!service || !scrollContainerRef.current) return
+    
+    const scrollContainer = scrollContainerRef.current
+    
+    const handleScroll = () => {
+      const scrollTop = scrollContainer.scrollTop
+      const containerTop = scrollContainer.getBoundingClientRect().top
+
+      for (const section of visibleSections) {
+        const element = sectionRefs.current[section.id]
+        if (element) {
+          const rect = element.getBoundingClientRect()
+          const elementTop = rect.top - containerTop
+          const elementBottom = elementTop + rect.height
+          
+          // Check if the section is in the viewport (with some offset for better UX)
+          if (elementTop <= 150 && elementBottom > 150) {
+            setActiveSection(section.id)
+            break
+          }
+        }
+      }
+    }
+
+    scrollContainer.addEventListener('scroll', handleScroll)
+    // Initial check
+    handleScroll()
+    
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
+  }, [service, visibleSections])
 
   // Get section icon based on status
   const getSectionIcon = (status: SectionStatus) => {
@@ -491,10 +470,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
       </div>
     )
   }
-
-  const visibleSections = sections.filter(section => 
-    !section.conditional || section.conditional(service)
-  )
   
   // Calculate overall progress
   const totalSections = visibleSections.filter(s => s.required).length
@@ -503,93 +478,191 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
   ).length
   const progressPercentage = totalSections > 0 ? (completedSections / totalSections) * 100 : 0
 
+  // Sidebar content
+  const SidebarContent = () => (
+    <div className="space-y-1">
+      {visibleSections.map((section) => {
+        const status = sectionStatus[section.id] || "optional"
+        const hasChanges = unsavedChanges.has(section.id)
+        const isActive = activeSection === section.id
+
+        return (
+          <button
+            key={section.id}
+            onClick={() => scrollToSection(section.id)}
+            className={cn(
+              "w-full text-left px-4 py-3 rounded-lg transition-all duration-200 group relative",
+              isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-muted/50"
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className={cn(
+                "transition-all duration-200",
+                isActive && "scale-110"
+              )}>
+                {getSectionIcon(status)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={cn(
+                  "font-medium text-sm flex items-center gap-2 transition-all duration-200",
+                  isActive ? "text-primary font-semibold" : "text-foreground"
+                )}>
+                  {section.title}
+                  {section.required && !isActive && (
+                    <Badge variant="outline" className="text-xs scale-90 opacity-60">
+                      Required
+                    </Badge>
+                  )}
+                  {hasChanges && (
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-xs scale-90",
+                        isActive ? "text-amber-700 border-amber-400 bg-amber-50" : "text-amber-600 border-amber-300"
+                      )}
+                    >
+                      Unsaved
+                    </Badge>
+                  )}
+                </div>
+                <div className={cn(
+                  "text-xs text-muted-foreground mt-0.5 transition-all duration-200",
+                  isActive ? "opacity-100 max-h-10" : "opacity-0 max-h-0 overflow-hidden"
+                )}>
+                  {section.description}
+                </div>
+              </div>
+            </div>
+            {/* Active indicator bar */}
+            <div className={cn(
+              "absolute left-0 top-2 bottom-2 w-1 bg-primary rounded-r transition-all duration-200",
+              isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
+            )} />
+            {/* Active background glow */}
+            {isActive && (
+              <div className="absolute inset-0 bg-primary/5 rounded-lg -z-10" />
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+
   return (
     <TooltipProvider>
-      <div className="relative">
-        {/* Sticky Progress Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <div className="container max-w-7xl py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.back()}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Back
-                </Button>
-                <div className="h-8 w-px bg-border" />
-                <div>
-                  <h2 className="font-semibold">{service.name}</h2>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{Math.round(progressPercentage)}% Complete</span>
-                    <span>{completedSections} of {totalSections} required sections</span>
+      <div className="flex h-screen overflow-hidden">
+        {/* Mobile Menu Button */}
+        <div className="lg:hidden fixed top-4 left-4 z-50">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0">
+              <div className="p-6">
+                <h2 className="font-semibold mb-4">Sections</h2>
+                <SidebarContent />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block w-80 border-r bg-background">
+          <div className="sticky top-0 h-screen overflow-auto">
+            {/* Sidebar Header */}
+            <div className="p-6 border-b bg-background">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="mb-4 -ml-2"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              
+              <div className="space-y-1 mb-4">
+                <h2 className="font-semibold">Edit Service</h2>
+                <p className="text-sm text-muted-foreground truncate">{service.name}</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Progress</span>
+                    <span className="text-muted-foreground">{Math.round(progressPercentage)}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{completedSections} of {totalSections} required sections</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-green-600" />
+                      <span>{Object.values(sectionStatus).filter(s => s === "complete").length}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 text-amber-600" />
+                      <span>{Object.values(sectionStatus).filter(s => s === "incomplete").length}</span>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              {unsavedChanges.size > 0 && (
+                <Button
+                  size="sm"
+                  className="w-full mt-4"
+                  onClick={handleSaveAll}
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Save All Changes ({unsavedChanges.size})
+                </Button>
+              )}
+            </div>
+
+            {/* Sidebar Navigation */}
+            <ScrollArea className="h-[calc(100vh-200px)]">
+              <div className="p-4">
+                <SidebarContent />
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
+          {/* Sticky Header for Mobile */}
+          <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
+            <div className="px-4 py-3 ml-16">
+              <h1 className="font-semibold">{service.name}</h1>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{Math.round(progressPercentage)}% Complete</span>
                 {unsavedChanges.size > 0 && (
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={handleSaveAll}
                     disabled={updateMutation.isPending}
                   >
-                    {updateMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Save All ({unsavedChanges.size})
+                    Save ({unsavedChanges.size})
                   </Button>
                 )}
-                
-                <div className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAutoCollapseEnabled(!autoCollapseEnabled)}
-                        className={cn(autoCollapseEnabled && "text-primary")}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{autoCollapseEnabled ? "Auto-collapse enabled" : "Auto-collapse disabled"}</p>
-                      <p className="text-xs text-muted-foreground">Automatically move to next section when complete</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowHelp(!showHelp)}
-                        className={cn(showHelp && "text-primary")}
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Toggle help tooltips</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
               </div>
             </div>
-            <Progress value={progressPercentage} className="h-1 mt-2" />
           </div>
-        </div>
-        
-        <div className="container max-w-7xl py-6 space-y-6">
-          {/* Main Header */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight">{service.name}</h1>
+
+          <div className="max-w-4xl mx-auto p-6 pb-20">
+            {/* Service Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">{service.name}</h1>
               <div className="flex items-center gap-2">
                 <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
                   {service.status}
@@ -605,156 +678,76 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon">
-                <Eye className="h-4 w-4" />
-              </Button>
-              
-              <Button variant="outline" size="icon">
-                <Copy className="h-4 w-4" />
-              </Button>
-              
-              <Button variant="outline" size="icon">
-                <Archive className="h-4 w-4" />
-              </Button>
+            {/* Sections */}
+            <div className="space-y-8">
+              {visibleSections.map((section) => {
+                const SectionComponent = section.component
+                const hasChanges = unsavedChanges.has(section.id)
+
+                const isActive = activeSection === section.id
+                
+                return (
+                  <div
+                    key={section.id}
+                    ref={(el) => sectionRefs.current[section.id] = el}
+                    className="scroll-mt-24"
+                  >
+                    <Card className={cn(
+                      "transition-all duration-300",
+                      isActive ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md"
+                    )}>
+                      <CardHeader className={cn(
+                        "transition-colors duration-300",
+                        isActive && "bg-primary/5"
+                      )}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2">
+                              <span className={cn(
+                                "transition-colors duration-300",
+                                isActive && "text-primary"
+                              )}>
+                                {section.title}
+                              </span>
+                              {section.required && (
+                                <Badge variant="outline" className="text-xs">
+                                  Required
+                                </Badge>
+                              )}
+                            </CardTitle>
+                            <CardDescription>{section.description}</CardDescription>
+                          </div>
+                          {hasChanges && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleSaveSection(section.id)}
+                              disabled={updateMutation.isPending}
+                            >
+                              {updateMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Save"
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <SectionComponent
+                          service={service}
+                          data={sectionData[section.id] || {}}
+                          onChange={(data) => handleSectionChange(section.id, data)}
+                          onSave={() => handleSaveSection(section.id)}
+                          hasChanges={hasChanges}
+                          isSaving={updateMutation.isPending}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )
+              })}
             </div>
           </div>
-
-          {/* Help Card */}
-          {showHelp && (
-            <Card className="bg-muted/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <HelpCircle className="h-4 w-4" />
-                  Quick Tips
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex items-start gap-2">
-                  <kbd className="px-2 py-1 text-xs bg-background rounded border">Ctrl+↑/↓</kbd>
-                  <span>Navigate between sections</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <kbd className="px-2 py-1 text-xs bg-background rounded border">Ctrl+S</kbd>
-                  <span>Save current section</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
-                  <span>Complete all required sections to publish your service</span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Progress Summary */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Section Overview</CardTitle>
-              <CardDescription>
-                Your service is {Math.round(progressPercentage)}% ready to publish
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Progress value={progressPercentage} className="h-2" />
-                <div className="flex gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>
-                      {Object.values(sectionStatus).filter(s => s === "complete").length} Complete
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-600" />
-                    <span>
-                      {Object.values(sectionStatus).filter(s => s === "incomplete").length} Incomplete
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {Object.values(sectionStatus).filter(s => s === "optional").length} Optional
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Accordion Sections */}
-          <Accordion 
-            type="multiple" 
-            value={openSections}
-            onValueChange={setOpenSections}
-            className="space-y-4"
-          >
-            {visibleSections.map((section, index) => {
-              const SectionComponent = section.component
-              const status = sectionStatus[section.id] || "optional"
-              const hasChanges = unsavedChanges.has(section.id)
-
-              return (
-                <AccordionItem 
-                  key={section.id} 
-                  value={section.id}
-                  className={cn(
-                    "border rounded-lg transition-colors",
-                    status === "complete" && "border-green-200 bg-green-50/50",
-                    status === "incomplete" && section.required && "border-amber-200"
-                  )}
-                >
-                  <AccordionTrigger className="px-6 hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <div className="flex items-center gap-3">
-                        {getSectionIcon(status)}
-                        <div className="text-left">
-                          <div className="font-medium flex items-center gap-2">
-                            {section.title}
-                            {section.required && (
-                              <Badge variant="outline" className="text-xs">
-                                Required
-                              </Badge>
-                            )}
-                            {hasChanges && (
-                              <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                                Unsaved
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {section.description}
-                          </div>
-                        </div>
-                      </div>
-                      {showHelp && index === 0 && openSections.length === 0 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="text-xs text-muted-foreground ml-4">
-                              Click to expand
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Start here to build your service</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pt-6">
-                    <SectionComponent
-                      service={service}
-                      data={sectionData[section.id] || {}}
-                      onChange={(data) => handleSectionChange(section.id, data)}
-                      onSave={() => handleSaveSection(section.id)}
-                      hasChanges={hasChanges}
-                      isSaving={updateMutation.isPending}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              )
-            })}
-          </Accordion>
         </div>
       </div>
     </TooltipProvider>
