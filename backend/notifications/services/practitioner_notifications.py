@@ -1,0 +1,435 @@
+"""
+Practitioner-specific notification services.
+"""
+import logging
+from datetime import datetime, timedelta
+from typing import Dict, Optional
+from decimal import Decimal
+
+from django.conf import settings
+from django.utils import timezone
+
+from .base import BaseNotificationService
+from notifications.models import Notification
+
+logger = logging.getLogger(__name__)
+
+
+class PractitionerNotificationService(BaseNotificationService):
+    """
+    Handle all practitioner-related notifications.
+    """
+    
+    # Courier template IDs (to be configured in settings)
+    TEMPLATES = {
+        'welcome': 'COURIER_PRACTITIONER_WELCOME_TEMPLATE',
+        'profile_incomplete': 'COURIER_PRACTITIONER_PROFILE_INCOMPLETE_TEMPLATE',
+        'no_services': 'COURIER_PRACTITIONER_NO_SERVICES_TEMPLATE',
+        'service_created': 'COURIER_PRACTITIONER_SERVICE_CREATED_TEMPLATE',
+        'bundle_created': 'COURIER_PRACTITIONER_BUNDLE_CREATED_TEMPLATE',
+        'booking_received': 'COURIER_PRACTITIONER_BOOKING_RECEIVED_TEMPLATE',
+        'booking_cancelled': 'COURIER_PRACTITIONER_BOOKING_CANCELLED_TEMPLATE',
+        'booking_rescheduled': 'COURIER_PRACTITIONER_BOOKING_RESCHEDULED_TEMPLATE',
+        'payout_completed': 'COURIER_PRACTITIONER_PAYOUT_COMPLETED_TEMPLATE',
+        'reminder_24h': 'COURIER_PRACTITIONER_REMINDER_24H_TEMPLATE',
+        'reminder_30m': 'COURIER_PRACTITIONER_REMINDER_30M_TEMPLATE',
+        'new_review': 'COURIER_PRACTITIONER_NEW_REVIEW_TEMPLATE',
+        'earnings_summary': 'COURIER_PRACTITIONER_EARNINGS_SUMMARY_TEMPLATE',
+        'client_message': 'COURIER_PRACTITIONER_CLIENT_MESSAGE_TEMPLATE',
+        'verification_approved': 'COURIER_PRACTITIONER_VERIFICATION_APPROVED_TEMPLATE',
+        'verification_rejected': 'COURIER_PRACTITIONER_VERIFICATION_REJECTED_TEMPLATE',
+    }
+    
+    def get_template_id(self, template_key: str) -> str:
+        """Get template ID from settings."""
+        setting_key = self.TEMPLATES.get(template_key)
+        return getattr(settings, setting_key, None) if setting_key else None
+    
+    def send_welcome_email(self, practitioner):
+        """
+        Send welcome email to new practitioner.
+        """
+        user = practitioner.user
+        if not self.should_send_notification(user, 'system', 'email'):
+            return
+        
+        template_id = self.get_template_id('welcome')
+        if not template_id:
+            logger.warning("No practitioner welcome template configured")
+            return
+        
+        data = {
+            'first_name': user.first_name or 'there',
+            'practitioner_name': practitioner.display_name or user.get_full_name(),
+            'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/practitioner",
+            'profile_setup_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/profile",
+            'create_service_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/services/new",
+            'help_center_url': f"{settings.FRONTEND_URL}/help/practitioner",
+            'commission_rate': practitioner.commission_rate,
+            'onboarding_checklist': [
+                'Complete your profile',
+                'Add your availability schedule',
+                'Create your first service',
+                'Set up payment information',
+                'Get verified (optional but recommended)'
+            ]
+        }
+        
+        notification = self.create_notification_record(
+            user=user,
+            title="Welcome to Estuary as a Practitioner!",
+            message="Welcome! Let's get your practitioner profile set up.",
+            notification_type='system',
+            delivery_channel='email'
+        )
+        
+        # Send welcome email
+        self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"practitioner-welcome-{practitioner.id}"
+        )
+        
+        # Schedule follow-up nudges
+        self._schedule_onboarding_nudges(practitioner)
+    
+    def send_booking_notification(self, booking):
+        """
+        Send new booking notification to practitioner.
+        """
+        practitioner = booking.service.practitioner
+        user = practitioner.user
+        
+        if not self.should_send_notification(user, 'booking', 'email'):
+            return
+        
+        template_id = self.get_template_id('booking_received')
+        if not template_id:
+            logger.warning("No booking received template configured")
+            return
+        
+        client = booking.user
+        service = booking.service
+        
+        # Calculate earnings
+        gross_amount = booking.total_amount
+        commission_amount = gross_amount * Decimal(practitioner.commission_rate) / 100
+        net_earnings = gross_amount - commission_amount
+        
+        data = {
+            'booking_id': str(booking.id),
+            'client_name': client.get_full_name(),
+            'client_email': client.email,
+            'service_name': service.name,
+            'service_type': service.get_service_type_display(),
+            'booking_date': booking.start_datetime.strftime('%A, %B %d, %Y'),
+            'booking_time': booking.start_datetime.strftime('%I:%M %p'),
+            'duration_minutes': service.duration,
+            'location': booking.get_location_display(),
+            'gross_amount': f"${gross_amount:.2f}",
+            'commission_amount': f"${commission_amount:.2f}",
+            'net_earnings': f"${net_earnings:.2f}",
+            'commission_rate': practitioner.commission_rate,
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
+            'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
+            'message_client_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/messages/new?recipient={client.id}"
+        }
+        
+        # Add session details if applicable
+        if booking.service_session:
+            data['session_name'] = booking.service_session.name
+            data['session_number'] = booking.service_session.session_number
+        
+        # Add client notes if any
+        if booking.notes:
+            data['client_notes'] = booking.notes
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=f"New Booking: {service.name}",
+            message=f"{client.get_full_name()} has booked your {service.name} for {data['booking_date']} at {data['booking_time']}.",
+            notification_type='booking',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        # Send immediately
+        self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"practitioner-booking-{booking.id}"
+        )
+        
+        # Schedule reminders
+        self._schedule_practitioner_reminders(booking)
+    
+    def send_payout_confirmation(self, payout):
+        """
+        Send payout confirmation to practitioner.
+        """
+        practitioner = payout.practitioner
+        user = practitioner.user
+        
+        if not self.should_send_notification(user, 'payment', 'email'):
+            return
+        
+        template_id = self.get_template_id('payout_completed')
+        if not template_id:
+            logger.warning("No payout confirmation template configured")
+            return
+        
+        data = {
+            'payout_id': str(payout.id),
+            'amount': f"${payout.amount:.2f}",
+            'payout_method': payout.get_payout_method_display(),
+            'bank_last4': payout.bank_account_last4,
+            'initiated_date': payout.created_at.strftime('%B %d, %Y'),
+            'expected_arrival': (payout.created_at + timedelta(days=2)).strftime('%B %d, %Y'),
+            'stripe_transfer_id': payout.stripe_transfer_id,
+            'earnings_period': f"{payout.period_start.strftime('%b %d')} - {payout.period_end.strftime('%b %d, %Y')}",
+            'transaction_count': payout.transaction_count,
+            'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/finances/payouts/{payout.id}",
+            'earnings_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/finances/earnings"
+        }
+        
+        notification = self.create_notification_record(
+            user=user,
+            title="Payout Initiated",
+            message=f"Your payout of {data['amount']} has been initiated and should arrive by {data['expected_arrival']}.",
+            notification_type='payment',
+            delivery_channel='email',
+            related_object_type='payout',
+            related_object_id=str(payout.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"payout-confirmation-{payout.id}"
+        )
+    
+    def send_booking_cancelled(self, booking, cancelled_by, reason=None):
+        """
+        Send booking cancellation notification to practitioner.
+        """
+        practitioner = booking.service.practitioner
+        user = practitioner.user
+        
+        if not self.should_send_notification(user, 'booking', 'email'):
+            return
+        
+        template_id = self.get_template_id('booking_cancelled')
+        if not template_id:
+            logger.warning("No booking cancelled template configured")
+            return
+        
+        client = booking.user
+        service = booking.service
+        
+        # Calculate lost earnings
+        gross_amount = booking.total_amount
+        commission_amount = gross_amount * Decimal(practitioner.commission_rate) / 100
+        lost_earnings = gross_amount - commission_amount
+        
+        data = {
+            'booking_id': str(booking.id),
+            'client_name': client.get_full_name(),
+            'service_name': service.name,
+            'original_date': booking.start_datetime.strftime('%A, %B %d, %Y'),
+            'original_time': booking.start_datetime.strftime('%I:%M %p'),
+            'cancelled_by': 'Client' if cancelled_by == client else 'System',
+            'cancellation_reason': reason or 'No reason provided',
+            'lost_earnings': f"${lost_earnings:.2f}",
+            'time_until_booking': self._format_time_until(booking.start_datetime - timezone.now()),
+            'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
+            'rebooking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/availability"
+        }
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=f"Booking Cancelled: {service.name}",
+            message=f"{client.get_full_name()} has cancelled their booking for {data['original_date']} at {data['original_time']}.",
+            notification_type='booking',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"booking-cancelled-{booking.id}"
+        )
+    
+    def send_earnings_summary(self, practitioner, period='weekly'):
+        """
+        Send earnings summary to practitioner.
+        """
+        user = practitioner.user
+        
+        if not self.should_send_notification(user, 'payment', 'email'):
+            return
+        
+        template_id = self.get_template_id('earnings_summary')
+        if not template_id:
+            logger.warning("No earnings summary template configured")
+            return
+        
+        # Calculate earnings for the period
+        if period == 'weekly':
+            start_date = timezone.now() - timedelta(days=7)
+            period_label = "This Week"
+        else:  # monthly
+            start_date = timezone.now() - timedelta(days=30)
+            period_label = "This Month"
+        
+        # Get earnings data (this would come from your analytics)
+        earnings_data = self._get_earnings_summary(practitioner, start_date)
+        
+        data = {
+            'practitioner_name': practitioner.display_name or user.get_full_name(),
+            'period_label': period_label,
+            'total_earnings': f"${earnings_data['total_earnings']:.2f}",
+            'total_bookings': earnings_data['total_bookings'],
+            'completed_sessions': earnings_data['completed_sessions'],
+            'cancelled_sessions': earnings_data['cancelled_sessions'],
+            'average_booking_value': f"${earnings_data['average_booking_value']:.2f}",
+            'top_services': earnings_data['top_services'],
+            'commission_paid': f"${earnings_data['commission_paid']:.2f}",
+            'net_earnings': f"${earnings_data['net_earnings']:.2f}",
+            'comparison_percent': earnings_data['comparison_percent'],
+            'comparison_direction': 'up' if earnings_data['comparison_percent'] > 0 else 'down',
+            'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/finances/earnings",
+            'analytics_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/analytics"
+        }
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=f"{period_label}'s Earnings Summary",
+            message=f"You earned {data['total_earnings']} from {data['total_bookings']} bookings {period_label.lower()}.",
+            notification_type='payment',
+            delivery_channel='email'
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"earnings-summary-{practitioner.id}-{period}-{timezone.now().strftime('%Y%W')}"
+        )
+    
+    def _schedule_practitioner_reminders(self, booking):
+        """
+        Schedule reminder notifications for practitioner.
+        """
+        practitioner = booking.service.practitioner
+        
+        # 24-hour reminder
+        reminder_24h = booking.start_datetime - timedelta(hours=24)
+        if reminder_24h > timezone.now():
+            self.schedule_notification(
+                user=practitioner.user,
+                notification_type='reminder',
+                delivery_channel='email',
+                scheduled_for=reminder_24h,
+                template_id=self.get_template_id('reminder_24h'),
+                data={},  # Will be populated when sent
+                title=f"Tomorrow: {booking.service.name} with {booking.user.get_full_name()}",
+                message=f"Reminder: You have a booking tomorrow",
+                related_object_type='booking',
+                related_object_id=str(booking.id)
+            )
+        
+        # 30-minute reminder
+        reminder_30m = booking.start_datetime - timedelta(minutes=30)
+        if reminder_30m > timezone.now():
+            self.schedule_notification(
+                user=practitioner.user,
+                notification_type='reminder',
+                delivery_channel='email',
+                scheduled_for=reminder_30m,
+                template_id=self.get_template_id('reminder_30m'),
+                data={},  # Will be populated when sent
+                title=f"Starting soon: {booking.service.name}",
+                message=f"Your session starts in 30 minutes",
+                related_object_type='booking',
+                related_object_id=str(booking.id)
+            )
+    
+    def _schedule_onboarding_nudges(self, practitioner):
+        """
+        Schedule onboarding reminder emails.
+        """
+        # 3-day nudge if profile incomplete
+        nudge_date = timezone.now() + timedelta(days=3)
+        self.schedule_notification(
+            user=practitioner.user,
+            notification_type='system',
+            delivery_channel='email',
+            scheduled_for=nudge_date,
+            template_id=self.get_template_id('profile_incomplete'),
+            data={},
+            title="Complete your practitioner profile",
+            message="Your profile is incomplete. Complete it to start receiving bookings."
+        )
+        
+        # 7-day nudge if no services created
+        nudge_date = timezone.now() + timedelta(days=7)
+        self.schedule_notification(
+            user=practitioner.user,
+            notification_type='system',
+            delivery_channel='email',
+            scheduled_for=nudge_date,
+            template_id=self.get_template_id('no_services'),
+            data={},
+            title="Create your first service",
+            message="You haven't created any services yet. Create one to start accepting bookings."
+        )
+    
+    def _get_earnings_summary(self, practitioner, start_date):
+        """
+        Get earnings summary data for the practitioner.
+        This is a placeholder - implement with actual queries.
+        """
+        # TODO: Implement actual earnings calculation
+        return {
+            'total_earnings': Decimal('1250.00'),
+            'total_bookings': 15,
+            'completed_sessions': 12,
+            'cancelled_sessions': 3,
+            'average_booking_value': Decimal('83.33'),
+            'top_services': [
+                {'name': 'Yoga Session', 'count': 8},
+                {'name': 'Meditation', 'count': 4}
+            ],
+            'commission_paid': Decimal('62.50'),
+            'net_earnings': Decimal('1187.50'),
+            'comparison_percent': 15.5
+        }
+    
+    def _format_time_until(self, timedelta_obj):
+        """
+        Format timedelta to human-readable string.
+        """
+        total_seconds = int(timedelta_obj.total_seconds())
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        
+        if hours > 24:
+            days = hours // 24
+            return f"{days} day{'s' if days > 1 else ''}"
+        elif hours > 0:
+            return f"{hours} hour{'s' if hours > 1 else ''}"
+        else:
+            return f"{minutes} minute{'s' if minutes > 1 else ''}"
