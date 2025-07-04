@@ -7,7 +7,6 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { useMessageNotifications } from "@/hooks/use-message-notifications"
-import PractitionerDashboardBreadcrumb from "@/components/dashboard/practitioner/practitioner-dashboard-breadcrumb"
 import {
   Menu,
   Home,
@@ -18,6 +17,7 @@ import {
   Settings,
   BarChart,
   Calendar,
+  CalendarCheck,
   MessageSquare,
   Users,
   SpadeIcon as Spa,
@@ -94,7 +94,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
     { text: "Manage Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
     { text: "Streams", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/streams" },
     { text: "Availability", icon: <Clock className="h-4 w-4" />, path: "/dashboard/practitioner/availability" },
-    { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
+    { text: "Calendar", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/calendar" },
+    { text: "Bookings", icon: <CalendarCheck className="h-4 w-4" />, path: "/dashboard/practitioner/bookings" },
     { text: "Clients", icon: <Users className="h-4 w-4" />, path: "/dashboard/practitioner/clients" },
     { 
       text: "Messages", 
@@ -520,7 +521,6 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-6 relative z-0 overflow-x-hidden">
-          <PractitionerDashboardBreadcrumb />
           {children}
         </main>
       </div>

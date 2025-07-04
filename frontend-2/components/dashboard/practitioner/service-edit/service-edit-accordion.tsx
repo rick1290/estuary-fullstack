@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
@@ -19,6 +19,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
 import { 
   CheckCircle2, 
   AlertCircle, 
@@ -28,8 +30,16 @@ import {
   Archive,
   Copy,
   ChevronLeft,
-  Loader2
+  Loader2,
+  HelpCircle,
+  Sparkles
 } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 // Import section components
 import { BasicInfoSection } from "./sections/basic-info-section"
@@ -161,6 +171,8 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
   const [sectionData, setSectionData] = useState<Record<string, any>>({})
   const [sectionStatus, setSectionStatus] = useState<Record<string, SectionStatus>>({})
+  const [autoCollapseEnabled, setAutoCollapseEnabled] = useState(true)
+  const [showHelp, setShowHelp] = useState(true)
 
   // Fetch service data
   const { data: service, isLoading, error } = useQuery({
@@ -314,8 +326,97 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         [sectionId]: isComplete ? "complete" : 
                      section?.required ? "incomplete" : "optional"
       }))
+      
+      // Auto-collapse completed sections if enabled
+      if (autoCollapseEnabled && isComplete && openSections.includes(sectionId)) {
+        // Find next incomplete section
+        const currentVisibleSections = sections.filter(section => 
+          !section.conditional || section.conditional(service)
+        )
+        const currentIndex = currentVisibleSections.findIndex(s => s.id === sectionId)
+        const nextSection = currentVisibleSections.slice(currentIndex + 1).find(
+          s => sectionStatus[s.id] !== "complete"
+        )
+        
+        if (nextSection) {
+          setOpenSections([nextSection.id])
+        }
+      }
     }
   }
+  
+  // Get visible sections for keyboard navigation
+  const getVisibleSections = useCallback(() => {
+    if (!service) return []
+    return sections.filter(section => 
+      !section.conditional || section.conditional(service)
+    )
+  }, [service])
+  
+  // Save specific section
+  const handleSaveSection = useCallback(async (sectionId: string) => {
+    let updates = { ...sectionData[sectionId] }
+    
+    // Map scheduleId to schedule field for API
+    if (sectionId === 'schedule-selection' && updates.scheduleId) {
+      updates = {
+        schedule: parseInt(updates.scheduleId)
+      }
+      delete updates.scheduleId
+    }
+    
+    // Debug logging for package and bundle sections
+    if (sectionId === 'package-composition' || sectionId === 'bundle-configuration') {
+      console.log(`Saving ${sectionId}:`, updates)
+    }
+    
+    // For package, bundle, and service sessions, the data is already properly formatted
+    // No special handling needed
+    
+    await updateMutation.mutateAsync({
+      path: { id: parseInt(serviceId) },
+      body: updates,
+    })
+    
+    setUnsavedChanges(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(sectionId)
+      return newSet
+    })
+  }, [sectionData, updateMutation, serviceId])
+  
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!service) return
+      
+      const currentVisibleSections = getVisibleSections()
+      const currentSection = openSections[0]
+      const currentIndex = currentVisibleSections.findIndex(s => s.id === currentSection)
+      
+      if (e.key === "ArrowDown" && e.ctrlKey) {
+        e.preventDefault()
+        const nextSection = currentVisibleSections[currentIndex + 1]
+        if (nextSection) {
+          setOpenSections([nextSection.id])
+        }
+      } else if (e.key === "ArrowUp" && e.ctrlKey) {
+        e.preventDefault()
+        const prevSection = currentVisibleSections[currentIndex - 1]
+        if (prevSection) {
+          setOpenSections([prevSection.id])
+        }
+      } else if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        if (unsavedChanges.has(currentSection)) {
+          handleSaveSection(currentSection)
+        }
+      }
+    }
+    
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [openSections, getVisibleSections, unsavedChanges, service, handleSaveSection])
 
   // Save all changes
   const handleSaveAll = async () => {
@@ -355,37 +456,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
     })
   }
 
-  // Save specific section
-  const handleSaveSection = async (sectionId: string) => {
-    let updates = { ...sectionData[sectionId] }
-    
-    // Map scheduleId to schedule field for API
-    if (sectionId === 'schedule-selection' && updates.scheduleId) {
-      updates = {
-        schedule: parseInt(updates.scheduleId)
-      }
-      delete updates.scheduleId
-    }
-    
-    // Debug logging for package and bundle sections
-    if (sectionId === 'package-composition' || sectionId === 'bundle-configuration') {
-      console.log(`Saving ${sectionId}:`, updates)
-    }
-    
-    // For package, bundle, and service sessions, the data is already properly formatted
-    // No special handling needed
-    
-    await updateMutation.mutateAsync({
-      path: { id: parseInt(serviceId) },
-      body: updates,
-    })
-    
-    setUnsavedChanges(prev => {
-      const newSet = new Set(prev)
-      newSet.delete(sectionId)
-      return newSet
-    })
-  }
 
   // Get section icon based on status
   const getSectionIcon = (status: SectionStatus) => {
@@ -422,161 +492,271 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
     )
   }
 
-  // Debug logging
-  console.log('Service type code:', service.service_type_code)
-  console.log('Service object:', service)
-  
   const visibleSections = sections.filter(section => 
     !section.conditional || section.conditional(service)
   )
   
-  console.log('Visible sections:', visibleSections.map(s => s.id))
+  // Calculate overall progress
+  const totalSections = visibleSections.filter(s => s.required).length
+  const completedSections = visibleSections.filter(
+    s => s.required && sectionStatus[s.id] === "complete"
+  ).length
+  const progressPercentage = totalSections > 0 ? (completedSections / totalSections) * 100 : 0
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">{service.name}</h1>
-          <div className="flex items-center gap-2">
-            <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
-              {service.status}
-            </Badge>
-            <Badge variant="outline">
-              {service.service_type_display || service.service_type_code}
-            </Badge>
-            {service.is_featured && (
-              <Badge variant="default" className="bg-amber-100 text-amber-800">
-                Featured
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2">
-          {unsavedChanges.size > 0 && (
-            <Button
-              onClick={handleSaveAll}
-              disabled={updateMutation.isPending}
-            >
-              {updateMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save All Changes ({unsavedChanges.size})
-            </Button>
-          )}
-          
-          <Button variant="outline" size="icon">
-            <Eye className="h-4 w-4" />
-          </Button>
-          
-          <Button variant="outline" size="icon">
-            <Copy className="h-4 w-4" />
-          </Button>
-          
-          <Button variant="outline" size="icon">
-            <Archive className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Progress Summary */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Completion Status</CardTitle>
-          <CardDescription>
-            Complete all required sections to publish your service
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <span>
-                {Object.values(sectionStatus).filter(s => s === "complete").length} Complete
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <span>
-                {Object.values(sectionStatus).filter(s => s === "incomplete").length} Incomplete
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Circle className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {Object.values(sectionStatus).filter(s => s === "optional").length} Optional
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Accordion Sections */}
-      <Accordion 
-        type="multiple" 
-        value={openSections}
-        onValueChange={setOpenSections}
-        className="space-y-4"
-      >
-        {visibleSections.map((section) => {
-          const SectionComponent = section.component
-          const status = sectionStatus[section.id] || "optional"
-          const hasChanges = unsavedChanges.has(section.id)
-
-          return (
-            <AccordionItem 
-              key={section.id} 
-              value={section.id}
-              className="border rounded-lg"
-            >
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center justify-between w-full pr-4">
-                  <div className="flex items-center gap-3">
-                    {getSectionIcon(status)}
-                    <div className="text-left">
-                      <div className="font-medium flex items-center gap-2">
-                        {section.title}
-                        {hasChanges && (
-                          <Badge variant="outline" className="text-xs">
-                            Unsaved
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {section.description}
-                      </div>
-                    </div>
+    <TooltipProvider>
+      <div className="relative">
+        {/* Sticky Progress Header */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <div className="container max-w-7xl py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.back()}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                <div className="h-8 w-px bg-border" />
+                <div>
+                  <h2 className="font-semibold">{service.name}</h2>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>{Math.round(progressPercentage)}% Complete</span>
+                    <span>{completedSections} of {totalSections} required sections</span>
                   </div>
                 </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pt-6">
-                <SectionComponent
-                  service={service}
-                  data={sectionData[section.id] || {}}
-                  onChange={(data) => handleSectionChange(section.id, data)}
-                  onSave={() => handleSaveSection(section.id)}
-                  hasChanges={hasChanges}
-                  isSaving={updateMutation.isPending}
-                />
-              </AccordionContent>
-            </AccordionItem>
-          )
-        })}
-      </Accordion>
-    </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {unsavedChanges.size > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={handleSaveAll}
+                    disabled={updateMutation.isPending}
+                  >
+                    {updateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save All ({unsavedChanges.size})
+                  </Button>
+                )}
+                
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAutoCollapseEnabled(!autoCollapseEnabled)}
+                        className={cn(autoCollapseEnabled && "text-primary")}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{autoCollapseEnabled ? "Auto-collapse enabled" : "Auto-collapse disabled"}</p>
+                      <p className="text-xs text-muted-foreground">Automatically move to next section when complete</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowHelp(!showHelp)}
+                        className={cn(showHelp && "text-primary")}
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Toggle help tooltips</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
+            <Progress value={progressPercentage} className="h-1 mt-2" />
+          </div>
+        </div>
+        
+        <div className="container max-w-7xl py-6 space-y-6">
+          {/* Main Header */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight">{service.name}</h1>
+              <div className="flex items-center gap-2">
+                <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
+                  {service.status}
+                </Badge>
+                <Badge variant="outline">
+                  {service.service_type_display || service.service_type_code}
+                </Badge>
+                {service.is_featured && (
+                  <Badge variant="default" className="bg-amber-100 text-amber-800">
+                    Featured
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon">
+                <Eye className="h-4 w-4" />
+              </Button>
+              
+              <Button variant="outline" size="icon">
+                <Copy className="h-4 w-4" />
+              </Button>
+              
+              <Button variant="outline" size="icon">
+                <Archive className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Help Card */}
+          {showHelp && (
+            <Card className="bg-muted/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  Quick Tips
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <kbd className="px-2 py-1 text-xs bg-background rounded border">Ctrl+↑/↓</kbd>
+                  <span>Navigate between sections</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <kbd className="px-2 py-1 text-xs bg-background rounded border">Ctrl+S</kbd>
+                  <span>Save current section</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
+                  <span>Complete all required sections to publish your service</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Progress Summary */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Section Overview</CardTitle>
+              <CardDescription>
+                Your service is {Math.round(progressPercentage)}% ready to publish
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Progress value={progressPercentage} className="h-2" />
+                <div className="flex gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>
+                      {Object.values(sectionStatus).filter(s => s === "complete").length} Complete
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <span>
+                      {Object.values(sectionStatus).filter(s => s === "incomplete").length} Incomplete
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {Object.values(sectionStatus).filter(s => s === "optional").length} Optional
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Accordion Sections */}
+          <Accordion 
+            type="multiple" 
+            value={openSections}
+            onValueChange={setOpenSections}
+            className="space-y-4"
+          >
+            {visibleSections.map((section, index) => {
+              const SectionComponent = section.component
+              const status = sectionStatus[section.id] || "optional"
+              const hasChanges = unsavedChanges.has(section.id)
+
+              return (
+                <AccordionItem 
+                  key={section.id} 
+                  value={section.id}
+                  className={cn(
+                    "border rounded-lg transition-colors",
+                    status === "complete" && "border-green-200 bg-green-50/50",
+                    status === "incomplete" && section.required && "border-amber-200"
+                  )}
+                >
+                  <AccordionTrigger className="px-6 hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <div className="flex items-center gap-3">
+                        {getSectionIcon(status)}
+                        <div className="text-left">
+                          <div className="font-medium flex items-center gap-2">
+                            {section.title}
+                            {section.required && (
+                              <Badge variant="outline" className="text-xs">
+                                Required
+                              </Badge>
+                            )}
+                            {hasChanges && (
+                              <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                                Unsaved
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {section.description}
+                          </div>
+                        </div>
+                      </div>
+                      {showHelp && index === 0 && openSections.length === 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-xs text-muted-foreground ml-4">
+                              Click to expand
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Start here to build your service</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pt-6">
+                    <SectionComponent
+                      service={service}
+                      data={sectionData[section.id] || {}}
+                      onChange={(data) => handleSectionChange(section.id, data)}
+                      onSave={() => handleSaveSection(section.id)}
+                      hasChanges={hasChanges}
+                      isSaving={updateMutation.isPending}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              )
+            })}
+          </Accordion>
+        </div>
+      </div>
+    </TooltipProvider>
   )
 }

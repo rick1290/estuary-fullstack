@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { ServiceEditAccordion } from "@/components/dashboard/practitioner/service-edit/service-edit-accordion"
+import { ServiceEditSplitView } from "@/components/dashboard/practitioner/service-edit/service-edit-split-view"
 
 export const metadata: Metadata = {
   title: "Edit Service | Practitioner Portal",
@@ -7,9 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function EditServicePage({ params }: { params: { id: string } }) {
-  return (
-    <div className="container mx-auto py-6 px-4 md:px-6 max-w-7xl">
-      <ServiceEditAccordion serviceId={params.id} />
-    </div>
-  )
+  return <ServiceEditSplitView serviceId={params.id} />
 }

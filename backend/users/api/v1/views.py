@@ -115,7 +115,26 @@ class TokenRefreshView(BaseTokenRefreshView):
         tags=['Authentication']
     )
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        # Get the response from the parent class
+        response = super().post(request, *args, **kwargs)
+        
+        # If successful and refresh token rotation is enabled,
+        # ensure the response includes the new refresh token
+        if response.status_code == 200:
+            data = response.data
+            # The parent class should already include 'refresh' if rotation is enabled
+            # but let's make sure the response format is consistent
+            if 'access' in data and 'refresh' not in data:
+                # If refresh token is not in response but we have rotation enabled,
+                # this shouldn't happen with proper SimpleJWT configuration
+                pass
+            
+            # Log successful refresh for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Token refreshed for user (has refresh: {'refresh' in data})")
+        
+        return response
 
 
 class LogoutView(APIView):

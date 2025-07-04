@@ -1,19 +1,11 @@
 import type { Metadata } from "next"
-import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
-import ClientsList from "@/components/dashboard/practitioner/clients/clients-list"
+import ClientsClient from "./clients-client"
 
 export const metadata: Metadata = {
-  title: "Clients | Practitioner Portal",
-  description: "Manage your client relationships and information",
+  title: "Clients | Practitioner Dashboard",
+  description: "Manage your client relationships and information.",
 }
 
-export default function PractitionerClientsPage() {
-  return (
-    <PractitionerDashboardPageLayout 
-      title="Clients" 
-      description="Manage your client relationships and information"
-    >
-      <ClientsList />
-    </PractitionerDashboardPageLayout>
-  )
+export default function ClientsPage() {
+  return <ClientsClient />
 }

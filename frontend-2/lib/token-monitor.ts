@@ -49,6 +49,10 @@ class TokenMonitor {
       
       if (session.error === "RefreshAccessTokenError") {
         console.error('Token refresh error detected, user needs to re-authenticate')
+        // Emit an event that can be handled by the app
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:refresh-failed'))
+        }
         return
       }
       
@@ -56,13 +60,20 @@ class TokenMonitor {
         const now = Date.now()
         const expiresIn = session.accessTokenExpires - now
         const fiveMinutes = 5 * 60 * 1000
+        const oneMinute = 60 * 1000
         
         if (expiresIn <= 0) {
           console.log('Token has expired, triggering refresh...')
-          await getSession({ req: { headers: {} } }) // Force refresh
-        } else if (expiresIn <= fiveMinutes) {
+          // Only force refresh if it's been expired for less than a minute
+          // to avoid infinite refresh loops
+          if (expiresIn > -oneMinute) {
+            await getSession() // Let NextAuth handle the refresh
+          }
+        } else if (expiresIn <= fiveMinutes && expiresIn > oneMinute) {
+          // Only refresh if we're between 1-5 minutes from expiry
+          // This prevents too frequent refreshes
           console.log(`Token expires in ${Math.round(expiresIn / 1000)} seconds, refreshing proactively...`)
-          await getSession({ req: { headers: {} } }) // Force refresh
+          await getSession() // Let NextAuth handle the refresh
         }
       }
     } catch (error) {

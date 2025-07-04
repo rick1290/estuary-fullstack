@@ -1,8 +1,0 @@
-[2025-06-21T18:15:45.814Z] Error: Request failed with status 200: 
-Stack:
-Error: Request failed with status 200: 
-    at zs (/app/node_modules/.pnpm/@hey-api+openapi-ts@0.72.2_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:38:121995)
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async Promise.all (index 0)
-    at async Iw (/app/node_modules/.pnpm/@hey-api+openapi-ts@0.72.2_typescript@5.8.3/node_modules/@hey-api/openapi-ts/dist/index.cjs:1338:4562)
-    at async start (/app/node_modules/.pnpm/@hey-api+openapi-ts@0.72.2_typescript@5.8.3/node_modules/@hey-api/openapi-ts/bin/index.cjs:131:21)
