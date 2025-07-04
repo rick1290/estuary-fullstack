@@ -24,9 +24,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import AddResourceDialog from "@/components/dashboard/practitioner/schedule/add-resource-dialog"
-import ResourceCard from "@/components/dashboard/practitioner/schedule/resource-card"
-import ResourceViewerDialog from "@/components/dashboard/practitioner/schedule/resource-viewer-dialog"
+import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
+import ResourceCard from "@/components/dashboard/practitioner/calendar/resource-card"
+import ResourceViewerDialog from "@/components/dashboard/practitioner/calendar/resource-viewer-dialog"
 
 // Mock data for bookings
 const mockBookings = {
@@ -469,8 +469,8 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">The booking you're looking for doesn't exist or has been removed.</p>
-            <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/schedule")}>
-              Return to Schedule
+            <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/calendar")}>
+              Return to Calendar
             </Button>
           </CardContent>
         </Card>

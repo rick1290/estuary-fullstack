@@ -198,10 +198,10 @@ const getEventsForTimeSlot = (day: Date, timeSlot: string) => {
 }
 
 interface PractitionerCalendarViewProps {
-  view: "week" | "month"
+  view: "day" | "week" | "month"
 }
 
-export default function PractitionerCalendarView({ view = "week" }: Partial<PractitionerCalendarViewProps>) {
+export default function PractitionerCalendarView({ view = "week" }: PractitionerCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const router = useRouter()
   const { user } = useAuth()
@@ -212,7 +212,9 @@ export default function PractitionerCalendarView({ view = "week" }: Partial<Prac
 
   // Calculate date range for API query
   const dateRange = useMemo(() => {
-    if (view === "week") {
+    if (view === "day") {
+      return { start: currentDate, end: currentDate }
+    } else if (view === "week") {
       const start = weekDays[0]
       const end = weekDays[weekDays.length - 1]
       return { start, end }
@@ -291,7 +293,9 @@ export default function PractitionerCalendarView({ view = "week" }: Partial<Prac
 
   const handlePrevious = () => {
     const newDate = new Date(currentDate)
-    if (view === "week") {
+    if (view === "day") {
+      newDate.setDate(newDate.getDate() - 1)
+    } else if (view === "week") {
       newDate.setDate(newDate.getDate() - 7)
     } else {
       newDate.setMonth(newDate.getMonth() - 1)
@@ -301,7 +305,9 @@ export default function PractitionerCalendarView({ view = "week" }: Partial<Prac
 
   const handleNext = () => {
     const newDate = new Date(currentDate)
-    if (view === "week") {
+    if (view === "day") {
+      newDate.setDate(newDate.getDate() + 1)
+    } else if (view === "week") {
       newDate.setDate(newDate.getDate() + 7)
     } else {
       newDate.setMonth(newDate.getMonth() + 1)
@@ -353,7 +359,8 @@ export default function PractitionerCalendarView({ view = "week" }: Partial<Prac
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">
-          {view === "week" ? formatWeekRange(weekDays) : formatMonthYear(currentDate)}
+          {view === "day" ? currentDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) :
+           view === "week" ? formatWeekRange(weekDays) : formatMonthYear(currentDate)}
         </h2>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={handlePrevious}>
@@ -369,7 +376,81 @@ export default function PractitionerCalendarView({ view = "week" }: Partial<Prac
         </div>
       </div>
 
-      {view === "week" ? (
+      {view === "day" ? (
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-[100px_1fr] min-w-[600px]">
+            {/* Header row */}
+            <div className="p-2 border-b border-r border-border"></div>
+            <div className={`p-2 text-center border-b border-r border-border ${
+              isToday(currentDate) ? "bg-primary/10" : "bg-background"
+            }`}>
+              <p className="text-sm font-medium">{currentDate.toLocaleDateString("en-US", { weekday: "long" })}</p>
+              <p className="text-lg font-semibold">{currentDate.getDate()}</p>
+            </div>
+
+            {/* Time slots */}
+            {timeSlots.map((timeSlot) => {
+              const events = getEventsForTimeSlot(currentDate, timeSlot)
+
+              return (
+                <React.Fragment key={timeSlot}>
+                  <div className="p-2 border-b border-r border-border flex items-center justify-center">
+                    <span className="text-xs">{timeSlot}</span>
+                  </div>
+                  
+                  <div className="p-2 border-b border-r border-border min-h-[80px] relative">
+                    {events.map((event) => (
+                      <Card
+                        key={event.id}
+                        className={`p-2 mb-1 cursor-pointer hover:shadow-md transition-shadow ${
+                          event.type === "session"
+                            ? "bg-primary/10"
+                            : event.type === "workshop"
+                              ? "bg-secondary/10"
+                              : "bg-green-100"
+                        } flex flex-col gap-0.5`}
+                        onClick={() => handleEventClick(event.bookingId)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium truncate">{event.title}</p>
+                          {event.location === "Virtual" && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Video className="h-4 w-4 text-primary" />
+                                </TooltipTrigger>
+                                <TooltipContent>Virtual Session</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          {event.type === "session" ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                          <div className="flex items-center gap-1">
+                            {event.clientAvatar && (
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={event.clientAvatar || "/placeholder.svg"} alt={event.clientName} />
+                                <AvatarFallback className="text-[10px]">{event.clientName.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                            )}
+                            <span className="text-xs truncate">{event.clientName}</span>
+                          </div>
+                        </div>
+
+                        <span className="text-xs">
+                          {event.start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} -
+                          {event.end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        </span>
+                      </Card>
+                    ))}
+                  </div>
+                </React.Fragment>
+              )
+            })}
+          </div>
+        </div>
+      ) : view === "week" ? (
         <div className="overflow-x-auto">
           <div className="grid grid-cols-[100px_repeat(7,_1fr)] min-w-[900px]">
             {/* Header row with days */}

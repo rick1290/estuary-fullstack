@@ -112,7 +112,7 @@ const typeConfig = {
   course: { color: "success", icon: Users },
 }
 
-export default function PractitionerScheduleList() {
+export default function PractitionerCalendarList() {
   const router = useRouter()
   const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState<string>("upcoming")
