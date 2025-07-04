@@ -481,68 +481,93 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   // Sidebar content
   const SidebarContent = () => (
     <div className="space-y-1">
-      {visibleSections.map((section) => {
+      {visibleSections.map((section, index) => {
         const status = sectionStatus[section.id] || "optional"
         const hasChanges = unsavedChanges.has(section.id)
         const isActive = activeSection === section.id
 
         return (
-          <button
-            key={section.id}
-            onClick={() => scrollToSection(section.id)}
-            className={cn(
-              "w-full text-left px-4 py-3 rounded-lg transition-all duration-200 group relative",
-              isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-muted/50"
+          <div key={section.id} className="relative">
+            {/* Connection line between sections */}
+            {index < visibleSections.length - 1 && (
+              <div className="absolute left-7 top-12 bottom-0 w-px bg-border/50" />
             )}
-          >
-            <div className="flex items-start gap-3">
-              <div className={cn(
-                "transition-all duration-200",
-                isActive && "scale-110"
-              )}>
-                {getSectionIcon(status)}
-              </div>
-              <div className="flex-1 min-w-0">
+            
+            <button
+              onClick={() => scrollToSection(section.id)}
+              className={cn(
+                "w-full text-left px-3 py-3 rounded-xl transition-all duration-200 group relative",
+                isActive 
+                  ? "bg-primary/10 shadow-sm scale-[1.02]" 
+                  : "hover:bg-muted/80 hover:shadow-sm"
+              )}
+            >
+              <div className="flex items-start gap-3">
                 <div className={cn(
-                  "font-medium text-sm flex items-center gap-2 transition-all duration-200",
-                  isActive ? "text-primary font-semibold" : "text-foreground"
+                  "mt-0.5 p-1.5 rounded-lg transition-all duration-200",
+                  isActive 
+                    ? "bg-primary text-primary-foreground shadow-sm" 
+                    : status === "complete" 
+                      ? "bg-green-100 text-green-700"
+                      : status === "incomplete"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-muted text-muted-foreground"
                 )}>
-                  {section.title}
-                  {section.required && !isActive && (
-                    <Badge variant="outline" className="text-xs scale-90 opacity-60">
-                      Required
-                    </Badge>
+                  {status === "complete" ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : status === "incomplete" ? (
+                    <AlertCircle className="h-4 w-4" />
+                  ) : (
+                    <Circle className="h-4 w-4" />
                   )}
-                  {hasChanges && (
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "text-xs scale-90",
-                        isActive ? "text-amber-700 border-amber-400 bg-amber-50" : "text-amber-600 border-amber-300"
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <h4 className={cn(
+                        "font-medium text-sm leading-tight transition-all duration-200",
+                        isActive ? "text-primary" : "text-foreground"
+                      )}>
+                        {section.title}
+                      </h4>
+                      <p className={cn(
+                        "text-xs text-muted-foreground mt-0.5 transition-all duration-200",
+                        isActive ? "opacity-100" : "opacity-60"
+                      )}>
+                        {section.description}
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1 items-end">
+                      {section.required && (
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-[10px] px-1.5 py-0",
+                            isActive && "border-primary/50"
+                          )}
+                        >
+                          Required
+                        </Badge>
                       )}
-                    >
-                      Unsaved
-                    </Badge>
-                  )}
-                </div>
-                <div className={cn(
-                  "text-xs text-muted-foreground mt-0.5 transition-all duration-200",
-                  isActive ? "opacity-100 max-h-10" : "opacity-0 max-h-0 overflow-hidden"
-                )}>
-                  {section.description}
+                      {hasChanges && (
+                        <div className="flex items-center gap-1">
+                          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                          <span className="text-[10px] text-amber-600 font-medium">Modified</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* Active indicator bar */}
-            <div className={cn(
-              "absolute left-0 top-2 bottom-2 w-1 bg-primary rounded-r transition-all duration-200",
-              isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
-            )} />
-            {/* Active background glow */}
-            {isActive && (
-              <div className="absolute inset-0 bg-primary/5 rounded-lg -z-10" />
-            )}
-          </button>
+              
+              {/* Active indicator */}
+              {isActive && (
+                <div className="absolute inset-0 ring-2 ring-primary/20 rounded-xl" />
+              )}
+            </button>
+          </div>
         )
       })}
     </div>
@@ -569,71 +594,101 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         </div>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-80 border-r bg-background">
-          <div className="sticky top-0 h-screen overflow-auto">
-            {/* Sidebar Header */}
-            <div className="p-6 border-b bg-background">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="mb-4 -ml-2"
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              
-              <div className="space-y-1 mb-4">
-                <h2 className="font-semibold">Edit Service</h2>
-                <p className="text-sm text-muted-foreground truncate">{service.name}</p>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Progress</span>
-                    <span className="text-muted-foreground">{Math.round(progressPercentage)}%</span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-2" />
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{completedSections} of {totalSections} required sections</span>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3 text-green-600" />
-                      <span>{Object.values(sectionStatus).filter(s => s === "complete").length}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3 text-amber-600" />
-                      <span>{Object.values(sectionStatus).filter(s => s === "incomplete").length}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {unsavedChanges.size > 0 && (
+        <div className="hidden lg:flex w-80 bg-muted/30 border-r">
+          <div className="flex flex-col w-full h-screen">
+            {/* Sidebar Header - Fixed */}
+            <div className="flex-shrink-0 bg-background border-b">
+              <div className="p-6 space-y-4">
                 <Button
+                  variant="ghost"
                   size="sm"
-                  className="w-full mt-4"
-                  onClick={handleSaveAll}
-                  disabled={updateMutation.isPending}
+                  onClick={() => router.back()}
+                  className="-ml-2 hover:bg-muted"
                 >
-                  {updateMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Save All Changes ({unsavedChanges.size})
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Back to Services
                 </Button>
-              )}
+                
+                <div>
+                  <h2 className="font-semibold text-lg">Service Configuration</h2>
+                  <p className="text-sm text-muted-foreground truncate mt-1">{service.name}</p>
+                </div>
+                
+                {/* Progress Card */}
+                <div className="bg-primary/5 rounded-lg p-4 space-y-3 border border-primary/10">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Overall Progress</span>
+                      <span className="text-2xl font-bold text-primary">{Math.round(progressPercentage)}%</span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-2 bg-primary/10" />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <p className="text-xs font-medium">{Object.values(sectionStatus).filter(s => s === "complete").length}</p>
+                      <p className="text-xs text-muted-foreground">Complete</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center">
+                        <AlertCircle className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <p className="text-xs font-medium">{Object.values(sectionStatus).filter(s => s === "incomplete").length}</p>
+                      <p className="text-xs text-muted-foreground">Required</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center">
+                        <Circle className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <p className="text-xs font-medium">{Object.values(sectionStatus).filter(s => s === "optional").length}</p>
+                      <p className="text-xs text-muted-foreground">Optional</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {unsavedChanges.size > 0 && (
+                  <Button
+                    className="w-full shadow-sm"
+                    onClick={handleSaveAll}
+                    disabled={updateMutation.isPending}
+                  >
+                    {updateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save All Changes ({unsavedChanges.size})
+                  </Button>
+                )}
+              </div>
             </div>
 
-            {/* Sidebar Navigation */}
-            <ScrollArea className="h-[calc(100vh-200px)]">
-              <div className="p-4">
+            {/* Sidebar Navigation - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 mb-3">
+                  Configuration Sections
+                </p>
                 <SidebarContent />
               </div>
-            </ScrollArea>
+            </div>
+            
+            {/* Quick Actions - Fixed at bottom */}
+            <div className="flex-shrink-0 p-4 border-t bg-background">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
