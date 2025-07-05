@@ -55,6 +55,22 @@ services:
       - fromGroup: estuary-django-shared
       - key: DEBUG
         value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estuary-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: FRONTEND_URL
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: COURIER_AUTH_TOKEN
+        sync: false
       - key: ALLOWED_HOSTS
         fromService:
           name: estuary-backend
@@ -112,7 +128,27 @@ services:
     envVars:
       - fromGroup: estuary-shared
       - fromGroup: estuary-django-shared
-      - fromGroup: estuary-celery-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estuary-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: FRONTEND_URL
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: COURIER_AUTH_TOKEN
+        sync: false
     buildFilter:
       paths:
         - backend/**
@@ -130,7 +166,27 @@ services:
     envVars:
       - fromGroup: estuary-shared
       - fromGroup: estuary-django-shared
-      - fromGroup: estuary-celery-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estuary-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: FRONTEND_URL
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: COURIER_AUTH_TOKEN
+        sync: false
     buildFilter:
       paths:
         - backend/**
@@ -172,31 +228,6 @@ envVarGroups:
       - key: DJANGO_SETTINGS_MODULE
         value: estuary.settings
       - key: DJANGO_SECRET_KEY
-        sync: false  # Set this in Render dashboard once, shared across all services
-      - key: DATABASE_URL
-        fromDatabase:
-          name: estuary-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: estuary-redis
-          type: keyvalue
-          property: connectionString
-      - key: FRONTEND_URL
-        fromService:
-          name: estuary-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-          
-  # Celery shared configuration
-  - name: estuary-celery-shared
-    envVars:
-      - key: CELERY_BROKER_URL
-        fromService:
-          name: estuary-redis
-          type: keyvalue
-          property: connectionString
+        generateValue: true  # Generate once, shared across all services
       - key: CELERY_RESULT_BACKEND
         value: django-db
-      - key: COURIER_AUTH_TOKEN
-        sync: false
