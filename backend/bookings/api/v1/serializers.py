@@ -254,7 +254,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Cannot book in the past")
         
         # Validate duration matches service duration (for individual sessions)
-        if service.service_type == 'session':
+        if service.service_type_code == 'session':
             expected_duration = service.duration_minutes
             actual_duration = int((data['end_time'] - data['start_time']).total_seconds() / 60)
             if actual_duration != expected_duration:

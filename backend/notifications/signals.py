@@ -122,6 +122,12 @@ def handle_booking_notification(sender, instance, created, **kwargs):
                 # client_service.send_booking_cancelled(instance)
                 practitioner_service.send_booking_cancelled(instance, cancelled_by, reason)
                 
+            elif instance.status == 'completed' and previous_status in ['confirmed', 'in_progress']:
+                # Send review request email when booking is completed
+                client_service = get_client_notification_service()
+                client_service.send_booking_completed_review_request(instance)
+                logger.info(f"Sent review request for completed booking {instance.id}")
+                
             elif instance.status == 'rescheduled':
                 # Individual rescheduling notifications handled here
                 # Session-wide reschedules handled by periodic task

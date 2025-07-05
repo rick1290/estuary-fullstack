@@ -112,7 +112,7 @@ class CommissionCalculator:
         practitioner = booking.practitioner
         
         # Get the booking amount
-        amount = booking.credit_value or Decimal('0')
+        amount = Decimal(booking.final_amount_cents) / 100 if booking.final_amount_cents else Decimal('0')
         
         # Calculate commission rate
         commission_rate = self.get_commission_rate(practitioner, service_type)

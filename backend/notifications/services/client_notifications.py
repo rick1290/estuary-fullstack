@@ -33,6 +33,7 @@ class ClientNotificationService(BaseNotificationService):
         'credit_purchase': 'COURIER_CLIENT_CREDIT_PURCHASE_TEMPLATE',
         'review_request': 'COURIER_CLIENT_REVIEW_REQUEST_TEMPLATE',
         'practitioner_message': 'COURIER_CLIENT_PRACTITIONER_MESSAGE_TEMPLATE',
+        'booking_completed_review_request': 'COURIER_CLIENT_BOOKING_COMPLETED_REVIEW_REQUEST_TEMPLATE',
     }
     
     def get_template_id(self, template_key: str) -> str:
@@ -418,3 +419,59 @@ class ClientNotificationService(BaseNotificationService):
             return f"{hours} hour{'s' if hours > 1 else ''}"
         else:
             return f"{minutes} minute{'s' if minutes > 1 else ''}"
+    
+    def send_booking_completed_review_request(self, booking):
+        """
+        Send review request email after booking is completed.
+        """
+        user = booking.user
+        if not self.should_send_notification(user, 'review', 'email'):
+            return
+        
+        template_id = self.get_template_id('booking_completed_review_request')
+        if not template_id:
+            logger.warning("No booking completed review request template configured")
+            return
+        
+        service = booking.service
+        practitioner = service.primary_practitioner
+        
+        data = {
+            'booking_id': str(booking.id),
+            'service_name': service.name,
+            'service_type': service.service_type,
+            'practitioner_name': practitioner.user.get_full_name(),
+            'practitioner_slug': practitioner.slug,
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
+            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'review_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/review",
+            'practitioner_profile_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}",
+            'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/user"
+        }
+        
+        # Add session-specific details if applicable
+        if booking.service_session:
+            data['session_name'] = booking.service_session.title or f"Session {booking.service_session.sequence_number}" if booking.service_session.sequence_number else service.name
+            if booking.service_session.sequence_number:
+                data['session_number'] = booking.service_session.sequence_number
+        
+        title = f"How was your experience with {practitioner.user.get_full_name()}?"
+        message = f"Your {service.name} session has been completed. We'd love to hear about your experience!"
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=title,
+            message=message,
+            notification_type='review',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"booking-review-request-{booking.id}"
+        )

@@ -90,6 +90,15 @@ app.conf.beat_schedule = {
             'expires': 3600.0,
         }
     },
+    
+    # Mark completed bookings
+    'mark-completed-bookings': {
+        'task': 'bookings.tasks.mark_completed_bookings',
+        'schedule': crontab(minute='*/30'),  # Every 30 minutes
+        'options': {
+            'expires': 1800.0,  # Task expires after 30 minutes
+        }
+    },
 }
 
 # Celery Configuration

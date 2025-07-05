@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { bookingsRetrieveOptions, bookingsCancelCreateOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -28,22 +28,33 @@ import {
   XCircle,
   DollarSign,
   FileText,
+  Star,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
+import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
 import { format, parseISO, differenceInHours, differenceInMinutes, isFuture } from "date-fns"
 import Link from "next/link"
 
 export default function BookingDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
 
   // Fetch booking details
   const { data: booking, isLoading, error, refetch } = useQuery({
     ...bookingsRetrieveOptions({ path: { id } }),
   })
+
+  // Check if we should auto-open review dialog from URL params
+  useEffect(() => {
+    if (searchParams.get('review') === 'true' && booking?.status === 'completed') {
+      setReviewDialogOpen(true)
+    }
+  }, [searchParams, booking])
 
   // Cancel booking mutation
   const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
@@ -334,6 +345,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                             variant="secondary"
                             className="flex items-center gap-2"
                             disabled={!modifiable}
+                            onClick={() => router.push(`/dashboard/user/bookings/${booking.id}/reschedule`)}
                           >
                             <CalendarRange className="h-4 w-4" />
                             Reschedule
@@ -392,17 +404,26 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
               </Card>
             )}
 
-            {booking.status === "completed" && !booking.review_id && (
-              <Card className="border-terracotta-100 bg-terracotta-50/30">
+            {booking.status === "completed" && (
+              <Card className="border-amber-100 bg-gradient-to-br from-amber-50 to-terracotta-50/30">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">How was your experience?</h3>
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-600" />
+                        How was your experience?
+                      </h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         Share your feedback to help others
                       </p>
                     </div>
-                    <Button variant="default">Leave Review</Button>
+                    <Button 
+                      variant="default" 
+                      onClick={() => setReviewDialogOpen(true)}
+                      className="bg-amber-600 hover:bg-amber-700"
+                    >
+                      Leave Review
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -497,6 +518,22 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         onConfirm={() => cancelBooking()}
         isLoading={isCancelling}
       />
+
+      {/* Review Booking Dialog */}
+      {booking && (
+        <ReviewBookingDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          booking={booking}
+          onSuccess={() => {
+            refetch()
+            // Remove review param from URL
+            const url = new URL(window.location.href)
+            url.searchParams.delete('review')
+            window.history.replaceState({}, '', url)
+          }}
+        />
+      )}
     </UserDashboardLayout>
   )
 }
