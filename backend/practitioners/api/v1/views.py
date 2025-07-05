@@ -658,12 +658,19 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         if end_date:
             bookings = bookings.filter(completed_at__lte=end_date)
         
-        # Calculate totals
-        totals = bookings.aggregate(
-            gross_amount=Sum('final_amount_cents'),
+        # Get earnings transactions instead of bookings for accurate commission data
+        from payments.models import EarningsTransaction
+        earnings_transactions = EarningsTransaction.objects.filter(
+            practitioner=practitioner,
+            booking__in=bookings
+        )
+        
+        # Calculate totals from earnings transactions
+        totals = earnings_transactions.aggregate(
+            gross_amount=Sum('gross_amount_cents'),
             commission_amount=Sum('commission_amount_cents'),
-            net_amount=Sum(F('final_amount_cents') - F('commission_amount_cents')),
-            total_bookings=Count('id')
+            net_amount=Sum('net_amount_cents'),
+            total_bookings=Count('booking_id', distinct=True)
         )
         
         # Get earnings by service type
@@ -673,7 +680,7 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         ).order_by('-amount')
         
         # Get time series data based on grouping
-        from django.db.models import Trunc
+        from django.db.models.functions import Trunc
         if group_by == 'day':
             trunc_fn = 'day'
         elif group_by == 'week':
@@ -683,13 +690,13 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         else:
             trunc_fn = 'year'
         
-        time_series = bookings.annotate(
-            period=Trunc('completed_at', trunc_fn)
+        time_series = earnings_transactions.annotate(
+            period=Trunc('created_at', trunc_fn)
         ).values('period').annotate(
-            gross_amount=Sum('final_amount_cents'),
+            gross_amount=Sum('gross_amount_cents'),
             commission_amount=Sum('commission_amount_cents'),
-            net_amount=Sum(F('final_amount_cents') - F('commission_amount_cents')),
-            booking_count=Count('id')
+            net_amount=Sum('net_amount_cents'),
+            booking_count=Count('booking_id', distinct=True)
         ).order_by('period')
         
         # Get available balance from PractitionerEarnings model
@@ -786,8 +793,24 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(bookings)
         
         # Format transactions
+        from payments.models import EarningsTransaction
         transactions = []
         for booking in (page if page is not None else bookings):
+            # Get earnings transaction for commission data
+            earnings_tx = EarningsTransaction.objects.filter(
+                booking=booking,
+                practitioner=practitioner
+            ).first()
+            
+            # Calculate commission (default to 15% if no earnings transaction)
+            if earnings_tx:
+                commission_cents = earnings_tx.commission_amount_cents
+                net_amount_cents = earnings_tx.net_amount_cents
+            else:
+                # Fallback calculation
+                commission_cents = int(booking.final_amount_cents * 0.15)
+                net_amount_cents = booking.final_amount_cents - commission_cents
+            
             transaction = {
                 'id': f"TXN-{booking.id}",
                 'booking_id': booking.id,
@@ -801,15 +824,15 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                 },
                 'service': {
                     'id': booking.service.id,
-                    'title': booking.service.title,
-                    'type': booking.service.service_type
+                    'title': booking.service.name,  # Service model uses 'name' not 'title'
+                    'type': booking.service.service_type.code  # Use 'code' field for the type identifier
                 },
                 'amount': booking.final_amount_cents,
                 'amount_display': f"${booking.final_amount_cents / 100:,.2f}",
-                'commission': booking.commission_amount_cents,
-                'commission_display': f"${booking.commission_amount_cents / 100:,.2f}",
-                'net_amount': booking.final_amount_cents - booking.commission_amount_cents,
-                'net_amount_display': f"${(booking.final_amount_cents - booking.commission_amount_cents) / 100:,.2f}",
+                'commission': commission_cents,
+                'commission_display': f"${commission_cents / 100:,.2f}",
+                'net_amount': net_amount_cents,
+                'net_amount_display': f"${net_amount_cents / 100:,.2f}",
             }
             transactions.append(transaction)
         

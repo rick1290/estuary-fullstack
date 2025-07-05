@@ -172,7 +172,7 @@ interface ServiceListingsProps {
 
 export default function ServiceListings({ query, serviceType, location, categories = [] }: ServiceListingsProps) {
   const [page, setPage] = useState(1)
-  const limit = 75  // Expanded from 12 to show more services
+  const limit = 12  // Show 12 services per page
 
   // Build query parameters for API
   const queryParams = useMemo(() => {
@@ -349,16 +349,27 @@ export default function ServiceListings({ query, serviceType, location, categori
         ))}
       </div>
 
-      {/* Load more button */}
-      {hasMore && (
-        <div className="mt-12 text-center">
+      {/* Pagination controls */}
+      {(hasMore || page > 1) && (
+        <div className="mt-12 flex items-center justify-center gap-4">
+          <Button 
+            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+            variant="outline"
+            size="default"
+            disabled={page === 1 || isLoading}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {page}
+          </span>
           <Button 
             onClick={() => setPage(prev => prev + 1)}
             variant="outline"
-            size="lg"
-            disabled={isLoading}
+            size="default"
+            disabled={!hasMore || isLoading}
           >
-            {isLoading ? 'Loading...' : 'Load More Services'}
+            Next
           </Button>
         </div>
       )}

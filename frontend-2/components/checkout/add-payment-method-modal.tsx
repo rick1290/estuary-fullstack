@@ -210,7 +210,10 @@ export default function AddPaymentMethodModal({
         
         <Elements stripe={stripePromise}>
           <PaymentMethodForm
-            onSuccess={() => onOpenChange(false)}
+            onSuccess={() => {
+              // Small delay to prevent form submission race condition
+              setTimeout(() => onOpenChange(false), 100)
+            }}
             onCancel={() => onOpenChange(false)}
           />
         </Elements>

@@ -163,6 +163,7 @@ export default function PaymentMethodSelector({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Payment Methods</CardTitle>
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={onAddNewCard}
@@ -177,7 +178,7 @@ export default function PaymentMethodSelector({
           <div className="text-center py-8">
             <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">No payment methods saved</p>
-            <Button onClick={onAddNewCard} className="gap-2">
+            <Button type="button" onClick={onAddNewCard} className="gap-2">
               <Plus className="h-4 w-4" />
               Add Payment Method
             </Button>

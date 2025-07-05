@@ -2,133 +2,30 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { CalendarIcon, Download } from "lucide-react"
+import { CalendarIcon, Download, ChevronLeft, ChevronRight } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { payoutsEarningsTransactionsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-// Mock data for transactions
-const mockTransactions = [
-  {
-    id: "tx-1",
-    date: new Date(2023, 4, 15),
-    type: "Payment",
-    transactionType: "Credit Card",
-    serviceType: "Session",
-    serviceName: "Mindfulness Meditation",
-    client: "Emma Thompson",
-    amount: 120.0,
-  },
-  {
-    id: "tx-2",
-    date: new Date(2023, 4, 16),
-    type: "Payment",
-    transactionType: "Bank Transfer",
-    serviceType: "Course",
-    serviceName: "Stress Management Course",
-    client: "John Davis",
-    amount: 350.0,
-  },
-  {
-    id: "tx-3",
-    date: new Date(2023, 4, 17),
-    type: "Refund",
-    transactionType: "Credit Card",
-    serviceType: "Workshop",
-    serviceName: "Yoga for Beginners",
-    client: "Sarah Miller",
-    amount: -75.0,
-  },
-  {
-    id: "tx-4",
-    date: new Date(2023, 4, 18),
-    type: "Payment",
-    transactionType: "PayPal",
-    serviceType: "Session",
-    serviceName: "Career Coaching",
-    client: "Michael Brown",
-    amount: 150.0,
-  },
-  {
-    id: "tx-5",
-    date: new Date(2023, 4, 19),
-    type: "Payment",
-    transactionType: "Credit Card",
-    serviceType: "Session",
-    serviceName: "Mindfulness Meditation",
-    client: "Jessica Wilson",
-    amount: 120.0,
-  },
-  {
-    id: "tx-6",
-    date: new Date(2023, 4, 20),
-    type: "Platform Fee",
-    transactionType: "Automatic",
-    serviceType: "Fee",
-    serviceName: "Monthly Platform Fee",
-    client: "Estuary",
-    amount: -45.0,
-  },
-  {
-    id: "tx-7",
-    date: new Date(2023, 4, 21),
-    type: "Payout",
-    transactionType: "Bank Transfer",
-    serviceType: "Payout",
-    serviceName: "Weekly Payout",
-    client: "Estuary",
-    amount: -620.0,
-  },
-  {
-    id: "tx-8",
-    date: new Date(2023, 4, 22),
-    type: "Payment",
-    transactionType: "Credit Card",
-    serviceType: "Workshop",
-    serviceName: "Meditation Workshop",
-    client: "David Clark",
-    amount: 85.0,
-  },
-  {
-    id: "tx-9",
-    date: new Date(2023, 4, 23),
-    type: "Payment",
-    transactionType: "Credit Card",
-    serviceType: "Course",
-    serviceName: "Mindful Leadership",
-    client: "Robert Johnson",
-    amount: 400.0,
-  },
-  {
-    id: "tx-10",
-    date: new Date(2023, 4, 24),
-    type: "Refund",
-    transactionType: "PayPal",
-    serviceType: "Session",
-    serviceName: "Life Coaching",
-    client: "Jennifer Adams",
-    amount: -150.0,
-  },
-]
-
-// Generate transactions for the current month
-const generateCurrentTransactions = () => {
-  const currentDate = new Date()
-  const currentMonth = currentDate.getMonth()
-  const currentYear = currentDate.getFullYear()
-
-  return mockTransactions.map((tx) => ({
-    ...tx,
-    date: new Date(currentYear, currentMonth, Math.floor(Math.random() * 28) + 1),
-  }))
+const statusConfig = {
+  'projected': { label: 'Projected', variant: 'secondary' },
+  'pending': { label: 'Pending', variant: 'warning' },
+  'available': { label: 'Available', variant: 'success' },
+  'paid': { label: 'Paid', variant: 'default' },
+  'reversed': { label: 'Reversed', variant: 'destructive' },
 }
 
 export function PractitionerTransactionsTable() {
-  const [transactions] = useState(generateCurrentTransactions())
+  const [page, setPage] = useState(1)
+  const limit = 20
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined
     to: Date | undefined
@@ -136,55 +33,66 @@ export function PractitionerTransactionsTable() {
     from: undefined,
     to: undefined,
   })
-  const [clientFilter, setClientFilter] = useState<string>("")
-  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("")
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
 
-  // Get unique values for filter dropdowns
-  const clients = Array.from(new Set(transactions.map((tx) => tx.client)))
-  const serviceTypes = Array.from(new Set(transactions.map((tx) => tx.serviceType)))
-  const transactionTypes = Array.from(new Set(transactions.map((tx) => tx.transactionType)))
+  // Build query parameters
+  const queryParams: any = {
+    limit,
+    offset: (page - 1) * limit,
+    ordering: '-created_at'
+  }
 
-  // Filter transactions based on selected filters
-  const filteredTransactions = transactions.filter((tx) => {
-    // Date range filter
-    if (dateRange.from && dateRange.to) {
-      if (tx.date < dateRange.from || tx.date > dateRange.to) {
-        return false
-      }
-    }
+  if (dateRange.from) {
+    queryParams.start_date = format(dateRange.from, 'yyyy-MM-dd')
+  }
+  if (dateRange.to) {
+    queryParams.end_date = format(dateRange.to, 'yyyy-MM-dd')
+  }
+  if (statusFilter && statusFilter !== "all") {
+    queryParams.status = statusFilter
+  }
+  if (serviceTypeFilter && serviceTypeFilter !== "all") {
+    queryParams.service_type = serviceTypeFilter
+  }
 
-    // Client filter
-    if (clientFilter && tx.client !== clientFilter) {
-      return false
-    }
-
-    // Service type filter
-    if (serviceTypeFilter && tx.serviceType !== serviceTypeFilter) {
-      return false
-    }
-
-    // Transaction type filter
-    if (transactionTypeFilter && tx.transactionType !== transactionTypeFilter) {
-      return false
-    }
-
-    return true
+  // Fetch transactions
+  const { data, isLoading, error } = useQuery({
+    ...payoutsEarningsTransactionsRetrieveOptions({ query: queryParams }),
   })
 
-  // Calculate totals
-  const totalIncome = filteredTransactions.filter((tx) => tx.amount > 0).reduce((sum, tx) => sum + tx.amount, 0)
+  const transactions = data?.results || []
+  const totalCount = data?.count || 0
 
-  const totalExpenses = filteredTransactions.filter((tx) => tx.amount < 0).reduce((sum, tx) => sum + tx.amount, 0)
+  // Calculate totals from current page data
+  const totalEarnings = transactions
+    .filter((tx: any) => tx.status !== 'reversed')
+    .reduce((sum: number, tx: any) => sum + (tx.net_amount_cents || 0), 0) / 100
 
-  const netAmount = totalIncome + totalExpenses
+  const totalCommission = transactions
+    .filter((tx: any) => tx.status !== 'reversed')
+    .reduce((sum: number, tx: any) => sum + (tx.commission_amount_cents || 0), 0) / 100
+
+  const totalAvailable = transactions
+    .filter((tx: any) => tx.status === 'available')
+    .reduce((sum: number, tx: any) => sum + (tx.net_amount_cents || 0), 0) / 100
 
   // Reset all filters
   const resetFilters = () => {
     setDateRange({ from: undefined, to: undefined })
-    setClientFilter("")
-    setServiceTypeFilter("")
-    setTransactionTypeFilter("")
+    setStatusFilter("all")
+    setServiceTypeFilter("all")
+    setPage(1)
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Failed to load transactions. Please try again.</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -192,28 +100,38 @@ export function PractitionerTransactionsTable() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">${totalIncome.toFixed(2)}</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold text-emerald-600">${totalEarnings.toFixed(2)}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Commission</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold text-orange-600">${totalCommission.toFixed(2)}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Net Amount</CardTitle>
+            <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={cn("text-2xl font-bold", netAmount >= 0 ? "text-emerald-600" : "text-red-600")}>
-              ${netAmount.toFixed(2)}
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold text-green-600">${totalAvailable.toFixed(2)}</div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -250,18 +168,18 @@ export function PractitionerTransactionsTable() {
             </PopoverContent>
           </Popover>
 
-          {/* Client Filter */}
-          <Select value={clientFilter} onValueChange={setClientFilter}>
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Client" />
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Clients</SelectItem>
-              {clients.map((client) => (
-                <SelectItem key={client} value={client}>
-                  {client}
-                </SelectItem>
-              ))}
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="projected">Projected</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="reversed">Reversed</SelectItem>
             </SelectContent>
           </Select>
 
@@ -271,27 +189,11 @@ export function PractitionerTransactionsTable() {
               <SelectValue placeholder="Service Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Service Types</SelectItem>
-              {serviceTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Transaction Type Filter */}
-          <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Transaction Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Transaction Types</SelectItem>
-              {transactionTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {transactionTypeDisplay[type] || type}
-                </SelectItem>
-              ))}
+              <SelectItem value="all">All Service Types</SelectItem>
+              <SelectItem value="session">Sessions</SelectItem>
+              <SelectItem value="workshop">Workshops</SelectItem>
+              <SelectItem value="course">Courses</SelectItem>
+              <SelectItem value="package">Packages</SelectItem>
             </SelectContent>
           </Select>
 
@@ -311,49 +213,115 @@ export function PractitionerTransactionsTable() {
       {/* Transactions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Transactions</CardTitle>
-          <CardDescription>{filteredTransactions.length} transactions found</CardDescription>
+          <CardTitle>Earnings Transactions</CardTitle>
+          <CardDescription>
+            {isLoading ? "Loading..." : `${totalCount} transactions found`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Transaction Type</TableHead>
+                <TableHead>Booking</TableHead>
                 <TableHead>Service</TableHead>
                 <TableHead>Client</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Gross</TableHead>
+                <TableHead className="text-right">Commission</TableHead>
+                <TableHead className="text-right">Net</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((tx) => (
+              {isLoading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : transactions.length > 0 ? (
+                transactions.map((tx: any) => (
                   <TableRow key={tx.id}>
-                    <TableCell>{format(tx.date, "MMM dd, yyyy")}</TableCell>
-                    <TableCell>{tx.type}</TableCell>
-                    <TableCell>{tx.transactionType}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{tx.serviceType}</div>
-                      <div className="text-sm text-muted-foreground">{tx.serviceName}</div>
+                      {format(new Date(tx.created_at), "MMM dd, yyyy")}
                     </TableCell>
-                    <TableCell>{tx.client}</TableCell>
-                    <TableCell
-                      className={cn("text-right font-medium", tx.amount > 0 ? "text-emerald-600" : "text-red-600")}
-                    >
-                      ${Math.abs(tx.amount).toFixed(2)}
+                    <TableCell className="font-mono text-sm">
+                      #{tx.booking?.public_uuid?.slice(-8) || tx.booking_id}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{tx.booking?.service?.name || 'Service'}</div>
+                      <div className="text-sm text-muted-foreground capitalize">
+                        {tx.booking?.service?.service_type || ''}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {tx.booking?.user?.full_name || tx.booking?.user?.email || 'Unknown'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusConfig[tx.status as keyof typeof statusConfig]?.variant as any}>
+                        {statusConfig[tx.status as keyof typeof statusConfig]?.label || tx.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      ${(tx.gross_amount_cents / 100).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right text-orange-600">
+                      -${(tx.commission_amount_cents / 100).toFixed(2)}
+                      <span className="text-xs text-muted-foreground ml-1">
+                        ({tx.commission_rate}%)
+                      </span>
+                    </TableCell>
+                    <TableCell className={cn(
+                      "text-right font-bold",
+                      tx.status === 'reversed' ? "text-red-600" : "text-green-600"
+                    )}>
+                      ${(tx.net_amount_cents / 100).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     No transactions found.
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalCount > limit && (
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <Button
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                variant="outline"
+                size="sm"
+                disabled={page === 1 || isLoading}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {Math.ceil(totalCount / limit)}
+              </span>
+              <Button
+                onClick={() => setPage(prev => prev + 1)}
+                variant="outline"
+                size="sm"
+                disabled={!data?.next || isLoading}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -26,8 +26,8 @@ export default function ProfileClient() {
   const router = useRouter()
 
   const handleViewPublicProfile = () => {
-    if (user?.practitioner_slug || user?.practitionerPublicId || user?.id) {
-      const profileId = user.practitioner_slug || user.practitionerPublicId || user.id
+    if (user?.practitioner_slug || user?.practitionerPublicId) {
+      const profileId = user.practitioner_slug || user.practitionerPublicId
       router.push(`/practitioners/${profileId}`)
     }
   }

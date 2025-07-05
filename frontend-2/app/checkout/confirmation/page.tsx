@@ -2,71 +2,59 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
+import { bookingsRetrieveOptions, paymentsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import Link from "next/link"
-import { CheckCircle2, Calendar, Clock, MapPin, User, Mail, Download, ArrowRight, Sparkles, Globe } from "lucide-react"
-import { getServiceById } from "@/lib/services"
+import { CheckCircle2, Calendar, Clock, MapPin, User, Mail, Download, ArrowRight, Sparkles, Globe, Loader2 } from "lucide-react"
 import { formatDate, formatTime } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { format, parseISO } from "date-fns"
 
 export default function ConfirmationPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [loading, setLoading] = useState(true)
-  const [service, setService] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  // Get service ID and type from URL
+  // Get IDs from URL parameters
+  const orderId = searchParams.get("orderId")
+  const bookingId = searchParams.get("bookingId")
   const serviceId = searchParams.get("serviceId")
   const serviceType = searchParams.get("type") || "session"
 
-  // Generate a random booking ID
-  const bookingId = "BK" + Math.floor(Math.random() * 10000000)
+  // Fetch booking data
+  const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery({
+    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId || '0') } }),
+    enabled: !!bookingId && !isNaN(parseInt(bookingId)),
+  })
 
-  useEffect(() => {
-    // Fetch service data
-    const fetchService = async () => {
-      if (!serviceId) {
-        setError("No service selected")
-        setLoading(false)
-        return
-      }
+  // Fetch order/payment data
+  const { data: order, isLoading: orderLoading, error: orderError } = useQuery({
+    ...paymentsRetrieveOptions({ path: { id: parseInt(orderId || '0') } }),
+    enabled: !!orderId && !isNaN(parseInt(orderId)),
+  })
 
-      try {
-        const serviceData = await getServiceById(serviceId)
-        if (!serviceData) {
-          setError("Service not found")
-          setLoading(false)
-          return
-        }
-
-        setService(serviceData)
-        setLoading(false)
-      } catch (err) {
-        setError("Failed to load service data")
-        setLoading(false)
-      }
-    }
-
-    fetchService()
-  }, [serviceId])
+  const loading = bookingLoading || orderLoading
+  const error = bookingError || orderError
+  const service = booking?.service
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-sage-50/30 to-white flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-sage-600 border-t-transparent"></div>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
+          <p className="text-sage-700">Loading your booking details...</p>
+        </div>
       </div>
     )
   }
 
-  if (error) {
+  if (error || !booking || !service) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-sage-50/30 to-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">Unable to load booking details</p>
           <Button asChild className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800">
             <Link href="/marketplace">Return to Marketplace</Link>
           </Button>
@@ -74,6 +62,9 @@ export default function ConfirmationPage() {
       </div>
     )
   }
+
+  // Extract practitioner info
+  const practitioner = service.primary_practitioner || service.practitioner
 
   // Get confirmation title based on service type
   const getConfirmationTitle = () => {
@@ -145,11 +136,13 @@ export default function ConfirmationPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <p className="text-sm text-olive-600 mb-1">Confirmation number</p>
-                    <p className="text-lg font-semibold font-mono text-olive-900">{bookingId}</p>
+                    <p className="text-lg font-semibold font-mono text-olive-900">
+                      {booking.booking_reference || booking.public_uuid?.slice(-8) || `BK${booking.id}`}
+                    </p>
                   </div>
                   <Badge className="bg-sage-100 text-sage-800 border-sage-300 hover:bg-sage-100">
                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Confirmed
+                    {booking.status_display || 'Confirmed'}
                   </Badge>
                 </div>
 
@@ -163,74 +156,71 @@ export default function ConfirmationPage() {
                       Service Details
                     </h3>
                     <div className="bg-gradient-to-br from-sage-50 to-terracotta-50 rounded-xl p-5 border border-sage-200">
-                      <h4 className="font-semibold text-lg text-olive-900 mb-2">{service.name}</h4>
+                      <h4 className="font-semibold text-lg text-olive-900 mb-2">
+                        {service.name || service.title || 'Service'}
+                      </h4>
                       <p className="text-olive-700 mb-4">
-                        {serviceType === "one-on-one" ? "Session" : 
-                         serviceType === "workshops" ? "Workshop" :
-                         serviceType === "courses" ? "Course" :
-                         serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} with{" "}
-                        <span className="font-medium">{service.primary_practitioner.display_name}</span>
+                        {service.service_type_display || service.service_type || serviceType} with{" "}
+                        <span className="font-medium">
+                          {practitioner?.display_name || 'Practitioner'}
+                        </span>
                       </p>
                       <div className="flex flex-wrap gap-4 text-sm">
                         <div className="flex items-center gap-2">
-                          {service.location_type === "virtual" || service.location_type === "online" ? (
+                          {booking.location_type === "virtual" ? (
                             <>
                               <Globe className="h-4 w-4 text-sage-600" />
-                              <span className="text-olive-700 font-medium">Online</span>
+                              <span className="text-olive-700 font-medium">Virtual Session</span>
                             </>
                           ) : (
                             <>
                               <MapPin className="h-4 w-4 text-sage-600" />
-                              <span className="text-olive-700">{service.location_type.charAt(0).toUpperCase() + service.location_type.slice(1)}</span>
+                              <span className="text-olive-700">
+                                {booking.location?.city ? `${booking.location.city}, ${booking.location.state_province}` : 'In-person'}
+                              </span>
                             </>
                           )}
                         </div>
-                        {service.duration && (
+                        {booking.duration_minutes && (
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-sage-600" />
-                            <span className="text-olive-700">{service.duration} minutes</span>
+                            <span className="text-olive-700">{booking.duration_minutes} minutes</span>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Sessions Schedule */}
-                  {service.sessions && service.sessions.length > 0 && (
+                  {/* Booking Schedule */}
+                  {booking.start_time && (
                     <div>
                       <h3 className="font-semibold text-olive-900 mb-4 flex items-center gap-2">
                         <Calendar className="h-5 w-5 text-terracotta-600" />
                         {serviceType === "course" || serviceType === "workshop" ? "Schedule" : "Session Time"}
                       </h3>
-                      <div className="space-y-3">
-                        {service.sessions.slice(0, 3).map((session: any, index: number) => (
-                          <div key={session.id} className="bg-sage-50/50 rounded-lg p-4 border border-sage-200">
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-medium text-olive-900">{session.title || `Session ${index + 1}`}</h4>
-                              <Badge variant="outline" className="text-xs border-sage-300 text-sage-700">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {formatDate(session.start_time)}
-                              </Badge>
-                            </div>
-                            <div className="flex flex-wrap gap-4 text-sm text-olive-700">
-                              <div className="flex items-center gap-1.5">
-                                <Clock className="h-4 w-4 text-sage-600" />
-                                <span>
-                                  {formatTime(session.start_time)} - {formatTime(session.end_time)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <User className="h-4 w-4 text-sage-600" />
-                                <span>{service.primary_practitioner.display_name}</span>
-                              </div>
-                            </div>
+                      <div className="bg-sage-50/50 rounded-lg p-4 border border-sage-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-olive-900">
+                            {booking.title || service.name || 'Session'}
+                          </h4>
+                          <Badge variant="outline" className="text-xs border-sage-300 text-sage-700">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {format(parseISO(booking.start_time), "MMM d, yyyy")}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-sm text-olive-700">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4 text-sage-600" />
+                            <span>
+                              {format(parseISO(booking.start_time), "h:mm a")}
+                              {booking.end_time && ` - ${format(parseISO(booking.end_time), "h:mm a")}`}
+                            </span>
                           </div>
-                        ))}
-                        {service.sessions.length > 3 && (
-                          <p className="text-sm text-olive-600 text-center font-medium">
-                            + {service.sessions.length - 3} more sessions
-                          </p>
-                        )}
+                          <div className="flex items-center gap-1.5">
+                            <User className="h-4 w-4 text-sage-600" />
+                            <span>{practitioner?.display_name || 'Practitioner'}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -290,8 +280,18 @@ export default function ConfirmationPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-olive-700">Service fee</span>
-                    <span className="font-medium text-olive-900">${Number(service.price).toFixed(2)}</span>
+                    <span className="font-medium text-olive-900">
+                      ${((booking.price_charged_cents || order?.subtotal_amount_cents || 0) / 100).toFixed(2)}
+                    </span>
                   </div>
+                  {(order?.credits_applied_cents || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-olive-700">Credits applied</span>
+                      <span className="font-medium text-green-600">
+                        -${(order.credits_applied_cents / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-olive-700">Processing fee</span>
                     <span className="font-medium text-olive-900">$0.00</span>
@@ -299,7 +299,9 @@ export default function ConfirmationPage() {
                   <Separator className="my-3" />
                   <div className="flex justify-between">
                     <span className="font-semibold text-olive-900">Total paid</span>
-                    <span className="text-lg font-bold text-olive-900">${Number(service.price).toFixed(2)}</span>
+                    <span className="text-lg font-bold text-olive-900">
+                      ${((booking.final_amount_cents || order?.total_amount_cents || 0) / 100).toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 
