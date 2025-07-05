@@ -67,8 +67,6 @@ services:
           name: estuary-frontend
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: COURIER_AUTH_TOKEN
-        sync: false
       - key: ALLOWED_HOSTS
         fromService:
           name: estuary-backend
@@ -79,33 +77,6 @@ services:
           name: estuary-frontend
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      # AWS S3 for static/media files (optional)
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_STORAGE_BUCKET_NAME
-        sync: false
-      - key: AWS_S3_REGION_NAME
-        value: us-west-2
-      # Stripe (optional)
-      - key: STRIPE_PUBLIC_KEY
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      # Email (optional)
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        value: 587
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
-        sync: false
-      - key: EMAIL_USE_TLS
-        value: true
     buildFilter:
       paths:
         - backend/**
@@ -143,8 +114,6 @@ services:
           name: estuary-frontend
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: COURIER_AUTH_TOKEN
-        sync: false
     buildFilter:
       paths:
         - backend/**
@@ -179,8 +148,6 @@ services:
           name: estuary-frontend
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: COURIER_AUTH_TOKEN
-        sync: false
     buildFilter:
       paths:
         - backend/**
@@ -225,3 +192,32 @@ envVarGroups:
         generateValue: true  # Generate once, shared across all services
       - key: CELERY_RESULT_BACKEND
         value: django-db
+      - key: COURIER_AUTH_TOKEN
+        sync: false  # Add once in Render dashboard, shared across all services
+      # Stripe keys - used by payment processing tasks
+      - key: STRIPE_PUBLIC_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Email configuration - used by notification tasks
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USE_TLS
+        value: true
+      # AWS S3 - used for media uploads in background tasks
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        value: us-west-2
