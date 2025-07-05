@@ -95,8 +95,8 @@ class CourierClient:
                     idempotency_key=idempotency_key
                 )
             
-            # Handle different response formats from trycourier
-            request_id = getattr(response, 'requestId', getattr(response, 'request_id', 'unknown'))
+            # Handle response from Courier v6 API
+            request_id = response.request_id
             logger.info(f"Email sent to {email} with request ID: {request_id}")
             return {"request_id": request_id}
             
