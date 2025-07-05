@@ -8,7 +8,7 @@ python-slugify==8.0.1
 django-environ==0.11.2
 pytz==2023.3
 django-seed==0.3.1
-redis==5.0.0
+redis>=4.5.3,<5.0.0
 django-use-email-as-username==1.4.0
 PyJWT==2.8.0
 boto3==1.35.0
@@ -31,3 +31,8 @@ django-cors-headers==4.3.1
 drf-nested-routers==0.93.5
 python-magic==0.4.27
 dj-database-url==2.1.0
+celery[redis]==5.3.4
+django-celery-beat>=2.7.0
+django-celery-results==2.5.1
+flower==2.0.1
+trycourier==4.4.0

@@ -15,6 +15,7 @@ from payments.models import (
 from practitioners.models import Practitioner, PractitionerOnboardingProgress
 from users.models import UserPaymentProfile
 from integrations.temporal.client import get_temporal_client
+from notifications.services.registry import get_client_notification_service
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,33 @@ def handle_payment_intent_succeeded(payment_intent):
         
         order.save()
         
+        # Send payment success notification
+        try:
+            notification_service = get_client_notification_service()
+            # Create a payment-like object from the order for the notification
+            payment_data = {
+                'id': order.id,
+                'amount': order.amount,
+                'user': order.user,
+                'created_at': order.created_at,
+                'stripe_receipt_url': payment_intent.get('charges', {}).get('data', [{}])[0].get('receipt_url'),
+                'payment_method_display': 'Card',
+                'booking': getattr(order, 'booking', None)
+            }
+            # Convert dict to object for the notification service
+            class PaymentObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+                def get_payment_method_display(self):
+                    return self.payment_method_display
+            
+            payment_obj = PaymentObj(payment_data)
+            notification_service.send_payment_success(payment_obj)
+            logger.info(f"Sent payment success notification for order {order_id}")
+        except Exception as e:
+            logger.error(f"Error sending payment success notification for order {order_id}: {str(e)}")
+        
         # Trigger the order processing workflow
         asyncio.create_task(trigger_order_workflow(order_id, payment_intent.get('metadata', {})))
         
@@ -183,6 +211,14 @@ def handle_credit_purchase_succeeded(payment_intent):
                 'currency': payment_intent['currency']
             }
         )
+        
+        # Send credit purchase notification
+        try:
+            from integrations.courier.utils import send_credit_purchase_confirmation
+            send_credit_purchase_confirmation(transaction)
+            logger.info(f"Sent credit purchase notification for user {user_id}")
+        except Exception as e:
+            logger.error(f"Error sending credit purchase notification: {str(e)}")
         
         logger.info(f"Successfully added {credit_amount} credits to user {user_id}")
         
@@ -291,6 +327,33 @@ def handle_checkout_session_completed(session):
         elif order.order_type == 'direct' and order.service:
             # Create booking(s) for service purchase
             create_booking_for_order(order, session.get('metadata', {}))
+        
+        # Send payment success notification for checkout session
+        try:
+            notification_service = get_client_notification_service()
+            # Create a payment-like object from the order for the notification
+            payment_data = {
+                'id': order.id,
+                'amount': order.amount,
+                'user': order.user,
+                'created_at': order.created_at,
+                'stripe_receipt_url': None,  # Not available in checkout session
+                'payment_method_display': 'Card',
+                'booking': getattr(order, 'booking', None)
+            }
+            # Convert dict to object for the notification service
+            class PaymentObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+                def get_payment_method_display(self):
+                    return self.payment_method_display
+            
+            payment_obj = PaymentObj(payment_data)
+            notification_service.send_payment_success(payment_obj)
+            logger.info(f"Sent payment success notification for checkout session {session['id']}")
+        except Exception as e:
+            logger.error(f"Error sending payment success notification for checkout session {session['id']}: {str(e)}")
         
         logger.info(f"Successfully processed checkout session {session['id']} for order {order_id}")
         

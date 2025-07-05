@@ -33,6 +33,9 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
     command: uvicorn estuary.asgi:application --host 0.0.0.0 --reload
     depends_on:
       - postgres
@@ -86,6 +89,71 @@ services:
       - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51RYVT4I79x8ltrHuOxx5PkP7sQf42FQAtUPmJyaREnFwPwgU8WPdQxqM2P6Ll8q5cI5uYBc0EpW9OpVApVcubE5Z004JjhTdrq
     depends_on:
       - admin
+
+  celery-worker:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    image: backend:latest
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
+    command: celery -A estuary worker --loglevel=info --concurrency=4
+    depends_on:
+      - postgres
+      - redis
+      - admin
+
+  celery-beat:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    image: backend:latest
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
+    command: celery -A estuary beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - postgres
+      - redis
+      - celery-worker
+
+  flower:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    image: backend:latest
+    ports:
+      - '5555:5555'
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
+      - FLOWER_PORT=5555
+    command: celery -A estuary flower --port=5555 --basic_auth=${FLOWER_BASIC_AUTH:-admin:admin}
+    depends_on:
+      - redis
+      - celery-worker
 
   nginx:
     image: nginx

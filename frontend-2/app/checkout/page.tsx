@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { 
-  publicServicesRetrieveOptions, 
+  servicesRetrieveOptions, 
   paymentMethodsListOptions,
   checkoutDirectPaymentCreateMutation 
 } from "@/src/client/@tanstack/react-query.gen"
@@ -105,10 +105,10 @@ export default function CheckoutPage() {
     autoLogin()
   }, [isAuthenticated, login])
 
-  // Fetch service data from API using public_uuid
+  // Fetch service data from API using ID
   const { data: serviceData, isLoading: loadingService, error: serviceError } = useQuery({
-    ...publicServicesRetrieveOptions({ path: { public_uuid: serviceId || '' } }),
-    enabled: !!serviceId,
+    ...servicesRetrieveOptions({ path: { id: parseInt(serviceId || '0') } }),
+    enabled: !!serviceId && !isNaN(parseInt(serviceId)),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
@@ -147,7 +147,7 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!serviceId) {
+    if (!serviceId || !serviceData) {
       setCheckoutError("Service information is missing")
       return
     }
@@ -164,7 +164,7 @@ export default function CheckoutPage() {
     try {
       // Prepare booking details based on service type
       const bookingDetails: any = {
-        service_id: serviceId,
+        service_id: parseInt(serviceId), // Now using integer ID
         payment_method_id: parseInt(selectedPaymentMethodId),
         apply_credits: applyCredits,
         special_requests: specialRequests,
@@ -174,14 +174,46 @@ export default function CheckoutPage() {
       if (serviceType === 'session') {
         // For sessions, we need start and end time
         if (selectedDate && selectedTime) {
-          // Parse the date and time to create proper datetime
-          const [hours, minutes] = selectedTime.split(':')
-          const startDateTime = new Date(selectedDate)
-          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          // Parse the formatted date string (e.g., "Mon, Jul 07")
+          // We need to add the current year since it's not included
+          const currentYear = new Date().getFullYear()
+          const [dayName, monthDate] = selectedDate.split(', ')
+          const dateWithYear = `${monthDate}, ${currentYear}`
           
-          // Assume 1 hour duration for now
+          // Create the date object with the current year
+          const baseDate = new Date(dateWithYear)
+          
+          // Parse the time (e.g., "2:30 PM" or "14:30")
+          let hours: number, minutes: number
+          
+          if (selectedTime.includes('AM') || selectedTime.includes('PM')) {
+            // 12-hour format with AM/PM
+            const [time, period] = selectedTime.split(' ')
+            const [hourStr, minuteStr] = time.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+            
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+              hours += 12
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0
+            }
+          } else {
+            // 24-hour format
+            const [hourStr, minuteStr] = selectedTime.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+          }
+          
+          // Create the full datetime
+          const startDateTime = new Date(baseDate)
+          startDateTime.setHours(hours, minutes, 0, 0)
+          
+          // Calculate end time based on service duration
+          const durationMinutes = serviceData.duration_minutes || 60
           const endDateTime = new Date(startDateTime)
-          endDateTime.setHours(endDateTime.getHours() + 1)
+          endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
           
           bookingDetails.start_time = startDateTime.toISOString()
           bookingDetails.end_time = endDateTime.toISOString()
@@ -195,12 +227,45 @@ export default function CheckoutPage() {
       } else if (serviceType === 'package' || serviceType === 'bundle') {
         // For packages and bundles, optionally include first session time
         if (selectedDate && selectedTime) {
-          const [hours, minutes] = selectedTime.split(':')
-          const startDateTime = new Date(selectedDate)
-          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          // Parse the formatted date string (e.g., "Mon, Jul 07")
+          const currentYear = new Date().getFullYear()
+          const [dayName, monthDate] = selectedDate.split(', ')
+          const dateWithYear = `${monthDate}, ${currentYear}`
           
+          // Create the date object with the current year
+          const baseDate = new Date(dateWithYear)
+          
+          // Parse the time (e.g., "2:30 PM" or "14:30")
+          let hours: number, minutes: number
+          
+          if (selectedTime.includes('AM') || selectedTime.includes('PM')) {
+            // 12-hour format with AM/PM
+            const [time, period] = selectedTime.split(' ')
+            const [hourStr, minuteStr] = time.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+            
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+              hours += 12
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0
+            }
+          } else {
+            // 24-hour format
+            const [hourStr, minuteStr] = selectedTime.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+          }
+          
+          // Create the full datetime
+          const startDateTime = new Date(baseDate)
+          startDateTime.setHours(hours, minutes, 0, 0)
+          
+          // Calculate end time based on service duration
+          const durationMinutes = serviceData.duration_minutes || 60
           const endDateTime = new Date(startDateTime)
-          endDateTime.setHours(endDateTime.getHours() + 1)
+          endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
           
           bookingDetails.start_time = startDateTime.toISOString()
           bookingDetails.end_time = endDateTime.toISOString()
@@ -254,7 +319,7 @@ export default function CheckoutPage() {
 
   // Transform API data to component format
   const service = {
-    id: serviceData.public_uuid || serviceData.id,
+    id: serviceData.id,
     title: serviceData.name || 'Service',
     type: serviceType,
     price: serviceData.price_cents ? serviceData.price_cents / 100 : 0,

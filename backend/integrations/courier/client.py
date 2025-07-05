@@ -5,8 +5,7 @@ import logging
 import os
 from typing import Dict, List, Optional, Union
 
-import courier
-from courier.client import Courier, AsyncCourier
+from trycourier import Courier
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -29,8 +28,7 @@ class CourierClient:
             logger.warning("No Courier authorization token provided. Email notifications will not be sent.")
         
         self.timeout = timeout
-        self.client = Courier(authorization_token=self.auth_token, timeout=self.timeout)
-        self.async_client = AsyncCourier(authorization_token=self.auth_token, timeout=self.timeout)
+        self.client = Courier(auth_token=self.auth_token)
     
     def send_email(
         self, 
@@ -64,113 +62,59 @@ class CourierClient:
             recipient_data = data or {}
             
             if template_id:
-                # Use template-based message
-                response = self.client.send(
-                    message=courier.TemplateMessage(
-                        template=template_id,
-                        to=courier.UserRecipient(
-                            email=email,
-                            data=recipient_data
-                        )
-                    ),
-                    idempotency_key=idempotency_key
-                )
+                # Use template-based message with trycourier format
+                logger.info(f"Sending template email with template_id: {template_id}")
+                message = {
+                    "to": {
+                        "email": email
+                    },
+                    "template": template_id,
+                    "data": recipient_data
+                }
+                
+                if idempotency_key:
+                    response = self.client.send(message, idempotency_key=idempotency_key)
+                else:
+                    response = self.client.send(message)
             else:
-                # Use content-based message
-                response = self.client.send(
-                    message=courier.ContentMessage(
-                        to=courier.UserRecipient(
-                            email=email,
-                            data=recipient_data
-                        ),
-                        content=courier.ElementalContentSugar(
-                            title=subject,
-                            body=body,
-                        ),
-                        routing=courier.Routing(method="all", channels=["email"]),
-                    ),
-                    idempotency_key=idempotency_key
-                )
+                # Use content-based message with trycourier format
+                message = {
+                    "to": {
+                        "email": email
+                    },
+                    "content": {
+                        "title": subject,
+                        "body": body
+                    },
+                    "data": recipient_data,
+                    "routing": {
+                        "method": "single",
+                        "channels": ["email"]
+                    }
+                }
+                
+                if idempotency_key:
+                    response = self.client.send(message, idempotency_key=idempotency_key)
+                else:
+                    response = self.client.send(message)
             
-            logger.info(f"Email sent to {email} with request ID: {response.request_id}")
-            return {"request_id": response.request_id}
+            # Handle different response formats from trycourier
+            request_id = getattr(response, 'requestId', getattr(response, 'request_id', 'unknown'))
+            logger.info(f"Email sent to {email} with request ID: {request_id}")
+            return {"request_id": request_id}
             
-        except courier.core.ApiError as e:
-            logger.error(f"Error sending email to {email}: {str(e)}")
-            return {"error": str(e)}
         except Exception as e:
-            logger.exception(f"Unexpected error sending email to {email}: {str(e)}")
-            return {"error": str(e)}
-    
-    async def send_email_async(
-        self, 
-        email: str, 
-        subject: str, 
-        body: str, 
-        data: Optional[Dict] = None,
-        template_id: Optional[str] = None,
-        idempotency_key: Optional[str] = None
-    ) -> Dict:
-        """
-        Send an email using Courier asynchronously.
-        
-        Args:
-            email: Recipient email address
-            subject: Email subject
-            body: Email body content
-            data: Additional data for template variables
-            template_id: Optional Courier template ID
-            idempotency_key: Optional idempotency key for the request
+            error_msg = str(e)
+            # Try to extract more detailed error info
+            if hasattr(e, 'response') and e.response:
+                try:
+                    error_details = e.response.json()
+                    error_msg = f"{str(e)} - Details: {error_details}"
+                except:
+                    error_msg = f"{str(e)} - Status: {e.response.status_code}"
             
-        Returns:
-            Response from Courier API
-        """
-        try:
-            if not self.auth_token:
-                logger.warning(f"Cannot send email to {email}: No Courier authorization token")
-                return {"error": "No Courier authorization token"}
-            
-            # Prepare recipient data
-            recipient_data = data or {}
-            
-            if template_id:
-                # Use template-based message
-                response = await self.async_client.send(
-                    message=courier.TemplateMessage(
-                        template=template_id,
-                        to=courier.UserRecipient(
-                            email=email,
-                            data=recipient_data
-                        )
-                    ),
-                    idempotency_key=idempotency_key
-                )
-            else:
-                # Use content-based message
-                response = await self.async_client.send(
-                    message=courier.ContentMessage(
-                        to=courier.UserRecipient(
-                            email=email,
-                            data=recipient_data
-                        ),
-                        content=courier.ElementalContentSugar(
-                            title=subject,
-                            body=body,
-                        ),
-                        routing=courier.Routing(method="all", channels=["email"]),
-                    ),
-                    idempotency_key=idempotency_key
-                )
-            
-            logger.info(f"Email sent asynchronously to {email} with request ID: {response.request_id}")
-            return {"request_id": response.request_id}
-            
-        except courier.core.ApiError as e:
-            logger.error(f"Error sending email asynchronously to {email}: {str(e)}")
-            return {"error": str(e)}
-        except Exception as e:
-            logger.exception(f"Unexpected error sending email asynchronously to {email}: {str(e)}")
-            return {"error": str(e)}
+            logger.exception(f"Error sending email to {email}: {error_msg}")
+            return {"error": error_msg}
 
 
 # Create a singleton instance for easy import

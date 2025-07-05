@@ -49,6 +49,13 @@ class Notification(BaseModel):
     # Additional data
     metadata = models.JSONField(default=dict, blank=True)
     
+    # Deduplication key for preventing duplicate notifications
+    notification_key = models.CharField(
+        max_length=100, 
+        blank=True,
+        help_text="Unique key to prevent duplicate notifications (e.g. 'booking_123_24h_reminder')"
+    )
+    
     class Meta:
         indexes = [
             models.Index(fields=['user', 'is_read']),
@@ -56,6 +63,8 @@ class Notification(BaseModel):
             models.Index(fields=['delivery_channel']),
             models.Index(fields=['scheduled_for']),
             models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['notification_key']),  # For deduplication queries
+            models.Index(fields=['user', 'notification_key', 'status']),  # Compound for fast lookups
         ]
     
     def __str__(self):
