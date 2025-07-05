@@ -48,7 +48,6 @@ services:
     region: oregon # same region as frontend
     plan: starter # or standard for production
     rootDir: backend
-    pythonVersion: "3.11"
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: uvicorn estuary.asgi:application --host 0.0.0.0 --port $PORT
     envVars:
@@ -108,7 +107,6 @@ services:
     region: oregon # same region as other services
     plan: starter
     rootDir: backend
-    pythonVersion: "3.11"
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A estuary worker --loglevel=info --concurrency=2
     envVars:
@@ -127,7 +125,6 @@ services:
     region: oregon # same region as other services
     plan: starter
     rootDir: backend
-    pythonVersion: "3.11"
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A estuary beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     envVars:
