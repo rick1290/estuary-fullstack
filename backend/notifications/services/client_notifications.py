@@ -104,8 +104,8 @@ class ClientNotificationService(BaseNotificationService):
             'booking_time': booking_datetime.strftime('%I:%M %p'),
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
-            'total_amount': f"${booking.final_amount:.2f}",
-            'credits_used': f"${booking.discount_amount:.2f}" if booking.discount_amount else None,
+            'total_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}",
+            'credits_used': f"${(booking.discount_amount_cents or 0) / 100:.2f}" if booking.discount_amount_cents else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'add_to_calendar_url': self._generate_calendar_url(booking),
             'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation"
@@ -253,8 +253,24 @@ class ClientNotificationService(BaseNotificationService):
         """
         Schedule reminder notifications for a booking.
         """
+        # TEST: 5-minute reminder for testing
+        reminder_5m = timezone.now() + timedelta(minutes=5)
+        self.schedule_notification(
+            user=booking.user,
+            notification_type='reminder',
+            delivery_channel='email',
+            scheduled_for=reminder_5m,
+            template_id=self.get_template_id('reminder_24h'),  # Using 24h template for test
+            data={},  # Will be populated when sent
+            title=f"TEST REMINDER (5 min): {booking.service.name}",
+            message=f"This is a test reminder scheduled for 5 minutes from booking confirmation",
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        logger.info(f"Scheduled TEST 5-minute reminder for booking {booking.id} at {reminder_5m}")
+        
         # 24-hour reminder
-        reminder_24h = booking.start_datetime - timedelta(hours=24)
+        reminder_24h = booking.start_time - timedelta(hours=24)
         if reminder_24h > timezone.now():
             self.schedule_notification(
                 user=booking.user,
@@ -270,7 +286,7 @@ class ClientNotificationService(BaseNotificationService):
             )
         
         # 30-minute reminder
-        reminder_30m = booking.start_datetime - timedelta(minutes=30)
+        reminder_30m = booking.start_time - timedelta(minutes=30)
         if reminder_30m > timezone.now():
             self.schedule_notification(
                 user=booking.user,

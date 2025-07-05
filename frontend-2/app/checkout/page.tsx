@@ -174,14 +174,46 @@ export default function CheckoutPage() {
       if (serviceType === 'session') {
         // For sessions, we need start and end time
         if (selectedDate && selectedTime) {
-          // Parse the date and time to create proper datetime
-          const [hours, minutes] = selectedTime.split(':')
-          const startDateTime = new Date(selectedDate)
-          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          // Parse the formatted date string (e.g., "Mon, Jul 07")
+          // We need to add the current year since it's not included
+          const currentYear = new Date().getFullYear()
+          const [dayName, monthDate] = selectedDate.split(', ')
+          const dateWithYear = `${monthDate}, ${currentYear}`
           
-          // Assume 1 hour duration for now
+          // Create the date object with the current year
+          const baseDate = new Date(dateWithYear)
+          
+          // Parse the time (e.g., "2:30 PM" or "14:30")
+          let hours: number, minutes: number
+          
+          if (selectedTime.includes('AM') || selectedTime.includes('PM')) {
+            // 12-hour format with AM/PM
+            const [time, period] = selectedTime.split(' ')
+            const [hourStr, minuteStr] = time.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+            
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+              hours += 12
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0
+            }
+          } else {
+            // 24-hour format
+            const [hourStr, minuteStr] = selectedTime.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+          }
+          
+          // Create the full datetime
+          const startDateTime = new Date(baseDate)
+          startDateTime.setHours(hours, minutes, 0, 0)
+          
+          // Calculate end time based on service duration
+          const durationMinutes = serviceData.duration_minutes || 60
           const endDateTime = new Date(startDateTime)
-          endDateTime.setHours(endDateTime.getHours() + 1)
+          endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
           
           bookingDetails.start_time = startDateTime.toISOString()
           bookingDetails.end_time = endDateTime.toISOString()
@@ -195,12 +227,45 @@ export default function CheckoutPage() {
       } else if (serviceType === 'package' || serviceType === 'bundle') {
         // For packages and bundles, optionally include first session time
         if (selectedDate && selectedTime) {
-          const [hours, minutes] = selectedTime.split(':')
-          const startDateTime = new Date(selectedDate)
-          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+          // Parse the formatted date string (e.g., "Mon, Jul 07")
+          const currentYear = new Date().getFullYear()
+          const [dayName, monthDate] = selectedDate.split(', ')
+          const dateWithYear = `${monthDate}, ${currentYear}`
           
+          // Create the date object with the current year
+          const baseDate = new Date(dateWithYear)
+          
+          // Parse the time (e.g., "2:30 PM" or "14:30")
+          let hours: number, minutes: number
+          
+          if (selectedTime.includes('AM') || selectedTime.includes('PM')) {
+            // 12-hour format with AM/PM
+            const [time, period] = selectedTime.split(' ')
+            const [hourStr, minuteStr] = time.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+            
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+              hours += 12
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0
+            }
+          } else {
+            // 24-hour format
+            const [hourStr, minuteStr] = selectedTime.split(':')
+            hours = parseInt(hourStr)
+            minutes = parseInt(minuteStr)
+          }
+          
+          // Create the full datetime
+          const startDateTime = new Date(baseDate)
+          startDateTime.setHours(hours, minutes, 0, 0)
+          
+          // Calculate end time based on service duration
+          const durationMinutes = serviceData.duration_minutes || 60
           const endDateTime = new Date(startDateTime)
-          endDateTime.setHours(endDateTime.getHours() + 1)
+          endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
           
           bookingDetails.start_time = startDateTime.toISOString()
           bookingDetails.end_time = endDateTime.toISOString()

@@ -77,12 +77,19 @@ def handle_booking_notification(sender, instance, created, **kwargs):
             client_service.send_booking_confirmation(instance)
             
             # Send notification to practitioner
-            practitioner_service = get_practitioner_notification_service()
-            practitioner_service.send_booking_notification(instance)
+            try:
+                practitioner_service = get_practitioner_notification_service()
+                practitioner_service.send_booking_notification(instance)
+                logger.info(f"Sent practitioner notification for booking {instance.id}")
+            except Exception as e:
+                logger.error(f"Error sending practitioner notification for booking {instance.id}: {str(e)}", exc_info=True)
             
             # Schedule reminders
-            schedule_booking_reminders.delay(instance.id)
-            logger.info(f"Sent confirmation and scheduled reminders for new confirmed booking {instance.id}")
+            try:
+                schedule_booking_reminders.delay(instance.id)
+                logger.info(f"Scheduled reminders for booking {instance.id}")
+            except Exception as e:
+                logger.error(f"Error scheduling reminders for booking {instance.id}: {str(e)}")
             
         elif not created:
             # For existing bookings, check if status changed
@@ -126,7 +133,7 @@ def handle_booking_notification(sender, instance, created, **kwargs):
                 pass
                     
     except Exception as e:
-        logger.error(f"Error handling booking notification for booking {instance.id}: {str(e)}")
+        logger.error(f"Error handling booking notification for booking {instance.id}: {str(e)}", exc_info=True)
 
 
 # Payment signals
@@ -240,6 +247,10 @@ def handle_practitioner_notifications(sender, instance, created, **kwargs):
             # Send welcome email when practitioner profile is first created
             service.send_welcome_email(instance)
             logger.info(f"Sent practitioner welcome email to {instance.user.email}")
+            
+            # Schedule onboarding nudges (profile incomplete at 3 days, no services at 7 days)
+            service._schedule_onboarding_nudges(instance)
+            logger.info(f"Scheduled onboarding nudges for practitioner {instance.user.email}")
         elif not created and hasattr(instance, 'tracker') and instance.tracker.has_changed('verification_status'):
             # Handle verification status changes
             if instance.verification_status == 'verified':

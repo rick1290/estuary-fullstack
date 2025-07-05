@@ -99,10 +99,16 @@ class PractitionerNotificationService(BaseNotificationService):
         """
         Send new booking notification to practitioner.
         """
-        practitioner = booking.service.practitioner
+        practitioner = booking.service.primary_practitioner
+        if not practitioner:
+            logger.warning(f"No primary practitioner for service {booking.service.id}")
+            return
+            
         user = practitioner.user
+        logger.info(f"Sending booking notification to practitioner {user.email} for booking {booking.id}")
         
         if not self.should_send_notification(user, 'booking', 'email'):
+            logger.warning(f"Practitioner {user.email} has disabled booking notifications")
             return
         
         template_id = self.get_template_id('booking_received')
@@ -110,14 +116,17 @@ class PractitionerNotificationService(BaseNotificationService):
             logger.warning("No booking received template configured")
             return
         
+        logger.info(f"Using template {template_id} for practitioner booking notification")
+        
         client = booking.user
         service = booking.service
         
-        # Calculate earnings
-        gross_amount = booking.total_amount
+        # Calculate earnings - convert cents to dollars
+        gross_amount_cents = booking.final_amount_cents or 0
+        gross_amount = Decimal(str(gross_amount_cents / 100.0))
         # TODO: Get commission rate from subscription tier
         commission_rate = Decimal('15.0')  # Default 15%
-        commission_amount = gross_amount * commission_rate / 100
+        commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
         data = {
@@ -125,11 +134,11 @@ class PractitionerNotificationService(BaseNotificationService):
             'client_name': client.get_full_name(),
             'client_email': client.email,
             'service_name': service.name,
-            'service_type': service.get_service_type_display(),
-            'booking_date': booking.start_datetime.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_datetime.strftime('%I:%M %p'),
-            'duration_minutes': service.duration,
-            'location': booking.get_location_display(),
+            'service_type': service.service_type.name if service.service_type else 'Service',
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
+            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'duration_minutes': service.duration_minutes,
+            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'gross_amount': f"${gross_amount:.2f}",
             'commission_amount': f"${commission_amount:.2f}",
             'net_earnings': f"${net_earnings:.2f}",
@@ -146,8 +155,8 @@ class PractitionerNotificationService(BaseNotificationService):
             data['session_number'] = booking.service_session.session_number
         
         # Add client notes if any
-        if booking.notes:
-            data['client_notes'] = booking.notes
+        if booking.client_notes:
+            data['client_notes'] = booking.client_notes
         
         notification = self.create_notification_record(
             user=user,
@@ -160,13 +169,18 @@ class PractitionerNotificationService(BaseNotificationService):
         )
         
         # Send immediately
-        self.send_email_notification(
+        result = self.send_email_notification(
             user=user,
             template_id=template_id,
             data=data,
             notification=notification,
             idempotency_key=f"practitioner-booking-{booking.id}"
         )
+        
+        if result and 'error' not in result:
+            logger.info(f"Successfully sent booking notification to practitioner {user.email}")
+        else:
+            logger.error(f"Failed to send booking notification to practitioner {user.email}: {result}")
         
         # Schedule reminders
         self._schedule_practitioner_reminders(booking)
@@ -222,7 +236,7 @@ class PractitionerNotificationService(BaseNotificationService):
         """
         Send booking cancellation notification to practitioner.
         """
-        practitioner = booking.service.practitioner
+        practitioner = booking.service.primary_practitioner
         user = practitioner.user
         
         if not self.should_send_notification(user, 'booking', 'email'):
@@ -337,10 +351,10 @@ class PractitionerNotificationService(BaseNotificationService):
         """
         Schedule reminder notifications for practitioner.
         """
-        practitioner = booking.service.practitioner
+        practitioner = booking.service.primary_practitioner
         
         # 24-hour reminder
-        reminder_24h = booking.start_datetime - timedelta(hours=24)
+        reminder_24h = booking.start_time - timedelta(hours=24)
         if reminder_24h > timezone.now():
             self.schedule_notification(
                 user=practitioner.user,
@@ -356,7 +370,7 @@ class PractitionerNotificationService(BaseNotificationService):
             )
         
         # 30-minute reminder
-        reminder_30m = booking.start_datetime - timedelta(minutes=30)
+        reminder_30m = booking.start_time - timedelta(minutes=30)
         if reminder_30m > timezone.now():
             self.schedule_notification(
                 user=practitioner.user,
@@ -377,49 +391,123 @@ class PractitionerNotificationService(BaseNotificationService):
         """
         # 3-day nudge if profile incomplete
         nudge_date = timezone.now() + timedelta(days=3)
-        self.schedule_notification(
+        notification = self.schedule_notification(
             user=practitioner.user,
             notification_type='system',
             delivery_channel='email',
             scheduled_for=nudge_date,
             template_id=self.get_template_id('profile_incomplete'),
-            data={},
+            data={'nudge_type': 'profile_incomplete'},
             title="Complete your practitioner profile",
             message="Your profile is incomplete. Complete it to start receiving bookings."
         )
         
+        # Schedule the specific task to handle this nudge
+        from notifications.tasks import send_practitioner_profile_nudge
+        send_practitioner_profile_nudge.apply_async(
+            args=[notification.id],
+            eta=nudge_date
+        )
+        
         # 7-day nudge if no services created
         nudge_date = timezone.now() + timedelta(days=7)
-        self.schedule_notification(
+        notification = self.schedule_notification(
             user=practitioner.user,
             notification_type='system',
             delivery_channel='email',
             scheduled_for=nudge_date,
             template_id=self.get_template_id('no_services'),
-            data={},
+            data={'nudge_type': 'no_services'},
             title="Create your first service",
             message="You haven't created any services yet. Create one to start accepting bookings."
+        )
+        
+        # Schedule the specific task to handle this nudge
+        from notifications.tasks import send_practitioner_services_nudge
+        send_practitioner_services_nudge.apply_async(
+            args=[notification.id],
+            eta=nudge_date
         )
     
     def _get_earnings_summary(self, practitioner, start_date):
         """
         Get earnings summary data for the practitioner.
-        This is a placeholder - implement with actual queries.
         """
-        # TODO: Implement actual earnings calculation
+        from bookings.models import Booking
+        from django.db.models import Sum, Count, Avg, Q
+        from decimal import Decimal
+        
+        end_date = timezone.now()
+        
+        # Get bookings in the period
+        period_bookings = Booking.objects.filter(
+            service__primary_practitioner=practitioner,
+            start_time__gte=start_date,
+            start_time__lt=end_date
+        )
+        
+        # Calculate earnings
+        completed_bookings = period_bookings.filter(status='completed')
+        earnings_data = completed_bookings.aggregate(
+            total_gross_cents=Sum('final_amount_cents'),
+            count=Count('id'),
+            avg_amount_cents=Avg('final_amount_cents')
+        )
+        
+        # Convert cents to dollars
+        total_gross_cents = earnings_data['total_gross_cents'] or 0
+        total_gross = Decimal(str(total_gross_cents / 100.0))
+        
+        # Calculate commission (TODO: Get actual commission rate from subscription tier)
+        commission_rate = Decimal('15.0')  # Default 15%
+        total_commission = total_gross * commission_rate / Decimal('100')
+        total_net = total_gross - total_commission
+        
+        # Convert average from cents to dollars
+        avg_cents = earnings_data['avg_amount_cents'] or 0
+        avg_amount = Decimal(str(avg_cents / 100.0)) if avg_cents else Decimal('0')
+        
+        # Get cancelled bookings count
+        cancelled_count = period_bookings.filter(status='cancelled').count()
+        
+        # Get top services
+        top_services = completed_bookings.values(
+            'service__name'
+        ).annotate(
+            count=Count('id'),
+            revenue_cents=Sum('final_amount_cents')
+        ).order_by('-count')[:3]
+        
+        # Calculate comparison with previous period
+        previous_start = start_date - (end_date - start_date)
+        previous_bookings = Booking.objects.filter(
+            service__primary_practitioner=practitioner,
+            start_time__gte=previous_start,
+            start_time__lt=start_date,
+            status='completed'
+        ).aggregate(total_cents=Sum('final_amount_cents'))
+        
+        previous_total_cents = previous_bookings['total_cents'] or 0
+        previous_total = Decimal(str(previous_total_cents / 100.0)) if previous_total_cents else Decimal('0')
+        
+        if previous_total > 0:
+            comparison_percent = float(((total_gross - previous_total) / previous_total) * 100)
+        else:
+            comparison_percent = 100.0 if total_gross > 0 else 0.0
+        
         return {
-            'total_earnings': Decimal('1250.00'),
-            'total_bookings': 15,
-            'completed_sessions': 12,
-            'cancelled_sessions': 3,
-            'average_booking_value': Decimal('83.33'),
+            'total_earnings': total_gross,
+            'total_bookings': earnings_data['count'] or 0,
+            'completed_sessions': earnings_data['count'] or 0,
+            'cancelled_sessions': cancelled_count,
+            'average_booking_value': avg_amount,
             'top_services': [
-                {'name': 'Yoga Session', 'count': 8},
-                {'name': 'Meditation', 'count': 4}
+                {'name': service['service__name'], 'count': service['count']}
+                for service in top_services
             ],
-            'commission_paid': Decimal('62.50'),
-            'net_earnings': Decimal('1187.50'),
-            'comparison_percent': 15.5
+            'commission_paid': total_commission,
+            'net_earnings': total_net,
+            'comparison_percent': round(comparison_percent, 1)
         }
     
     def _format_time_until(self, timedelta_obj):
