@@ -5,8 +5,7 @@ import logging
 import os
 from typing import Dict, List, Optional, Union
 
-import courier
-from courier.client import Courier
+from trycourier import Courier
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ class CourierClient:
             logger.warning("No Courier authorization token provided. Email notifications will not be sent.")
         
         self.timeout = timeout
-        self.client = Courier(authorization_token=self.auth_token)
+        self.client = Courier(auth_token=self.auth_token)
     
     def send_email(
         self, 
@@ -63,40 +62,46 @@ class CourierClient:
             recipient_data = data or {}
             
             if template_id:
-                # Use template-based message with modern Courier v6.2.1 format
+                # Use template-based message with trycourier format
                 logger.info(f"Sending template email with template_id: {template_id}")
-                message = courier.TemplateMessage(
-                    template=template_id,
-                    to=courier.UserRecipient(email=email),
-                    data=recipient_data
-                )
+                message = {
+                    "to": {
+                        "email": email
+                    },
+                    "template": template_id,
+                    "data": recipient_data
+                }
                 
                 if idempotency_key:
-                    response = self.client.send(message=message, idempotency_key=idempotency_key)
+                    response = self.client.send(message, idempotency_key=idempotency_key)
                 else:
-                    response = self.client.send(message=message)
+                    response = self.client.send(message)
             else:
-                # Use content-based message with modern Courier v6.2.1 format
-                message = courier.ContentMessage(
-                    to=courier.UserRecipient(email=email),
-                    content=courier.ElementalContentSugar(
-                        title=subject,
-                        body=body
-                    ),
-                    data=recipient_data,
-                    routing=courier.Routing(
-                        method=courier.RoutingMethod.SINGLE,
-                        channels=[courier.RoutingChannel.EMAIL]
-                    )
-                )
+                # Use content-based message with trycourier format
+                message = {
+                    "to": {
+                        "email": email
+                    },
+                    "content": {
+                        "title": subject,
+                        "body": body
+                    },
+                    "data": recipient_data,
+                    "routing": {
+                        "method": "single",
+                        "channels": ["email"]
+                    }
+                }
                 
                 if idempotency_key:
-                    response = self.client.send(message=message, idempotency_key=idempotency_key)
+                    response = self.client.send(message, idempotency_key=idempotency_key)
                 else:
-                    response = self.client.send(message=message)
+                    response = self.client.send(message)
             
-            logger.info(f"Email sent to {email} with request ID: {response.request_id}")
-            return {"request_id": response.request_id}
+            # Handle different response formats from trycourier
+            request_id = getattr(response, 'requestId', getattr(response, 'request_id', 'unknown'))
+            logger.info(f"Email sent to {email} with request ID: {request_id}")
+            return {"request_id": request_id}
             
         except Exception as e:
             error_msg = str(e)

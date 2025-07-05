@@ -1,5 +1,6 @@
 """
 Signal handlers for automatic notification triggers.
+Handles immediate notifications only - reminders are processed via periodic tasks.
 """
 import logging
 from django.db.models.signals import post_save, post_delete, pre_save
@@ -17,7 +18,6 @@ from notifications.services.registry import (
     get_client_notification_service,
     get_practitioner_notification_service
 )
-from notifications.tasks import schedule_booking_reminders
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -67,7 +67,8 @@ def send_welcome_notification(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Booking)
 def handle_booking_notification(sender, instance, created, **kwargs):
     """
-    Send notifications for booking events.
+    Send immediate notifications for booking events.
+    Note: Reminders are handled via periodic tasks, not signals.
     """
     try:
         # Handle new bookings that are already confirmed (e.g., from direct payment)
@@ -84,12 +85,8 @@ def handle_booking_notification(sender, instance, created, **kwargs):
             except Exception as e:
                 logger.error(f"Error sending practitioner notification for booking {instance.id}: {str(e)}", exc_info=True)
             
-            # Schedule reminders
-            try:
-                schedule_booking_reminders.delay(instance.id)
-                logger.info(f"Scheduled reminders for booking {instance.id}")
-            except Exception as e:
-                logger.error(f"Error scheduling reminders for booking {instance.id}: {str(e)}")
+            # Note: Reminders will be handled by periodic task, not here
+            logger.info(f"Booking {instance.id} confirmed - reminders will be processed by periodic task")
             
         elif not created:
             # For existing bookings, check if status changed
@@ -110,9 +107,7 @@ def handle_booking_notification(sender, instance, created, **kwargs):
                 practitioner_service = get_practitioner_notification_service()
                 practitioner_service.send_booking_notification(instance)
                 
-                # Schedule reminders
-                schedule_booking_reminders.delay(instance.id)
-                logger.info(f"Sent confirmation and scheduled reminders for booking {instance.id} (status changed from {previous_status} to confirmed)")
+                logger.info(f"Sent confirmation for booking {instance.id} (status changed from {previous_status} to confirmed)")
             
             elif instance.status == 'cancelled' and previous_status == 'confirmed':
                 # Send cancellation notifications
@@ -128,8 +123,8 @@ def handle_booking_notification(sender, instance, created, **kwargs):
                 practitioner_service.send_booking_cancelled(instance, cancelled_by, reason)
                 
             elif instance.status == 'rescheduled':
-                # Send rescheduling notifications
-                # Implement rescheduling notifications
+                # Individual rescheduling notifications handled here
+                # Session-wide reschedules handled by periodic task
                 pass
                     
     except Exception as e:

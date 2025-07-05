@@ -19,14 +19,23 @@ app.autodiscover_tasks()
 
 # Celery Beat Schedule
 app.conf.beat_schedule = {
-    # Process scheduled notifications every minute
-    'process-scheduled-notifications': {
-        'task': 'notifications.tasks.process_scheduled_notifications',
-        'schedule': 60.0,  # Every 60 seconds
+    # NEW: Master notification processing (reminders, reschedules, etc.)
+    'process-all-notifications': {
+        'task': 'notifications.cron.process_all_notifications',
+        'schedule': crontab(minute='*/15'),  # Every 15 minutes
         'options': {
-            'expires': 30.0,  # Task expires after 30 seconds if not executed
+            'expires': 600.0,  # Task expires after 10 minutes if not executed
         }
     },
+    
+    # DEPRECATED: Old scheduled notification processor (will be removed)
+    # 'process-scheduled-notifications': {
+    #     'task': 'notifications.tasks.process_scheduled_notifications',
+    #     'schedule': 60.0,  # Every 60 seconds
+    #     'options': {
+    #         'expires': 30.0,  # Task expires after 30 seconds if not executed
+    #     }
+    # },
     
     # Clean up old notifications daily at 2 AM
     'cleanup-old-notifications': {
@@ -46,23 +55,23 @@ app.conf.beat_schedule = {
         }
     },
     
-    # Process Temporal workflows (if needed)
-    'check-temporal-workflows': {
-        'task': 'workflows.tasks.check_pending_workflows',
-        'schedule': 300.0,  # Every 5 minutes
-        'options': {
-            'expires': 240.0,
-        }
-    },
+    # DISABLED: Temporal workflows (not using Temporal currently)
+    # 'check-temporal-workflows': {
+    #     'task': 'workflows.tasks.check_pending_workflows',
+    #     'schedule': 300.0,  # Every 5 minutes
+    #     'options': {
+    #         'expires': 240.0,
+    #     }
+    # },
     
-    # Update stream post analytics
-    'update-stream-analytics': {
-        'task': 'streams.tasks.update_stream_analytics',
-        'schedule': crontab(minute='*/30'),  # Every 30 minutes
-        'options': {
-            'expires': 1800.0,
-        }
-    },
+    # DISABLED: Stream analytics (implement when needed)
+    # 'update-stream-analytics': {
+    #     'task': 'streams.tasks.update_stream_analytics',
+    #     'schedule': crontab(minute='*/30'),  # Every 30 minutes
+    #     'options': {
+    #         'expires': 1800.0,
+    #     }
+    # },
     
     # Check for expired credits
     'expire-unused-credits': {
@@ -91,9 +100,11 @@ app.conf.update(
     broker_connection_max_retries=10,
     
     # Result backend settings
+    result_backend='django-db',  # Use Django database as result backend
     result_expires=3600,  # Results expire after 1 hour
     result_persistent=True,
     result_compression='gzip',
+    task_track_started=True,  # Track when tasks start
     
     # Task execution settings
     task_soft_time_limit=300,  # 5 minutes soft limit

@@ -52,10 +52,8 @@ services:
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: uvicorn estuary.asgi:application --host 0.0.0.0 --port $PORT
     envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: estuary.settings
-      - key: DJANGO_SECRET_KEY
-        generateValue: true
+      - fromGroup: estuary-shared
+      - fromGroup: estuary-django-shared
       - key: DEBUG
         value: false
       - key: ALLOWED_HOSTS
@@ -63,21 +61,7 @@ services:
           name: estuary-backend
           type: web
           envVarKey: RENDER_EXTERNAL_HOSTNAME
-      - key: DATABASE_URL
-        fromDatabase:
-          name: estuary-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: estuary-redis
-          type: keyvalue
-          property: connectionString
       - key: CORS_ALLOWED_ORIGINS
-        fromService:
-          name: estuary-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: FRONTEND_URL
         fromService:
           name: estuary-frontend
           type: web
@@ -117,6 +101,44 @@ services:
         - backend/__pycache__/**
         - backend/**/*.pyc
 
+  # Celery Worker for Background Tasks
+  - type: worker
+    name: estuary-celery-worker
+    runtime: python
+    region: oregon # same region as other services
+    plan: starter
+    rootDir: backend
+    pythonVersion: "3.11.0"
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A estuary worker --loglevel=info --concurrency=2
+    envVars:
+      - fromGroup: estuary-shared
+      - fromGroup: estuary-django-shared
+      - fromGroup: estuary-celery-shared
+    buildFilter:
+      paths:
+        - backend/**
+        - requirements.txt
+
+  # Celery Beat for Scheduled Tasks
+  - type: worker
+    name: estuary-celery-beat
+    runtime: python
+    region: oregon # same region as other services
+    plan: starter
+    rootDir: backend
+    pythonVersion: "3.11.0"
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A estuary beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    envVars:
+      - fromGroup: estuary-shared
+      - fromGroup: estuary-django-shared
+      - fromGroup: estuary-celery-shared
+    buildFilter:
+      paths:
+        - backend/**
+        - requirements.txt
+
   # Redis for Caching and WebSockets
   - type: keyvalue
     name: estuary-redis
@@ -146,3 +168,38 @@ envVarGroups:
         sync: false
       - key: LOG_LEVEL
         value: info
+        
+  # Django/Backend shared configuration
+  - name: estuary-django-shared
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: estuary.settings
+      - key: DJANGO_SECRET_KEY
+        sync: false  # Set this in Render dashboard once, shared across all services
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estuary-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: FRONTEND_URL
+        fromService:
+          name: estuary-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+          
+  # Celery shared configuration
+  - name: estuary-celery-shared
+    envVars:
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: estuary-redis
+          type: keyvalue
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        value: django-db
+      - key: COURIER_AUTH_TOKEN
+        sync: false

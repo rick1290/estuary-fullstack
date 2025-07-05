@@ -597,7 +597,7 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Celery broker URL (Redis)
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'  # Use Django database for task results
 
 # Celery settings
 CELERY_ACCEPT_CONTENT = ['json']
@@ -605,6 +605,8 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = True
+CELERY_TASK_TRACK_STARTED = True  # Track when tasks start
+CELERY_RESULT_PERSISTENT = True   # Keep results in database
 
 # Task execution settings
 CELERY_TASK_SOFT_TIME_LIMIT = 300  # 5 minutes
@@ -628,6 +630,7 @@ CELERY_RESULT_COMPRESSION = 'gzip'
 # Task routing (optional - for scaling)
 CELERY_TASK_ROUTES = {
     'notifications.tasks.*': {'queue': 'notifications'},
+    'notifications.cron.*': {'queue': 'notifications'},  # Add cron tasks to notifications queue
     'payments.tasks.*': {'queue': 'payments'},
     'bookings.tasks.*': {'queue': 'default'},
 }
@@ -650,6 +653,7 @@ COURIER_CLIENT_PAYMENT_SUCCESS_TEMPLATE = os.environ.get('COURIER_CLIENT_PAYMENT
 COURIER_CLIENT_SESSION_CONFIRMATION_TEMPLATE = os.environ.get('COURIER_CLIENT_SESSION_CONFIRMATION_TEMPLATE', 'CLIENT_SESSION_CONFIRMATION_V1')
 COURIER_CLIENT_REMINDER_24H_TEMPLATE = os.environ.get('COURIER_CLIENT_REMINDER_24H_TEMPLATE', 'CLIENT_REMINDER_24H_V1')
 COURIER_CLIENT_REMINDER_30M_TEMPLATE = os.environ.get('COURIER_CLIENT_REMINDER_30M_TEMPLATE', 'CLIENT_REMINDER_30M_V1')
+COURIER_CLIENT_BOOKING_RESCHEDULED_TEMPLATE = os.environ.get('COURIER_CLIENT_BOOKING_RESCHEDULED_TEMPLATE', 'CLIENT_BOOKING_RESCHEDULED_V1')
 
 COURIER_PRACTITIONER_WELCOME_TEMPLATE = os.environ.get('COURIER_PRACTITIONER_WELCOME_TEMPLATE', 'PRACTITIONER_WELCOME_V1')
 COURIER_PRACTITIONER_PROFILE_INCOMPLETE_TEMPLATE = os.environ.get('COURIER_PRACTITIONER_PROFILE_INCOMPLETE_TEMPLATE', 'PRACTITIONER_PROFILE_INCOMPLETE_V1')
