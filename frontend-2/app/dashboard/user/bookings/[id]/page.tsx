@@ -51,7 +51,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   // Check if we should auto-open review dialog from URL params
   useEffect(() => {
-    if (searchParams.get('review') === 'true' && booking?.status === 'completed') {
+    if (searchParams.get('review') === 'true' && booking?.status === 'completed' && !booking?.has_review) {
       setReviewDialogOpen(true)
     }
   }, [searchParams, booking])
@@ -411,19 +411,28 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                     <div>
                       <h3 className="font-medium flex items-center gap-2">
                         <Star className="h-4 w-4 text-amber-600" />
-                        How was your experience?
+                        {booking.has_review ? "Thank you for your review!" : "How was your experience?"}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Share your feedback to help others
+                        {booking.has_review 
+                          ? "Your feedback helps others find great practitioners" 
+                          : "Share your feedback to help others"}
                       </p>
                     </div>
-                    <Button 
-                      variant="default" 
-                      onClick={() => setReviewDialogOpen(true)}
-                      className="bg-amber-600 hover:bg-amber-700"
-                    >
-                      Leave Review
-                    </Button>
+                    {booking.has_review ? (
+                      <Badge variant="outline" className="bg-amber-50">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Reviewed
+                      </Badge>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        onClick={() => setReviewDialogOpen(true)}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        Leave Review
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

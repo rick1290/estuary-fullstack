@@ -154,6 +154,9 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     parent_booking_id = serializers.IntegerField(source='parent_booking.id', read_only=True)
     parent_booking_uuid = serializers.CharField(source='parent_booking.public_uuid', read_only=True)
     
+    # Review status
+    has_review = serializers.SerializerMethodField()
+    
     # Rescheduling info
     rescheduled_from_id = serializers.IntegerField(source='rescheduled_from.id', read_only=True)
     rescheduled_from_uuid = serializers.CharField(source='rescheduled_from.public_uuid', read_only=True)
@@ -175,7 +178,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'duration_minutes', 'is_upcoming', 'is_active', 'can_be_canceled', 'can_be_rescheduled',
             'is_individual_session', 'is_group_session', 'is_package_booking', 'is_course_booking',
             'is_parent_booking', 'child_bookings', 'parent_booking_id', 'parent_booking_uuid',
-            'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
+            'has_review', 'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
@@ -195,6 +198,10 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             return []
         child_bookings = obj.child_bookings.select_related('service', 'practitioner__user')
         return BookingListSerializer(child_bookings, many=True).data
+    
+    def get_has_review(self, obj):
+        """Check if this booking has been reviewed by the user"""
+        return obj.reviews.filter(user=obj.user).exists()
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
