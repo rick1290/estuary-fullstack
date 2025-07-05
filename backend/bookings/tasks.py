@@ -1,9 +1,11 @@
 from celery import shared_task
 from django.utils import timezone
 from django.db.models import Q, Max
+from datetime import timedelta
 import logging
 
 from .models import Booking
+from payments.models import EarningsTransaction
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +81,25 @@ def mark_completed_bookings():
                     f"End time used: {end_time_used}"
                 )
                 completed_count += 1
+                
+                # Update earnings transaction status from 'projected' to 'pending'
+                try:
+                    earnings = EarningsTransaction.objects.filter(
+                        booking=booking,
+                        status='projected'
+                    ).first()
+                    
+                    if earnings:
+                        earnings.status = 'pending'
+                        # Update available_after to 48 hours from completion
+                        earnings.available_after = timezone.now() + timedelta(hours=48)
+                        earnings.save(update_fields=['status', 'available_after', 'updated_at'])
+                        logger.info(f"Updated earnings transaction {earnings.id} to pending status")
+                except Exception as e:
+                    logger.error(
+                        f"Error updating earnings for booking {booking.id}: {str(e)}",
+                        exc_info=True
+                    )
                 
                 # Send review request email
                 try:

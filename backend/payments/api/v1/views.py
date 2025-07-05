@@ -352,17 +352,28 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                     order.status = 'completed'
                     order.save()
                     
-                    # Deduct credits if used
-                    if credits_to_apply_cents > 0:
-                        UserCreditTransaction.objects.create(
-                            user=user,
-                            amount_cents=-credits_to_apply_cents,
-                            transaction_type='usage',
-                            service=service,
-                            practitioner=service.primary_practitioner,
-                            order=order,
-                            description=f"Applied to {service.name}"
-                        )
+                    # Create paired credit transactions for service booking
+                    # 1. Purchase transaction (money in)
+                    UserCreditTransaction.objects.create(
+                        user=user,
+                        amount_cents=service_price_cents,  # Full service price
+                        transaction_type='purchase',
+                        service=service,
+                        practitioner=service.primary_practitioner,
+                        order=order,
+                        description=f"Purchase: {service.name}"
+                    )
+                    
+                    # 2. Usage transaction (service booked)
+                    UserCreditTransaction.objects.create(
+                        user=user,
+                        amount_cents=-service_price_cents,  # Negative for usage
+                        transaction_type='usage',
+                        service=service,
+                        practitioner=service.primary_practitioner,
+                        order=order,
+                        description=f"Booking: {service.name}"
+                    )
                     
                     # Create booking based on service type
                     from bookings.models import Booking, BookingFactory
@@ -553,15 +564,27 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                 order.status = 'completed'
                 order.save()
                 
-                # Deduct credits
+                # Create paired credit transactions for service booking
+                # 1. Purchase transaction (conceptual - representing the service value)
                 UserCreditTransaction.objects.create(
                     user=user,
-                    amount_cents=-credits_to_apply_cents,
+                    amount_cents=service_price_cents,  # Full service price
+                    transaction_type='purchase',
+                    service=service,
+                    practitioner=service.primary_practitioner,
+                    order=order,
+                    description=f"Purchase: {service.name}"
+                )
+                
+                # 2. Usage transaction (actual credits used)
+                UserCreditTransaction.objects.create(
+                    user=user,
+                    amount_cents=-service_price_cents,  # Negative for usage
                     transaction_type='usage',
                     service=service,
                     practitioner=service.primary_practitioner,
                     order=order,
-                    description=f"Applied to {service.name}"
+                    description=f"Booking: {service.name}"
                 )
                 
                 # Create booking using same logic as paid bookings
@@ -702,26 +725,67 @@ class CreditViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         
         amount = serializer.validated_data['amount']
+        amount_cents = int(amount * 100)
         stripe_client = StripeClient()
+        
+        # Create order record for tracking
+        order = Order.objects.create(
+            user=request.user,
+            payment_method='stripe',
+            subtotal_amount_cents=amount_cents,
+            total_amount_cents=amount_cents,
+            status='pending',
+            order_type='credit',
+            metadata={
+                'credit_amount': amount,
+                'description': f'Purchase of ${amount} credits'
+            }
+        )
         
         # Create payment intent
         intent = stripe_client.payment_intents.create(
-            amount=int(amount * 100),
+            amount=amount_cents,
             currency='usd',
             payment_method=serializer.validated_data.get('payment_method_id'),
             customer=request.user.payment_profile.stripe_customer_id,
             metadata={
+                'order_id': str(order.id),
                 'user_id': str(request.user.id),
                 'type': 'credit_purchase',
-                'amount': str(amount)
+                'credit_amount': str(amount)
             },
             confirm=True if serializer.validated_data.get('payment_method_id') else False
         )
         
+        order.stripe_payment_intent_id = intent.id
+        order.save()
+        
+        # If payment succeeded immediately, process it
+        if intent.status == 'succeeded':
+            order.status = 'completed'
+            order.save()
+            
+            # Create credit transaction
+            UserCreditTransaction.objects.create(
+                user=request.user,
+                amount_cents=amount_cents,
+                transaction_type='purchase',
+                description=f"Credit purchase - Order #{order.id}",
+                order=order
+            )
+            
+            return Response({
+                'payment_intent_id': intent.id,
+                'status': 'success',
+                'order_id': str(order.id),
+                'credits_added': amount
+            })
+        
         return Response({
             'payment_intent_id': intent.id,
             'client_secret': intent.client_secret,
-            'status': intent.status
+            'status': intent.status,
+            'order_id': str(order.id)
         })
     
     @action(detail=False, methods=['post'])

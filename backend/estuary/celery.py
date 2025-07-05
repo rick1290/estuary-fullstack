@@ -99,6 +99,24 @@ app.conf.beat_schedule = {
             'expires': 1800.0,  # Task expires after 30 minutes
         }
     },
+    
+    # Update available earnings
+    'update-available-earnings': {
+        'task': 'payments.tasks.update_available_earnings',
+        'schedule': crontab(minute=0),  # Every hour
+        'options': {
+            'expires': 3600.0,
+        }
+    },
+    
+    # Calculate pending earnings daily
+    'calculate-pending-earnings': {
+        'task': 'payments.tasks.calculate_pending_earnings',
+        'schedule': crontab(hour=1, minute=0),  # Daily at 1 AM
+        'options': {
+            'expires': 3600.0,
+        }
+    },
 }
 
 # Celery Configuration
