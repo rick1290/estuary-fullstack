@@ -193,6 +193,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         description: "Your changes have been saved successfully.",
       })
       queryClient.invalidateQueries({ queryKey: ['services', serviceId] })
+      queryClient.invalidateQueries({ queryKey: ['servicesRetrieve', { path: { id: parseInt(serviceId) } }] })
       setUnsavedChanges(new Set())
     },
     onError: (error: any) => {
@@ -280,9 +281,79 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
 
       // Calculate section completion status
       const newStatus: Record<string, SectionStatus> = {}
+      const currentSectionData = {
+        "basic-info": {
+          name: service.name,
+          title: service.title,
+          description: service.description,
+          short_description: service.short_description,
+          category_id: service.category?.id,
+          tags: service.tags,
+        },
+        "pricing-duration": {
+          price: service.price,
+          duration_minutes: service.duration_minutes,
+          max_participants: service.max_participants,
+          min_participants: service.min_participants,
+        },
+        "schedule-selection": {
+          scheduleId: service.schedule_id || service.schedule?.id?.toString(),
+        },
+        "bundle-configuration": {
+          sessions_included: service.sessions_included,
+          child_service_configs: service.child_relationships?.map(rel => ({
+            child_service_id: rel.child_service?.id,
+            quantity: rel.quantity
+          })) || [],
+        },
+        "package-composition": {
+          child_service_configs: service.child_relationships?.map(rel => ({
+            child_service_id: rel.child_service?.id,
+            quantity: rel.quantity,
+            discount_percentage: rel.discount_percentage,
+            order: rel.order
+          })) || [],
+        },
+        "service-sessions": {
+          sessions: service.sessions || [],
+        },
+        "revenue-sharing": {
+          additionalPractitioners: service.additional_practitioners || [],
+        },
+        "location": {
+          location_type: service.location_type,
+          address_id: service.address?.id,
+        },
+        "media": {
+          image: service.image,
+        },
+        "benefits": {
+          what_youll_learn: service.what_youll_learn,
+          prerequisites: service.prerequisites,
+          includes: service.includes,
+          benefits: service.benefits || [],
+          agenda_items: service.agenda_items || [],
+        },
+        "resources": {
+          // resources: service.resources,
+        },
+        "advanced": {
+          terms_conditions: service.terms_conditions,
+          experience_level: service.experience_level,
+          age_min: service.age_min,
+          age_max: service.age_max,
+        },
+        "status-visibility": {
+          status: service.status,
+          is_featured: service.is_featured,
+          is_active: service.is_active,
+          is_public: service.is_public,
+        },
+      }
+      
       sections.forEach(section => {
         if (!section.conditional || section.conditional(service)) {
-          const data = sectionData[section.id] || {}
+          const data = currentSectionData[section.id] || {}
           const isComplete = checkSectionCompletion(section.id, data, service)
           newStatus[section.id] = isComplete ? "complete" : 
                                   section.required ? "incomplete" : "optional"

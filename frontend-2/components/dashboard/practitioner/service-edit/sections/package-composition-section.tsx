@@ -52,13 +52,11 @@ export function PackageCompositionSection({
   const [discount, setDiscount] = useState(0)
 
   // Fetch practitioner's services that can be included in the package
-  const { data: availableServices } = useQuery(
+  const { data: availableServices, isLoading: isLoadingServices } = useQuery(
     servicesListOptions({
       query: {
         practitioner: user?.practitioner_profile?.id,
         page_size: 100,
-        // Exclude packages and bundles from being included
-        exclude_types: 'package,bundle'
       }
     })
   )
@@ -103,7 +101,14 @@ export function PackageCompositionSection({
   }
 
   const getServiceById = (serviceId: number) => {
-    return availableServices?.results?.find(s => s.id === serviceId)
+    // First check in available services
+    const found = availableServices?.results?.find(s => s.id === serviceId)
+    if (found) return found
+    
+    // If not found, check if it's in the service's child relationships
+    // This handles the case where the child service might not be in the current page of results
+    const childRel = service.child_relationships?.find(rel => rel.child_service?.id === serviceId)
+    return childRel?.child_service
   }
 
   const calculateTotalValue = () => {
@@ -200,24 +205,47 @@ export function PackageCompositionSection({
                 <SelectValue placeholder="Choose a service to include" />
               </SelectTrigger>
               <SelectContent>
-                {availableServices?.results?.map((service) => {
-                  // Don't show services already included
-                  const isIncluded = localData.child_service_configs?.some(
-                    item => item.child_service_id === service.id
-                  )
-                  if (isIncluded) return null
-
-                  return (
-                    <SelectItem key={service.id} value={String(service.id)}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{service.name}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ${service.price} • {service.duration_minutes}min
-                        </span>
-                      </div>
-                    </SelectItem>
-                  )
-                })}
+                {isLoadingServices ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    Loading services...
+                  </div>
+                ) : (
+                  <>
+                    {(() => {
+                      const filteredServices = availableServices?.results
+                        ?.filter(svc => 
+                          // Exclude packages and bundles from being included
+                          svc.service_type_code !== 'package' && 
+                          svc.service_type_code !== 'bundle' &&
+                          // Exclude current service
+                          svc.id !== service.id &&
+                          // Don't show services already included
+                          !localData.child_service_configs?.some(
+                            item => item.child_service_id === svc.id
+                          )
+                        )
+                      
+                      if (!filteredServices || filteredServices.length === 0) {
+                        return (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            No services available to add
+                          </div>
+                        )
+                      }
+                      
+                      return filteredServices.map((svc) => (
+                        <SelectItem key={svc.id} value={String(svc.id)}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{svc.name}</span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ${svc.price} • {svc.duration_minutes}min
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    })()}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>

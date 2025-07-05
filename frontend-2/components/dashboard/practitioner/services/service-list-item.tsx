@@ -24,6 +24,7 @@ import {
 import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign, Users } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 import type { Service } from "@/types/service"
 
 // Status variants
@@ -138,7 +139,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
               </Button>
 
               <Button variant="outline" size="icon" asChild>
-                <Link href={`/services/${service.id}`} target="_blank">
+                <Link href={getServiceDetailUrl(service)} target="_blank">
                   <Eye className="h-4 w-4" />
                 </Link>
               </Button>
