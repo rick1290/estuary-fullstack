@@ -58,14 +58,25 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   // Cancel booking mutation
   const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
-    mutationFn: () => bookingsCancelCreateOptions({ path: { id } }).queryFn({ queryKey: [{}] }),
+    mutationFn: async (reason: string) => {
+      const { bookingsCancelCreate } = await import('@/src/client')
+      const response = await bookingsCancelCreate({
+        path: { id },
+        body: {
+          reason: reason,
+          status: 'canceled',
+          canceled_by: 'client'
+        } as any
+      })
+      return response.data
+    },
     onSuccess: () => {
       toast.success("Booking cancelled successfully")
-      setCancelDialogOpen(false)
       refetch()
     },
-    onError: () => {
-      toast.error("Failed to cancel booking. Please try again.")
+    onError: (error: any) => {
+      console.error('Cancellation error:', error)
+      toast.error(error?.response?.data?.message || "Failed to cancel booking. Please try again.")
     },
   })
 
@@ -163,6 +174,14 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   const joinable = isSessionJoinable()
   const modifiable = isModifiable()
+  
+  // Debug logging
+  console.log('Booking details:', {
+    status: booking.status,
+    start_time: booking.start_time,
+    modifiable,
+    hoursUntilStart: booking.start_time ? differenceInHours(parseISO(booking.start_time), new Date()) : null
+  })
 
   return (
     <UserDashboardLayout title="Booking Details">
@@ -366,7 +385,10 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                         <div>
                           <Button 
                             variant="destructive" 
-                            onClick={() => setCancelDialogOpen(true)} 
+                            onClick={() => {
+                              console.log('Cancel button clicked', { cancelDialogOpen, modifiable })
+                              setCancelDialogOpen(true)
+                            }} 
                             disabled={!modifiable}
                           >
                             Cancel Booking
@@ -515,18 +537,20 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Cancellation Dialog */}
-      <CancelBookingDialog
-        bookingId={booking.id}
-        serviceName={service?.name || "Service"}
-        practitionerName={practitioner?.display_name || "Practitioner"}
-        date={booking.start_time ? format(parseISO(booking.start_time), "MMMM d, yyyy") : ""}
-        time={booking.start_time ? format(parseISO(booking.start_time), "h:mm a") : ""}
-        price={`$${booking.total_amount || 0}`}
-        open={cancelDialogOpen}
-        onOpenChange={setCancelDialogOpen}
-        onConfirm={() => cancelBooking()}
-        isLoading={isCancelling}
-      />
+      {booking && (
+        <CancelBookingDialog
+          bookingId={booking.public_uuid || String(booking.id)}
+          serviceName={service?.name || "Service"}
+          practitionerName={practitioner?.display_name || "Practitioner"}
+          date={booking.start_time ? format(parseISO(booking.start_time), "MMMM d, yyyy") : ""}
+          time={booking.start_time ? format(parseISO(booking.start_time), "h:mm a") : ""}
+          price={`$${booking.final_amount || 0}`}
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          onConfirm={(reason) => cancelBooking(reason)}
+          isLoading={isCancelling}
+        />
+      )}
 
       {/* Review Booking Dialog */}
       {booking && (
