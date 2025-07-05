@@ -147,7 +147,7 @@ def handle_payment_notification(sender, instance, created, **kwargs):
             service = get_client_notification_service()
             service.send_payment_success(instance)
         except Exception as e:
-            logger.error(f"Error sending payment notification for payment {instance.id}: {str(e)}")
+            logger.error(f"Error sending payment notification for order {instance.id}: {str(e)}")
 
 
 # Credit purchase signals
@@ -192,7 +192,7 @@ def handle_service_notification(sender, instance, created, **kwargs):
             # service.send_service_created(instance)
             
             # If this is their first service, cancel the nudge
-            if instance.practitioner.services.count() == 1:
+            if instance.primary_practitioner and instance.primary_practitioner.services.count() == 1:
                 # Cancel scheduled nudge notification
                 pass
         except Exception as e:

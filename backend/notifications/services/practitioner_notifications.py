@@ -151,8 +151,8 @@ class PractitionerNotificationService(BaseNotificationService):
         
         # Add session details if applicable
         if booking.service_session:
-            data['session_name'] = booking.service_session.name
-            data['session_number'] = booking.service_session.session_number
+            data['session_name'] = booking.service_session.title or f"Session {booking.service_session.sequence_number}" if booking.service_session.sequence_number else service.name
+            data['session_number'] = booking.service_session.sequence_number
         
         # Add client notes if any
         if booking.client_notes:
@@ -345,6 +345,65 @@ class PractitionerNotificationService(BaseNotificationService):
             data=data,
             notification=notification,
             idempotency_key=f"earnings-summary-{practitioner.id}-{period}-{timezone.now().strftime('%Y%W')}"
+        )
+    
+    def send_booking_reminder(self, booking, hours_before):
+        """
+        Send booking reminder to practitioner (for individual sessions).
+        """
+        practitioner = booking.service.primary_practitioner
+        user = practitioner.user
+        
+        if not self.should_send_notification(user, 'reminder', 'email'):
+            return
+        
+        template_key = 'reminder_24h' if hours_before == 24 else 'reminder_30m'
+        template_id = self.get_template_id(template_key)
+        if not template_id:
+            logger.warning(f"No {template_key} template configured for practitioners")
+            return
+        
+        client = booking.user
+        service = booking.service
+        
+        # Calculate time until booking
+        time_until = booking.start_time - timezone.now()
+        
+        data = {
+            'booking_id': str(booking.id),
+            'client_name': client.get_full_name(),
+            'client_email': client.email,
+            'service_name': service.name,
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
+            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'duration_minutes': service.duration_minutes,
+            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'hours_until': hours_before,
+            'time_until_human': self._format_time_until(time_until),
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
+            'is_aggregated': False  # Individual reminder
+        }
+        
+        title = f"Reminder: {service.name} with {client.get_full_name()} in {hours_before} {'hours' if hours_before > 1 else 'hour'}"
+        message = f"Your session with {client.get_full_name()} is at {data['booking_time']}"
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=title,
+            message=message,
+            notification_type='reminder',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"practitioner-booking-reminder-{booking.id}-{hours_before}h"
         )
     
     def _schedule_practitioner_reminders(self, booking):

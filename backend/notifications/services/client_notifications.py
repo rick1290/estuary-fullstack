@@ -113,8 +113,8 @@ class ClientNotificationService(BaseNotificationService):
         
         # Add session-specific details if applicable
         if booking.service_session:
-            data['session_name'] = booking.service_session.name
-            data['session_number'] = booking.service_session.session_number
+            data['session_name'] = booking.service_session.title or f"Session {booking.service_session.sequence_number}" if booking.service_session.sequence_number else service.name
+            data['session_number'] = booking.service_session.sequence_number
         
         notification = self.create_notification_record(
             user=user,
@@ -138,11 +138,11 @@ class ClientNotificationService(BaseNotificationService):
         # Schedule reminders
         self._schedule_booking_reminders(booking)
     
-    def send_payment_success(self, payment):
+    def send_payment_success(self, order):
         """
         Send payment success notification.
         """
-        user = payment.user
+        user = order.user
         if not self.should_send_notification(user, 'payment', 'email'):
             return
         
@@ -151,23 +151,34 @@ class ClientNotificationService(BaseNotificationService):
             logger.warning("No payment success template configured")
             return
         
+        # Get related booking if any
+        booking = None
+        if hasattr(order, 'bookings') and order.bookings.exists():
+            booking = order.bookings.first()
+        
         data = {
-            'payment_id': str(payment.id),
-            'amount': f"${payment.amount:.2f}",
-            'payment_method': payment.get_payment_method_display(),
-            'transaction_date': payment.created_at.strftime('%B %d, %Y at %I:%M %p'),
-            'receipt_url': payment.stripe_receipt_url,
-            'invoice_url': f"{settings.FRONTEND_URL}/dashboard/user/invoices/{payment.id}"
+            'order_id': str(order.public_uuid),
+            'amount': f"${order.total_amount:.2f}",
+            'payment_method': order.get_payment_method_display(),
+            'transaction_date': order.created_at.strftime('%B %d, %Y at %I:%M %p'),
+            'receipt_url': order.metadata.get('stripe_receipt_url', ''),
+            'invoice_url': f"{settings.FRONTEND_URL}/dashboard/user/invoices/{order.public_uuid}",
+            'credits_applied': f"${(order.credits_applied_cents / 100):.2f}" if order.credits_applied_cents > 0 else None
         }
         
         # Add booking details if payment is for a booking
-        if payment.booking:
-            booking = payment.booking
+        if booking:
             data.update({
                 'service_name': booking.service.name,
                 'practitioner_name': booking.service.primary_practitioner.user.get_full_name() if booking.service.primary_practitioner else 'Unknown',
-                'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-                'booking_time': booking.start_time.strftime('%I:%M %p')
+                'booking_date': booking.start_time.strftime('%A, %B %d, %Y') if booking.start_time else '',
+                'booking_time': booking.start_time.strftime('%I:%M %p') if booking.start_time else ''
+            })
+        elif order.service:
+            # For service orders without booking
+            data.update({
+                'service_name': order.service.name,
+                'practitioner_name': order.service.primary_practitioner.user.get_full_name() if order.service.primary_practitioner else 'Unknown'
             })
         
         notification = self.create_notification_record(
@@ -176,8 +187,8 @@ class ClientNotificationService(BaseNotificationService):
             message=f"Your payment of {data['amount']} has been processed successfully.",
             notification_type='payment',
             delivery_channel='email',
-            related_object_type='payment',
-            related_object_id=str(payment.id)
+            related_object_type='order',
+            related_object_id=str(order.public_uuid)
         )
         
         return self.send_email_notification(
@@ -185,7 +196,7 @@ class ClientNotificationService(BaseNotificationService):
             template_id=template_id,
             data=data,
             notification=notification,
-            idempotency_key=f"payment-success-{payment.id}"
+            idempotency_key=f"payment-success-{order.public_uuid}"
         )
     
     def send_booking_reminder(self, booking, hours_before: int):
@@ -253,22 +264,17 @@ class ClientNotificationService(BaseNotificationService):
         """
         Schedule reminder notifications for a booking.
         """
-        # TEST: 5-minute reminder for testing
-        reminder_5m = timezone.now() + timedelta(minutes=5)
-        self.schedule_notification(
-            user=booking.user,
-            notification_type='reminder',
-            delivery_channel='email',
-            scheduled_for=reminder_5m,
-            template_id=self.get_template_id('reminder_24h'),  # Using 24h template for test
-            data={},  # Will be populated when sent
-            title=f"TEST REMINDER (5 min): {booking.service.name}",
-            message=f"This is a test reminder scheduled for 5 minutes from booking confirmation",
-            related_object_type='booking',
-            related_object_id=str(booking.id)
-        )
-        logger.info(f"Scheduled TEST 5-minute reminder for booking {booking.id} at {reminder_5m}")
-        
+        # Check if this is a course booking
+        if booking.service.service_type.code == 'course':
+            self._schedule_course_reminders(booking)
+        else:
+            # Standard reminders for sessions, workshops, packages
+            self._schedule_standard_reminders(booking)
+    
+    def _schedule_standard_reminders(self, booking):
+        """
+        Schedule standard reminders for sessions, workshops, and packages.
+        """
         # 24-hour reminder
         reminder_24h = booking.start_time - timedelta(hours=24)
         if reminder_24h > timezone.now():
@@ -300,6 +306,94 @@ class ClientNotificationService(BaseNotificationService):
                 related_object_type='booking',
                 related_object_id=str(booking.id)
             )
+    
+    def _schedule_course_reminders(self, booking):
+        """
+        Schedule reminders for all sessions in a course.
+        """
+        from services.models import ServiceSession
+        from notifications.tasks import send_booking_reminder
+        
+        # Get all future sessions for this course
+        course_sessions = ServiceSession.objects.filter(
+            service=booking.service,
+            start_time__gte=timezone.now()
+        ).order_by('sequence_number', 'start_time')
+        
+        logger.info(f"Scheduling reminders for {course_sessions.count()} course sessions for booking {booking.id}")
+        
+        for session in course_sessions:
+            # 24-hour reminder
+            reminder_24h = session.start_time - timedelta(hours=24)
+            if reminder_24h > timezone.now():
+                send_booking_reminder.apply_async(
+                    args=[booking.id, 'client', 24, session.start_time.isoformat(), session.id],
+                    eta=reminder_24h
+                )
+                logger.info(f"Scheduled 24h reminder for course session {session.id} at {reminder_24h}")
+            
+            # 30-minute reminder
+            reminder_30m = session.start_time - timedelta(minutes=30)
+            if reminder_30m > timezone.now():
+                send_booking_reminder.apply_async(
+                    args=[booking.id, 'client', 0.5, session.start_time.isoformat(), session.id],
+                    eta=reminder_30m
+                )
+                logger.info(f"Scheduled 30min reminder for course session {session.id} at {reminder_30m}")
+    
+    def send_course_session_reminder(self, booking, session, hours_before):
+        """
+        Send course session-specific reminder.
+        """
+        user = booking.user
+        if not self.should_send_notification(user, 'reminder', 'email'):
+            return
+        
+        template_key = 'reminder_24h' if hours_before == 24 else 'reminder_30m'
+        template_id = self.get_template_id(template_key)
+        if not template_id:
+            logger.warning(f"No {template_key} template configured")
+            return
+        
+        service = booking.service
+        practitioner = service.primary_practitioner
+        
+        data = {
+            'booking_id': str(booking.id),
+            'service_name': service.name,
+            'session_title': session.title or f"Session {session.sequence_number}" if session.sequence_number else service.name,
+            'session_number': session.sequence_number,
+            'practitioner_name': practitioner.user.get_full_name(),
+            'session_date': session.start_time.strftime('%A, %B %d, %Y'),
+            'session_time': session.start_time.strftime('%I:%M %p'),
+            'duration_minutes': session.duration or service.duration_minutes,
+            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'hours_until': hours_before,
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
+            'session_url': f"{settings.FRONTEND_URL}/dashboard/user/sessions/{session.id}",
+            'is_course_session': True
+        }
+        
+        title = f"Reminder: {service.name} - Session {session.sequence_number} in {hours_before} {'hours' if hours_before > 1 else 'hour'}"
+        message = f"Session {session.sequence_number} of your course starts at {data['session_time']}"
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=title,
+            message=message,
+            notification_type='reminder',
+            delivery_channel='email',
+            related_object_type='service_session',
+            related_object_id=str(session.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"course-reminder-{booking.id}-session-{session.id}-{hours_before}h"
+        )
     
     def _generate_calendar_url(self, booking):
         """
