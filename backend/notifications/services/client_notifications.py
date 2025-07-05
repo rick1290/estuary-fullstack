@@ -89,10 +89,10 @@ class ClientNotificationService(BaseNotificationService):
             return
         
         service = booking.service
-        practitioner = service.practitioner
+        practitioner = service.primary_practitioner
         
         # Format booking details
-        booking_datetime = booking.start_datetime
+        booking_datetime = booking.start_time
         
         data = {
             'booking_id': str(booking.id),
@@ -102,10 +102,10 @@ class ClientNotificationService(BaseNotificationService):
             'practitioner_slug': practitioner.slug,
             'booking_date': booking_datetime.strftime('%A, %B %d, %Y'),
             'booking_time': booking_datetime.strftime('%I:%M %p'),
-            'duration_minutes': service.duration,
-            'location': booking.get_location_display(),
-            'total_amount': f"${booking.total_amount:.2f}",
-            'credits_used': f"${booking.credits_applied:.2f}" if booking.credits_applied else None,
+            'duration_minutes': service.duration_minutes,
+            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'total_amount': f"${booking.final_amount:.2f}",
+            'credits_used': f"${booking.discount_amount:.2f}" if booking.discount_amount else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'add_to_calendar_url': self._generate_calendar_url(booking),
             'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation"
@@ -165,9 +165,9 @@ class ClientNotificationService(BaseNotificationService):
             booking = payment.booking
             data.update({
                 'service_name': booking.service.name,
-                'practitioner_name': booking.service.practitioner.user.get_full_name(),
-                'booking_date': booking.start_datetime.strftime('%A, %B %d, %Y'),
-                'booking_time': booking.start_datetime.strftime('%I:%M %p')
+                'practitioner_name': booking.service.primary_practitioner.user.get_full_name() if booking.service.primary_practitioner else 'Unknown',
+                'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
+                'booking_time': booking.start_time.strftime('%I:%M %p')
             })
         
         notification = self.create_notification_record(
@@ -203,30 +203,29 @@ class ClientNotificationService(BaseNotificationService):
             return
         
         service = booking.service
-        practitioner = service.practitioner
+        practitioner = service.primary_practitioner
         
         # Calculate time until booking
-        time_until = booking.start_datetime - timezone.now()
+        time_until = booking.start_time - timezone.now()
         
         data = {
             'booking_id': str(booking.id),
             'service_name': service.name,
             'practitioner_name': practitioner.user.get_full_name(),
-            'booking_date': booking.start_datetime.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_datetime.strftime('%I:%M %p'),
-            'duration_minutes': service.duration,
-            'location': booking.get_location_display(),
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
+            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'duration_minutes': service.duration_minutes,
+            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'hours_until': hours_before,
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'reschedule_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/reschedule",
-            'practitioner_contact': practitioner.user.email,
-            'preparation_notes': service.preparation_notes
+            'practitioner_contact': practitioner.user.email
         }
         
         # Add video conference details if applicable
-        if booking.is_virtual and booking.video_room_url:
-            data['video_room_url'] = booking.video_room_url
+        if booking.meeting_url:
+            data['video_room_url'] = booking.meeting_url
             data['video_instructions'] = "Click the link above to join your video session"
         
         title = f"Reminder: {service.name} in {hours_before} {'hours' if hours_before > 1 else 'hour'}"

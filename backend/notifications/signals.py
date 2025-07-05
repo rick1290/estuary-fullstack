@@ -2,7 +2,7 @@
 Signal handlers for automatic notification triggers.
 """
 import logging
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 
@@ -21,6 +21,26 @@ from notifications.tasks import schedule_booking_reminders
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+# Store for tracking booking status changes
+_booking_status_tracker = {}
+
+
+# Booking pre-save signal to track status changes
+@receiver(pre_save, sender=Booking)
+def track_booking_status_change(sender, instance, **kwargs):
+    """
+    Track booking status before save to detect changes.
+    """
+    if instance.pk:  # Only for existing bookings
+        try:
+            old_booking = Booking.objects.get(pk=instance.pk)
+            _booking_status_tracker[instance.pk] = {
+                'old_status': old_booking.status,
+                'old_payment_status': old_booking.payment_status
+            }
+        except Booking.DoesNotExist:
+            pass
 
 
 # User registration signals
@@ -50,6 +70,7 @@ def handle_booking_notification(sender, instance, created, **kwargs):
     Send notifications for booking events.
     """
     try:
+        # Handle new bookings that are already confirmed (e.g., from direct payment)
         if created and instance.status == 'confirmed':
             # Send confirmation to client
             client_service = get_client_notification_service()
@@ -61,29 +82,48 @@ def handle_booking_notification(sender, instance, created, **kwargs):
             
             # Schedule reminders
             schedule_booking_reminders.delay(instance.id)
+            logger.info(f"Sent confirmation and scheduled reminders for new confirmed booking {instance.id}")
             
         elif not created:
-            # Check for status changes (only if tracker is available)
-            if hasattr(instance, 'tracker') and instance.tracker.has_changed('status'):
-                previous_status = instance.tracker.previous('status')
+            # For existing bookings, check if status changed
+            booking_tracker = _booking_status_tracker.get(instance.pk, {})
+            previous_status = booking_tracker.get('old_status')
+            
+            # Clean up tracker
+            if instance.pk in _booking_status_tracker:
+                del _booking_status_tracker[instance.pk]
+            
+            # Check if status changed to confirmed
+            if instance.status == 'confirmed' and previous_status and previous_status != 'confirmed':
+                # Send confirmation emails
+                client_service = get_client_notification_service()
+                client_service.send_booking_confirmation(instance)
                 
-                if instance.status == 'cancelled' and previous_status == 'confirmed':
-                    # Send cancellation notifications
-                    client_service = get_client_notification_service()
-                    practitioner_service = get_practitioner_notification_service()
-                    
-                    # Determine who cancelled
-                    cancelled_by = instance.metadata.get('cancelled_by', 'system')
-                    reason = instance.metadata.get('cancellation_reason', '')
-                    
-                    # Notify both parties
-                    # client_service.send_booking_cancelled(instance)
-                    practitioner_service.send_booking_cancelled(instance, cancelled_by, reason)
-                    
-                elif instance.status == 'rescheduled':
-                    # Send rescheduling notifications
-                    # Implement rescheduling notifications
-                    pass
+                # Send notification to practitioner
+                practitioner_service = get_practitioner_notification_service()
+                practitioner_service.send_booking_notification(instance)
+                
+                # Schedule reminders
+                schedule_booking_reminders.delay(instance.id)
+                logger.info(f"Sent confirmation and scheduled reminders for booking {instance.id} (status changed from {previous_status} to confirmed)")
+            
+            elif instance.status == 'cancelled' and previous_status == 'confirmed':
+                # Send cancellation notifications
+                client_service = get_client_notification_service()
+                practitioner_service = get_practitioner_notification_service()
+                
+                # Determine who cancelled
+                cancelled_by = instance.metadata.get('cancelled_by', 'system')
+                reason = instance.metadata.get('cancellation_reason', '')
+                
+                # Notify both parties
+                # client_service.send_booking_cancelled(instance)
+                practitioner_service.send_booking_cancelled(instance, cancelled_by, reason)
+                
+            elif instance.status == 'rescheduled':
+                # Send rescheduling notifications
+                # Implement rescheduling notifications
+                pass
                     
     except Exception as e:
         logger.error(f"Error handling booking notification for booking {instance.id}: {str(e)}")

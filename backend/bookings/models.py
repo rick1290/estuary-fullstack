@@ -136,6 +136,10 @@ class Booking(PublicModel):
                            related_name='bookings', help_text="Video room for virtual sessions")
     payment_transaction = models.ForeignKey('payments.UserCreditTransaction', on_delete=models.SET_NULL,
                                           blank=True, null=True, related_name='bookings')
+    
+    # Metadata for tracking various flags and data
+    metadata = models.JSONField(default=dict, blank=True, 
+                              help_text="Additional data like reminder flags, custom fields, etc.")
 
     class Meta:
         verbose_name = 'Booking'

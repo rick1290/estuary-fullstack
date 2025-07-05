@@ -239,11 +239,22 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         
+        # Store old start time for reminder handling
+        old_start_time = booking.start_time.isoformat()
+        
         # Reschedule booking
         try:
             new_booking = booking.reschedule(
                 new_start_time=serializer.validated_data['start_time'],
                 new_end_time=serializer.validated_data['end_time']
+            )
+            
+            # Handle reminder rescheduling
+            from notifications.tasks import handle_booking_reschedule
+            handle_booking_reschedule.delay(
+                new_booking.id,
+                old_start_time,
+                new_booking.start_time.isoformat()
             )
             
             response_serializer = BookingDetailSerializer(

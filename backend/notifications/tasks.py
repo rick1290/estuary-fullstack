@@ -215,41 +215,46 @@ def schedule_booking_reminders(booking_id: int):
             'service__practitioner__user'
         ).get(id=booking_id)
         
-        # Schedule client reminders
-        client_service = get_client_notification_service()
+        # Get current booking start time to pass to reminders
+        booking_start_iso = booking.start_time.isoformat()
         
+        # Schedule client reminders
         # 24-hour reminder
-        reminder_time = booking.start_datetime - timedelta(hours=24)
+        reminder_time = booking.start_time - timedelta(hours=24)
         if reminder_time > timezone.now():
             send_booking_reminder.apply_async(
-                args=[booking_id, 'client', 24],
+                args=[booking_id, 'client', 24, booking_start_iso],
                 eta=reminder_time
             )
+            logger.info(f"Scheduled 24h client reminder for booking {booking_id} at {reminder_time}")
         
         # 30-minute reminder
-        reminder_time = booking.start_datetime - timedelta(minutes=30)
+        reminder_time = booking.start_time - timedelta(minutes=30)
         if reminder_time > timezone.now():
             send_booking_reminder.apply_async(
-                args=[booking_id, 'client', 0.5],
+                args=[booking_id, 'client', 0.5, booking_start_iso],
                 eta=reminder_time
             )
+            logger.info(f"Scheduled 30min client reminder for booking {booking_id} at {reminder_time}")
         
         # Schedule practitioner reminders
         # 24-hour reminder
         reminder_time = booking.start_datetime - timedelta(hours=24)
         if reminder_time > timezone.now():
             send_booking_reminder.apply_async(
-                args=[booking_id, 'practitioner', 24],
+                args=[booking_id, 'practitioner', 24, booking_start_iso],
                 eta=reminder_time
             )
+            logger.info(f"Scheduled 24h practitioner reminder for booking {booking_id} at {reminder_time}")
         
         # 30-minute reminder
-        reminder_time = booking.start_datetime - timedelta(minutes=30)
+        reminder_time = booking.start_time - timedelta(minutes=30)
         if reminder_time > timezone.now():
             send_booking_reminder.apply_async(
-                args=[booking_id, 'practitioner', 0.5],
+                args=[booking_id, 'practitioner', 0.5, booking_start_iso],
                 eta=reminder_time
             )
+            logger.info(f"Scheduled 30min practitioner reminder for booking {booking_id} at {reminder_time}")
             
     except Booking.DoesNotExist:
         logger.error(f"Booking {booking_id} not found")
@@ -258,11 +263,18 @@ def schedule_booking_reminders(booking_id: int):
 
 
 @shared_task
-def send_booking_reminder(booking_id: int, user_type: str, hours_before: float):
+def send_booking_reminder(booking_id: int, user_type: str, hours_before: float, expected_start_time: str):
     """
-    Send a booking reminder.
+    Send a booking reminder with validation.
+    
+    Args:
+        booking_id: ID of the booking
+        user_type: 'client' or 'practitioner'
+        hours_before: Hours before the appointment (24 or 0.5)
+        expected_start_time: ISO format datetime string of when booking was originally scheduled
     """
     from bookings.models import Booking
+    from django.utils.dateparse import parse_datetime
     
     try:
         booking = Booking.objects.select_related(
@@ -271,19 +283,88 @@ def send_booking_reminder(booking_id: int, user_type: str, hours_before: float):
             'service_session'
         ).get(id=booking_id)
         
-        # Check if booking is still active
+        # Check if booking is still confirmed
         if booking.status != 'confirmed':
             logger.info(f"Skipping reminder for booking {booking_id} - status is {booking.status}")
-            return
+            return f"Booking {booking_id} no longer confirmed, skipping {hours_before}h reminder"
         
+        # Check if booking time hasn't changed
+        expected_dt = parse_datetime(expected_start_time)
+        if booking.start_time != expected_dt:
+            logger.info(f"Skipping reminder for booking {booking_id} - time changed from {expected_start_time} to {booking.start_time}")
+            return f"Booking {booking_id} rescheduled, skipping old {hours_before}h reminder"
+        
+        # Check if reminder already sent (stored in metadata)
+        reminder_key = f"{user_type}_{hours_before}h_reminder_sent"
+        if booking.metadata.get(reminder_key):
+            logger.info(f"Skipping reminder for booking {booking_id} - {reminder_key} already sent")
+            return f"Booking {booking_id} {hours_before}h reminder already sent"
+        
+        # Send the reminder
         if user_type == 'client':
             service = get_client_notification_service()
             service.send_booking_reminder(booking, int(hours_before))
         else:
             service = get_practitioner_notification_service()
-            # Practitioner reminder logic would go here
+            # TODO: Implement practitioner reminder
+            logger.info(f"Practitioner reminder for booking {booking_id} - {hours_before}h before")
+        
+        # Mark reminder as sent
+        booking.metadata[reminder_key] = timezone.now().isoformat()
+        booking.save(update_fields=['metadata'])
+        
+        logger.info(f"Successfully sent {hours_before}h {user_type} reminder for booking {booking_id}")
+        return f"Sent {hours_before}h reminder for booking {booking_id}"
             
     except Booking.DoesNotExist:
         logger.error(f"Booking {booking_id} not found")
+        return f"Booking {booking_id} not found"
     except Exception as e:
         logger.exception(f"Error sending booking reminder: {str(e)}")
+        return f"Error sending reminder: {str(e)}"
+
+
+@shared_task
+def handle_booking_reschedule(booking_id: int, old_start_time: str, new_start_time: str):
+    """
+    Handle rescheduling of booking reminders.
+    This should be called when a booking is rescheduled.
+    
+    Args:
+        booking_id: ID of the booking
+        old_start_time: ISO format datetime string of previous start time
+        new_start_time: ISO format datetime string of new start time
+    """
+    from bookings.models import Booking
+    from django.utils.dateparse import parse_datetime
+    
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        
+        # Clear old reminder sent flags
+        reminder_keys = [
+            'client_24h_reminder_sent',
+            'client_0.5h_reminder_sent',
+            'practitioner_24h_reminder_sent',
+            'practitioner_0.5h_reminder_sent'
+        ]
+        
+        for key in reminder_keys:
+            if key in booking.metadata:
+                del booking.metadata[key]
+        
+        booking.save(update_fields=['metadata'])
+        
+        # Schedule new reminders if booking is still confirmed
+        if booking.status == 'confirmed':
+            schedule_booking_reminders.delay(booking_id)
+            logger.info(f"Rescheduled reminders for booking {booking_id} from {old_start_time} to {new_start_time}")
+        
+        return f"Successfully rescheduled reminders for booking {booking_id}"
+        
+    except Booking.DoesNotExist:
+        logger.error(f"Booking {booking_id} not found")
+        return f"Booking {booking_id} not found"
+    except Exception as e:
+        logger.exception(f"Error handling booking reschedule: {str(e)}")
+        return f"Error rescheduling: {str(e)}"
