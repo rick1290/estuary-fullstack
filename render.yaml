@@ -48,7 +48,7 @@ services:
     region: oregon # same region as frontend
     plan: starter # or standard for production
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    buildCommand: pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
     startCommand: uvicorn estuary.asgi:application --host 0.0.0.0 --port $PORT
     envVars:
       - fromGroup: estuary-shared
