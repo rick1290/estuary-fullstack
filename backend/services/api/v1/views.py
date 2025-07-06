@@ -674,6 +674,11 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Get sessions based on service"""
+        # For detail views (retrieve, update, destroy), return all sessions
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            return ServiceSession.objects.select_related('service', 'room', 'address')
+        
+        # For list view, filter by service_id if provided
         service_id = self.request.query_params.get('service_id')
         if not service_id:
             return ServiceSession.objects.none()
