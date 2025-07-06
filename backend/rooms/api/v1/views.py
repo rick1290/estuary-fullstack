@@ -107,7 +107,7 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         # Check if user is the practitioner/host
         if room.booking and room.booking.practitioner.user == user:
             role = 'host'
-        elif room.service_session and room.service_session.service.practitioner.user == user:
+        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             role = 'host'
         elif room.created_by == user:
             role = 'host'
