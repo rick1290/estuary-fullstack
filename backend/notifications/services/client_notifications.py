@@ -145,8 +145,8 @@ class ClientNotificationService(BaseNotificationService):
             idempotency_key=f"booking-confirmation-{booking.id}"
         )
         
-        # Schedule reminders
-        self._schedule_booking_reminders(booking)
+        # Reminders are now handled by periodic task process_booking_reminders
+        # self._schedule_booking_reminders(booking)  # Deprecated - using periodic task instead
     
     def send_payment_success(self, order):
         """

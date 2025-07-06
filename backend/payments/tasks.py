@@ -153,7 +153,6 @@ def complete_booking_post_payment(self, booking_id: int):
         from bookings.models import Booking
         from rooms.services import RoomService
         from notifications.services import NotificationService
-        from notifications.tasks import schedule_booking_reminders
         
         booking = Booking.objects.select_related(
             'service',
@@ -185,12 +184,8 @@ def complete_booking_post_payment(self, booking_id: int):
             logger.error(f"Failed to send notifications for booking {booking_id}: {e}")
             # Don't retry for notification failures - they have their own retry logic
         
-        # 3. Schedule reminder notifications
-        try:
-            schedule_booking_reminders.delay(booking_id)
-            logger.info(f"Scheduled reminder notifications for booking {booking_id}")
-        except Exception as e:
-            logger.error(f"Failed to schedule reminders for booking {booking_id}: {e}")
+        # 3. Reminder notifications now handled by periodic task
+        logger.info(f"Reminders will be sent by periodic task for booking {booking_id}")
         
         logger.info(f"Completed post-payment setup for booking {booking_id}")
         return {

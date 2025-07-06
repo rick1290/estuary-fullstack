@@ -540,3 +540,36 @@ coverage report
 - **Queue**: Celery with Redis
 - **Storage**: Cloudflare R2
 - **Monitoring**: Sentry
+
+## Booking Reminder System
+
+The system uses a **periodic task** approach for sending booking reminders, which runs every 5 minutes:
+
+### How it works:
+1. `process-booking-reminders` task runs every 5 minutes
+2. Checks for bookings that need 24-hour or 30-minute reminders
+3. Sends reminders if not already sent (tracked in booking metadata)
+4. Handles both individual and aggregated practitioner reminders
+
+### Benefits:
+- **Self-healing**: Automatically handles rescheduled bookings
+- **Simple**: No complex task scheduling/cancellation logic
+- **Reliable**: Survives system restarts
+- **Efficient**: Only queries bookings in reminder windows
+
+### Reminder Types:
+- **24-hour reminders**: Sent 23:50 - 24:10 hours before
+- **30-minute reminders**: Sent 25-35 minutes before
+- **Aggregated**: Practitioners get one email for group sessions with all participants
+
+### Celery Beat Configuration:
+The periodic reminder task is already configured in `/backend/estuary/celery.py`:
+```python
+'process-booking-reminders': {
+    'task': 'process-booking-reminders',
+    'schedule': crontab(minute='*/5'),  # Every 5 minutes
+    'options': {
+        'expires': 240.0,  # Task expires after 4 minutes if not executed
+    }
+},
+```

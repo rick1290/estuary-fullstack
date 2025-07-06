@@ -28,14 +28,14 @@ app.conf.beat_schedule = {
         }
     },
     
-    # DEPRECATED: Old scheduled notification processor (will be removed)
-    # 'process-scheduled-notifications': {
-    #     'task': 'notifications.tasks.process_scheduled_notifications',
-    #     'schedule': 60.0,  # Every 60 seconds
-    #     'options': {
-    #         'expires': 30.0,  # Task expires after 30 seconds if not executed
-    #     }
-    # },
+    # Process booking reminders every 5 minutes
+    'process-booking-reminders': {
+        'task': 'process-booking-reminders',
+        'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        'options': {
+            'expires': 240.0,  # Task expires after 4 minutes if not executed
+        }
+    },
     
     # Clean up old notifications daily at 2 AM
     'cleanup-old-notifications': {
