@@ -138,3 +138,125 @@ def calculate_pending_earnings():
         'errors': errors,
         'completed_at': timezone.now().isoformat()
     }
+
+
+@shared_task(name='complete-booking-post-payment', bind=True, max_retries=3)
+def complete_booking_post_payment(self, booking_id: int):
+    """
+    Complete booking setup tasks after payment confirmation.
+    This includes room creation, notifications, and other non-critical tasks.
+    
+    Args:
+        booking_id: ID of the booking to complete setup for
+    """
+    try:
+        from bookings.models import Booking
+        from rooms.services import RoomService
+        from notifications.services import NotificationService
+        from notifications.tasks import schedule_booking_reminders
+        
+        booking = Booking.objects.select_related(
+            'service',
+            'service__primary_practitioner',
+            'user',
+            'practitioner'
+        ).get(id=booking_id)
+        
+        logger.info(f"Starting post-payment setup for booking {booking_id}")
+        
+        # 1. Create room if needed
+        if not hasattr(booking, 'livekit_room') or not booking.livekit_room:
+            if booking.service.location_type in ['virtual', 'online', 'hybrid'] and not booking.service_session:
+                try:
+                    room_service = RoomService()
+                    room = room_service.create_room_for_booking(booking)
+                    logger.info(f"Created room {room.livekit_room_name} for booking {booking_id}")
+                except Exception as e:
+                    logger.error(f"Failed to create room for booking {booking_id}: {e}")
+                    # Retry this task later
+                    raise self.retry(exc=e, countdown=60)
+        
+        # 2. Send notifications
+        try:
+            notification_service = NotificationService()
+            notification_service.send_booking_confirmation(booking)
+            logger.info(f"Sent booking confirmation notifications for booking {booking_id}")
+        except Exception as e:
+            logger.error(f"Failed to send notifications for booking {booking_id}: {e}")
+            # Don't retry for notification failures - they have their own retry logic
+        
+        # 3. Schedule reminder notifications
+        try:
+            schedule_booking_reminders.delay(booking_id)
+            logger.info(f"Scheduled reminder notifications for booking {booking_id}")
+        except Exception as e:
+            logger.error(f"Failed to schedule reminders for booking {booking_id}: {e}")
+        
+        logger.info(f"Completed post-payment setup for booking {booking_id}")
+        return {
+            'booking_id': booking_id,
+            'completed': True,
+            'completed_at': timezone.now().isoformat()
+        }
+        
+    except Booking.DoesNotExist:
+        logger.error(f"Booking {booking_id} not found")
+        return {
+            'booking_id': booking_id,
+            'completed': False,
+            'error': 'Booking not found'
+        }
+    except Exception as e:
+        logger.error(f"Error in post-payment setup for booking {booking_id}: {e}")
+        raise
+
+
+@shared_task(name='create-booking-earnings-async')
+def create_booking_earnings_async(practitioner_id: int, booking_id: int, service_id: int, gross_amount_cents: int):
+    """
+    Create earnings transaction asynchronously after booking is confirmed.
+    
+    Args:
+        practitioner_id: ID of the practitioner
+        booking_id: ID of the booking
+        service_id: ID of the service
+        gross_amount_cents: Gross amount in cents
+    """
+    if not practitioner_id:
+        logger.info(f"No practitioner for booking {booking_id}, skipping earnings creation")
+        return
+    
+    try:
+        from practitioners.models import Practitioner
+        from bookings.models import Booking
+        from services.models import Service
+        from payments.services import EarningsService
+        
+        practitioner = Practitioner.objects.get(id=practitioner_id)
+        booking = Booking.objects.get(id=booking_id)
+        service = Service.objects.get(id=service_id)
+        
+        earnings_service = EarningsService()
+        earnings = earnings_service.create_booking_earnings(
+            practitioner=practitioner,
+            booking=booking,
+            service=service,
+            gross_amount_cents=gross_amount_cents
+        )
+        
+        if earnings:
+            logger.info(f"Created earnings transaction {earnings.id} for booking {booking_id}")
+        
+        return {
+            'success': True,
+            'earnings_id': earnings.id if earnings else None,
+            'booking_id': booking_id
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating earnings for booking {booking_id}: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'booking_id': booking_id
+        }

@@ -5,6 +5,7 @@ from .payment_service import PaymentService
 from .credit_service import CreditService
 from .earnings_service import EarningsService
 from .checkout_orchestrator import CheckoutOrchestrator
+from .checkout_orchestrator_fast import FastCheckoutOrchestrator
 from .payout_service import PayoutService
 from .webhook_service import WebhookService
 from .checkout_service import CheckoutService
@@ -15,6 +16,7 @@ __all__ = [
     'CreditService',
     'EarningsService',
     'CheckoutOrchestrator',
+    'FastCheckoutOrchestrator',
     'PayoutService',
     'WebhookService',
     'CheckoutService',

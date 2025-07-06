@@ -239,15 +239,27 @@ class CheckoutViewSet(viewsets.GenericViewSet):
         serializer = DirectPaymentSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         
-        orchestrator = CheckoutOrchestrator()
-        
         try:
-            result = orchestrator.process_booking_payment(
-                user=request.user,
-                service_id=serializer.validated_data['service_id'],
-                payment_method_id=serializer.validated_data['payment_method_id'],
-                booking_data=serializer.validated_data
-            )
+            # Use fast orchestrator by default (can be controlled by feature flag)
+            use_fast_checkout = True  # TODO: Move to settings or feature flag
+            
+            if use_fast_checkout:
+                from payments.services.checkout_orchestrator_fast import FastCheckoutOrchestrator
+                orchestrator = FastCheckoutOrchestrator()
+                result = orchestrator.process_booking_payment_fast(
+                    user=request.user,
+                    service_id=serializer.validated_data['service_id'],
+                    payment_method_id=serializer.validated_data['payment_method_id'],
+                    booking_data=serializer.validated_data
+                )
+            else:
+                orchestrator = CheckoutOrchestrator()
+                result = orchestrator.process_booking_payment(
+                    user=request.user,
+                    service_id=serializer.validated_data['service_id'],
+                    payment_method_id=serializer.validated_data['payment_method_id'],
+                    booking_data=serializer.validated_data
+                )
             
             if result.requires_action:
                 return Response({
