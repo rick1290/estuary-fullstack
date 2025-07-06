@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
-  streamSubscriptionsPartialUpdateMutation,
-  streamSubscriptionsDestroyMutation
+  subscriptionsPartialUpdateMutation,
+  subscriptionsDestroyMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -52,7 +52,7 @@ export default function StreamSubscriptionTierChange({
 
   // Update tier mutation
   const updateTierMutation = useMutation({
-    ...streamSubscriptionsPartialUpdateMutation(),
+    ...subscriptionsPartialUpdateMutation(),
     onSuccess: () => {
       toast({
         title: "Subscription updated!",
@@ -75,7 +75,7 @@ export default function StreamSubscriptionTierChange({
 
   // Cancel subscription mutation
   const cancelSubscriptionMutation = useMutation({
-    ...streamSubscriptionsDestroyMutation(),
+    ...subscriptionsDestroyMutation(),
     onSuccess: () => {
       toast({
         title: "Subscription cancelled",

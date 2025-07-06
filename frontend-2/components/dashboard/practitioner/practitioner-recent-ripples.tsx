@@ -12,7 +12,7 @@ import {
   Users, 
   BookOpen,
   MessageSquare,
-  Stream,
+  Radio,
   Droplets,
   ExternalLink
 } from "lucide-react"
@@ -45,7 +45,7 @@ export default function PractitionerRecentRipples() {
     if (type.includes('workshop')) return <Users className="h-4 w-4" />
     if (type.includes('course')) return <BookOpen className="h-4 w-4" />
     // In the future, add stream subscriptions
-    if (type === 'stream') return <Stream className="h-4 w-4" />
+    if (type === 'stream') return <Radio className="h-4 w-4" />
     return <User className="h-4 w-4" />
   }
 

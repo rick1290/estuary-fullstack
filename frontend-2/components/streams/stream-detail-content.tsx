@@ -158,7 +158,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       streamId: apiPost.stream || stream?.id || '',
       streamTitle: apiPost.stream_title || stream?.title || '',
       content: apiPost.content || '',
-      mediaUrls: apiPost.media?.map((m: any) => m.media_url) || [],
+      mediaUrls: apiPost.media?.map((m: any) => m.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${m.url}` : '') || [],
       contentType: apiPost.post_type as any || 'article',
       isPremium: apiPost.tier_level !== 'free',
       tierLevel: apiPost.tier_level,

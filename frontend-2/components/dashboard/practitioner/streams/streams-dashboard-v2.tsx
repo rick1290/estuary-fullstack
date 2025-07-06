@@ -157,8 +157,8 @@ export default function StreamsDashboardV2() {
   const handleCreatePost = async (postData: any) => {
     if (!practitionerStream?.id) {
       toast({
-        title: "Error",
-        description: "Stream not found",
+        title: "Create Your Stream First",
+        description: "You need to create a stream before you can publish posts. Click 'Create My Stream' to get started.",
         variant: "destructive",
       })
       return
@@ -195,8 +195,33 @@ export default function StreamsDashboardV2() {
         }
       })
       
-      createPostMutation.mutate({
-        body: formData as any // Type assertion needed for FormData
+      // Use direct fetch for FormData uploads since generated client doesn't handle it properly
+      fetch('/api/v1/stream-posts/', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      }).then(async (response) => {
+        if (response.ok) {
+          toast({
+            title: "Post created!",
+            description: "Your post has been created successfully.",
+          })
+          queryClient.invalidateQueries({ 
+            queryKey: streamPostsListOptions({ 
+              query: { stream: practitionerStream?.id } 
+            }).queryKey 
+          })
+          setCreatePostOpen(false)
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Failed to create post' }))
+          throw new Error(errorData.error || errorData.detail || 'Failed to create post')
+        }
+      }).catch((error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create post",
+          variant: "destructive",
+        })
       })
     } else {
       // No media, use regular JSON

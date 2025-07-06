@@ -200,7 +200,7 @@ export default function FeedPost({
                   >
                     <Box
                       component="img"
-                      src={url}
+                      src={url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${url}`}
                       alt={`Post media ${index + 1}`}
                       sx={{
                         position: "absolute",

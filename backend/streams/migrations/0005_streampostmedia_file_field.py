@@ -37,14 +37,5 @@ class Migration(migrations.Migration):
             name='is_processed',
             field=models.BooleanField(default=True),
         ),
-        # Remove old URL fields - commented out for safety
-        # You can uncomment these after verifying data migration
-        # migrations.RemoveField(
-        #     model_name='streampostmedia',
-        #     name='media_url',
-        # ),
-        # migrations.RemoveField(
-        #     model_name='streampostmedia',
-        #     name='thumbnail_url',
-        # ),
+        # Note: Old URL fields will be removed in migration 0006
     ]

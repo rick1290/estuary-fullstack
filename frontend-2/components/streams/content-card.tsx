@@ -228,18 +228,108 @@ export default function ContentCard({ post }: ContentCardProps) {
               </div>
             ) : (
               <div className="relative">
-                <Image
-                  src={post.mediaUrls[0] || "/placeholder.svg"}
-                  alt="Post media"
-                  width={800}
-                  height={450}
-                  className="w-full rounded-xl object-cover"
-                  style={{
-                    filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                  }}
-                />
+                {/* Multi-image gallery layout */}
+                {post.mediaUrls.length === 1 ? (
+                  // Single image - full width
+                  <div className="relative">
+                    <Image
+                      src={post.mediaUrls[0] || "/placeholder.svg"}
+                      alt="Post media"
+                      width={800}
+                      height={450}
+                      className="w-full rounded-xl object-cover"
+                      style={{
+                        filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                      }}
+                    />
+                  </div>
+                ) : post.mediaUrls.length === 2 ? (
+                  // Two images - side by side
+                  <div className="grid grid-cols-2 gap-2">
+                    {post.mediaUrls.slice(0, 2).map((url, index) => (
+                      <div key={index} className="relative aspect-square">
+                        <Image
+                          src={url || "/placeholder.svg"}
+                          alt={`Post media ${index + 1}`}
+                          fill
+                          className="rounded-xl object-cover"
+                          style={{
+                            filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : post.mediaUrls.length === 3 ? (
+                  // Three images - first one larger, two smaller
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative aspect-square">
+                      <Image
+                        src={post.mediaUrls[0] || "/placeholder.svg"}
+                        alt="Post media 1"
+                        fill
+                        className="rounded-xl object-cover"
+                        style={{
+                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                        }}
+                      />
+                    </div>
+                    <div className="grid grid-rows-2 gap-2">
+                      {post.mediaUrls.slice(1, 3).map((url, index) => (
+                        <div key={index + 1} className="relative aspect-square">
+                          <Image
+                            src={url || "/placeholder.svg"}
+                            alt={`Post media ${index + 2}`}
+                            fill
+                            className="rounded-xl object-cover"
+                            style={{
+                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  // Four or more images - 2x2 grid with "+X more" overlay
+                  <div className="grid grid-cols-2 gap-2">
+                    {post.mediaUrls.slice(0, 3).map((url, index) => (
+                      <div key={index} className="relative aspect-square">
+                        <Image
+                          src={url || "/placeholder.svg"}
+                          alt={`Post media ${index + 1}`}
+                          fill
+                          className="rounded-xl object-cover"
+                          style={{
+                            filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <div className="relative aspect-square">
+                      <Image
+                        src={post.mediaUrls[3] || "/placeholder.svg"}
+                        alt="Post media 4"
+                        fill
+                        className="rounded-xl object-cover"
+                        style={{
+                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                        }}
+                      />
+                      {post.mediaUrls.length > 4 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
+                          <span className="text-white font-semibold text-lg">
+                            +{post.mediaUrls.length - 4} more
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Premium content overlay */}
                 {post.isPremium && !post.hasAccess && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center rounded-xl">
                     <Button 
                       className="bg-white/90 backdrop-blur-sm text-gray-900 hover:bg-white shadow-lg"
                       onClick={() => {
@@ -248,7 +338,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                             defaultTab: "login",
                             redirectUrl: window.location.pathname,
                             serviceType: "stream",
-                            title: "Subscribe to View Image",
+                            title: "Subscribe to View Images",
                             description: "Sign in to access exclusive image content"
                           })
                         } else {
