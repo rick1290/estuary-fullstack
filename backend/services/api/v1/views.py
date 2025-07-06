@@ -5,11 +5,13 @@ from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Q, Count, Avg, F, Prefetch, Max
 from django.utils import timezone
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceSession,
@@ -125,10 +127,31 @@ class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(tags=['Services']),
-    create=extend_schema(tags=['Services']),
+    create=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        description="Create a new service. Supports both JSON and multipart/form-data for file uploads."
+    ),
     retrieve=extend_schema(tags=['Services']),
-    update=extend_schema(tags=['Services']),
-    partial_update=extend_schema(tags=['Services']),
+    update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        description="Update a service. Supports both JSON and multipart/form-data for file uploads."
+    ),
+    partial_update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        description="Update a service. Supports both JSON and multipart/form-data for file uploads."
+    ),
     destroy=extend_schema(tags=['Services']),
     featured=extend_schema(tags=['Services']),
     popular=extend_schema(tags=['Services']),
@@ -150,6 +173,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
     Used by practitioner dashboard and admin interfaces.
     """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsServiceOwner]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Accept both JSON and multipart
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ServiceFilter
     search_fields = ['name', 'description', 'tags']
@@ -199,6 +223,39 @@ class ServiceViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return ServiceCreateUpdateSerializer
         return ServiceDetailSerializer
+    
+    @extend_schema(
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        responses={200: ServiceDetailSerializer},
+        description="Update a service. Supports both JSON and multipart/form-data for file uploads."
+    )
+    def partial_update(self, request, *args, **kwargs):
+        """Override partial_update to add detailed logging for image uploads"""
+        print(f"\n=== Service PATCH Request Debug ===")
+        print(f"Content-Type: {request.content_type}")
+        print(f"Request FILES: {request.FILES}")
+        print(f"Request DATA: {dict(request.data)}")
+        
+        # Check if we have an image file
+        if 'image' in request.FILES:
+            image_file = request.FILES['image']
+            print(f"Image file detected:")
+            print(f"  - Name: {image_file.name}")
+            print(f"  - Size: {image_file.size}")
+            print(f"  - Content type: {image_file.content_type}")
+        
+        # Call parent method
+        response = super().partial_update(request, *args, **kwargs)
+        
+        # Log response
+        print(f"Response status: {response.status_code}")
+        if response.status_code == 200:
+            print(f"Updated service image_url: {response.data.get('image_url')}")
+        
+        return response
     
     @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
     def by_slug(self, request, slug=None):

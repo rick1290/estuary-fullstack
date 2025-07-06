@@ -10,6 +10,7 @@ import {
 } from "@/src/client/@tanstack/react-query.gen"
 import type { ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
 import { useToast } from "@/hooks/use-toast"
+import { patchWithFormData } from "@/lib/api-helpers"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -187,13 +188,19 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   // Update mutation
   const updateMutation = useMutation({
     ...servicesPartialUpdateMutation(),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Service updated",
         description: "Your changes have been saved successfully.",
       })
-      queryClient.invalidateQueries({ queryKey: ['services', serviceId] })
-      queryClient.invalidateQueries({ queryKey: ['servicesRetrieve', { path: { id: parseInt(serviceId) } }] })
+      // Invalidate and refetch the service data
+      await queryClient.invalidateQueries({ queryKey: ['services'] })
+      await queryClient.invalidateQueries({ 
+        queryKey: ['services', 'detail', parseInt(serviceId)] 
+      })
+      await queryClient.refetchQueries({
+        queryKey: servicesRetrieveOptions({ path: { id: parseInt(serviceId) } }).queryKey
+      })
       setUnsavedChanges(new Set())
     },
     onError: (error: any) => {
@@ -253,7 +260,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
           address_id: service.address?.id,
         },
         "media": {
-          image: service.image,
+          image: service.image_url || service.image,
         },
         "benefits": {
           what_youll_learn: service.what_youll_learn,
@@ -325,7 +332,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
           address_id: service.address?.id,
         },
         "media": {
-          image: service.image,
+          image: service.image_url || service.image,
         },
         "benefits": {
           what_youll_learn: service.what_youll_learn,
@@ -416,10 +423,28 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       delete updates.scheduleId
     }
     
-    await updateMutation.mutateAsync({
-      path: { id: parseInt(serviceId) },
-      body: updates,
-    })
+    // Check if we have a file to upload (only for media section)
+    const hasFile = sectionId === 'media' && updates.image instanceof File
+    
+    console.log('Section updates:', sectionId, updates)
+    console.log('Has file:', hasFile, updates.image)
+    
+    if (hasFile) {
+      // For file uploads, we need to pass the raw updates object with the File
+      // The generated client should handle FormData serialization
+      console.log('Uploading image file:', updates.image)
+      
+      await updateMutation.mutateAsync({
+        path: { id: parseInt(serviceId) },
+        body: updates,
+      })
+    } else {
+      // Regular JSON request
+      await updateMutation.mutateAsync({
+        path: { id: parseInt(serviceId) },
+        body: updates,
+      })
+    }
     
     setUnsavedChanges(prev => {
       const newSet = new Set(prev)
@@ -431,6 +456,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   // Save all changes
   const handleSaveAll = async () => {
     const updates: Partial<ServiceCreateUpdateRequestWritable> = {}
+    let hasFile = false
     
     // Merge all changed sections
     unsavedChanges.forEach(sectionId => {
@@ -442,13 +468,52 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         delete sectionUpdates.scheduleId
       }
       
+      // Check for files
+      Object.values(sectionUpdates).forEach(value => {
+        if (value instanceof File) {
+          hasFile = true
+        }
+      })
+      
       Object.assign(updates, sectionUpdates)
     })
 
-    await updateMutation.mutateAsync({
-      path: { id: parseInt(serviceId) },
-      body: updates,
-    })
+    if (hasFile) {
+      // Create FormData for file upload
+      const formData = new FormData()
+      
+      // Add all fields to FormData
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append(key, value)
+        } else if (Array.isArray(value)) {
+          // Handle arrays by appending each item
+          value.forEach((item, index) => {
+            if (typeof item === 'object' && item !== null) {
+              formData.append(`${key}[${index}]`, JSON.stringify(item))
+            } else {
+              formData.append(`${key}[${index}]`, String(item))
+            }
+          })
+        } else if (typeof value === 'object' && value !== null) {
+          // Handle nested objects by stringifying
+          formData.append(key, JSON.stringify(value))
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, String(value))
+        }
+      })
+      
+      await updateMutation.mutateAsync({
+        path: { id: parseInt(serviceId) },
+        body: formData,
+      })
+    } else {
+      // Regular JSON request
+      await updateMutation.mutateAsync({
+        path: { id: parseInt(serviceId) },
+        body: updates,
+      })
+    }
   }
 
   // Scroll to section

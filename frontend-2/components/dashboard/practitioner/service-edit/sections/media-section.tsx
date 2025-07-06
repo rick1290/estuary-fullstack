@@ -36,10 +36,23 @@ export function MediaSection({
   const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
-    setLocalData(data)
-    // Set initial preview
+    // Don't update localData if it's just the initial image URL
+    // We only want to track actual changes (new files or removals)
     if (data.image && typeof data.image === 'string') {
+      // This is the initial image URL, just set the preview
       setCoverImagePreview(data.image)
+      // Don't set localData.image to the URL string
+      setLocalData({ ...data, image: undefined })
+    } else {
+      setLocalData(data)
+      // Set preview for File objects
+      if (data.image instanceof File) {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setCoverImagePreview(reader.result as string)
+        }
+        reader.readAsDataURL(data.image)
+      }
     }
   }, [data])
 
@@ -71,7 +84,7 @@ export function MediaSection({
 
   const removeCoverImage = () => {
     setCoverImagePreview(null)
-    handleChange('image', null)
+    handleChange('image', '') // Use empty string instead of null for removal
   }
 
   return (

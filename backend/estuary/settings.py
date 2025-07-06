@@ -166,6 +166,25 @@ STATIC_URL = "static/"
 # Path where static files will be collected
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media_files')
+
+# Get Cloudflare settings with safe defaults
+CLOUDFLARE_R2_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY_ID', '')
+CLOUDFLARE_R2_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_ACCESS_KEY', '')
+CLOUDFLARE_R2_STORAGE_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_STORAGE_BUCKET_NAME', '')
+CLOUDFLARE_R2_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_ENDPOINT_URL', '')
+CLOUDFLARE_R2_REGION_NAME = os.getenv('CLOUDFLARE_R2_REGION_NAME', 'auto')
+CLOUDFLARE_R2_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_CUSTOM_DOMAIN', '')
+
+# Use Cloudflare R2 for media storage in production
+if not DEBUG and CLOUDFLARE_R2_ACCESS_KEY_ID:
+    DEFAULT_FILE_STORAGE = 'integrations.cloudflare_r2.storage.CloudflareR2Storage'
+else:
+    # Use local storage for development
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -230,6 +249,8 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser',
     ],
     'EXCEPTION_HANDLER': 'core.api.exceptions.custom_exception_handler',
     # Temporarily disable versioning to test schema generation
@@ -494,6 +515,8 @@ STRIPE_STATEMENT_DESCRIPTOR = 'ESTUARY'
 
 # Frontend URL for redirects
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3001')
+# Backend URL for building absolute URLs
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
 
 # Payment settings
 PAYMENT_MINIMUM_AMOUNT_CENTS = 100  # $1.00 minimum
@@ -501,15 +524,8 @@ PAYMENT_HOLD_PERIOD_HOURS = 48  # Hold period before practitioner can withdraw
 PAYOUT_MINIMUM_AMOUNT_CENTS = 5000  # $50.00 minimum payout
 
 # ============================================================================
-# Cloudflare R2 Storage Configuration
+# Cloudflare R2 Storage Configuration (moved to media section above)
 # ============================================================================
-
-CLOUDFLARE_R2_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY_ID', '')
-CLOUDFLARE_R2_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_ACCESS_KEY', '')
-CLOUDFLARE_R2_STORAGE_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_STORAGE_BUCKET_NAME', '')
-CLOUDFLARE_R2_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_ENDPOINT_URL', '')
-CLOUDFLARE_R2_REGION_NAME = os.getenv('CLOUDFLARE_R2_REGION_NAME', 'auto')
-CLOUDFLARE_R2_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_CUSTOM_DOMAIN', '')
 
 # ============================================================================
 # Temporal Configuration

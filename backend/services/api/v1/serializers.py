@@ -269,6 +269,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
     waitlist_count = serializers.SerializerMethodField()
     practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
     cancellation_policy = serializers.SerializerMethodField()
+    image_url = serializers.CharField(read_only=True)
     
     class Meta(ServiceListSerializer.Meta):
         fields = ServiceListSerializer.Meta.fields + [
@@ -282,7 +283,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
             'media_attachments', 'child_relationships', 'sessions', 'resources',
             'price_per_session', 'original_price', 'savings_amount',
             'savings_percentage', 'total_sessions', 'benefits', 'agenda_items',
-            'waitlist_count', 'practitioner_relationships', 'cancellation_policy'
+            'waitlist_count', 'practitioner_relationships', 'cancellation_policy', 'image_url'
         ]
     
     def get_additional_practitioners(self, obj):
@@ -331,6 +332,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=False, allow_null=True)
     practitioner_category_id = serializers.IntegerField(required=False, allow_null=True)
     service_type_id = serializers.IntegerField(required=True)
+    image = serializers.ImageField(required=False, allow_null=True, help_text="Service cover image")
     additional_practitioner_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
@@ -502,6 +504,28 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         """Update service with relationships"""
+        # Log the incoming data
+        print(f"\n=== Service Update Debug ===")
+        print(f"Service ID: {instance.id}")
+        print(f"Service name: {instance.name}")
+        print(f"Validated data keys: {list(validated_data.keys())}")
+        print(f"Current image field value: {instance.image}")
+        print(f"Current image file exists: {bool(instance.image)}")
+        
+        if 'image' in validated_data:
+            print(f"\n=== Image Update Debug ===")
+            print(f"New image field type: {type(validated_data['image'])}")
+            print(f"New image field value: {validated_data['image']}")
+            
+            if hasattr(validated_data['image'], 'name'):
+                print(f"Image file name: {validated_data['image'].name}")
+                print(f"Image file size: {validated_data['image'].size}")
+            
+            # Handle empty string as image removal
+            if validated_data['image'] == '':
+                print("Empty string detected - removing image")
+                validated_data['image'] = None
+        
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', None)
         child_service_configs = validated_data.pop('child_service_configs', None)
@@ -511,7 +535,26 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         validated_data.pop('benefits', None)
         
         # Update service
+        print(f"\n=== Before super().update() ===")
         service = super().update(instance, validated_data)
+        
+        # Force save to ensure image is persisted
+        service.save()
+        
+        # Log after update
+        print(f"\n=== After Update ===")
+        print(f"Service image field: {service.image}")
+        print(f"Service image name: {service.image.name if service.image else 'None'}")
+        print(f"Service image file exists: {bool(service.image)}")
+        print(f"Service image URL: {service.image_url if hasattr(service, 'image_url') else 'No image_url property'}")
+        
+        # Check if file was actually saved
+        if service.image:
+            try:
+                print(f"Image file path: {service.image.path}")
+                print(f"Image file URL: {service.image.url}")
+            except Exception as e:
+                print(f"Error accessing image file: {e}")
         
         # Update additional practitioners if provided
         if additional_practitioner_ids is not None:
