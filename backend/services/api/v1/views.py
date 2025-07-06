@@ -529,6 +529,107 @@ class ServiceViewSet(viewsets.ModelViewSet):
             
             serializer = WaitlistSerializer(waitlist_entry)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @extend_schema(
+        tags=['Services'],
+        summary="Upload cover image for service",
+        description="Upload a cover image for a service. This will replace any existing cover image.",
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'image': {'type': 'string', 'format': 'binary', 'description': 'Image file to upload'},
+                },
+                'required': ['image']
+            }
+        },
+        responses={
+            200: {
+                'description': 'Cover image uploaded successfully',
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'type': 'object',
+                            'properties': {
+                                'message': {'type': 'string'},
+                                'image_url': {'type': 'string'},
+                            }
+                        }
+                    }
+                }
+            },
+            400: {'description': 'Bad request - invalid file or no file provided'},
+            403: {'description': 'Permission denied - not the service owner'}
+        }
+    )
+    @action(
+        detail=True, 
+        methods=['post'], 
+        parser_classes=[MultiPartParser, FormParser],
+        url_path='upload-cover-image',
+        url_name='upload-cover-image'
+    )
+    def upload_cover_image(self, request, pk=None):
+        """
+        Upload cover image for a service.
+        Replaces any existing cover image.
+        """
+        try:
+            # Get the service - this will also handle 404 if not found
+            service = self.get_object()
+            
+            # Check permissions (IsServiceOwner should handle this, but double-check)
+            if not request.user.is_authenticated:
+                return Response(
+                    {'error': 'Authentication required'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            if not hasattr(request.user, 'practitioner_profile') or not request.user.practitioner_profile:
+                return Response(
+                    {'error': 'Must be a practitioner to upload cover images'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            if service.primary_practitioner != request.user.practitioner_profile:
+                return Response(
+                    {'error': 'You can only upload cover images for your own services'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Check if image file is provided
+            if 'image' not in request.FILES:
+                return Response(
+                    {'error': 'No image file provided'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            image_file = request.FILES['image']
+            
+            # Validate file type
+            if not image_file.content_type or not image_file.content_type.startswith('image/'):
+                return Response(
+                    {'error': 'File must be an image'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Update service with new image
+            service.image = image_file
+            service.save(update_fields=['image'])
+            
+            # Return success response with image URL
+            image_url = service.image.url if service.image else None
+            return Response({
+                'message': 'Cover image uploaded successfully',
+                'image_url': image_url
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            import traceback
+            return Response({
+                'error': f'Upload failed: {str(e)}',
+                'traceback': traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema_view(

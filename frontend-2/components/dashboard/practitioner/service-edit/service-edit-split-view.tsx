@@ -950,14 +950,18 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <SectionComponent
-                          service={service}
-                          data={sectionData[section.id] || {}}
-                          onChange={(data) => handleSectionChange(section.id, data)}
-                          onSave={() => handleSaveSection(section.id)}
-                          hasChanges={hasChanges}
-                          isSaving={updateMutation.isPending}
-                        />
+                        {section.id === 'media' ? (
+                          <MediaSection service={service} />
+                        ) : (
+                          <SectionComponent
+                            service={service}
+                            data={sectionData[section.id] || {}}
+                            onChange={(data) => handleSectionChange(section.id, data)}
+                            onSave={() => handleSaveSection(section.id)}
+                            hasChanges={hasChanges}
+                            isSaving={updateMutation.isPending}
+                          />
+                        )}
                       </CardContent>
                     </Card>
                   </div>
