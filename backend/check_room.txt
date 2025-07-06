@@ -1,0 +1,18 @@
+from services.models import ServiceSession
+from rooms.models import Room
+
+# Get the service session
+session = ServiceSession.objects.get(id=32)
+print(f"Session: {session.title or 'Untitled'} (ID: {session.id})")
+
+# Check for room
+room = Room.objects.filter(service_session=session).first()
+if room:
+    print(f"Room found!")
+    print(f"Room ID: {room.id}")
+    print(f"Room public UUID: {room.public_uuid}")
+    print(f"LiveKit room name: {room.livekit_room_name}")
+    print(f"Status: {room.status}")
+    print(f"URL should be: /room/session/{session.id}/lobby")
+else:
+    print("No room found for this session")

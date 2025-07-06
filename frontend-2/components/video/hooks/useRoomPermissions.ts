@@ -108,9 +108,15 @@ export function useRoomPermissions({ bookingId, sessionId, roomId }: UseRoomPerm
 
     if (sessionId && sessionQuery.data) {
       const session = sessionQuery.data;
-      const isPractitioner = session.service?.practitioner?.user?.id === user.numericId;
+      const isPractitioner = session.service?.primary_practitioner?.user?.id === user.numericId || 
+                            session.service?.primary_practitioner?.id === user.numericId;
+      
+      // Check for bookings related to this session's service
       const hasBooking = userBookingsQuery.data?.results?.some(
-        (booking: any) => booking.status === 'confirmed'
+        (booking: any) => 
+          booking.status === 'confirmed' && 
+          (booking.service_session?.id === parseInt(sessionId) || 
+           booking.service?.id === session.service?.id)
       );
 
       if (!isPractitioner && !hasBooking) {

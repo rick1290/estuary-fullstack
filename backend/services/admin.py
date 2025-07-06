@@ -23,7 +23,7 @@ class ServiceTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'primary_practitioner', 'service_type', 'price', 'duration_display', 
+    list_display = ['name', 'primary_practitioner', 'service_type', 'get_price_display', 'duration_display', 
                    'location_type', 'is_active', 'is_featured']
     list_filter = ['service_type', 'category', 'location_type', 'experience_level', 
                    'is_active', 'is_featured', 'is_public']
@@ -38,7 +38,7 @@ class ServiceAdmin(admin.ModelAdmin):
             'fields': ('name', 'short_description', 'description', 'id', 'public_uuid')
         }),
         ('Pricing & Duration', {
-            'fields': ('price', 'duration_minutes', 'duration_display')
+            'fields': ('price_cents', 'duration_minutes', 'duration_display')
         }),
         ('Classification', {
             'fields': ('service_type', 'category', 'experience_level')
@@ -50,23 +50,19 @@ class ServiceAdmin(admin.ModelAdmin):
             'fields': ('max_participants', 'min_participants', 'age_min', 'age_max')
         }),
         ('Location & Delivery', {
-            'fields': ('location_type', 'location')
+            'fields': ('location_type', 'address')
         }),
         ('Content & Learning', {
             'fields': ('what_youll_learn', 'prerequisites', 'includes')
         }),
         ('Media & Presentation', {
-            'fields': ('image_url', 'video_url', 'tags')
+            'fields': ('image', 'tags')
         }),
         ('Multi-language', {
             'fields': ('languages',)
         }),
         ('Status & Visibility', {
             'fields': ('is_active', 'is_featured', 'is_public')
-        }),
-        ('Service Type Flags', {
-            'fields': ('is_course',),
-            'classes': ('collapse',)
         }),
         ('Statistics (Read-only)', {
             'fields': ('average_rating', 'total_reviews', 'total_bookings'),
@@ -80,7 +76,13 @@ class ServiceAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'primary_practitioner__user', 'service_type', 'category', 'location'
+            'primary_practitioner__user', 'service_type', 'category', 'address'
         )
+    
+    def get_price_display(self, obj):
+        """Display price in dollars"""
+        return f"${obj.price:.2f}"
+    get_price_display.short_description = 'Price'
+    get_price_display.admin_order_field = 'price_cents'
 
 
