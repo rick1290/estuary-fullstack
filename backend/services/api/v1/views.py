@@ -204,15 +204,15 @@ class ServiceViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             # Public users see only active and public services
             if not self.request.user.is_authenticated:
-                queryset = queryset.filter(is_active=True, is_public=True, status='published')
+                queryset = queryset.filter(is_active=True, is_public=True, status='active')
             # Authenticated users can see their own services regardless of status
             elif hasattr(self.request.user, 'practitioner_profile'):
                 queryset = queryset.filter(
-                    Q(is_active=True, is_public=True, status='published') |
+                    Q(is_active=True, is_public=True, status='active') |
                     Q(primary_practitioner=self.request.user.practitioner_profile)
                 )
             else:
-                queryset = queryset.filter(is_active=True, is_public=True, status='published')
+                queryset = queryset.filter(is_active=True, is_public=True, status='active')
         
         return queryset
     
@@ -248,7 +248,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             is_featured=True,
             is_active=True,
             is_public=True,
-            status='published'
+            status='active'
         )[:12]  # Limit to 12 featured services
         serializer = ServiceListSerializer(featured, many=True, context={'request': request})
         return Response(serializer.data)
@@ -259,7 +259,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         popular = self.get_queryset().filter(
             is_active=True,
             is_public=True,
-            status='published'
+            status='active'
         ).annotate(
             booking_count=Count('bookings'),
             avg_rating_annotated=Avg('reviews__rating')

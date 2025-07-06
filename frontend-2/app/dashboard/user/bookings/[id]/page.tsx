@@ -331,14 +331,14 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
               {booking.status === "confirmed" && (
                 <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
-                  {booking.location_type === "virtual" && booking.video_url && (
+                  {booking.location_type === "virtual" && (booking.room?.public_uuid || booking.video_url) && (
                     <Button
                       className={`flex items-center gap-2 ${joinable ? "bg-green-600 hover:bg-green-700" : ""}`}
                       disabled={!joinable}
                       asChild={joinable}
                     >
                       {joinable ? (
-                        <a href={booking.video_url} target="_blank" rel="noopener noreferrer">
+                        <a href={booking.room?.public_uuid ? `/room/${booking.room.public_uuid}/lobby` : booking.video_url} target={booking.room?.public_uuid ? "_self" : "_blank"} rel="noopener noreferrer">
                           <Video className="h-4 w-4" />
                           Join Session Now
                         </a>

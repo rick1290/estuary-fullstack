@@ -86,6 +86,132 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(active_rooms, many=True)
         return Response(serializer.data)
     
+    @action(detail=True, methods=['get'])
+    def check_access(self, request, public_uuid=None):
+        """
+        Check if the current user has access to this room.
+        Returns access permissions and room details.
+        """
+        room = self.get_object()
+        user = request.user
+        
+        # Initialize response data
+        response_data = {
+            'can_join': False,
+            'role': 'viewer',
+            'reason': None,
+            'room': {
+                'id': room.id,
+                'public_uuid': room.public_uuid,
+                'livekit_room_name': room.livekit_room_name,
+                'status': room.status,
+                'room_type': room.room_type,
+            }
+        }
+        
+        # Check if user is the room creator
+        if room.created_by == user:
+            response_data.update({
+                'can_join': True,
+                'role': 'host',
+            })
+            return Response(response_data)
+        
+        # Check for direct booking relationship
+        if room.booking:
+            booking = room.booking
+            # Check if user is the practitioner of the SERVICE (not the booking)
+            is_practitioner = (
+                booking.service and 
+                booking.service.primary_practitioner and 
+                booking.service.primary_practitioner.user == user
+            )
+            is_client = booking.user == user
+            
+            if not (is_practitioner or is_client):
+                response_data['reason'] = 'Not associated with this booking'
+                return Response(response_data)
+            
+            if booking.status not in ['confirmed', 'in_progress']:
+                response_data['reason'] = f'Booking is {booking.status}'
+                return Response(response_data)
+            
+            response_data.update({
+                'can_join': True,
+                'role': 'host' if is_practitioner else 'participant',
+                'booking': {
+                    'id': booking.id,
+                    'public_uuid': booking.public_uuid,
+                    'status': booking.status,
+                }
+            })
+            return Response(response_data)
+        
+        # Check for service session relationship
+        if room.service_session:
+            session = room.service_session
+            service = session.service
+            
+            # Check if user is the practitioner
+            is_practitioner = (
+                service.primary_practitioner and 
+                service.primary_practitioner.user == user
+            )
+            
+            if is_practitioner:
+                response_data.update({
+                    'can_join': True,
+                    'role': 'host',
+                    'service_session': {
+                        'id': session.id,
+                        'start_time': session.start_time,
+                        'end_time': session.end_time,
+                    }
+                })
+                return Response(response_data)
+            
+            # Check for user bookings
+            # For workshops: booking.service_session matches this session
+            # For courses: booking.service matches this session's service
+            from bookings.models import Booking
+            
+            user_has_access = False
+            
+            # Check workshop bookings (direct service_session relationship)
+            if Booking.objects.filter(
+                user=user,
+                service_session=session,
+                status='confirmed'
+            ).exists():
+                user_has_access = True
+            
+            # Check course bookings (service relationship)
+            elif service.service_type == 'course' and Booking.objects.filter(
+                user=user,
+                service=service,
+                status='confirmed'
+            ).exists():
+                user_has_access = True
+            
+            if user_has_access:
+                response_data.update({
+                    'can_join': True,
+                    'role': 'participant',
+                    'service_session': {
+                        'id': session.id,
+                        'start_time': session.start_time,
+                        'end_time': session.end_time,
+                    }
+                })
+                return Response(response_data)
+            
+            response_data['reason'] = 'No confirmed booking for this session'
+            return Response(response_data)
+        
+        # Default: no access
+        response_data['reason'] = 'No valid access to this room'
+        return Response(response_data)
+    
     @action(detail=True, methods=['post'])
     def get_token(self, request, public_uuid=None):
         """
@@ -105,7 +231,7 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         role = 'participant'  # Default role
         
         # Check if user is the practitioner/host
-        if room.booking and room.booking.practitioner.user == user:
+        if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
             role = 'host'
         elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             role = 'host'
@@ -186,9 +312,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Check permissions - only host can start recording
         is_host = False
-        if room.booking and room.booking.practitioner.user == user:
+        if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
             is_host = True
-        elif room.service_session and room.service_session.service.practitioner.user == user:
+        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             is_host = True
         elif room.created_by == user:
             is_host = True
@@ -246,9 +372,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Check permissions - only host can stop recording
         is_host = False
-        if room.booking and room.booking.practitioner.user == user:
+        if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
             is_host = True
-        elif room.service_session and room.service_session.service.practitioner.user == user:
+        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             is_host = True
         elif room.created_by == user:
             is_host = True
@@ -299,10 +425,15 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         if not can_view:
             # Check if user is a participant
             if room.booking:
-                can_view = room.booking.user == user or room.booking.practitioner.user == user
+                can_view = room.booking.user == user or (
+                    room.booking.service and 
+                    room.booking.service.primary_practitioner and 
+                    room.booking.service.primary_practitioner.user == user
+                )
             elif room.service_session:
                 can_view = (
-                    room.service_session.service.practitioner.user == user or
+                    room.service_session.service.primary_practitioner and
+                    room.service_session.service.primary_practitioner.user == user or
                     room.service_session.bookings.filter(user=user).exists()
                 )
         
