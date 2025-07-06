@@ -353,6 +353,7 @@ class StreamPostSerializer(BaseSerializer):
     media = StreamPostMediaSerializer(many=True, read_only=True)
     can_access = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    is_saved = serializers.SerializerMethodField()
     
     class Meta:
         model = StreamPost
@@ -365,7 +366,7 @@ class StreamPostSerializer(BaseSerializer):
             'view_count', 'unique_view_count', 'like_count', 'comment_count', 'share_count',
             'allow_comments', 'allow_tips',
             'poll_options', 'poll_ends_at', 'poll_allows_multiple',
-            'tags', 'media', 'can_access', 'is_liked',
+            'tags', 'media', 'can_access', 'is_liked', 'is_saved',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
@@ -402,6 +403,46 @@ class StreamPostSerializer(BaseSerializer):
         if not request or not request.user.is_authenticated:
             return False
         return obj.likes.filter(user=request.user).exists()
+    
+    def get_is_saved(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.saves.filter(user=request.user).exists()
+
+
+class StreamPostCommentSerializer(BaseSerializer):
+    """Serializer for stream post comments."""
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_image = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = StreamPostComment
+        fields = [
+            'id', 'post', 'user', 'user_name', 'user_image',
+            'content', 'parent_comment', 'replies',
+            'is_pinned', 'is_hidden', 'is_reported',
+            'like_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'user', 'user_name', 'user_image', 'replies',
+            'is_pinned', 'is_hidden', 'is_reported',
+            'like_count', 'created_at', 'updated_at'
+        ]
+    
+    def get_user_image(self, obj):
+        """Get user's profile image URL."""
+        if hasattr(obj.user, 'profile') and obj.user.profile.avatar:
+            return obj.user.profile.avatar.url
+        return None
+    
+    def get_replies(self, obj):
+        """Get nested replies if this is a parent comment."""
+        if obj.parent_comment is None:
+            replies = obj.replies.filter(is_hidden=False)
+            return StreamPostCommentSerializer(replies, many=True, context=self.context).data
+        return []
 
 
 class StreamSubscriptionSerializer(BaseSerializer):

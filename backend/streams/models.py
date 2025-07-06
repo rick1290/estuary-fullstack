@@ -464,6 +464,30 @@ class StreamPostLike(BaseModel):
         return f"{self.user} likes {self.post}"
 
 
+class StreamPostSave(BaseModel):
+    """Saved/bookmarked stream posts"""
+    post = models.ForeignKey(
+        StreamPost,
+        on_delete=models.CASCADE,
+        related_name='saves'
+    )
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='saved_stream_posts'
+    )
+    
+    class Meta:
+        unique_together = ['post', 'user']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['post']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user} saved {self.post}"
+
+
 class StreamPostComment(BaseModel):
     """Comments on stream posts"""
     post = models.ForeignKey(

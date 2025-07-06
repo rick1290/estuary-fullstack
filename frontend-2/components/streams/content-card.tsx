@@ -7,6 +7,14 @@ import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { useAuth } from "@/hooks/use-auth"
 import type { StreamPost } from "@/types/stream"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import { 
+  streamPostsLikeCreateMutation, 
+  streamPostsSaveCreateMutation,
+  streamPostsCommentsCreateMutation,
+  streamPostsCommentsListOptions
+} from "@/src/client/@tanstack/react-query.gen"
+import { useToast } from "@/components/ui/use-toast"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -26,11 +34,52 @@ export default function ContentCard({ post }: ContentCardProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
-  const [liked, setLiked] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  
+  const [liked, setLiked] = useState(post.isLiked)
+  const [saved, setSaved] = useState(post.isSaved)
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
   const [likeCount, setLikeCount] = useState(post.likes)
+
+  // Initialize liked state
+  useEffect(() => {
+    setLiked(post.isLiked)
+    setLikeCount(post.likes)
+  }, [post.isLiked, post.likes])
+
+  // Like mutation
+  const likeMutation = useMutation({
+    ...streamPostsLikeCreateMutation(),
+    onMutate: async () => {
+      // Optimistic update
+      const newLiked = !liked
+      setLiked(newLiked)
+      setLikeCount(newLiked ? likeCount + 1 : Math.max(0, likeCount - 1))
+    },
+    onSuccess: (data) => {
+      // Update with server data
+      if (data) {
+        // The response is directly the StreamPostReadable object
+        setLiked(!!data.is_liked)
+        setLikeCount(data.like_count || 0)
+      }
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['streamPosts'] })
+    },
+    onError: (error: any) => {
+      // Revert optimistic update
+      setLiked(!liked)
+      setLikeCount(liked ? likeCount + 1 : Math.max(0, likeCount - 1))
+      
+      toast({
+        title: "Failed to update like",
+        description: error?.body?.detail || "Please try again",
+        variant: "destructive",
+      })
+    }
+  })
 
   const handleLike = () => {
     if (!isAuthenticated) {
@@ -44,9 +93,41 @@ export default function ContentCard({ post }: ContentCardProps) {
       return
     }
 
-    setLiked(!liked)
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1)
+    // Call API to toggle like
+    likeMutation.mutate({
+      path: {
+        public_uuid: post.id
+      },
+      body: {} // Empty body as required by the API
+    })
   }
+
+  // Save mutation
+  const saveMutation = useMutation({
+    ...streamPostsSaveCreateMutation(),
+    onMutate: async () => {
+      // Optimistic update
+      setSaved(!saved)
+    },
+    onSuccess: (data) => {
+      // Update with server data
+      if (data) {
+        setSaved(!!data.is_saved)
+      }
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['streamPosts'] })
+    },
+    onError: (error: any) => {
+      // Revert optimistic update
+      setSaved(!saved)
+      
+      toast({
+        title: "Failed to save post",
+        description: error?.body?.detail || "Please try again",
+        variant: "destructive",
+      })
+    }
+  })
 
   const handleSave = () => {
     if (!isAuthenticated) {
@@ -59,7 +140,14 @@ export default function ContentCard({ post }: ContentCardProps) {
       })
       return
     }
-    setSaved(!saved)
+    
+    // Call API to toggle save
+    saveMutation.mutate({
+      path: {
+        public_uuid: post.id
+      },
+      body: {} // Empty body as required by the API
+    })
   }
 
   const handleCommentToggle = () => {
@@ -76,13 +164,46 @@ export default function ContentCard({ post }: ContentCardProps) {
     setShowComments(!showComments)
   }
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!comment.trim()) return
-    // In a real app, this would send the comment to an API
-    console.log(`Comment on post ${post.id}: ${comment}`)
-    setComment("")
+    
+    // Call API to create comment
+    createCommentMutation.mutate({
+      path: { public_uuid: post.id },
+      body: { 
+        content: comment.trim()
+      }
+    })
   }
+
+  // Query for comments
+  const { data: commentsData, refetch: refetchComments } = useQuery({
+    ...streamPostsCommentsListOptions({
+      path: { public_uuid: post.id }
+    }),
+    enabled: showComments && !!post.id
+  })
+
+  // Comment creation mutation
+  const createCommentMutation = useMutation({
+    ...streamPostsCommentsCreateMutation(),
+    onSuccess: (data) => {
+      setComment("")
+      refetchComments()
+      toast({
+        title: "Comment posted!",
+        description: "Your comment has been added.",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to post comment",
+        description: error?.body?.detail || "Please try again",
+        variant: "destructive",
+      })
+    }
+  })
 
   const handlePractitionerClick = () => {
     router.push(`/practitioners/${post.practitionerId}`)
@@ -426,27 +547,54 @@ export default function ContentCard({ post }: ContentCardProps) {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
-              <Button type="submit" size="sm" disabled={!comment.trim()} className="bg-sage-600 hover:bg-sage-700 rounded-xl">
-                Post
+              <Button 
+                type="submit" 
+                size="sm" 
+                disabled={!comment.trim() || createCommentMutation.isPending} 
+                className="bg-sage-600 hover:bg-sage-700 rounded-xl"
+              >
+                {createCommentMutation.isPending ? "Posting..." : "Post"}
               </Button>
             </form>
             
-            {post.commentsList && post.commentsList.length > 0 ? (
+            {commentsData?.results && commentsData.results.length > 0 ? (
               <div className="space-y-3">
-                {post.commentsList.map((comment) => (
+                {commentsData.results.map((comment: any) => (
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.userImage || "/placeholder.svg"} alt={comment.userName} />
-                      <AvatarFallback className="text-xs">{comment.userName.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={comment.user_image || "/placeholder.svg"} alt={comment.user_name} />
+                      <AvatarFallback className="text-xs">{comment.user_name?.charAt(0) || '?'}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2">
-                        <span className="font-medium text-sm text-olive-900">{comment.userName}</span>
+                        <span className="font-medium text-sm text-olive-900">{comment.user_name}</span>
                         <span className="text-xs text-olive-500">
-                          {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       <p className="text-sm text-olive-700 mt-0.5">{comment.content}</p>
+                      {/* Show replies if any */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="ml-8 mt-2 space-y-2">
+                          {comment.replies.map((reply: any) => (
+                            <div key={reply.id} className="flex gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={reply.user_image || "/placeholder.svg"} alt={reply.user_name} />
+                                <AvatarFallback className="text-xs">{reply.user_name?.charAt(0) || '?'}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="font-medium text-xs text-olive-900">{reply.user_name}</span>
+                                  <span className="text-xs text-olive-500">
+                                    {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-olive-700 mt-0.5">{reply.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

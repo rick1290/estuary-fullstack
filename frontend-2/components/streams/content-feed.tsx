@@ -34,6 +34,7 @@ export default function ContentFeed({
   const queryParams: any = {
     page_size: pageSize,
     is_published: true, // Only show published posts
+    include_all_tiers: true, // Show all content for preview purposes
   }
 
   // Add search query
@@ -96,6 +97,10 @@ export default function ContentFeed({
 
   // Map API response to StreamPost format
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
+    // For public users or non-subscribers, we want to show content preview (no full access)
+    // The API should return all posts when include_all_tiers is true
+    const hasAccess = apiPost.tier_level === 'free' || (apiPost.can_access || false)
+    
     return {
       id: apiPost.public_uuid || apiPost.id,
       practitionerId: apiPost.practitioner_id || '',
@@ -113,10 +118,9 @@ export default function ContentFeed({
       comments: apiPost.comment_count || 0,
       views: apiPost.view_count || 0,
       tags: apiPost.tags || [],
-      isLiked: false, // TODO: Implement user like status
-      isSaved: false, // TODO: Implement user save status
-      // Use the has_access value from the API which already handles authentication logic
-      hasAccess: apiPost.can_access || false,
+      isLiked: apiPost.is_liked || false,
+      isSaved: apiPost.is_saved || false,
+      hasAccess: hasAccess,
       userSubscriptionTier: apiPost.user_subscription_tier || null,
     }
   }

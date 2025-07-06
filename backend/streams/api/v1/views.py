@@ -14,7 +14,7 @@ from drf_spectacular.types import OpenApiTypes
 from streams.models import (
     Stream, StreamPost, StreamSubscription, StreamPostMedia,
     LiveStream, StreamSchedule, LiveStreamViewer, LiveStreamAnalytics,
-    StreamCategory, StreamAnalytics
+    StreamCategory, StreamAnalytics, StreamPostComment, StreamPostSave
 )
 from rooms.models import Room, RoomTemplate, RoomToken, RoomRecording
 from rooms.livekit.tokens import generate_room_token
@@ -23,7 +23,7 @@ from .serializers import (
     LiveStreamSerializer, LiveStreamCreateSerializer, StreamScheduleSerializer,
     LiveStreamViewerSerializer, LiveStreamAnalyticsSerializer,
     StreamCategorySerializer, StreamAnalyticsSerializer,
-    RoomRecordingSerializer
+    RoomRecordingSerializer, StreamPostCommentSerializer
 )
 from .permissions import IsPractitionerOwner, IsStreamOwner, CanAccessStream
 from .views_media import StreamPostMediaMixin
@@ -1158,8 +1158,22 @@ class UserStreamSubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
     update=extend_schema(tags=['Stream Posts']),
     partial_update=extend_schema(tags=['Stream Posts']),
     destroy=extend_schema(tags=['Stream Posts']),
-    like=extend_schema(tags=['Stream Posts']),
-    view=extend_schema(tags=['Stream Posts'])
+    like=extend_schema(tags=['Stream Posts'], description="Like or unlike a stream post"),
+    save=extend_schema(tags=['Stream Posts'], description="Save or unsave a stream post"), 
+    view=extend_schema(tags=['Stream Posts'], description="Track a view on a stream post"),
+    saved=extend_schema(tags=['Stream Posts'], description="Get user's saved stream posts"),
+    comments=extend_schema(
+        tags=['Stream Posts'], 
+        description="Get comments or create a new comment on a stream post",
+        responses={
+            200: StreamPostCommentSerializer(many=True),
+            201: StreamPostCommentSerializer
+        }
+    ),
+    delete_comment=extend_schema(
+        tags=['Stream Posts'], 
+        description="Delete a comment on a stream post"
+    )
 )
 class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
     """
@@ -1354,6 +1368,23 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         # This is now handled in the create method above
         pass
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def saved(self, request):
+        """Get user's saved posts."""
+        saved_post_ids = StreamPostSave.objects.filter(
+            user=request.user
+        ).values_list('post_id', flat=True)
+        
+        queryset = self.get_queryset().filter(id__in=saved_post_ids)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def like(self, request, public_uuid=None):
         """Like or unlike a post."""
@@ -1375,13 +1406,46 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         
         if not created:
             like.delete()
-            post.like_count = F('like_count') - 1
+            post.like_count = max(0, post.like_count - 1)
             post.save(update_fields=['like_count'])
-            return Response({'liked': False, 'like_count': post.like_count})
+            return Response({
+                'liked': False, 
+                'like_count': post.like_count,
+                'is_liked': False
+            })
         else:
-            post.like_count = F('like_count') + 1
+            post.like_count = post.like_count + 1
             post.save(update_fields=['like_count'])
-            return Response({'liked': True, 'like_count': post.like_count})
+            return Response({
+                'liked': True, 
+                'like_count': post.like_count,
+                'is_liked': True
+            })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def save(self, request, public_uuid=None):
+        """Save or unsave a post."""
+        post = self.get_object()
+        
+        # Check if user can access this post
+        if not self._can_access_post(request.user, post):
+            return Response(
+                {'error': 'You need a higher subscription tier to access this post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Toggle save
+        from streams.models import StreamPostSave
+        save, created = StreamPostSave.objects.get_or_create(
+            user=request.user,
+            post=post
+        )
+        
+        if not created:
+            save.delete()
+            return Response({'saved': False})
+        else:
+            return Response({'saved': True})
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def view(self, request, public_uuid=None):
@@ -1413,6 +1477,121 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
             post.save(update_fields=['view_count', 'unique_view_count'])
         
         return Response({'viewed': True})
+    
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
+    def comments(self, request, public_uuid=None):
+        """Get or create comments for a post."""
+        post = self.get_object()
+        
+        # Check if user can access this post
+        if not self._can_access_post(request.user, post):
+            return Response(
+                {'error': 'You need a higher subscription tier to access this post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if request.method == 'GET':
+            # Get comments
+            comments = StreamPostComment.objects.filter(
+                post=post,
+                is_hidden=False
+            ).select_related('user').order_by('-created_at')
+            
+            # Paginate
+            page = self.paginate_queryset(comments)
+            if page is not None:
+                from .serializers import StreamPostCommentSerializer
+                serializer = StreamPostCommentSerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            from .serializers import StreamPostCommentSerializer
+            serializer = StreamPostCommentSerializer(comments, many=True)
+            return Response(serializer.data)
+        
+        else:  # POST
+            # Create comment
+            if not post.allow_comments:
+                return Response(
+                    {'error': 'Comments are disabled for this post'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            content = request.data.get('content', '').strip()
+            if not content:
+                return Response(
+                    {'error': 'Comment content is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            parent_id = request.data.get('parent_comment')
+            parent_comment = None
+            if parent_id:
+                try:
+                    parent_comment = StreamPostComment.objects.get(
+                        id=parent_id,
+                        post=post,
+                        is_hidden=False
+                    )
+                except StreamPostComment.DoesNotExist:
+                    return Response(
+                        {'error': 'Parent comment not found'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            comment = StreamPostComment.objects.create(
+                post=post,
+                user=request.user,
+                content=content,
+                parent_comment=parent_comment
+            )
+            
+            # Update comment count
+            post.comment_count = StreamPostComment.objects.filter(
+                post=post,
+                is_hidden=False
+            ).count()
+            post.save(update_fields=['comment_count'])
+            
+            from .serializers import StreamPostCommentSerializer
+            serializer = StreamPostCommentSerializer(comment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['delete'], url_path='comments/(?P<comment_id>[0-9]+)', 
+            permission_classes=[IsAuthenticated])
+    def delete_comment(self, request, public_uuid=None, comment_id=None):
+        """Delete a comment."""
+        post = self.get_object()
+        
+        try:
+            comment = StreamPostComment.objects.get(
+                id=comment_id,
+                post=post
+            )
+        except StreamPostComment.DoesNotExist:
+            return Response(
+                {'error': 'Comment not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check permissions - only comment author or post owner can delete
+        if comment.user != request.user and post.stream.practitioner.user != request.user:
+            return Response(
+                {'error': 'You do not have permission to delete this comment'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Soft delete by hiding
+        comment.is_hidden = True
+        comment.save()
+        
+        # Update comment count
+        post.comment_count = StreamPostComment.objects.filter(
+            post=post,
+            is_hidden=False
+        ).count()
+        post.save(update_fields=['comment_count'])
+        
+        return Response({'message': 'Comment deleted successfully'})
     
     def _can_access_post(self, user, post):
         """Check if user can access a post based on subscription tier."""

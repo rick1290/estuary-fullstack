@@ -47,13 +47,15 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
     })
   })
 
-  // Fetch stream posts
+  // Fetch stream posts - get all posts for preview/subscription purposes
   const { data: postsData, isLoading: postsLoading } = useQuery({
     ...streamPostsListOptions({
       query: {
         stream: stream?.id,
         is_published: true,
-        page_size: 20
+        page_size: 20,
+        // Don't filter by tier - we want to show all content for preview
+        include_all_tiers: true
       }
     }),
     enabled: !!stream?.id && typeof stream.id === 'number'
@@ -150,6 +152,11 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
   // Map API response to StreamPost format
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
+    const userTier = stream?.user_subscription?.tier_level || null
+    // For public users or non-subscribers, show preview access (no full access)
+    // For subscribers, check actual access
+    const hasAccess = userTier ? (apiPost.can_access || false) : false
+    
     return {
       id: apiPost.public_uuid || apiPost.id,
       practitionerId: apiPost.practitioner_id || stream?.practitioner_id || '',
@@ -167,10 +174,10 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       comments: apiPost.comment_count || 0,
       views: apiPost.view_count || 0,
       tags: apiPost.tags || [],
-      isLiked: false,
-      isSaved: false,
-      hasAccess: apiPost.can_access || false,
-      userSubscriptionTier: stream?.user_subscription?.tier_level || null
+      isLiked: apiPost.is_liked || false,
+      isSaved: apiPost.is_saved || false,
+      hasAccess: hasAccess,
+      userSubscriptionTier: userTier
     }
   }
 
@@ -334,7 +341,8 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
           {/* Sidebar - Subscription */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-6 shadow-xl">
+            <div className="sticky top-6 space-y-4">
+            <Card className="shadow-xl">
               {!showPayment ? (
                 <>
                   <CardHeader>
@@ -497,6 +505,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                 </Elements>
               )}
             </Card>
+            </div>
           </div>
         </div>
       </div>
