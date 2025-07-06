@@ -17,66 +17,17 @@ logger = logging.getLogger(__name__)
 
 # ========== Booking and ServiceSession Room Creation ==========
 
-@receiver(post_save, sender=Booking)
-def create_room_for_booking(sender, instance: Booking, created: bool, **kwargs):
-    """
-    Create a room when a booking is confirmed and requires video.
-    """
-    # Skip if this is a new booking (not yet confirmed)
-    if created and instance.status != 'confirmed':
-        return
-    
-    # Only create room when status changes to confirmed
-    if instance.status == 'confirmed':
-        # Check if booking already has a room
-        if hasattr(instance, 'livekit_room') and instance.livekit_room:
-            return
-        
-        # Skip if this is a group session (those use ServiceSession rooms)
-        if instance.service_session:
-            return
-        
-        # Check if service is virtual/online
-        if not _requires_video_room(instance.service):
-            return
-        
-        # Skip if this is a package/bundle booking
-        if instance.is_package_purchase or instance.is_bundle_purchase:
-            return
-        
-        try:
-            # Get or create appropriate template
-            template = _get_room_template_for_service(instance.service)
-            
-            # Create room
-            room = Room.objects.create(
-                booking=instance,
-                room_type='individual',
-                template=template,
-                created_by=instance.practitioner.user,
-                name=f"{instance.service_name_snapshot} - {instance.user.get_full_name()}",
-                scheduled_start=instance.start_time,
-                scheduled_end=instance.end_time,
-                max_participants=2,  # Practitioner + Client
-                recording_enabled=_should_enable_recording(instance.service),
-                sip_enabled=_should_enable_sip(instance.service),
-                metadata={
-                    'booking_id': str(instance.id),
-                    'service_id': str(instance.service.id),
-                    'practitioner_id': str(instance.practitioner.id),
-                    'client_id': str(instance.user.id),
-                    'service_name': instance.service_name_snapshot,
-                }
-            )
-            
-            logger.info(f"Created room {room.name} for booking {instance.id}")
-            
-            # Enable SIP if configured
-            if room.sip_enabled and hasattr(room, 'dial_in_number'):
-                enable_sip_for_room(room)
-            
-        except Exception as e:
-            logger.error(f"Failed to create room for booking {instance.id}: {e}")
+# DEPRECATED: Room creation is now handled explicitly by BookingService
+# This signal is commented out to prevent duplicate room creation
+# @receiver(post_save, sender=Booking)
+# def create_room_for_booking(sender, instance: Booking, created: bool, **kwargs):
+#     """
+#     Create a room when a booking is confirmed and requires video.
+#     
+#     NOTE: This functionality has been moved to BookingService.create_booking()
+#     for explicit room creation as part of the service layer architecture.
+#     """
+#     pass
 
 
 @receiver(post_save, sender=ServiceSession)

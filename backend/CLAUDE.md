@@ -49,6 +49,75 @@ Django REST Framework backend for the Estuary wellness marketplace platform. Pro
   /media              # Media file handling
 ```
 
+### Service Layer Architecture
+
+The backend uses a service layer pattern to organize business logic, making the codebase more maintainable and testable. Services handle complex operations that span multiple models or require external integrations.
+
+#### Core Services
+
+**Payment Services** (`/payments/services/`)
+- `PaymentService` - Handles Stripe payment processing, order creation, and refunds
+- `CreditService` - Manages user credit transactions, balances, and transfers
+- `EarningsService` - Calculates commissions and manages practitioner earnings
+- `CheckoutOrchestrator` - Coordinates the entire checkout flow across multiple services
+
+**Booking Services** (`/bookings/services/`)
+- `BookingService` - Creates bookings with explicit room creation, handles different service types
+
+**Room Services** (`/rooms/services/`)
+- `RoomService` - Manages LiveKit room creation and lifecycle
+
+**Notification Services** (`/notifications/services/`)
+- `NotificationService` - Coordinates client and practitioner notifications
+- `ClientNotificationService` - Handles client-specific notifications
+- `PractitionerNotificationService` - Handles practitioner-specific notifications
+
+#### Service Layer Benefits
+
+1. **Separation of Concerns**: Business logic is separated from views and models
+2. **Reusability**: Services can be used by multiple views, management commands, or tasks
+3. **Testability**: Services can be unit tested in isolation
+4. **Explicit Behavior**: No hidden side effects through signals
+5. **Transaction Management**: Services handle database transactions explicitly
+
+#### Example Usage
+
+```python
+# In a view
+from payments.services import CheckoutOrchestrator
+
+orchestrator = CheckoutOrchestrator()
+result = orchestrator.process_booking_payment(
+    user=request.user,
+    service_id=service_id,
+    payment_method_id=payment_method_id,
+    booking_data={
+        'start_time': start_time,
+        'end_time': end_time,
+        'special_requests': notes
+    }
+)
+
+if result.success:
+    return Response({'booking': result.booking.id})
+else:
+    return Response({'error': result.error}, status=400)
+```
+
+#### When to Use Services
+
+Create a service when:
+- Business logic spans multiple models
+- External APIs need to be called (Stripe, LiveKit, etc.)
+- Complex calculations are required
+- Multiple database operations need to be coordinated
+- You need to ensure transactional consistency
+
+Keep logic in models when:
+- It's simple property calculations
+- It's single-model validation
+- It's data transformation for that model only
+
 ## Data Models
 
 ### Core Models

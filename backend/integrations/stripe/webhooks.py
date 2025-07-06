@@ -934,7 +934,7 @@ def create_earnings_for_booking(booking, order):
             return
         
         # Get commission calculator
-        from payments.services import CommissionCalculator
+        from payments.commission_services import CommissionCalculator
         calculator = CommissionCalculator()
         
         # Get commission rate

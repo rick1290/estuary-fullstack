@@ -7,7 +7,7 @@ from payments.models import (
     EarningsTransaction, 
     PackageCompletionRecord
 )
-from payments.services import (
+from payments.commission_services import (
     CommissionCalculator,
     PackageCompletionService,
     handle_booking_status_change
