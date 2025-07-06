@@ -315,17 +315,33 @@ class RoomRecordingSerializer(BaseSerializer):
 # Additional serializers for stream posts, subscriptions, etc.
 class StreamPostMediaSerializer(BaseSerializer):
     """Serializer for stream post media."""
+    url = serializers.SerializerMethodField()
+    filename = serializers.SerializerMethodField()
     
     class Meta:
         model = StreamPostMedia
         fields = [
-            'id', 'media_type', 'media_url', 'thumbnail_url',
-            'filename', 'file_size', 'duration_seconds',
+            'id', 'file', 'media_type', 'url', 'filename',
+            'file_size', 'content_type', 'duration_seconds',
             'width', 'height', 'order', 'caption', 'alt_text',
             'is_processed', 'processing_error',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['is_processed', 'processing_error', 'created_at', 'updated_at']
+        read_only_fields = [
+            'url', 'filename', 'file_size', 'content_type',
+            'is_processed', 'processing_error', 'created_at', 'updated_at'
+        ]
+        extra_kwargs = {
+            'file': {'write_only': True}
+        }
+    
+    def get_url(self, obj):
+        """Get the file URL."""
+        return obj.url
+    
+    def get_filename(self, obj):
+        """Get the filename."""
+        return obj.filename
 
 
 class StreamPostSerializer(BaseSerializer):

@@ -38,6 +38,7 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
     tags: [],
     status: "published",
   })
+  const [mediaCaptions, setMediaCaptions] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -50,9 +51,7 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
       const postData = {
         ...formData,
         streamId,
-        mediaUrls: formData.mediaFiles.map(
-          (file, index) => `/placeholder.svg?height=400&width=400&query=stream-media-${index}`,
-        ),
+        mediaCaptions,
       }
 
       onCreatePost(postData)
@@ -67,6 +66,7 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
         tags: [],
         status: "published",
       })
+      setMediaCaptions([])
     } catch (error) {
       console.error("Error creating post:", error)
     } finally {
@@ -80,6 +80,8 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
       ...prev,
       mediaFiles: [...prev.mediaFiles, ...files],
     }))
+    // Add empty captions for new files
+    setMediaCaptions((prev) => [...prev, ...new Array(files.length).fill('')])
   }
 
   const handleAttachmentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +97,7 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
       ...prev,
       mediaFiles: prev.mediaFiles.filter((_, i) => i !== index),
     }))
+    setMediaCaptions((prev) => prev.filter((_, i) => i !== index))
   }
 
   const removeAttachment = (index: number) => {
@@ -210,22 +213,55 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
             {/* Media Preview */}
             {formData.mediaFiles.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                {formData.mediaFiles.map((file, index) => (
-                  <div key={index} className="relative">
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground text-center p-2">{file.name}</span>
+                {formData.mediaFiles.map((file, index) => {
+                  const isImage = file.type.startsWith('image/')
+                  const objectUrl = isImage ? URL.createObjectURL(file) : null
+                  
+                  return (
+                    <div key={index} className="space-y-2">
+                      <div className="relative">
+                        <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                          {isImage && objectUrl ? (
+                            <img
+                              src={objectUrl}
+                              alt={file.name}
+                              className="w-full h-full object-cover"
+                              onLoad={() => URL.revokeObjectURL(objectUrl)}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full p-2">
+                              <div className="text-center">
+                                <div className="text-xs font-medium truncate">{file.name}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {(file.size / 1024 / 1024).toFixed(1)} MB
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={() => removeMediaFile(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Input
+                        placeholder="Add caption..."
+                        value={mediaCaptions[index] || ''}
+                        onChange={(e) => {
+                          const newCaptions = [...mediaCaptions]
+                          newCaptions[index] = e.target.value
+                          setMediaCaptions(newCaptions)
+                        }}
+                        className="text-xs h-8"
+                      />
                     </div>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6"
-                      onClick={() => removeMediaFile(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

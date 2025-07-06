@@ -164,22 +164,58 @@ export default function StreamsDashboardV2() {
       return
     }
 
-    // Map frontend data to API format
-    const apiData = {
-      stream: practitionerStream.id,
-      title: postData.title,
-      content: postData.content,
-      post_type: 'post', // Default to text post
-      tier_level: postData.tier,
-      is_published: postData.status === 'published',
-      tags: postData.tags,
-      allow_comments: true,
-      allow_tips: true,
-    }
+    // Check if we have media files
+    const hasMedia = postData.mediaFiles && postData.mediaFiles.length > 0
+    
+    if (hasMedia) {
+      // Create FormData for multipart upload
+      const formData = new FormData()
+      
+      // Add text fields
+      formData.append('stream', practitionerStream.id.toString())
+      formData.append('title', postData.title || '')
+      formData.append('content', postData.content)
+      formData.append('post_type', postData.mediaFiles.length > 0 ? 'gallery' : 'post')
+      formData.append('tier_level', postData.tier)
+      formData.append('is_published', String(postData.status === 'published'))
+      formData.append('allow_comments', 'true')
+      formData.append('allow_tips', 'true')
+      
+      // Add tags as JSON
+      if (postData.tags && postData.tags.length > 0) {
+        formData.append('tags', JSON.stringify(postData.tags))
+      }
+      
+      // Add media files
+      postData.mediaFiles.forEach((file: File, index: number) => {
+        formData.append(`media_files[${index}]`, file)
+        // Add captions if available
+        if (postData.mediaCaptions && postData.mediaCaptions[index]) {
+          formData.append(`media_captions[${index}]`, postData.mediaCaptions[index])
+        }
+      })
+      
+      createPostMutation.mutate({
+        body: formData as any // Type assertion needed for FormData
+      })
+    } else {
+      // No media, use regular JSON
+      const apiData = {
+        stream: practitionerStream.id,
+        title: postData.title,
+        content: postData.content,
+        post_type: 'post',
+        tier_level: postData.tier,
+        is_published: postData.status === 'published',
+        tags: postData.tags,
+        allow_comments: true,
+        allow_tips: true,
+      }
 
-    createPostMutation.mutate({
-      body: apiData
-    })
+      createPostMutation.mutate({
+        body: apiData
+      })
+    }
   }
 
   // Update post mutation

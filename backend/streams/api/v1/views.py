@@ -2,13 +2,17 @@ from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db.models import Q, F, Count, Sum
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from streams.models import (
-    Stream, StreamPost, StreamSubscription,
+    Stream, StreamPost, StreamSubscription, StreamPostMedia,
     LiveStream, StreamSchedule, LiveStreamViewer, LiveStreamAnalytics,
     StreamCategory, StreamAnalytics
 )
@@ -22,6 +26,7 @@ from .serializers import (
     RoomRecordingSerializer
 )
 from .permissions import IsPractitionerOwner, IsStreamOwner, CanAccessStream
+from .views_media import StreamPostMediaMixin
 
 
 class StreamViewSet(viewsets.ModelViewSet):
@@ -1124,11 +1129,44 @@ class UserStreamSubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-class StreamPostViewSet(viewsets.ModelViewSet):
+@extend_schema_view(
+    list=extend_schema(tags=['Stream Posts']),
+    create=extend_schema(
+        tags=['Stream Posts'],
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'stream': {'type': 'integer', 'description': 'Stream ID'},
+                    'title': {'type': 'string', 'description': 'Post title'},
+                    'content': {'type': 'string', 'description': 'Post content'},
+                    'post_type': {'type': 'string', 'enum': ['post', 'gallery', 'video', 'audio', 'link', 'poll']},
+                    'tier_level': {'type': 'string', 'enum': ['free', 'entry', 'premium']},
+                    'is_published': {'type': 'boolean'},
+                    'tags': {'type': 'string', 'description': 'JSON array of tags'},
+                    'allow_comments': {'type': 'boolean'},
+                    'allow_tips': {'type': 'boolean'},
+                    'media_files[]': {'type': 'array', 'items': {'type': 'string', 'format': 'binary'}},
+                    'media_captions[]': {'type': 'array', 'items': {'type': 'string'}}
+                }
+            },
+            'application/json': StreamPostSerializer,
+        },
+        description="Create a new stream post. Supports both JSON and multipart/form-data for file uploads."
+    ),
+    retrieve=extend_schema(tags=['Stream Posts']),
+    update=extend_schema(tags=['Stream Posts']),
+    partial_update=extend_schema(tags=['Stream Posts']),
+    destroy=extend_schema(tags=['Stream Posts']),
+    like=extend_schema(tags=['Stream Posts']),
+    view=extend_schema(tags=['Stream Posts'])
+)
+class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
     """
     ViewSet for managing stream posts.
     """
     serializer_class = StreamPostSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Support file uploads
     lookup_field = 'public_uuid'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['tier_level', 'post_type', 'is_published', 'is_pinned']
@@ -1186,26 +1224,114 @@ class StreamPostViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), IsStreamOwner()]
         return [IsAuthenticated()]
     
-    def perform_create(self, serializer):
-        """Set the stream when creating a post."""
+    def create(self, request, *args, **kwargs):
+        """Create a new stream post with optional media uploads."""
         # Get stream_id from request data
-        stream_id = self.request.data.get('stream')
+        stream_id = request.data.get('stream')
         if not stream_id:
-            raise serializers.ValidationError("Stream ID is required")
+            return Response(
+                {'error': 'Stream ID is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
             
         stream = get_object_or_404(Stream, pk=stream_id)
         
         # Verify user owns the stream
-        if not (hasattr(self.request.user, 'practitioner_profile') and 
-                stream.practitioner == self.request.user.practitioner_profile):
-            raise serializers.ValidationError("You can only create posts for your own stream")
+        if not (hasattr(request.user, 'practitioner_profile') and 
+                stream.practitioner == request.user.practitioner_profile):
+            return Response(
+                {'error': 'You can only create posts for your own stream'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
-        # Set published_at if publishing now
-        extra_kwargs = {}
-        if serializer.validated_data.get('is_published', False):
-            extra_kwargs['published_at'] = timezone.now()
+        # Handle file uploads
+        media_files = []
+        media_captions = []
         
-        serializer.save(stream=stream, **extra_kwargs)
+        # Extract media files from request
+        for key in request.FILES:
+            if key.startswith('media_files['):
+                index = key.split('[')[1].split(']')[0]
+                media_files.append((int(index), request.FILES[key]))
+                
+        # Sort by index to maintain order
+        media_files.sort(key=lambda x: x[0])
+        
+        # Extract captions
+        for key in request.data:
+            if key.startswith('media_captions['):
+                index = key.split('[')[1].split(']')[0]
+                media_captions.append((int(index), request.data[key]))
+        
+        media_captions.sort(key=lambda x: x[0])
+        caption_dict = {idx: caption for idx, caption in media_captions}
+        
+        # Parse tags if they're JSON string
+        tags = request.data.get('tags', [])
+        if isinstance(tags, str):
+            try:
+                import json
+                tags = json.loads(tags)
+            except:
+                tags = []
+        
+        # Create the post
+        with transaction.atomic():
+            # Prepare post data
+            post_data = {
+                'stream': stream.id,
+                'title': request.data.get('title', ''),
+                'content': request.data.get('content', ''),
+                'post_type': request.data.get('post_type', 'post'),
+                'tier_level': request.data.get('tier_level', 'free'),
+                'is_published': request.data.get('is_published', 'true').lower() == 'true',
+                'tags': tags,
+                'allow_comments': request.data.get('allow_comments', 'true').lower() == 'true',
+                'allow_tips': request.data.get('allow_tips', 'true').lower() == 'true',
+            }
+            
+            # If publishing now, set published_at
+            if post_data['is_published']:
+                post_data['published_at'] = timezone.now()
+            
+            # Create post
+            serializer = self.get_serializer(data=post_data)
+            serializer.is_valid(raise_exception=True)
+            post = serializer.save(stream=stream)
+            
+            # Handle media uploads
+            for idx, (original_idx, file) in enumerate(media_files):
+                # Determine media type
+                content_type = file.content_type or 'application/octet-stream'
+                if content_type.startswith('image/'):
+                    media_type = 'image'
+                elif content_type.startswith('video/'):
+                    media_type = 'video'
+                elif content_type.startswith('audio/'):
+                    media_type = 'audio'
+                else:
+                    media_type = 'document'
+                
+                # Create StreamPostMedia with direct file upload
+                StreamPostMedia.objects.create(
+                    post=post,
+                    file=file,
+                    media_type=media_type,
+                    content_type=content_type,
+                    file_size=file.size,
+                    caption=caption_dict.get(original_idx, ''),
+                    order=idx
+                )
+        
+        # Return the created post with media
+        post.refresh_from_db()
+        serializer = self.get_serializer(post)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def perform_create(self, serializer):
+        """Set the stream when creating a post."""
+        # This is now handled in the create method above
+        pass
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def like(self, request, public_uuid=None):

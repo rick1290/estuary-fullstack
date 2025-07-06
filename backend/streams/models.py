@@ -290,6 +290,13 @@ class StreamPostMedia(BaseModel):
         related_name='media'
     )
     
+    # Direct file storage
+    file = models.FileField(
+        upload_to='streams/posts/%Y/%m/%d/',
+        max_length=500,
+        help_text="File stored in CloudFlare R2"
+    )
+    
     # Media info
     media_type = models.CharField(max_length=20, choices=[
         ('image', 'Image'),
@@ -297,12 +304,10 @@ class StreamPostMedia(BaseModel):
         ('audio', 'Audio'),
         ('document', 'Document'),
     ])
-    media_url = models.URLField()
-    thumbnail_url = models.URLField(blank=True, null=True)
     
-    # Metadata
-    filename = models.CharField(max_length=255, blank=True, null=True)
-    file_size = models.IntegerField(blank=True, null=True)
+    # Cached metadata (populated on save)
+    file_size = models.PositiveBigIntegerField(default=0)
+    content_type = models.CharField(max_length=100, blank=True)
     duration_seconds = models.IntegerField(blank=True, null=True)
     width = models.IntegerField(blank=True, null=True)
     height = models.IntegerField(blank=True, null=True)
@@ -312,9 +317,31 @@ class StreamPostMedia(BaseModel):
     caption = models.TextField(blank=True, null=True)
     alt_text = models.CharField(max_length=255, blank=True, null=True)
     
-    # Processing status
-    is_processed = models.BooleanField(default=False)
+    # Processing status (for future video encoding, etc)
+    is_processed = models.BooleanField(default=True)  # Default True for simple uploads
     processing_error = models.TextField(blank=True, null=True)
+    
+    @property
+    def url(self):
+        """Get the file URL."""
+        return self.file.url if self.file else None
+    
+    @property
+    def filename(self):
+        """Get the filename."""
+        return self.file.name.split('/')[-1] if self.file else None
+    
+    def save(self, *args, **kwargs):
+        """Auto-populate metadata on save."""
+        if self.file and not self.file_size:
+            self.file_size = self.file.size
+        
+        # Auto-detect media type from content type if not set
+        if self.file and not self.media_type:
+            # This will be set from the view based on content_type
+            pass
+            
+        super().save(*args, **kwargs)
     
     class Meta:
         ordering = ['order', 'created_at']
