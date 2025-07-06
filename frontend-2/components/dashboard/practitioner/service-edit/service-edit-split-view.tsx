@@ -952,6 +952,8 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                       <CardContent>
                         {section.id === 'media' ? (
                           <MediaSection service={service} />
+                        ) : section.id === 'resources' ? (
+                          <ResourcesSection service={service} />
                         ) : (
                           <SectionComponent
                             service={service}

@@ -720,10 +720,30 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(tags=['Services']),
-    create=extend_schema(tags=['Services']),
+    create=extend_schema(
+        tags=['Services'],
+        summary="Create service resource",
+        description="Create a new service resource. Supports file uploads via multipart/form-data.",
+        request={
+            'multipart/form-data': ServiceResourceSerializer,
+            'application/json': ServiceResourceSerializer,
+        }
+    ),
     retrieve=extend_schema(tags=['Services']),
-    update=extend_schema(tags=['Services']),
-    partial_update=extend_schema(tags=['Services']),
+    update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceResourceSerializer,
+            'application/json': ServiceResourceSerializer,
+        }
+    ),
+    partial_update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceResourceSerializer,
+            'application/json': ServiceResourceSerializer,
+        }
+    ),
     destroy=extend_schema(tags=['Services'])
 )
 class ServiceResourceViewSet(viewsets.ModelViewSet):
@@ -732,6 +752,7 @@ class ServiceResourceViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ServiceResourceSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Add parsers for file uploads
     
     def get_queryset(self):
         """Get resources based on filters"""

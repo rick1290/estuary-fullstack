@@ -192,6 +192,7 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
 class ServiceResourceSerializer(serializers.ModelSerializer):
     """Serializer for service resources"""
     uploaded_by_name = serializers.CharField(source='uploaded_by.display_name', read_only=True)
+    file = serializers.FileField(write_only=True, required=False, help_text="File to upload")
     
     class Meta:
         model = ServiceResource
@@ -201,12 +202,100 @@ class ServiceResourceSerializer(serializers.ModelSerializer):
             'file_type', 'duration_seconds', 'uploaded_by_name', 'access_level',
             'is_downloadable', 'available_from', 'available_until', 'order',
             'is_featured', 'tags', 'view_count', 'download_count',
-            'created_at', 'updated_at'
+            'service', 'service_session', 'booking',  # Add parent relationship fields
+            'created_at', 'updated_at', 'file'
         ]
         read_only_fields = [
             'id', 'uploaded_by_name', 'view_count', 'download_count',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'file_url', 'file_name', 'file_size', 'file_type'
         ]
+    
+    def validate(self, attrs):
+        """Ensure parent field matches attachment_level"""
+        attachment_level = attrs.get('attachment_level')
+        service = attrs.get('service')
+        service_session = attrs.get('service_session')
+        booking = attrs.get('booking')
+        
+        # Ensure exactly one parent is set based on attachment_level
+        if attachment_level == 'service':
+            if not service:
+                raise serializers.ValidationError(
+                    "service field is required when attachment_level is 'service'"
+                )
+            # Ensure other parent fields are not set
+            attrs['service_session'] = None
+            attrs['booking'] = None
+            
+        elif attachment_level == 'session':
+            if not service_session:
+                raise serializers.ValidationError(
+                    "service_session field is required when attachment_level is 'session'"
+                )
+            # Ensure other parent fields are not set
+            attrs['service'] = None
+            attrs['booking'] = None
+            
+        elif attachment_level == 'booking':
+            if not booking:
+                raise serializers.ValidationError(
+                    "booking field is required when attachment_level is 'booking'"
+                )
+            # Ensure other parent fields are not set
+            attrs['service'] = None
+            attrs['service_session'] = None
+        
+        return attrs
+    
+    def create(self, validated_data):
+        # Handle file upload
+        file = validated_data.pop('file', None)
+        
+        # Create the resource
+        resource = super().create(validated_data)
+        
+        # Process file upload if provided
+        if file:
+            self._handle_file_upload(resource, file)
+        
+        return resource
+    
+    def update(self, instance, validated_data):
+        # Handle file upload
+        file = validated_data.pop('file', None)
+        
+        # Update the resource
+        resource = super().update(instance, validated_data)
+        
+        # Process file upload if provided
+        if file:
+            self._handle_file_upload(resource, file)
+        
+        return resource
+    
+    def _handle_file_upload(self, resource, file):
+        """Handle file upload and set metadata"""
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+        import os
+        from datetime import datetime
+        
+        # Generate file path
+        now = datetime.now()
+        file_extension = os.path.splitext(file.name)[1]
+        file_path = f"services/resources/{now.year}/{now.month:02d}/{resource.id}_{file.name}"
+        
+        # Save file
+        saved_path = default_storage.save(file_path, ContentFile(file.read()))
+        
+        # Update resource with file metadata
+        resource.file_url = default_storage.url(saved_path)
+        resource.file_name = file.name
+        resource.file_size = file.size
+        resource.file_type = file.content_type
+        
+        # Save the updated resource
+        resource.save(update_fields=['file_url', 'file_name', 'file_size', 'file_type'])
 
 
 class ServiceListSerializer(serializers.ModelSerializer):
