@@ -318,7 +318,7 @@ export function GuidedServiceWizard() {
         experience_level: "all_levels",
         what_youll_learn: "",
         prerequisites: "",
-        includes: data.includes || "",
+        includes: data.includes ? data.includes.split('\n').filter(item => item.trim()).map(item => item.trim()) : [],
         // Optional fields
         ...(data.schedule_id && data.schedule_id !== "none" && { schedule: parseInt(data.schedule_id) }),
         ...(data.categoryId && { category_id: parseInt(data.categoryId) }),

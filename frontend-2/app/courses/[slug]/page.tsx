@@ -165,7 +165,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
   // Transform API data to component format
   const course = serviceData ? {
-    id: serviceData.public_uuid || serviceData.id,
+    id: serviceData.id,
     title: serviceData.name || 'Course',
     type: "courses",
     description: serviceData.short_description || serviceData.description || 'A transformative learning experience.',

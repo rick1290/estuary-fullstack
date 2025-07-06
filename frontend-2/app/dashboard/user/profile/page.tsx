@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { User, Lock, Mail, CreditCard, Receipt, Calendar, Bell, Trash2 } from "lucide-react"
+import { User, Lock, Mail, CreditCard, Receipt, Calendar, Bell, Trash2, Wallet } from "lucide-react"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 import { Card, CardContent } from "@/components/ui/card"
 import AccountTab from "@/components/dashboard/user/settings/account-tab"
@@ -9,6 +9,7 @@ import PasswordTab from "@/components/dashboard/user/settings/password-tab"
 import EmailTab from "@/components/dashboard/user/settings/email-tab"
 import PaymentMethodsTab from "@/components/dashboard/user/settings/payment-methods-tab"
 import PaymentHistoryTab from "@/components/dashboard/user/settings/payment-history-tab"
+import CreditsTab from "@/components/dashboard/user/settings/credits-tab"
 import AutoconfirmationTab from "@/components/dashboard/user/settings/autoconfirmation-tab"
 import CalendarTab from "@/components/dashboard/user/settings/calendar-tab"
 import NotificationsTab from "@/components/dashboard/user/settings/notifications-tab"
@@ -21,6 +22,7 @@ const settingsTabs = [
   { id: "email", label: "Email", icon: Mail },
   { id: "payment-methods", label: "Payment Methods", icon: CreditCard },
   { id: "payment-history", label: "Payment History", icon: Receipt },
+  { id: "credits", label: "Credits", icon: Wallet },
   { id: "autoconfirmation", label: "Auto-confirmation", icon: Calendar },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "notifications", label: "Notifications", icon: Bell },
@@ -46,6 +48,8 @@ export default function UserProfilePage() {
         return <PaymentMethodsTab />
       case "payment-history":
         return <PaymentHistoryTab />
+      case "credits":
+        return <CreditsTab />
       case "autoconfirmation":
         return <AutoconfirmationTab />
       case "calendar":

@@ -19,12 +19,7 @@ import { useAuthModal } from "@/components/auth/auth-provider"
 import { useToast } from "@/components/ui/use-toast"
 import { Spinner } from "@/components/ui/spinner"
 import ContentCard from "./content-card"
-import StreamSubscriptionPayment from "./stream-subscription-payment"
 import type { StreamPost } from "@/types/stream"
-import { Elements } from "@stripe/react-stripe-js"
-import { getStripe } from "@/lib/stripe-loader"
-
-const stripePromise = getStripe()
 
 interface StreamDetailContentProps {
   streamId: string
@@ -36,9 +31,6 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
   const { openAuthModal } = useAuthModal()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [selectedTier, setSelectedTier] = useState<"free" | "entry" | "premium">("free")
-  const [showPayment, setShowPayment] = useState(false)
-  const [paymentTier, setPaymentTier] = useState<"entry" | "premium">("entry")
 
   // Fetch stream details
   const { data: stream, isLoading: streamLoading } = useQuery({
@@ -47,65 +39,22 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
     })
   })
 
-  // Fetch stream posts
+  // Fetch stream posts - get all posts for preview/subscription purposes
   const { data: postsData, isLoading: postsLoading } = useQuery({
     ...streamPostsListOptions({
       query: {
         stream: stream?.id,
         is_published: true,
-        page_size: 20
+        page_size: 20,
+        // Don't filter by tier - we want to show all content for preview
+        include_all_tiers: true
       }
     }),
     enabled: !!stream?.id && typeof stream.id === 'number'
   })
 
-  // Subscribe mutation
-  const subscribeMutation = useMutation({
-    ...streamsSubscribeCreateMutation(),
-    onSuccess: () => {
-      toast({
-        title: "Subscribed successfully!",
-        description: `You are now subscribed to ${stream?.title}`,
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: streamsRetrieveOptions({ 
-          path: { id: streamId } 
-        }).queryKey 
-      })
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Subscription failed",
-        description: error?.body?.detail || "Failed to subscribe to stream",
-        variant: "destructive",
-      })
-    }
-  })
 
-  // Update subscription mutation
-  const updateSubscriptionMutation = useMutation({
-    ...streamsSubscriptionChangeTierCreateMutation(),
-    onSuccess: () => {
-      toast({
-        title: "Subscription updated!",
-        description: "Your subscription tier has been updated",
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: streamsRetrieveOptions({ 
-          path: { id: streamId } 
-        }).queryKey 
-      })
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Update failed",
-        description: error?.body?.detail || "Failed to update subscription",
-        variant: "destructive",
-      })
-    }
-  })
-
-  const handleSubscribe = () => {
+  const handleSubscribe = (tier: "entry" | "premium" = "entry") => {
     if (!isAuthenticated) {
       openAuthModal({
         defaultTab: "login",
@@ -116,20 +65,8 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       return
     }
 
-    if (selectedTier === "free") {
-      subscribeMutation.mutate({
-        path: {
-          id: stream?.id!
-        },
-        body: {
-          tier: "free"
-        }
-      })
-    } else {
-      // Show payment flow for paid tiers
-      setPaymentTier(selectedTier as "entry" | "premium")
-      setShowPayment(true)
-    }
+    // Redirect to stream checkout page
+    router.push(`/checkout/stream?streamId=${streamId}&tier=${tier}`)
   }
 
   const handleUpgrade = (newTier: "entry" | "premium") => {
@@ -143,13 +80,17 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       return
     }
 
-    // Show payment flow for tier upgrade
-    setPaymentTier(newTier)
-    setShowPayment(true)
+    // Redirect to stream checkout page for upgrade
+    router.push(`/checkout/stream?streamId=${streamId}&tier=${newTier}`)
   }
 
   // Map API response to StreamPost format
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
+    const userTier = stream?.user_subscription?.tier_level || null
+    // For public users or non-subscribers, show preview access (no full access)
+    // For subscribers, check actual access
+    const hasAccess = userTier ? (apiPost.can_access || false) : false
+    
     return {
       id: apiPost.public_uuid || apiPost.id,
       practitionerId: apiPost.practitioner_id || stream?.practitioner_id || '',
@@ -158,7 +99,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       streamId: apiPost.stream || stream?.id || '',
       streamTitle: apiPost.stream_title || stream?.title || '',
       content: apiPost.content || '',
-      mediaUrls: apiPost.media?.map((m: any) => m.media_url) || [],
+      mediaUrls: apiPost.media?.map((m: any) => m.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${m.url}` : '') || [],
       contentType: apiPost.post_type as any || 'article',
       isPremium: apiPost.tier_level !== 'free',
       tierLevel: apiPost.tier_level,
@@ -167,10 +108,10 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       comments: apiPost.comment_count || 0,
       views: apiPost.view_count || 0,
       tags: apiPost.tags || [],
-      isLiked: false,
-      isSaved: false,
-      hasAccess: apiPost.can_access || false,
-      userSubscriptionTier: stream?.user_subscription?.tier_level || null
+      isLiked: apiPost.is_liked || false,
+      isSaved: apiPost.is_saved || false,
+      hasAccess: hasAccess,
+      userSubscriptionTier: userTier
     }
   }
 
@@ -202,7 +143,8 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
   const premiumPosts = posts.filter(p => p.tierLevel === 'premium')
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream-50 to-white">
+    <>
+      <div className="min-h-screen bg-gradient-to-b from-cream-50 to-white">
       {/* Header */}
       <div className="relative">
         <div 
@@ -334,172 +276,70 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
           {/* Sidebar - Subscription */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-6 shadow-xl">
-              {!showPayment ? (
-                <>
-                  <CardHeader>
-                    <CardTitle>Subscribe to {stream.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                {/* Free Tier */}
-                <div 
-                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                    selectedTier === 'free' 
-                      ? 'border-sage-600 bg-sage-50 shadow-sm' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedTier('free')}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h3 className="font-medium text-sm">Free</h3>
-                    <span className="text-sm font-semibold">$0</span>
-                  </div>
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Access to free content</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Community updates</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Entry Tier */}
-                <div 
-                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                    selectedTier === 'entry' 
-                      ? 'border-sage-600 bg-sage-50 shadow-sm' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedTier('entry')}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h3 className="font-medium text-sm">Entry</h3>
-                    <div className="text-right">
-                      <span className="text-sm font-semibold">
-                        ${((stream.entry_tier_price_cents || 0) / 100).toFixed(0)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">/mo</span>
-                    </div>
-                  </div>
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Everything in Free</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Exclusive content</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Group sessions</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Premium Tier */}
-                <div 
-                  className={`p-3 rounded-lg border cursor-pointer transition-all relative ${
-                    selectedTier === 'premium' 
-                      ? 'border-sage-600 bg-sage-50 shadow-sm' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedTier('premium')}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="font-medium text-sm">Premium</h3>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        Best Value
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-semibold">
-                        ${((stream.premium_tier_price_cents || 0) / 100).toFixed(0)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">/mo</span>
-                    </div>
-                  </div>
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Everything in Entry</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>All premium content</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>1-on-1 check-ins</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span>Priority support</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Subscribe/Upgrade Button */}
-                {!stream.user_subscription ? (
-                  <Button 
-                    onClick={handleSubscribe} 
-                    className="w-full"
-                    disabled={subscribeMutation.isPending}
-                  >
-                    {subscribeMutation.isPending ? (
-                      <Spinner className="h-4 w-4" />
-                    ) : selectedTier === 'free' ? (
-                      'Subscribe Free'
-                    ) : (
-                      `Subscribe for $${
-                        selectedTier === 'entry' 
-                          ? ((stream.entry_tier_price_cents || 0) / 100).toFixed(0)
-                          : ((stream.premium_tier_price_cents || 0) / 100).toFixed(0)
-                      }/mo`
-                    )}
-                  </Button>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="text-center p-3 bg-sage-50 rounded-lg">
-                      <p className="text-sm text-sage-700 font-medium">
-                        Current tier: {stream.user_subscription.tier_level}
+            <div className="sticky top-6 space-y-4">
+              <Card className="shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-lg">Subscribe to {stream.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!stream.user_subscription ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Choose a subscription tier to access exclusive content
                       </p>
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => handleSubscribe("entry")}
+                          className="w-full p-3 rounded-lg border-2 border-gray-200 hover:border-sage-400 transition-colors text-left"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">Entry Tier</h4>
+                              <p className="text-xs text-muted-foreground">Access to exclusive content</p>
+                            </div>
+                            <span className="font-semibold">${((stream.entry_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleSubscribe("premium")}
+                          className="w-full p-3 rounded-lg border-2 border-gray-200 hover:border-sage-400 transition-colors text-left"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">Premium Tier</h4>
+                              <p className="text-xs text-muted-foreground">All content + exclusive perks</p>
+                            </div>
+                            <span className="font-semibold">${((stream.premium_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
+                          </div>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="text-center p-3 bg-sage-50 rounded-lg">
+                        <p className="text-sm text-sage-700 font-medium">
+                          Current tier: {stream.user_subscription.tier_level}
+                        </p>
+                      </div>
+                      {stream.user_subscription.tier_level !== 'premium' && (
+                        <Button 
+                          onClick={() => handleUpgrade(
+                            stream.user_subscription!.tier_level === 'free' ? 'entry' : 'premium'
+                          )} 
+                          className="w-full"
+                        >
+                          Upgrade to {stream.user_subscription.tier_level === 'free' ? 'Entry' : 'Premium'}
+                        </Button>
+                      )}
                     </div>
-                    {stream.user_subscription.tier_level !== 'premium' && (
-                      <Button 
-                        onClick={() => handleUpgrade(
-                          stream.user_subscription!.tier_level === 'free' ? 'entry' : 'premium'
-                        )} 
-                        className="w-full"
-                      >
-                        Upgrade to {stream.user_subscription.tier_level === 'free' ? 'Entry' : 'Premium'}
-                      </Button>
-                    )}
-                  </div>
-                )}
-                  </CardContent>
-                </>
-              ) : (
-                <Elements stripe={stripePromise}>
-                  <StreamSubscriptionPayment
-                    stream={stream}
-                    selectedTier={paymentTier}
-                    onSuccess={() => {
-                      setShowPayment(false)
-                      setSelectedTier("free")
-                    }}
-                    onCancel={() => setShowPayment(false)}
-                  />
-                </Elements>
-              )}
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
     </div>
+    </>
   )
 }

@@ -65,6 +65,7 @@ const convertServiceForDisplay = (service: ServiceListReadable): any => {
   return {
     id: service.id?.toString() || '',
     name: service.name,
+    slug: service.slug, // Add the slug property
     description: service.short_description || '',
     price: priceValue.toFixed(2),
     duration: service.duration_minutes,
@@ -74,6 +75,7 @@ const convertServiceForDisplay = (service: ServiceListReadable): any => {
       name: service.service_type_display || '',
       code: service.service_type_code || ''
     },
+    service_type_code: service.service_type_code, // Also add service_type_code for the utility function
     category: service.category ? {
       id: service.category.id?.toString() || '',
       name: service.category.name,

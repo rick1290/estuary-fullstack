@@ -22,22 +22,16 @@ class LiveKitClient:
     def __init__(self):
         self.api_key = getattr(settings, 'LIVEKIT_API_KEY', os.environ.get('LIVEKIT_API_KEY'))
         self.api_secret = getattr(settings, 'LIVEKIT_API_SECRET', os.environ.get('LIVEKIT_API_SECRET'))
-        self.server_url = getattr(settings, 'LIVEKIT_SERVER_URL', os.environ.get('LIVEKIT_SERVER_URL', 'http://localhost:7880'))
+        self.server_url = getattr(settings, 'LIVEKIT_HOST', os.environ.get('LIVEKIT_HOST', 'http://localhost:7880'))
         
         if not self.api_key or not self.api_secret:
             raise ValueError("LiveKit API key and secret must be configured")
         
         # Initialize API client
-        self.room_service = api.RoomServiceClient(
-            self.server_url,
-            self.api_key,
-            self.api_secret
-        )
-        
-        self.egress_service = api.EgressServiceClient(
-            self.server_url,
-            self.api_key,
-            self.api_secret
+        self.lk_api = api.LiveKitAPI(
+            url=self.server_url,
+            api_key=self.api_key,
+            api_secret=self.api_secret
         )
     
     # Room Management
@@ -64,7 +58,7 @@ class LiveKitClient:
             Created room object
         """
         try:
-            room = await self.room_service.create_room(
+            room = await self.lk_api.room.create_room(
                 api.CreateRoomRequest(
                     name=name,
                     empty_timeout=empty_timeout,

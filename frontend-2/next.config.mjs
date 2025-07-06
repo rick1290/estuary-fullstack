@@ -7,6 +7,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['@livekit/components-react', '@livekit/components-core'],
   images: {
     unoptimized: true,
     domains: ['localhost'],

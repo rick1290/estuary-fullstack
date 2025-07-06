@@ -157,29 +157,90 @@ export default function StreamsDashboardV2() {
   const handleCreatePost = async (postData: any) => {
     if (!practitionerStream?.id) {
       toast({
-        title: "Error",
-        description: "Stream not found",
+        title: "Create Your Stream First",
+        description: "You need to create a stream before you can publish posts. Click 'Create My Stream' to get started.",
         variant: "destructive",
       })
       return
     }
 
-    // Map frontend data to API format
-    const apiData = {
-      stream: practitionerStream.id,
-      title: postData.title,
-      content: postData.content,
-      post_type: 'post', // Default to text post
-      tier_level: postData.tier,
-      is_published: postData.status === 'published',
-      tags: postData.tags,
-      allow_comments: true,
-      allow_tips: true,
-    }
+    // Check if we have media files
+    const hasMedia = postData.mediaFiles && postData.mediaFiles.length > 0
+    
+    if (hasMedia) {
+      // Create FormData for multipart upload
+      const formData = new FormData()
+      
+      // Add text fields
+      formData.append('stream', practitionerStream.id.toString())
+      formData.append('title', postData.title || '')
+      formData.append('content', postData.content)
+      formData.append('post_type', postData.mediaFiles.length > 0 ? 'gallery' : 'post')
+      formData.append('tier_level', postData.tier)
+      formData.append('is_published', String(postData.status === 'published'))
+      formData.append('allow_comments', 'true')
+      formData.append('allow_tips', 'true')
+      
+      // Add tags as JSON
+      if (postData.tags && postData.tags.length > 0) {
+        formData.append('tags', JSON.stringify(postData.tags))
+      }
+      
+      // Add media files
+      postData.mediaFiles.forEach((file: File, index: number) => {
+        formData.append(`media_files[${index}]`, file)
+        // Add captions if available
+        if (postData.mediaCaptions && postData.mediaCaptions[index]) {
+          formData.append(`media_captions[${index}]`, postData.mediaCaptions[index])
+        }
+      })
+      
+      // Use direct fetch for FormData uploads since generated client doesn't handle it properly
+      fetch('/api/v1/stream-posts/', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      }).then(async (response) => {
+        if (response.ok) {
+          toast({
+            title: "Post created!",
+            description: "Your post has been created successfully.",
+          })
+          queryClient.invalidateQueries({ 
+            queryKey: streamPostsListOptions({ 
+              query: { stream: practitionerStream?.id } 
+            }).queryKey 
+          })
+          setCreatePostOpen(false)
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Failed to create post' }))
+          throw new Error(errorData.error || errorData.detail || 'Failed to create post')
+        }
+      }).catch((error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create post",
+          variant: "destructive",
+        })
+      })
+    } else {
+      // No media, use regular JSON
+      const apiData = {
+        stream: practitionerStream.id,
+        title: postData.title,
+        content: postData.content,
+        post_type: 'post',
+        tier_level: postData.tier,
+        is_published: postData.status === 'published',
+        tags: postData.tags,
+        allow_comments: true,
+        allow_tips: true,
+      }
 
-    createPostMutation.mutate({
-      body: apiData
-    })
+      createPostMutation.mutate({
+        body: apiData
+      })
+    }
   }
 
   // Update post mutation

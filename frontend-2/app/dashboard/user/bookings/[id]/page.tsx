@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { bookingsRetrieveOptions, bookingsCancelCreateOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -28,33 +28,55 @@ import {
   XCircle,
   DollarSign,
   FileText,
+  Star,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
+import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
 import { format, parseISO, differenceInHours, differenceInMinutes, isFuture } from "date-fns"
 import Link from "next/link"
 
 export default function BookingDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
 
   // Fetch booking details
   const { data: booking, isLoading, error, refetch } = useQuery({
     ...bookingsRetrieveOptions({ path: { id } }),
   })
 
+  // Check if we should auto-open review dialog from URL params
+  useEffect(() => {
+    if (searchParams.get('review') === 'true' && booking?.status === 'completed' && !booking?.has_review) {
+      setReviewDialogOpen(true)
+    }
+  }, [searchParams, booking])
+
   // Cancel booking mutation
   const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
-    mutationFn: () => bookingsCancelCreateOptions({ path: { id } }).queryFn({ queryKey: [{}] }),
+    mutationFn: async (reason: string) => {
+      const { bookingsCancelCreate } = await import('@/src/client')
+      const response = await bookingsCancelCreate({
+        path: { id },
+        body: {
+          reason: reason,
+          status: 'canceled',
+          canceled_by: 'client'
+        } as any
+      })
+      return response.data
+    },
     onSuccess: () => {
       toast.success("Booking cancelled successfully")
-      setCancelDialogOpen(false)
       refetch()
     },
-    onError: () => {
-      toast.error("Failed to cancel booking. Please try again.")
+    onError: (error: any) => {
+      console.error('Cancellation error:', error)
+      toast.error(error?.response?.data?.message || "Failed to cancel booking. Please try again.")
     },
   })
 
@@ -152,6 +174,14 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   const joinable = isSessionJoinable()
   const modifiable = isModifiable()
+  
+  // Debug logging
+  console.log('Booking details:', {
+    status: booking.status,
+    start_time: booking.start_time,
+    modifiable,
+    hoursUntilStart: booking.start_time ? differenceInHours(parseISO(booking.start_time), new Date()) : null
+  })
 
   return (
     <UserDashboardLayout title="Booking Details">
@@ -301,14 +331,14 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
               {booking.status === "confirmed" && (
                 <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
-                  {booking.location_type === "virtual" && booking.video_url && (
+                  {booking.location_type === "virtual" && (booking.room?.public_uuid || booking.video_url) && (
                     <Button
                       className={`flex items-center gap-2 ${joinable ? "bg-green-600 hover:bg-green-700" : ""}`}
                       disabled={!joinable}
                       asChild={joinable}
                     >
                       {joinable ? (
-                        <a href={booking.video_url} target="_blank" rel="noopener noreferrer">
+                        <a href={booking.room?.public_uuid ? `/room/${booking.room.public_uuid}/lobby` : booking.video_url} target={booking.room?.public_uuid ? "_self" : "_blank"} rel="noopener noreferrer">
                           <Video className="h-4 w-4" />
                           Join Session Now
                         </a>
@@ -334,6 +364,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                             variant="secondary"
                             className="flex items-center gap-2"
                             disabled={!modifiable}
+                            onClick={() => router.push(`/dashboard/user/bookings/${booking.id}/reschedule`)}
                           >
                             <CalendarRange className="h-4 w-4" />
                             Reschedule
@@ -354,7 +385,10 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                         <div>
                           <Button 
                             variant="destructive" 
-                            onClick={() => setCancelDialogOpen(true)} 
+                            onClick={() => {
+                              console.log('Cancel button clicked', { cancelDialogOpen, modifiable })
+                              setCancelDialogOpen(true)
+                            }} 
                             disabled={!modifiable}
                           >
                             Cancel Booking
@@ -392,17 +426,35 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
               </Card>
             )}
 
-            {booking.status === "completed" && !booking.review_id && (
-              <Card className="border-terracotta-100 bg-terracotta-50/30">
+            {booking.status === "completed" && (
+              <Card className="border-amber-100 bg-gradient-to-br from-amber-50 to-terracotta-50/30">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">How was your experience?</h3>
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-600" />
+                        {booking.has_review ? "Thank you for your review!" : "How was your experience?"}
+                      </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Share your feedback to help others
+                        {booking.has_review 
+                          ? "Your feedback helps others find great practitioners" 
+                          : "Share your feedback to help others"}
                       </p>
                     </div>
-                    <Button variant="default">Leave Review</Button>
+                    {booking.has_review ? (
+                      <Badge variant="outline" className="bg-amber-50">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Reviewed
+                      </Badge>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        onClick={() => setReviewDialogOpen(true)}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        Leave Review
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -485,18 +537,36 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Cancellation Dialog */}
-      <CancelBookingDialog
-        bookingId={booking.id}
-        serviceName={service?.name || "Service"}
-        practitionerName={practitioner?.display_name || "Practitioner"}
-        date={booking.start_time ? format(parseISO(booking.start_time), "MMMM d, yyyy") : ""}
-        time={booking.start_time ? format(parseISO(booking.start_time), "h:mm a") : ""}
-        price={`$${booking.total_amount || 0}`}
-        open={cancelDialogOpen}
-        onOpenChange={setCancelDialogOpen}
-        onConfirm={() => cancelBooking()}
-        isLoading={isCancelling}
-      />
+      {booking && (
+        <CancelBookingDialog
+          bookingId={booking.public_uuid || String(booking.id)}
+          serviceName={service?.name || "Service"}
+          practitionerName={practitioner?.display_name || "Practitioner"}
+          date={booking.start_time ? format(parseISO(booking.start_time), "MMMM d, yyyy") : ""}
+          time={booking.start_time ? format(parseISO(booking.start_time), "h:mm a") : ""}
+          price={`$${booking.final_amount || 0}`}
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          onConfirm={(reason) => cancelBooking(reason)}
+          isLoading={isCancelling}
+        />
+      )}
+
+      {/* Review Booking Dialog */}
+      {booking && (
+        <ReviewBookingDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          booking={booking}
+          onSuccess={() => {
+            refetch()
+            // Remove review param from URL
+            const url = new URL(window.location.href)
+            url.searchParams.delete('review')
+            window.history.replaceState({}, '', url)
+          }}
+        />
+      )}
     </UserDashboardLayout>
   )
 }

@@ -15,3 +15,14 @@
     - Purchase processing
     - Credit tracking
     - Practitioner compensation system
+
+- Room Access System (Video Conferencing):
+  * Unified URL pattern: /room/{room-uuid}/lobby
+  * Single backend endpoint handles all permission checks
+  * Access types:
+    - Individual sessions: Booking → Room
+    - Workshops: Booking → ServiceSession → Room
+    - Courses: Booking → Service → ServiceSession → Room
+  * Backend endpoint: GET /api/v1/rooms/{uuid}/check_access/
+  * Returns: can_join, role (host/participant), reason if denied
+  * See: /frontend-2/docs/room-access-system.md for details

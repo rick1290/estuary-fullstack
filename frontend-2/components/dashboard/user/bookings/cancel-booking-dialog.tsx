@@ -1,17 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -21,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 
 interface CancelBookingDialogProps {
-  bookingId: number
+  bookingId: number | string
   serviceName: string
   practitionerName: string
   date: string
@@ -29,7 +27,7 @@ interface CancelBookingDialogProps {
   price: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirmCancel?: () => void
+  onConfirm?: (reason: string) => void
   isLoading?: boolean
 }
 
@@ -42,7 +40,7 @@ export function CancelBookingDialog({
   price,
   open,
   onOpenChange,
-  onConfirmCancel,
+  onConfirm,
   isLoading,
 }: CancelBookingDialogProps) {
   const router = useRouter()
@@ -51,6 +49,11 @@ export function CancelBookingDialog({
   const [reason, setReason] = useState<string>("")
   const [reasonCategory, setReasonCategory] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
+
+  // Debug log
+  React.useEffect(() => {
+    console.log('CancelBookingDialog state:', { open, step, isLoading })
+  }, [open, step, isLoading])
 
   const handleContinue = () => {
     setStep("reason")
@@ -64,8 +67,14 @@ export function CancelBookingDialog({
 
     setError(null)
     
-    if (onConfirmCancel) {
-      onConfirmCancel()
+    // Combine category and optional additional comments
+    const fullReason = reason 
+      ? `${reasonCategory}: ${reason}`
+      : reasonCategory
+    
+    if (onConfirm) {
+      setStep("processing")
+      onConfirm(fullReason)
     } else {
       // Fallback to simulation if no handler provided
       setStep("processing")
@@ -100,18 +109,25 @@ export function CancelBookingDialog({
     }
   }
 
+  // Handle success from parent component
+  React.useEffect(() => {
+    if (isLoading === false && step === "processing") {
+      setStep("success")
+    }
+  }, [isLoading, step])
+
   return (
-    <AlertDialog open={open} onOpenChange={handleClose}>
-      <AlertDialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
         {step === "confirm" && (
           <>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
-              <AlertDialogDescription>
+            <DialogHeader>
+              <DialogTitle>Cancel Booking</DialogTitle>
+              <DialogDescription>
                 Are you sure you want to cancel your booking for {serviceName} with {practitionerName} on {date} at{" "}
                 {time}?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+              </DialogDescription>
+            </DialogHeader>
             <div className="my-4 space-y-4">
               <Alert variant="warning" className="bg-amber-50 border-amber-200 text-amber-800">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -122,23 +138,23 @@ export function CancelBookingDialog({
                 </AlertDescription>
               </Alert>
             </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-              <AlertDialogAction onClick={handleContinue} className="bg-destructive text-destructive-foreground">
+            <DialogFooter>
+              <Button variant="outline" onClick={() => handleClose()}>Keep Booking</Button>
+              <Button onClick={handleContinue} variant="destructive">
                 Continue to Cancel
-              </AlertDialogAction>
-            </AlertDialogFooter>
+              </Button>
+            </DialogFooter>
           </>
         )}
 
         {step === "reason" && (
           <>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Why are you cancelling?</AlertDialogTitle>
-              <AlertDialogDescription>
+            <DialogHeader>
+              <DialogTitle>Why are you cancelling?</DialogTitle>
+              <DialogDescription>
                 Your feedback helps us improve our services. This information is only shared anonymously.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+              </DialogDescription>
+            </DialogHeader>
             <div className="my-4 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="reason-category">Reason for cancellation</Label>
@@ -165,27 +181,27 @@ export function CancelBookingDialog({
                   placeholder="Please share any additional details about why you're cancelling..."
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="min-h-[100px]"
+                  className="min-h-[100px] resize-none"
                 />
               </div>
             </div>
-            <AlertDialogFooter>
+            <DialogFooter>
               <Button variant="outline" onClick={() => setStep("confirm")}>
                 Back
               </Button>
-              <Button variant="destructive" onClick={handleSubmit}>
-                Confirm Cancellation
+              <Button variant="destructive" onClick={handleSubmit} disabled={isLoading}>
+                {isLoading ? "Processing..." : "Confirm Cancellation"}
               </Button>
-            </AlertDialogFooter>
+            </DialogFooter>
           </>
         )}
 
         {step === "processing" && (
           <>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Processing Cancellation</AlertDialogTitle>
-              <AlertDialogDescription>Please wait while we process your cancellation...</AlertDialogDescription>
-            </AlertDialogHeader>
+            <DialogHeader>
+              <DialogTitle>Processing Cancellation</DialogTitle>
+              <DialogDescription>Please wait while we process your cancellation...</DialogDescription>
+            </DialogHeader>
             <div className="my-8 flex justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>
@@ -194,15 +210,15 @@ export function CancelBookingDialog({
 
         {step === "success" && (
           <>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl text-green-600 flex items-center gap-2">
+            <DialogHeader>
+              <DialogTitle className="text-xl text-green-600 flex items-center gap-2">
                 <CheckCircle2 className="h-6 w-6" />
                 Booking Successfully Cancelled
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-base">
+              </DialogTitle>
+              <DialogDescription className="text-base">
                 Your booking has been cancelled and your time slot has been released.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+              </DialogDescription>
+            </DialogHeader>
             <div className="my-6 space-y-4">
               <div className="bg-green-50 border border-green-100 rounded-lg p-4">
                 <h4 className="font-medium text-green-800 mb-2">Cancellation Details:</h4>
@@ -229,14 +245,14 @@ export function CancelBookingDialog({
                 </p>
               </div>
             </div>
-            <AlertDialogFooter>
+            <DialogFooter>
               <Button onClick={handleClose} className="w-full bg-green-600 hover:bg-green-700">
                 Return to Bookings
               </Button>
-            </AlertDialogFooter>
+            </DialogFooter>
           </>
         )}
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   )
 }

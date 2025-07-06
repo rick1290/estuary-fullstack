@@ -467,7 +467,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
 
   // Transform API data to component format
   const workshop = serviceData ? {
-    id: serviceData.public_uuid || serviceData.id,
+    id: serviceData.id,
     title: serviceData.name || 'Workshop',
     description: serviceData.short_description || serviceData.description || 'A transformative workshop experience.',
     image: serviceData.image_url || serviceData.featured_image || '/workshop-image-1.jpg',

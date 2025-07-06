@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { servicesUploadCoverImageCreateMutation } from "@/src/client/@tanstack/react-query.gen"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
@@ -14,46 +17,62 @@ import type { ServiceReadable } from "@/src/client/types.gen"
 
 interface MediaSectionProps {
   service: ServiceReadable
-  data: {
-    image?: string | File
-  }
-  onChange: (data: any) => void
-  onSave: () => void
-  hasChanges: boolean
-  isSaving: boolean
 }
 
-export function MediaSection({ 
-  service, 
-  data, 
-  onChange, 
-  onSave, 
-  hasChanges, 
-  isSaving 
-}: MediaSectionProps) {
-  const [localData, setLocalData] = useState(data)
+export function MediaSection({ service }: MediaSectionProps) {
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-
-  useEffect(() => {
-    setLocalData(data)
-    // Set initial preview
-    if (data.image && typeof data.image === 'string') {
-      setCoverImagePreview(data.image)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  
+  const uploadCoverImageMutation = useMutation({
+    ...servicesUploadCoverImageCreateMutation(),
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: "Cover image updated successfully"
+      })
+      // Update preview with new image URL
+      if (data.image_url) {
+        const imageUrl = data.image_url.startsWith('http') 
+          ? data.image_url 
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${data.image_url}`
+        setCoverImagePreview(imageUrl)
+      }
+      // Invalidate service queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      setSelectedFile(null)
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload cover image",
+        variant: "destructive"
+      })
     }
-  }, [data])
+  })
+  
+  // Set initial preview from service image
+  useEffect(() => {
+    if (service.image_url) {
+      const imageUrl = service.image_url.startsWith('http') 
+        ? service.image_url 
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${service.image_url}`
+      setCoverImagePreview(imageUrl)
+    }
+  }, [service.image_url])
 
-  const handleChange = (field: string, value: any) => {
-    const newData = { ...localData, [field]: value }
-    setLocalData(newData)
-    onChange(newData)
-  }
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select a valid image file",
+          variant: "destructive"
+        })
         return
       }
       
@@ -64,14 +83,40 @@ export function MediaSection({
       }
       reader.readAsDataURL(file)
       
-      // Update data
-      handleChange('image', file)
+      setSelectedFile(file)
+    }
+  }
+  
+  const handleUpload = async () => {
+    if (!selectedFile) return
+    
+    try {
+      await uploadCoverImageMutation.mutateAsync({
+        path: { id: service.id },
+        body: { image: selectedFile }
+      })
+    } catch (error) {
+      // Error is handled in onError callback
     }
   }
 
   const removeCoverImage = () => {
-    setCoverImagePreview(null)
-    handleChange('image', null)
+    if (selectedFile) {
+      // Cancel selected file
+      setSelectedFile(null)
+      // Reset to original image or null
+      if (service.image_url) {
+        const imageUrl = service.image_url.startsWith('http') 
+          ? service.image_url 
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${service.image_url}`
+        setCoverImagePreview(imageUrl)
+      } else {
+        setCoverImagePreview(null)
+      }
+    } else {
+      // Remove current cover image (would need a separate endpoint)
+      setCoverImagePreview(null)
+    }
   }
 
   return (
@@ -86,21 +131,49 @@ export function MediaSection({
         </div>
         
         {coverImagePreview ? (
-          <div className="relative w-full max-w-md">
-            <img
-              src={coverImagePreview}
-              alt="Cover preview"
-              className="w-full h-64 object-cover rounded-lg"
-            />
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              className="absolute top-2 right-2"
-              onClick={removeCoverImage}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="space-y-4">
+            <div className="relative w-full max-w-md">
+              <img
+                src={coverImagePreview}
+                alt="Cover preview"
+                className="w-full h-64 object-cover rounded-lg"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2"
+                onClick={removeCoverImage}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {selectedFile && (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleUpload}
+                  disabled={uploadCoverImageMutation.isPending}
+                  className="flex-1"
+                >
+                  {uploadCoverImageMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "Upload New Image"
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={removeCoverImage}
+                  disabled={uploadCoverImageMutation.isPending}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <Card className="max-w-md">
@@ -135,24 +208,6 @@ export function MediaSection({
         </ul>
       </Card>
 
-      {/* Save Button */}
-      {hasChanges && (
-        <div className="flex justify-end pt-4 border-t">
-          <Button
-            onClick={onSave}
-            disabled={isSaving || isUploading}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Saving...
-              </>
-            ) : (
-              "Save Section"
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

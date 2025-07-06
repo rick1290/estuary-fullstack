@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { formatDistanceToNow } from "date-fns"
-import { MoreHorizontal, Edit, Trash2, Eye, Calendar, Users } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Eye, Calendar, Users, Image } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -168,6 +168,12 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </DropdownMenuItem>
+                  {post.media && post.media.length > 0 && (
+                    <DropdownMenuItem onClick={() => handleEditClick(post)}>
+                      <Image className="mr-2 h-4 w-4" />
+                      Manage Media ({post.media.length})
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleDeleteClick(post)} className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -184,7 +190,7 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
                 {post.media.slice(0, 4).map((media, index) => (
                   <div key={index} className="aspect-square relative rounded-md overflow-hidden bg-muted">
                     <img
-                      src={media.media_url || "/placeholder.svg"}
+                      src={media.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${media.url}` : "/placeholder.svg"}
                       alt={media.caption || `Post media ${index + 1}`}
                       className="object-cover w-full h-full"
                     />

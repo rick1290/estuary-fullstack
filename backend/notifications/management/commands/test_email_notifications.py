@@ -34,7 +34,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--type',
             type=str,
-            choices=['all', 'nudges', 'earnings', 'booking', 'welcome'],
+            choices=['all', 'nudges', 'earnings', 'booking', 'welcome', 'review'],
             default='all',
             help='Type of notifications to test'
         )
@@ -228,6 +228,72 @@ class Command(BaseCommand):
             booking.delete()
             self.stdout.write('Cleaned up test booking')
         
+        if test_type in ['all', 'review']:
+            self.stdout.write(self.style.WARNING('\n=== Testing Review Request ==='))
+            
+            # Create a test booking that is marked as completed
+            yesterday = timezone.now() - timedelta(days=1)
+            
+            # First, create a test service if not exists
+            if 'service' not in locals():
+                from services.models import Service, ServiceType
+                
+                # Get or create the service type
+                service_type, _ = ServiceType.objects.get_or_create(
+                    code='session',
+                    defaults={
+                        'name': 'Individual Session',
+                        'description': 'One-on-one sessions'
+                    }
+                )
+                
+                service, created = Service.objects.get_or_create(
+                    primary_practitioner=practitioner,
+                    name='Test Service for Review',
+                    defaults={
+                        'service_type': service_type,
+                        'description': 'Test service for review request',
+                        'price_cents': 10000,  # $100
+                        'duration_minutes': 60,
+                        'is_active': True,
+                        'slug': f'test-service-review-{practitioner.id}'
+                    }
+                )
+            
+            # Create completed booking
+            completed_booking = Booking.objects.create(
+                user=user,
+                service=service,
+                practitioner=practitioner,
+                start_time=yesterday,
+                end_time=yesterday + timedelta(hours=1),
+                status='completed',  # Mark as completed
+                payment_status='paid',
+                price_charged_cents=10000,  # $100
+                final_amount_cents=10000,   # $100
+                discount_amount_cents=0,
+                timezone='UTC',
+                service_name_snapshot=service.name,
+                service_description_snapshot=service.description,
+                service_duration_snapshot=service.duration_minutes,
+                practitioner_name_snapshot=practitioner.display_name or practitioner.user.get_full_name(),
+                completed_at=timezone.now()  # Set completion time
+            )
+            
+            self.stdout.write(f'Created completed test booking from yesterday')
+            
+            # Test review request email
+            self.stdout.write('Sending booking completed review request email...')
+            try:
+                client_service.send_booking_completed_review_request(completed_booking)
+                self.stdout.write(self.style.SUCCESS('✓ Booking completed review request sent'))
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'✗ Error sending review request: {str(e)}'))
+            
+            # Clean up test booking
+            completed_booking.delete()
+            self.stdout.write('Cleaned up completed test booking')
+        
         self.stdout.write(self.style.SUCCESS(f'\n✅ All test notifications triggered for {email}'))
         self.stdout.write(self.style.WARNING('\nCheck your email and Django admin Notifications to see the results!'))
         self.stdout.write('\nNotifications sent:')
@@ -248,3 +314,6 @@ class Command(BaseCommand):
             self.stdout.write('  • Practitioner booking notification')
             self.stdout.write('  • 24-hour booking reminder')
             self.stdout.write('  • 5-minute test reminder (scheduled)')
+            
+        if test_type in ['all', 'review']:
+            self.stdout.write('  • Booking completed review request')

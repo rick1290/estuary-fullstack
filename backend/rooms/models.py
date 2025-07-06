@@ -135,7 +135,7 @@ class Room(PublicModel):
     Model representing a LiveKit video room.
     """
     # Core fields
-    name = models.CharField(max_length=255, unique=True, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
     room_type = models.CharField(max_length=20, choices=ROOM_TYPE_CHOICES, default='individual')
     status = models.CharField(max_length=20, choices=ROOM_STATUS_CHOICES, default='pending')
     
@@ -183,6 +183,14 @@ class Room(PublicModel):
     actual_end = models.DateTimeField(null=True, blank=True)
     
     # Relationships
+    created_by = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_rooms',
+        help_text="User who created this room"
+    )
     booking = models.OneToOneField(
         'bookings.Booking',
         on_delete=models.CASCADE,
@@ -226,8 +234,6 @@ class Room(PublicModel):
         """Validate that room has either booking or service_session, not both."""
         if self.booking and self.service_session:
             raise ValidationError("Room cannot be linked to both booking and service session")
-        if not self.booking and not self.service_session:
-            raise ValidationError("Room must be linked to either booking or service session")
     
     def save(self, *args, **kwargs):
         if not self.livekit_room_name:
@@ -274,9 +280,18 @@ class Room(PublicModel):
         if self.status not in ['pending', 'ended']:
             return False
         
-        # Allow starting 15 minutes before scheduled time
-        if self.scheduled_start:
-            buffer_time = self.scheduled_start - timedelta(minutes=15)
+        # Get the actual start time from booking or service session (source of truth)
+        actual_start_time = None
+        if self.booking:
+            actual_start_time = self.booking.start_time
+        elif self.service_session:
+            actual_start_time = self.service_session.start_time
+        elif self.scheduled_start:
+            actual_start_time = self.scheduled_start
+        
+        # Allow starting 15 minutes before actual scheduled time
+        if actual_start_time:
+            buffer_time = actual_start_time - timedelta(minutes=15)
             return timezone.now() >= buffer_time
         
         return True

@@ -88,7 +88,7 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
                   {post.media.slice(0, 4).map((media, index) => (
                     <div key={index} className="aspect-video relative rounded-lg overflow-hidden bg-muted">
                       <img
-                        src={media.media_url || "/placeholder.svg"}
+                        src={media.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${media.url}` : "/placeholder.svg"}
                         alt={media.caption || `Post media ${index + 1}`}
                         className="object-cover w-full h-full"
                       />

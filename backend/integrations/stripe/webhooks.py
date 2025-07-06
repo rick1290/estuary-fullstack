@@ -10,7 +10,8 @@ import asyncio
 
 from payments.models import (
     Order, UserCreditTransaction, PaymentMethod,
-    PractitionerSubscription, SubscriptionTier
+    PractitionerSubscription, SubscriptionTier,
+    EarningsTransaction
 )
 from practitioners.models import Practitioner, PractitionerOnboardingProgress
 from users.models import UserPaymentProfile
@@ -280,15 +281,34 @@ def handle_checkout_session_completed(session):
     try:
         # Get the order ID from the metadata
         order_id = session.get('metadata', {}).get('order_id')
-        if not order_id:
-            logger.error(f"Checkout session {session['id']} has no order_id in metadata")
-            return
+        order_type = session.get('metadata', {}).get('order_type')
         
-        # Get the order
-        try:
-            order = Order.objects.get(id=order_id)
-        except Order.DoesNotExist:
-            logger.error(f"Order {order_id} not found for checkout session {session['id']}")
+        # Handle credit purchases without pre-existing order
+        if not order_id and order_type == 'credit':
+            # Create order for credit purchase
+            order = Order.objects.create(
+                user_id=session.get('metadata', {}).get('user_id'),
+                order_type='credit',
+                subtotal_amount_cents=session.get('amount_total', 0),
+                total_amount_cents=session.get('amount_total', 0),
+                status='completed',
+                stripe_checkout_session_id=session['id'],
+                stripe_payment_intent_id=session.get('payment_intent'),
+                metadata={
+                    'credit_amount': session.get('metadata', {}).get('credit_amount', session.get('amount_total', 0)),
+                    'stripe_payment_status': 'succeeded'
+                }
+            )
+            logger.info(f"Created order {order.id} for credit purchase from checkout session {session['id']}")
+        elif order_id:
+            # Get existing order
+            try:
+                order = Order.objects.get(id=order_id)
+            except Order.DoesNotExist:
+                logger.error(f"Order {order_id} not found for checkout session {session['id']}")
+                return
+        else:
+            logger.error(f"Checkout session {session['id']} has no order_id in metadata and is not a credit purchase")
             return
         
         # If the session has a payment intent, update the order with that ID
@@ -428,18 +448,26 @@ def create_credit_transaction_for_order(order):
         order: Order object
     """
     try:
+        # Check if credit transaction already exists for this order
+        existing_transaction = UserCreditTransaction.objects.filter(
+            order=order,
+            transaction_type='purchase'
+        ).first()
+        
+        if existing_transaction:
+            logger.info(f"Credit transaction already exists for order {order.id}")
+            return
+        
         # Get credit amount from metadata or use order amount
-        credit_amount = order.metadata.get('credit_amount', order.amount) if order.metadata else order.amount
+        credit_amount = order.metadata.get('credit_amount', order.total_amount_cents) if order.metadata else order.total_amount_cents
         
         # Create a credit transaction
-        CreditTransaction.objects.create(
+        UserCreditTransaction.objects.create(
             user=order.user,
-            amount=credit_amount,
-            created_at=timezone.now(),
-            updated_at=timezone.now(),
-            order=order,
+            amount_cents=credit_amount,
             transaction_type='purchase',
-            currency=order.currency
+            description=f"Credit purchase - Order #{order.id}",
+            order=order
         )
         
         logger.info(f"Created credit transaction for order {order.id}")
@@ -453,25 +481,16 @@ def create_refund_credit_transaction(order, refunded_amount):
     
     Args:
         order: Order object
-        refunded_amount: Amount refunded
+        refunded_amount: Amount refunded in cents
     """
     try:
-        # Find the original purchase transaction
-        original_transaction = CreditTransaction.objects.filter(
-            order=order,
-            transaction_type='purchase'
-        ).first()
-        
-        # Create a refund transaction
-        CreditTransaction.objects.create(
+        # Create a refund transaction (positive amount for refund to user's credit balance)
+        UserCreditTransaction.objects.create(
             user=order.user,
-            amount=-float(refunded_amount),  # Negative amount for refund
-            created_at=timezone.now(),
-            updated_at=timezone.now(),
-            order=order,
+            amount_cents=refunded_amount,  # Positive amount for refund
             transaction_type='refund',
-            reference_transaction=original_transaction,
-            currency=order.currency
+            description=f"Refund for Order #{order.id}",
+            order=order
         )
         
         logger.info(f"Created refund credit transaction for order {order.id}")
@@ -536,6 +555,34 @@ def create_booking_for_order(order, metadata):
             # Update order metadata with booking ID
             update_order_metadata_with_booking(order, booking)
             
+            # Create paired credit transactions for service booking
+            # 1. Purchase transaction (money in)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=order.subtotal_amount_cents,  # Full service price
+                transaction_type='purchase',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=booking,
+                description=f"Purchase: {service.name}"
+            )
+            
+            # 2. Usage transaction (service booked)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=-order.subtotal_amount_cents,  # Negative for usage
+                transaction_type='usage',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=booking,
+                description=f"Booking: {service.name}"
+            )
+            
+            # Create earnings transaction
+            create_earnings_for_booking(booking, order)
+            
         elif service_type == 'workshop':
             # For workshops, we need the service session ID
             service_session_id = metadata.get('service_session_id')
@@ -570,6 +617,34 @@ def create_booking_for_order(order, metadata):
             # Update order metadata with booking ID
             update_order_metadata_with_booking(order, booking)
             
+            # Create paired credit transactions for service booking
+            # 1. Purchase transaction (money in)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=order.subtotal_amount_cents,  # Full service price
+                transaction_type='purchase',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=booking,
+                description=f"Purchase: {service.name}"
+            )
+            
+            # 2. Usage transaction (service booked)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=-order.subtotal_amount_cents,  # Negative for usage
+                transaction_type='usage',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=booking,
+                description=f"Booking: {service.name}"
+            )
+            
+            # Create earnings transaction
+            create_earnings_for_booking(booking, order)
+            
         elif service_type in ['package', 'bundle']:
             # Create a parent booking for the package/bundle
             parent_booking = Booking.objects.create(
@@ -587,6 +662,34 @@ def create_booking_for_order(order, metadata):
             
             # Update order metadata with booking ID
             update_order_metadata_with_booking(order, parent_booking)
+            
+            # Create paired credit transactions for service booking
+            # 1. Purchase transaction (money in)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=order.subtotal_amount_cents,  # Full service price
+                transaction_type='purchase',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=parent_booking,
+                description=f"Purchase: {service.name}"
+            )
+            
+            # 2. Usage transaction (service booked)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=-order.subtotal_amount_cents,  # Negative for usage
+                transaction_type='usage',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=parent_booking,
+                description=f"Booking: {service.name}"
+            )
+            
+            # Create earnings transaction for the parent booking
+            create_earnings_for_booking(parent_booking, order)
             
         elif service_type == 'course':
             # For courses, we need to create a parent booking and add the user to all sessions
@@ -622,6 +725,34 @@ def create_booking_for_order(order, metadata):
             
             # Update order metadata with booking ID
             update_order_metadata_with_booking(order, parent_booking)
+            
+            # Create paired credit transactions for service booking
+            # 1. Purchase transaction (money in)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=order.subtotal_amount_cents,  # Full service price
+                transaction_type='purchase',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=parent_booking,
+                description=f"Purchase: {service.name}"
+            )
+            
+            # 2. Usage transaction (service booked)
+            UserCreditTransaction.objects.create(
+                user=order.user,
+                amount_cents=-order.subtotal_amount_cents,  # Negative for usage
+                transaction_type='usage',
+                service=service,
+                practitioner=order.practitioner,
+                order=order,
+                booking=parent_booking,
+                description=f"Booking: {service.name}"
+            )
+            
+            # Create earnings transaction for the parent booking
+            create_earnings_for_booking(parent_booking, order)
             
         else:
             logger.warning(f"Unknown service type '{service_type}' for order {order.id}")
@@ -788,6 +919,52 @@ def parse_datetime(datetime_str):
         except:
             logger.error(f"Could not parse datetime string: {datetime_str}")
             return None
+
+def create_earnings_for_booking(booking, order):
+    """
+    Create earnings transaction for a booking.
+    
+    Args:
+        booking: Booking object
+        order: Order object
+    """
+    try:
+        if not booking.practitioner:
+            logger.info(f"No practitioner for booking {booking.id}, skipping earnings creation")
+            return
+        
+        # Get commission calculator
+        from payments.commission_services import CommissionCalculator
+        calculator = CommissionCalculator()
+        
+        # Get commission rate
+        commission_rate = calculator.get_commission_rate(
+            practitioner=booking.practitioner,
+            service_type=booking.service.service_type
+        )
+        
+        # Calculate commission and net amounts
+        gross_amount_cents = booking.price_charged_cents
+        commission_amount_cents = int((commission_rate / 100) * gross_amount_cents)
+        net_amount_cents = gross_amount_cents - commission_amount_cents
+        
+        # Create earnings transaction with 'projected' status
+        earnings = EarningsTransaction.objects.create(
+            practitioner=booking.practitioner,
+            booking=booking,
+            gross_amount_cents=gross_amount_cents,
+            commission_rate=commission_rate,
+            commission_amount_cents=commission_amount_cents,
+            net_amount_cents=net_amount_cents,
+            status='projected',  # Will become 'pending' when booking starts
+            available_after=booking.start_time + timezone.timedelta(hours=48),
+            description=f"Earnings from booking for {booking.service.name}"
+        )
+        
+        logger.info(f"Created earnings transaction {earnings.id} for booking {booking.id}")
+        
+    except Exception as e:
+        logger.exception(f"Error creating earnings for booking {booking.id}: {str(e)}")
 
 
 async def trigger_order_workflow(order_id: str, metadata: dict):

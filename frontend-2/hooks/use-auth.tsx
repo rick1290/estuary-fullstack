@@ -18,6 +18,7 @@ interface User {
   hasPractitionerAccount: boolean
   practitionerId?: number | null
   practitionerPublicId?: string | null
+  practitioner_slug?: string | null
 }
 
 // Helper function to convert API user to our User type
@@ -44,6 +45,7 @@ function convertAPIUser(apiUser: UserProfileReadable): User {
     hasPractitionerAccount: hasPractitionerProfile,
     practitionerId: apiUser.practitioner_id || null,
     practitionerPublicId: apiUser.practitioner_public_id || null,
+    practitioner_slug: apiUser.practitioner_slug || null,
   }
 }
 

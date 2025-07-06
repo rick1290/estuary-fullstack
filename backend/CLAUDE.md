@@ -49,6 +49,79 @@ Django REST Framework backend for the Estuary wellness marketplace platform. Pro
   /media              # Media file handling
 ```
 
+### Service Layer Architecture
+
+The backend uses a service layer pattern to organize business logic, making the codebase more maintainable and testable. Services handle complex operations that span multiple models or require external integrations.
+
+#### Core Services
+
+**Payment Services** (`/payments/services/`)
+- `PaymentService` - Handles Stripe payment processing, order creation, and refunds
+- `CreditService` - Manages user credit transactions, balances, and transfers
+- `EarningsService` - Calculates commissions and manages practitioner earnings
+- `CheckoutOrchestrator` - Coordinates the entire checkout flow across multiple services
+- `PayoutService` - Manages practitioner payout requests and eligibility checks
+- `WebhookService` - Processes Stripe webhooks for payments, subscriptions, and refunds
+- `CheckoutService` - Creates Stripe checkout sessions for services, credits, and subscriptions
+- `SubscriptionService` - Manages practitioner subscription lifecycle and tier changes
+
+**Booking Services** (`/bookings/services/`)
+- `BookingService` - Creates bookings with explicit room creation, handles different service types
+
+**Room Services** (`/rooms/services/`)
+- `RoomService` - Manages LiveKit room creation and lifecycle
+
+**Notification Services** (`/notifications/services/`)
+- `NotificationService` - Coordinates client and practitioner notifications
+- `ClientNotificationService` - Handles client-specific notifications
+- `PractitionerNotificationService` - Handles practitioner-specific notifications
+
+#### Service Layer Benefits
+
+1. **Separation of Concerns**: Business logic is separated from views and models
+2. **Reusability**: Services can be used by multiple views, management commands, or tasks
+3. **Testability**: Services can be unit tested in isolation
+4. **Explicit Behavior**: No hidden side effects through signals
+5. **Transaction Management**: Services handle database transactions explicitly
+
+#### Example Usage
+
+```python
+# In a view
+from payments.services import CheckoutOrchestrator
+
+orchestrator = CheckoutOrchestrator()
+result = orchestrator.process_booking_payment(
+    user=request.user,
+    service_id=service_id,
+    payment_method_id=payment_method_id,
+    booking_data={
+        'start_time': start_time,
+        'end_time': end_time,
+        'special_requests': notes
+    }
+)
+
+if result.success:
+    return Response({'booking': result.booking.id})
+else:
+    return Response({'error': result.error}, status=400)
+```
+
+#### When to Use Services
+
+Create a service when:
+- Business logic spans multiple models
+- External APIs need to be called (Stripe, LiveKit, etc.)
+- Complex calculations are required
+- Multiple database operations need to be coordinated
+- You need to ensure transactional consistency
+
+Keep logic in models when:
+- It's simple property calculations
+- It's single-model validation
+- It's data transformation for that model only
+
 ## Data Models
 
 ### Core Models
@@ -467,3 +540,36 @@ coverage report
 - **Queue**: Celery with Redis
 - **Storage**: Cloudflare R2
 - **Monitoring**: Sentry
+
+## Booking Reminder System
+
+The system uses a **periodic task** approach for sending booking reminders, which runs every 5 minutes:
+
+### How it works:
+1. `process-booking-reminders` task runs every 5 minutes
+2. Checks for bookings that need 24-hour or 30-minute reminders
+3. Sends reminders if not already sent (tracked in booking metadata)
+4. Handles both individual and aggregated practitioner reminders
+
+### Benefits:
+- **Self-healing**: Automatically handles rescheduled bookings
+- **Simple**: No complex task scheduling/cancellation logic
+- **Reliable**: Survives system restarts
+- **Efficient**: Only queries bookings in reminder windows
+
+### Reminder Types:
+- **24-hour reminders**: Sent 23:50 - 24:10 hours before
+- **30-minute reminders**: Sent 25-35 minutes before
+- **Aggregated**: Practitioners get one email for group sessions with all participants
+
+### Celery Beat Configuration:
+The periodic reminder task is already configured in `/backend/estuary/celery.py`:
+```python
+'process-booking-reminders': {
+    'task': 'process-booking-reminders',
+    'schedule': crontab(minute='*/5'),  # Every 5 minutes
+    'options': {
+        'expires': 240.0,  # Task expires after 4 minutes if not executed
+    }
+},
+```

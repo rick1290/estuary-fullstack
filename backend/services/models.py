@@ -297,6 +297,34 @@ class Service(PublicModel):
         return self.name
 
     @property
+    def image_url(self):
+        """Get the absolute URL for the service image."""
+        if self.image:
+            try:
+                # Get the URL from the file field
+                url = self.image.url
+                
+                # If it's already a full URL (from cloud storage), return it
+                if url.startswith('http'):
+                    return url
+                
+                # For local development, we need to build the full URL
+                from django.conf import settings
+                
+                # Use the backend URL for media files, not frontend
+                backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
+                
+                # Remove leading slash if present to avoid double slashes
+                if url.startswith('/'):
+                    url = url[1:]
+                
+                return f"{backend_url}/{url}"
+            except Exception as e:
+                print(f"Error getting image URL: {e}")
+                return None
+        return None
+    
+    @property
     def price(self):
         """Get price in dollars as Decimal."""
         return Decimal(self.price_cents) / 100

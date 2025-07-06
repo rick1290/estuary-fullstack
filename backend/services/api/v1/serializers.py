@@ -167,7 +167,7 @@ class SessionAgendaItemSerializer(serializers.ModelSerializer):
 
 class ServiceSessionSerializer(serializers.ModelSerializer):
     """Serializer for service sessions (workshops/courses)"""
-    room_url = serializers.CharField(source='room.room_url', read_only=True)
+    room = serializers.SerializerMethodField()
     agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
     benefits = ServiceBenefitSerializer(many=True, read_only=True)
     participant_count = serializers.IntegerField(source='current_participants', read_only=True)
@@ -176,13 +176,28 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceSession
         fields = [
-            'id', 'title', 'description', 'start_time', 'end_time',
+            'id', 'service', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
             'participant_count', 'waitlist_count', 'sequence_number', 
-            'room_url', 'status', 'agenda', 'agenda_items', 'benefits',
+            'room', 'status', 'agenda', 'agenda_items', 'benefits',
             'what_youll_learn', 'address', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'current_participants', 'participant_count', 'room_url', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'current_participants', 'participant_count', 'room', 'created_at', 'updated_at']
+    
+    def get_room(self, obj):
+        """Get room information for this session"""
+        if hasattr(obj, 'livekit_room') and obj.livekit_room:
+            room = obj.livekit_room
+            return {
+                'id': room.id,
+                'public_uuid': room.public_uuid,
+                'livekit_room_name': room.livekit_room_name,
+                'status': room.status,
+                'max_participants': room.max_participants,
+                'scheduled_start': room.scheduled_start,
+                'scheduled_end': room.scheduled_end,
+            }
+        return None
     
     def get_waitlist_count(self, obj):
         """Get count of waiting users for this session"""
@@ -192,6 +207,7 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
 class ServiceResourceSerializer(serializers.ModelSerializer):
     """Serializer for service resources"""
     uploaded_by_name = serializers.CharField(source='uploaded_by.display_name', read_only=True)
+    file = serializers.FileField(write_only=True, required=False, help_text="File to upload")
     
     class Meta:
         model = ServiceResource
@@ -201,12 +217,100 @@ class ServiceResourceSerializer(serializers.ModelSerializer):
             'file_type', 'duration_seconds', 'uploaded_by_name', 'access_level',
             'is_downloadable', 'available_from', 'available_until', 'order',
             'is_featured', 'tags', 'view_count', 'download_count',
-            'created_at', 'updated_at'
+            'service', 'service_session', 'booking',  # Add parent relationship fields
+            'created_at', 'updated_at', 'file'
         ]
         read_only_fields = [
             'id', 'uploaded_by_name', 'view_count', 'download_count',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'file_url', 'file_name', 'file_size', 'file_type'
         ]
+    
+    def validate(self, attrs):
+        """Ensure parent field matches attachment_level"""
+        attachment_level = attrs.get('attachment_level')
+        service = attrs.get('service')
+        service_session = attrs.get('service_session')
+        booking = attrs.get('booking')
+        
+        # Ensure exactly one parent is set based on attachment_level
+        if attachment_level == 'service':
+            if not service:
+                raise serializers.ValidationError(
+                    "service field is required when attachment_level is 'service'"
+                )
+            # Ensure other parent fields are not set
+            attrs['service_session'] = None
+            attrs['booking'] = None
+            
+        elif attachment_level == 'session':
+            if not service_session:
+                raise serializers.ValidationError(
+                    "service_session field is required when attachment_level is 'session'"
+                )
+            # Ensure other parent fields are not set
+            attrs['service'] = None
+            attrs['booking'] = None
+            
+        elif attachment_level == 'booking':
+            if not booking:
+                raise serializers.ValidationError(
+                    "booking field is required when attachment_level is 'booking'"
+                )
+            # Ensure other parent fields are not set
+            attrs['service'] = None
+            attrs['service_session'] = None
+        
+        return attrs
+    
+    def create(self, validated_data):
+        # Handle file upload
+        file = validated_data.pop('file', None)
+        
+        # Create the resource
+        resource = super().create(validated_data)
+        
+        # Process file upload if provided
+        if file:
+            self._handle_file_upload(resource, file)
+        
+        return resource
+    
+    def update(self, instance, validated_data):
+        # Handle file upload
+        file = validated_data.pop('file', None)
+        
+        # Update the resource
+        resource = super().update(instance, validated_data)
+        
+        # Process file upload if provided
+        if file:
+            self._handle_file_upload(resource, file)
+        
+        return resource
+    
+    def _handle_file_upload(self, resource, file):
+        """Handle file upload and set metadata"""
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+        import os
+        from datetime import datetime
+        
+        # Generate file path
+        now = datetime.now()
+        file_extension = os.path.splitext(file.name)[1]
+        file_path = f"services/resources/{now.year}/{now.month:02d}/{resource.id}_{file.name}"
+        
+        # Save file
+        saved_path = default_storage.save(file_path, ContentFile(file.read()))
+        
+        # Update resource with file metadata
+        resource.file_url = default_storage.url(saved_path)
+        resource.file_name = file.name
+        resource.file_size = file.size
+        resource.file_type = file.content_type
+        
+        # Save the updated resource
+        resource.save(update_fields=['file_url', 'file_name', 'file_size', 'file_type'])
 
 
 class ServiceListSerializer(serializers.ModelSerializer):
@@ -269,6 +373,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
     waitlist_count = serializers.SerializerMethodField()
     practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
     cancellation_policy = serializers.SerializerMethodField()
+    image_url = serializers.CharField(read_only=True)
     
     class Meta(ServiceListSerializer.Meta):
         fields = ServiceListSerializer.Meta.fields + [
@@ -282,7 +387,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
             'media_attachments', 'child_relationships', 'sessions', 'resources',
             'price_per_session', 'original_price', 'savings_amount',
             'savings_percentage', 'total_sessions', 'benefits', 'agenda_items',
-            'waitlist_count', 'practitioner_relationships', 'cancellation_policy'
+            'waitlist_count', 'practitioner_relationships', 'cancellation_policy', 'image_url'
         ]
     
     def get_additional_practitioners(self, obj):
@@ -331,6 +436,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=False, allow_null=True)
     practitioner_category_id = serializers.IntegerField(required=False, allow_null=True)
     service_type_id = serializers.IntegerField(required=True)
+    image = serializers.ImageField(required=False, allow_null=True, help_text="Service cover image")
     additional_practitioner_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
@@ -342,13 +448,8 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         allow_empty=True,
         help_text="List of dicts with child_service_id, quantity, discount_percentage, etc."
     )
-    sessions = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        allow_empty=True,
-        write_only=True,
-        help_text="List of session data for workshops/courses"
-    )
+    # Sessions are now managed via the dedicated ServiceSession endpoint
+    # Remove sessions field to simplify the API
     
     class Meta:
         model = Service
@@ -363,7 +464,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             'is_shareable', 'sessions_included', 'bonus_sessions',
             'max_per_customer', 'available_from', 'available_until',
             'highlight_text', 'terms_conditions', 'additional_practitioner_ids',
-            'child_service_configs', 'sessions'
+            'child_service_configs'
         ]
         read_only_fields = ['id', 'public_uuid', 'price_cents', 'slug']
     
@@ -416,7 +517,6 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', [])
         child_service_configs = validated_data.pop('child_service_configs', [])
-        sessions_data = validated_data.pop('sessions', [])
         # Remove reverse relationships that can't be directly assigned
         validated_data.pop('agenda_items', None)
         validated_data.pop('benefits', None)
@@ -465,53 +565,61 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
                 except Service.DoesNotExist:
                     pass
         
-        # Create sessions if provided (for workshops/courses)
-        if sessions_data and service.service_type.code in ['workshop', 'course']:
-            for session_data in sessions_data:
-                # Valid fields for ServiceSession model (based on the model definition)
-                valid_fields = {
-                    'title', 'description', 'start_time', 'end_time', 
-                    'duration', 'max_participants', 'sequence_number',
-                    'status', 'agenda', 'what_youll_learn', 'price_cents',
-                    'current_participants', 'room', 'address'
-                }
-                
-                # Filter to only include valid fields
-                filtered_data = {k: v for k, v in session_data.items() if k in valid_fields}
-                
-                # Parse datetime strings (they come as ISO strings from frontend)
-                if 'start_time' in filtered_data:
-                    if isinstance(filtered_data['start_time'], str):
-                        filtered_data['start_time'] = parse_datetime(filtered_data['start_time'])
-                        if not filtered_data['start_time']:
-                            raise serializers.ValidationError(f"Invalid start_time format")
-                
-                if 'end_time' in filtered_data:
-                    if isinstance(filtered_data['end_time'], str):
-                        filtered_data['end_time'] = parse_datetime(filtered_data['end_time'])
-                        if not filtered_data['end_time']:
-                            raise serializers.ValidationError(f"Invalid end_time format")
-                
-                ServiceSession.objects.create(
-                    service=service,
-                    **filtered_data
-                )
-        
         return service
     
     @transaction.atomic
     def update(self, instance, validated_data):
         """Update service with relationships"""
+        # Log the incoming data
+        print(f"\n=== Service Update Debug ===")
+        print(f"Service ID: {instance.id}")
+        print(f"Service name: {instance.name}")
+        print(f"Validated data keys: {list(validated_data.keys())}")
+        print(f"Current image field value: {instance.image}")
+        print(f"Current image file exists: {bool(instance.image)}")
+        
+        if 'image' in validated_data:
+            print(f"\n=== Image Update Debug ===")
+            print(f"New image field type: {type(validated_data['image'])}")
+            print(f"New image field value: {validated_data['image']}")
+            
+            if hasattr(validated_data['image'], 'name'):
+                print(f"Image file name: {validated_data['image'].name}")
+                print(f"Image file size: {validated_data['image'].size}")
+            
+            # Handle empty string as image removal
+            if validated_data['image'] == '':
+                print("Empty string detected - removing image")
+                validated_data['image'] = None
+        
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', None)
         child_service_configs = validated_data.pop('child_service_configs', None)
-        sessions_data = validated_data.pop('sessions', None)
         # Remove reverse relationships that can't be directly assigned
         validated_data.pop('agenda_items', None)
         validated_data.pop('benefits', None)
         
         # Update service
+        print(f"\n=== Before super().update() ===")
         service = super().update(instance, validated_data)
+        
+        # Force save to ensure image is persisted
+        service.save()
+        
+        # Log after update
+        print(f"\n=== After Update ===")
+        print(f"Service image field: {service.image}")
+        print(f"Service image name: {service.image.name if service.image else 'None'}")
+        print(f"Service image file exists: {bool(service.image)}")
+        print(f"Service image URL: {service.image_url if hasattr(service, 'image_url') else 'No image_url property'}")
+        
+        # Check if file was actually saved
+        if service.image:
+            try:
+                print(f"Image file path: {service.image.path}")
+                print(f"Image file URL: {service.image.url}")
+            except Exception as e:
+                print(f"Error accessing image file: {e}")
         
         # Update additional practitioners if provided
         if additional_practitioner_ids is not None:
@@ -559,41 +667,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
                 except Service.DoesNotExist:
                     pass
         
-        # Update sessions if provided (for workshops/courses)
-        if sessions_data is not None and service.service_type.code in ['workshop', 'course']:
-            # Remove existing sessions
-            service.sessions.all().delete()
-            
-            # Add new sessions
-            for session_data in sessions_data:
-                # Valid fields for ServiceSession model (based on the model definition)
-                valid_fields = {
-                    'title', 'description', 'start_time', 'end_time', 
-                    'duration', 'max_participants', 'sequence_number',
-                    'status', 'agenda', 'what_youll_learn', 'price_cents',
-                    'current_participants', 'room', 'address'
-                }
-                
-                # Filter to only include valid fields
-                filtered_data = {k: v for k, v in session_data.items() if k in valid_fields}
-                
-                # Parse datetime strings (they come as ISO strings from frontend)
-                if 'start_time' in filtered_data:
-                    if isinstance(filtered_data['start_time'], str):
-                        filtered_data['start_time'] = parse_datetime(filtered_data['start_time'])
-                        if not filtered_data['start_time']:
-                            raise serializers.ValidationError(f"Invalid start_time format")
-                
-                if 'end_time' in filtered_data:
-                    if isinstance(filtered_data['end_time'], str):
-                        filtered_data['end_time'] = parse_datetime(filtered_data['end_time'])
-                        if not filtered_data['end_time']:
-                            raise serializers.ValidationError(f"Invalid end_time format")
-                
-                ServiceSession.objects.create(
-                    service=service,
-                    **filtered_data
-                )
+        # Sessions are now managed via the dedicated ServiceSession endpoint
         
         return service
 

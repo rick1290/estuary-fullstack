@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
@@ -21,6 +21,7 @@ import {
   Info,
   ChevronRight,
   User,
+  Users,
   CalendarPlus,
   AlertCircle,
   Search,
@@ -41,7 +42,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { format, parseISO, isPast, isFuture } from "date-fns"
 import Link from "next/link"
 
-type BookingStatus = "all" | "upcoming" | "unscheduled" | "past" | "cancelled"
+type BookingStatus = "all" | "upcoming" | "unscheduled" | "past" | "canceled"
 type ServiceType = "all" | "session" | "workshop" | "course" | "package"
 
 export default function UserBookingsList() {
@@ -49,12 +50,16 @@ export default function UserBookingsList() {
   const [activeTab, setActiveTab] = useState<BookingStatus>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<ServiceType[]>(["all"])
+  const [page, setPage] = useState(1)
+  const limit = 10 // Number of bookings per page
 
-  // Fetch bookings from API
+  // Fetch bookings from API - for now fetching all bookings and paginating client-side
+  // TODO: Move filtering to server-side for better performance
   const { data, isLoading, error } = useQuery({
     ...bookingsListOptions({
       query: {
-        ordering: "-created_at"
+        ordering: "-created_at",
+        limit: 100 // Fetch more bookings to allow client-side filtering
       }
     }),
   })
@@ -72,8 +77,8 @@ export default function UserBookingsList() {
           return booking.status === "confirmed" && isFuture(parseISO(booking.start_time))
         } else if (activeTab === "past") {
           return booking.status === "completed" || isPast(parseISO(booking.start_time))
-        } else if (activeTab === "cancelled") {
-          return booking.status === "cancelled"
+        } else if (activeTab === "canceled") {
+          return booking.status === "canceled"
         } else if (activeTab === "unscheduled") {
           return booking.status === "pending" || !booking.start_time
         }
@@ -107,9 +112,21 @@ export default function UserBookingsList() {
     return filtered
   }, [bookings, activeTab, searchQuery, selectedServiceTypes])
 
+  // Paginate the filtered results
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return filteredBookings.slice(startIndex, endIndex)
+  }, [filteredBookings, page, limit])
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [activeTab, searchQuery, selectedServiceTypes])
+
   const getStatusBadge = (booking: any) => {
-    if (booking.status === "cancelled") {
-      return <Badge variant="destructive">Cancelled</Badge>
+    if (booking.status === "canceled") {
+      return <Badge variant="destructive">Canceled</Badge>
     } else if (booking.status === "completed") {
       return <Badge variant="outline">Completed</Badge>
     } else if (booking.status === "confirmed" && booking.start_time) {
@@ -256,7 +273,7 @@ export default function UserBookingsList() {
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
           <TabsTrigger value="unscheduled">Unscheduled</TabsTrigger>
           <TabsTrigger value="past">Past</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="canceled">Canceled</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -279,8 +296,8 @@ export default function UserBookingsList() {
                   ? "You don't have any unscheduled services to book."
                   : activeTab === "past"
                   ? "You don't have any past bookings."
-                  : activeTab === "cancelled"
-                  ? "You don't have any cancelled bookings."
+                  : activeTab === "canceled"
+                  ? "You don't have any canceled bookings."
                   : "You haven't made any bookings yet."}
               </p>
               {(activeTab === "all" || activeTab === "upcoming") && (
@@ -293,7 +310,7 @@ export default function UserBookingsList() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredBookings.map((booking: any) => {
+          {paginatedBookings.map((booking: any) => {
             const service = booking.service
             const practitioner = service?.practitioner || service?.primary_practitioner
             const isUnscheduled = booking.status === "pending" || !booking.start_time
@@ -426,6 +443,31 @@ export default function UserBookingsList() {
               </Card>
             )
           })}
+          
+          {/* Pagination controls */}
+          {filteredBookings.length > limit && (
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <Button 
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                variant="outline"
+                size="default"
+                disabled={page === 1 || isLoading}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {Math.ceil(filteredBookings.length / limit)}
+              </span>
+              <Button 
+                onClick={() => setPage(prev => prev + 1)}
+                variant="outline"
+                size="default"
+                disabled={page >= Math.ceil(filteredBookings.length / limit) || isLoading}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

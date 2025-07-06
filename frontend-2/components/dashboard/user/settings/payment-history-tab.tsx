@@ -149,9 +149,13 @@ export default function PaymentHistoryTab() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {payment.stripe_payment_intent_id ? (
-                            <span className="text-sm text-muted-foreground">
-                              #{payment.stripe_payment_intent_id.slice(-8).toUpperCase()}
+                          {payment.order?.public_uuid ? (
+                            <span className="text-sm text-muted-foreground font-mono">
+                              #{payment.order.public_uuid.slice(-8).toUpperCase()}
+                            </span>
+                          ) : payment.public_uuid ? (
+                            <span className="text-sm text-muted-foreground font-mono">
+                              #{payment.public_uuid.slice(-8).toUpperCase()}
                             </span>
                           ) : (
                             '-'

@@ -206,14 +206,65 @@ export default function StreamSubscriptionPayment({
         </CardContent>
       </Card>
 
-      {/* Payment Method Selection */}
-      <div>
-        <PaymentMethodSelector
-          selectedMethodId={selectedPaymentMethodId}
-          onSelectMethod={setSelectedPaymentMethodId}
-          onAddNewCard={() => setShowAddPaymentModal(true)}
-        />
-      </div>
+      {/* Payment Method Selection - Compact for sidebar */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Payment Method</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {paymentMethods?.results && paymentMethods.results.length > 0 ? (
+            <div className="space-y-2">
+              {paymentMethods.results.slice(0, 2).map((method) => (
+                <div
+                  key={method.id}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                    selectedPaymentMethodId === method.id.toString() 
+                      ? "border-primary bg-primary/5" 
+                      : "border-gray-200 hover:border-gray-300"
+                  )}
+                  onClick={() => setSelectedPaymentMethodId(method.id.toString())}
+                >
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      •••• {method.last4}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {method.brand} • {method.exp_month.toString().padStart(2, '0')}/{method.exp_year.toString().slice(-2)}
+                    </p>
+                  </div>
+                  {method.is_default && (
+                    <Badge variant="secondary" className="text-xs">Default</Badge>
+                  )}
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddPaymentModal(true)}
+                className="w-full text-xs"
+              >
+                <CreditCard className="mr-2 h-3 w-3" />
+                Add New Card
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <CreditCard className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground mb-3">No payment methods</p>
+              <Button
+                size="sm"
+                onClick={() => setShowAddPaymentModal(true)}
+                className="w-full"
+              >
+                <CreditCard className="mr-2 h-3 w-3" />
+                Add Payment Method
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Error Display */}
       {paymentError && (

@@ -10,6 +10,7 @@ import {
 } from "@/src/client/@tanstack/react-query.gen"
 import type { ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
 import { useToast } from "@/hooks/use-toast"
+import { patchWithFormData } from "@/lib/api-helpers"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -187,12 +188,19 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   // Update mutation
   const updateMutation = useMutation({
     ...servicesPartialUpdateMutation(),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Service updated",
         description: "Your changes have been saved successfully.",
       })
-      queryClient.invalidateQueries({ queryKey: ['services', serviceId] })
+      // Invalidate and refetch the service data
+      await queryClient.invalidateQueries({ queryKey: ['services'] })
+      await queryClient.invalidateQueries({ 
+        queryKey: ['services', 'detail', parseInt(serviceId)] 
+      })
+      await queryClient.refetchQueries({
+        queryKey: servicesRetrieveOptions({ path: { id: parseInt(serviceId) } }).queryKey
+      })
       setUnsavedChanges(new Set())
     },
     onError: (error: any) => {
@@ -252,7 +260,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
           address_id: service.address?.id,
         },
         "media": {
-          image: service.image,
+          image: service.image_url || service.image,
         },
         "benefits": {
           what_youll_learn: service.what_youll_learn,
@@ -280,9 +288,79 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
 
       // Calculate section completion status
       const newStatus: Record<string, SectionStatus> = {}
+      const currentSectionData = {
+        "basic-info": {
+          name: service.name,
+          title: service.title,
+          description: service.description,
+          short_description: service.short_description,
+          category_id: service.category?.id,
+          tags: service.tags,
+        },
+        "pricing-duration": {
+          price: service.price,
+          duration_minutes: service.duration_minutes,
+          max_participants: service.max_participants,
+          min_participants: service.min_participants,
+        },
+        "schedule-selection": {
+          scheduleId: service.schedule_id || service.schedule?.id?.toString(),
+        },
+        "bundle-configuration": {
+          sessions_included: service.sessions_included,
+          child_service_configs: service.child_relationships?.map(rel => ({
+            child_service_id: rel.child_service?.id,
+            quantity: rel.quantity
+          })) || [],
+        },
+        "package-composition": {
+          child_service_configs: service.child_relationships?.map(rel => ({
+            child_service_id: rel.child_service?.id,
+            quantity: rel.quantity,
+            discount_percentage: rel.discount_percentage,
+            order: rel.order
+          })) || [],
+        },
+        "service-sessions": {
+          sessions: service.sessions || [],
+        },
+        "revenue-sharing": {
+          additionalPractitioners: service.additional_practitioners || [],
+        },
+        "location": {
+          location_type: service.location_type,
+          address_id: service.address?.id,
+        },
+        "media": {
+          image: service.image_url || service.image,
+        },
+        "benefits": {
+          what_youll_learn: service.what_youll_learn,
+          prerequisites: service.prerequisites,
+          includes: service.includes,
+          benefits: service.benefits || [],
+          agenda_items: service.agenda_items || [],
+        },
+        "resources": {
+          // resources: service.resources,
+        },
+        "advanced": {
+          terms_conditions: service.terms_conditions,
+          experience_level: service.experience_level,
+          age_min: service.age_min,
+          age_max: service.age_max,
+        },
+        "status-visibility": {
+          status: service.status,
+          is_featured: service.is_featured,
+          is_active: service.is_active,
+          is_public: service.is_public,
+        },
+      }
+      
       sections.forEach(section => {
         if (!section.conditional || section.conditional(service)) {
-          const data = sectionData[section.id] || {}
+          const data = currentSectionData[section.id] || {}
           const isComplete = checkSectionCompletion(section.id, data, service)
           newStatus[section.id] = isComplete ? "complete" : 
                                   section.required ? "incomplete" : "optional"
@@ -345,6 +423,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       delete updates.scheduleId
     }
     
+    // Simply send the update
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },
       body: updates,
@@ -360,6 +439,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   // Save all changes
   const handleSaveAll = async () => {
     const updates: Partial<ServiceCreateUpdateRequestWritable> = {}
+    let hasFile = false
     
     // Merge all changed sections
     unsavedChanges.forEach(sectionId => {
@@ -371,9 +451,17 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         delete sectionUpdates.scheduleId
       }
       
+      // Check for files
+      Object.values(sectionUpdates).forEach(value => {
+        if (value instanceof File) {
+          hasFile = true
+        }
+      })
+      
       Object.assign(updates, sectionUpdates)
     })
 
+    // Let the API client handle the request format
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },
       body: updates,
@@ -814,14 +902,20 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <SectionComponent
-                          service={service}
-                          data={sectionData[section.id] || {}}
-                          onChange={(data) => handleSectionChange(section.id, data)}
-                          onSave={() => handleSaveSection(section.id)}
-                          hasChanges={hasChanges}
-                          isSaving={updateMutation.isPending}
-                        />
+                        {section.id === 'media' ? (
+                          <MediaSection service={service} />
+                        ) : section.id === 'resources' ? (
+                          <ResourcesSection service={service} />
+                        ) : (
+                          <SectionComponent
+                            service={service}
+                            data={sectionData[section.id] || {}}
+                            onChange={(data) => handleSectionChange(section.id, data)}
+                            onSave={() => handleSaveSection(section.id)}
+                            hasChanges={hasChanges}
+                            isSaving={updateMutation.isPending}
+                          />
+                        )}
                       </CardContent>
                     </Card>
                   </div>

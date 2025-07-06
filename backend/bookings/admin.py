@@ -16,7 +16,7 @@ class BookingNoteInline(admin.TabularInline):
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = ['public_uuid_short', 'user_email', 'practitioner_name', 'service_name', 
-                   'start_time', 'status', 'payment_status', 'final_amount', 'created_at']
+                   'start_time', 'status', 'payment_status', 'final_amount_display', 'created_at']
     list_filter = ['status', 'payment_status', 'created_at']
     search_fields = ['public_uuid', 'user__email', 'practitioner__user__email', 
                     'practitioner__display_name', 'service__name']
@@ -35,7 +35,7 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('start_time', 'end_time', 'actual_start_time', 'actual_end_time', 'timezone')
         }),
         ('Status & Payment', {
-            'fields': ('status', 'payment_status', 'price_charged', 'discount_amount', 'final_amount')
+            'fields': ('status', 'payment_status', 'price_charged_cents', 'discount_amount_cents', 'final_amount_cents')
         }),
         ('Location & Meeting', {
             'fields': ('location', 'meeting_url', 'meeting_id', 'room')
@@ -84,6 +84,11 @@ class BookingAdmin(admin.ModelAdmin):
         return obj.service.name
     service_name.short_description = 'Service'
     service_name.admin_order_field = 'service__name'
+    
+    def final_amount_display(self, obj):
+        return f"${obj.final_amount}"
+    final_amount_display.short_description = 'Final Amount'
+    final_amount_display.admin_order_field = 'final_amount_cents'
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(

@@ -22,8 +22,15 @@ export default function UserStreamSubscriptions() {
   const [showManageDialog, setShowManageDialog] = useState(false)
 
   // TODO: The users/me/stream-subscriptions endpoint is not being generated in the OpenAPI client
-  // For now, we'll show a placeholder
-  const { data, isLoading } = { data: null, isLoading: false }
+  // For now, we'll use a placeholder query
+  const { data, isLoading } = useQuery({
+    queryKey: ['user-stream-subscriptions'],
+    queryFn: async () => {
+      // This would be the actual API call when the endpoint is available
+      return { results: [] }
+    },
+    enabled: !!user
+  })
 
   if (isLoading) {
     return (

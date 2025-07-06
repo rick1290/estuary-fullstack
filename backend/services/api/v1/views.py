@@ -5,11 +5,13 @@ from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Q, Count, Avg, F, Prefetch, Max
 from django.utils import timezone
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceSession,
@@ -125,10 +127,31 @@ class PractitionerServiceCategoryViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(tags=['Services']),
-    create=extend_schema(tags=['Services']),
+    create=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        description="Create a new service. Supports both JSON and multipart/form-data for file uploads."
+    ),
     retrieve=extend_schema(tags=['Services']),
-    update=extend_schema(tags=['Services']),
-    partial_update=extend_schema(tags=['Services']),
+    update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        description="Update a service. Supports both JSON and multipart/form-data for file uploads."
+    ),
+    partial_update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceCreateUpdateSerializer,
+            'application/json': ServiceCreateUpdateSerializer,
+        },
+        description="Update a service. Supports both JSON and multipart/form-data for file uploads."
+    ),
     destroy=extend_schema(tags=['Services']),
     featured=extend_schema(tags=['Services']),
     popular=extend_schema(tags=['Services']),
@@ -150,6 +173,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
     Used by practitioner dashboard and admin interfaces.
     """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsServiceOwner]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Accept both JSON and multipart
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ServiceFilter
     search_fields = ['name', 'description', 'tags']
@@ -180,15 +204,15 @@ class ServiceViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             # Public users see only active and public services
             if not self.request.user.is_authenticated:
-                queryset = queryset.filter(is_active=True, is_public=True, status='published')
+                queryset = queryset.filter(is_active=True, is_public=True, status='active')
             # Authenticated users can see their own services regardless of status
             elif hasattr(self.request.user, 'practitioner_profile'):
                 queryset = queryset.filter(
-                    Q(is_active=True, is_public=True, status='published') |
+                    Q(is_active=True, is_public=True, status='active') |
                     Q(primary_practitioner=self.request.user.practitioner_profile)
                 )
             else:
-                queryset = queryset.filter(is_active=True, is_public=True, status='published')
+                queryset = queryset.filter(is_active=True, is_public=True, status='active')
         
         return queryset
     
@@ -199,6 +223,10 @@ class ServiceViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return ServiceCreateUpdateSerializer
         return ServiceDetailSerializer
+    
+    # No override needed - let DRF handle JSON/FormData parsing naturally
+    
+    # Let DRF handle the request parsing - it already handles JSON and FormData correctly
     
     @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
     def by_slug(self, request, slug=None):
@@ -220,7 +248,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             is_featured=True,
             is_active=True,
             is_public=True,
-            status='published'
+            status='active'
         )[:12]  # Limit to 12 featured services
         serializer = ServiceListSerializer(featured, many=True, context={'request': request})
         return Response(serializer.data)
@@ -231,7 +259,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         popular = self.get_queryset().filter(
             is_active=True,
             is_public=True,
-            status='published'
+            status='active'
         ).annotate(
             booking_count=Count('bookings'),
             avg_rating_annotated=Avg('reviews__rating')
@@ -472,6 +500,107 @@ class ServiceViewSet(viewsets.ModelViewSet):
             
             serializer = WaitlistSerializer(waitlist_entry)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @extend_schema(
+        tags=['Services'],
+        summary="Upload cover image for service",
+        description="Upload a cover image for a service. This will replace any existing cover image.",
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'image': {'type': 'string', 'format': 'binary', 'description': 'Image file to upload'},
+                },
+                'required': ['image']
+            }
+        },
+        responses={
+            200: {
+                'description': 'Cover image uploaded successfully',
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'type': 'object',
+                            'properties': {
+                                'message': {'type': 'string'},
+                                'image_url': {'type': 'string'},
+                            }
+                        }
+                    }
+                }
+            },
+            400: {'description': 'Bad request - invalid file or no file provided'},
+            403: {'description': 'Permission denied - not the service owner'}
+        }
+    )
+    @action(
+        detail=True, 
+        methods=['post'], 
+        parser_classes=[MultiPartParser, FormParser],
+        url_path='upload-cover-image',
+        url_name='upload-cover-image'
+    )
+    def upload_cover_image(self, request, pk=None):
+        """
+        Upload cover image for a service.
+        Replaces any existing cover image.
+        """
+        try:
+            # Get the service - this will also handle 404 if not found
+            service = self.get_object()
+            
+            # Check permissions (IsServiceOwner should handle this, but double-check)
+            if not request.user.is_authenticated:
+                return Response(
+                    {'error': 'Authentication required'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            if not hasattr(request.user, 'practitioner_profile') or not request.user.practitioner_profile:
+                return Response(
+                    {'error': 'Must be a practitioner to upload cover images'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            if service.primary_practitioner != request.user.practitioner_profile:
+                return Response(
+                    {'error': 'You can only upload cover images for your own services'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Check if image file is provided
+            if 'image' not in request.FILES:
+                return Response(
+                    {'error': 'No image file provided'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            image_file = request.FILES['image']
+            
+            # Validate file type
+            if not image_file.content_type or not image_file.content_type.startswith('image/'):
+                return Response(
+                    {'error': 'File must be an image'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Update service with new image
+            service.image = image_file
+            service.save(update_fields=['image'])
+            
+            # Return success response with image URL
+            image_url = service.image.url if service.image else None
+            return Response({
+                'message': 'Cover image uploaded successfully',
+                'image_url': image_url
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            import traceback
+            return Response({
+                'error': f'Upload failed: {str(e)}',
+                'traceback': traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema_view(
@@ -545,6 +674,11 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Get sessions based on service"""
+        # For detail views (retrieve, update, destroy), return all sessions
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            return ServiceSession.objects.select_related('service', 'room', 'address')
+        
+        # For list view, filter by service_id if provided
         service_id = self.request.query_params.get('service_id')
         if not service_id:
             return ServiceSession.objects.none()
@@ -562,10 +696,30 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(tags=['Services']),
-    create=extend_schema(tags=['Services']),
+    create=extend_schema(
+        tags=['Services'],
+        summary="Create service resource",
+        description="Create a new service resource. Supports file uploads via multipart/form-data.",
+        request={
+            'multipart/form-data': ServiceResourceSerializer,
+            'application/json': ServiceResourceSerializer,
+        }
+    ),
     retrieve=extend_schema(tags=['Services']),
-    update=extend_schema(tags=['Services']),
-    partial_update=extend_schema(tags=['Services']),
+    update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceResourceSerializer,
+            'application/json': ServiceResourceSerializer,
+        }
+    ),
+    partial_update=extend_schema(
+        tags=['Services'],
+        request={
+            'multipart/form-data': ServiceResourceSerializer,
+            'application/json': ServiceResourceSerializer,
+        }
+    ),
     destroy=extend_schema(tags=['Services'])
 )
 class ServiceResourceViewSet(viewsets.ModelViewSet):
@@ -574,6 +728,7 @@ class ServiceResourceViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ServiceResourceSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Add parsers for file uploads
     
     def get_queryset(self):
         """Get resources based on filters"""

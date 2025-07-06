@@ -55,11 +55,14 @@ from notifications.api.v1.views import (
 
 # Streaming content
 from streams.api.v1.views import (
-    StreamViewSet, StreamPostViewSet, LiveStreamViewSet, StreamScheduleViewSet, StreamCategoryViewSet
+    StreamViewSet, StreamPostViewSet, StreamCategoryViewSet
 )
 
 # Messaging
 from messaging.api.v1.views import ConversationViewSet, MessageViewSet, PractitionerMessagingViewSet
+
+# Rooms (LiveKit video)
+from rooms.api.v1.views import RoomViewSet
 
 # Register all ViewSets properly
 # Bookings
@@ -119,14 +122,15 @@ router.register(r'notification-templates', NotificationTemplateViewSet, basename
 # Streams
 router.register(r'streams', StreamViewSet, basename='stream')
 router.register(r'stream-posts', StreamPostViewSet, basename='stream-post')
-router.register(r'live-streams', LiveStreamViewSet, basename='live-stream')
-router.register(r'stream-schedules', StreamScheduleViewSet, basename='stream-schedule')
 router.register(r'stream-categories', StreamCategoryViewSet, basename='stream-category')
 
 # Messaging
 router.register(r'conversations', ConversationViewSet, basename='conversation')
 router.register(r'messages', MessageViewSet, basename='message')
 router.register(r'practitioner-messaging', PractitionerMessagingViewSet, basename='practitioner-messaging')
+
+# Rooms (LiveKit video)
+router.register(r'rooms', RoomViewSet, basename='room')
 
 # Import documentation views
 from api.v1.docs import (
@@ -155,4 +159,7 @@ urlpatterns = [
     
     # Include payment URLs (for webhooks)
     path('', include('payments.api.v1.urls')),
+    
+    # Include room URLs (for booking-specific endpoints)
+    path('', include('rooms.api.v1.urls')),
 ]

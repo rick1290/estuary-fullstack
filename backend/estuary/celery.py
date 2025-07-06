@@ -28,14 +28,14 @@ app.conf.beat_schedule = {
         }
     },
     
-    # DEPRECATED: Old scheduled notification processor (will be removed)
-    # 'process-scheduled-notifications': {
-    #     'task': 'notifications.tasks.process_scheduled_notifications',
-    #     'schedule': 60.0,  # Every 60 seconds
-    #     'options': {
-    #         'expires': 30.0,  # Task expires after 30 seconds if not executed
-    #     }
-    # },
+    # Process booking reminders every 5 minutes
+    'process-booking-reminders': {
+        'task': 'process-booking-reminders',
+        'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        'options': {
+            'expires': 240.0,  # Task expires after 4 minutes if not executed
+        }
+    },
     
     # Clean up old notifications daily at 2 AM
     'cleanup-old-notifications': {
@@ -86,6 +86,33 @@ app.conf.beat_schedule = {
     'generate-weekly-payouts': {
         'task': 'payments.tasks.generate_weekly_payouts',
         'schedule': crontab(hour=10, minute=0, day_of_week=1),  # Monday 10 AM
+        'options': {
+            'expires': 3600.0,
+        }
+    },
+    
+    # Mark completed bookings
+    'mark-completed-bookings': {
+        'task': 'bookings.tasks.mark_completed_bookings',
+        'schedule': crontab(minute='*/30'),  # Every 30 minutes
+        'options': {
+            'expires': 1800.0,  # Task expires after 30 minutes
+        }
+    },
+    
+    # Update available earnings
+    'update-available-earnings': {
+        'task': 'payments.tasks.update_available_earnings',
+        'schedule': crontab(minute=0),  # Every hour
+        'options': {
+            'expires': 3600.0,
+        }
+    },
+    
+    # Calculate pending earnings daily
+    'calculate-pending-earnings': {
+        'task': 'payments.tasks.calculate_pending_earnings',
+        'schedule': crontab(hour=1, minute=0),  # Daily at 1 AM
         'options': {
             'expires': 3600.0,
         }

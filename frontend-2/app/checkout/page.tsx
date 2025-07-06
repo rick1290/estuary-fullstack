@@ -8,7 +8,8 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { 
   servicesRetrieveOptions, 
   paymentMethodsListOptions,
-  checkoutDirectPaymentCreateMutation 
+  checkoutDirectPaymentCreateMutation,
+  creditsBalanceRetrieveOptions 
 } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
@@ -36,8 +37,6 @@ import { Switch } from "@/components/ui/switch"
 import PaymentMethodSelector from "@/components/checkout/payment-method-selector"
 import AddPaymentMethodModal from "@/components/checkout/add-payment-method-modal"
 
-// Mock user credit balance for now
-const userCreditBalance = 25.0
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -62,6 +61,12 @@ export default function CheckoutPage() {
     enabled: isAuthenticated,
   })
   
+  // Fetch real user credit balance
+  const { data: creditBalance } = useQuery({
+    ...creditsBalanceRetrieveOptions(),
+    enabled: isAuthenticated,
+  })
+  
   // Auto-select default payment method when it changes
   useEffect(() => {
     if (paymentMethods?.results && !selectedPaymentMethodId) {
@@ -71,9 +76,16 @@ export default function CheckoutPage() {
       }
     }
   }, [paymentMethods, selectedPaymentMethodId])
+  
+  // Auto-enable credits if user has balance
+  useEffect(() => {
+    if (creditBalance && creditBalance.balance_cents > 0) {
+      setApplyCredits(true)
+    }
+  }, [creditBalance])
 
   // Credit balance state
-  const [applyCredits, setApplyCredits] = useState(userCreditBalance > 0)
+  const [applyCredits, setApplyCredits] = useState(false)
 
   // Get service ID and other parameters from URL
   const serviceId = searchParams.get("serviceId")
@@ -332,6 +344,7 @@ export default function CheckoutPage() {
 
   // Calculate pricing - ensure all values are numbers
   const basePrice = service.price
+  const userCreditBalance = creditBalance ? creditBalance.balance : 0
   const creditsToApply = applyCredits ? Math.min(userCreditBalance, basePrice) : 0
   const subtotal = basePrice
   const discount = creditsToApply + promoDiscount

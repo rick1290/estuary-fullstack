@@ -369,6 +369,30 @@ class Booking(PublicModel):
     def mark_no_show(self):
         """Mark booking as no-show."""
         self.transition_to('no_show')
+    
+    def calculate_refund_amount(self):
+        """
+        Calculate refund amount based on cancellation policy.
+        
+        Returns:
+            int: Refund amount in cents
+        """
+        # If booking hasn't started yet
+        if self.start_time > timezone.now():
+            hours_until_start = (self.start_time - timezone.now()).total_seconds() / 3600
+            
+            # Full refund if canceled more than 24 hours before
+            if hours_until_start >= 24:
+                return self.final_amount_cents
+            # 50% refund if canceled 6-24 hours before
+            elif hours_until_start >= 6:
+                return int(self.final_amount_cents * 0.5)
+            # No refund if canceled less than 6 hours before
+            else:
+                return 0
+        else:
+            # No refund for already started bookings
+            return 0
 
     def cancel(self, reason=None, canceled_by='client'):
         """Cancel this booking."""
@@ -376,6 +400,18 @@ class Booking(PublicModel):
             raise ValidationError("This booking cannot be canceled")
         
         self.transition_to('canceled', reason=reason, canceled_by=canceled_by)
+        
+        # Process refund if payment was made
+        if self.payment_status == 'paid' and self.final_amount_cents > 0:
+            from payments.tasks import process_refund_credits
+            # Calculate refund amount based on cancellation policy
+            refund_amount_cents = self.calculate_refund_amount()
+            if refund_amount_cents > 0:
+                process_refund_credits.delay(
+                    str(self.id), 
+                    refund_amount_cents, 
+                    reason or 'Booking canceled'
+                )
         
         # Cancel child bookings if this is a parent
         if self.is_parent_booking:

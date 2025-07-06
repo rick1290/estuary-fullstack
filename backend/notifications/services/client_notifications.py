@@ -33,6 +33,7 @@ class ClientNotificationService(BaseNotificationService):
         'credit_purchase': 'COURIER_CLIENT_CREDIT_PURCHASE_TEMPLATE',
         'review_request': 'COURIER_CLIENT_REVIEW_REQUEST_TEMPLATE',
         'practitioner_message': 'COURIER_CLIENT_PRACTITIONER_MESSAGE_TEMPLATE',
+        'booking_completed_review_request': 'COURIER_CLIENT_BOOKING_COMPLETED_REVIEW_REQUEST_TEMPLATE',
     }
     
     def get_template_id(self, template_key: str) -> str:
@@ -94,6 +95,13 @@ class ClientNotificationService(BaseNotificationService):
         # Format booking details
         booking_datetime = booking.start_time
         
+        # Check if booking has a video room
+        video_room_url = None
+        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
+        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        
         data = {
             'booking_id': str(booking.id),
             'service_name': service.name,
@@ -108,7 +116,9 @@ class ClientNotificationService(BaseNotificationService):
             'credits_used': f"${(booking.discount_amount_cents or 0) / 100:.2f}" if booking.discount_amount_cents else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'add_to_calendar_url': self._generate_calendar_url(booking),
-            'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation"
+            'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation",
+            'video_room_url': video_room_url,
+            'has_video_room': bool(video_room_url)
         }
         
         # Add session-specific details if applicable
@@ -135,8 +145,8 @@ class ClientNotificationService(BaseNotificationService):
             idempotency_key=f"booking-confirmation-{booking.id}"
         )
         
-        # Schedule reminders
-        self._schedule_booking_reminders(booking)
+        # Reminders are now handled by periodic task process_booking_reminders
+        # self._schedule_booking_reminders(booking)  # Deprecated - using periodic task instead
     
     def send_payment_success(self, order):
         """
@@ -219,6 +229,13 @@ class ClientNotificationService(BaseNotificationService):
         # Calculate time until booking
         time_until = booking.start_time - timezone.now()
         
+        # Check if booking has a video room
+        video_room_url = None
+        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
+        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        
         data = {
             'booking_id': str(booking.id),
             'service_name': service.name,
@@ -231,11 +248,15 @@ class ClientNotificationService(BaseNotificationService):
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'reschedule_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/reschedule",
-            'practitioner_contact': practitioner.user.email
+            'practitioner_contact': practitioner.user.email,
+            'video_room_url': video_room_url,
+            'has_video_room': bool(video_room_url)
         }
         
         # Add video conference details if applicable
-        if booking.meeting_url:
+        if video_room_url:
+            data['video_instructions'] = "Click the link above to join your video session"
+        elif booking.meeting_url:
             data['video_room_url'] = booking.meeting_url
             data['video_instructions'] = "Click the link above to join your video session"
         
@@ -418,3 +439,106 @@ class ClientNotificationService(BaseNotificationService):
             return f"{hours} hour{'s' if hours > 1 else ''}"
         else:
             return f"{minutes} minute{'s' if minutes > 1 else ''}"
+    
+    def send_booking_completed_review_request(self, booking):
+        """
+        Send review request email after booking is completed.
+        """
+        user = booking.user
+        if not self.should_send_notification(user, 'review', 'email'):
+            return
+        
+        template_id = self.get_template_id('booking_completed_review_request')
+        if not template_id:
+            logger.warning("No booking completed review request template configured")
+            return
+        
+        service = booking.service
+        practitioner = service.primary_practitioner
+        
+        data = {
+            'booking_id': str(booking.id),
+            'service_name': service.name,
+            'service_type': service.service_type,
+            'practitioner_name': practitioner.user.get_full_name(),
+            'practitioner_slug': practitioner.slug,
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
+            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'review_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/review",
+            'practitioner_profile_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}",
+            'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/user"
+        }
+        
+        # Add session-specific details if applicable
+        if booking.service_session:
+            data['session_name'] = booking.service_session.title or f"Session {booking.service_session.sequence_number}" if booking.service_session.sequence_number else service.name
+            if booking.service_session.sequence_number:
+                data['session_number'] = booking.service_session.sequence_number
+        
+        title = f"How was your experience with {practitioner.user.get_full_name()}?"
+        message = f"Your {service.name} session has been completed. We'd love to hear about your experience!"
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=title,
+            message=message,
+            notification_type='review',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"booking-review-request-{booking.id}"
+        )
+    
+    def send_booking_cancellation(self, booking):
+        """
+        Send booking cancellation notification to client.
+        """
+        user = booking.user
+        if not self.should_send_notification(user, 'booking', 'email'):
+            return
+        
+        template_id = self.get_template_id('booking_cancelled')
+        if not template_id:
+            logger.warning("No booking cancelled template configured")
+            return
+        
+        service = booking.service
+        practitioner = service.primary_practitioner if service else booking.practitioner
+        
+        data = {
+            'booking_id': str(booking.id),
+            'service_name': service.name if service else booking.service_name_snapshot,
+            'practitioner_name': practitioner.user.get_full_name() if practitioner else booking.practitioner_name_snapshot,
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y') if booking.start_time else 'N/A',
+            'booking_time': booking.start_time.strftime('%I:%M %p') if booking.start_time else 'N/A',
+            'cancelled_by': booking.cancelled_by or 'System',
+            'cancellation_reason': booking.cancellation_reason or 'No reason provided',
+            'refund_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}" if booking.final_amount_cents else None,
+            'support_url': f"{settings.FRONTEND_URL}/support",
+            'rebooking_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}" if practitioner else settings.FRONTEND_URL
+        }
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=f"Booking Cancelled: {data['service_name']}",
+            message=f"Your booking with {data['practitioner_name']} on {data['booking_date']} has been cancelled.",
+            notification_type='booking',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"booking-cancellation-{booking.id}"
+        )

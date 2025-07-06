@@ -357,13 +357,69 @@ practitioner_net = $90
    - Track payment intents and order IDs
    - Monitor for suspicious patterns
 
+## Credit System Implementation
+
+### Credit Transaction Flow
+1. **Purchase Credits**:
+   - User calls `/api/v1/credits/purchase/`
+   - Creates Order record (order_type='credit')
+   - Creates Stripe PaymentIntent
+   - If payment succeeds immediately: Creates UserCreditTransaction
+   - If payment requires action: Webhook creates UserCreditTransaction
+   - Duplicate prevention: Checks if transaction exists for order
+
+2. **Use Credits**:
+   - During booking creation
+   - Creates negative UserCreditTransaction (debit)
+   - UserCreditBalance automatically updated via model save()
+
+3. **Refund Credits**:
+   - When booking is canceled
+   - Creates positive UserCreditTransaction (refund)
+   - Amount based on cancellation policy:
+     - 100% if canceled 24+ hours before
+     - 50% if canceled 6-24 hours before  
+     - 0% if canceled <6 hours before
+
+### Earnings Transaction Flow
+1. **Booking Created**:
+   - EarningsTransaction created with status='projected'
+   - Commission calculated based on service type and practitioner tier
+
+2. **Booking Completed**:
+   - Status changes from 'projected' to 'pending'
+   - 48-hour hold period starts
+   - Celery task: `mark-completed-bookings`
+
+3. **Hold Period Expires**:
+   - Status changes from 'pending' to 'available'
+   - Practitioner balance updated
+   - Celery task: `update-available-earnings`
+
+4. **Booking Canceled**:
+   - Creates reversal transaction (negative amounts)
+   - Original transaction marked as 'reversed'
+   - Practitioner balance adjusted if needed
+
+### Celery Tasks
+- `mark-completed-bookings`: Runs every 30 minutes
+- `update-available-earnings`: Runs every hour
+- `calculate-pending-earnings`: Runs daily at 1 AM
+- `process-refund-credits`: Triggered on booking cancellation
+
 ## Webhook Handling
 
 The system processes Stripe webhooks for:
-- `payment_intent.succeeded` - Mark order as paid
+- `payment_intent.succeeded` - Mark order as paid, create transactions
 - `payment_intent.payment_failed` - Handle payment failures
+- `checkout.session.completed` - Process checkout completions
 - `charge.refunded` - Process refunds
 - `customer.subscription.updated` - Update practitioner tiers
+
+### Duplicate Prevention
+- Credit purchases check for existing transactions by order
+- Booking creation checks for existing bookings by order
+- Earnings creation is idempotent per booking
 
 ## Common Issues and Solutions
 

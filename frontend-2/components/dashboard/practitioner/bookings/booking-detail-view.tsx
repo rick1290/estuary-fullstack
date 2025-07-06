@@ -1,12 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   bookingsRetrieveOptions, 
   bookingsCancelCreateMutation,
   bookingsCompleteCreateMutation,
-  bookingsConfirmCreateMutation
+  bookingsConfirmCreateMutation,
+  bookingsPartialUpdateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -15,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import {
   Calendar,
@@ -32,7 +35,9 @@ import {
   Phone,
   MessageSquare,
   Edit,
-  Copy
+  Copy,
+  Save,
+  X
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -58,6 +63,8 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   const router = useRouter()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const [isEditingNote, setIsEditingNote] = useState(false)
+  const [noteContent, setNoteContent] = useState("")
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
@@ -112,6 +119,25 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
     },
   })
 
+  const updateNoteMutation = useMutation({
+    ...bookingsPartialUpdateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Note saved",
+        description: "Your note has been saved successfully.",
+      })
+      queryClient.invalidateQueries({ queryKey: ['bookings', bookingId] })
+      setIsEditingNote(false)
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to save note",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      })
+    },
+  })
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -161,6 +187,15 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   const handleConfirm = () => {
     confirmMutation.mutate({
       path: { id: parseInt(bookingId) }
+    })
+  }
+
+  const handleSaveNote = () => {
+    updateNoteMutation.mutate({
+      path: { id: parseInt(bookingId) },
+      body: {
+        practitioner_notes: noteContent
+      }
     })
   }
 
@@ -358,14 +393,62 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
               <CardDescription>Internal notes about this booking</CardDescription>
             </CardHeader>
             <CardContent>
-              {booking.practitioner_notes ? (
-                <p className="text-sm">{booking.practitioner_notes}</p>
+              {isEditingNote ? (
+                <div className="space-y-4">
+                  <Textarea
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                    placeholder="Add your notes here..."
+                    className="min-h-[100px]"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveNote}
+                      disabled={updateNoteMutation.isPending}
+                    >
+                      {updateNoteMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Note
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingNote(false)
+                        setNoteContent(booking.practitioner_notes || "")
+                      }}
+                      disabled={updateNoteMutation.isPending}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No notes added yet</p>
+                <>
+                  {booking.practitioner_notes ? (
+                    <p className="text-sm whitespace-pre-wrap">{booking.practitioner_notes}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No notes added yet</p>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => {
+                      setIsEditingNote(true)
+                      setNoteContent(booking.practitioner_notes || "")
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    {booking.practitioner_notes ? "Edit Note" : "Add Note"}
+                  </Button>
+                </>
               )}
-              <Button variant="outline" size="sm" className="mt-4">
-                Add Note
-              </Button>
             </CardContent>
           </Card>
         </div>
