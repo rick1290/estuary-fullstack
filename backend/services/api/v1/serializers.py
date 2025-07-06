@@ -167,7 +167,7 @@ class SessionAgendaItemSerializer(serializers.ModelSerializer):
 
 class ServiceSessionSerializer(serializers.ModelSerializer):
     """Serializer for service sessions (workshops/courses)"""
-    room_url = serializers.CharField(source='room.room_url', read_only=True)
+    room = serializers.SerializerMethodField()
     agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
     benefits = ServiceBenefitSerializer(many=True, read_only=True)
     participant_count = serializers.IntegerField(source='current_participants', read_only=True)
@@ -179,10 +179,25 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
             'id', 'service', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
             'participant_count', 'waitlist_count', 'sequence_number', 
-            'room_url', 'status', 'agenda', 'agenda_items', 'benefits',
+            'room', 'status', 'agenda', 'agenda_items', 'benefits',
             'what_youll_learn', 'address', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'current_participants', 'participant_count', 'room_url', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'current_participants', 'participant_count', 'room', 'created_at', 'updated_at']
+    
+    def get_room(self, obj):
+        """Get room information for this session"""
+        if hasattr(obj, 'livekit_room') and obj.livekit_room:
+            room = obj.livekit_room
+            return {
+                'id': room.id,
+                'public_uuid': room.public_uuid,
+                'livekit_room_name': room.livekit_room_name,
+                'status': room.status,
+                'max_participants': room.max_participants,
+                'scheduled_start': room.scheduled_start,
+                'scheduled_end': room.scheduled_end,
+            }
+        return None
     
     def get_waitlist_count(self, obj):
         """Get count of waiting users for this session"""
