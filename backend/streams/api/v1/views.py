@@ -277,12 +277,16 @@ class StreamViewSet(viewsets.ModelViewSet):
         
         # Handle free tier
         if tier == 'free':
+            now = timezone.now()
+            # For free tier, set a far future end date (e.g., 100 years)
             subscription = StreamSubscription.objects.create(
                 user=request.user,
                 stream=stream,
                 tier='free',
                 status='active',
-                started_at=timezone.now()
+                started_at=now,
+                current_period_start=now,
+                current_period_end=now + timezone.timedelta(days=36500)  # ~100 years
             )
             
             # Update subscriber counts

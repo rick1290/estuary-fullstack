@@ -218,7 +218,8 @@ export default function ContentCard({ post }: ContentCardProps) {
   const formattedDate = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
 
   return (
-    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm rounded-2xl">
+    <>
+      <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm rounded-2xl">
       {/* Card header with practitioner info */}
       <div className="flex items-center p-5">
         <div className="h-10 w-10 cursor-pointer ring-2 ring-sage-200 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg" onClick={handlePractitionerClick}>
@@ -285,8 +286,8 @@ export default function ContentCard({ post }: ContentCardProps) {
                       description: "Sign in to access exclusive premium content"
                     })
                   } else {
-                    // Navigate to subscription page or open subscription modal
-                    router.push(`/streams/${post.streamId}?subscribe=${post.tierLevel}`)
+                    // Redirect to stream checkout page
+                    router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
                   }
                 }} 
                 className="font-medium text-sage-700 p-0 h-auto"
@@ -323,7 +324,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                             description: "Sign in to access exclusive video content"
                           })
                         } else {
-                          router.push(`/streams/${post.streamId}?subscribe=${post.tierLevel}`)
+                          router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
                         }
                       }}
                     >
@@ -463,7 +464,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                             description: "Sign in to access exclusive image content"
                           })
                         } else {
-                          router.push(`/streams/${post.streamId}?subscribe=${post.tierLevel}`)
+                          router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
                         }
                       }}
                     >
@@ -606,5 +607,7 @@ export default function ContentCard({ post }: ContentCardProps) {
         )}
       </CardContent>
     </Card>
+
+    </>
   )
 }
