@@ -14,14 +14,21 @@ import {
   MediaDeviceMenu,
   useRoomContext,
   useConnectionState,
-  DisconnectButton
+  VideoConference,
+  formatChatMessageLinks
 } from '@livekit/components-react';
 import { Track, ConnectionState } from 'livekit-client';
 import '@livekit/components-styles';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageSquare, Settings, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Loader2, MessageSquare, Settings, X, Users, 
+  PhoneOff, Maximize2, Minimize2, Clock 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface VideoRoomProps {
   token: string;
@@ -46,6 +53,12 @@ export function VideoRoom({
 }: VideoRoomProps) {
   const [showChat, setShowChat] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sessionDuration, setSessionDuration] = useState<number>(0);
+
+  // Get session info
+  const sessionInfo = bookingDetails || sessionDetails;
+  const practitioner = sessionInfo?.practitioner;
 
   // Room options based on room type
   const roomOptions = useMemo(() => ({
@@ -68,6 +81,283 @@ export function VideoRoom({
     }
   }), [roomType]);
 
+  // Track session duration
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setSessionDuration(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  // For individual sessions, use the enhanced UI
+  if (roomType === 'individual') {
+    return (
+      <LiveKitRoom
+        token={token}
+        serverUrl={serverUrl}
+        options={roomOptions}
+        connect={true}
+        onConnected={() => {
+          console.log('Connected to LiveKit room successfully!');
+        }}
+        onDisconnected={(reason) => {
+          console.log('Disconnected:', reason);
+          onLeaveRoom();
+        }}
+        onError={(error) => {
+          console.error('Room error:', error);
+          onError?.(error);
+        }}
+      >
+        <LayoutContextProvider>
+          <div className="h-screen flex flex-col bg-gradient-to-br from-estuary-900 to-wellness-900" style={{
+            '--lk-fg': 'white',
+            '--lk-bg': 'transparent',
+            '--lk-bg-2': 'rgba(255, 255, 255, 0.05)',
+            '--lk-bg-3': 'rgba(255, 255, 255, 0.1)',
+            '--lk-border': 'rgba(255, 255, 255, 0.2)',
+            '--lk-participant-name-fg': 'white',
+            '--lk-participant-name-bg': 'rgba(0, 0, 0, 0.6)',
+            '--lk-participant-metadata-fg': 'rgba(255, 255, 255, 0.8)',
+            '--lk-participant-tile-border': 'rgba(255, 255, 255, 0.1)',
+            '--lk-focus-ring': 'rgba(32, 178, 170, 0.5)',
+          } as React.CSSProperties}>
+            {/* Room Audio - Important for audio to work */}
+            <RoomAudioRenderer />
+            
+            {/* Connection State Notifications */}
+            <ConnectionStateToast />
+            
+            {/* Header */}
+            <div className="bg-estuary-900/80 backdrop-blur-md border-b border-wellness-700/30 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="text-white">
+                    <h2 className="text-lg font-semibold">
+                      {sessionInfo?.service?.name || 'Video Session'}
+                    </h2>
+                    <div className="flex items-center gap-3 text-sm text-wellness-200">
+                      <Badge variant="secondary" className="bg-wellness-700/30 text-wellness-100 border-wellness-600">
+                        {isHost ? 'Host' : 'Participant'}
+                      </Badge>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatDuration(sessionDuration)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {practitioner && !isHost && (
+                    <div className="flex items-center gap-3 pl-6 border-l border-wellness-700/30">
+                      <Avatar className="h-10 w-10 border-2 border-wellness-600">
+                        <AvatarImage src={practitioner.profile_photo} alt={practitioner.name} />
+                        <AvatarFallback className="bg-wellness-700 text-white">
+                          {practitioner.name?.split(' ').map((n: string) => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium text-white">{practitioner.name}</p>
+                        {practitioner.specialization && (
+                          <p className="text-xs text-wellness-200">{practitioner.specialization}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Chat Toggle */}
+                  {roomType !== 'individual' && (
+                    <Button
+                      variant={showChat ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setShowChat(!showChat)}
+                      className={cn(
+                        "text-white border-wellness-600",
+                        showChat ? "bg-wellness-700/50" : "hover:bg-wellness-700/30"
+                      )}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Chat
+                    </Button>
+                  )}
+                  
+                  {/* Settings Toggle */}
+                  <Button
+                    variant={showSettings ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={cn(
+                      "text-white border-wellness-600",
+                      showSettings ? "bg-wellness-700/50" : "hover:bg-wellness-700/30"
+                    )}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Button>
+                  
+                  {/* Fullscreen Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleFullscreen}
+                    className="text-white hover:bg-wellness-700/30"
+                  >
+                    {isFullscreen ? (
+                      <Minimize2 className="h-4 w-4" />
+                    ) : (
+                      <Maximize2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  
+                  {/* Leave Button */}
+                  <LeaveButton onLeaveRoom={onLeaveRoom} />
+                </div>
+              </div>
+            </div>
+            
+            {/* Main Content Area */}
+            <div className="flex-1 flex">
+              {/* Video Area */}
+              <div className="flex-1 relative overflow-hidden">
+                {roomType === 'individual' ? (
+                  <IndividualLayout />
+                ) : roomType === 'webinar' ? (
+                  <WebinarLayout isHost={isHost} />
+                ) : (
+                  <GroupLayout />
+                )}
+              </div>
+              
+              {/* Chat Sidebar */}
+              {showChat && roomType !== 'individual' && (
+                <div className="w-80 bg-estuary-900/95 backdrop-blur-md border-l border-wellness-700/30 flex flex-col">
+                  <div className="p-4 border-b border-wellness-700/30 flex items-center justify-between">
+                    <h3 className="text-white font-medium">Chat</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowChat(false)}
+                      className="text-wellness-200 hover:text-white hover:bg-wellness-700/30"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <Chat 
+                      style={{ 
+                        height: '100%', 
+                        backgroundColor: 'transparent',
+                        '--lk-chat-bg': 'transparent',
+                        '--lk-chat-input-bg': 'rgba(32, 178, 170, 0.1)',
+                        '--lk-chat-input-border': 'rgba(32, 178, 170, 0.3)',
+                        '--lk-chat-message-bg': 'rgba(32, 178, 170, 0.1)',
+                        '--lk-chat-text': 'white',
+                      } as React.CSSProperties}
+                      messageFormatter={formatChatMessageLinks}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Settings Sidebar */}
+              {showSettings && (
+                <div className="w-80 bg-estuary-900/95 backdrop-blur-md border-l border-wellness-700/30 flex flex-col">
+                  <div className="p-4 border-b border-wellness-700/30 flex items-center justify-between">
+                    <h3 className="text-white font-medium">Settings</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSettings(false)}
+                      className="text-wellness-200 hover:text-white hover:bg-wellness-700/30"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex-1 p-4 space-y-6">
+                    <div>
+                      <label className="text-white text-sm font-medium mb-2 block">Camera</label>
+                      <div className="lk-device-menu" style={{ '--lk-control-bg': 'rgba(32, 178, 170, 0.2)' } as React.CSSProperties}>
+                        <MediaDeviceMenu kind="videoinput" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white text-sm font-medium mb-2 block">Microphone</label>
+                      <div className="lk-device-menu" style={{ '--lk-control-bg': 'rgba(32, 178, 170, 0.2)' } as React.CSSProperties}>
+                        <MediaDeviceMenu kind="audioinput" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white text-sm font-medium mb-2 block">Speaker</label>
+                      <div className="lk-device-menu" style={{ '--lk-control-bg': 'rgba(32, 178, 170, 0.2)' } as React.CSSProperties}>
+                        <MediaDeviceMenu kind="audiooutput" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Control Bar */}
+            <div className="bg-estuary-900/80 backdrop-blur-md border-t border-wellness-700/30 p-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="lk-control-bar" style={{
+                  '--lk-control-bg': 'rgba(255, 255, 255, 0.1)',
+                  '--lk-control-hover-bg': 'rgba(255, 255, 255, 0.2)',
+                  '--lk-control-active-bg': 'rgba(32, 178, 170, 0.3)',
+                  '--lk-control-fg': 'white',
+                  '--lk-control-active-fg': 'white',
+                  '--lk-button-bg': 'rgba(255, 255, 255, 0.1)',
+                  '--lk-button-hover-bg': 'rgba(255, 255, 255, 0.2)',
+                  '--lk-button-fg': 'white',
+                  '--lk-button-active-fg': 'white',
+                  '--lk-danger-bg': 'rgb(220, 38, 38)',
+                  '--lk-danger-hover-bg': 'rgb(185, 28, 28)',
+                  '--lk-fg': 'white',
+                  '--lk-bg': 'transparent',
+                } as React.CSSProperties}>
+                  <ControlBar
+                    variation={isHost ? "verbose" : "minimal"}
+                    controls={{
+                      microphone: true,
+                      camera: true,
+                      chat: false, // We handle chat with our own button
+                      screenShare: isHost || roomType === 'individual',
+                      leave: false // We handle this with our own button
+                    }}
+                    saveUserChoices={true}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </LayoutContextProvider>
+      </LiveKitRoom>
+    );
+  }
+
+  // For group/webinar sessions, use the VideoConference component
   return (
     <LiveKitRoom
       token={token}
@@ -76,8 +366,6 @@ export function VideoRoom({
       connect={true}
       onConnected={() => {
         console.log('Connected to LiveKit room successfully!');
-        console.log('Server URL:', serverUrl);
-        console.log('Room options:', roomOptions);
       }}
       onDisconnected={(reason) => {
         console.log('Disconnected:', reason);
@@ -88,131 +376,26 @@ export function VideoRoom({
         onError?.(error);
       }}
     >
-      <LayoutContextProvider>
-        <div className="h-screen flex bg-gray-900">
-          {/* Room Audio - Important for audio to work */}
-          <RoomAudioRenderer />
-          
-          {/* Connection State Notifications */}
-          <ConnectionStateToast />
-          
-          {/* Main Video Section */}
-          <div className="flex-1 flex flex-col">
-            {/* Header */}
-            <div className="bg-gray-800 p-4 flex items-center justify-between">
-              <div className="text-white">
-                <h2 className="text-lg font-semibold">
-                  {bookingDetails?.service?.title || sessionDetails?.service?.title || 'Video Session'}
-                </h2>
-                <p className="text-sm text-gray-300">
-                  {isHost ? 'Host' : 'Participant'} • {roomType === 'individual' ? '1-on-1' : 'Group'} Session
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {/* Chat Toggle */}
-                {roomType !== 'individual' && (
-                  <Button
-                    variant={showChat ? "default" : "secondary"}
-                    size="sm"
-                    onClick={() => setShowChat(!showChat)}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Chat
-                  </Button>
-                )}
-                
-                {/* Settings Toggle */}
-                <Button
-                  variant={showSettings ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setShowSettings(!showSettings)}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-                
-                <LeaveButton onLeaveRoom={onLeaveRoom} />
-              </div>
+      <VideoConference
+        chatMessageFormatter={formatChatMessageLinks}
+        SettingsComponent={() => (
+          <div className="space-y-6 p-4">
+            <h3 className="text-lg font-medium">Settings</h3>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Camera</label>
+              <MediaDeviceMenu kind="videoinput" />
             </div>
-            
-            {/* Main Video Area */}
-            <div className="flex-1 relative overflow-hidden">
-              {roomType === 'individual' ? (
-                <IndividualLayout />
-              ) : roomType === 'webinar' ? (
-                <WebinarLayout isHost={isHost} />
-              ) : (
-                <GroupLayout />
-              )}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Microphone</label>
+              <MediaDeviceMenu kind="audioinput" />
             </div>
-            
-            {/* Control Bar */}
-            <div className="bg-gray-800 p-4">
-              <ControlBar
-                variation={isHost ? "verbose" : "minimal"}
-                controls={{
-                  microphone: true,
-                  camera: true,
-                  chat: false, // We handle chat with our own button
-                  screenShare: isHost || roomType === 'individual',
-                  leave: false // We handle this with our own button
-                }}
-                saveUserChoices={true}
-              />
+            <div>
+              <label className="text-sm font-medium mb-2 block">Speaker</label>
+              <MediaDeviceMenu kind="audiooutput" />
             </div>
           </div>
-          
-          {/* Chat Sidebar */}
-          {showChat && roomType !== 'individual' && (
-            <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
-              <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                <h3 className="text-white font-medium">Chat</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowChat(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <Chat style={{ height: '100%', backgroundColor: 'transparent' }} />
-              </div>
-            </div>
-          )}
-          
-          {/* Settings Sidebar */}
-          {showSettings && (
-            <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
-              <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                <h3 className="text-white font-medium">Settings</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSettings(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex-1 p-4 space-y-6">
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Camera</label>
-                  <MediaDeviceMenu kind="videoinput" />
-                </div>
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Microphone</label>
-                  <MediaDeviceMenu kind="audioinput" />
-                </div>
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Speaker</label>
-                  <MediaDeviceMenu kind="audiooutput" />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </LayoutContextProvider>
+        )}
+      />
     </LiveKitRoom>
   );
 }
@@ -238,21 +421,21 @@ function IndividualLayout() {
   if (screenShareTrack) {
     // Screen share layout
     return (
-      <div className="relative h-full">
+      <div className="relative h-full p-4">
         {/* Main screen share */}
-        <div className="h-full">
+        <div className="h-full rounded-lg overflow-hidden shadow-2xl">
           <ParticipantTile trackRef={screenShareTrack} />
         </div>
         
         {/* Small camera feeds */}
-        <div className="absolute bottom-4 right-4 flex gap-2">
+        <div className="absolute bottom-8 right-8 flex gap-3">
           {cameraTrack && (
-            <div className="w-48 h-36 rounded-lg overflow-hidden shadow-lg">
+            <div className="w-48 h-36 rounded-lg overflow-hidden shadow-xl ring-2 ring-wellness-600/50">
               <ParticipantTile trackRef={cameraTrack} />
             </div>
           )}
           {otherCameraTrack && (
-            <div className="w-48 h-36 rounded-lg overflow-hidden shadow-lg">
+            <div className="w-48 h-36 rounded-lg overflow-hidden shadow-xl ring-2 ring-wellness-600/50">
               <ParticipantTile trackRef={otherCameraTrack} />
             </div>
           )}
@@ -263,9 +446,9 @@ function IndividualLayout() {
 
   // Regular 1-on-1 layout
   return (
-    <div className="h-full flex gap-4 p-4">
+    <div className="h-full flex gap-4 p-6">
       {tracks.map((track) => (
-        <div key={track.participant.identity} className="flex-1 rounded-lg overflow-hidden">
+        <div key={track.participant.identity} className="flex-1 rounded-xl overflow-hidden shadow-2xl ring-1 ring-wellness-700/30">
           <ParticipantTile trackRef={track} />
         </div>
       ))}
@@ -276,7 +459,7 @@ function IndividualLayout() {
 // Group Session Layout (Grid)
 function GroupLayout() {
   return (
-    <div className="h-full p-4">
+    <div className="h-full p-6">
       <GridLayout tracks={useTracks([{ source: Track.Source.Camera, withPlaceholder: true }])}>
         <ParticipantTile />
       </GridLayout>
@@ -294,14 +477,14 @@ function WebinarLayout({ isHost }: { isHost: boolean }) {
   return (
     <div className="h-full flex">
       {/* Main speaker area */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-6">
         {hostTrack ? (
-          <div className="h-full rounded-lg overflow-hidden">
+          <div className="h-full rounded-xl overflow-hidden shadow-2xl ring-1 ring-wellness-700/30">
             <ParticipantTile trackRef={hostTrack} />
           </div>
         ) : (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center text-gray-400">
+            <div className="text-center text-wellness-200">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
               <p>Waiting for host to join...</p>
             </div>
@@ -311,13 +494,16 @@ function WebinarLayout({ isHost }: { isHost: boolean }) {
       
       {/* Viewers sidebar */}
       {viewerTracks.length > 0 && (
-        <div className="w-64 bg-gray-800 p-2 overflow-y-auto">
-          <h3 className="text-white text-sm font-medium mb-2 px-2">
-            Participants ({viewerTracks.length})
-          </h3>
-          <div className="space-y-2">
+        <div className="w-64 bg-estuary-900/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="flex items-center gap-2 mb-4 text-wellness-200">
+            <Users className="h-4 w-4" />
+            <h3 className="text-sm font-medium">
+              Participants ({viewerTracks.length})
+            </h3>
+          </div>
+          <div className="space-y-3">
             {viewerTracks.map((track) => (
-              <div key={track.participant.identity} className="aspect-video rounded overflow-hidden">
+              <div key={track.participant.identity} className="aspect-video rounded-lg overflow-hidden shadow-lg">
                 <ParticipantTile trackRef={track} />
               </div>
             ))}
@@ -328,28 +514,26 @@ function WebinarLayout({ isHost }: { isHost: boolean }) {
   );
 }
 
-// Leave button component that properly disconnects from LiveKit
+// Leave button component
 function LeaveButton({ onLeaveRoom }: { onLeaveRoom: () => void }) {
   const room = useRoomContext();
   const connectionState = useConnectionState();
   const [isLeaving, setIsLeaving] = React.useState(false);
   
   const handleLeave = async () => {
-    if (isLeaving) return; // Prevent multiple clicks
+    if (isLeaving) return;
     
     setIsLeaving(true);
     
     try {
-      // Only disconnect if we're actually connected
       if (connectionState === ConnectionState.Connected) {
         console.log('Disconnecting from LiveKit room...');
-        await room.disconnect(true); // true = stop tracks immediately
+        await room.disconnect(true);
         console.log('Successfully disconnected from LiveKit room');
       }
     } catch (error) {
       console.error('Error disconnecting from room:', error);
     } finally {
-      // Always call the leave handler to navigate away
       onLeaveRoom();
     }
   };
@@ -360,6 +544,7 @@ function LeaveButton({ onLeaveRoom }: { onLeaveRoom: () => void }) {
       onClick={handleLeave}
       disabled={isLeaving}
       size="sm"
+      className="bg-red-600 hover:bg-red-700 border-red-500"
     >
       {isLeaving ? (
         <>
@@ -367,7 +552,10 @@ function LeaveButton({ onLeaveRoom }: { onLeaveRoom: () => void }) {
           Leaving...
         </>
       ) : (
-        'Leave Session'
+        <>
+          <PhoneOff className="h-4 w-4 mr-2" />
+          Leave
+        </>
       )}
     </Button>
   );

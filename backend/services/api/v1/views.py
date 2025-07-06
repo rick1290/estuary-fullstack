@@ -224,38 +224,9 @@ class ServiceViewSet(viewsets.ModelViewSet):
             return ServiceCreateUpdateSerializer
         return ServiceDetailSerializer
     
-    @extend_schema(
-        request={
-            'multipart/form-data': ServiceCreateUpdateSerializer,
-            'application/json': ServiceCreateUpdateSerializer,
-        },
-        responses={200: ServiceDetailSerializer},
-        description="Update a service. Supports both JSON and multipart/form-data for file uploads."
-    )
-    def partial_update(self, request, *args, **kwargs):
-        """Override partial_update to add detailed logging for image uploads"""
-        print(f"\n=== Service PATCH Request Debug ===")
-        print(f"Content-Type: {request.content_type}")
-        print(f"Request FILES: {request.FILES}")
-        print(f"Request DATA: {dict(request.data)}")
-        
-        # Check if we have an image file
-        if 'image' in request.FILES:
-            image_file = request.FILES['image']
-            print(f"Image file detected:")
-            print(f"  - Name: {image_file.name}")
-            print(f"  - Size: {image_file.size}")
-            print(f"  - Content type: {image_file.content_type}")
-        
-        # Call parent method
-        response = super().partial_update(request, *args, **kwargs)
-        
-        # Log response
-        print(f"Response status: {response.status_code}")
-        if response.status_code == 200:
-            print(f"Updated service image_url: {response.data.get('image_url')}")
-        
-        return response
+    # No override needed - let DRF handle JSON/FormData parsing naturally
+    
+    # Let DRF handle the request parsing - it already handles JSON and FormData correctly
     
     @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\w]+)')
     def by_slug(self, request, slug=None):

@@ -56,15 +56,15 @@ def handle_booking_completion(sender, instance, created, **kwargs):
             calculator = CommissionCalculator()
             earnings = calculator.calculate_practitioner_earnings(instance)
             
-            # Create practitioner credit transaction
-            PractitionerCreditTransaction.objects.create(
+            # Create earnings transaction
+            EarningsTransaction.objects.create(
                 practitioner=instance.practitioner,
-                credits_earned=earnings['gross_amount'],
-                commission=earnings['commission_amount'],
-                commission_rate=earnings['commission_rate'],
-                net_credits=earnings['net_earnings'],
                 booking=instance,
-                payout_status='pending'
+                gross_amount_cents=earnings['gross_amount'],
+                commission_rate=earnings['commission_rate'],
+                commission_amount_cents=earnings['commission_amount'],
+                net_amount_cents=earnings['net_earnings'],
+                status='pending'
             )
 
 

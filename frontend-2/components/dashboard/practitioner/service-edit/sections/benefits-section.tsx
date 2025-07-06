@@ -50,9 +50,10 @@ export function BenefitsSection({
   const [newBenefit, setNewBenefit] = useState({ title: "", description: "" })
   const [newAgendaItem, setNewAgendaItem] = useState({ title: "", description: "", duration_minutes: 0 })
 
-  // Parse includes data - for new structure, includes is just a text field
-  // Benefits and agenda items are stored separately
-  const includesText = typeof localData.includes === 'string' ? localData.includes : ''
+  // Parse includes data - backend stores as JSON array, display as newline-separated text
+  const includesText = Array.isArray(localData.includes) 
+    ? localData.includes.join('\n') 
+    : (typeof localData.includes === 'string' ? localData.includes : '')
 
   useEffect(() => {
     setLocalData(data)
@@ -70,7 +71,9 @@ export function BenefitsSection({
   }
 
   const updateIncludesText = (text: string) => {
-    handleChange('includes', text)
+    // Convert text to array format for JSON field
+    const includesArray = text.split('\n').filter(item => item.trim()).map(item => item.trim())
+    handleChange('includes', includesArray.length > 0 ? includesArray : null)
   }
 
   const addLearningGoal = () => {

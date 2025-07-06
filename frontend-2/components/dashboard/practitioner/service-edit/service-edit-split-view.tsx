@@ -423,28 +423,11 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       delete updates.scheduleId
     }
     
-    // Check if we have a file to upload (only for media section)
-    const hasFile = sectionId === 'media' && updates.image instanceof File
-    
-    console.log('Section updates:', sectionId, updates)
-    console.log('Has file:', hasFile, updates.image)
-    
-    if (hasFile) {
-      // For file uploads, we need to pass the raw updates object with the File
-      // The generated client should handle FormData serialization
-      console.log('Uploading image file:', updates.image)
-      
-      await updateMutation.mutateAsync({
-        path: { id: parseInt(serviceId) },
-        body: updates,
-      })
-    } else {
-      // Regular JSON request
-      await updateMutation.mutateAsync({
-        path: { id: parseInt(serviceId) },
-        body: updates,
-      })
-    }
+    // Simply send the update
+    await updateMutation.mutateAsync({
+      path: { id: parseInt(serviceId) },
+      body: updates,
+    })
     
     setUnsavedChanges(prev => {
       const newSet = new Set(prev)
@@ -478,42 +461,11 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       Object.assign(updates, sectionUpdates)
     })
 
-    if (hasFile) {
-      // Create FormData for file upload
-      const formData = new FormData()
-      
-      // Add all fields to FormData
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value instanceof File) {
-          formData.append(key, value)
-        } else if (Array.isArray(value)) {
-          // Handle arrays by appending each item
-          value.forEach((item, index) => {
-            if (typeof item === 'object' && item !== null) {
-              formData.append(`${key}[${index}]`, JSON.stringify(item))
-            } else {
-              formData.append(`${key}[${index}]`, String(item))
-            }
-          })
-        } else if (typeof value === 'object' && value !== null) {
-          // Handle nested objects by stringifying
-          formData.append(key, JSON.stringify(value))
-        } else if (value !== null && value !== undefined) {
-          formData.append(key, String(value))
-        }
-      })
-      
-      await updateMutation.mutateAsync({
-        path: { id: parseInt(serviceId) },
-        body: formData,
-      })
-    } else {
-      // Regular JSON request
-      await updateMutation.mutateAsync({
-        path: { id: parseInt(serviceId) },
-        body: updates,
-      })
-    }
+    // Let the API client handle the request format
+    await updateMutation.mutateAsync({
+      path: { id: parseInt(serviceId) },
+      body: updates,
+    })
   }
 
   // Scroll to section

@@ -1,7 +1,7 @@
-# Rooms App - LiveKit Integration
+# Rooms App - LiveKit Video Conferencing
 
 ## Overview
-The rooms app provides video conferencing functionality using LiveKit, a modern WebRTC infrastructure. It supports individual sessions, group workshops, courses, and phone dial-in capabilities.
+The rooms app provides video conferencing functionality for the Estuary platform using LiveKit, a modern WebRTC infrastructure. It supports individual sessions, group workshops, courses, and phone dial-in capabilities.
 
 ## Architecture
 
@@ -9,10 +9,11 @@ The rooms app provides video conferencing functionality using LiveKit, a modern 
 
 #### Room
 The main model representing a video conference room:
-- **Linked to either**: Booking (1-on-1) OR ServiceSession (group)
-- **Room types**: individual, workshop, course, webinar, broadcast
+- **Linked to either**: Booking (1-on-1 sessions) OR ServiceSession (group workshops/courses)
+- **Room types**: individual, group, webinar, broadcast
 - **LiveKit integration**: Stores room name, SID, and configuration
 - **Phone support**: Optional dial-in with PIN
+- **Auto-created**: LiveKit rooms are created automatically when first participant joins
 
 #### RoomTemplate
 Predefined configurations for different room types:
@@ -35,306 +36,229 @@ Manages session recordings:
 - Access permissions
 - Processing status
 
-#### RoomToken
-JWT tokens for secure access:
-- One token per participant per session
-- Role-based permissions
-- Expiration tracking
-- Revocation support
+## Room Lifecycle
 
-### LiveKit Integration (`rooms/livekit/`)
-
-#### client.py
-Wrapper for LiveKit Server API:
-```python
-# Room management
-client.create_room(name, config)
-client.update_room(name, metadata)
-client.delete_room(name)
-
-# Participant management
-client.list_participants(room)
-client.remove_participant(room, identity)
-client.mute_participant(room, identity, track_type)
-
-# Recording management
-client.start_recording(room, outputs)
-client.stop_recording(recording_id)
+### 1. Creation
+```
+Booking Confirmed → Signal fires → Room created in Django
+                                   ↓
+                            Status: 'pending'
+                            Unique room name generated
+                            Empty timeout set (300s default)
 ```
 
-#### tokens.py
-JWT token generation with permissions:
-```python
-# Generate participant token
-token = generate_room_token(
-    room_name="session-123",
-    participant_name="Dr. Smith",
-    role="host",
-    metadata={"booking_id": "123"}
-)
-
-# Role-based permissions
-- Host: Can publish, record, manage participants
-- Participant: Can publish video/audio
-- Viewer: Can only subscribe (webinar mode)
+### 2. Joining
+```
+User visits /room/booking/{id}/lobby → Pre-join screen
+                                      ↓
+                              Tests devices
+                                      ↓
+                    Clicks join → Gets token from backend
+                                      ↓
+                       Connects to LiveKit cloud
+                                      ↓
+                 LiveKit auto-creates room (if enabled)
+                                      ↓
+                     Room status → 'active'/'in_use'
 ```
 
-#### webhooks.py
-Handles LiveKit events:
-- `room_started` / `room_finished` - Lifecycle tracking
-- `participant_connected` / `participant_disconnected` - Attendance
-- `track_published` / `track_unpublished` - Media tracking
-- `recording_started` / `recording_ended` - Recording management
+### 3. During Session
+- Participants tracked via webhooks
+- Real-time participant count updates
+- Optional recording
+- Screen sharing support
+- Chat (for group rooms)
 
-#### sip.py
-Phone integration via SIP:
-```python
-# Dial-in support
-sip.create_dial_in(
-    room_name="session-123",
-    phone_number="+1-555-0123",
-    pin="1234"
-)
-
-# Dial-out to participant
-sip.create_dial_out_participant(
-    room_name="session-123",
-    phone_number="+1-555-0199",
-    participant_name="John Doe"
-)
+### 4. Leaving/Closing
+```
+Participant leaves → Webhook received → Update participant record
+                                      ↓
+                          Last participant leaves?
+                                      ↓
+                                    Yes
+                                      ↓
+                    Schedule closure after empty_timeout
+                                      ↓
+                    Room closes → Status: 'ended'
+                                ↓
+                    Update booking to 'completed'
 ```
 
-## Room Creation Flow
+## Token Generation
 
-### 1. Individual Sessions (1-on-1)
-```
-Booking created → Booking confirmed → Signal fires → Room created
-                                                    ↓
-                                             Links to Booking
-                                             Uses "individual" template
-                                             Max 2 participants
-```
+### How it works:
+1. Frontend requests token via API
+2. Backend validates user has permission (is participant or practitioner)
+3. Token generated with:
+   - User identity (e.g., "9-richard.j.nielsen@gmail.com")
+   - Display name
+   - Room name
+   - Permissions (host vs participant)
+   - 4-hour expiry
 
-### 2. Group Sessions (Workshops/Courses)
-```
-ServiceSession created → Signal fires → Room created
-                                       ↓
-                                Links to ServiceSession
-                                Uses "group" template
-                                Max = session.max_participants
-```
-
-### 3. Automatic Configuration
-Rooms are configured based on service type:
-- Therapy session → Private, no recording, 2 participants
-- Yoga class → Group, optional recording, 20 participants
-- Webinar → Broadcast mode, always recorded, 500 viewers
-
-## Access Control
-
-### Token Generation Flow
-```python
-# 1. User requests to join room
-# 2. Verify user has permission:
-#    - For individual: Is user the client or practitioner?
-#    - For group: Does user have confirmed booking?
-# 3. Generate token with appropriate role
-# 4. Return token to frontend
+### Token structure:
+```json
+{
+  "iss": "API_KEY",
+  "sub": "user-identity",
+  "iat": 1234567890,
+  "exp": 1234567890,
+  "name": "Display Name",
+  "video": {
+    "room": "individual-829b8d608f60",
+    "roomJoin": true,
+    "canPublish": true,
+    "canSubscribe": true,
+    "canPublishData": true
+  }
+}
 ```
 
-### Permission Levels
-- **Host** (Practitioner): Full control, can manage room
-- **Participant** (Client): Can publish/subscribe media
-- **Viewer** (Webinar attendee): Subscribe only
-- **Recorder**: Special token for recording service
+### Implementation:
+- Uses LiveKit Python SDK
+- Falls back to manual JWT generation if SDK fails
+- Different permissions for hosts vs participants
 
-## Phone Integration
+## Webhook Integration
 
-### Dial-in Flow
-1. Room created with SIP enabled
-2. System assigns regional phone number
-3. Generates unique PIN
-4. Sends details in booking confirmation
-5. User calls → Enters PIN → Joins room audio-only
+### Events Handled:
+- `room_started` - Room becomes active
+- `room_finished` - Room ends
+- `participant_joined` - Someone joins
+- `participant_left` - Someone leaves
+- `track_published` - Camera/mic/screen share started
+- `track_unpublished` - Media stopped
+- `egress_started/ended` - Recording events
 
-### Configuration
-```python
-# In settings.py
-LIVEKIT_SIP_ENABLED = True
-LIVEKIT_SIP_PROVIDER = 'twilio'
+### Configuration:
+1. Set webhook URL in LiveKit dashboard: `https://your-domain.com/api/webhooks/livekit/`
+2. Backend verifies webhook signatures
+3. Updates Django models based on events
 
-# Phone numbers by region
-US: +1-555-ESTUARY
-UK: +44-20-ESTUARY
-AU: +61-2-ESTUARY
-```
+## API Endpoints
 
-### Use Cases
-- Elderly clients without smartphones
-- Participants with poor internet
-- Emergency sessions while traveling
-- Accessibility compliance
+### Room Access:
+- `GET /api/v1/rooms/{room_uuid}/` - Get room details
+- `POST /api/v1/rooms/{room_uuid}/get_token/` - Get access token
+- `POST /api/v1/rooms/booking/{booking_id}/join/` - Join via booking
 
-## Recording Management
-
-### Recording Options
-1. **Manual**: Practitioner starts/stops during session
-2. **Automatic**: Based on service settings
-3. **Compliance**: Always-on for certain service types
-
-### Storage Flow
-```
-LiveKit → Egress → S3/R2 → Post-processing → Available to users
-                           ↓
-                    Webhook updates RoomRecording
-                    Generates access URLs
-                    Notifies participants
-```
-
-### Access Control
-- Practitioners: Always have access
-- Clients: Based on service settings
-- Expiration: URLs expire after X days
-- Downloads: Can be disabled
+### Recording:
+- `POST /api/v1/rooms/{room_name}/start_recording/` - Start recording
+- `POST /api/v1/rooms/{room_name}/stop_recording/` - Stop recording
 
 ## Frontend Integration
 
-### Required Components
-```javascript
-// 1. Pre-join screen
-<PreJoin 
-  onDeviceTest={handleDeviceTest}
-  onJoin={handleJoin}
-/>
+### Pages:
+- `/room/booking/{id}/lobby` - Pre-join screen with device testing
+- `/room/booking/{id}` - Main video room
+- `/room/session/{id}` - For group sessions
+- `/room/{room_uuid}` - Direct room access
 
-// 2. Video room
-<LiveKitRoom
-  token={token}
-  serverUrl={LIVEKIT_HOST}
-  connect={true}
-  options={{
-    adaptiveStream: true,
-    dynacast: true,
-  }}
->
-  <VideoConference />
-</LiveKitRoom>
+### Components:
+- `PreJoinScreen` - Device testing and settings
+- `VideoRoom` - Main LiveKit room wrapper
+- `ParticipantTile` - Individual video tiles
+- `ControlBar` - Camera/mic/screen controls
 
-// 3. Controls
-<ControlBar 
-  variation={isHost ? "host" : "participant"}
-/>
+### Hooks:
+- `useRoomToken` - Fetches access token
+- `useRoomPermissions` - Determines user role
+- `useRoomInfo` - Gets room details
+
+## Configuration
+
+### Environment Variables:
+```bash
+# LiveKit Cloud
+LIVEKIT_HOST=https://your-instance.livekit.cloud
+LIVEKIT_API_KEY=your-api-key
+LIVEKIT_API_SECRET=your-api-secret
+
+# Optional
+LIVEKIT_SIP_ENABLED=false  # Phone dial-in
+LIVEKIT_DEFAULT_RECORDING_ENABLED=false
 ```
 
-### Room URLs
-- Individual: `/room/booking/{booking_id}/`
-- Group: `/room/session/{service_session_id}/`
-- Direct: `/room/{room_uuid}/` (for special cases)
-
-## Best Practices
-
-### 1. Room Lifecycle
-- Create rooms only when needed (not on booking creation)
-- Set appropriate empty timeout (10 min default)
-- Clean up expired rooms via scheduled task
-- Archive recordings after X days
-
-### 2. Security
-- Always validate permissions server-side
-- Use short-lived tokens (2 hours)
-- Implement waiting rooms for groups
-- Log all participant actions
-
-### 3. Performance
-- Use adaptive streaming
-- Enable dynacast for large rooms
-- Limit video quality based on participant count
-- Use simulcast for better bandwidth usage
-
-### 4. User Experience
-- Show connection quality indicators
-- Provide pre-join device testing
-- Clear error messages for common issues
-- Fallback to phone for connection problems
-
-## Monitoring & Analytics
-
-### Key Metrics
-- Room duration and participant count
-- Connection quality (packet loss, jitter)
-- Device/browser statistics
-- Phone vs video participation rates
-
-### Webhook Events to Track
-- No-shows (room created but never joined)
-- Connection issues (frequent disconnects)
-- Recording failures
-- Phone fallback usage
+### Room Settings:
+- `empty_timeout`: 300 seconds (5 minutes) - configurable per room
+- `max_participants`: Based on room type
+- `recording_enabled`: Based on service settings
+- Auto-create rooms: Enable in LiveKit dashboard
 
 ## Common Scenarios
 
-### Scenario 1: Client Can't Connect
-1. Video fails → Show dial-in option
-2. Provide phone number and PIN
-3. Track as phone participant
-4. Maintain session continuity
+### 1. Individual Session (Therapy, Coaching)
+- Room type: 'individual'
+- Max 2 participants
+- Screen sharing enabled
+- No recording by default
+- 1-on-1 layout with picture-in-picture
 
-### Scenario 2: Group Workshop
-1. Create room 15 min before start
-2. Enable waiting room
-3. Host joins → Admits participants
-4. Optional recording based on consent
-5. Auto-end 30 min after scheduled time
+### 2. Group Workshop
+- Room type: 'group'
+- Max 25 participants
+- Grid layout
+- Optional recording
+- Chat enabled
 
-### Scenario 3: Course with Recordings
-1. Each session gets new room
-2. Auto-record all sessions
-3. Make available to enrolled students
-4. Expire access after course ends
+### 3. Webinar/Course
+- Room type: 'webinar'
+- Host can publish, viewers watch
+- Q&A via chat
+- Usually recorded
+- Speaker + viewers sidebar layout
 
 ## Troubleshooting
 
-### Common Issues
-1. **"Cannot connect"** - Check firewall/WebRTC
-2. **"No audio/video"** - Device permissions
-3. **"Poor quality"** - Bandwidth/CPU issues
-4. **"Cannot join"** - Token expired or invalid
+### Room not appearing in LiveKit dashboard:
+1. Check if token was successfully generated
+2. Verify LiveKit URL matches your instance
+3. Ensure auto-create is enabled in LiveKit settings
+4. Check browser console for connection errors
 
-### Debug Tools
-- LiveKit CLI for room inspection
-- Webhook logs for event tracking
-- Django admin for token/participant data
-- CloudFlare Analytics for performance
+### Participants not being tracked:
+1. Configure webhook URL in LiveKit dashboard
+2. Verify webhook endpoint is accessible
+3. Check Django logs for webhook errors
+4. Ensure webhook signature validation passes
 
-## Future Enhancements
+### Can't join room:
+1. Check booking status (must be 'confirmed' or 'in_progress')
+2. Verify user is participant or practitioner
+3. Check token expiry (4 hours)
+4. Ensure room hasn't ended
 
-### Planned Features
-1. **Breakout Rooms** - For workshop activities
-2. **Screen Sharing** - With annotations
-3. **Virtual Backgrounds** - Privacy feature
-4. **Live Transcription** - Accessibility
-5. **Streaming** - YouTube/Facebook Live
-6. **Whiteboard** - Collaborative drawing
-7. **Polls/Q&A** - Engagement features
+### Leave button not working:
+- Frontend now properly calls `room.disconnect(true)`
+- Shows "Leaving..." state
+- Immediately stops all tracks
+- Triggers participant_left webhook
 
-### AI Integration
-- Real-time transcription
-- Session summaries
-- Sentiment analysis
-- Automated highlights
+## Development Tips
 
-## Migration from Daily.co
+### Testing Locally:
+1. Use ngrok to expose webhook endpoint
+2. Configure ngrok URL in LiveKit dashboard
+3. Test with multiple browser tabs for participants
+4. Check Django Admin for room/participant records
 
-If migrating from Daily.co:
-1. Update Room model fields
-2. Implement token generation
-3. Update frontend components
-4. Migrate recordings
-5. Update webhook handlers
-6. Test phone integration
+### Debugging:
+- Enable Django logging for 'rooms' app
+- Check browser console for LiveKit connection logs
+- Use LiveKit CLI to inspect rooms
+- Monitor webhook payloads
 
-Key differences:
-- Tokens generated server-side (not client-side)
-- More control over room configuration
-- Better performance at scale
-- Self-hosting option available
+### Adding New Features:
+1. Waiting rooms - Hold participants before host joins
+2. Breakout rooms - For workshop activities  
+3. Live streaming - Broadcast to YouTube/Facebook
+4. Transcription - Real-time captions
+5. Virtual backgrounds - Privacy feature
+
+## Best Practices
+
+1. **Security**: Always validate permissions server-side before generating tokens
+2. **Cleanup**: Ensure rooms close properly to avoid resource waste
+3. **Monitoring**: Track room duration and participant metrics
+4. **Error Handling**: Gracefully handle connection failures
+5. **User Experience**: Provide clear connection status and error messages

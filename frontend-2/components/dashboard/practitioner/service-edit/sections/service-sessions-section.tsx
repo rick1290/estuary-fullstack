@@ -1,6 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { 
+  serviceSessionsListOptions,
+  serviceSessionsCreateMutation,
+  serviceSessionsPartialUpdateMutation,
+  serviceSessionsDestroyMutation
+} from "@/src/client/@tanstack/react-query.gen"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -10,196 +18,183 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format, addWeeks, setHours, setMinutes } from "date-fns"
-import { CalendarIcon, Clock, Plus, X, GripVertical } from "lucide-react"
+import { CalendarIcon, Clock, Plus, X, GripVertical, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ServiceReadable } from "@/src/client/types.gen"
 
-interface ServiceSession {
-  id?: string | number
-  title?: string
-  description?: string
-  start_time: string
-  end_time: string
-  sequence_number: number
-  max_participants?: number
-}
-
 interface ServiceSessionsSectionProps {
   service: ServiceReadable
-  data: {
-    sessions?: ServiceSession[]
-  }
-  onChange: (data: any) => void
-  onSave: () => void
-  hasChanges: boolean
-  isSaving: boolean
+  data: any // Not used anymore, keeping for compatibility
+  onChange: (data: any) => void // Not used anymore
+  onSave: () => void // Not used anymore
+  hasChanges: boolean // Not used anymore
+  isSaving: boolean // Not used anymore
 }
 
 export function ServiceSessionsSection({ 
-  service, 
-  data, 
-  onChange, 
-  onSave, 
-  hasChanges, 
-  isSaving 
+  service
 }: ServiceSessionsSectionProps) {
-  const [localData, setLocalData] = useState(data)
-  const [selectedDate, setSelectedDate] = useState<Date>()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  
+  // State for new session form
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedTime, setSelectedTime] = useState("09:00")
   const [duration, setDuration] = useState(service.duration_minutes || 60)
   const [sessionTitle, setSessionTitle] = useState("")
   const [sessionDescription, setSessionDescription] = useState("")
-
+  
   const isWorkshop = service.service_type_code === 'workshop'
   const isCourse = service.service_type_code === 'course'
 
-  useEffect(() => {
-    setLocalData(data)
-  }, [data])
+  // Fetch existing sessions
+  const { data: sessionsData, isLoading } = useQuery({
+    ...serviceSessionsListOptions({
+      query: { service_id: service.id }
+    }),
+    enabled: !!service.id
+  })
 
-  const handleChange = (field: string, value: any) => {
-    const newData = { ...localData, [field]: value }
-    setLocalData(newData)
-    onChange(newData)
-  }
+  const sessions = sessionsData?.results || []
 
-  const addSession = () => {
+  // Mutations
+  const createMutation = useMutation({
+    ...serviceSessionsCreateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Session added",
+        description: "The session has been added successfully."
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey 
+      })
+      // Reset form
+      setSelectedDate(undefined)
+      setSelectedTime("09:00")
+      setSessionTitle("")
+      setSessionDescription("")
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add session",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      })
+    }
+  })
+
+  const updateMutation = useMutation({
+    ...serviceSessionsPartialUpdateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Session updated",
+        description: "The session has been updated successfully."
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey 
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update session",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      })
+    }
+  })
+
+  const deleteMutation = useMutation({
+    ...serviceSessionsDestroyMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Session removed",
+        description: "The session has been removed successfully."
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey 
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove session",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      })
+    }
+  })
+
+  const addSession = async () => {
     if (!selectedDate || !selectedTime) return
 
     const [hours, minutes] = selectedTime.split(':').map(Number)
     const startTime = setMinutes(setHours(selectedDate, hours), minutes)
     const endTime = new Date(startTime.getTime() + duration * 60000)
 
-    const currentSessions = localData.sessions || []
-    const newSession: ServiceSession = {
-      id: `temp_${Date.now()}`,
-      title: sessionTitle || (isCourse ? `Module ${currentSessions.length + 1}` : undefined),
-      description: sessionDescription || undefined,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
-      sequence_number: currentSessions.length + 1,
-      max_participants: service.max_participants
-    }
-
-    handleChange('sessions', [...currentSessions, newSession])
-    
-    // Reset form
-    setSessionTitle("")
-    setSessionDescription("")
-    if (isCourse) {
-      // For courses, default to next week same time
-      setSelectedDate(addWeeks(selectedDate, 1))
-    }
-  }
-
-  const removeSession = (index: number) => {
-    const currentSessions = localData.sessions || []
-    const updatedSessions = currentSessions.filter((_, i) => i !== index)
-    // Resequence remaining sessions
-    updatedSessions.forEach((session, i) => {
-      session.sequence_number = i + 1
-    })
-    handleChange('sessions', updatedSessions)
-  }
-
-  const generateWeeklySessions = (weeks: number) => {
-    if (!selectedDate || !selectedTime) return
-
-    const sessions: ServiceSession[] = []
-    const [hours, minutes] = selectedTime.split(':').map(Number)
-
-    for (let i = 0; i < weeks; i++) {
-      const sessionDate = addWeeks(selectedDate, i)
-      const startTime = setMinutes(setHours(sessionDate, hours), minutes)
-      const endTime = new Date(startTime.getTime() + duration * 60000)
-
-      sessions.push({
-        id: `temp_${Date.now()}_${i}`,
-        title: `Week ${i + 1}`,
+    await createMutation.mutateAsync({
+      body: {
+        service: service.id,
+        title: sessionTitle || undefined,
+        description: sessionDescription || undefined,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        sequence_number: i + 1,
-        max_participants: service.max_participants
-      })
-    }
+        max_participants: service.max_participants,
+        sequence_number: sessions.length
+      }
+    })
+  }
 
-    handleChange('sessions', sessions)
+  const removeSession = async (sessionId: number) => {
+    await deleteMutation.mutateAsync({
+      path: { id: sessionId }
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <Label>{isWorkshop ? 'Workshop Sessions' : 'Course Modules'}</Label>
-        <p className="text-sm text-muted-foreground mt-1">
-          {isWorkshop 
-            ? 'Add the dates and times for your workshop sessions'
-            : 'Define the modules and schedule for your course'
-          }
-        </p>
-      </div>
-
-      {/* Quick Actions for Courses */}
-      {isCourse && (
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => generateWeeklySessions(4)}
-          >
-            Generate 4 Week Course
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => generateWeeklySessions(8)}
-          >
-            Generate 8 Week Course
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => generateWeeklySessions(12)}
-          >
-            Generate 12 Week Course
-          </Button>
-        </div>
-      )}
-
+    <div className="space-y-4">
       {/* Existing Sessions */}
-      <div className="space-y-3">
-        {(localData.sessions || []).map((session, index) => (
-          <Card key={session.id || index} className="p-4">
+      <div className="space-y-2">
+        {sessions.map((session: any, index: number) => (
+          <Card key={session.id} className="p-4">
             <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{isCourse ? `Module ${session.sequence_number}` : `Session ${index + 1}`}</Badge>
+                  <Badge variant="outline">
+                    {isCourse ? `Module ${index + 1}` : `Session ${index + 1}`}
+                  </Badge>
                   {session.title && (
-                    <span className="font-medium">{session.title}</span>
+                    <h4 className="font-medium">{session.title}</h4>
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4" />
-                    {format(new Date(session.start_time), 'PPP')}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {format(new Date(session.start_time), 'p')} - {format(new Date(session.end_time), 'p')}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <CalendarIcon className="h-3 w-3" />
+                    {format(new Date(session.start_time), "PPP")}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {format(new Date(session.start_time), "p")} - {format(new Date(session.end_time), "p")}
+                  </div>
                 </div>
                 {session.description && (
-                  <p className="text-sm text-muted-foreground">{session.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {session.description}
+                  </p>
                 )}
               </div>
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
-                onClick={() => removeSession(index)}
+                size="icon"
+                onClick={() => removeSession(session.id)}
+                disabled={deleteMutation.isPending}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -289,27 +284,34 @@ export function ServiceSessionsSection({
             type="button"
             variant="outline"
             onClick={addSession}
-            disabled={!selectedDate || !selectedTime}
+            disabled={!selectedDate || !selectedTime || createMutation.isPending}
             className="w-full"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            {createMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4 mr-2" />
+            )}
             Add {isCourse ? 'Module' : 'Session'}
           </Button>
         </div>
       </Card>
 
-      {/* Save Button */}
-      {hasChanges && (
-        <div className="flex justify-end pt-4 border-t">
-          <Button
-            onClick={onSave}
-            disabled={isSaving || !localData.sessions?.length}
-          >
-            {isSaving ? "Saving..." : "Save Section"}
-          </Button>
+      {isWorkshop && (
+        <div className="rounded-lg bg-muted/50 p-4">
+          <p className="text-sm text-muted-foreground">
+            💡 <strong>Workshop Tip:</strong> For workshops, you typically need just one session with the workshop date and time.
+          </p>
         </div>
       )}
-      
+
+      {isCourse && (
+        <div className="rounded-lg bg-muted/50 p-4">
+          <p className="text-sm text-muted-foreground">
+            💡 <strong>Course Tip:</strong> Add all your course modules here. Participants will attend all sessions in sequence.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
