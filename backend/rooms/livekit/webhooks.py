@@ -130,6 +130,22 @@ class LiveKitWebhookHandler:
             
             room.save(update_fields=['status', 'actual_end', 'total_duration_seconds', 'updated_at'])
             
+            # Update booking status if applicable
+            if room.booking:
+                room.booking.status = 'completed'
+                room.booking.actual_end_time = timezone.now()
+                room.booking.save(update_fields=['status', 'actual_end_time'])
+            
+            # End all active participant sessions
+            active_participants = room.participants.filter(left_at__isnull=True)
+            for participant in active_participants:
+                participant.left_at = timezone.now()
+                participant.save(update_fields=['left_at'])
+            
+            # Schedule analytics update
+            from rooms.tasks import update_room_analytics
+            update_room_analytics.delay(room.id)
+            
             logger.info(f"Room {room.name} finished")
             return {"status": "success", "room_id": str(room.id)}
             

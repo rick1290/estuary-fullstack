@@ -280,9 +280,18 @@ class Room(PublicModel):
         if self.status not in ['pending', 'ended']:
             return False
         
-        # Allow starting 15 minutes before scheduled time
-        if self.scheduled_start:
-            buffer_time = self.scheduled_start - timedelta(minutes=15)
+        # Get the actual start time from booking or service session (source of truth)
+        actual_start_time = None
+        if self.booking:
+            actual_start_time = self.booking.start_time
+        elif self.service_session:
+            actual_start_time = self.service_session.start_time
+        elif self.scheduled_start:
+            actual_start_time = self.scheduled_start
+        
+        # Allow starting 15 minutes before actual scheduled time
+        if actual_start_time:
+            buffer_time = actual_start_time - timedelta(minutes=15)
             return timezone.now() >= buffer_time
         
         return True

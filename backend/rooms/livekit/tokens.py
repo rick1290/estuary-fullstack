@@ -6,8 +6,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from django.conf import settings
 from django.utils import timezone
-from livekit import api
+# Use the same import pattern from the working test script
+from livekit.api import AccessToken, VideoGrants
 import jwt
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -49,31 +51,50 @@ class TokenGenerator:
         Returns:
             JWT access token
         """
-        # Create access token
-        token = api.AccessToken(self.api_key, self.api_secret)
+        try:
+            # Try using the SDK first
+            token = AccessToken(self.api_key, self.api_secret)
+            token.identity = identity
+            
+            if name:
+                token.name = name
+            
+            if metadata:
+                token.metadata = metadata
+            
+            # Grant video permissions
+            grants = VideoGrants(
+                room_join=True,
+                room=room_name,
+                can_publish=True,
+                can_subscribe=True
+            )
+            
+            # Apply custom permissions
+            if permissions:
+                self._apply_permissions(grants, permissions)
+            
+            # Set video grants on token
+            token.video_grants = grants
+            
+            # Generate and return token
+            jwt_token = token.to_jwt()
+            
+            # Verify the token has video grants
+            decoded = jwt.decode(jwt_token, options={"verify_signature": False})
+            if 'video' in decoded:
+                logger.info(f"Successfully generated token for {identity} in room {room_name}")
+                return jwt_token
+            else:
+                logger.warning("Token missing video claim, using manual generation")
+                raise ValueError("Token missing video claim")
+                
+        except Exception as e:
+            logger.error(f"SDK token generation failed: {e}")
+            logger.info("Using manual JWT generation")
         
-        # Set token properties
-        token.identity = identity
-        token.ttl = timedelta(seconds=ttl)
-        
-        if name:
-            token.name = name
-        
-        if metadata:
-            token.metadata = metadata
-        
-        if attributes:
-            token.attributes = attributes
-        
-        # Grant video permissions
-        grant = token.add_grant(api.VideoGrants(room_join=True, room=room_name))
-        
-        # Apply custom permissions
-        if permissions:
-            self._apply_permissions(grant, permissions)
-        
-        # Generate and return token
-        return token.to_jwt()
+        # Fallback to manual JWT generation
+        return self._create_jwt_manually(room_name, identity, name, permissions, ttl)
     
     def create_host_token(
         self,
@@ -307,7 +328,7 @@ class TokenGenerator:
             ttl=ttl
         )
     
-    def _apply_permissions(self, grant: api.VideoGrants, permissions: Dict[str, bool]):
+    def _apply_permissions(self, grant: VideoGrants, permissions: Dict[str, bool]):
         """
         Apply permissions to a video grant.
         
@@ -340,6 +361,60 @@ class TokenGenerator:
             grant.room_record = permissions['room_record']
         if 'ingress_admin' in permissions:
             grant.ingress_admin = permissions['ingress_admin']
+    
+    def _create_jwt_manually(
+        self,
+        room_name: str,
+        identity: str,
+        name: Optional[str] = None,
+        permissions: Optional[Dict[str, bool]] = None,
+        ttl: int = 3600
+    ) -> str:
+        """
+        Manually create JWT token as a fallback if SDK fails.
+        """
+        now = int(time.time())
+        
+        # Base claims
+        payload = {
+            "iss": self.api_key,
+            "sub": identity,
+            "iat": now,
+            "nbf": now,
+            "exp": now + ttl,
+        }
+        
+        # Add name if provided
+        if name:
+            payload["name"] = name
+        
+        # Default permissions
+        video_grants = {
+            "room": room_name,
+            "roomJoin": True,
+            "canPublish": True,
+            "canSubscribe": True,
+            "canPublishData": True,
+        }
+        
+        # Apply custom permissions if provided
+        if permissions:
+            if 'can_publish' in permissions:
+                video_grants['canPublish'] = permissions['can_publish']
+            if 'can_subscribe' in permissions:
+                video_grants['canSubscribe'] = permissions['can_subscribe']
+            if 'can_publish_data' in permissions:
+                video_grants['canPublishData'] = permissions['can_publish_data']
+            if 'hidden' in permissions:
+                video_grants['hidden'] = permissions['hidden']
+            if 'recorder' in permissions:
+                video_grants['recorder'] = permissions['recorder']
+        
+        # Add video grants to payload
+        payload["video"] = video_grants
+        
+        # Generate JWT
+        return jwt.encode(payload, self.api_secret, algorithm="HS256")
     
     def decode_token(self, token: str) -> Dict:
         """
@@ -489,7 +564,7 @@ def generate_room_token(
             ttl=ttl
         )
     else:
-        token = generator.create_viewer_token(
+        token = generator.create_participant_token(
             room_name=room_name,
             identity=participant_identity,
             name=participant_name,

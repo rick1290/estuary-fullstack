@@ -123,7 +123,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     user = BookingUserSerializer(read_only=True)
     practitioner = BookingPractitionerSerializer(read_only=True)
     service = BookingServiceSerializer(read_only=True)
-    room = BookingRoomSerializer(read_only=True)
+    room = BookingRoomSerializer(source='livekit_room', read_only=True)
     location = BookingAddressSerializer(read_only=True)
     reminders = BookingReminderSerializer(many=True, read_only=True)
     notes = BookingNoteSerializer(many=True, read_only=True)

@@ -205,31 +205,45 @@ def room_post_save(sender, instance, created, **kwargs):
 
 def create_livekit_room(room):
     """
-    Create a room in LiveKit when a new Room instance is created.
+    Create a room in LiveKit (or ensure it exists).
     """
     try:
-        client = LiveKitClient()
+        # Try to create the room in LiveKit
+        # Note: If auto-create is enabled, this might not be necessary
+        # but it ensures the room exists with the right settings
+        from .livekit.client import LiveKitClient
+        import asyncio
         
-        # Set room options based on template or defaults
-        options = {
-            'name': room.livekit_room_name,
-            'empty_timeout': room.empty_timeout,
-            'max_participants': room.max_participants,
-            'metadata': str(room.metadata),
-        }
+        async def _create_room():
+            client = LiveKitClient()
+            try:
+                # Try to create the room
+                room_info = await client.create_room(
+                    name=room.livekit_room_name,
+                    empty_timeout=room.empty_timeout,
+                    max_participants=room.max_participants,
+                    metadata={"django_room_id": str(room.id)}
+                )
+                logger.info(f"Created LiveKit room: {room_info}")
+                room.livekit_room_sid = room_info.get('sid', '')
+            except Exception as e:
+                # Room might already exist or auto-create is enabled
+                logger.info(f"Room creation skipped (might already exist or auto-create enabled): {e}")
         
-        # Create room in LiveKit
-        livekit_room = client.create_room(**options)
+        # Run the async function
+        try:
+            asyncio.run(_create_room())
+        except RuntimeError:
+            # If we're already in an async context, just log
+            logger.info(f"Room {room.livekit_room_name} will be auto-created on first join")
         
-        # Update room with LiveKit SID
-        if livekit_room and 'sid' in livekit_room:
-            room.livekit_room_sid = livekit_room['sid']
-            room.save(update_fields=['livekit_room_sid'])
-            
-        logger.info(f"Created LiveKit room {room.livekit_room_name} with SID {room.livekit_room_sid}")
+        room.status = 'pending'  # Ready for participants to join
+        room.save(update_fields=['status', 'livekit_room_sid'])
+        
+        logger.info(f"Room {room.livekit_room_name} ready")
         
     except Exception as e:
-        logger.error(f"Failed to create LiveKit room for {room.id}: {str(e)}")
+        logger.error(f"Failed to prepare room {room.id}: {str(e)}")
         room.status = 'error'
         room.save(update_fields=['status'])
 
@@ -321,11 +335,16 @@ def participant_post_save(sender, instance, created, **kwargs):
 def schedule_room_closure(room):
     """
     Schedule a room to be closed after empty_timeout seconds.
-    This would typically use Celery or another task queue.
     """
-    # For now, we'll just log it
-    logger.info(f"Room {room.id} is empty, will close in {room.empty_timeout} seconds")
-    # TODO: Implement actual scheduling with Celery
+    from rooms.tasks import close_empty_room
+    
+    logger.info(f"Room {room.id} is empty, scheduling closure in {room.empty_timeout} seconds")
+    
+    # Schedule the task to run after empty_timeout seconds
+    close_empty_room.apply_async(
+        args=[room.id],
+        countdown=room.empty_timeout  # Delay in seconds
+    )
 
 
 def send_room_started_notifications(room):
