@@ -95,6 +95,13 @@ class ClientNotificationService(BaseNotificationService):
         # Format booking details
         booking_datetime = booking.start_time
         
+        # Check if booking has a video room
+        video_room_url = None
+        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
+        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        
         data = {
             'booking_id': str(booking.id),
             'service_name': service.name,
@@ -109,7 +116,9 @@ class ClientNotificationService(BaseNotificationService):
             'credits_used': f"${(booking.discount_amount_cents or 0) / 100:.2f}" if booking.discount_amount_cents else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'add_to_calendar_url': self._generate_calendar_url(booking),
-            'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation"
+            'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation",
+            'video_room_url': video_room_url,
+            'has_video_room': bool(video_room_url)
         }
         
         # Add session-specific details if applicable
@@ -220,6 +229,13 @@ class ClientNotificationService(BaseNotificationService):
         # Calculate time until booking
         time_until = booking.start_time - timezone.now()
         
+        # Check if booking has a video room
+        video_room_url = None
+        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
+        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        
         data = {
             'booking_id': str(booking.id),
             'service_name': service.name,
@@ -232,11 +248,15 @@ class ClientNotificationService(BaseNotificationService):
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'reschedule_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/reschedule",
-            'practitioner_contact': practitioner.user.email
+            'practitioner_contact': practitioner.user.email,
+            'video_room_url': video_room_url,
+            'has_video_room': bool(video_room_url)
         }
         
         # Add video conference details if applicable
-        if booking.meeting_url:
+        if video_room_url:
+            data['video_instructions'] = "Click the link above to join your video session"
+        elif booking.meeting_url:
             data['video_room_url'] = booking.meeting_url
             data['video_instructions'] = "Click the link above to join your video session"
         

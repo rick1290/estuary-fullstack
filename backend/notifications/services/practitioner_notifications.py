@@ -129,6 +129,13 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
+        # Check if booking has a video room
+        video_room_url = None
+        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
+        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        
         data = {
             'booking_id': str(booking.id),
             'client_name': client.get_full_name(),
@@ -146,7 +153,9 @@ class PractitionerNotificationService(BaseNotificationService):
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
             'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
-            'message_client_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/messages/new?recipient={client.id}"
+            'message_client_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/messages/new?recipient={client.id}",
+            'video_room_url': video_room_url,
+            'has_video_room': bool(video_room_url)
         }
         
         # Add session details if applicable
@@ -369,6 +378,13 @@ class PractitionerNotificationService(BaseNotificationService):
         # Calculate time until booking
         time_until = booking.start_time - timezone.now()
         
+        # Check if booking has a video room
+        video_room_url = None
+        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
+        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        
         data = {
             'booking_id': str(booking.id),
             'client_name': client.get_full_name(),
@@ -382,7 +398,9 @@ class PractitionerNotificationService(BaseNotificationService):
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
             'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
-            'is_aggregated': False  # Individual reminder
+            'is_aggregated': False,  # Individual reminder
+            'video_room_url': video_room_url,
+            'has_video_room': bool(video_room_url)
         }
         
         title = f"Reminder: {service.name} with {client.get_full_name()} in {hours_before} {'hours' if hours_before > 1 else 'hour'}"
