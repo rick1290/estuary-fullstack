@@ -35,6 +35,9 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: NEXTAUTH_SECRET
         generateValue: true # Render will generate a random value
+      # LiveKit frontend configuration
+      - key: NEXT_PUBLIC_LIVEKIT_URL
+        sync: false # Add in Render dashboard - e.g. wss://your-project.livekit.cloud
     buildFilter:
       paths:
         - frontend-2/**
@@ -221,3 +224,10 @@ envVarGroups:
         sync: false
       - key: AWS_S3_REGION_NAME
         value: us-west-2
+      # LiveKit configuration
+      - key: LIVEKIT_API_KEY
+        sync: false  # Add in Render dashboard
+      - key: LIVEKIT_API_SECRET
+        sync: false  # Add in Render dashboard
+      - key: LIVEKIT_URL
+        sync: false  # Add in Render dashboard - e.g. wss://your-project.livekit.cloud
