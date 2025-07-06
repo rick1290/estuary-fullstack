@@ -1,3 +1,9 @@
+"""
+Payment-related signal handlers.
+
+NOTE: Most payment logic has been moved to service classes for explicit control.
+Only package completion tracking remains here as it needs to track status changes.
+"""
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -50,22 +56,12 @@ def handle_booking_completion(sender, instance, created, **kwargs):
         # Handle the status change
         handle_booking_status_change(instance, instance._old_status, instance.status)
         
-        # If this is a regular booking (not part of a package) and it's completed
-        if not instance.parent_booking and instance.status == 'completed' and instance._old_status != 'completed':
-            # Calculate commission and create credit transaction
-            calculator = CommissionCalculator()
-            earnings = calculator.calculate_practitioner_earnings(instance)
-            
-            # Create earnings transaction
-            EarningsTransaction.objects.create(
-                practitioner=instance.practitioner,
-                booking=instance,
-                gross_amount_cents=earnings['gross_amount'],
-                commission_rate=earnings['commission_rate'],
-                commission_amount_cents=earnings['commission_amount'],
-                net_amount_cents=earnings['net_earnings'],
-                status='pending'
-            )
+        # DEPRECATED: Earnings are now created by EarningsService when booking is created
+        # This ensures earnings are tracked immediately, not just on completion
+        # if not instance.parent_booking and instance.status == 'completed' and instance._old_status != 'completed':
+        #     # NOTE: This functionality has been moved to EarningsService.create_booking_earnings()
+        #     # which is called by CheckoutOrchestrator during payment processing
+        #     pass
 
 
 @receiver(post_save, sender=PackageCompletionRecord)

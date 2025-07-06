@@ -495,3 +495,50 @@ class ClientNotificationService(BaseNotificationService):
             notification=notification,
             idempotency_key=f"booking-review-request-{booking.id}"
         )
+    
+    def send_booking_cancellation(self, booking):
+        """
+        Send booking cancellation notification to client.
+        """
+        user = booking.user
+        if not self.should_send_notification(user, 'booking', 'email'):
+            return
+        
+        template_id = self.get_template_id('booking_cancelled')
+        if not template_id:
+            logger.warning("No booking cancelled template configured")
+            return
+        
+        service = booking.service
+        practitioner = service.primary_practitioner if service else booking.practitioner
+        
+        data = {
+            'booking_id': str(booking.id),
+            'service_name': service.name if service else booking.service_name_snapshot,
+            'practitioner_name': practitioner.user.get_full_name() if practitioner else booking.practitioner_name_snapshot,
+            'booking_date': booking.start_time.strftime('%A, %B %d, %Y') if booking.start_time else 'N/A',
+            'booking_time': booking.start_time.strftime('%I:%M %p') if booking.start_time else 'N/A',
+            'cancelled_by': booking.cancelled_by or 'System',
+            'cancellation_reason': booking.cancellation_reason or 'No reason provided',
+            'refund_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}" if booking.final_amount_cents else None,
+            'support_url': f"{settings.FRONTEND_URL}/support",
+            'rebooking_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}" if practitioner else settings.FRONTEND_URL
+        }
+        
+        notification = self.create_notification_record(
+            user=user,
+            title=f"Booking Cancelled: {data['service_name']}",
+            message=f"Your booking with {data['practitioner_name']} on {data['booking_date']} has been cancelled.",
+            notification_type='booking',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+        
+        return self.send_email_notification(
+            user=user,
+            template_id=template_id,
+            data=data,
+            notification=notification,
+            idempotency_key=f"booking-cancellation-{booking.id}"
+        )

@@ -60,6 +60,10 @@ The backend uses a service layer pattern to organize business logic, making the 
 - `CreditService` - Manages user credit transactions, balances, and transfers
 - `EarningsService` - Calculates commissions and manages practitioner earnings
 - `CheckoutOrchestrator` - Coordinates the entire checkout flow across multiple services
+- `PayoutService` - Manages practitioner payout requests and eligibility checks
+- `WebhookService` - Processes Stripe webhooks for payments, subscriptions, and refunds
+- `CheckoutService` - Creates Stripe checkout sessions for services, credits, and subscriptions
+- `SubscriptionService` - Manages practitioner subscription lifecycle and tier changes
 
 **Booking Services** (`/bookings/services/`)
 - `BookingService` - Creates bookings with explicit room creation, handles different service types

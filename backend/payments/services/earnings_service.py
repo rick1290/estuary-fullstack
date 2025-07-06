@@ -2,7 +2,7 @@
 Earnings service for managing practitioner earnings and commissions.
 """
 import logging
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, Dict
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
@@ -196,3 +196,35 @@ class EarningsService:
         # This would typically be handled by signals or periodic tasks
         # but included here for completeness
         pass
+    
+    def process_available_earnings(self) -> Dict[str, int]:
+        """
+        Process all pending earnings that are ready to be available.
+        This is called by the periodic task.
+        
+        Returns:
+            Dict with counts of processed earnings
+        """
+        now = timezone.now()
+        
+        # Get all pending earnings ready to be available
+        pending_earnings = EarningsTransaction.objects.filter(
+            status='pending',
+            available_after__lte=now
+        ).select_related('practitioner')
+        
+        updated_count = 0
+        error_count = 0
+        
+        for earning in pending_earnings:
+            try:
+                self.mark_earnings_available(earning)
+                updated_count += 1
+            except Exception as e:
+                logger.error(f"Error processing earning {earning.id}: {e}")
+                error_count += 1
+        
+        return {
+            'updated_count': updated_count,
+            'error_count': error_count
+        }

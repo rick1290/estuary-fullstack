@@ -220,6 +220,31 @@ class PayoutService:
         
         logger.info(f"Started processing payout {payout.id}")
     
+    def mark_payout_completed(self, payout: PractitionerPayout) -> None:
+        """
+        Mark a payout as completed and send notification.
+        
+        Args:
+            payout: Payout to mark as completed
+        """
+        if payout.status != 'processing':
+            raise ValueError(f"Cannot complete payout in {payout.status} status")
+        
+        with transaction.atomic():
+            payout.status = 'completed'
+            payout.completed_at = timezone.now()
+            payout.save()
+            
+            # Send notification
+            try:
+                from notifications.services.practitioner_notifications import PractitionerNotificationService
+                notification_service = PractitionerNotificationService()
+                notification_service.send_payout_confirmation(payout)
+                logger.info(f"Sent payout confirmation for {payout.id}")
+            except Exception as e:
+                logger.error(f"Failed to send payout notification: {e}")
+                # Don't fail the payout completion if notification fails
+    
     def get_payout_history(
         self,
         practitioner: Practitioner,

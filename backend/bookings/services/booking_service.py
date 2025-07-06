@@ -286,6 +286,58 @@ class BookingService:
         return True
     
     @transaction.atomic
+    def mark_booking_completed(self, booking: Booking) -> Booking:
+        """
+        Mark a booking as completed, update earnings, and send review request.
+        
+        Args:
+            booking: Booking to complete
+            
+        Returns:
+            Updated booking
+        """
+        if booking.status == 'completed':
+            logger.warning(f"Booking {booking.id} already completed")
+            return booking
+        
+        booking.status = 'completed'
+        booking.actual_end_time = timezone.now()
+        booking.completed_at = timezone.now()
+        booking.save()
+        
+        # Update earnings transaction status from 'projected' to 'pending'
+        try:
+            from payments.models import EarningsTransaction
+            from datetime import timedelta
+            
+            earnings = EarningsTransaction.objects.filter(
+                booking=booking,
+                status='projected'
+            ).first()
+            
+            if earnings:
+                earnings.status = 'pending'
+                # Update available_after to 48 hours from completion
+                earnings.available_after = timezone.now() + timedelta(hours=48)
+                earnings.save(update_fields=['status', 'available_after', 'updated_at'])
+                logger.info(f"Updated earnings transaction {earnings.id} to pending status")
+        except Exception as e:
+            logger.error(f"Error updating earnings for booking {booking.id}: {e}")
+            # Don't fail the completion if earnings update fails
+        
+        # Send review request notification
+        try:
+            from notifications.services.client_notifications import ClientNotificationService
+            client_service = ClientNotificationService()
+            client_service.send_booking_completed_review_request(booking)
+            logger.info(f"Sent review request for completed booking {booking.id}")
+        except Exception as e:
+            logger.error(f"Failed to send review request: {e}")
+            # Don't fail the completion if notification fails
+        
+        return booking
+    
+    @transaction.atomic
     def cancel_booking(self, booking: Booking, cancelled_by: str = 'client', reason: str = '') -> Booking:
         """
         Cancel a booking.

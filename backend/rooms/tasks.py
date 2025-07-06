@@ -14,21 +14,16 @@ def close_empty_room(room_id):
     """
     Close a room if it's still empty after the timeout period.
     """
+    from rooms.services import RoomService
+    
     try:
         room = Room.objects.get(id=room_id)
         
         # Check if room is still empty
         if room.current_participants == 0 and room.status in ['active', 'in_use']:
-            room.status = 'ended'
-            room.actual_end = timezone.now()
-            
-            # Calculate total duration if we have a start time
-            if room.actual_start:
-                room.total_duration_seconds = int(
-                    (room.actual_end - room.actual_start).total_seconds()
-                )
-            
-            room.save(update_fields=['status', 'actual_end', 'total_duration_seconds'])
+            # Use RoomService to handle room closure
+            room_service = RoomService()
+            room_service.close_room(room)
             logger.info(f"Closed empty room {room.id} after timeout")
         else:
             logger.info(f"Room {room.id} is no longer empty, not closing")
@@ -41,17 +36,31 @@ def close_empty_room(room_id):
 def cleanup_old_rooms():
     """
     Clean up rooms that have been ended for more than 24 hours.
+    This task could be extended to archive data or perform cleanup.
     """
+    from rooms.services import RoomService
+    
     cutoff_time = timezone.now() - timezone.timedelta(hours=24)
     old_rooms = Room.objects.filter(
         status='ended',
         actual_end__lt=cutoff_time
     )
     
+    room_service = RoomService()
+    cleaned_count = 0
+    
     for room in old_rooms:
-        # You might want to archive data before deleting
-        logger.info(f"Cleaning up old room {room.id}")
-        # room.delete()  # Uncomment to actually delete
+        try:
+            # Use RoomService for any cleanup operations
+            # This could be extended to archive recordings, clean up storage, etc.
+            logger.info(f"Processing old room {room.id} for cleanup")
+            # room_service.archive_room(room)  # Future method
+            cleaned_count += 1
+        except Exception as e:
+            logger.error(f"Error cleaning up room {room.id}: {e}")
+    
+    logger.info(f"Cleanup task completed. Processed {cleaned_count} rooms.")
+    return {'cleaned_count': cleaned_count}
 
 
 @shared_task
@@ -59,24 +68,18 @@ def update_room_analytics(room_id):
     """
     Update analytics for a room after it ends.
     """
+    from rooms.services import RoomService
+    
     try:
         room = Room.objects.get(id=room_id)
         
-        # Calculate various metrics
-        participants = room.participants.all()
-        
-        # Average participant duration
-        total_participant_duration = sum(p.duration_seconds for p in participants if p.duration_seconds)
-        avg_duration = total_participant_duration / len(participants) if participants else 0
+        # Use RoomService to calculate and update analytics
+        room_service = RoomService()
+        analytics = room_service.calculate_room_analytics(room)
         
         # Update room metadata with analytics
         room.metadata.update({
-            'analytics': {
-                'avg_participant_duration': avg_duration,
-                'total_participants': room.total_participants,
-                'peak_participants': room.peak_participants,
-                'room_duration': room.total_duration_seconds,
-            }
+            'analytics': analytics
         })
         room.save(update_fields=['metadata'])
         

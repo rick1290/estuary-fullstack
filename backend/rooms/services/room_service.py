@@ -121,6 +121,79 @@ class RoomService:
         
         logger.info(f"Cancelled room {room.livekit_room_name}")
     
+    def close_room(self, room: Room) -> None:
+        """
+        Close a room after session ends.
+        
+        Args:
+            room: Room to close
+        """
+        if room.status == 'ended':
+            return
+        
+        room.status = 'ended'
+        room.actual_end = timezone.now()
+        
+        # Calculate total duration if we have a start time
+        if room.actual_start:
+            room.total_duration_seconds = int(
+                (room.actual_end - room.actual_start).total_seconds()
+            )
+        
+        room.save(update_fields=['status', 'actual_end', 'total_duration_seconds'])
+        
+        logger.info(f"Closed room {room.livekit_room_name}")
+    
+    def calculate_room_analytics(self, room: Room) -> dict:
+        """
+        Calculate analytics for a room.
+        
+        Args:
+            room: Room to analyze
+            
+        Returns:
+            Dict with analytics data
+        """
+        participants = room.participants.all()
+        
+        # Average participant duration
+        total_participant_duration = sum(
+            p.duration_seconds for p in participants if p.duration_seconds
+        )
+        avg_duration = total_participant_duration / len(participants) if participants else 0
+        
+        return {
+            'avg_participant_duration': avg_duration,
+            'total_participants': room.total_participants,
+            'peak_participants': room.peak_participants,
+            'room_duration': room.total_duration_seconds,
+            'participant_count': len(participants),
+            'completion_rate': self._calculate_completion_rate(room, participants)
+        }
+    
+    def _calculate_completion_rate(self, room: Room, participants) -> float:
+        """
+        Calculate what percentage of participants stayed for the full session.
+        
+        Args:
+            room: Room to check
+            participants: QuerySet of participants
+            
+        Returns:
+            Completion rate as percentage (0-100)
+        """
+        if not participants or not room.total_duration_seconds:
+            return 0.0
+        
+        # Consider "completed" if they stayed for at least 80% of the session
+        threshold_seconds = room.total_duration_seconds * 0.8
+        completed_count = sum(
+            1 for p in participants 
+            if p.duration_seconds and p.duration_seconds >= threshold_seconds
+        )
+        
+        return (completed_count / len(participants)) * 100
+    
     def _get_room_template(self, room_type: str) -> Optional[RoomTemplate]:
         """
         Get or create appropriate room template.

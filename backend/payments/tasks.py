@@ -17,68 +17,19 @@ def update_available_earnings():
     when their available_after time has passed.
     This task runs every hour via Celery Beat.
     """
-    now = timezone.now()
+    from payments.services import EarningsService
     
-    # Get all pending earnings that are ready to be available
-    pending_earnings = EarningsTransaction.objects.filter(
-        status='pending',
-        available_after__lte=now
-    ).select_related('practitioner')
-    
-    updated_count = 0
-    error_count = 0
-    
-    for earning in pending_earnings:
-        try:
-            # Update the earnings transaction status
-            earning.status = 'available'
-            earning.save(update_fields=['status', 'updated_at'])
-            
-            # Update practitioner's earnings balance
-            practitioner_earnings, created = PractitionerEarnings.objects.get_or_create(
-                practitioner=earning.practitioner,
-                defaults={
-                    'pending_balance_cents': 0,
-                    'available_balance_cents': 0,
-                    'lifetime_earnings_cents': 0,
-                    'lifetime_payouts_cents': 0
-                }
-            )
-            
-            # Move amount from pending to available
-            practitioner_earnings.pending_balance_cents = max(
-                0, 
-                practitioner_earnings.pending_balance_cents - earning.net_amount_cents
-            )
-            practitioner_earnings.available_balance_cents += earning.net_amount_cents
-            practitioner_earnings.lifetime_earnings_cents += earning.net_amount_cents
-            practitioner_earnings.save()
-            
-            logger.info(
-                f"Updated earnings transaction {earning.id} to available. "
-                f"Practitioner: {earning.practitioner.display_name}, "
-                f"Amount: ${earning.net_amount_cents / 100:.2f}"
-            )
-            updated_count += 1
-            
-        except Exception as e:
-            logger.error(
-                f"Error updating earnings transaction {earning.id}: {str(e)}",
-                exc_info=True
-            )
-            error_count += 1
+    earnings_service = EarningsService()
+    result = earnings_service.process_available_earnings()
     
     logger.info(
         f"Available earnings update task finished. "
-        f"Updated {updated_count} earnings to available. "
-        f"Errors: {error_count}"
+        f"Updated {result['updated_count']} earnings to available. "
+        f"Errors: {result['error_count']}"
     )
     
-    return {
-        'updated_count': updated_count,
-        'error_count': error_count,
-        'checked_at': now.isoformat()
-    }
+    result['checked_at'] = timezone.now().isoformat()
+    return result
 
 
 @shared_task(name='process-refund-credits')
@@ -93,19 +44,17 @@ def process_refund_credits(booking_id, refund_amount_cents, reason='Booking canc
     """
     try:
         from bookings.models import Booking
-        from .models import UserCreditTransaction
+        from payments.services import CreditService, EarningsService
         
         booking = Booking.objects.get(id=booking_id)
         
-        # Create refund credit transaction
-        refund_transaction = UserCreditTransaction.objects.create(
+        # Use CreditService for refund
+        credit_service = CreditService()
+        refund_transaction = credit_service.refund_credits(
             user=booking.user,
-            amount_cents=refund_amount_cents,  # Positive for refund
-            transaction_type='refund',
+            amount_cents=refund_amount_cents,
             booking=booking,
-            service=booking.service,
-            practitioner=booking.practitioner,
-            description=f"Refund: {reason}"
+            reason=f"Refund: {reason}"
         )
         
         logger.info(
@@ -113,49 +62,12 @@ def process_refund_credits(booking_id, refund_amount_cents, reason='Booking canc
             f"Amount: ${refund_amount_cents / 100:.2f}"
         )
         
-        # Handle earnings reversal if booking had earnings
-        try:
-            earnings = EarningsTransaction.objects.filter(
-                booking=booking,
-                status__in=['projected', 'pending', 'available']
-            ).first()
-            
-            if earnings:
-                # Create a reversal earnings transaction
-                reversal = EarningsTransaction.objects.create(
-                    practitioner=earnings.practitioner,
-                    booking=booking,
-                    gross_amount_cents=-earnings.gross_amount_cents,
-                    commission_rate=earnings.commission_rate,
-                    commission_amount_cents=-earnings.commission_amount_cents,
-                    net_amount_cents=-earnings.net_amount_cents,
-                    status='reversal',
-                    description=f"Reversal: {reason}",
-                    reference_transaction=earnings
-                )
-                
-                # If the original earnings were available, update practitioner balance
-                if earnings.status == 'available':
-                    practitioner_earnings = PractitionerEarnings.objects.get(
-                        practitioner=earnings.practitioner
-                    )
-                    practitioner_earnings.available_balance_cents = max(
-                        0,
-                        practitioner_earnings.available_balance_cents - earnings.net_amount_cents
-                    )
-                    practitioner_earnings.save()
-                
-                # Mark original earnings as reversed
-                earnings.status = 'reversed'
-                earnings.save()
-                
-                logger.info(f"Created earnings reversal {reversal.id} for booking {booking_id}")
-                
-        except Exception as e:
-            logger.error(
-                f"Error handling earnings reversal for booking {booking_id}: {str(e)}",
-                exc_info=True
-            )
+        # Use EarningsService for earnings reversal
+        earnings_service = EarningsService()
+        reversal = earnings_service.reverse_earnings(booking)
+        
+        if reversal:
+            logger.info(f"Created earnings reversal {reversal.id} for booking {booking_id}")
         
         return {
             'success': True,

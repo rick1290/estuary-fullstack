@@ -27,10 +27,7 @@ class NotificationService:
         """
         # Send to client
         try:
-            self.client_service.send_booking_confirmation(
-                booking.user.email,
-                booking
-            )
+            self.client_service.send_booking_confirmation(booking)
             logger.info(f"Sent booking confirmation to client {booking.user.email}")
         except Exception as e:
             logger.error(f"Failed to send client booking confirmation: {e}")
@@ -52,10 +49,7 @@ class NotificationService:
         """
         # Send to client
         try:
-            self.client_service.send_booking_cancellation(
-                booking.user.email,
-                booking
-            )
+            self.client_service.send_booking_cancellation(booking)
             logger.info(f"Sent cancellation to client {booking.user.email}")
         except Exception as e:
             logger.error(f"Failed to send client cancellation: {e}")
@@ -63,9 +57,10 @@ class NotificationService:
         # Send to practitioner
         if booking.practitioner:
             try:
-                self.practitioner_service.send_booking_cancellation_notification(
-                    booking.practitioner.user.email,
-                    booking
+                self.practitioner_service.send_booking_cancelled(
+                    booking,
+                    cancelled_by=booking.cancelled_by or 'client',
+                    reason=booking.cancellation_reason
                 )
                 logger.info(f"Sent cancellation to practitioner {booking.practitioner.user.email}")
             except Exception as e:

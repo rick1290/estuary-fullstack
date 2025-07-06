@@ -69,49 +69,31 @@ def mark_completed_bookings():
                 continue
             
             if should_complete:
-                # Update the booking status to completed
-                booking.status = 'completed'
-                booking.completed_at = timezone.now()
-                booking.save(update_fields=['status', 'completed_at', 'updated_at'])
+                # Use BookingService to mark as completed
+                # This handles status update and review request notification
+                from bookings.services import BookingService
+                booking_service = BookingService()
                 
-                logger.info(
-                    f"Marked booking {booking.id} as completed. "
-                    f"Service: {booking.service.name} ({booking.service.service_type_code}), "
-                    f"User: {booking.user.email}, "
-                    f"End time used: {end_time_used}"
-                )
-                completed_count += 1
-                
-                # Update earnings transaction status from 'projected' to 'pending'
                 try:
-                    earnings = EarningsTransaction.objects.filter(
-                        booking=booking,
-                        status='projected'
-                    ).first()
+                    # Use BookingService to mark as completed
+                    # This now handles status update, earnings update, and review request
+                    booking_service.mark_booking_completed(booking)
                     
-                    if earnings:
-                        earnings.status = 'pending'
-                        # Update available_after to 48 hours from completion
-                        earnings.available_after = timezone.now() + timedelta(hours=48)
-                        earnings.save(update_fields=['status', 'available_after', 'updated_at'])
-                        logger.info(f"Updated earnings transaction {earnings.id} to pending status")
+                    logger.info(
+                        f"Marked booking {booking.id} as completed. "
+                        f"Service: {booking.service.name} ({booking.service.service_type_code}), "
+                        f"User: {booking.user.email}, "
+                        f"End time used: {end_time_used}"
+                    )
+                    completed_count += 1
+                    
                 except Exception as e:
                     logger.error(
-                        f"Error updating earnings for booking {booking.id}: {str(e)}",
+                        f"Error marking booking {booking.id} as completed: {str(e)}",
                         exc_info=True
                     )
-                
-                # Send review request email
-                try:
-                    from notifications.services.registry import get_client_notification_service
-                    client_service = get_client_notification_service()
-                    client_service.send_booking_completed_review_request(booking)
-                    logger.info(f"Sent review request email for booking {booking.id}")
-                except Exception as e:
-                    logger.error(
-                        f"Error sending review request email for booking {booking.id}: {str(e)}",
-                        exc_info=True
-                    )
+                    error_count += 1
+                    continue
                 
         except Exception as e:
             logger.error(
