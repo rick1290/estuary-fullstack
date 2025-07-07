@@ -28,6 +28,7 @@ import {
   Filter,
   X,
   ChevronDown,
+  Play,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -153,6 +154,31 @@ export default function UserBookingsList() {
         setSelectedServiceTypes([...newTypes, type])
       }
     }
+  }
+
+  const isSessionJoinable = (booking: any) => {
+    if (!booking.start_time || booking.status !== "confirmed") return false
+    
+    const now = new Date()
+    const startTime = parseISO(booking.start_time)
+    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
+    
+    // Allow joining 15 minutes before start and up to 30 minutes after start
+    const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
+    const joinWindowEnd = new Date(startTime.getTime() + 30 * 60 * 1000)
+    
+    return now >= joinWindowStart && now <= joinWindowEnd && now < endTime
+  }
+
+  const isSessionStartingSoon = (booking: any) => {
+    if (!booking.start_time || booking.status !== "confirmed") return false
+    
+    const now = new Date()
+    const startTime = parseISO(booking.start_time)
+    const timeUntilStart = startTime.getTime() - now.getTime()
+    
+    // Session starts within 15 minutes
+    return timeUntilStart > 0 && timeUntilStart <= 15 * 60 * 1000
   }
 
   if (isLoading) {
@@ -318,7 +344,11 @@ export default function UserBookingsList() {
             return (
               <Card
                 key={booking.id}
-                className="overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                className={`overflow-hidden hover:shadow-md transition-all cursor-pointer ${
+                  isSessionStartingSoon(booking) && booking.location_type === "virtual" 
+                    ? "ring-2 ring-sage-500 ring-opacity-50" 
+                    : ""
+                }`}
                 onClick={() => router.push(`/dashboard/user/bookings/${booking.id}`)}
               >
                 <CardContent className="p-6">
@@ -360,7 +390,14 @@ export default function UserBookingsList() {
                             </div>
                           )}
                         </div>
-                        {getStatusBadge(booking)}
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(booking)}
+                          {isSessionStartingSoon(booking) && booking.location_type === "virtual" && (
+                            <Badge variant="default" className="bg-sage-600 animate-pulse">
+                              Starting soon
+                            </Badge>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-1 text-sm text-gray-600">
@@ -415,8 +452,36 @@ export default function UserBookingsList() {
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="flex-shrink-0 flex items-center">
+                    {/* Action Buttons */}
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                      {/* Join Button for virtual sessions */}
+                      {booking.location_type === "virtual" && 
+                       booking.room?.public_uuid && 
+                       isSessionJoinable(booking) && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/room/${booking.room.public_uuid}/lobby`)
+                                }}
+                                className="bg-sage-600 hover:bg-sage-700"
+                              >
+                                <Play className="h-4 w-4 mr-1" />
+                                Join
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Join video session</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      
+                      {/* View Details Button */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
