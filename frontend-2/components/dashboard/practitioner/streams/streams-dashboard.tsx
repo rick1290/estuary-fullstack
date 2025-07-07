@@ -39,7 +39,7 @@ export default function StreamsDashboard() {
   const { data: streamsData, isLoading: streamsLoading } = useQuery({
     ...streamsListOptions({
       query: {
-        practitioner: user?.practitioner_id
+        practitioner: user?.practitionerId
       }
     })
   })
@@ -68,7 +68,7 @@ export default function StreamsDashboard() {
       queryClient.invalidateQueries({ 
         queryKey: [{ 
           _id: 'streamsList',
-          query: { practitioner: user?.practitioner_id }
+          query: { practitioner: user?.practitionerId }
         }] 
       })
     },
@@ -84,7 +84,7 @@ export default function StreamsDashboard() {
   const createStream = () => {
     createStreamMutation.mutate({
       body: {
-        title: `${user?.name || 'My'} Wellness Journey`,
+        title: `${user?.firstName || 'My'} Wellness Journey`,
         description: 'Welcome to my exclusive wellness content stream!',
         entry_tier_price_cents: 1000,  // $10 default
         premium_tier_price_cents: 2000, // $20 default
@@ -431,7 +431,7 @@ export default function StreamsDashboard() {
       queryClient.invalidateQueries({ 
         queryKey: [{ 
           _id: 'streamsList',
-          query: { practitioner: user?.practitioner_id }
+          query: { practitioner: user?.practitionerId }
         }] 
       })
             }}

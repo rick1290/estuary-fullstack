@@ -10,7 +10,7 @@ import {
   bookingsConfirmCreateMutation,
   bookingsPartialUpdateMutation
 } from "@/src/client/@tanstack/react-query.gen"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -46,6 +46,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+// Check if a session can be joined
+const isSessionJoinable = (booking: any) => {
+  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  
+  const now = new Date()
+  const startTime = typeof booking.start_time === 'string' ? parseISO(booking.start_time) : new Date(booking.start_time)
+  const endTime = booking.end_time 
+    ? (typeof booking.end_time === 'string' ? parseISO(booking.end_time) : new Date(booking.end_time))
+    : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  
+  // Allow joining 15 minutes before start and until the session ends
+  const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
+  
+  return now >= joinWindowStart && now < endTime
+}
 
 interface BookingDetailViewProps {
   bookingId: string
@@ -250,10 +266,13 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   </DropdownMenuItem>
                 </>
               )}
-              {booking.service?.location_type === "virtual" && booking.meeting_url && (
-                <DropdownMenuItem onClick={() => window.open(booking.meeting_url, "_blank")}>
+              {booking.service?.location_type === "virtual" && booking.livekit_room && isSessionJoinable(booking) && (
+                <DropdownMenuItem 
+                  onClick={() => router.push(`/room/${booking.livekit_room.public_uuid}/lobby`)}
+                  className="text-primary"
+                >
                   <Video className="h-4 w-4 mr-2" />
-                  Join Virtual Session
+                  Join Session
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem>
