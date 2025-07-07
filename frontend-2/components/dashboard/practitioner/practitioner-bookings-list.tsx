@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, MoreVertical, User, Loader2, Search, Filter, Users, SpadeIcon as Spa, BookOpen } from "lucide-react"
+import { Calendar, Clock, MoreVertical, User, Loader2, Search, Filter, Users, SpadeIcon as Spa, BookOpen, Video } from "lucide-react"
 import { format, parseISO, startOfWeek, endOfWeek, isAfter } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -35,6 +35,20 @@ const serviceTypeConfig = {
   session: { label: "Session", icon: User, color: "primary" },
   workshop: { label: "Workshop", icon: Users, color: "secondary" },
   course: { label: "Course", icon: BookOpen, color: "success" },
+}
+
+// Check if a session can be joined
+const isSessionJoinable = (booking: any) => {
+  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  
+  const now = new Date()
+  const startTime = parseISO(booking.start_time)
+  const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  
+  // Allow joining 15 minutes before start and until the session ends
+  const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
+  
+  return now >= joinWindowStart && now < endTime
 }
 
 export default function PractitionerBookingsList() {
@@ -344,6 +358,25 @@ export default function PractitionerBookingsList() {
                                 View Details
                               </Link>
                             </DropdownMenuItem>
+                            {/* Join button for virtual sessions */}
+                            {booking.service?.location_type === "virtual" && booking.livekit_room && (
+                              <DropdownMenuItem asChild>
+                                {isSessionJoinable(booking) ? (
+                                  <Link 
+                                    href={`/room/${booking.livekit_room.public_uuid}/lobby`}
+                                    className="flex items-center gap-2 text-primary"
+                                  >
+                                    <Video className="h-4 w-4" />
+                                    Join Session
+                                  </Link>
+                                ) : (
+                                  <span className="flex items-center gap-2 opacity-50 cursor-not-allowed">
+                                    <Video className="h-4 w-4" />
+                                    Join Session
+                                  </span>
+                                )}
+                              </DropdownMenuItem>
+                            )}
                             {booking.status === "confirmed" && (
                               <>
                                 <DropdownMenuItem>Reschedule</DropdownMenuItem>

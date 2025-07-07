@@ -18,14 +18,30 @@ import { useQuery } from "@tanstack/react-query"
 import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { format, isToday, isTomorrow, parseISO } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
+
+// Check if a session can be joined
+const isSessionJoinable = (booking: any) => {
+  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  
+  const now = new Date()
+  const startTime = parseISO(booking.start_time)
+  const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  
+  // Allow joining 15 minutes before start and until the session ends
+  const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
+  
+  return now >= joinWindowStart && now < endTime
+}
 export default function PractitionerUpcomingBookings() {
   const [tabValue, setTabValue] = useState("upcoming")
+  const router = useRouter()
   
-  // Fetch upcoming bookings
+  // Fetch upcoming bookings - include in_progress status
   const { data: bookingsResponse, isLoading } = useQuery(
     bookingsListOptions({
       query: {
-        status: tabValue === "pending" ? "pending_payment" : "confirmed",
+        status: tabValue === "pending" ? "pending_payment" : undefined, // Remove status filter to get all statuses
         ordering: "start_time",
         page_size: 5,
         is_upcoming: true  // Add filter for upcoming bookings only
@@ -45,12 +61,20 @@ export default function PractitionerUpcomingBookings() {
       .filter(booking => {
         const startTime = parseISO(booking.start_time)
         
+        // Include confirmed and in_progress bookings in all tabs except pending
+        const validStatuses = ["confirmed", "in_progress"]
+        
         if (tabValue === "today") {
-          return isToday(startTime)
+          return isToday(startTime) && (validStatuses.includes(booking.status) || booking.status === "in_progress")
         } else if (tabValue === "upcoming") {
-          return startTime > now
+          // Include in_progress bookings that haven't ended yet
+          if (booking.status === "in_progress") {
+            const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+            return endTime > now
+          }
+          return startTime > now && validStatuses.includes(booking.status)
         } else if (tabValue === "pending") {
-          return booking.payment_status === "pending" || booking.status === "pending"
+          return booking.payment_status === "pending" || booking.status === "pending" || booking.status === "pending_payment"
         }
         return true
       })
@@ -75,7 +99,12 @@ export default function PractitionerUpcomingBookings() {
           date: dateDisplay,
           time: `${format(startTime, "h:mm a")} - ${format(endTime, "h:mm a")}`,
           type: booking.service?.location_type === "virtual" ? "Virtual" : "In-Person",
-          status: booking.status
+          status: booking.status,
+          livekit_room: booking.livekit_room,
+          location_type: booking.service?.location_type,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          duration_minutes: booking.duration_minutes
         }
       })
   }, [bookingsResponse, tabValue])
@@ -118,7 +147,9 @@ export default function PractitionerUpcomingBookings() {
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{booking.service}</div>
-                  <Badge variant={booking.status === "confirmed" ? "success" : "outline"}>{booking.status}</Badge>
+                  <Badge variant={booking.status === "confirmed" ? "success" : booking.status === "in_progress" ? "default" : "outline"}>
+                    {booking.status === "in_progress" ? "In Progress" : booking.status}
+                  </Badge>
                 </div>
 
                 <div className="text-sm text-muted-foreground space-y-1">
@@ -152,7 +183,26 @@ export default function PractitionerUpcomingBookings() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px]">
-                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
+                      View Details
+                    </Link>
+                  </DropdownMenuItem>
+                  {/* Join button for virtual sessions */}
+                  {booking.location_type === "virtual" && booking.livekit_room && (
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        if (isSessionJoinable(booking)) {
+                          router.push(`/room/${booking.livekit_room.public_uuid}/lobby`)
+                        }
+                      }}
+                      className={isSessionJoinable(booking) ? "text-primary" : "opacity-50"}
+                      disabled={!isSessionJoinable(booking)}
+                    >
+                      <Video className="h-4 w-4 mr-2" />
+                      Join Session
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem>Send Message</DropdownMenuItem>
                   <DropdownMenuItem>Reschedule</DropdownMenuItem>
                   <DropdownMenuSeparator />
