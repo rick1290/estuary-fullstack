@@ -9,7 +9,8 @@ import { useRoomToken } from '@/components/video/hooks';
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, AlertCircle, Users } from 'lucide-react';
+import { Loader2, AlertCircle, Users, ArrowLeft } from 'lucide-react';
+import { EstuaryLogo } from '@/components/ui/estuary-logo';
 
 export default function RoomLobbyPage() {
   const params = useParams();
@@ -30,6 +31,11 @@ export default function RoomLobbyPage() {
     // Store settings in session storage for the room page
     sessionStorage.setItem('roomSettings', JSON.stringify(settings));
     router.push(`/room/${roomId}`);
+  };
+
+  const handleExit = () => {
+    // Navigate back to dashboard
+    router.push('/dashboard/user');
   };
 
   // Loading state
@@ -99,6 +105,20 @@ export default function RoomLobbyPage() {
 
   return (
     <>
+      {/* Estuary Logo */}
+      <div className="fixed top-4 left-4 z-50">
+        <EstuaryLogo size="lg" className="text-sage-700" />
+      </div>
+
+      {/* Exit Button */}
+      <button
+        onClick={handleExit}
+        className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-md hover:bg-white transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>Exit to Dashboard</span>
+      </button>
+
       <PreJoinScreen
         sessionDetails={sessionDetails}
         onJoinRoom={handleJoinRoom}
