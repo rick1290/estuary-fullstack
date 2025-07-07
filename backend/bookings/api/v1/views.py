@@ -79,7 +79,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Base queryset with optimized relations
         queryset = Booking.objects.select_related(
             'user', 'practitioner__user', 'service', 'location',
-            'room', 'service_session', 'parent_booking',
+            'room', 'livekit_room', 'service_session', 'parent_booking',
             'rescheduled_from', 'payment_transaction'
         ).prefetch_related(
             'reminders', 'notes__author',

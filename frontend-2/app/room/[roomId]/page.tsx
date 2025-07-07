@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation } from '@/src/client/@tanstack/react-query.gen';
+import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation, bookingsRetrieveOptions } from '@/src/client/@tanstack/react-query.gen';
 import { VideoRoom } from '@/components/video/core/VideoRoom';
 import { useRoomToken } from '@/components/video/hooks';
 import { useAuth } from '@/hooks/use-auth';
@@ -27,6 +27,13 @@ export default function RoomPage() {
   });
   
   const { token, loading: tokenLoading, error: tokenError, roomInfo } = useRoomToken({ roomId });
+  
+  // Fetch booking details if we have a booking ID
+  const bookingId = accessData?.booking?.id;
+  const { data: bookingData } = useQuery({
+    ...bookingsRetrieveOptions({ path: { id: bookingId! } }),
+    enabled: !!bookingId
+  });
 
   // Recording mutations
   const startRecordingMutation = useMutation(roomsStartRecordingCreateMutation());
@@ -76,7 +83,7 @@ export default function RoomPage() {
   };
 
   // Loading state
-  if (tokenLoading || loadingAccess) {
+  if (tokenLoading || loadingAccess || (bookingId && !bookingData)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <Card className="bg-gray-800 border-gray-700">
@@ -141,8 +148,10 @@ export default function RoomPage() {
     );
   }
 
-  // Build session details from access data
-  const sessionDetails = accessData?.service_session || accessData?.booking || { room: accessData?.room };
+  // Build session details from access data, enhanced with booking details
+  const sessionDetails = accessData?.service_session || 
+    (bookingData ? bookingData : accessData?.booking) || 
+    { room: accessData?.room };
 
   return (
     <VideoRoom

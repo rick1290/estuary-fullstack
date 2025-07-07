@@ -28,6 +28,7 @@ import {
   Filter,
   X,
   ChevronDown,
+  Play,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -39,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { format, parseISO, isPast, isFuture } from "date-fns"
+import { format, parseISO, isPast, isFuture, formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 
 type BookingStatus = "all" | "upcoming" | "unscheduled" | "past" | "canceled"
@@ -116,7 +117,22 @@ export default function UserBookingsList() {
   const paginatedBookings = useMemo(() => {
     const startIndex = (page - 1) * limit
     const endIndex = startIndex + limit
-    return filteredBookings.slice(startIndex, endIndex)
+    const paginated = filteredBookings.slice(startIndex, endIndex)
+    
+    // Debug log the first booking to see data structure
+    if (paginated.length > 0) {
+      console.log('First booking data:', {
+        id: paginated[0].id,
+        location_type: paginated[0].location_type,
+        service_location_type: paginated[0].service?.location_type,
+        room: paginated[0].room,
+        status: paginated[0].status,
+        start_time: paginated[0].start_time,
+        end_time: paginated[0].end_time
+      })
+    }
+    
+    return paginated
   }, [filteredBookings, page, limit])
 
   // Reset page when filters change
@@ -153,6 +169,30 @@ export default function UserBookingsList() {
         setSelectedServiceTypes([...newTypes, type])
       }
     }
+  }
+
+  const isSessionJoinable = (booking: any) => {
+    if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+    
+    const now = new Date()
+    const startTime = parseISO(booking.start_time)
+    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
+    
+    // Allow joining 15 minutes before start and until the session ends
+    const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
+    
+    return now >= joinWindowStart && now < endTime
+  }
+
+  const isSessionStartingSoon = (booking: any) => {
+    if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+    
+    const now = new Date()
+    const startTime = parseISO(booking.start_time)
+    const timeUntilStart = startTime.getTime() - now.getTime()
+    
+    // Session starts within 15 minutes
+    return timeUntilStart > 0 && timeUntilStart <= 15 * 60 * 1000
   }
 
   if (isLoading) {
@@ -318,9 +358,23 @@ export default function UserBookingsList() {
             return (
               <Card
                 key={booking.id}
-                className="overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                className={`relative overflow-hidden hover:shadow-md transition-all cursor-pointer ${
+                  isSessionStartingSoon(booking) && booking.location_type === "virtual" 
+                    ? "ring-2 ring-sage-500 ring-opacity-50" 
+                    : ""
+                }`}
                 onClick={() => router.push(`/dashboard/user/bookings/${booking.id}`)}
               >
+                {/* Status Badge in top-right corner */}
+                <div className="absolute top-4 right-4 z-10 flex gap-2">
+                  {getStatusBadge(booking)}
+                  {isSessionStartingSoon(booking) && booking.location_type === "virtual" && (
+                    <Badge variant="default" className="bg-sage-600 animate-pulse [animation-duration:2s]">
+                      Starting soon
+                    </Badge>
+                  )}
+                </div>
+
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {/* Service Image/Icon */}
@@ -337,30 +391,27 @@ export default function UserBookingsList() {
                     </div>
 
                     {/* Booking Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="font-medium text-lg text-gray-900 line-clamp-1">
-                            {service?.name || "Service"}
-                          </h3>
-                          {practitioner && (
-                            <div className="flex items-center mt-1">
-                              <Avatar className="h-5 w-5 mr-2">
-                                <AvatarImage
-                                  src={practitioner.profile_image_url}
-                                  alt={practitioner.display_name}
-                                />
-                                <AvatarFallback>
-                                  {practitioner.display_name?.charAt(0) || "P"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm text-gray-600">
-                                {practitioner.display_name}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {getStatusBadge(booking)}
+                    <div className="flex-1 min-w-0 pr-20">
+                      <div className="mb-2">
+                        <h3 className="font-medium text-lg text-gray-900 line-clamp-1">
+                          {service?.name || "Service"}
+                        </h3>
+                        {practitioner && (
+                          <div className="flex items-center mt-1">
+                            <Avatar className="h-5 w-5 mr-2">
+                              <AvatarImage
+                                src={practitioner.profile_image_url}
+                                alt={practitioner.display_name}
+                              />
+                              <AvatarFallback>
+                                {practitioner.display_name?.charAt(0) || "P"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm text-gray-600">
+                              {practitioner.display_name}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1 text-sm text-gray-600">
@@ -415,8 +466,67 @@ export default function UserBookingsList() {
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="flex-shrink-0 flex items-center">
+                    {/* Action Buttons */}
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                      {/* Join Button for virtual sessions */}
+                      {booking.location_type === "virtual" && 
+                       booking.room?.public_uuid && 
+                       (booking.status === "confirmed" || booking.status === "in_progress") && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-block">
+                                <Button
+                                  variant={isSessionJoinable(booking) ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (isSessionJoinable(booking)) {
+                                      router.push(`/room/${booking.room.public_uuid}/lobby`)
+                                    }
+                                  }}
+                                  disabled={!isSessionJoinable(booking)}
+                                  className={isSessionJoinable(booking) ? "bg-sage-600 hover:bg-sage-700" : ""}
+                                >
+                                  <Play className="h-4 w-4 mr-1" />
+                                  Join
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {(() => {
+                                  if (isSessionJoinable(booking)) {
+                                    return "Join video session now"
+                                  }
+                                  
+                                  if (!booking.start_time) {
+                                    return "Session time not set"
+                                  }
+                                  
+                                  const startTime = parseISO(booking.start_time)
+                                  const now = new Date()
+                                  const timeUntilStart = startTime.getTime() - now.getTime()
+                                  
+                                  if (isPast(startTime)) {
+                                    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
+                                    if (isPast(endTime)) {
+                                      return "Session has ended"
+                                    }
+                                    // This case should not happen because isSessionJoinable would return true
+                                    return "Join video session now"
+                                  }
+                                  
+                                  // Session hasn't started yet
+                                  return "Join will be available 15 minutes before session start"
+                                })()}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      
+                      {/* View Details Button */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>

@@ -140,13 +140,15 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   const service = booking.service
   const practitioner = service?.practitioner || service?.primary_practitioner
 
-  // Check if session is joinable (within 15 minutes of start time)
+  // Check if session is joinable (15 minutes before start until end of session)
   const isSessionJoinable = () => {
-    if (booking.status !== "confirmed" || !booking.start_time) return false
+    if ((booking.status !== "confirmed" && booking.status !== "in_progress") || !booking.start_time) return false
     const startTime = parseISO(booking.start_time)
+    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
     const now = new Date()
     const minutesUntilStart = differenceInMinutes(startTime, now)
-    return minutesUntilStart <= 15 && minutesUntilStart >= -30 // 15 min before to 30 min after
+    const minutesUntilEnd = differenceInMinutes(endTime, now)
+    return minutesUntilStart <= 15 && minutesUntilEnd > 0 // 15 min before start until session ends
   }
 
   // Check if reschedulable/cancellable (more than 24 hours before start)
@@ -177,10 +179,18 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   
   // Debug logging
   console.log('Booking details:', {
+    id: booking.id,
     status: booking.status,
     start_time: booking.start_time,
+    end_time: booking.end_time,
+    service_location_type: service?.location_type,
+    has_room: !!booking.room,
+    room_uuid: booking.room?.public_uuid,
+    has_video_url: !!booking.video_url,
+    joinable,
     modifiable,
-    hoursUntilStart: booking.start_time ? differenceInHours(parseISO(booking.start_time), new Date()) : null
+    minutesUntilStart: booking.start_time ? differenceInMinutes(parseISO(booking.start_time), new Date()) : null,
+    minutesUntilEnd: booking.end_time ? differenceInMinutes(parseISO(booking.end_time), new Date()) : null
   })
 
   return (
@@ -255,7 +265,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
                   <div className="space-y-3">
                     <div className="flex items-center">
-                      {booking.location_type === "virtual" ? (
+                      {service?.location_type === "virtual" ? (
                         <>
                           <Video className="h-5 w-5 mr-3 text-primary" />
                           <div>
@@ -329,26 +339,39 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                 )}
               </CardContent>
 
-              {booking.status === "confirmed" && (
+              {(booking.status === "confirmed" || booking.status === "in_progress") && (
                 <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
-                  {booking.location_type === "virtual" && (booking.room?.public_uuid || booking.video_url) && (
-                    <Button
-                      className={`flex items-center gap-2 ${joinable ? "bg-green-600 hover:bg-green-700" : ""}`}
-                      disabled={!joinable}
-                      asChild={joinable}
-                    >
-                      {joinable ? (
-                        <a href={booking.room?.public_uuid ? `/room/${booking.room.public_uuid}/lobby` : booking.video_url} target={booking.room?.public_uuid ? "_self" : "_blank"} rel="noopener noreferrer">
-                          <Video className="h-4 w-4" />
-                          Join Session Now
-                        </a>
-                      ) : (
-                        <>
-                          <Video className="h-4 w-4" />
-                          Join Session
-                        </>
-                      )}
-                    </Button>
+                  {service?.location_type === "virtual" && (booking.room?.public_uuid || booking.video_url) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button
+                              className={`flex items-center gap-2 ${joinable ? "bg-green-600 hover:bg-green-700" : ""}`}
+                              disabled={!joinable}
+                              asChild={joinable}
+                            >
+                              {joinable ? (
+                                <a href={booking.room?.public_uuid ? `/room/${booking.room.public_uuid}/lobby` : booking.video_url} target={booking.room?.public_uuid ? "_self" : "_blank"} rel="noopener noreferrer">
+                                  <Video className="h-4 w-4" />
+                                  Join Session Now
+                                </a>
+                              ) : (
+                                <>
+                                  <Video className="h-4 w-4" />
+                                  Join Session
+                                </>
+                              )}
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        {!joinable && booking.start_time && (
+                          <TooltipContent>
+                            <p>Join will be available 15 minutes before session start</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
 
                   <Button variant="outline" className="flex items-center gap-2">

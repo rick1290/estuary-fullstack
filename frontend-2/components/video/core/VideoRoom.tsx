@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { EstuaryLogo } from '@/components/ui/estuary-logo';
 
 interface VideoRoomProps {
   token: string;
@@ -152,8 +153,8 @@ export function VideoRoom({
             <div className="bg-estuary-900/80 backdrop-blur-md border-b border-wellness-700/30 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="text-white">
-                    <h2 className="text-lg font-semibold">
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">
                       {sessionInfo?.service?.name || 'Video Session'}
                     </h2>
                     <div className="flex items-center gap-3 text-sm text-wellness-200">
@@ -351,6 +352,12 @@ export function VideoRoom({
                 </div>
               </div>
             </div>
+            
+            {/* Powered by Estuary - Below controls */}
+            <div className="bg-estuary-900 px-4 py-2 flex items-center justify-end gap-2 text-white/60 text-sm">
+              <span>Powered by</span>
+              <EstuaryLogo size="sm" className="text-white/80" />
+            </div>
           </div>
         </LayoutContextProvider>
       </LiveKitRoom>
@@ -376,26 +383,35 @@ export function VideoRoom({
         onError?.(error);
       }}
     >
-      <VideoConference
-        chatMessageFormatter={formatChatMessageLinks}
-        SettingsComponent={() => (
-          <div className="space-y-6 p-4">
-            <h3 className="text-lg font-medium">Settings</h3>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Camera</label>
-              <MediaDeviceMenu kind="videoinput" />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Microphone</label>
-              <MediaDeviceMenu kind="audioinput" />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Speaker</label>
-              <MediaDeviceMenu kind="audiooutput" />
-            </div>
-          </div>
-        )}
-      />
+      <div className="h-full flex flex-col bg-gray-900">
+        <div className="flex-1 relative">
+          <VideoConference
+            chatMessageFormatter={formatChatMessageLinks}
+            SettingsComponent={() => (
+              <div className="space-y-6 p-4">
+                <h3 className="text-lg font-medium">Settings</h3>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Camera</label>
+                  <MediaDeviceMenu kind="videoinput" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Microphone</label>
+                  <MediaDeviceMenu kind="audioinput" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Speaker</label>
+                  <MediaDeviceMenu kind="audiooutput" />
+                </div>
+              </div>
+            )}
+          />
+        </div>
+        {/* Powered by Estuary - Below the video, above nothing */}
+        <div className="flex items-center justify-end gap-2 px-4 py-2 text-white/60 text-sm bg-gray-900">
+          <span>Powered by</span>
+          <EstuaryLogo size="sm" className="text-white/80" />
+        </div>
+      </div>
     </LiveKitRoom>
   );
 }

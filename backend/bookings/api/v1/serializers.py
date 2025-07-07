@@ -101,20 +101,22 @@ class BookingListSerializer(serializers.ModelSerializer):
     user = BookingUserSerializer(read_only=True)
     practitioner = BookingPractitionerSerializer(read_only=True)
     service = BookingServiceSerializer(read_only=True)
+    room = BookingRoomSerializer(source='livekit_room', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     payment_status_display = serializers.CharField(source='get_payment_status_display', read_only=True)
     price_charged = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     final_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     duration_minutes = serializers.IntegerField(read_only=True)
     is_upcoming = serializers.BooleanField(read_only=True)
+    location_type = serializers.CharField(source='service.location_type', read_only=True)
     
     class Meta:
         model = Booking
         fields = [
-            'id', 'public_uuid', 'user', 'practitioner', 'service', 'start_time', 'end_time',
+            'id', 'public_uuid', 'user', 'practitioner', 'service', 'room', 'start_time', 'end_time',
             'status', 'status_display', 'payment_status', 'payment_status_display',
             'price_charged', 'final_amount', 'duration_minutes', 'is_upcoming',
-            'created_at', 'updated_at'
+            'location_type', 'created_at', 'updated_at'
         ]
 
 

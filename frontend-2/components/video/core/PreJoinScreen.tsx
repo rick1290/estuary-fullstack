@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, AlertCircle, Video, Mic, Headphones, Calendar, Clock } from 'lucide-react';
+import { Loader2, AlertCircle, Video, Mic, Headphones, Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface JoinSettings {
@@ -22,6 +22,7 @@ interface PreJoinScreenProps {
   bookingDetails?: any;
   sessionDetails?: any;
   onJoinRoom: (settings: JoinSettings) => void;
+  onExit?: () => void;
   loading?: boolean;
   error?: string;
 }
@@ -30,6 +31,7 @@ export function PreJoinScreen({
   bookingDetails,
   sessionDetails,
   onJoinRoom,
+  onExit,
   loading = false,
   error
 }: PreJoinScreenProps) {
@@ -81,12 +83,35 @@ export function PreJoinScreen({
                 </div>
                 
                 <div className="p-6 bg-white">
+                  <style jsx global>{`
+                    .lk-prejoin .lk-button {
+                      padding: 10px 24px !important;
+                      font-size: 15px !important;
+                      font-weight: 500 !important;
+                      background-color: #9CAF88 !important;
+                      color: white !important;
+                      border-radius: 6px !important;
+                      transition: background-color 0.2s !important;
+                      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+                    }
+                    .lk-prejoin .lk-button:hover {
+                      background-color: #8A9D7B !important;
+                    }
+                    .lk-prejoin .lk-button:disabled {
+                      opacity: 0.5 !important;
+                      cursor: not-allowed !important;
+                    }
+                  `}</style>
                   <div className="lk-prejoin-container" style={{ 
                     '--lk-bg': 'var(--cream-50)',
                     '--lk-control-bg': 'var(--sage-100)',
                     '--lk-control-hover-bg': 'var(--sage-200)',
-                    '--lk-button-bg': 'var(--sage-600)',
-                    '--lk-button-hover-bg': 'var(--sage-700)',
+                    '--lk-button-bg': '#9CAF88',
+                    '--lk-button-hover-bg': '#7D9070',
+                    '--lk-button-fg': 'white',
+                    '--lk-button-size': '48px',
+                    '--lk-button-font-weight': '600',
+                    '--lk-button-font-size': '16px',
                   } as React.CSSProperties}>
                     <PreJoin
                       onSubmit={handlePreJoinSubmit}

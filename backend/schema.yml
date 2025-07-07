@@ -37,6 +37,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
       - cookieAuth: []
@@ -200,6 +206,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
         required: true
       security:
       - bearerAuth: []
@@ -280,6 +292,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -299,6 +317,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedUserProfileRequest'
       security:
@@ -424,6 +448,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -462,6 +492,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/TokenRefreshRequest'
         required: true
@@ -625,6 +661,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -636,6 +678,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingCreate'
           description: ''
+  /api/v1/bookings/{booking_id}/join/:
+    post:
+      operationId: bookings_join_create
+      description: Get a token to join the room for a booking.
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/bookings/{booking_id}/room/:
+    get:
+      operationId: bookings_room_retrieve
+      description: Get room details for a booking.
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/bookings/{id}/:
     get:
       operationId: bookings_retrieve
@@ -704,6 +784,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingUpdateRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -743,6 +829,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingUpdateRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedBookingUpdateRequest'
       security:
@@ -789,6 +881,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
         required: true
       security:
       - cookieAuth: []
@@ -815,6 +913,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
         required: true
@@ -845,6 +949,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
         required: true
       security:
       - cookieAuth: []
@@ -871,6 +981,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
         required: true
@@ -922,6 +1038,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
         required: true
       security:
       - cookieAuth: []
@@ -950,6 +1072,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingRescheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingRescheduleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingRescheduleRequest'
         required: true
       security:
       - cookieAuth: []
@@ -970,6 +1098,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityCheckRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvailabilityCheckRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/AvailabilityCheckRequest'
         required: true
@@ -994,6 +1128,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1016,6 +1156,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1036,6 +1182,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/BookingDetailRequest'
         required: true
@@ -1101,6 +1253,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BundleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BundleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BundleRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1153,6 +1311,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BundleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BundleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BundleRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1179,6 +1343,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBundleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBundleRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedBundleRequest'
       security:
@@ -1260,6 +1430,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CertificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -1310,6 +1486,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CertificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -1335,6 +1517,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCertificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCertificationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedCertificationRequest'
       security:
@@ -1368,12 +1556,18 @@ paths:
   /api/v1/checkout/create_session/:
     post:
       operationId: checkout_create_session_create
-      description: Create a Stripe checkout session
+      description: Create a Stripe checkout session using CheckoutService
       tags:
       - Payments
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CheckoutSessionRequest'
         required: true
@@ -1390,12 +1584,18 @@ paths:
   /api/v1/checkout/direct_payment/:
     post:
       operationId: checkout_direct_payment_create
-      description: Process direct payment with saved payment method
+      description: Process direct payment with saved payment method using orchestrator
       tags:
       - Payments
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CheckoutSessionRequest'
         required: true
@@ -1533,6 +1733,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/City'
           description: ''
+  /api/v1/commission/calculate/:
+    post:
+      operationId: commission_calculate_create
+      description: Calculate commission for a hypothetical transaction
+      tags:
+      - Payments
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/commission/rates/:
+    get:
+      operationId: commission_rates_retrieve
+      description: Get commission rates for current practitioner
+      tags:
+      - Payments
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/commissions/calculate/:
     post:
       operationId: commissions_calculate_create
@@ -1615,6 +1839,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SimpleConversationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SimpleConversationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SimpleConversationCreateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1665,6 +1895,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ConversationDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConversationDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConversationDetailRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -1689,6 +1925,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConversationDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConversationDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedConversationDetailRequest'
       security:
@@ -1734,6 +1976,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConversationDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ConversationDetailRequest'
       security:
@@ -1792,6 +2040,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1802,6 +2056,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
+          description: ''
+  /api/v1/conversations/messageable_practitioners/:
+    get:
+      operationId: conversations_messageable_practitioners_retrieve
+      description: Get list of practitioners the user can message (has bookings with)
+      tags:
+      - conversations
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
           description: ''
   /api/v1/countries/:
     get:
@@ -1896,7 +2166,7 @@ paths:
   /api/v1/credits/purchase/:
     post:
       operationId: credits_purchase_create
-      description: Purchase credits
+      description: Purchase credits using orchestrator
       tags:
       - Payments
       security:
@@ -1920,7 +2190,7 @@ paths:
   /api/v1/credits/transfer/:
     post:
       operationId: credits_transfer_create
-      description: Transfer credits to another user
+      description: Transfer credits to another user using CreditService
       tags:
       - Payments
       security:
@@ -1980,6 +2250,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EducationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EducationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EducationRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -2030,6 +2306,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EducationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EducationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EducationRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -2055,6 +2337,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEducationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEducationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedEducationRequest'
       security:
@@ -2137,391 +2425,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/live-streams/:
-    get:
-      operationId: live_streams_list
-      description: ViewSet for managing live streaming sessions.
-      parameters:
-      - in: query
-        name: is_public
-        schema:
-          type: boolean
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - in: query
-        name: practitioner
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      - in: query
-        name: status
-        schema:
-          type: string
-          enum:
-          - cancelled
-          - ended
-          - live
-          - scheduled
-        description: |-
-          * `scheduled` - Scheduled
-          * `live` - Live
-          * `ended` - Ended
-          * `cancelled` - Cancelled
-      - in: query
-        name: stream
-        schema:
-          type: integer
-      - in: query
-        name: tier_level
-        schema:
-          type: string
-          enum:
-          - entry
-          - free
-          - premium
-        description: |-
-          Minimum tier required to view this live stream
-
-          * `free` - Free
-          * `entry` - Entry
-          * `premium` - Premium
-      tags:
-      - live-streams
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLiveStreamList'
-          description: ''
-    post:
-      operationId: live_streams_create
-      description: ViewSet for managing live streaming sessions.
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LiveStreamCreateRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStreamCreate'
-          description: ''
-  /api/v1/live-streams/{id}/:
-    get:
-      operationId: live_streams_retrieve
-      description: ViewSet for managing live streaming sessions.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-    put:
-      operationId: live_streams_update
-      description: ViewSet for managing live streaming sessions.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LiveStreamRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-    patch:
-      operationId: live_streams_partial_update
-      description: ViewSet for managing live streaming sessions.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedLiveStreamRequest'
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-    delete:
-      operationId: live_streams_destroy
-      description: ViewSet for managing live streaming sessions.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/live-streams/{id}/analytics/:
-    get:
-      operationId: live_streams_analytics_retrieve
-      description: Get analytics for a live stream.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-  /api/v1/live-streams/{id}/end_stream/:
-    post:
-      operationId: live_streams_end_stream_create
-      description: End a live stream.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LiveStreamRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-  /api/v1/live-streams/{id}/go_live/:
-    post:
-      operationId: live_streams_go_live_create
-      description: Start a live stream.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LiveStreamRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-  /api/v1/live-streams/{id}/join/:
-    post:
-      operationId: live_streams_join_create
-      description: Join a live stream as a viewer.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LiveStreamRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-  /api/v1/live-streams/{id}/leave/:
-    post:
-      operationId: live_streams_leave_create
-      description: Leave a live stream.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LiveStreamRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-  /api/v1/live-streams/{id}/recordings/:
-    get:
-      operationId: live_streams_recordings_retrieve
-      description: Get recordings for a live stream.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
-  /api/v1/live-streams/{id}/viewers/:
-    get:
-      operationId: live_streams_viewers_retrieve
-      description: Get current viewers of a live stream.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this live stream.
-        required: true
-      tags:
-      - live-streams
-      security:
-      - cookieAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LiveStream'
-          description: ''
   /api/v1/media/:
     get:
       operationId: media_list
@@ -3143,6 +3046,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationSettingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3198,6 +3107,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationSettingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3226,6 +3141,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationSettingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationSettingRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedNotificationSettingRequest'
       security:
@@ -3269,6 +3190,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationSettingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3289,6 +3216,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/NotificationSettingRequest'
         required: true
@@ -3463,6 +3396,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3528,6 +3467,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3561,6 +3506,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedNotificationRequest'
       security:
@@ -3615,6 +3566,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3643,6 +3600,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3663,6 +3626,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/NotificationRequest'
         required: true
@@ -3703,6 +3672,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/NotificationRequest'
         required: true
@@ -3800,6 +3775,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PackageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PackageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PackageRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3852,6 +3833,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PackageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PackageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PackageRequest'
         required: true
       security:
       - cookieAuth: []
@@ -3878,6 +3865,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPackageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPackageRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPackageRequest'
       security:
@@ -3959,6 +3952,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PaymentMethodCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodCreateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4008,6 +4007,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PaymentMethodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -4032,6 +4037,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentMethodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentMethodRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPaymentMethodRequest'
       security:
@@ -4076,6 +4087,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PaymentMethodRequest'
       security:
@@ -4210,6 +4227,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerPayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -4260,6 +4283,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerPayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -4285,6 +4314,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerPayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerPayoutRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPractitionerPayoutRequest'
       security:
@@ -4315,7 +4350,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/payouts/earnings_balance/:
+  /api/v1/payouts/earnings/balance/:
     get:
       operationId: payouts_earnings_balance_retrieve
       description: Get practitioner's earnings balance
@@ -4331,7 +4366,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerPayout'
           description: ''
-  /api/v1/payouts/earnings_transactions/:
+  /api/v1/payouts/earnings/transactions/:
     get:
       operationId: payouts_earnings_transactions_retrieve
       description: List earnings transactions
@@ -4347,15 +4382,80 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerPayout'
           description: ''
-  /api/v1/payouts/request_payout/:
+  /api/v1/payouts/earnings_balance/:
+    get:
+      operationId: payouts_earnings_balance_retrieve_2
+      description: Get practitioner's earnings balance
+      tags:
+      - payouts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerPayout'
+          description: ''
+  /api/v1/payouts/earnings_transactions/:
+    get:
+      operationId: payouts_earnings_transactions_retrieve_2
+      description: List earnings transactions
+      tags:
+      - payouts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerPayout'
+          description: ''
+  /api/v1/payouts/request/:
     post:
-      operationId: payouts_request_payout_create
-      description: Request a payout
+      operationId: payouts_request_create
+      description: Request a payout using PayoutService
       tags:
       - payouts
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerPayout'
+          description: ''
+  /api/v1/payouts/request_payout/:
+    post:
+      operationId: payouts_request_payout_create
+      description: Request a payout using PayoutService
+      tags:
+      - payouts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerPayoutRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PractitionerPayoutRequest'
       security:
@@ -4373,7 +4473,7 @@ paths:
       operationId: practitioner_applications_complete_step_create
       description: Mark an onboarding step as complete
       tags:
-      - practitioner-applications
+      - Practitioner Applications
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -4385,7 +4485,7 @@ paths:
       operationId: practitioner_applications_start_create
       description: Start practitioner application
       tags:
-      - practitioner-applications
+      - Practitioner Applications
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -4397,7 +4497,55 @@ paths:
       operationId: practitioner_applications_status_retrieve
       description: Get application status
       tags:
-      - practitioner-applications
+      - Practitioner Applications
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/practitioner-applications/stripe_connect_create/:
+    post:
+      operationId: practitioner_applications_stripe_connect_create_create
+      description: Create a Stripe Connect account link for onboarding
+      tags:
+      - Practitioner Applications
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/practitioner-applications/stripe_connect_disconnect/:
+    post:
+      operationId: practitioner_applications_stripe_connect_disconnect_create
+      description: Disconnect the Stripe Connect account
+      tags:
+      - Practitioner Applications
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/practitioner-applications/stripe_connect_refresh/:
+    post:
+      operationId: practitioner_applications_stripe_connect_refresh_create
+      description: Create a new account link to continue onboarding or update account
+      tags:
+      - Practitioner Applications
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/practitioner-applications/stripe_connect_status/:
+    get:
+      operationId: practitioner_applications_stripe_connect_status_retrieve
+      description: Get the current Stripe Connect status for the practitioner
+      tags:
+      - Practitioner Applications
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -4451,6 +4599,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
         required: true
@@ -4510,6 +4664,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4539,6 +4699,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerServiceCategoryRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPractitionerServiceCategoryRequest'
       security:
@@ -4581,6 +4747,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PractitionerServiceCategoryRequest'
         required: true
@@ -4669,6 +4841,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerLocationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4724,6 +4902,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerLocationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4752,6 +4936,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerLocationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerLocationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPractitionerLocationRequest'
       security:
@@ -4802,6 +4992,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerLocationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4844,6 +5040,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerLocationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4866,6 +5068,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerLocationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerLocationRequest'
         required: true
       security:
       - cookieAuth: []
@@ -4877,6 +5085,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerLocation'
           description: ''
+  /api/v1/practitioner-messaging/can_message/:
+    get:
+      operationId: practitioner_messaging_can_message_retrieve
+      description: Check if the practitioner can message a specific user
+      summary: Check messaging permission
+      parameters:
+      - in: query
+        name: user_id
+        schema:
+          type: integer
+        description: User ID to check messaging permission for
+        required: true
+      tags:
+      - Messaging
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/practitioner-messaging/eligible_contacts/:
+    get:
+      operationId: practitioner_messaging_eligible_contacts_retrieve
+      description: Get list of users/clients that the practitioner can message based
+        on their subscription tier and relationships
+      summary: Get eligible messaging contacts
+      tags:
+      - Messaging
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/practitioners/:
     get:
       operationId: practitioners_list
@@ -5134,6 +5376,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerUpdateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -5168,6 +5416,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerUpdateRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPractitionerUpdateRequest'
       security:
@@ -5624,6 +5878,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerApplicationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerApplicationRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PractitionerApplicationRequest'
       security:
@@ -6583,6 +6843,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ReviewCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -6663,6 +6929,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ReviewUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdateRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -6702,6 +6974,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewUpdateRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedReviewUpdateRequest'
       security:
@@ -6787,6 +7065,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewResponseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewResponseRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ReviewResponseRequest'
         required: true
@@ -6896,6 +7180,271 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReviewStatistics'
           description: ''
+  /api/v1/rooms/:
+    get:
+      operationId: rooms_list
+      description: ViewSet for Room operations.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoomList'
+          description: ''
+  /api/v1/rooms/{public_uuid}/:
+    get:
+      operationId: rooms_retrieve
+      description: ViewSet for Room operations.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomDetail'
+          description: ''
+  /api/v1/rooms/{public_uuid}/check_access/:
+    get:
+      operationId: rooms_check_access_retrieve
+      description: |-
+        Check if the current user has access to this room.
+        Returns access permissions and room details.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{public_uuid}/get_token/:
+    post:
+      operationId: rooms_get_token_create
+      description: Get a LiveKit access token for joining a room.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{public_uuid}/participants/:
+    get:
+      operationId: rooms_participants_retrieve
+      description: Get current participants in a room.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{public_uuid}/recordings/:
+    get:
+      operationId: rooms_recordings_retrieve
+      description: Get recordings for a room.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{public_uuid}/start_recording/:
+    post:
+      operationId: rooms_start_recording_create
+      description: Start recording a room (host only).
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{public_uuid}/stop_recording/:
+    post:
+      operationId: rooms_stop_recording_create
+      description: Stop recording a room (host only).
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/active/:
+    get:
+      operationId: rooms_active_retrieve
+      description: Get currently active rooms for the current user.
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/upcoming/:
+    get:
+      operationId: rooms_upcoming_retrieve
+      description: Get upcoming rooms for the current user.
+      tags:
+      - rooms
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
   /api/v1/schedules/:
     get:
       operationId: schedules_list
@@ -6949,6 +7498,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleCreateRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ScheduleCreateRequest'
         required: true
@@ -7006,6 +7561,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
         required: true
       security:
       - cookieAuth: []
@@ -7034,6 +7595,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedScheduleRequest'
       security:
@@ -7084,6 +7651,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
         required: true
       security:
       - cookieAuth: []
@@ -7130,6 +7703,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ScheduleRequest'
         required: true
@@ -7199,6 +7778,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
         required: true
       security:
       - cookieAuth: []
@@ -7255,6 +7840,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
         required: true
       security:
       - cookieAuth: []
@@ -7283,6 +7874,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceCategoryRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedServiceCategoryRequest'
       security:
@@ -7375,11 +7972,15 @@ paths:
           description: ''
     post:
       operationId: service_resources_create
-      description: ViewSet for service resources.
+      description: Create a new service resource. Supports file uploads via multipart/form-data.
+      summary: Create service resource
       tags:
       - Services
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceResourceRequest'
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceResourceRequest'
@@ -7431,6 +8032,9 @@ paths:
       - Services
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceResourceRequest'
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceResourceRequest'
@@ -7459,6 +8063,9 @@ paths:
       - Services
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceResourceRequest'
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedServiceResourceRequest'
@@ -7541,6 +8148,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceSessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceSessionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceSessionRequest'
         required: true
       security:
       - cookieAuth: []
@@ -7592,6 +8205,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceSessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceSessionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceSessionRequest'
         required: true
       security:
       - cookieAuth: []
@@ -7618,6 +8237,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceSessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceSessionRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedServiceSessionRequest'
       security:
@@ -7820,13 +8445,15 @@ paths:
           description: ''
     post:
       operationId: services_create
-      description: |-
-        ViewSet for services - Internal CRUD operations using primary keys.
-        Used by practitioner dashboard and admin interfaces.
+      description: Create a new service. Supports both JSON and multipart/form-data
+        for file uploads.
       tags:
       - Services
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceCreateUpdateRequest'
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceCreateUpdateRequest'
@@ -7869,9 +8496,8 @@ paths:
           description: ''
     put:
       operationId: services_update
-      description: |-
-        ViewSet for services - Internal CRUD operations using primary keys.
-        Used by practitioner dashboard and admin interfaces.
+      description: Update a service. Supports both JSON and multipart/form-data for
+        file uploads.
       parameters:
       - in: path
         name: id
@@ -7883,6 +8509,9 @@ paths:
       - Services
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceCreateUpdateRequest'
           application/json:
             schema:
               $ref: '#/components/schemas/ServiceCreateUpdateRequest'
@@ -7899,9 +8528,8 @@ paths:
           description: ''
     patch:
       operationId: services_partial_update
-      description: |-
-        ViewSet for services - Internal CRUD operations using primary keys.
-        Used by practitioner dashboard and admin interfaces.
+      description: Update a service. Supports both JSON and multipart/form-data for
+        file uploads.
       parameters:
       - in: path
         name: id
@@ -7913,6 +8541,9 @@ paths:
       - Services
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceCreateUpdateRequest'
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedServiceCreateUpdateRequest'
@@ -7962,6 +8593,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ServiceDetailRequest'
         required: true
@@ -8023,6 +8660,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceDetail'
           description: ''
+  /api/v1/services/{id}/upload-cover-image/:
+    post:
+      operationId: services_upload_cover_image_create
+      description: Upload a cover image for a service. This will replace any existing
+        cover image.
+      summary: Upload cover image for service
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      tags:
+      - Services
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file to upload
+              required:
+              - image
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Cover image uploaded successfully
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        image_url:
+                          type: string
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Bad request - invalid file or no file provided
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Permission denied - not the service owner
+          description: ''
   /api/v1/services/{id}/waitlist/:
     get:
       operationId: services_waitlist_retrieve
@@ -8062,6 +8757,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceDetailRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ServiceDetailRequest'
         required: true
@@ -8384,13 +9085,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/StreamCategory'
           description: ''
-  /api/v1/stream-schedules/:
+  /api/v1/stream-posts/:
     get:
-      operationId: stream_schedules_list
-      description: ViewSet for managing stream schedules.
+      operationId: stream_posts_list
+      description: ViewSet for managing stream posts.
       parameters:
       - in: query
-        name: is_active
+        name: is_pinned
+        schema:
+          type: boolean
+      - in: query
+        name: is_published
         schema:
           type: boolean
       - name: ordering
@@ -8412,9 +9117,31 @@ paths:
         schema:
           type: integer
       - in: query
-        name: stream
+        name: post_type
         schema:
-          type: integer
+          type: string
+          enum:
+          - audio
+          - gallery
+          - image
+          - link
+          - poll
+          - post
+          - video
+        description: |-
+          * `post` - Text Post
+          * `video` - Video
+          * `audio` - Audio
+          * `image` - Image
+          * `gallery` - Image Gallery
+          * `link` - External Link
+          * `poll` - Poll
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       - in: query
         name: tier_level
         schema:
@@ -8424,11 +9151,13 @@ paths:
           - free
           - premium
         description: |-
+          Minimum tier required to view this post
+
           * `free` - Free
           * `entry` - Entry
           * `premium` - Premium
       tags:
-      - stream-schedules
+      - Stream Posts
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -8438,19 +9167,65 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedStreamScheduleList'
+                $ref: '#/components/schemas/PaginatedStreamPostList'
           description: ''
     post:
-      operationId: stream_schedules_create
-      description: ViewSet for managing stream schedules.
+      operationId: stream_posts_create
+      description: Create a new stream post. Supports both JSON and multipart/form-data
+        for file uploads.
       tags:
-      - stream-schedules
+      - Stream Posts
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                stream:
+                  type: integer
+                  description: Stream ID
+                title:
+                  type: string
+                  description: Post title
+                content:
+                  type: string
+                  description: Post content
+                post_type:
+                  type: string
+                  enum:
+                  - post
+                  - gallery
+                  - video
+                  - audio
+                  - link
+                  - poll
+                tier_level:
+                  type: string
+                  enum:
+                  - free
+                  - entry
+                  - premium
+                is_published:
+                  type: boolean
+                tags:
+                  type: string
+                  description: JSON array of tags
+                allow_comments:
+                  type: boolean
+                allow_tips:
+                  type: boolean
+                media_files[]:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                media_captions[]:
+                  type: array
+                  items:
+                    type: string
           application/json:
             schema:
-              $ref: '#/components/schemas/StreamScheduleRequest'
-        required: true
+              $ref: '#/components/schemas/StreamPostRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -8459,21 +9234,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamSchedule'
+                $ref: '#/components/schemas/StreamPost'
           description: ''
-  /api/v1/stream-schedules/{id}/:
+  /api/v1/stream-posts/{public_uuid}/:
     get:
-      operationId: stream_schedules_retrieve
-      description: ViewSet for managing stream schedules.
+      operationId: stream_posts_retrieve
+      description: ViewSet for managing stream posts.
       parameters:
       - in: path
-        name: id
+        name: public_uuid
         schema:
-          type: integer
-        description: A unique integer value identifying this stream schedule.
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
         required: true
       tags:
-      - stream-schedules
+      - Stream Posts
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -8483,25 +9259,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamSchedule'
+                $ref: '#/components/schemas/StreamPost'
           description: ''
     put:
-      operationId: stream_schedules_update
-      description: ViewSet for managing stream schedules.
+      operationId: stream_posts_update
+      description: ViewSet for managing stream posts.
       parameters:
       - in: path
-        name: id
+        name: public_uuid
         schema:
-          type: integer
-        description: A unique integer value identifying this stream schedule.
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
         required: true
       tags:
-      - stream-schedules
+      - Stream Posts
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StreamScheduleRequest'
+              $ref: '#/components/schemas/StreamPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
         required: true
       security:
       - cookieAuth: []
@@ -8511,25 +9294,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamSchedule'
+                $ref: '#/components/schemas/StreamPost'
           description: ''
     patch:
-      operationId: stream_schedules_partial_update
-      description: ViewSet for managing stream schedules.
+      operationId: stream_posts_partial_update
+      description: ViewSet for managing stream posts.
       parameters:
       - in: path
-        name: id
+        name: public_uuid
         schema:
-          type: integer
-        description: A unique integer value identifying this stream schedule.
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
         required: true
       tags:
-      - stream-schedules
+      - Stream Posts
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedStreamScheduleRequest'
+              $ref: '#/components/schemas/PatchedStreamPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamPostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamPostRequest'
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -8538,44 +9328,213 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamSchedule'
+                $ref: '#/components/schemas/StreamPost'
           description: ''
     delete:
-      operationId: stream_schedules_destroy
-      description: ViewSet for managing stream schedules.
+      operationId: stream_posts_destroy
+      description: ViewSet for managing stream posts.
       parameters:
       - in: path
-        name: id
+        name: public_uuid
         schema:
-          type: integer
-        description: A unique integer value identifying this stream schedule.
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
         required: true
       tags:
-      - stream-schedules
+      - Stream Posts
       security:
       - cookieAuth: []
       - bearerAuth: []
       responses:
         '204':
           description: No response body
-  /api/v1/stream-schedules/{id}/generate_streams/:
-    post:
-      operationId: stream_schedules_generate_streams_create
-      description: Generate scheduled live streams from this schedule.
+  /api/v1/stream-posts/{public_uuid}/comments/:
+    get:
+      operationId: stream_posts_comments_list
+      description: Get comments or create a new comment on a stream post
       parameters:
-      - in: path
-        name: id
+      - in: query
+        name: is_pinned
+        schema:
+          type: boolean
+      - in: query
+        name: is_published
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
         schema:
           type: integer
-        description: A unique integer value identifying this stream schedule.
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: post_type
+        schema:
+          type: string
+          enum:
+          - audio
+          - gallery
+          - image
+          - link
+          - poll
+          - post
+          - video
+        description: |-
+          * `post` - Text Post
+          * `video` - Video
+          * `audio` - Audio
+          * `image` - Image
+          * `gallery` - Image Gallery
+          * `link` - External Link
+          * `poll` - Poll
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
         required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: tier_level
+        schema:
+          type: string
+          enum:
+          - entry
+          - free
+          - premium
+        description: |-
+          Minimum tier required to view this post
+
+          * `free` - Free
+          * `entry` - Entry
+          * `premium` - Premium
       tags:
-      - stream-schedules
+      - Stream Posts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStreamPostCommentList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPostComment'
+          description: ''
+    post:
+      operationId: stream_posts_comments_create
+      description: Get comments or create a new comment on a stream post
+      parameters:
+      - in: query
+        name: is_pinned
+        schema:
+          type: boolean
+      - in: query
+        name: is_published
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: post_type
+        schema:
+          type: string
+          enum:
+          - audio
+          - gallery
+          - image
+          - link
+          - poll
+          - post
+          - video
+        description: |-
+          * `post` - Text Post
+          * `video` - Video
+          * `audio` - Audio
+          * `image` - Image
+          * `gallery` - Image Gallery
+          * `link` - External Link
+          * `poll` - Poll
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: tier_level
+        schema:
+          type: string
+          enum:
+          - entry
+          - free
+          - premium
+        description: |-
+          Minimum tier required to view this post
+
+          * `free` - Free
+          * `entry` - Entry
+          * `premium` - Premium
+      tags:
+      - Stream Posts
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StreamScheduleRequest'
+              $ref: '#/components/schemas/StreamPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
         required: true
       security:
       - cookieAuth: []
@@ -8585,7 +9544,367 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamSchedule'
+                $ref: '#/components/schemas/PaginatedStreamPostCommentList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPostComment'
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/comments/{comment_id}/:
+    delete:
+      operationId: stream_posts_comments_destroy
+      description: Delete a comment on a stream post
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/stream-posts/{public_uuid}/like/:
+    post:
+      operationId: stream_posts_like_create
+      description: Like or unlike a stream post
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/media/{media_id}/:
+    delete:
+      operationId: stream_posts_media_destroy
+      description: Delete a specific media item from a stream post.
+      summary: Delete media from stream post
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: string
+        description: ID of the media item to delete
+        required: true
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          content:
+            application/json:
+              schema:
+                description: Media deleted successfully
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Permission denied - not the post owner
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Media not found
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/reorder-media/:
+    post:
+      operationId: stream_posts_reorder_media_create
+      description: Reorder media items in a stream post by providing a list of media
+        IDs in the desired order.
+      summary: Reorder media in stream post
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                media_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of media IDs in the desired order
+              required:
+              - media_ids
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Media reordered successfully
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Bad request - missing media_ids
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Permission denied - not the post owner
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/save/:
+    post:
+      operationId: stream_posts_save_create
+      description: Save or unsave a stream post
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/test-endpoint/:
+    get:
+      operationId: stream_posts_test_endpoint_retrieve
+      description: Test endpoint to verify routing works.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - stream-posts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/upload-media/:
+    post:
+      operationId: stream_posts_upload_media_create
+      description: Upload multiple media files to a stream post with support for images,
+        videos, and audio.
+      summary: Upload media to stream post
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                media_0:
+                  type: string
+                  format: binary
+                  description: Media file (can use media_0, media_1, etc.)
+                caption_0:
+                  type: string
+                  description: Caption for corresponding media file
+                alt_text_0:
+                  type: string
+                  description: Alt text for corresponding media file
+              additionalProperties: true
+              description: Upload multiple files using media_N naming (media_0, media_1,
+                etc.) with optional caption_N and alt_text_N
+              required: []
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Media uploaded successfully
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        uploaded:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/StreamPostMedia'
+                        post_id:
+                          type: string
+                          format: uuid
+                        errors:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              file:
+                                type: string
+                              error:
+                                type: string
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Bad request - invalid files or no files provided
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Permission denied - not the post owner
+          description: ''
+  /api/v1/stream-posts/{public_uuid}/view/:
+    post:
+      operationId: stream_posts_view_create
+      description: Track a view on a stream post
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamPostRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
+  /api/v1/stream-posts/saved/:
+    get:
+      operationId: stream_posts_saved_retrieve
+      description: Get user's saved stream posts
+      tags:
+      - Stream Posts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
           description: ''
   /api/v1/streams/:
     get:
@@ -8659,6 +9978,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/StreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
         required: true
       security:
       - cookieAuth: []
@@ -8711,6 +10036,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/StreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
         required: true
       security:
       - cookieAuth: []
@@ -8737,6 +10068,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedStreamRequest'
       security:
@@ -8808,6 +10145,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/StreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
         required: true
       security:
       - cookieAuth: []
@@ -8819,10 +10162,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Stream'
           description: ''
-  /api/v1/streams/{id}/live_streams/:
-    get:
-      operationId: streams_live_streams_retrieve
-      description: Get live streams for a content stream.
+  /api/v1/streams/{id}/pricing/:
+    patch:
+      operationId: streams_pricing_partial_update
+      description: Update stream pricing.
       parameters:
       - in: path
         name: id
@@ -8832,6 +10175,122 @@ paths:
         required: true
       tags:
       - streams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStreamRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stream'
+          description: ''
+  /api/v1/streams/{id}/subscribe/:
+    post:
+      operationId: streams_subscribe_create
+      description: Subscribe to a stream.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Stream.
+        required: true
+      tags:
+      - streams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stream'
+          description: ''
+  /api/v1/streams/{id}/subscription/change-tier/:
+    post:
+      operationId: streams_subscription_change_tier_create
+      description: Change subscription tier.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Stream.
+        required: true
+      tags:
+      - streams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stream'
+          description: ''
+  /api/v1/streams/{id}/unsubscribe/:
+    post:
+      operationId: streams_unsubscribe_create
+      description: Cancel subscription to a stream.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Stream.
+        required: true
+      tags:
+      - streams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+        required: true
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -8959,6 +10418,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SubscriptionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -9010,6 +10475,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
         required: true
       security:
       - cookieAuth: []
@@ -9036,6 +10507,12 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerSubscriptionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPractitionerSubscriptionRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPractitionerSubscriptionRequest'
       security:
@@ -9082,6 +10559,47 @@ paths:
       requestBody:
         content:
           application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerSubscription'
+          description: ''
+  /api/v1/subscriptions/{id}/confirm_payment/:
+    post:
+      operationId: subscriptions_confirm_payment_create
+      description: Confirm payment for a subscription after frontend payment confirmation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this practitioner subscription.
+        required: true
+      tags:
+      - Subscriptions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PractitionerSubscriptionRequest'
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PractitionerSubscriptionRequest'
         required: true
@@ -9193,6 +10711,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Topic'
           description: ''
+  /api/v1/webhooks/stripe/:
+    post:
+      operationId: webhooks_stripe_create
+      description: Process webhook events
+      tags:
+      - webhooks
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/zipcodes/:
     get:
       operationId: zipcodes_list
@@ -9890,6 +11421,9 @@ components:
         parent_booking_uuid:
           type: string
           readOnly: true
+        has_review:
+          type: string
+          readOnly: true
         rescheduled_from_id:
           type: integer
           readOnly: true
@@ -10014,6 +11548,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/BookingService'
           readOnly: true
+        room:
+          allOf:
+          - $ref: '#/components/schemas/BookingRoom'
+          readOnly: true
         start_time:
           type: string
           format: date-time
@@ -10047,6 +11585,9 @@ components:
           readOnly: true
         is_upcoming:
           type: boolean
+          readOnly: true
+        location_type:
+          type: string
           readOnly: true
         created_at:
           type: string
@@ -10229,22 +11770,8 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/BookingRoomStatusEnum'
+          - $ref: '#/components/schemas/Status91cEnum'
           readOnly: true
-    BookingRoomStatusEnum:
-      enum:
-      - pending
-      - active
-      - in_use
-      - ended
-      - error
-      type: string
-      description: |-
-        * `pending` - Pending
-        * `active` - Active
-        * `in_use` - In Use
-        * `ended` - Ended
-        * `error` - Error
     BookingService:
       type: object
       description: Simplified service serializer for bookings
@@ -10680,6 +12207,9 @@ components:
             $ref: '#/components/schemas/ServicePractitioner'
           readOnly: true
         cancellation_policy:
+          type: string
+          readOnly: true
+        image_url:
           type: string
           readOnly: true
       required:
@@ -11276,296 +12806,6 @@ components:
         * `intermediate` - Intermediate
         * `advanced` - Advanced
         * `all_levels` - All Levels
-    LiveStream:
-      type: object
-      description: Serializer for live streaming sessions.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        public_uuid:
-          type: string
-          format: uuid
-          readOnly: true
-          description: Public UUID for API exposure
-        stream:
-          type: integer
-        stream_title:
-          type: string
-          readOnly: true
-        room:
-          type: integer
-          readOnly: true
-          nullable: true
-        room_details:
-          type: string
-          readOnly: true
-        practitioner:
-          type: integer
-        practitioner_name:
-          type: string
-          readOnly: true
-        title:
-          type: string
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        status:
-          $ref: '#/components/schemas/LiveStreamStatusEnum'
-        tier_level:
-          allOf:
-          - $ref: '#/components/schemas/TierLevelEnum'
-          description: |-
-            Minimum tier required to view this live stream
-
-            * `free` - Free
-            * `entry` - Entry
-            * `premium` - Premium
-        is_public:
-          type: boolean
-          description: Whether non-subscribers can view
-        scheduled_start:
-          type: string
-          format: date-time
-        scheduled_end:
-          type: string
-          format: date-time
-        actual_start:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        actual_end:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        allow_chat:
-          type: boolean
-        allow_reactions:
-          type: boolean
-        record_stream:
-          type: boolean
-        current_viewers:
-          type: integer
-          readOnly: true
-        peak_viewers:
-          type: integer
-          readOnly: true
-        total_viewers:
-          type: integer
-          readOnly: true
-        unique_viewers:
-          type: integer
-          readOnly: true
-        chat_message_count:
-          type: integer
-          readOnly: true
-        reaction_count:
-          type: integer
-          readOnly: true
-        thumbnail_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        tags: {}
-        is_live:
-          type: string
-          readOnly: true
-        can_start:
-          type: string
-          readOnly: true
-        duration_minutes:
-          type: string
-          readOnly: true
-        can_access:
-          type: string
-          readOnly: true
-        join_url:
-          type: string
-          readOnly: true
-        is_host:
-          type: string
-          readOnly: true
-        viewer_count:
-          type: integer
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - practitioner
-      - scheduled_end
-      - scheduled_start
-      - stream
-      - title
-    LiveStreamCreate:
-      type: object
-      description: Serializer for creating live streams.
-      properties:
-        stream:
-          type: integer
-        title:
-          type: string
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        tier_level:
-          allOf:
-          - $ref: '#/components/schemas/TierLevelEnum'
-          description: |-
-            Minimum tier required to view this live stream
-
-            * `free` - Free
-            * `entry` - Entry
-            * `premium` - Premium
-        is_public:
-          type: boolean
-          description: Whether non-subscribers can view
-        scheduled_start:
-          type: string
-          format: date-time
-        scheduled_end:
-          type: string
-          format: date-time
-        allow_chat:
-          type: boolean
-        allow_reactions:
-          type: boolean
-        record_stream:
-          type: boolean
-        thumbnail_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        tags: {}
-      required:
-      - scheduled_end
-      - scheduled_start
-      - stream
-      - title
-    LiveStreamCreateRequest:
-      type: object
-      description: Serializer for creating live streams.
-      properties:
-        stream:
-          type: integer
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        tier_level:
-          allOf:
-          - $ref: '#/components/schemas/TierLevelEnum'
-          description: |-
-            Minimum tier required to view this live stream
-
-            * `free` - Free
-            * `entry` - Entry
-            * `premium` - Premium
-        is_public:
-          type: boolean
-          description: Whether non-subscribers can view
-        scheduled_start:
-          type: string
-          format: date-time
-        scheduled_end:
-          type: string
-          format: date-time
-        allow_chat:
-          type: boolean
-        allow_reactions:
-          type: boolean
-        record_stream:
-          type: boolean
-        thumbnail_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        tags: {}
-      required:
-      - scheduled_end
-      - scheduled_start
-      - stream
-      - title
-    LiveStreamRequest:
-      type: object
-      description: Serializer for live streaming sessions.
-      properties:
-        stream:
-          type: integer
-        practitioner:
-          type: integer
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        status:
-          $ref: '#/components/schemas/LiveStreamStatusEnum'
-        tier_level:
-          allOf:
-          - $ref: '#/components/schemas/TierLevelEnum'
-          description: |-
-            Minimum tier required to view this live stream
-
-            * `free` - Free
-            * `entry` - Entry
-            * `premium` - Premium
-        is_public:
-          type: boolean
-          description: Whether non-subscribers can view
-        scheduled_start:
-          type: string
-          format: date-time
-        scheduled_end:
-          type: string
-          format: date-time
-        allow_chat:
-          type: boolean
-        allow_reactions:
-          type: boolean
-        record_stream:
-          type: boolean
-        thumbnail_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        tags: {}
-      required:
-      - practitioner
-      - scheduled_end
-      - scheduled_start
-      - stream
-      - title
-    LiveStreamStatusEnum:
-      enum:
-      - scheduled
-      - live
-      - ended
-      - cancelled
-      type: string
-      description: |-
-        * `scheduled` - Scheduled
-        * `live` - Live
-        * `ended` - Ended
-        * `cancelled` - Cancelled
     LocationTypeEnum:
       enum:
       - virtual
@@ -11607,7 +12847,7 @@ components:
           readOnly: true
         media_type:
           allOf:
-          - $ref: '#/components/schemas/MediaTypeEnum'
+          - $ref: '#/components/schemas/MediaMediaTypeEnum'
           readOnly: true
         entity_type:
           $ref: '#/components/schemas/EntityTypeEnum'
@@ -11700,6 +12940,18 @@ components:
       - entity_id
       - entity_type
       - filename
+    MediaMediaTypeEnum:
+      enum:
+      - image
+      - video
+      - document
+      - audio
+      type: string
+      description: |-
+        * `image` - Image
+        * `video` - Video
+        * `document` - Document
+        * `audio` - Audio
     MediaProcessingJob:
       type: object
       description: Serializer for media processing jobs
@@ -11853,18 +13105,6 @@ components:
         * `ready` - Ready
         * `failed` - Failed
         * `deleted` - Deleted
-    MediaTypeEnum:
-      enum:
-      - image
-      - video
-      - document
-      - audio
-      type: string
-      description: |-
-        * `image` - Image
-        * `video` - Video
-        * `document` - Document
-        * `audio` - Audio
     MediaVersion:
       type: object
       description: Serializer for media versions/variants
@@ -12728,6 +13968,9 @@ components:
         cancellation_policy:
           type: string
           readOnly: true
+        image_url:
+          type: string
+          readOnly: true
       required:
       - duration_minutes
       - name
@@ -13052,29 +14295,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Education'
-    PaginatedLiveStreamList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/LiveStream'
     PaginatedMediaList:
       type: object
       required:
@@ -13420,6 +14640,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReviewQuestion'
+    PaginatedRoomList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
     PaginatedScheduleList:
       type: object
       required:
@@ -13650,7 +14893,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Stream'
-    PaginatedStreamScheduleList:
+    PaginatedStreamPostCommentList:
       type: object
       required:
       - count
@@ -13672,7 +14915,30 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/StreamSchedule'
+            $ref: '#/components/schemas/StreamPostComment'
+    PaginatedStreamPostList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StreamPost'
     PaginatedStyleList:
       type: object
       required:
@@ -14003,53 +15269,6 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
-    PatchedLiveStreamRequest:
-      type: object
-      description: Serializer for live streaming sessions.
-      properties:
-        stream:
-          type: integer
-        practitioner:
-          type: integer
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        status:
-          $ref: '#/components/schemas/LiveStreamStatusEnum'
-        tier_level:
-          allOf:
-          - $ref: '#/components/schemas/TierLevelEnum'
-          description: |-
-            Minimum tier required to view this live stream
-
-            * `free` - Free
-            * `entry` - Entry
-            * `premium` - Premium
-        is_public:
-          type: boolean
-          description: Whether non-subscribers can view
-        scheduled_start:
-          type: string
-          format: date-time
-        scheduled_end:
-          type: string
-          format: date-time
-        allow_chat:
-          type: boolean
-        allow_reactions:
-          type: boolean
-        record_stream:
-          type: boolean
-        thumbnail_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        tags: {}
     PatchedMediaRequest:
       type: object
       description: Main serializer for Media objects
@@ -15188,13 +16407,6 @@ components:
             additionalProperties: {}
           description: List of dicts with child_service_id, quantity, discount_percentage,
             etc.
-        sessions:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-          writeOnly: true
-          description: List of session data for workshops/courses
     PatchedServiceResourceRequest:
       type: object
       description: Serializer for service resources
@@ -15214,33 +16426,12 @@ components:
           type: string
           nullable: true
           description: For text posts and rich content
-        file_url:
-          type: string
-          format: uri
-          nullable: true
-          description: URL to uploaded file (S3/CDN)
-          maxLength: 200
         external_url:
           type: string
           format: uri
           nullable: true
           description: External video/link URL
           maxLength: 200
-        file_name:
-          type: string
-          nullable: true
-          maxLength: 255
-        file_size:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          nullable: true
-          description: File size in bytes
-        file_type:
-          type: string
-          nullable: true
-          description: MIME type
-          maxLength: 50
         duration_seconds:
           type: integer
           maximum: 2147483647
@@ -15270,10 +16461,26 @@ components:
           type: boolean
         tags:
           nullable: true
+        service:
+          type: integer
+          nullable: true
+        service_session:
+          type: integer
+          nullable: true
+        booking:
+          type: integer
+          nullable: true
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+          description: File to upload
     PatchedServiceSessionRequest:
       type: object
       description: Serializer for service sessions (workshops/courses)
       properties:
+        service:
+          type: integer
         title:
           type: string
           nullable: true
@@ -15318,6 +16525,65 @@ components:
           type: integer
           nullable: true
           description: Address where this session takes place (for in-person sessions)
+    PatchedStreamPostRequest:
+      type: object
+      description: Serializer for stream posts.
+      properties:
+        stream:
+          type: integer
+        title:
+          type: string
+          nullable: true
+          maxLength: 255
+        content:
+          type: string
+          minLength: 1
+          description: Main text content with rich formatting
+        post_type:
+          $ref: '#/components/schemas/PostTypeEnum'
+        tier_level:
+          allOf:
+          - $ref: '#/components/schemas/TierLevelEnum'
+          description: |-
+            Minimum tier required to view this post
+
+            * `free` - Free
+            * `entry` - Entry
+            * `premium` - Premium
+        teaser_text:
+          type: string
+          nullable: true
+          description: Preview text shown to users below required tier
+          maxLength: 500
+        blur_preview:
+          type: boolean
+          description: Show blurred preview to lower tiers
+        is_published:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        is_pinned:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When post becomes unavailable
+        allow_comments:
+          type: boolean
+        allow_tips:
+          type: boolean
+        poll_options:
+          nullable: true
+          description: List of poll options with votes
+        poll_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        poll_allows_multiple:
+          type: boolean
+        tags: {}
     PatchedStreamRequest:
       type: object
       description: Serializer for content streams.
@@ -15420,37 +16686,6 @@ components:
           type: string
           format: date-time
           nullable: true
-    PatchedStreamScheduleRequest:
-      type: object
-      description: Serializer for stream schedules.
-      properties:
-        stream:
-          type: integer
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        recurrence_rule:
-          type: string
-          minLength: 1
-          description: RRULE format for recurrence
-          maxLength: 500
-        duration_minutes:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-        tier_level:
-          $ref: '#/components/schemas/TierLevelEnum'
-        is_active:
-          type: boolean
-        auto_create_days_ahead:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          description: Days ahead to auto-create scheduled streams
     PatchedUserProfileRequest:
       type: object
       description: User profile serializer
@@ -15569,6 +16804,24 @@ components:
         * `paid` - Paid
         * `partially_refunded` - Partially Refunded
         * `refunded` - Refunded
+    PostTypeEnum:
+      enum:
+      - post
+      - video
+      - audio
+      - image
+      - gallery
+      - link
+      - poll
+      type: string
+      description: |-
+        * `post` - Text Post
+        * `video` - Video
+        * `audio` - Audio
+        * `image` - Image
+        * `gallery` - Image Gallery
+        * `link` - External Link
+        * `poll` - Poll
     PractitionerApplication:
       type: object
       description: Serializer for practitioner applications
@@ -16610,6 +17863,26 @@ components:
         * `rating` - Rating
         * `text` - Text
         * `boolean` - Yes/No
+    RecordingStatusEnum:
+      enum:
+      - none
+      - starting
+      - active
+      - stopping
+      - stopped
+      - processing
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `none` - Not Recording
+        * `starting` - Starting Recording
+        * `active` - Recording Active
+        * `stopping` - Stopping Recording
+        * `stopped` - Recording Stopped
+        * `processing` - Processing
+        * `ready` - Recording Ready
+        * `failed` - Recording Failed
     ReminderTypeEnum:
       enum:
       - email
@@ -17005,6 +18278,239 @@ components:
           type: string
         is_anonymous:
           type: boolean
+    Room:
+      type: object
+      description: Serializer for Room model.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        public_uuid:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Public UUID for API exposure
+        name:
+          type: string
+          maxLength: 255
+        room_type:
+          $ref: '#/components/schemas/RoomTypeEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status91cEnum'
+          readOnly: true
+        livekit_room_name:
+          type: string
+          readOnly: true
+        created_by:
+          type: integer
+          nullable: true
+          description: User who created this room
+        created_by_name:
+          type: string
+          readOnly: true
+        created_by_email:
+          type: string
+          format: email
+          readOnly: true
+        scheduled_start:
+          type: string
+          format: date-time
+          nullable: true
+        scheduled_end:
+          type: string
+          format: date-time
+          nullable: true
+        actual_start:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        actual_end:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        current_participants:
+          type: integer
+          readOnly: true
+        peak_participants:
+          type: integer
+          readOnly: true
+        recording_enabled:
+          type: boolean
+        recording_status:
+          allOf:
+          - $ref: '#/components/schemas/RecordingStatusEnum'
+          readOnly: true
+        is_active:
+          type: string
+          readOnly: true
+        can_start:
+          type: string
+          readOnly: true
+        duration_minutes:
+          type: string
+          readOnly: true
+        metadata: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - name
+    RoomDetail:
+      type: object
+      description: Detailed serializer for Room with additional information.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        public_uuid:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Public UUID for API exposure
+        name:
+          type: string
+          maxLength: 255
+        room_type:
+          $ref: '#/components/schemas/RoomTypeEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status91cEnum'
+          readOnly: true
+        livekit_room_name:
+          type: string
+          readOnly: true
+        created_by:
+          type: integer
+          nullable: true
+          description: User who created this room
+        created_by_name:
+          type: string
+          readOnly: true
+        created_by_email:
+          type: string
+          format: email
+          readOnly: true
+        scheduled_start:
+          type: string
+          format: date-time
+          nullable: true
+        scheduled_end:
+          type: string
+          format: date-time
+          nullable: true
+        actual_start:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        actual_end:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        current_participants:
+          type: integer
+          readOnly: true
+        peak_participants:
+          type: integer
+          readOnly: true
+        recording_enabled:
+          type: boolean
+        recording_status:
+          allOf:
+          - $ref: '#/components/schemas/RecordingStatusEnum'
+          readOnly: true
+        is_active:
+          type: string
+          readOnly: true
+        can_start:
+          type: string
+          readOnly: true
+        duration_minutes:
+          type: string
+          readOnly: true
+        metadata: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        booking:
+          type: string
+          readOnly: true
+        service_session:
+          type: string
+          readOnly: true
+        participants:
+          type: string
+          readOnly: true
+        empty_timeout:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Seconds to keep room alive when empty
+        max_participants:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        dial_in_number:
+          type: string
+          maxLength: 20
+        dial_in_pin:
+          type: string
+          maxLength: 10
+      required:
+      - name
+    RoomRequest:
+      type: object
+      description: Serializer for Room model.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        room_type:
+          $ref: '#/components/schemas/RoomTypeEnum'
+        created_by:
+          type: integer
+          nullable: true
+          description: User who created this room
+        scheduled_start:
+          type: string
+          format: date-time
+          nullable: true
+        scheduled_end:
+          type: string
+          format: date-time
+          nullable: true
+        recording_enabled:
+          type: boolean
+        metadata: {}
+      required:
+      - name
+    RoomTypeEnum:
+      enum:
+      - individual
+      - group
+      - webinar
+      - broadcast
+      type: string
+      description: |-
+        * `individual` - Individual Session
+        * `group` - Group Session
+        * `webinar` - Webinar
+        * `broadcast` - Broadcast
     Schedule:
       type: object
       description: Serializer for practitioner schedules
@@ -19376,13 +20882,6 @@ components:
             additionalProperties: {}
           description: List of dicts with child_service_id, quantity, discount_percentage,
             etc.
-        sessions:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-          writeOnly: true
-          description: List of session data for workshops/courses
       required:
       - duration_minutes
       - name
@@ -19664,6 +21163,9 @@ components:
             $ref: '#/components/schemas/ServicePractitioner'
           readOnly: true
         cancellation_policy:
+          type: string
+          readOnly: true
+        image_url:
           type: string
           readOnly: true
       required:
@@ -20021,9 +21523,9 @@ components:
         file_url:
           type: string
           format: uri
+          readOnly: true
           nullable: true
           description: URL to uploaded file (S3/CDN)
-          maxLength: 200
         external_url:
           type: string
           format: uri
@@ -20032,19 +21534,18 @@ components:
           maxLength: 200
         file_name:
           type: string
+          readOnly: true
           nullable: true
-          maxLength: 255
         file_size:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          readOnly: true
           nullable: true
           description: File size in bytes
         file_type:
           type: string
+          readOnly: true
           nullable: true
           description: MIME type
-          maxLength: 50
         duration_seconds:
           type: integer
           maximum: 2147483647
@@ -20083,6 +21584,15 @@ components:
         download_count:
           type: integer
           readOnly: true
+        service:
+          type: integer
+          nullable: true
+        service_session:
+          type: integer
+          nullable: true
+        booking:
+          type: integer
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -20114,33 +21624,12 @@ components:
           type: string
           nullable: true
           description: For text posts and rich content
-        file_url:
-          type: string
-          format: uri
-          nullable: true
-          description: URL to uploaded file (S3/CDN)
-          maxLength: 200
         external_url:
           type: string
           format: uri
           nullable: true
           description: External video/link URL
           maxLength: 200
-        file_name:
-          type: string
-          nullable: true
-          maxLength: 255
-        file_size:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          nullable: true
-          description: File size in bytes
-        file_type:
-          type: string
-          nullable: true
-          description: MIME type
-          maxLength: 50
         duration_seconds:
           type: integer
           maximum: 2147483647
@@ -20170,6 +21659,20 @@ components:
           type: boolean
         tags:
           nullable: true
+        service:
+          type: integer
+          nullable: true
+        service_session:
+          type: integer
+          nullable: true
+        booking:
+          type: integer
+          nullable: true
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+          description: File to upload
       required:
       - attachment_level
       - resource_type
@@ -20181,6 +21684,8 @@ components:
         id:
           type: integer
           readOnly: true
+        service:
+          type: integer
         title:
           type: string
           nullable: true
@@ -20218,7 +21723,7 @@ components:
           type: integer
           maximum: 2147483647
           minimum: 0
-        room_url:
+        room:
           type: string
           readOnly: true
         status:
@@ -20256,11 +21761,14 @@ components:
           readOnly: true
       required:
       - end_time
+      - service
       - start_time
     ServiceSessionRequest:
       type: object
       description: Serializer for service sessions (workshops/courses)
       properties:
+        service:
+          type: integer
         title:
           type: string
           nullable: true
@@ -20307,6 +21815,7 @@ components:
           description: Address where this session takes place (for in-person sessions)
       required:
       - end_time
+      - service
       - start_time
     SessionAgendaItem:
       type: object
@@ -21387,6 +22896,20 @@ components:
         * `completed` - Completed
         * `canceled` - Canceled
         * `no_show` - No Show
+    Status91cEnum:
+      enum:
+      - pending
+      - active
+      - in_use
+      - ended
+      - error
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `active` - Active
+        * `in_use` - In Use
+        * `ended` - Ended
+        * `error` - Error
     StatusBa5Enum:
       enum:
       - draft
@@ -21616,6 +23139,355 @@ components:
       required:
       - name
       - slug
+    StreamPost:
+      type: object
+      description: Serializer for stream posts.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        public_uuid:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Public UUID for API exposure
+        stream:
+          type: integer
+        stream_title:
+          type: string
+          readOnly: true
+        practitioner_name:
+          type: string
+          readOnly: true
+        practitioner_id:
+          type: integer
+          readOnly: true
+        practitioner_image:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          nullable: true
+          maxLength: 255
+        content:
+          type: string
+          description: Main text content with rich formatting
+        post_type:
+          $ref: '#/components/schemas/PostTypeEnum'
+        tier_level:
+          allOf:
+          - $ref: '#/components/schemas/TierLevelEnum'
+          description: |-
+            Minimum tier required to view this post
+
+            * `free` - Free
+            * `entry` - Entry
+            * `premium` - Premium
+        teaser_text:
+          type: string
+          nullable: true
+          description: Preview text shown to users below required tier
+          maxLength: 500
+        blur_preview:
+          type: boolean
+          description: Show blurred preview to lower tiers
+        is_published:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        is_pinned:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When post becomes unavailable
+        view_count:
+          type: integer
+          readOnly: true
+        unique_view_count:
+          type: integer
+          readOnly: true
+        like_count:
+          type: integer
+          readOnly: true
+        comment_count:
+          type: integer
+          readOnly: true
+        share_count:
+          type: integer
+          readOnly: true
+        allow_comments:
+          type: boolean
+        allow_tips:
+          type: boolean
+        poll_options:
+          nullable: true
+          description: List of poll options with votes
+        poll_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        poll_allows_multiple:
+          type: boolean
+        tags: {}
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/StreamPostMedia'
+          readOnly: true
+        can_access:
+          type: string
+          readOnly: true
+        is_liked:
+          type: string
+          readOnly: true
+        is_saved:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - post_type
+      - stream
+      - tier_level
+    StreamPostComment:
+      type: object
+      description: Serializer for stream post comments.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        post:
+          type: integer
+        user:
+          type: integer
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        user_image:
+          type: string
+          readOnly: true
+        content:
+          type: string
+        parent_comment:
+          type: integer
+          nullable: true
+        replies:
+          type: string
+          readOnly: true
+        is_pinned:
+          type: boolean
+          readOnly: true
+        is_hidden:
+          type: boolean
+          readOnly: true
+        is_reported:
+          type: boolean
+          readOnly: true
+        like_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - post
+    StreamPostMedia:
+      type: object
+      description: Serializer for stream post media.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        media_type:
+          $ref: '#/components/schemas/StreamPostMediaMediaTypeEnum'
+        url:
+          type: string
+          readOnly: true
+        filename:
+          type: string
+          readOnly: true
+        file_size:
+          type: integer
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        duration_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        width:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        height:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        caption:
+          type: string
+          nullable: true
+        alt_text:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_processed:
+          type: boolean
+          readOnly: true
+        processing_error:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - media_type
+    StreamPostMediaMediaTypeEnum:
+      enum:
+      - image
+      - video
+      - audio
+      - document
+      type: string
+      description: |-
+        * `image` - Image
+        * `video` - Video
+        * `audio` - Audio
+        * `document` - Document
+    StreamPostMediaRequest:
+      type: object
+      description: Serializer for stream post media.
+      properties:
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+          description: File stored in CloudFlare R2
+        media_type:
+          $ref: '#/components/schemas/StreamPostMediaMediaTypeEnum'
+        duration_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        width:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        height:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        caption:
+          type: string
+          nullable: true
+        alt_text:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - file
+      - media_type
+    StreamPostRequest:
+      type: object
+      description: Serializer for stream posts.
+      properties:
+        stream:
+          type: integer
+        title:
+          type: string
+          nullable: true
+          maxLength: 255
+        content:
+          type: string
+          minLength: 1
+          description: Main text content with rich formatting
+        post_type:
+          $ref: '#/components/schemas/PostTypeEnum'
+        tier_level:
+          allOf:
+          - $ref: '#/components/schemas/TierLevelEnum'
+          description: |-
+            Minimum tier required to view this post
+
+            * `free` - Free
+            * `entry` - Entry
+            * `premium` - Premium
+        teaser_text:
+          type: string
+          nullable: true
+          description: Preview text shown to users below required tier
+          maxLength: 500
+        blur_preview:
+          type: boolean
+          description: Show blurred preview to lower tiers
+        is_published:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        is_pinned:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When post becomes unavailable
+        allow_comments:
+          type: boolean
+        allow_tips:
+          type: boolean
+        poll_options:
+          nullable: true
+          description: List of poll options with votes
+        poll_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        poll_allows_multiple:
+          type: boolean
+        tags: {}
+      required:
+      - content
+      - post_type
+      - stream
+      - tier_level
     StreamRequest:
       type: object
       description: Serializer for content streams.
@@ -21722,96 +23594,6 @@ components:
       - description
       - entry_tier_price_cents
       - premium_tier_price_cents
-      - title
-    StreamSchedule:
-      type: object
-      description: Serializer for stream schedules.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        stream:
-          type: integer
-        stream_title:
-          type: string
-          readOnly: true
-        title:
-          type: string
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        recurrence_rule:
-          type: string
-          description: RRULE format for recurrence
-          maxLength: 500
-        duration_minutes:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-        tier_level:
-          $ref: '#/components/schemas/TierLevelEnum'
-        is_active:
-          type: boolean
-        auto_create_days_ahead:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          description: Days ahead to auto-create scheduled streams
-        next_occurrence:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        upcoming_streams:
-          type: string
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - recurrence_rule
-      - stream
-      - title
-    StreamScheduleRequest:
-      type: object
-      description: Serializer for stream schedules.
-      properties:
-        stream:
-          type: integer
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type: string
-          nullable: true
-        recurrence_rule:
-          type: string
-          minLength: 1
-          description: RRULE format for recurrence
-          maxLength: 500
-        duration_minutes:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-        tier_level:
-          $ref: '#/components/schemas/TierLevelEnum'
-        is_active:
-          type: boolean
-        auto_create_days_ahead:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          description: Days ahead to auto-create scheduled streams
-      required:
-      - recurrence_rule
-      - stream
       - title
     Style:
       type: object
@@ -22995,6 +24777,9 @@ components:
           type: string
           readOnly: true
         practitioner_id:
+          type: string
+          readOnly: true
+        practitioner_slug:
           type: string
           readOnly: true
         account_status:
