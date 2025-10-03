@@ -48,7 +48,7 @@ app.conf.beat_schedule = {
     
     # Send practitioner earnings summaries every Monday at 9 AM
     'send-practitioner-earnings-summaries': {
-        'task': 'notifications.tasks.send_practitioner_earnings_summaries',
+        'task': 'practitioners.tasks.send_practitioner_earnings_summaries',
         'schedule': crontab(hour=9, minute=0, day_of_week=1),  # Monday = 1
         'options': {
             'expires': 3600.0,

@@ -250,7 +250,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
             
             # Handle reminder rescheduling
-            from notifications.tasks import handle_booking_reschedule
+            from bookings.tasks import handle_booking_reschedule
             handle_booking_reschedule.delay(
                 new_booking.id,
                 old_start_time,

@@ -15,14 +15,16 @@ class BookingNoteInline(admin.TabularInline):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ['public_uuid_short', 'user_email', 'practitioner_name', 'service_name', 
+    list_display = ['public_uuid_short', 'user_email', 'practitioner_name', 'service_name',
                    'start_time', 'status', 'payment_status', 'final_amount_display', 'created_at']
     list_filter = ['status', 'payment_status', 'created_at']
-    search_fields = ['public_uuid', 'user__email', 'practitioner__user__email', 
+    search_fields = ['public_uuid', 'user__email', 'practitioner__user__email',
                     'practitioner__display_name', 'service__name']
     readonly_fields = ['id', 'public_uuid', 'created_at', 'updated_at', 'duration_minutes',
                       'is_upcoming', 'is_active', 'can_be_canceled', 'can_be_rescheduled']
     date_hierarchy = 'start_time'
+    list_per_page = 50  # Prevent server-side cursor issues
+    list_max_show_all = 200  # Limit "Show all" to prevent cursor errors
     
     fieldsets = (
         ('Booking Information', {

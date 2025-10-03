@@ -36,10 +36,18 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         Get rooms accessible to the current user.
         """
         user = self.request.user
-        
-        # Base queryset
+
+        # Base queryset with all needed relations
         queryset = Room.objects.select_related(
-            'created_by', 'booking', 'service_session'
+            'created_by',
+            'booking',
+            'booking__service',
+            'booking__service__primary_practitioner',
+            'booking__service__primary_practitioner__user',
+            'service_session',
+            'service_session__service',
+            'service_session__service__primary_practitioner',
+            'service_session__service__primary_practitioner__user'
         ).prefetch_related('participants')
         
         # Filter based on user role and relationships
