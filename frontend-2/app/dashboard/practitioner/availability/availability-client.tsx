@@ -43,7 +43,18 @@ export default function AvailabilityClient() {
 
   // Fetch schedules
   const { data: schedulesData, isLoading } = useQuery(schedulesListOptions())
-  const schedules = schedulesData?.results || []
+  const schedules = (schedulesData?.results || []).sort((a, b) => {
+    // Default schedule first
+    if (a.is_default && !b.is_default) return -1
+    if (!a.is_default && b.is_default) return 1
+
+    // Then active schedules before inactive
+    if (a.is_active && !b.is_active) return -1
+    if (!a.is_active && b.is_active) return 1
+
+    // Finally alphabetical by name
+    return a.name.localeCompare(b.name)
+  })
 
   // Create schedule mutation
   const createMutation = useMutation({
