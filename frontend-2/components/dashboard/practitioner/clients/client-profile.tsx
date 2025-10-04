@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { practitionersClientsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { practitionersClientsRetrieve2Options } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 
 interface ClientProfileProps {
@@ -18,19 +18,15 @@ interface ClientProfileProps {
 
 export default function ClientProfile({ clientId }: ClientProfileProps) {
   const [isFavorite, setIsFavorite] = useState(false)
-  
+
   // Fetch client details from API
-  const { data: clientsData, isLoading, error } = useQuery({
-    ...practitionersClientsRetrieveOptions({
-      query: {
-        user_id: parseInt(clientId),
-        page_size: 1
+  const { data: client, isLoading, error } = useQuery({
+    ...practitionersClientsRetrieve2Options({
+      path: {
+        client_id: clientId
       }
     }),
   })
-
-  // Extract the client from the paginated response
-  const client = (clientsData as any)?.results?.[0]
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite)
