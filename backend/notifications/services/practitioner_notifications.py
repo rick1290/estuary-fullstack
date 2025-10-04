@@ -480,7 +480,7 @@ class PractitionerNotificationService(BaseNotificationService):
         )
         
         # Schedule the specific task to handle this nudge
-        from notifications.tasks import send_practitioner_profile_nudge
+        from practitioners.tasks import send_practitioner_profile_nudge
         send_practitioner_profile_nudge.apply_async(
             args=[notification.id],
             eta=nudge_date
@@ -500,7 +500,7 @@ class PractitionerNotificationService(BaseNotificationService):
         )
         
         # Schedule the specific task to handle this nudge
-        from notifications.tasks import send_practitioner_services_nudge
+        from practitioners.tasks import send_practitioner_services_nudge
         send_practitioner_services_nudge.apply_async(
             args=[notification.id],
             eta=nudge_date

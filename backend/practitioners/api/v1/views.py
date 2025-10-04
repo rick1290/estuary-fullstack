@@ -11,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from datetime import datetime, timedelta
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from practitioners.models import (
     Practitioner, Schedule, ScheduleTimeSlot, SchedulePreference,
@@ -55,6 +55,7 @@ from .filters import PractitionerFilter
     search=extend_schema(tags=['Practitioners']),
     stats=extend_schema(tags=['Practitioners']),
     clients=extend_schema(tags=['Practitioners']),
+    client_detail=extend_schema(tags=['Practitioners']),
     client_notes=extend_schema(tags=['Practitioners']),
     client_note_detail=extend_schema(tags=['Practitioners']),
     earnings=extend_schema(tags=['Practitioners']),
@@ -500,7 +501,7 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                 Q(email__icontains=search) |
                 Q(profile__display_name__icontains=search)
             )
-        
+
         # Serialize the results
         from .serializers import PractitionerClientSerializer
         
@@ -512,7 +513,66 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         
         serializer = PractitionerClientSerializer(clients, many=True)
         return Response(serializer.data)
-    
+
+    @action(detail=False, methods=['get'], url_path='clients/(?P<client_id>[^/]+)', permission_classes=[IsAuthenticated])
+    def client_detail(self, request, client_id=None):
+        """
+        Get detailed information about a specific client.
+        Returns client profile and booking statistics.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "You are not registered as a practitioner"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Get the specific client user
+        client = get_object_or_404(User, id=client_id)
+
+        # Verify this client has bookings with the practitioner
+        has_bookings = Booking.objects.filter(
+            user=client,
+            practitioner=practitioner,
+            status__in=['completed', 'confirmed', 'in_progress']
+        ).exists()
+
+        if not has_bookings:
+            return Response(
+                {"detail": "This user is not your client"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Annotate with booking statistics
+        from django.db.models import Count, Sum, Max, Subquery, OuterRef
+
+        client_data = User.objects.filter(id=client_id).annotate(
+            total_bookings=Count('bookings', filter=Q(
+                bookings__practitioner=practitioner,
+                bookings__status__in=['completed', 'confirmed', 'in_progress']
+            )),
+            total_spent=Sum('bookings__final_amount_cents', filter=Q(
+                bookings__practitioner=practitioner,
+                bookings__status='completed'
+            )),
+            last_booking_date=Max('bookings__start_time', filter=Q(
+                bookings__practitioner=practitioner
+            )),
+            next_booking_date=Subquery(
+                Booking.objects.filter(
+                    user=OuterRef('pk'),
+                    practitioner=practitioner,
+                    status='confirmed',
+                    start_time__gte=timezone.now()
+                ).order_by('start_time').values('start_time')[:1]
+            )
+        ).select_related('profile').first()
+
+        from .serializers import PractitionerClientSerializer
+        serializer = PractitionerClientSerializer(client_data)
+        return Response(serializer.data)
+
     @extend_schema(
         methods=['POST'],
         request={
@@ -1505,6 +1565,21 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'time_slot_id': {
+                        'type': 'integer',
+                        'description': 'ID of the time slot to remove'
+                    }
+                },
+                'required': ['time_slot_id']
+            }
+        },
+        responses={204: None}
+    )
     @action(detail=True, methods=['delete'])
     def remove_time_slot(self, request, pk=None):
         """Remove a time slot from a schedule"""

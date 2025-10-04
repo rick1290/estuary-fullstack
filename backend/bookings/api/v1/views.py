@@ -75,7 +75,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Get bookings based on user role"""
         user = self.request.user
-        
+
         # Base queryset with optimized relations
         queryset = Booking.objects.select_related(
             'user', 'practitioner__user', 'service', 'location',
@@ -87,17 +87,25 @@ class BookingViewSet(viewsets.ModelViewSet):
                 'service', 'practitioner__user'
             ))
         )
-        
+
+        # Check if filtering by practitioner
+        practitioner_filter = self.request.query_params.get('practitioner') or \
+                             self.request.query_params.get('practitioner_id')
+
         # Filter based on user role
         if hasattr(user, 'practitioner_profile') and user.practitioner_profile.is_active:
-            # Practitioner sees their appointments and their own bookings
-            queryset = queryset.filter(
-                Q(practitioner=user.practitioner_profile) | Q(user=user)
-            )
+            # If filtering by practitioner, only show practitioner bookings
+            if practitioner_filter:
+                queryset = queryset.filter(practitioner=user.practitioner_profile)
+            else:
+                # Otherwise show both practitioner appointments and own bookings
+                queryset = queryset.filter(
+                    Q(practitioner=user.practitioner_profile) | Q(user=user)
+                )
         else:
             # Regular users see only their bookings
             queryset = queryset.filter(user=user)
-        
+
         return queryset
     
     def get_serializer_class(self):
@@ -250,7 +258,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
             
             # Handle reminder rescheduling
-            from notifications.tasks import handle_booking_reschedule
+            from bookings.tasks import handle_booking_reschedule
             handle_booking_reschedule.delay(
                 new_booking.id,
                 old_start_time,

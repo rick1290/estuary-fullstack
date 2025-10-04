@@ -55,8 +55,10 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
     onSuccess: () => {
       toast.success("Note added successfully")
       setNewNote("")
-      queryClient.invalidateQueries({ 
-        queryKey: ['practitionersClientsNotesRetrieve', { path: { client_id: clientId } }] 
+      queryClient.invalidateQueries({
+        queryKey: practitionersClientsNotesRetrieveOptions({
+          path: { client_id: clientId },
+        }).queryKey
       })
     },
     onError: () => {
@@ -70,8 +72,10 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
     onSuccess: () => {
       toast.success("Note updated successfully")
       setEditingNote(null)
-      queryClient.invalidateQueries({ 
-        queryKey: ['practitionersClientsNotesRetrieve', { path: { client_id: clientId } }] 
+      queryClient.invalidateQueries({
+        queryKey: practitionersClientsNotesRetrieveOptions({
+          path: { client_id: clientId },
+        }).queryKey
       })
     },
     onError: () => {
@@ -86,8 +90,10 @@ export default function ClientNotes({ clientId }: ClientNotesProps) {
       toast.success("Note deleted successfully")
       setDeleteDialogOpen(false)
       setNoteToDelete(null)
-      queryClient.invalidateQueries({ 
-        queryKey: ['practitionersClientsNotesRetrieve', { path: { client_id: clientId } }] 
+      queryClient.invalidateQueries({
+        queryKey: practitionersClientsNotesRetrieveOptions({
+          path: { client_id: clientId },
+        }).queryKey
       })
     },
     onError: () => {

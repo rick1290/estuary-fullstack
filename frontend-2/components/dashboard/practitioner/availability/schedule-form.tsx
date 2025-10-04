@@ -54,6 +54,14 @@ const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
 })
 
+// Format time to 12-hour format
+const formatTime12Hour = (time24: string) => {
+  const [hours, minutes] = time24.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading }: ScheduleFormProps) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -366,14 +374,14 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
                           <SelectContent>
                             {TIME_OPTIONS.map((time) => (
                               <SelectItem key={time} value={time}>
-                                {time.slice(0, 5)}
+                                {formatTime12Hour(time)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        
+
                         <span>to</span>
-                        
+
                         <Select
                           value={slot.end_time}
                           onValueChange={(value) => handleTimeSlotChange(globalIndex, "end_time", value)}
@@ -384,7 +392,7 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
                           <SelectContent>
                             {TIME_OPTIONS.map((time) => (
                               <SelectItem key={time} value={time}>
-                                {time.slice(0, 5)}
+                                {formatTime12Hour(time)}
                               </SelectItem>
                             ))}
                           </SelectContent>

@@ -174,10 +174,11 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
               </div>
 
               {/* Bio */}
-              <p className="text-olive-600 mb-4 line-clamp-2 leading-relaxed">
-                {(practitioner.bio_short || (practitioner.bio && practitioner.bio.length > 150 ? practitioner.bio.substring(0, 150) + "..." : practitioner.bio)) ||
-                  "Experienced practitioner dedicated to helping clients achieve their wellness goals through personalized approaches and evidence-based techniques."}
-              </p>
+              {(practitioner.bio_short || practitioner.bio) && (
+                <p className="text-olive-600 mb-4 line-clamp-2 leading-relaxed">
+                  {practitioner.bio_short || (practitioner.bio && practitioner.bio.length > 150 ? practitioner.bio.substring(0, 150) + "..." : practitioner.bio)}
+                </p>
+              )}
 
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -212,11 +213,19 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                     </span>
                   </div>
                   
-                  {/* Price Range (mock data) */}
-                  <div className="flex items-center gap-2 text-sm text-olive-600">
-                    <DollarSign className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
-                    <span>$80 - $150 per session</span>
-                  </div>
+                  {/* Price Range */}
+                  {practitioner.price_range && (practitioner.price_range.min || practitioner.price_range.max) && (
+                    <div className="flex items-center gap-2 text-sm text-olive-600">
+                      <DollarSign className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
+                      <span>
+                        {practitioner.price_range.min && practitioner.price_range.max
+                          ? `$${practitioner.price_range.min} - $${practitioner.price_range.max}`
+                          : practitioner.price_range.min
+                          ? `From $${practitioner.price_range.min}`
+                          : `Up to $${practitioner.price_range.max}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

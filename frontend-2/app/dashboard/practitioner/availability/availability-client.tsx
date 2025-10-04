@@ -43,7 +43,18 @@ export default function AvailabilityClient() {
 
   // Fetch schedules
   const { data: schedulesData, isLoading } = useQuery(schedulesListOptions())
-  const schedules = schedulesData?.results || []
+  const schedules = (schedulesData?.results || []).sort((a, b) => {
+    // Default schedule first
+    if (a.is_default && !b.is_default) return -1
+    if (!a.is_default && b.is_default) return 1
+
+    // Then active schedules before inactive
+    if (a.is_active && !b.is_active) return -1
+    if (!a.is_active && b.is_active) return 1
+
+    // Finally alphabetical by name
+    return a.name.localeCompare(b.name)
+  })
 
   // Create schedule mutation
   const createMutation = useMutation({
@@ -53,7 +64,9 @@ export default function AvailabilityClient() {
         title: "Schedule created",
         description: "Your new availability schedule has been created.",
       })
-      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
+      })
       setIsCreating(false)
     },
     onError: (error: any) => {
@@ -73,7 +86,9 @@ export default function AvailabilityClient() {
         title: "Schedule updated",
         description: "Your availability schedule has been updated.",
       })
-      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
+      })
       setEditingSchedule(null)
     },
     onError: (error: any) => {
@@ -93,7 +108,9 @@ export default function AvailabilityClient() {
         title: "Schedule deleted",
         description: "Your availability schedule has been deleted.",
       })
-      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
+      })
       setDeleteScheduleId(null)
     },
     onError: (error: any) => {
@@ -138,25 +155,11 @@ export default function AvailabilityClient() {
 
   // Remove time slot mutation
   const removeTimeSlotMutation = useMutation({
-    mutationFn: async ({ scheduleId, timeSlotId }: { scheduleId: number; timeSlotId: number }) => {
-      // Custom implementation because the backend expects body in DELETE request
-      const token = AuthService.getAccessToken()
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/schedules/${scheduleId}/remove_time_slot/`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ time_slot_id: timeSlotId }),
-        credentials: 'include',
+    ...schedulesRemoveTimeSlotDestroyMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
       })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Failed to remove time slot')
-      }
-      
-      return response
     },
     onError: (error: any) => {
       toast({
@@ -227,8 +230,8 @@ export default function AvailabilityClient() {
         for (const slot of slotsToRemove) {
           if (slot.id) {
             await removeTimeSlotMutation.mutateAsync({
-              scheduleId: editingSchedule.id,
-              timeSlotId: slot.id
+              path: { id: editingSchedule.id },
+              body: { time_slot_id: slot.id }
             })
           }
         }

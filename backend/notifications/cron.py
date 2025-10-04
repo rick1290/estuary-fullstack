@@ -310,7 +310,7 @@ def send_session_reminder_to_practitioner(session, bookings, hours_before):
     
     try:
         # Use existing aggregated reminder task
-        from notifications.tasks import send_practitioner_aggregated_reminder
+        from bookings.tasks import send_practitioner_aggregated_reminder
         
         result = send_practitioner_aggregated_reminder(
             practitioner_id=practitioner.id,

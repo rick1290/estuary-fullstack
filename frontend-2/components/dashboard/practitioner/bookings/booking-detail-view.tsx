@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { 
-  bookingsRetrieveOptions, 
+import {
+  bookingsRetrieveOptions,
   bookingsCancelCreateMutation,
   bookingsCompleteCreateMutation,
   bookingsConfirmCreateMutation,
-  bookingsPartialUpdateMutation
+  bookingsNotesRetrieveOptions,
+  bookingsNotesCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -135,15 +136,25 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
     },
   })
 
-  const updateNoteMutation = useMutation({
-    ...bookingsPartialUpdateMutation(),
+  // Fetch notes
+  const { data: notes = [] } = useQuery({
+    ...bookingsNotesRetrieveOptions({
+      path: { id: bookingId }
+    }),
+  })
+
+  const createNoteMutation = useMutation({
+    ...bookingsNotesCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Note saved",
         description: "Your note has been saved successfully.",
       })
-      queryClient.invalidateQueries({ queryKey: ['bookings', bookingId] })
+      queryClient.invalidateQueries({
+        queryKey: bookingsNotesRetrieveOptions({ path: { id: bookingId } }).queryKey
+      })
       setIsEditingNote(false)
+      setNoteContent("")
     },
     onError: (error: any) => {
       toast({
@@ -207,10 +218,13 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   }
 
   const handleSaveNote = () => {
-    updateNoteMutation.mutate({
-      path: { id: parseInt(bookingId) },
+    if (!noteContent.trim()) return
+
+    createNoteMutation.mutate({
+      path: { id: bookingId },
       body: {
-        practitioner_notes: noteContent
+        content: noteContent,
+        is_private: true
       }
     })
   }
@@ -412,62 +426,74 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
               <CardDescription>Internal notes about this booking</CardDescription>
             </CardHeader>
             <CardContent>
-              {isEditingNote ? (
-                <div className="space-y-4">
-                  <Textarea
-                    value={noteContent}
-                    onChange={(e) => setNoteContent(e.target.value)}
-                    placeholder="Add your notes here..."
-                    className="min-h-[100px]"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleSaveNote}
-                      disabled={updateNoteMutation.isPending}
-                    >
-                      {updateNoteMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Save Note
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingNote(false)
-                        setNoteContent(booking.practitioner_notes || "")
-                      }}
-                      disabled={updateNoteMutation.isPending}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
+              <div className="space-y-4">
+                {/* Add new note form */}
+                {isEditingNote ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      placeholder="Add your notes here..."
+                      className="min-h-[100px]"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleSaveNote}
+                        disabled={createNoteMutation.isPending || !noteContent.trim()}
+                      >
+                        {createNoteMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Save Note
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingNote(false)
+                          setNoteContent("")
+                        }}
+                        disabled={createNoteMutation.isPending}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  {booking.practitioner_notes ? (
-                    <p className="text-sm whitespace-pre-wrap">{booking.practitioner_notes}</p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No notes added yet</p>
-                  )}
+                ) : (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-4"
-                    onClick={() => {
-                      setIsEditingNote(true)
-                      setNoteContent(booking.practitioner_notes || "")
-                    }}
+                    onClick={() => setIsEditingNote(true)}
                   >
                     <Edit className="h-4 w-4 mr-2" />
-                    {booking.practitioner_notes ? "Edit Note" : "Add Note"}
+                    Add Note
                   </Button>
-                </>
-              )}
+                )}
+
+                {/* Display existing notes */}
+                {notes.length > 0 && (
+                  <div className="space-y-3 mt-6">
+                    <h4 className="text-sm font-medium">Previous Notes</h4>
+                    {notes.map((note: any) => (
+                      <div key={note.id} className="border rounded-lg p-3 space-y-1">
+                        <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {note.created_at && format(parseISO(note.created_at), "MMM d, yyyy 'at' h:mm a")}
+                          {note.is_private && <span className="ml-2 text-orange-600">(Private)</span>}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {notes.length === 0 && !isEditingNote && (
+                  <p className="text-sm text-muted-foreground">No notes added yet</p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -6,6 +6,8 @@ from django.db import transaction
 from django.db.models import Count, Avg, Q
 from decimal import Decimal
 from django.utils.dateparse import parse_datetime
+from drf_spectacular.utils import extend_schema_field, OpenApiTypes
+from drf_spectacular.types import OpenApiTypes as Types
 
 from services.models import (
     ServiceCategory, Service, ServiceType, ServiceRelationship,
@@ -374,6 +376,19 @@ class ServiceDetailSerializer(ServiceListSerializer):
     practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
     cancellation_policy = serializers.SerializerMethodField()
     image_url = serializers.CharField(read_only=True)
+    includes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_null=True,
+        read_only=True,
+        help_text="What's included in the service - array of items"
+    )
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_null=True,
+        read_only=True
+    )
     
     class Meta(ServiceListSerializer.Meta):
         fields = ServiceListSerializer.Meta.fields + [
@@ -437,6 +452,19 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     practitioner_category_id = serializers.IntegerField(required=False, allow_null=True)
     service_type_id = serializers.IntegerField(required=True)
     image = serializers.ImageField(required=False, allow_null=True, help_text="Service cover image")
+    includes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_null=True,
+        allow_empty=True,
+        help_text="What's included in the service - array of items"
+    )
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_null=True,
+        allow_empty=True
+    )
     additional_practitioner_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,

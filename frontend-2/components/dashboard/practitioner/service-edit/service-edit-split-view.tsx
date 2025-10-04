@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { 
+import {
   servicesRetrieveOptions,
   servicesUpdateMutation,
   servicesPartialUpdateMutation
@@ -11,6 +12,7 @@ import {
 import type { ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
 import { useToast } from "@/hooks/use-toast"
 import { patchWithFormData } from "@/lib/api-helpers"
+import { getServiceDetailUrl } from "@/lib/service-utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -139,13 +141,14 @@ const sections = [
     component: ResourcesSection,
     required: false,
   },
-  {
-    id: "revenue-sharing",
-    title: "Revenue Sharing",
-    description: "Configure revenue split with co-practitioners",
-    component: RevenueSharingSection,
-    required: false,
-  },
+  // Hidden for now - not needed
+  // {
+  //   id: "revenue-sharing",
+  //   title: "Revenue Sharing",
+  //   description: "Configure revenue split with co-practitioners",
+  //   component: RevenueSharingSection,
+  //   required: false,
+  // },
   {
     id: "advanced",
     title: "Advanced Settings",
@@ -440,24 +443,35 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   const handleSaveAll = async () => {
     const updates: Partial<ServiceCreateUpdateRequestWritable> = {}
     let hasFile = false
-    
+
     // Merge all changed sections
     unsavedChanges.forEach(sectionId => {
       const sectionUpdates = { ...sectionData[sectionId] }
-      
+
       // Map scheduleId to schedule field for API
       if (sectionId === 'schedule-selection' && sectionUpdates.scheduleId) {
         sectionUpdates.schedule = parseInt(sectionUpdates.scheduleId)
         delete sectionUpdates.scheduleId
       }
-      
+
+      // Ensure includes is always an array or null (never a string)
+      if ('includes' in sectionUpdates) {
+        if (typeof sectionUpdates.includes === 'string') {
+          // Convert string to array
+          sectionUpdates.includes = sectionUpdates.includes.split('\n').filter((item: string) => item.trim())
+        }
+        if (Array.isArray(sectionUpdates.includes) && sectionUpdates.includes.length === 0) {
+          sectionUpdates.includes = null
+        }
+      }
+
       // Check for files
       Object.values(sectionUpdates).forEach(value => {
         if (value instanceof File) {
           hasFile = true
         }
       })
-      
+
       Object.assign(updates, sectionUpdates)
     })
 
@@ -770,8 +784,10 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs">
-                        <Eye className="h-3 w-3" />
+                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs" asChild>
+                        <Link href={getServiceDetailUrl(service)} target="_blank">
+                          <Eye className="h-3 w-3" />
+                        </Link>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
