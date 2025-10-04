@@ -144,25 +144,11 @@ export default function AvailabilityClient() {
 
   // Remove time slot mutation
   const removeTimeSlotMutation = useMutation({
-    mutationFn: async ({ scheduleId, timeSlotId }: { scheduleId: number; timeSlotId: number }) => {
-      // Custom implementation because the backend expects body in DELETE request
-      const token = AuthService.getAccessToken()
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/schedules/${scheduleId}/remove_time_slot/`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ time_slot_id: timeSlotId }),
-        credentials: 'include',
+    ...schedulesRemoveTimeSlotDestroyMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
       })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Failed to remove time slot')
-      }
-      
-      return response
     },
     onError: (error: any) => {
       toast({
@@ -233,8 +219,8 @@ export default function AvailabilityClient() {
         for (const slot of slotsToRemove) {
           if (slot.id) {
             await removeTimeSlotMutation.mutateAsync({
-              scheduleId: editingSchedule.id,
-              timeSlotId: slot.id
+              path: { id: editingSchedule.id },
+              body: { time_slot_id: slot.id }
             })
           }
         }

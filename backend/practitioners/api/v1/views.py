@@ -1565,6 +1565,21 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'time_slot_id': {
+                        'type': 'integer',
+                        'description': 'ID of the time slot to remove'
+                    }
+                },
+                'required': ['time_slot_id']
+            }
+        },
+        responses={204: None}
+    )
     @action(detail=True, methods=['delete'])
     def remove_time_slot(self, request, pk=None):
         """Remove a time slot from a schedule"""
