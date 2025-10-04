@@ -132,60 +132,8 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
-  // Transform API data to component format
-  console.log('Service data from API:', serviceData)
-  const session = serviceData ? {
-    id: serviceData.public_uuid || serviceData.id,
-    title: serviceData.name || 'Session',
-    type: "one-on-one",
-    description: serviceData.short_description || serviceData.description || 'A personalized session experience.',
-    longDescription: serviceData.description || serviceData.long_description || 'This personalized session is designed to support your wellness journey.',
-    price: serviceData.price_cents ? Math.floor(serviceData.price_cents / 100) : 0,
-    duration: serviceData.duration_minutes || 60,
-    location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Location TBD',
-    platform: serviceData.platform || 'Zoom',
-    rating: serviceData.average_rating || 4.8,
-    reviewCount: serviceData.total_reviews || 0,
-    categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Wellness'],
-    image: serviceData.image_url || serviceData.featured_image || '/session-image-1.jpg',
-    experienceLevel: serviceData.experience_level || "all_levels",
-    whatToExpect: serviceData.what_to_expect || [
-      "Personalized assessment of your goals and needs",
-      "Guided practice tailored to your experience level",
-      "Professional instruction and technique guidance",
-      "Discussion of how to integrate learnings into daily life",
-      "Personalized recommendations for continued growth",
-    ],
-    benefits: serviceData.benefits || [
-      {
-        id: 1,
-        title: "Personal Growth",
-        description: "Experience meaningful transformation through personalized guidance.",
-        icon: "spa",
-      },
-      {
-        id: 2,
-        title: "Expert Support",
-        description: "Work one-on-one with a certified practitioner.",
-        icon: "center_focus_strong",
-      },
-      {
-        id: 3,
-        title: "Lasting Change",
-        description: "Develop skills and insights for long-term wellbeing.",
-        icon: "balance",
-      },
-    ],
-    practitioner: {
-      id: serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id,
-      name: serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Practitioner',
-      title: serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Wellness Practitioner',
-      bio: serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced practitioner dedicated to supporting your wellness journey.',
-      image: serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/placeholder.svg?height=200&width=200',
-      rating: serviceData.practitioner?.average_rating || serviceData.primary_practitioner?.average_rating || 4.8,
-      reviewCount: serviceData.practitioner?.total_reviews || serviceData.primary_practitioner?.total_reviews || 0,
-    },
-  } : MOCK_SESSION
+  // Use real API data
+  const service = serviceData
 
   // Check if this service is favorited
   const isFavorited = serviceData && favoriteServiceIds.has(serviceData.id?.toString() || serviceData.public_uuid)
@@ -322,7 +270,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <span className="text-olive-900 font-medium">{session.title}</span>
+                <span className="text-olive-900 font-medium">{service?.name || 'Session'}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -333,46 +281,64 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             <div className="space-y-8 animate-slide-up">
               {/* Categories */}
               <div className="flex flex-wrap gap-2">
-                {session.categories.map((category) => (
-                  <Badge key={category} variant="terracotta" className="text-sm">
-                    {category}
+                {service?.category && (
+                  <Badge variant="terracotta" className="text-sm">
+                    {service.category.name}
+                  </Badge>
+                )}
+                {service?.practitioner_category && (
+                  <Badge variant="sage" className="text-sm">
+                    {service.practitioner_category.name}
+                  </Badge>
+                )}
+                {service?.tags?.map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-sm">
+                    {tag}
                   </Badge>
                 ))}
               </div>
-              
+
               <div>
                 <h1 className="text-5xl lg:text-6xl font-medium text-olive-900 mb-6 leading-tight">
-                  {session.title}
+                  {service?.name || 'Session'}
                 </h1>
                 <p className="text-xl text-olive-700 leading-relaxed">
-                  {session.description}
+                  {service?.short_description || service?.description || ''}
                 </p>
               </div>
-              
+
               {/* Meta info */}
               <div className="flex flex-wrap items-center gap-6 text-olive-700">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="font-medium">{session.duration} minutes</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="font-medium">{session.location}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="font-medium">1-on-1 Session</span>
-                </div>
+                {service?.duration_minutes && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                    <span className="font-medium">{service.duration_display}</span>
+                  </div>
+                )}
+                {service?.location_type && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                    <span className="font-medium">{service.location_type === 'virtual' ? 'Virtual' : service.location_type}</span>
+                  </div>
+                )}
+                {service?.max_participants === 1 && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                    <span className="font-medium">1-on-1 Session</span>
+                  </div>
+                )}
               </div>
-              
+
               {/* Rating */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <Star className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
-                  <span className="text-2xl font-medium text-olive-900">{session.rating}</span>
+              {service && service.total_reviews > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
+                    <span className="text-2xl font-medium text-olive-900">{service.average_rating?.toFixed(1)}</span>
+                  </div>
+                  <span className="text-olive-600">({service.total_reviews} {service.total_reviews === 1 ? 'review' : 'reviews'})</span>
                 </div>
-                <span className="text-olive-600">({session.reviewCount} reviews)</span>
-              </div>
+              )}
               
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
@@ -400,10 +366,10 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
               <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-2xl">
-                {session.image ? (
-                  <img 
-                    src={session.image} 
-                    alt={session.title}
+                {service?.image_url ? (
+                  <img
+                    src={service.image_url}
+                    alt={service.name}
                     className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
                   />
                 ) : (
@@ -411,12 +377,14 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                     <Calendar className="h-32 w-32 text-sage-300" strokeWidth="1" />
                   </div>
                 )}
-                
+
                 {/* Floating elements */}
-                <div className="absolute top-6 right-6 bg-cream-50/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-                  <p className="text-sm text-olive-700 mb-1">Starting from</p>
-                  <p className="text-3xl font-medium text-olive-900">${session.price}</p>
-                </div>
+                {service?.price && (
+                  <div className="absolute top-6 right-6 bg-cream-50/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+                    <p className="text-sm text-olive-700 mb-1">Starting from</p>
+                    <p className="text-3xl font-medium text-olive-900">${service.price}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -440,77 +408,87 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
           {/* Main Content - Left Side */}
           <div className="space-y-20">
             {/* Immersive Overview Section */}
-            <section className="animate-fade-in">
-              <div className="relative">
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">Your Journey Begins Here</h2>
+            {service?.description && (
+              <section className="animate-fade-in">
+                <div className="relative">
+                  <h2 className="text-3xl font-medium text-olive-900 mb-8">About This Session</h2>
+                  <div className="prose prose-lg prose-olive max-w-none">
+                    <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                      {service.description}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* What You'll Learn */}
+            {service?.what_youll_learn && (
+              <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
+                <h2 className="text-3xl font-medium text-olive-900 mb-10">What You'll Learn</h2>
                 <div className="prose prose-lg prose-olive max-w-none">
                   <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
-                    {session.longDescription}
+                    {service.what_youll_learn}
                   </p>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
-            {/* Visual What to Expect Section */}
-            <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-              <h2 className="text-3xl font-medium text-olive-900 mb-10">What Your Session Includes</h2>
-              <div className="grid gap-6">
-                {session.whatToExpect.map((item, index) => (
-                  <div key={index} className="group relative bg-cream-100 rounded-2xl p-6 hover:bg-sage-50 transition-all duration-300 card-hover">
-                    <div className="flex gap-5">
-                      <div className="flex-shrink-0 w-12 h-12 bg-sage-200 rounded-full flex items-center justify-center text-sage-700 font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-olive-700 text-lg leading-relaxed pt-2">{item}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            {/* Prerequisites */}
+            {service?.prerequisites && (
+              <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">Prerequisites</h2>
+                <div className="prose prose-lg prose-olive max-w-none">
+                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                    {service.prerequisites}
+                  </p>
+                </div>
+              </section>
+            )}
 
-            {/* Transformative Benefits */}
-            <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <h2 className="text-3xl font-medium text-olive-900 mb-10">Transform Your Practice</h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                {session.benefits.map((benefit) => (
-                  <div key={benefit.id} className="relative group">
-                    <div className="absolute -left-4 top-0 w-1 h-full bg-terracotta-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="pl-4">
-                      <h3 className="text-xl font-medium text-olive-900 mb-3 group-hover:text-sage-700 transition-colors">
-                        {benefit.title}
-                      </h3>
-                      <p className="text-olive-600 leading-relaxed">{benefit.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            {/* Requirements */}
+            {service?.requirements && (
+              <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">Requirements</h2>
+                <div className="prose prose-lg prose-olive max-w-none">
+                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                    {service.requirements}
+                  </p>
+                </div>
+              </section>
+            )}
 
             {/* Practitioner Spotlight */}
-            <section className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
-              <h2 className="text-3xl font-medium text-olive-900 mb-8">Meet Your Guide</h2>
-              <div className="flex flex-col md:flex-row gap-8 items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
-                    <span className="text-4xl font-medium text-olive-800">
-                      {session.practitioner.name.charAt(0)}
-                    </span>
+            {service?.primary_practitioner && (
+              <section className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">Meet Your Guide</h2>
+                <div className="flex flex-col md:flex-row gap-8 items-center">
+                  <div className="flex-shrink-0">
+                    {service.primary_practitioner.profile_image_url ? (
+                      <img
+                        src={service.primary_practitioner.profile_image_url}
+                        alt={service.primary_practitioner.display_name}
+                        className="w-32 h-32 rounded-full object-cover shadow-xl"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
+                        <span className="text-4xl font-medium text-olive-800">
+                          {service.primary_practitioner.display_name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-medium text-olive-900 mb-2">{service.primary_practitioner.display_name}</h3>
+                    <Link
+                      href={`/practitioners/${service.primary_practitioner.slug}`}
+                      className="text-sage-600 hover:text-sage-700 underline text-sm"
+                    >
+                      View Full Profile
+                    </Link>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-medium text-olive-900 mb-2">{session.practitioner.name}</h3>
-                  <p className="text-lg text-sage-700 mb-4">{session.practitioner.title}</p>
-                  <p className="text-olive-600 leading-relaxed mb-4">{session.practitioner.bio}</p>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-5 w-5 text-terracotta-500 fill-terracotta-500" />
-                      <span className="font-medium text-olive-900">{session.practitioner.rating}</span>
-                    </div>
-                    <span className="text-olive-600">• {session.practitioner.reviewCount} sessions completed</span>
-                  </div>
-                </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             {/* Session Details Card */}
             <section className="animate-fade-in" style={{animationDelay: '0.8s'}}>
@@ -518,107 +496,70 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-medium text-olive-900 mb-6">Session Details</h2>
                   <div className="grid gap-5">
-                    <div className="flex justify-between items-center py-4 border-b border-sage-200">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                        <span className="text-olive-700">Duration</span>
-                      </div>
-                      <span className="font-medium text-olive-900">{session.duration} minutes</span>
-                    </div>
-                    <div className="flex justify-between items-center py-4 border-b border-sage-200">
-                      <div className="flex items-center gap-3">
-                        <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                        <span className="text-olive-700">Format</span>
-                      </div>
-                      <span className="font-medium text-olive-900">One-on-one</span>
-                    </div>
-                    <div className="flex justify-between items-center py-4 border-b border-sage-200">
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                        <span className="text-olive-700">Location</span>
-                      </div>
-                      <span className="font-medium text-olive-900">{session.location}</span>
-                    </div>
-                    {session.platform && (
+                    {service?.duration_minutes && (
                       <div className="flex justify-between items-center py-4 border-b border-sage-200">
                         <div className="flex items-center gap-3">
-                          <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                          <span className="text-olive-700">Platform</span>
+                          <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                          <span className="text-olive-700">Duration</span>
                         </div>
-                        <span className="font-medium text-olive-900">{session.platform}</span>
+                        <span className="font-medium text-olive-900">{service.duration_display}</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center py-4">
-                      <div className="flex items-center gap-3">
-                        <Star className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                        <span className="text-olive-700">Experience Level</span>
+                    {service?.max_participants === 1 && (
+                      <div className="flex justify-between items-center py-4 border-b border-sage-200">
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                          <span className="text-olive-700">Format</span>
+                        </div>
+                        <span className="font-medium text-olive-900">One-on-one</span>
                       </div>
-                      <span className="font-medium text-olive-900">All Levels Welcome</span>
-                    </div>
+                    )}
+                    {service?.location_type && (
+                      <div className="flex justify-between items-center py-4 border-b border-sage-200">
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                          <span className="text-olive-700">Location</span>
+                        </div>
+                        <span className="font-medium text-olive-900 capitalize">{service.location_type}</span>
+                      </div>
+                    )}
+                    {service?.experience_level && (
+                      <div className="flex justify-between items-center py-4">
+                        <div className="flex items-center gap-3">
+                          <Star className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                          <span className="text-olive-700">Experience Level</span>
+                        </div>
+                        <span className="font-medium text-olive-900 capitalize">{service.experience_level.replace('_', ' ')}</span>
+                      </div>
+                    )}
+                    {service?.age_min && service?.age_max && (
+                      <div className="flex justify-between items-center py-4 border-t border-sage-200">
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                          <span className="text-olive-700">Age Range</span>
+                        </div>
+                        <span className="font-medium text-olive-900">{service.age_min} - {service.age_max} years</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            </section>
-
-            {/* Testimonials Section */}
-            <section className="animate-fade-in" style={{animationDelay: '1s'}}>
-              <h2 className="text-3xl font-medium text-olive-900 mb-10">What Others Are Saying</h2>
-              <div className="grid gap-6">
-                <Card className="border-2 border-sage-100 bg-cream-50">
-                  <CardContent className="p-8">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-terracotta-500 fill-terracotta-500" />
-                      ))}
-                    </div>
-                    <p className="text-lg text-olive-700 mb-6 italic">
-                      "This session completely transformed my approach to meditation. Sarah's guidance was exactly what I needed to break through my mental barriers."
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-sage-200 flex items-center justify-center">
-                        <span className="text-sage-700 font-medium">JM</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-olive-900">Jessica M.</p>
-                        <p className="text-sm text-olive-600">Verified Client</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-2 border-sage-100 bg-cream-50">
-                  <CardContent className="p-8">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-terracotta-500 fill-terracotta-500" />
-                      ))}
-                    </div>
-                    <p className="text-lg text-olive-700 mb-6 italic">
-                      "I've tried many meditation practices, but this personalized approach made all the difference. Highly recommend!"
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-terracotta-200 flex items-center justify-center">
-                        <span className="text-terracotta-700 font-medium">RT</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-olive-900">Robert T.</p>
-                        <p className="text-sm text-olive-600">Verified Client</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </section>
           </div>
 
           {/* Right Column - Sticky Booking Panel */}
           <div className="space-y-8">
             <div className="lg:sticky lg:top-24">
-              <SessionBookingPanel session={{
-                ...session,
-                primary_practitioner: serviceData?.primary_practitioner || serviceData?.practitioner,
-                id: serviceData?.id || serviceData?.public_uuid
-              }} />
+              {service && (
+                <SessionBookingPanel session={{
+                  id: service.id,
+                  public_uuid: service.public_uuid,
+                  name: service.name,
+                  price: service.price,
+                  duration_display: service.duration_display,
+                  primary_practitioner: service.primary_practitioner
+                }} />
+              )}
               
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">

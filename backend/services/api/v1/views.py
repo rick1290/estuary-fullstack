@@ -26,7 +26,7 @@ from .serializers import (
     ServiceCreateUpdateSerializer, ServiceTypeSerializer, ServiceSessionSerializer,
     ServiceResourceSerializer, PractitionerServiceCategorySerializer,
     PackageSerializer, BundleSerializer, WaitlistSerializer, ServiceSearchSerializer,
-    MediaAttachmentSerializer
+    MediaAttachmentSerializer, ServiceBenefitSerializer, SessionAgendaItemSerializer
 )
 from .permissions import (
     IsOwnerOrReadOnly, IsPractitionerOrReadOnly, IsServiceOwner,
@@ -601,6 +601,132 @@ class ServiceViewSet(viewsets.ModelViewSet):
                 'error': f'Upload failed: {str(e)}',
                 'traceback': traceback.format_exc()
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @extend_schema(
+        tags=['Services'],
+        request=ServiceBenefitSerializer,
+        responses={200: ServiceBenefitSerializer(many=True)}
+    )
+    @action(detail=True, methods=['post'], url_path='benefits')
+    def create_benefit(self, request, pk=None):
+        """Create a new benefit for this service"""
+        service = self.get_object()
+        serializer = ServiceBenefitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(service=service)
+
+        # Return all benefits for this service
+        benefits = service.benefits.all()
+        return Response(ServiceBenefitSerializer(benefits, many=True).data)
+
+    @extend_schema(
+        tags=['Services'],
+        request=ServiceBenefitSerializer,
+        responses={200: ServiceBenefitSerializer(many=True)}
+    )
+    @action(detail=True, methods=['put'], url_path='benefits/(?P<benefit_id>[^/.]+)')
+    def update_benefit(self, request, pk=None, benefit_id=None):
+        """Update a specific benefit"""
+        service = self.get_object()
+        try:
+            benefit = service.benefits.get(id=benefit_id)
+        except ServiceBenefit.DoesNotExist:
+            return Response(
+                {'error': 'Benefit not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ServiceBenefitSerializer(benefit, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Return all benefits for this service
+        benefits = service.benefits.all()
+        return Response(ServiceBenefitSerializer(benefits, many=True).data)
+
+    @extend_schema(
+        tags=['Services'],
+        responses={200: ServiceBenefitSerializer(many=True)}
+    )
+    @action(detail=True, methods=['delete'], url_path='benefits/(?P<benefit_id>[^/.]+)')
+    def delete_benefit(self, request, pk=None, benefit_id=None):
+        """Delete a specific benefit"""
+        service = self.get_object()
+        try:
+            benefit = service.benefits.get(id=benefit_id)
+            benefit.delete()
+        except ServiceBenefit.DoesNotExist:
+            return Response(
+                {'error': 'Benefit not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Return remaining benefits
+        benefits = service.benefits.all()
+        return Response(ServiceBenefitSerializer(benefits, many=True).data)
+
+    @extend_schema(
+        tags=['Services'],
+        request=SessionAgendaItemSerializer,
+        responses={200: SessionAgendaItemSerializer(many=True)}
+    )
+    @action(detail=True, methods=['post'], url_path='agenda')
+    def create_agenda_item(self, request, pk=None):
+        """Create a new agenda item for this service"""
+        service = self.get_object()
+        serializer = SessionAgendaItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(service=service)
+
+        # Return all agenda items for this service
+        agenda_items = service.agenda_items.all()
+        return Response(SessionAgendaItemSerializer(agenda_items, many=True).data)
+
+    @extend_schema(
+        tags=['Services'],
+        request=SessionAgendaItemSerializer,
+        responses={200: SessionAgendaItemSerializer(many=True)}
+    )
+    @action(detail=True, methods=['put'], url_path='agenda/(?P<agenda_id>[^/.]+)')
+    def update_agenda_item(self, request, pk=None, agenda_id=None):
+        """Update a specific agenda item"""
+        service = self.get_object()
+        try:
+            agenda_item = service.agenda_items.get(id=agenda_id)
+        except SessionAgendaItem.DoesNotExist:
+            return Response(
+                {'error': 'Agenda item not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = SessionAgendaItemSerializer(agenda_item, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Return all agenda items for this service
+        agenda_items = service.agenda_items.all()
+        return Response(SessionAgendaItemSerializer(agenda_items, many=True).data)
+
+    @extend_schema(
+        tags=['Services'],
+        responses={200: SessionAgendaItemSerializer(many=True)}
+    )
+    @action(detail=True, methods=['delete'], url_path='agenda/(?P<agenda_id>[^/.]+)')
+    def delete_agenda_item(self, request, pk=None, agenda_id=None):
+        """Delete a specific agenda item"""
+        service = self.get_object()
+        try:
+            agenda_item = service.agenda_items.get(id=agenda_id)
+            agenda_item.delete()
+        except SessionAgendaItem.DoesNotExist:
+            return Response(
+                {'error': 'Agenda item not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Return remaining agenda items
+        agenda_items = service.agenda_items.all()
+        return Response(SessionAgendaItemSerializer(agenda_items, many=True).data)
 
 
 @extend_schema_view(
