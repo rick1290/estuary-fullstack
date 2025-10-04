@@ -53,7 +53,9 @@ export default function AvailabilityClient() {
         title: "Schedule created",
         description: "Your new availability schedule has been created.",
       })
-      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
+      })
       setIsCreating(false)
     },
     onError: (error: any) => {
@@ -73,7 +75,9 @@ export default function AvailabilityClient() {
         title: "Schedule updated",
         description: "Your availability schedule has been updated.",
       })
-      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
+      })
       setEditingSchedule(null)
     },
     onError: (error: any) => {
@@ -93,7 +97,9 @@ export default function AvailabilityClient() {
         title: "Schedule deleted",
         description: "Your availability schedule has been deleted.",
       })
-      queryClient.invalidateQueries({ queryKey: ['schedules'] })
+      queryClient.invalidateQueries({
+        queryKey: schedulesListOptions().queryKey
+      })
       setDeleteScheduleId(null)
     },
     onError: (error: any) => {
