@@ -433,9 +433,41 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               </section>
             )}
 
+            {/* Key Benefits */}
+            {service?.benefits && service.benefits.length > 0 && (
+              <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
+                <h2 className="text-3xl font-medium text-olive-900 mb-10">Key Benefits</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {service.benefits.map((benefit) => (
+                    <Card key={benefit.id} className="border-2 border-sage-200 bg-cream-100/30 hover:bg-cream-100/50 transition-colors">
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-medium text-olive-900 mb-2">{benefit.title}</h3>
+                        <p className="text-olive-700 leading-relaxed">{benefit.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* What's Included */}
+            {service?.includes && service.includes.length > 0 && (
+              <section className="animate-fade-in" style={{animationDelay: '0.35s'}}>
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">What's Included</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {service.includes.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-sage-600 mt-0.5 flex-shrink-0" strokeWidth="2" />
+                      <span className="text-olive-700 leading-relaxed">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Prerequisites */}
             {service?.prerequisites && (
-              <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
+              <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
                 <h2 className="text-3xl font-medium text-olive-900 mb-8">Prerequisites</h2>
                 <div className="prose prose-lg prose-olive max-w-none">
                   <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
@@ -447,7 +479,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
             {/* Requirements */}
             {service?.requirements && (
-              <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
+              <section className="animate-fade-in" style={{animationDelay: '0.45s'}}>
                 <h2 className="text-3xl font-medium text-olive-900 mb-8">Requirements</h2>
                 <div className="prose prose-lg prose-olive max-w-none">
                   <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
