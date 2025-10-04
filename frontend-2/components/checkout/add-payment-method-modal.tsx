@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQueryClient, useMutation } from "@tanstack/react-query"
-import { paymentMethodsCreateMutation } from "@/src/client/@tanstack/react-query.gen"
+import { paymentMethodsCreateMutation, paymentMethodsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,9 @@ function PaymentMethodForm({ onSuccess, onCancel }: {
   const createPaymentMethod = useMutation({
     ...paymentMethodsCreateMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paymentMethodsList'] })
+      queryClient.invalidateQueries({
+        queryKey: paymentMethodsListOptions().queryKey
+      })
       onSuccess()
     },
     onError: (error: any) => {
