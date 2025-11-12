@@ -176,62 +176,80 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
     location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Virtual',
     rating: serviceData.average_rating || 4.6,
     reviewCount: serviceData.total_reviews || 0,
-    categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Wellness'],
+    categories: Array.isArray(serviceData.categories)
+      ? serviceData.categories.map(c => c.name)
+      : serviceData.category
+      ? [serviceData.category.name]
+      : ['Wellness'],
     image: serviceData.image_url || serviceData.featured_image || '/course-image-1.jpg',
     experienceLevel: serviceData.experience_level || "beginner",
-    whatYoullLearn: serviceData.learning_objectives || serviceData.what_youll_learn || [
-      "Fundamental concepts and principles",
-      "Practical techniques and strategies",
-      "How to apply learnings in daily life",
-      "Advanced methods for continued growth",
-      "Sustainable practices for long-term success",
-    ],
-    benefits: serviceData.benefits || [
-      {
-        id: 1,
-        title: "Comprehensive Learning",
-        description: "Gain deep understanding through structured curriculum.",
-        icon: "favorite",
-      },
-      {
-        id: 2,
-        title: "Expert Guidance",
-        description: "Learn from experienced practitioners and instructors.",
-        icon: "person",
-      },
-      {
-        id: 3,
-        title: "Practical Application",
-        description: "Apply knowledge through hands-on exercises and projects.",
-        icon: "restaurant",
-      },
-    ],
-    sessions: serviceData.course_sessions || serviceData.sessions || [
-      {
-        id: 1,
-        title: "Introduction and Foundations",
-        description: "Overview of course fundamentals and key concepts.",
-        date: "TBD",
-        startTime: "18:00",
-        endTime: "19:30",
-        agenda: [
-          "Welcome and course overview",
-          "Introduction to core principles",
-          "Setting intentions and goals",
-          "Q&A session",
+    whatYoullLearn: Array.isArray(serviceData.learning_objectives)
+      ? serviceData.learning_objectives
+      : Array.isArray(serviceData.what_youll_learn)
+      ? serviceData.what_youll_learn
+      : [
+          "Fundamental concepts and principles",
+          "Practical techniques and strategies",
+          "How to apply learnings in daily life",
+          "Advanced methods for continued growth",
+          "Sustainable practices for long-term success",
         ],
-      },
-    ],
-    practitioners: serviceData.instructors || (serviceData.practitioner || serviceData.primary_practitioner) ? [{
-      id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
-      name: (serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Instructor'),
-      title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Course Instructor'),
-      bio: (serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced instructor dedicated to your learning journey.'),
-      image: (serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/placeholder.svg?height=200&width=200'),
-      isPrimary: true,
-      rating: (serviceData.practitioner?.average_rating || serviceData.primary_practitioner?.average_rating || 4.7),
-      reviewCount: (serviceData.practitioner?.total_reviews || serviceData.primary_practitioner?.total_reviews || 0),
-    }] : [],
+    benefits: Array.isArray(serviceData.benefits)
+      ? serviceData.benefits
+      : [
+          {
+            id: 1,
+            title: "Comprehensive Learning",
+            description: "Gain deep understanding through structured curriculum.",
+            icon: "favorite",
+          },
+          {
+            id: 2,
+            title: "Expert Guidance",
+            description: "Learn from experienced practitioners and instructors.",
+            icon: "person",
+          },
+          {
+            id: 3,
+            title: "Practical Application",
+            description: "Apply knowledge through hands-on exercises and projects.",
+            icon: "restaurant",
+          },
+        ],
+    sessions: Array.isArray(serviceData.course_sessions)
+      ? serviceData.course_sessions
+      : Array.isArray(serviceData.sessions)
+      ? serviceData.sessions
+      : [
+          {
+            id: 1,
+            title: "Introduction and Foundations",
+            description: "Overview of course fundamentals and key concepts.",
+            date: "TBD",
+            startTime: "18:00",
+            endTime: "19:30",
+            agenda: [
+              "Welcome and course overview",
+              "Introduction to core principles",
+              "Setting intentions and goals",
+              "Q&A session",
+            ],
+          },
+        ],
+    practitioners: Array.isArray(serviceData.instructors)
+      ? serviceData.instructors
+      : (serviceData.practitioner || serviceData.primary_practitioner)
+      ? [{
+          id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
+          name: (serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Instructor'),
+          title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Course Instructor'),
+          bio: (serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced instructor dedicated to your learning journey.'),
+          image: (serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/placeholder.svg?height=200&width=200'),
+          isPrimary: true,
+          rating: (serviceData.practitioner?.average_rating || serviceData.primary_practitioner?.average_rating || 4.7),
+          reviewCount: (serviceData.practitioner?.total_reviews || serviceData.primary_practitioner?.total_reviews || 0),
+        }]
+      : [],
   } : MOCK_COURSE
 
   // Auth and favorites state
