@@ -213,7 +213,7 @@ export default function Navbar() {
               {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="relative">
                     <Badge
                       variant="destructive"
                       className="absolute -right-1 -top-1 h-4 w-4 p-0 flex items-center justify-center"
