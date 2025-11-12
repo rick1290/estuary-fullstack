@@ -198,21 +198,24 @@ export default function AuthModal({
           {/* Left Side - Image and Stats */}
           <div className="relative hidden lg:block bg-gradient-to-br from-sage-600 to-terracotta-600 p-8 text-white">
             {/* Background Image */}
-            <div className="absolute inset-0 opacity-20">
-              <img 
-                src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&h=600&fit=crop" 
-                alt="Wellness practitioners"
+            <div className="absolute inset-0 opacity-30">
+              <img
+                src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop"
+                alt="Peaceful wellness meditation"
                 className="w-full h-full object-cover"
               />
             </div>
-            
+
+            {/* Dark overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900/60 to-gray-900/40"></div>
+
             {/* Content */}
-            <div className="relative z-10 h-full flex flex-col">
+            <div className="relative z-10 h-full flex flex-col [&_*]:drop-shadow-lg">
               <div className="flex-1 flex flex-col justify-center">
-                <h2 className="text-3xl font-bold mb-6">
+                <h2 className="text-3xl font-bold mb-6 text-white">
                   {title || "Join Our Wellness Community"}
                 </h2>
-                <p className="text-lg mb-8 text-white/90">
+                <p className="text-lg mb-8 text-white">
                   {description || "Connect with top practitioners and transform your wellness journey"}
                 </p>
 
@@ -220,31 +223,31 @@ export default function AuthModal({
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <Users className="h-6 w-6" />
+                      <Users className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">500+</p>
-                      <p className="text-sm text-white/80">Verified Practitioners</p>
+                      <p className="text-2xl font-bold text-white">500+</p>
+                      <p className="text-sm text-white">Verified Practitioners</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <Star className="h-6 w-6" />
+                      <Star className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">4.9/5</p>
-                      <p className="text-sm text-white/80">Average Rating</p>
+                      <p className="text-2xl font-bold text-white">4.9/5</p>
+                      <p className="text-sm text-white">Average Rating</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <Shield className="h-6 w-6" />
+                      <Shield className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">100%</p>
-                      <p className="text-sm text-white/80">Secure & Private</p>
+                      <p className="text-2xl font-bold text-white">100%</p>
+                      <p className="text-sm text-white">Secure & Private</p>
                     </div>
                   </div>
                 </div>
@@ -252,27 +255,27 @@ export default function AuthModal({
                 {/* Features */}
                 <div className="mt-8 space-y-3">
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-white/90" />
-                    <span className="text-sm">Access top wellness practitioners</span>
+                    <Check className="h-5 w-5 text-white" />
+                    <span className="text-sm text-white">Access top wellness practitioners</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-white/90" />
-                    <span className="text-sm">Book sessions, workshops & courses</span>
+                    <Check className="h-5 w-5 text-white" />
+                    <span className="text-sm text-white">Book sessions, workshops & courses</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-white/90" />
-                    <span className="text-sm">Track your wellness journey</span>
+                    <Check className="h-5 w-5 text-white" />
+                    <span className="text-sm text-white">Track your wellness journey</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-white/90" />
-                    <span className="text-sm">Connect with a supportive community</span>
+                    <Check className="h-5 w-5 text-white" />
+                    <span className="text-sm text-white">Connect with a supportive community</span>
                   </div>
                 </div>
               </div>
 
               {/* Logo */}
               <div className="mt-8">
-                <p className="text-xl font-bold tracking-widest">ESTUARY</p>
+                <p className="text-xl font-bold tracking-widest text-white">ESTUARY</p>
               </div>
             </div>
           </div>
