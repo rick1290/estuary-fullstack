@@ -53,7 +53,8 @@ class Command(BaseCommand):
 
             elif email_type == 'booking_confirmation':
                 from emails.services import EmailService
-                booking_date = timezone.now() + timedelta(days=3)
+                # Set booking for 3 days from now at 2:00 PM
+                booking_date = (timezone.now() + timedelta(days=3)).replace(hour=14, minute=0, second=0, microsecond=0)
                 result = EmailService.send_template_email(
                     to=recipient_email,
                     template_path='clients/booking_confirmation_standalone.mjml',
@@ -80,7 +81,8 @@ class Command(BaseCommand):
 
             elif email_type == 'reminder':
                 from emails.services import EmailService
-                session_date = timezone.now() + timedelta(hours=24)
+                # Set session for tomorrow at 2:00 PM
+                session_date = (timezone.now() + timedelta(days=1)).replace(hour=14, minute=0, second=0, microsecond=0)
                 result = EmailService.send_template_email(
                     to=recipient_email,
                     template_path='clients/reminder_standalone.mjml',
@@ -104,15 +106,29 @@ class Command(BaseCommand):
 
             elif email_type == 'booking_received':
                 from emails.services import EmailService
-                booking_date = timezone.now() + timedelta(days=5)
+                from django.contrib.auth import get_user_model
+
+                # Create booking datetime with a reasonable time (2:00 PM, 5 days from now)
+                booking_date = (timezone.now() + timedelta(days=5)).replace(hour=14, minute=0, second=0, microsecond=0)
+
+                # Try to get a real user for client data, otherwise use test data
+                User = get_user_model()
+                try:
+                    client_user = User.objects.exclude(email=recipient_email).first()
+                    client_name = client_user.get_full_name() if client_user and client_user.get_full_name() else 'John Smith'
+                    client_email = client_user.email if client_user else 'client@example.com'
+                except:
+                    client_name = 'John Smith'
+                    client_email = 'client@example.com'
+
                 result = EmailService.send_template_email(
                     to=recipient_email,
                     template_path='practitioners/booking_received_standalone.mjml',
                     context={
                         'user': {'first_name': first_name},
                         'first_name': first_name,
-                        'client_name': 'Michael Thompson',
-                        'client_email': 'michael.thompson@example.com',
+                        'client_name': client_name,
+                        'client_email': client_email,
                         'service_name': 'Mindful Meditation Session',
                         'service_type': 'Session',
                         'booking_date': booking_date.strftime('%A, %B %d, %Y'),

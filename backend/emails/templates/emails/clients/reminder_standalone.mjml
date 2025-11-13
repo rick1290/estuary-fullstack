@@ -41,25 +41,31 @@
         <mj-column>
           <!-- Service Name -->
           <mj-text font-size="20px" font-weight="600" color="#7a8b63" padding-bottom="16px">
-            Mindful Meditation Session
+            {{ service_name }}
           </mj-text>
 
           <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #3c412a;">👤 With:</span> Dr. Sarah Johnson
+            <span style="font-weight: 600; color: #3c412a;">👤 With:</span> {{ practitioner_name }}
           </mj-text>
 
           <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #3c412a;">📅 Tomorrow:</span> December 15, 2025
+            <span style="font-weight: 600; color: #3c412a;">📅 Date:</span> {{ booking_date }}
           </mj-text>
 
           <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #3c412a;">⏰ Time:</span> 2:00 PM PST (1 hour)
+            <span style="font-weight: 600; color: #3c412a;">⏰ Time:</span> {{ booking_time }} ({{ duration_minutes }} min)
           </mj-text>
 
           <!-- CTA Button -->
-          <mj-button href="{{ WEBSITE_URL }}/room/abc-123/lobby">
+          {% if has_video_room %}
+          <mj-button href="{{ join_url }}">
+            Join Session
+          </mj-button>
+          {% else %}
+          <mj-button href="{{ booking_url }}">
             View Session Details
           </mj-button>
+          {% endif %}
         </mj-column>
       </mj-section>
 

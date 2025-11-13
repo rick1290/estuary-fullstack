@@ -48,27 +48,27 @@
             Client
           </mj-text>
           <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #7a8b63;">Richard Nielsen</span><br/>
-            <span style="color: #6f7a47; font-size: 14px;">richard.j.nielsen@gmail.com</span>
+            <span style="font-weight: 600; color: #7a8b63;">{{ client_name }}</span><br/>
+            <span style="color: #6f7a47; font-size: 14px;">{{ client_email }}</span>
           </mj-text>
 
           <mj-divider border-color="#e2d5bd" padding="16px 0" />
 
           <!-- Service -->
           <mj-text font-size="20px" font-weight="600" color="#7a8b63" padding-bottom="16px">
-            Mindful Meditation Session
+            {{ service_name }}
           </mj-text>
 
           <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #3c412a;">📅 Date:</span> December 15, 2025
+            <span style="font-weight: 600; color: #3c412a;">📅 Date:</span> {{ booking_date }}
           </mj-text>
 
           <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #3c412a;">⏰ Time:</span> 2:00 PM - 3:00 PM PST
+            <span style="font-weight: 600; color: #3c412a;">⏰ Time:</span> {{ booking_time }} ({{ duration_minutes }} min)
           </mj-text>
 
           <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #3c412a;">💰 Earnings:</span> $95.00 (after 5% commission)
+            <span style="font-weight: 600; color: #3c412a;">💰 Earnings:</span> {{ net_earnings }} (after {{ commission_rate }}% commission)
           </mj-text>
 
           <!-- CTA Button -->
@@ -82,10 +82,10 @@
       <mj-section background-color="#f5f1e6" border-radius="12px" padding="24px 28px">
         <mj-column>
           <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">
-            📊 This Month
+            💡 Booking Tip
           </mj-text>
           <mj-text font-size="14px" line-height="1.6" color="#3c412a">
-            <strong>12 bookings</strong> · <strong>$1,140 earnings</strong> · <strong>4.9★ rating</strong>
+            Respond to client messages within 24 hours to maintain your response rating and improve client satisfaction.
           </mj-text>
         </mj-column>
       </mj-section>
