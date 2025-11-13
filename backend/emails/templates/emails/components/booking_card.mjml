@@ -1,0 +1,43 @@
+<!-- Reusable Booking Details Card -->
+<!-- Usage: {% include 'emails/components/booking_card.mjml' %} -->
+<!-- Requires: booking, service in context -->
+
+<mj-section background-color="#ffffff" border-radius="12px" border="1px solid #e2d5bd" padding="24px">
+  <mj-column>
+    <!-- Service Name -->
+    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="16px">
+      {{ service.title }}
+    </mj-text>
+
+    <!-- Booking Details -->
+    <mj-text padding-bottom="12px">
+      <span style="color: #6f7a47; font-weight: 600;">📅 Date:</span><br/>
+      <span style="color: #3c412a;">{{ booking.booking_date|date:"F d, Y" }}</span>
+    </mj-text>
+
+    <mj-text padding-bottom="12px">
+      <span style="color: #6f7a47; font-weight: 600;">⏰ Time:</span><br/>
+      <span style="color: #3c412a;">{{ booking.start_time|time:"g:i A" }} - {{ booking.end_time|time:"g:i A" }}</span>
+    </mj-text>
+
+    {% if service.location_type == 'virtual' %}
+    <mj-text padding-bottom="12px">
+      <span style="color: #6f7a47; font-weight: 600;">📍 Location:</span><br/>
+      <span style="color: #3c412a;">Virtual Session</span>
+    </mj-text>
+    {% elif service.location %}
+    <mj-text padding-bottom="12px">
+      <span style="color: #6f7a47; font-weight: 600;">📍 Location:</span><br/>
+      <span style="color: #3c412a;">{{ service.location }}</span>
+    </mj-text>
+    {% endif %}
+
+    {% if booking.total_amount %}
+    <mj-divider border-color="#e2d5bd" padding="16px 0" />
+    <mj-text padding-top="8px">
+      <span style="color: #6f7a47; font-weight: 600;">Total:</span>
+      <span style="color: #3c412a; font-size: 18px; font-weight: 700; float: right;">${{ booking.total_amount|floatformat:2 }}</span>
+    </mj-text>
+    {% endif %}
+  </mj-column>
+</mj-section>

@@ -1,0 +1,113 @@
+{% extends "emails/base.mjml" %}
+
+{% block content %}
+<!-- New Booking Hero -->
+<mj-section padding="48px 0 32px">
+  <mj-column>
+    <mj-text align="center" font-size="48px" padding-bottom="16px">
+      🎉
+    </mj-text>
+    <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="16px">
+      New Booking Received!
+    </mj-text>
+    <mj-text align="center" font-size="16px" color="#6f7a47">
+      {{ client.get_full_name }} just booked {{ service.title }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Client Info Card -->
+<mj-section background-color="#f5f1e6" border-radius="12px" padding="20px">
+  <mj-column width="80px" vertical-align="middle">
+    {% if client.profile.avatar %}
+    <mj-image
+      src="{{ client.profile.avatar }}"
+      alt="{{ client.get_full_name }}"
+      width="64px"
+      height="64px"
+      border-radius="32px"
+    />
+    {% else %}
+    <mj-image
+      src="{{ WEBSITE_URL }}/static/default-avatar.png"
+      alt="{{ client.get_full_name }}"
+      width="64px"
+      height="64px"
+      border-radius="32px"
+    />
+    {% endif %}
+  </mj-column>
+
+  <mj-column width="420px" vertical-align="middle">
+    <mj-text font-size="18px" font-weight="600" color="#3c412a" padding="0">
+      {{ client.get_full_name }}
+    </mj-text>
+    <mj-text font-size="14px" color="#6f7a47" padding="4px 0 0 0">
+      {{ client.email }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Spacing -->
+<mj-section padding="16px 0">
+  <mj-column></mj-column>
+</mj-section>
+
+<!-- Booking Details -->
+{% include 'emails/components/booking_card.mjml' %}
+
+<!-- Client Notes (if any) -->
+{% if booking.special_requests %}
+<mj-section background-color="#f5f1e6" border-radius="12px" border-left="4px solid #7a8b63" padding="24px 28px">
+  <mj-column>
+    <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">
+      💬 Client's Note
+    </mj-text>
+    <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+      {{ booking.special_requests }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Quick Actions -->
+<mj-section background-color="#ffffff" border-radius="12px" padding="32px">
+  <mj-column>
+    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="20px">
+      Quick Actions
+    </mj-text>
+
+    {% include 'emails/components/button.mjml' with button_text="View Booking Details" button_url=WEBSITE_URL|add:"/dashboard/practitioner/bookings/"|add:booking.id %}
+
+    <mj-text align="center" padding-top="16px" padding-bottom="12px">
+      <a href="{{ WEBSITE_URL }}/dashboard/practitioner/clients/{{ client.id }}" style="color: #7a8b63; font-size: 14px; font-weight: 600;">View Client Profile →</a>
+    </mj-text>
+
+    <mj-text align="center">
+      <a href="{{ WEBSITE_URL }}/dashboard/practitioner/messages?client={{ client.id }}" style="color: #7a8b63; font-size: 14px; font-weight: 600;">Send Message →</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Reminder Info -->
+<mj-section padding="32px 0">
+  <mj-column>
+    <mj-text align="center" font-size="14px" color="#8b985b">
+      Don't worry, we'll send you reminders 24 hours and 30 minutes before the session.
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Earnings Info -->
+<mj-section background-color="#f5f1e6" border-radius="12px" padding="24px">
+  <mj-column>
+    <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">
+      💰 Your Earnings
+    </mj-text>
+    <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+      <strong>Total Booking:</strong> ${{ booking.total_amount|floatformat:2 }}<br/>
+      <strong>Your Earnings:</strong> ${{ booking.practitioner_amount|floatformat:2 }} (after 5% platform fee)
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endblock %}

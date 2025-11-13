@@ -1,0 +1,102 @@
+{% extends "emails/base.mjml" %}
+
+{% block content %}
+<!-- Welcome Hero -->
+<mj-section padding="48px 0 32px">
+  <mj-column>
+    <mj-text align="center" font-size="36px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="16px">
+      Welcome to Estuary! 🌿
+    </mj-text>
+    <mj-text align="center" font-size="18px" color="#6f7a47" padding-bottom="32px">
+      Hi {{ first_name }}, we're excited to have you join our practitioner community
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Main Message -->
+<mj-section background-color="#ffffff" border-radius="16px" padding="40px 32px">
+  <mj-column>
+    <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
+      Congratulations on taking this step! You're now part of a vibrant community of wellness practitioners who are transforming lives every day.
+    </mj-text>
+
+    <mj-text font-size="16px" line-height="1.7" padding-bottom="32px">
+      Let's get you set up for success:
+    </mj-text>
+
+    <!-- Getting Started Steps -->
+    <mj-text padding-bottom="16px">
+      <span style="display: inline-block; width: 40px; height: 40px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: 700; margin-right: 12px;">1</span>
+      <span style="font-weight: 600; color: #3c412a; font-size: 18px;">Complete Your Profile</span><br/>
+      <span style="margin-left: 52px; color: #6f7a47;">Tell clients about your expertise, certifications, and approach</span>
+    </mj-text>
+
+    <mj-text padding-bottom="16px">
+      <span style="display: inline-block; width: 40px; height: 40px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: 700; margin-right: 12px;">2</span>
+      <span style="font-weight: 600; color: #3c412a; font-size: 18px;">Create Your Services</span><br/>
+      <span style="margin-left: 52px; color: #6f7a47;">Set up sessions, workshops, or courses with your pricing</span>
+    </mj-text>
+
+    <mj-text padding-bottom="32px">
+      <span style="display: inline-block; width: 40px; height: 40px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: 700; margin-right: 12px;">3</span>
+      <span style="font-weight: 600; color: #3c412a; font-size: 18px;">Set Your Availability</span><br/>
+      <span style="margin-left: 52px; color: #6f7a47;">Let clients know when you're available for bookings</span>
+    </mj-text>
+
+    <!-- CTA -->
+    {% include 'emails/components/button.mjml' with button_text="Complete Your Profile" button_url=WEBSITE_URL|add:"/dashboard/practitioner/profile" %}
+  </mj-column>
+</mj-section>
+
+<!-- Commission Info -->
+<mj-section background-color="#f5f1e6" border-radius="12px" padding="32px">
+  <mj-column>
+    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="16px">
+      💰 Simple, Transparent Pricing
+    </mj-text>
+
+    <mj-text font-size="14px" line-height="1.7" padding-bottom="12px">
+      <strong>5% commission</strong> on all bookings (that's it!)
+    </mj-text>
+
+    <mj-text font-size="14px" line-height="1.7" padding-bottom="12px">
+      <strong>Weekly payouts</strong> automatically or request anytime
+    </mj-text>
+
+    <mj-text font-size="14px" line-height="1.7">
+      <strong>Full transparency</strong> - track every booking and earning in real-time
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Resources -->
+<mj-section background-color="#ffffff" border-radius="12px" padding="32px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="700" color="#3c412a" padding-bottom="16px">
+      📚 Helpful Resources
+    </mj-text>
+
+    <mj-text padding-bottom="8px">
+      <a href="{{ WEBSITE_URL }}/practitioner-guide" style="color: #7a8b63; text-decoration: none; font-weight: 600;">→ Practitioner Success Guide</a>
+    </mj-text>
+
+    <mj-text padding-bottom="8px">
+      <a href="{{ WEBSITE_URL }}/help/practitioners" style="color: #7a8b63; text-decoration: none; font-weight: 600;">→ Help Center for Practitioners</a>
+    </mj-text>
+
+    <mj-text padding-bottom="8px">
+      <a href="{{ WEBSITE_URL }}/community" style="color: #7a8b63; text-decoration: none; font-weight: 600;">→ Join Our Practitioner Community</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Support -->
+<mj-section padding="32px 0">
+  <mj-column>
+    <mj-text align="center" font-size="14px" color="#8b985b">
+      Have questions? We're here to help you succeed.<br/>
+      <a href="mailto:{{ SUPPORT_EMAIL }}" style="color: #7a8b63; font-weight: 600;">Contact Support</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endblock %}

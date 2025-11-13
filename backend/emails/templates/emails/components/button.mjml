@@ -1,0 +1,14 @@
+<!-- Reusable CTA Button Component -->
+<!-- Usage: {% include 'emails/components/button.mjml' with button_text="View Booking" button_url="https://..." button_color="#7a8b63" %} -->
+
+<mj-button
+  href="{{ button_url }}"
+  background-color="{{ button_color|default:'#7a8b63' }}"
+  color="#ffffff"
+  font-weight="600"
+  border-radius="12px"
+  padding="14px 32px"
+  font-size="16px"
+>
+  {{ button_text }}
+</mj-button>

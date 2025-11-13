@@ -1,0 +1,87 @@
+<mjml>
+  <mj-head>
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#3c412a" />
+      <mj-button background-color="#7a8b63" color="#ffffff" font-weight="600" border-radius="12px" padding="14px 32px" font-size="16px" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f5f1e6">
+    <mj-section background-color="#ffffff" padding="32px 24px">
+      <mj-column>
+        <mj-text align="center" font-size="20px" font-weight="700" color="#3c412a" letter-spacing="5px" padding="12px 0">ESTUARY</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
+      <mj-section padding="48px 0 32px">
+        <mj-column>
+          <mj-text align="center" font-size="36px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="16px">
+            Welcome to ESTUARY, {{ user.first_name }}! 🌿
+          </mj-text>
+          <mj-text align="center" font-size="18px" color="#6f7a47" padding-bottom="32px">
+            You're now part of a growing community of wellness practitioners
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section background-color="#ffffff" border-radius="16px" padding="40px 32px">
+        <mj-column>
+          <mj-text font-size="16px" line-height="1.7" padding-bottom="32px">
+            Congratulations on taking the first step to grow your practice! ESTUARY connects you with clients seeking authentic wellness experiences, and we're here to support your success.
+          </mj-text>
+
+          <mj-text font-size="18px" font-weight="600" color="#3c412a" padding-bottom="16px">Get Started in 3 Steps:</mj-text>
+
+          <mj-text padding-bottom="16px">
+            <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px; font-weight: 700;">1</span>
+            <span style="font-weight: 600; color: #3c412a;">Complete Your Profile</span><br/>
+            <span style="padding-left: 44px; display: block; color: #6f7a47; font-size: 14px; padding-top: 4px;">Add your photo, bio, certifications, and specializations</span>
+          </mj-text>
+
+          <mj-text padding-bottom="16px">
+            <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px; font-weight: 700;">2</span>
+            <span style="font-weight: 600; color: #3c412a;">Create Your Services</span><br/>
+            <span style="padding-left: 44px; display: block; color: #6f7a47; font-size: 14px; padding-top: 4px;">Set up sessions, workshops, or courses with your availability</span>
+          </mj-text>
+
+          <mj-text padding-bottom="32px">
+            <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px; font-weight: 700;">3</span>
+            <span style="font-weight: 600; color: #3c412a;">Go Live</span><br/>
+            <span style="padding-left: 44px; display: block; color: #6f7a47; font-size: 14px; padding-top: 4px;">Start accepting bookings and connecting with clients</span>
+          </mj-text>
+
+          <mj-button href="{{ WEBSITE_URL }}/practitioner/setup">Complete Setup</mj-button>
+        </mj-column>
+      </mj-section>
+
+      <mj-section background-color="#f5f1e6" border-radius="12px" border-left="4px solid #7a8b63" padding="24px 28px">
+        <mj-column>
+          <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">💰 Our Commission</mj-text>
+          <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+            We charge only <strong>5% commission</strong> on each booking. You keep 95% of what you earn. Payouts are weekly, directly to your bank account.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="32px 0">
+        <mj-column>
+          <mj-text align="center" font-size="14px" color="#8b985b">
+            Questions? We're here to help.<br/>
+            <a href="{{ WEBSITE_URL }}/practitioner/help" style="color: #7a8b63; font-weight: 600;">Visit Practitioner Help Center →</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <mj-section background-color="#3c412a" padding="40px 24px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="18px" font-weight="700" letter-spacing="5px" padding-bottom="16px">ESTUARY</mj-text>
+        <mj-text align="center" color="#95a57f" font-size="14px" padding-bottom="24px">Empowering wellness practitioners</mj-text>
+        <mj-text align="center" color="#8b985b" font-size="12px">© {{ YEAR }} ESTUARY. All rights reserved.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

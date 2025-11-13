@@ -1,0 +1,39 @@
+<!-- Reusable Practitioner Info Card -->
+<!-- Usage: {% include 'emails/components/practitioner_card.mjml' %} -->
+<!-- Requires: practitioner in context -->
+
+<mj-section background-color="#f5f1e6" border-radius="12px" padding="20px">
+  <mj-column width="80px" vertical-align="middle">
+    {% if practitioner.profile_image_url %}
+    <mj-image
+      src="{{ practitioner.profile_image_url }}"
+      alt="{{ practitioner.display_name }}"
+      width="64px"
+      height="64px"
+      border-radius="32px"
+    />
+    {% else %}
+    <mj-image
+      src="{{ WEBSITE_URL }}/static/default-avatar.png"
+      alt="{{ practitioner.display_name }}"
+      width="64px"
+      height="64px"
+      border-radius="32px"
+    />
+    {% endif %}
+  </mj-column>
+
+  <mj-column width="420px" vertical-align="middle">
+    <mj-text font-size="18px" font-weight="600" color="#3c412a" padding="0">
+      {{ practitioner.display_name }}
+    </mj-text>
+
+    {% if practitioner.specializations.all %}
+    <mj-text font-size="14px" color="#6f7a47" padding="4px 0 0 0">
+      {% for spec in practitioner.specializations.all|slice:":3" %}
+        {{ spec.name }}{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </mj-text>
+    {% endif %}
+  </mj-column>
+</mj-section>
