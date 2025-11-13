@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { X, Check, Users, Star, Shield, ArrowRight, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { authRegisterCreate } from "@/src/client/sdk.gen"
@@ -199,10 +200,12 @@ export default function AuthModal({
           <div className="relative hidden lg:block bg-gradient-to-br from-sage-600 to-terracotta-600 p-8 text-white">
             {/* Background Image */}
             <div className="absolute inset-0 opacity-30">
-              <img
-                src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop"
+              <Image
+                src="/auth-modal-background.png"
                 alt="Peaceful wellness meditation"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                priority
               />
             </div>
 
