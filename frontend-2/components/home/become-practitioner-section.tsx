@@ -86,33 +86,30 @@ export default function BecomePractitionerSection() {
 
           <div className="order-1 lg:order-2 animate-slide-up" style={{animationDelay: '0.2s'}}>
             <Card className="overflow-hidden border-0 shadow-2xl">
-              <div className="relative h-[400px] lg:h-[500px] bg-gradient-to-br from-sage-100 to-terracotta-100">
-                <div className="absolute inset-0 texture-grain opacity-20" />
-                
-                {/* Placeholder visual */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-32 h-32 rounded-full bg-white/80 backdrop-blur-sm mx-auto mb-6 flex items-center justify-center shadow-xl">
-                      <Heart className="h-16 w-16 text-terracotta-600" strokeWidth="1.5" />
-                    </div>
-                    <p className="text-olive-800 font-medium text-lg">Your Practice Awaits</p>
-                  </div>
-                </div>
-                
+              <div className="relative h-[400px] lg:h-[500px]">
+                {/* Hero image */}
+                <Image
+                  src="/become-practitioner-hero.png"
+                  alt="Share Your Gifts Transform Lives"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+
                 {/* Stats overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-olive-900/80 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
                   <div className="grid grid-cols-3 gap-4 text-white">
                     <div className="text-center">
-                      <p className="text-3xl font-bold">500+</p>
-                      <p className="text-sm opacity-90">Practitioners</p>
+                      <p className="text-3xl font-bold drop-shadow-lg">500+</p>
+                      <p className="text-sm drop-shadow-md">Practitioners</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-3xl font-bold">10k+</p>
-                      <p className="text-sm opacity-90">Sessions</p>
+                      <p className="text-3xl font-bold drop-shadow-lg">10k+</p>
+                      <p className="text-sm drop-shadow-md">Sessions</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-3xl font-bold">4.9</p>
-                      <p className="text-sm opacity-90">Avg Rating</p>
+                      <p className="text-3xl font-bold drop-shadow-lg">4.9</p>
+                      <p className="text-sm drop-shadow-md">Avg Rating</p>
                     </div>
                   </div>
                 </div>
