@@ -2,6 +2,7 @@
 Practitioner-specific notification services.
 """
 import logging
+import pytz
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 from decimal import Decimal
@@ -59,6 +60,38 @@ class PractitionerNotificationService(BaseNotificationService):
     def get_template(self, template_key: str) -> Dict[str, str]:
         """Get template path and subject."""
         return self.TEMPLATES.get(template_key, {})
+
+    def _format_datetime_with_timezone(self, dt: datetime, booking_timezone: str = 'UTC') -> Dict[str, str]:
+        """
+        Convert UTC datetime to booking timezone and return formatted strings.
+
+        Args:
+            dt: datetime object (in UTC)
+            booking_timezone: timezone string (e.g., 'America/Los_Angeles')
+
+        Returns:
+            dict with 'date', 'time', 'time_with_tz' keys
+        """
+        try:
+            # Convert to booking timezone
+            tz = pytz.timezone(booking_timezone)
+            local_dt = dt.astimezone(tz)
+
+            return {
+                'date': local_dt.strftime('%A, %B %d, %Y'),
+                'time': local_dt.strftime('%I:%M %p'),
+                'time_with_tz': local_dt.strftime('%I:%M %p %Z'),
+                'tz_abbr': local_dt.strftime('%Z')
+            }
+        except Exception as e:
+            logger.warning(f"Error converting timezone {booking_timezone}: {e}")
+            # Fallback to UTC
+            return {
+                'date': dt.strftime('%A, %B %d, %Y'),
+                'time': dt.strftime('%I:%M %p'),
+                'time_with_tz': dt.strftime('%I:%M %p UTC'),
+                'tz_abbr': 'UTC'
+            }
     
     def send_welcome_email(self, practitioner):
         """
@@ -138,13 +171,17 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+
         # Check if booking has a video room
         video_room_url = None
         if hasattr(booking, 'livekit_room') and booking.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
         elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
-        
+
         data = {
             'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
@@ -152,8 +189,8 @@ class PractitionerNotificationService(BaseNotificationService):
             'client_email': client.email,
             'service_name': service.name,
             'service_type': service.service_type.name if service.service_type else 'Service',
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'gross_amount': f"${gross_amount:.2f}",
@@ -285,24 +322,29 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_rate = Decimal('15.0')  # Default 15%
         commission_amount = gross_amount * commission_rate / 100
         lost_earnings = gross_amount - commission_amount
-        
+
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        booking_time = booking.start_datetime if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time
+        dt_formatted = self._format_datetime_with_timezone(booking_time, booking_tz)
+
         data = {
             'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'client_name': client.get_full_name(),
             'service_name': service.name,
-            'original_date': booking.start_datetime.strftime('%A, %B %d, %Y') if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time.strftime('%A, %B %d, %Y'),
-            'original_time': booking.start_datetime.strftime('%I:%M %p') if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time.strftime('%I:%M %p'),
+            'original_date': dt_formatted['date'],
+            'original_time': dt_formatted['time_with_tz'],
             'cancelled_by': 'Client' if cancelled_by == client else 'System',
             'cancellation_reason': reason or 'No reason provided',
             'lost_earnings': f"${lost_earnings:.2f}",
-            'time_until_booking': self._format_time_until((booking.start_datetime if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time) - timezone.now()),
+            'time_until_booking': self._format_time_until(booking_time - timezone.now()),
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
             'rebooking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/availability",
             'is_practitioner': True,
             'other_party_name': client.get_full_name(),
-            'booking_date': booking.start_datetime.strftime('%A, %B %d, %Y') if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_datetime.strftime('%I:%M %p') if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time.strftime('%I:%M %p')
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz']
         }
         
         notification = self.create_notification_record(

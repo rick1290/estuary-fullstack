@@ -53,8 +53,14 @@ class Command(BaseCommand):
 
             elif email_type == 'booking_confirmation':
                 from emails.services import EmailService
+                import pytz
                 # Set booking for 3 days from now at 2:00 PM
                 booking_date = (timezone.now() + timedelta(days=3)).replace(hour=14, minute=0, second=0, microsecond=0)
+
+                # Convert to PST for display
+                pst = pytz.timezone('America/Los_Angeles')
+                booking_date_local = booking_date.astimezone(pst)
+
                 result = EmailService.send_template_email(
                     to=recipient_email,
                     template_path='clients/booking_confirmation_standalone.mjml',
@@ -63,8 +69,8 @@ class Command(BaseCommand):
                         'first_name': first_name,
                         'service_name': 'Mindful Meditation Session',
                         'practitioner_name': 'Sarah Johnson',
-                        'booking_date': booking_date.strftime('%A, %B %d, %Y'),
-                        'booking_time': booking_date.strftime('%I:%M %p'),
+                        'booking_date': booking_date_local.strftime('%A, %B %d, %Y'),
+                        'booking_time': booking_date_local.strftime('%I:%M %p %Z'),
                         'duration_minutes': 60,
                         'location': 'Virtual Session',
                         'total_amount': '89.00',
@@ -81,8 +87,14 @@ class Command(BaseCommand):
 
             elif email_type == 'reminder':
                 from emails.services import EmailService
+                import pytz
                 # Set session for tomorrow at 2:00 PM
                 session_date = (timezone.now() + timedelta(days=1)).replace(hour=14, minute=0, second=0, microsecond=0)
+
+                # Convert to PST for display
+                pst = pytz.timezone('America/Los_Angeles')
+                session_date_local = session_date.astimezone(pst)
+
                 result = EmailService.send_template_email(
                     to=recipient_email,
                     template_path='clients/reminder_standalone.mjml',
@@ -91,8 +103,8 @@ class Command(BaseCommand):
                         'first_name': first_name,
                         'service_name': 'Mindful Meditation Session',
                         'practitioner_name': 'Sarah Johnson',
-                        'booking_date': session_date.strftime('%A, %B %d, %Y'),
-                        'booking_time': session_date.strftime('%I:%M %p'),
+                        'booking_date': session_date_local.strftime('%A, %B %d, %Y'),
+                        'booking_time': session_date_local.strftime('%I:%M %p %Z'),
                         'duration_minutes': 60,
                         'location': 'Virtual Session',
                         'time_until': '24 hours',
@@ -121,6 +133,11 @@ class Command(BaseCommand):
                     client_name = 'John Smith'
                     client_email = 'client@example.com'
 
+                # Convert to PST for display
+                import pytz
+                pst = pytz.timezone('America/Los_Angeles')
+                booking_date_local = booking_date.astimezone(pst)
+
                 result = EmailService.send_template_email(
                     to=recipient_email,
                     template_path='practitioners/booking_received_standalone.mjml',
@@ -131,8 +148,8 @@ class Command(BaseCommand):
                         'client_email': client_email,
                         'service_name': 'Mindful Meditation Session',
                         'service_type': 'Session',
-                        'booking_date': booking_date.strftime('%A, %B %d, %Y'),
-                        'booking_time': booking_date.strftime('%I:%M %p'),
+                        'booking_date': booking_date_local.strftime('%A, %B %d, %Y'),
+                        'booking_time': booking_date_local.strftime('%I:%M %p %Z'),
                         'duration_minutes': 60,
                         'location': 'Virtual Session',
                         'gross_amount': '$89.00',

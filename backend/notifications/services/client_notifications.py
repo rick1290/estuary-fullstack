@@ -2,6 +2,7 @@
 Client-specific notification services.
 """
 import logging
+import pytz
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
@@ -66,6 +67,38 @@ class ClientNotificationService(BaseNotificationService):
     def get_template(self, template_key: str) -> Dict[str, str]:
         """Get template path and subject."""
         return self.TEMPLATES.get(template_key, {})
+
+    def _format_datetime_with_timezone(self, dt: datetime, booking_timezone: str = 'UTC') -> Dict[str, str]:
+        """
+        Convert UTC datetime to booking timezone and return formatted strings.
+
+        Args:
+            dt: datetime object (in UTC)
+            booking_timezone: timezone string (e.g., 'America/Los_Angeles')
+
+        Returns:
+            dict with 'date', 'time', 'time_with_tz' keys
+        """
+        try:
+            # Convert to booking timezone
+            tz = pytz.timezone(booking_timezone)
+            local_dt = dt.astimezone(tz)
+
+            return {
+                'date': local_dt.strftime('%A, %B %d, %Y'),
+                'time': local_dt.strftime('%I:%M %p'),
+                'time_with_tz': local_dt.strftime('%I:%M %p %Z'),
+                'tz_abbr': local_dt.strftime('%Z')
+            }
+        except Exception as e:
+            logger.warning(f"Error converting timezone {booking_timezone}: {e}")
+            # Fallback to UTC
+            return {
+                'date': dt.strftime('%A, %B %d, %Y'),
+                'time': dt.strftime('%I:%M %p'),
+                'time_with_tz': dt.strftime('%I:%M %p UTC'),
+                'tz_abbr': 'UTC'
+            }
     
     def send_welcome_email(self, user, verification_token: Optional[str] = None):
         """
@@ -119,8 +152,10 @@ class ClientNotificationService(BaseNotificationService):
         service = booking.service
         practitioner = service.primary_practitioner
 
-        # Format booking details
+        # Format booking details with timezone conversion
         booking_datetime = booking.start_time
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking_datetime, booking_tz)
 
         # Check if booking has a video room
         video_room_url = None
@@ -136,8 +171,8 @@ class ClientNotificationService(BaseNotificationService):
             'service_type': service.service_type,
             'practitioner_name': practitioner.user.get_full_name() if practitioner else 'Your Practitioner',
             'practitioner_slug': practitioner.slug if practitioner else '',
-            'booking_date': booking_datetime.strftime('%A, %B %d, %Y'),
-            'booking_time': booking_datetime.strftime('%I:%M %p'),
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'total_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}",
@@ -310,6 +345,10 @@ class ClientNotificationService(BaseNotificationService):
         # Calculate time until booking
         time_until = booking.start_time - timezone.now()
 
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+
         # Check if booking has a video room
         video_room_url = None
         if hasattr(booking, 'livekit_room') and booking.livekit_room:
@@ -325,8 +364,8 @@ class ClientNotificationService(BaseNotificationService):
             'booking_id': str(booking.id),
             'service_name': service.name,
             'practitioner_name': practitioner.user.get_full_name() if practitioner else 'Your Practitioner',
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'hours_until': hours_before,
@@ -544,6 +583,10 @@ class ClientNotificationService(BaseNotificationService):
         service = booking.service
         practitioner = service.primary_practitioner
 
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+
         data = {
             'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
@@ -551,9 +594,9 @@ class ClientNotificationService(BaseNotificationService):
             'service_type': service.service_type,
             'practitioner_name': practitioner.user.get_full_name() if practitioner else 'Your Practitioner',
             'practitioner_slug': practitioner.slug if practitioner else '',
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
-            'session_date': booking.start_time.strftime('%B %d, %Y'),
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
+            'session_date': dt_formatted['date'],
             'review_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/review",
             'practitioner_profile_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}" if practitioner else '',
             'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/user"
@@ -604,13 +647,23 @@ class ClientNotificationService(BaseNotificationService):
         service = booking.service
         practitioner = service.primary_practitioner if service else booking.practitioner
 
+        # Format booking time with timezone conversion
+        if booking.start_time:
+            booking_tz = getattr(booking, 'timezone', 'UTC')
+            dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+            booking_date_str = dt_formatted['date']
+            booking_time_str = dt_formatted['time_with_tz']
+        else:
+            booking_date_str = 'N/A'
+            booking_time_str = 'N/A'
+
         data = {
             'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'service_name': service.name if service else booking.service_name_snapshot,
             'other_party_name': practitioner.user.get_full_name() if practitioner else booking.practitioner_name_snapshot,
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y') if booking.start_time else 'N/A',
-            'booking_time': booking.start_time.strftime('%I:%M %p') if booking.start_time else 'N/A',
+            'booking_date': booking_date_str,
+            'booking_time': booking_time_str,
             'cancelled_by': booking.cancelled_by or 'System',
             'cancellation_reason': booking.cancellation_reason if hasattr(booking, 'cancellation_reason') else None,
             'refund_amount': f"{(booking.final_amount_cents or 0) / 100:.2f}" if booking.final_amount_cents else None,
