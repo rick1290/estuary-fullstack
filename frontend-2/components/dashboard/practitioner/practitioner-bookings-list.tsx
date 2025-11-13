@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, MoreVertical, User, Loader2, Search, Filter, Users, SpadeIcon as Spa, BookOpen, Video } from "lucide-react"
-import { format, parseISO, startOfWeek, endOfWeek, isAfter } from "date-fns"
+import { Calendar, Clock, MoreVertical, User, Loader2, Search, Filter, Users, SpadeIcon as Spa, BookOpen, Video, Play } from "lucide-react"
+import { format, parseISO, startOfWeek, endOfWeek, isAfter, isPast, isFuture } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
@@ -63,28 +64,8 @@ export default function PractitionerBookingsList() {
   const queryParams = useMemo(() => {
     const params: any = {
       practitioner_id: user?.practitionerId,
-      ordering: "-start_time",
-      page_size: 50
-    }
-
-    // Tab filters
-    const now = new Date()
-    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }) // Monday start
-    const endOfThisWeek = endOfWeek(now, { weekStartsOn: 1 })
-
-    switch (selectedTab) {
-      case "new_this_week":
-        params.created_at__gte = startOfThisWeek.toISOString()
-        params.created_at__lte = endOfThisWeek.toISOString()
-        break
-      case "upcoming":
-        params.status = "confirmed"
-        params.start_time__gte = now.toISOString()
-        break
-      case "canceled":
-        params.status = "cancelled,canceled"
-        break
-      // 'all' has no additional filters
+      ordering: "-created_at", // Most recent bookings first
+      page_size: 100
     }
 
     // Service type filter
@@ -92,8 +73,8 @@ export default function PractitionerBookingsList() {
       params.service__service_type_code = serviceTypeFilter
     }
 
-    // Status filter (only apply if not already filtered by tab)
-    if (statusFilter !== "all" && !["upcoming", "canceled"].includes(selectedTab)) {
+    // Status filter (only apply if not filtered by tab)
+    if (statusFilter !== "all" && !["upcoming", "canceled", "past"].includes(selectedTab)) {
       params.status = statusFilter
     }
 
@@ -115,16 +96,25 @@ export default function PractitionerBookingsList() {
 
   const bookings = data?.results || []
 
-  // Filter bookings for "New This Week" tab locally if API doesn't support it
+  // Filter bookings based on selected tab
   const filteredBookings = useMemo(() => {
-    if (selectedTab === "new_this_week") {
-      const startOfThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 })
-      return bookings.filter(booking => {
-        const createdDate = parseISO(booking.created_at)
-        return isAfter(createdDate, startOfThisWeek)
+    let filtered = bookings
+
+    // Filter by tab
+    if (selectedTab !== "all") {
+      filtered = filtered.filter((booking: any) => {
+        if (selectedTab === "upcoming") {
+          return booking.status === "confirmed" && booking.start_time && isFuture(parseISO(booking.start_time))
+        } else if (selectedTab === "past") {
+          return booking.status === "completed" || (booking.start_time && isPast(parseISO(booking.start_time)))
+        } else if (selectedTab === "canceled") {
+          return booking.status === "cancelled" || booking.status === "canceled"
+        }
+        return true
       })
     }
-    return bookings
+
+    return filtered
   }, [bookings, selectedTab])
 
   const formatTime = (startTime: string, duration?: number) => {
@@ -220,11 +210,11 @@ export default function PractitionerBookingsList() {
             <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
               All
             </TabsTrigger>
-            <TabsTrigger value="new_this_week" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              New This Week
-            </TabsTrigger>
             <TabsTrigger value="upcoming" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
               Upcoming
+            </TabsTrigger>
+            <TabsTrigger value="past" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Past
             </TabsTrigger>
             <TabsTrigger value="canceled" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
               Canceled
@@ -259,7 +249,7 @@ export default function PractitionerBookingsList() {
             </Select>
 
             {/* Status Filter */}
-            {!["upcoming", "canceled"].includes(selectedTab) && (
+            {!["upcoming", "canceled", "past"].includes(selectedTab) && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Status" />
@@ -281,8 +271,8 @@ export default function PractitionerBookingsList() {
           {filteredBookings.length === 0 ? (
             <div className="rounded-md border p-8 text-center">
               <p className="text-muted-foreground">
-                {selectedTab === "new_this_week" && "No new bookings this week"}
                 {selectedTab === "upcoming" && "No upcoming bookings"}
+                {selectedTab === "past" && "No past bookings"}
                 {selectedTab === "canceled" && "No canceled bookings"}
                 {selectedTab === "all" && "No bookings found"}
               </p>
@@ -346,45 +336,62 @@ export default function PractitionerBookingsList() {
                       </TableCell>
                       <TableCell>${booking.total_amount || "0.00"}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
-                                View Details
-                              </Link>
-                            </DropdownMenuItem>
-                            {/* Join button for virtual sessions */}
-                            {booking.service?.location_type === "virtual" && booking.livekit_room && (
-                              <DropdownMenuItem asChild>
-                                {isSessionJoinable(booking) ? (
-                                  <Link 
-                                    href={`/room/${booking.livekit_room.public_uuid}/lobby`}
-                                    className="flex items-center gap-2 text-primary"
-                                  >
-                                    <Video className="h-4 w-4" />
-                                    Join Session
-                                  </Link>
-                                ) : (
-                                  <span className="flex items-center gap-2 opacity-50 cursor-not-allowed">
-                                    <Video className="h-4 w-4" />
-                                    Join Session
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Inline Join Button for virtual sessions */}
+                          {booking.service?.location_type === "virtual" &&
+                           booking.room?.public_uuid &&
+                           (booking.status === "confirmed" || booking.status === "in_progress") && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-block">
+                                    <Button
+                                      variant={isSessionJoinable(booking) ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (isSessionJoinable(booking)) {
+                                          router.push(`/room/${booking.room.public_uuid}/lobby`)
+                                        }
+                                      }}
+                                      disabled={!isSessionJoinable(booking)}
+                                      className={isSessionJoinable(booking) ? "bg-sage-600 hover:bg-sage-700" : ""}
+                                    >
+                                      <Play className="h-4 w-4 mr-1" />
+                                      Join
+                                    </Button>
                                   </span>
-                                )}
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {isSessionJoinable(booking)
+                                    ? "Click to join the session"
+                                    : "Join will be available 15 minutes before session start"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
+                                  View Details
+                                </Link>
                               </DropdownMenuItem>
-                            )}
-                            {booking.status === "confirmed" && (
-                              <>
-                                <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              {booking.status === "confirmed" && (
+                                <>
+                                  <DropdownMenuItem>Reschedule</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
