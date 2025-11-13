@@ -59,8 +59,8 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset.filter(
             Q(created_by=user) |  # Rooms they created
             Q(booking__user=user) |  # Rooms for their bookings
-            Q(booking__practitioner__user=user) |  # Rooms where they're the practitioner
-            Q(service_session__service__practitioner__user=user) |  # Their service session rooms
+            Q(booking__service__primary_practitioner__user=user) |  # Rooms where they're the practitioner
+            Q(service_session__service__primary_practitioner__user=user) |  # Their service session rooms
             Q(service_session__bookings__user=user)  # Rooms for sessions they're booked in
         ).distinct()
     
@@ -484,8 +484,8 @@ class BookingRoomViewSet(viewsets.ViewSet):
         
         # Check permissions
         if not (
-            request.user == booking.user or 
-            request.user == booking.practitioner.user or
+            request.user == booking.user or
+            request.user == booking.service.primary_practitioner.user or
             request.user.is_staff
         ):
             return Response(
@@ -520,8 +520,8 @@ class BookingRoomViewSet(viewsets.ViewSet):
         
         # Check permissions
         if not (
-            request.user == booking.user or 
-            request.user == booking.practitioner.user or
+            request.user == booking.user or
+            request.user == booking.service.primary_practitioner.user or
             request.user.is_staff
         ):
             return Response(
