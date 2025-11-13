@@ -280,9 +280,9 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   </DropdownMenuItem>
                 </>
               )}
-              {booking.service?.location_type === "virtual" && booking.livekit_room && isSessionJoinable(booking) && (
-                <DropdownMenuItem 
-                  onClick={() => router.push(`/room/${booking.livekit_room.public_uuid}/lobby`)}
+              {booking.service?.location_type === "virtual" && booking.room && isSessionJoinable(booking) && (
+                <DropdownMenuItem
+                  onClick={() => router.push(`/room/${booking.room.public_uuid}/lobby`)}
                   className="text-primary"
                 >
                   <Video className="h-4 w-4 mr-2" />
@@ -374,6 +374,30 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   </>
                 )}
               </div>
+
+              {/* Join Session Button for Virtual Sessions */}
+              {booking.service?.location_type === "virtual" && booking.room?.public_uuid && (
+                <>
+                  <Separator />
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      className={`w-full flex items-center justify-center gap-2 ${
+                        isSessionJoinable(booking) ? "bg-green-600 hover:bg-green-700" : ""
+                      }`}
+                      disabled={!isSessionJoinable(booking)}
+                      onClick={() => router.push(`/room/${booking.room.public_uuid}/lobby`)}
+                    >
+                      <Video className="h-4 w-4" />
+                      {isSessionJoinable(booking) ? "Join Session Now" : "Join Session"}
+                    </Button>
+                    {!isSessionJoinable(booking) && booking.start_time && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Join will be available 15 minutes before session start
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
