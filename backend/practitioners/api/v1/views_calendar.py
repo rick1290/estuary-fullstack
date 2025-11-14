@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q, Prefetch
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from datetime import timedelta
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -40,6 +41,101 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
     This provides a "what's on my schedule" view vs raw bookings.
     """
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={200: ServiceSessionEventSerializer()},
+        description="Get detailed information about a specific ServiceSession with all attendees"
+    )
+    def retrieve(self, request, pk=None):
+        """
+        Get detailed information about a specific ServiceSession.
+
+        Returns the session details along with all attendees (bookings for this session).
+        """
+        user = request.user
+
+        # Get practitioner
+        try:
+            practitioner = Practitioner.objects.get(user=user)
+        except Practitioner.DoesNotExist:
+            return Response(
+                {'error': 'User is not a practitioner'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the ServiceSession
+        service_session = get_object_or_404(
+            ServiceSession.objects.select_related(
+                'service',
+                'service__service_type',
+                'room'
+            ).prefetch_related(
+                Prefetch(
+                    'bookings',
+                    queryset=Booking.objects.select_related('user').filter(
+                        status__in=['confirmed', 'in_progress', 'completed']
+                    )
+                )
+            ),
+            pk=pk,
+            service__primary_practitioner=practitioner
+        )
+
+        # Build attendees list
+        attendees = []
+        for booking in service_session.bookings.all():
+            attendees.append({
+                'id': booking.user.id,
+                'full_name': booking.user.get_full_name() or booking.user.email,
+                'email': booking.user.email,
+                'avatar_url': getattr(booking.user, 'avatar_url', None),
+                'phone_number': getattr(booking.user, 'phone_number', None),
+                'booking_status': booking.status,
+                'booking_id': booking.id,
+                'public_uuid': booking.public_uuid,
+            })
+
+        # Determine overall status
+        statuses = [b.status for b in service_session.bookings.all()]
+        if 'in_progress' in statuses:
+            event_status = 'in_progress'
+        elif all(s == 'completed' for s in statuses):
+            event_status = 'completed'
+        elif 'cancelled' in statuses or 'canceled' in statuses:
+            if all(s in ['cancelled', 'canceled'] for s in statuses):
+                event_status = 'cancelled'
+            else:
+                event_status = 'confirmed'
+        else:
+            event_status = 'confirmed'
+
+        # Build response
+        response_data = {
+            'event_type': 'service_session',
+            'service_session_id': service_session.id,
+            'service_session_title': service_session.title,
+            'sequence_number': service_session.sequence_number,
+            'service': {
+                'id': service_session.service.id,
+                'name': service_session.service.name,
+                'service_type_code': service_session.service.service_type.code if service_session.service.service_type else 'workshop',
+                'location_type': service_session.service.location_type,
+                'duration_minutes': service_session.duration or service_session.service.duration_minutes,
+                'description': service_session.description or service_session.service.description,
+            },
+            'start_time': service_session.start_time,
+            'end_time': service_session.end_time,
+            'duration_minutes': service_session.duration or service_session.service.duration_minutes,
+            'attendee_count': len(attendees),
+            'max_participants': service_session.max_participants,
+            'attendees': attendees,
+            'room': self._serialize_room(service_session.room) if service_session.room else None,
+            'status': event_status,
+            'agenda': service_session.agenda,
+            'what_youll_learn': service_session.what_youll_learn,
+        }
+
+        return Response(response_data)
 
     @extend_schema(
         parameters=[
@@ -267,8 +363,8 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
                 'end_time': booking.end_time,
                 'duration_minutes': booking.duration_minutes or booking.service.duration_minutes,
                 'client': client,
-                'room': self._serialize_room(booking.livekit_room) if hasattr(booking, 'livekit_room') and booking.livekit_room else None,
-                'total_amount': str(booking.total_amount) if booking.total_amount else '0.00',
+                'room': self._serialize_room(booking.room) if hasattr(booking, 'room') and booking.room else None,
+                'total_amount': str(booking.final_amount) if booking.final_amount else '0.00',
                 'status': booking.status,
             }
 
