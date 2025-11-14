@@ -22,19 +22,19 @@
     <!-- Content -->
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
       <!-- Welcome Hero -->
-      <mj-section padding="48px 0 32px">
+      <mj-section padding="28px 0 20px">
         <mj-column>
-          <mj-text align="center" font-size="36px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="16px">
+          <mj-text align="center" font-size="26px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="12px">
             Welcome to ESTUARY 🌿
           </mj-text>
-          <mj-text align="center" font-size="18px" color="#6f7a47" padding-bottom="32px">
+          <mj-text align="center" font-size="16px" color="#6f7a47" padding-bottom="20px">
             Hi {{ user.first_name }}, we're so glad you're here
           </mj-text>
         </mj-column>
       </mj-section>
 
       <!-- Main Message -->
-      <mj-section background-color="#ffffff" border-radius="16px" padding="40px 32px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="28px 24px">
         <mj-column>
           <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
             You've just taken the first step toward transformation. ESTUARY connects you with experienced wellness practitioners who are ready to support your journey.

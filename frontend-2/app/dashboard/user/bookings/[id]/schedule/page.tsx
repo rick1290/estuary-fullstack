@@ -1,382 +1,479 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { format, addDays } from "date-fns"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { bookingsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { bookingsCheckAvailabilityCreate, bookingsScheduleCreate } from "@/src/client"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, User, Clock, MapPin, CalendarDays, CheckCircle2, Info } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ArrowLeft, User, Clock, MapPin, CalendarDays, CheckCircle2, AlertCircle, CalendarIcon, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
+import { format, addDays, parseISO } from "date-fns"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 
-// Helper function to generate dates excluding weekends
-const generateAvailableDates = (startDate: Date, days: number) => {
-  const dates: Date[] = []
-  let currentDate = new Date(startDate)
-
-  while (dates.length < days) {
-    const dayOfWeek = currentDate.getDay()
-    // Skip weekends (0 = Sunday, 6 = Saturday)
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      dates.push(new Date(currentDate))
-    }
-    currentDate = addDays(currentDate, 1)
-  }
-
-  return dates
-}
-
-// Helper function to generate time slots
-const generateTimeSlots = (date: string) => {
-  // Base time slots
-  const baseSlots = ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"]
-
-  // Randomly remove 1-3 slots to create variation
-  const slotsToRemove = Math.floor(Math.random() * 3) + 1
-  const availableSlots = [...baseSlots]
-
-  for (let i = 0; i < slotsToRemove; i++) {
-    const indexToRemove = Math.floor(Math.random() * availableSlots.length)
-    availableSlots.splice(indexToRemove, 1)
-  }
-
-  return availableSlots.sort()
-}
-
-// Mock data for unscheduled bookings
-const unscheduledBookings = [
-  {
-    id: 8,
-    serviceName: "Personal Wellness Consultation",
-    practitionerName: "Dr. Emily Parker",
-    practitionerImage: "/practitioner-3.jpg",
-    status: "unscheduled",
-    description: "A personalized wellness consultation to help you create a balanced lifestyle plan.",
-    price: "$95.00",
-    bookingDate: "2023-06-08",
-    bookingReference: "EST-WEL-4321",
-    expiryDate: "2023-09-08", // 3 months from purchase
-    duration: "60 min",
-    location: "Virtual",
-    purchaseType: "Single Session",
-  },
-  {
-    id: 9,
-    serviceName: "Yoga Therapy Package",
-    practitionerName: "James Wilson",
-    practitionerImage: "/practitioner-4.jpg",
-    status: "unscheduled",
-    description: "A series of 5 personalized yoga therapy sessions to address specific health concerns.",
-    price: "$275.00",
-    bookingDate: "2023-06-05",
-    bookingReference: "EST-YOG-8765",
-    expiryDate: "2024-06-05", // 1 year from purchase
-    duration: "60 min per session",
-    location: "Virtual",
-    purchaseType: "Package (5 sessions)",
-    sessionsRemaining: 5,
-    sessionsTotal: 5,
-  },
-]
-
-export default function ScheduleBookingPage({ params }: { params: { id: string } }) {
+export default function ScheduleBookingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
   const router = useRouter()
-  const [booking, setBooking] = useState<(typeof unscheduledBookings)[0] | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [availableDates, setAvailableDates] = useState<Date[]>([])
-  const [availableTimes, setAvailableTimes] = useState<string[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: Date; end: Date } | null>(null)
+  const [availableTimes, setAvailableTimes] = useState<{ start_time: string }[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [timeSlotsByDate, setTimeSlotsByDate] = useState<Record<string, string[]>>({})
+  const [showAllTimes, setShowAllTimes] = useState(false)
 
-  useEffect(() => {
-    const bookingId = Number.parseInt(params.id)
-    const foundBooking = unscheduledBookings.find((b) => b.id === bookingId)
+  // Date carousel state
+  const [visibleDates, setVisibleDates] = useState<Array<{ day: string; date: string; dateObj: Date }>>([])
+  const [allDates, setAllDates] = useState<Array<{ day: string; date: string; dateObj: Date }>>([])
+  const [currentDateIndex, setCurrentDateIndex] = useState(0)
 
-    if (foundBooking) {
-      setBooking(foundBooking)
+  // Fetch booking details from API
+  const { data: booking, isLoading, error } = useQuery({
+    ...bookingsRetrieveOptions({ path: { id } }),
+  })
 
-      // Generate available dates (next 14 weekdays)
-      const today = new Date()
-      const dates = generateAvailableDates(today, 14)
-      setAvailableDates(dates)
-
-      // Generate time slots for each date
-      const slots: Record<string, string[]> = {}
-      dates.forEach((date) => {
-        const dateString = format(date, "yyyy-MM-dd")
-        slots[dateString] = generateTimeSlots(dateString)
+  // Schedule mutation
+  const { mutate: scheduleBooking, isPending: isSubmitting } = useMutation({
+    mutationFn: async (data: { start_time: Date; end_time: Date }) => {
+      const response = await bookingsScheduleCreate({
+        path: { id },
+        body: {
+          start_time: data.start_time,
+          end_time: data.end_time,
+        }
       })
-      setTimeSlotsByDate(slots)
-    } else {
-      // Booking not found, redirect back to bookings list
-      router.push("/dashboard/user/bookings")
-    }
-  }, [params.id, router])
-
-  // Update available times when date changes
-  useEffect(() => {
-    if (selectedDate) {
-      const dateString = format(selectedDate, "yyyy-MM-dd")
-      setAvailableTimes(timeSlotsByDate[dateString] || [])
-      setSelectedTime(null)
-    } else {
-      setAvailableTimes([])
-      setSelectedTime(null)
-    }
-  }, [selectedDate, timeSlotsByDate])
-
-  const handleScheduleBooking = () => {
-    if (!selectedDate || !selectedTime) return
-
-    setIsSubmitting(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
+      return response.data
+    },
+    onSuccess: () => {
       setIsSuccess(true)
-
-      // Redirect after success message
+      toast.success("Booking scheduled successfully!")
       setTimeout(() => {
-        router.push("/dashboard/user/bookings")
+        router.push(`/dashboard/user/bookings/${id}`)
       }, 2000)
-    }, 1500)
+    },
+    onError: (error: any) => {
+      console.error('Schedule error:', error)
+      toast.error(error?.response?.data?.detail || "Failed to schedule booking")
+    },
+  })
+
+  // Check if booking is schedulable (draft with no start_time)
+  const isSchedulable = React.useMemo(() => {
+    if (!booking) return false
+    return !booking.start_time && (booking.status === 'draft' || booking.status === 'pending_payment')
+  }, [booking])
+
+  // Initialize dates
+  useEffect(() => {
+    const dates = []
+    const startDate = addDays(new Date(), 1) // Start from tomorrow
+
+    for (let i = 0; i < 30; i++) {
+      const date = addDays(startDate, i)
+      dates.push({
+        day: format(date, 'EEE'),
+        date: format(date, 'MMM d'),
+        dateObj: date
+      })
+    }
+
+    setAllDates(dates)
+    updateVisibleDates(0, dates)
+  }, [])
+
+  const updateVisibleDates = (startIndex: number, dates = allDates) => {
+    const visibleCount = 3 // Show 3 dates at a time
+    const endIndex = Math.min(startIndex + visibleCount, dates.length)
+    setVisibleDates(dates.slice(startIndex, endIndex))
+    setCurrentDateIndex(startIndex)
   }
 
-  if (!booking) {
+  const handlePrevDates = () => {
+    if (currentDateIndex > 0) {
+      updateVisibleDates(currentDateIndex - 1)
+    }
+  }
+
+  const handleNextDates = () => {
+    if (currentDateIndex + 3 < allDates.length) {
+      updateVisibleDates(currentDateIndex + 1)
+    }
+  }
+
+  // Redirect if booking not found or not schedulable
+  useEffect(() => {
+    if (!isLoading && !booking) {
+      toast.error("Booking not found")
+      router.push("/dashboard/user/bookings")
+    } else if (!isLoading && booking && !isSchedulable) {
+      toast.error("This booking is already scheduled")
+      setTimeout(() => {
+        router.push(`/dashboard/user/bookings/${id}`)
+      }, 3000)
+    }
+  }, [booking, isLoading, isSchedulable, id, router])
+
+  // Fetch available times when date changes
+  const fetchAvailability = async (date: Date) => {
+    if (!booking || !booking.service) return
+
+    setIsLoadingSlots(true)
+    setSelectedTime(null)
+    setSelectedTimeSlot(null)
+
+    try {
+      const response = await bookingsCheckAvailabilityCreate({
+        body: {
+          practitioner_id: booking.service.primary_practitioner?.id || booking.practitioner?.id,
+          service_id: booking.service.id,
+          date: format(date, 'yyyy-MM-dd'),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      })
+
+      if (response.data && 'available_slots' in response.data) {
+        setAvailableTimes((response.data as any).available_slots || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch availability:', error)
+      toast.error('Failed to load available time slots')
+      setAvailableTimes([])
+    } finally {
+      setIsLoadingSlots(false)
+    }
+  }
+
+  const handleDateSelect = (date: { dateObj: Date }) => {
+    setSelectedDate(date.dateObj)
+    fetchAvailability(date.dateObj)
+  }
+
+  const handleTimeSelect = (slot: { start_time: string }) => {
+    const startTime = new Date(slot.start_time)
+    const formattedTime = format(startTime, 'h:mm a')
+    setSelectedTime(formattedTime)
+
+    // Calculate end time based on service duration
+    const duration = booking?.service?.duration || 60
+    const endTime = new Date(startTime.getTime() + duration * 60000)
+
+    setSelectedTimeSlot({
+      start: startTime,
+      end: endTime
+    })
+  }
+
+  const handleSchedule = async () => {
+    if (!selectedTimeSlot) return
+
+    scheduleBooking({
+      start_time: selectedTimeSlot.start,
+      end_time: selectedTimeSlot.end
+    })
+  }
+
+  // Determine visible time slots
+  const visibleTimeSlots = showAllTimes ? availableTimes : availableTimes.slice(0, 6)
+
+  if (isLoading) {
     return (
       <UserDashboardLayout title="Schedule Booking">
-        <div className="flex justify-center items-center h-64">
-          <p>Loading booking details...</p>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2 mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-60 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </UserDashboardLayout>
     )
   }
 
-  // Format date for display
-  const formatDate = (date: Date) => {
-    return format(date, "EEEE, MMMM d, yyyy")
+  if (error || !booking) {
+    return null // Will redirect
   }
+
+  const service = booking.service
+  const practitioner = service?.practitioner || service?.primary_practitioner
 
   return (
     <UserDashboardLayout title="Schedule Booking">
-      <div className="space-y-6">
-        {/* Back button */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <Button
           variant="ghost"
-          className="flex items-center gap-2 mb-4 pl-0 hover:pl-2 transition-all"
-          onClick={() => router.push("/dashboard/user/bookings")}
+          size="sm"
+          onClick={() => router.push(`/dashboard/user/bookings/${id}`)}
+          className="mb-6"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Bookings
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Booking Details
         </Button>
 
-        {isSuccess ? (
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center justify-center text-center p-6">
-                <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-                <h2 className="text-2xl font-semibold text-green-800">Booking Scheduled!</h2>
-                <p className="text-green-700 mt-2 mb-6">
-                  Your session has been successfully scheduled for {selectedDate && formatDate(selectedDate)} at{" "}
-                  {selectedTime}.
-                </p>
-                <Button onClick={() => router.push("/dashboard/user/bookings")}>Return to Bookings</Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Main scheduling area */}
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-2xl">{booking.serviceName}</CardTitle>
-                      <CardDescription className="text-base mt-1">with {booking.practitionerName}</CardDescription>
-                    </div>
-                    <Badge variant="outline" className="border-amber-400 text-amber-600">
-                      Needs Scheduling
-                    </Badge>
-                  </div>
-                </CardHeader>
+        {!isSchedulable && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This booking is already scheduled. Redirecting back...
+            </AlertDescription>
+          </Alert>
+        )}
 
-                <CardContent className="space-y-6">
-                  <div className="rounded-lg border border-border">
-                    <div className="flex max-sm:flex-col">
-                      {/* Calendar */}
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        disabled={[
-                          { before: new Date() },
-                          (date) => {
-                            // Disable dates that aren't in the available dates array
-                            return !availableDates.some(
-                              (availableDate) =>
-                                availableDate.getDate() === date.getDate() &&
-                                availableDate.getMonth() === date.getMonth() &&
-                                availableDate.getFullYear() === date.getFullYear(),
-                            )
-                          },
-                        ]}
-                        className="p-2 sm:pe-5 bg-background"
-                      />
+        {isSuccess && (
+          <Alert className="mb-6 border-green-500 bg-green-50 dark:bg-green-950">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-600">
+              Your booking has been successfully scheduled! Redirecting...
+            </AlertDescription>
+          </Alert>
+        )}
 
-                      {/* Time slots */}
-                      <div className="relative w-full max-sm:h-48 sm:w-40">
-                        <div className="absolute inset-0 border-border py-4 max-sm:border-t">
-                          <ScrollArea className="h-full border-border sm:border-s">
-                            <div className="space-y-3">
-                              <div className="flex h-5 shrink-0 items-center px-5">
-                                {selectedDate ? (
-                                  <p className="text-sm font-medium">{format(selectedDate, "EEEE, d")}</p>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">Select a date</p>
-                                )}
-                              </div>
-
-                              {selectedDate ? (
-                                availableTimes.length > 0 ? (
-                                  <div className="grid gap-1.5 px-5 max-sm:grid-cols-2">
-                                    {availableTimes.map((timeSlot) => (
-                                      <Button
-                                        key={timeSlot}
-                                        variant={selectedTime === timeSlot ? "default" : "outline"}
-                                        size="sm"
-                                        className="w-full"
-                                        onClick={() => setSelectedTime(timeSlot)}
-                                      >
-                                        {timeSlot}
-                                      </Button>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="px-5 py-2">
-                                    <p className="text-sm text-muted-foreground">No available times</p>
-                                  </div>
-                                )
-                              ) : (
-                                <div className="px-5 py-2">
-                                  <p className="text-sm text-muted-foreground">Please select a date first</p>
-                                </div>
-                              )}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                      </div>
+        <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+          <div>
+            {/* Scheduling Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Select Date & Time</CardTitle>
+                <CardDescription>Choose an available slot for your session</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Date Picker Carousel */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Available Dates</h3>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={handlePrevDates}
+                        disabled={currentDateIndex === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={handleNextDates}
+                        disabled={currentDateIndex + 3 >= allDates.length}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Timezone note */}
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    <Info className="h-3 w-3 mr-1" />
-                    All times shown in your local time zone ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                  <div className="grid grid-cols-3 gap-2">
+                    {visibleDates.map((date) => (
+                      <button
+                        key={date.dateObj.toISOString()}
+                        onClick={() => handleDateSelect(date)}
+                        className={`
+                          p-4 rounded-lg border text-center transition-all
+                          ${selectedDate?.toDateString() === date.dateObj.toDateString()
+                            ? 'border-primary bg-primary/10 shadow-sm'
+                            : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          }
+                        `}
+                      >
+                        <div className="text-sm font-medium">{date.day}</div>
+                        <div className="text-lg font-semibold mt-1">{date.date}</div>
+                      </button>
+                    ))}
                   </div>
-                </CardContent>
+                </div>
 
-                <CardFooter className="flex justify-between border-t pt-6">
+                {/* Time Slots */}
+                {selectedDate && (
                   <div>
-                    {selectedDate && selectedTime && (
-                      <div className="text-sm">
-                        <span className="font-medium">Selected:</span> {formatDate(selectedDate)} at {selectedTime}
+                    <h3 className="font-semibold mb-4">Available Times</h3>
+                    {isLoadingSlots ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
+                    ) : availableTimes.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-3 gap-2">
+                          {visibleTimeSlots.map((slot, index) => {
+                            const time = format(new Date(slot.start_time), 'h:mm a')
+                            return (
+                              <Button
+                                key={index}
+                                variant={selectedTime === time ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handleTimeSelect(slot)}
+                                className="w-full"
+                              >
+                                {time}
+                              </Button>
+                            )
+                          })}
+                        </div>
+                        {availableTimes.length > 6 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowAllTimes(!showAllTimes)}
+                            className="w-full mt-2"
+                          >
+                            {showAllTimes ? 'Show less' : `Show ${availableTimes.length - 6} more time slots`}
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No available times for this date
+                      </p>
                     )}
                   </div>
-                  <Button disabled={!selectedDate || !selectedTime || isSubmitting} onClick={handleScheduleBooking}>
-                    {isSubmitting ? "Scheduling..." : "Confirm Booking"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
+                )}
 
-            {/* Sidebar with booking info */}
-            <div>
+                {/* Selected Summary */}
+                {selectedDate && selectedTime && (
+                  <Alert className="border-primary/20 bg-primary/5">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <AlertDescription>
+                      <span className="font-medium">Selected appointment:</span>{' '}
+                      {format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+              <CardFooter className="flex gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/dashboard/user/bookings/${id}`)}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSchedule}
+                  disabled={!selectedDate || !selectedTime || isSubmitting}
+                  className="flex-1"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    'Confirm Schedule'
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Selected Time Summary */}
+            {selectedDate && selectedTime && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <h3 className="font-semibold">Your Appointment</h3>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{selectedTime} ({service?.duration || 60} min)</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Service Info */}
+            <Card>
+              <CardHeader>
+                <h3 className="font-semibold">Service</h3>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="font-medium text-lg">{service?.name || 'Service'}</p>
+                  {service?.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3 text-sm">
+                  {service?.location_type === 'virtual' ? (
+                    <div className="flex items-start gap-2">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Virtual Session</p>
+                        <p className="text-muted-foreground">Join link will be provided</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">In-Person Session</p>
+                        <p className="text-muted-foreground">{booking.location?.address || 'Address will be provided'}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="font-medium">Duration</p>
+                      <p className="text-muted-foreground">{service?.duration || 60} minutes</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Practitioner Info */}
+            {practitioner && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Booking Details</CardTitle>
+                  <h3 className="font-semibold">Practitioner</h3>
                 </CardHeader>
-
-                <CardContent className="space-y-4">
+                <CardContent>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
                       <AvatarImage
-                        src={booking.practitionerImage || "/placeholder.svg"}
-                        alt={booking.practitionerName}
+                        src={practitioner.profile_image_url}
+                        alt={practitioner.display_name}
                       />
                       <AvatarFallback>
-                        <User className="h-8 w-8" />
+                        <User className="h-6 w-6" />
                       </AvatarFallback>
                     </Avatar>
-
                     <div>
-                      <h3 className="font-semibold text-lg">{booking.practitionerName}</h3>
-                      <p className="text-sm text-muted-foreground">Wellness Practitioner</p>
+                      <p className="font-semibold">
+                        {practitioner.display_name || 'N/A'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {practitioner.specialization || 'Wellness Practitioner'}
+                      </p>
                     </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Duration</p>
-                        <p className="text-sm text-muted-foreground">{booking.duration}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Location</p>
-                        <p className="text-sm text-muted-foreground">{booking.location}</p>
-                      </div>
-                    </div>
-
-                    {booking.purchaseType && (
-                      <div className="flex items-start gap-3">
-                        <CalendarDays className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="font-medium">Purchase Type</p>
-                          <p className="text-sm text-muted-foreground">{booking.purchaseType}</p>
-                          {booking.sessionsRemaining && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {booking.sessionsRemaining} of {booking.sessionsTotal} sessions remaining
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {booking.expiryDate && (
-                      <div className="flex items-start gap-3">
-                        <CalendarDays className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="font-medium">Expires On</p>
-                          <p className="text-sm text-muted-foreground">{booking.expiryDate}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">{booking.description}</p>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </UserDashboardLayout>
   )

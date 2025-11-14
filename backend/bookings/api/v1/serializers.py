@@ -412,27 +412,63 @@ class BookingStatusChangeSerializer(serializers.Serializer):
         return data
 
 
+class BookingScheduleSerializer(serializers.Serializer):
+    """Serializer for scheduling unscheduled draft bookings"""
+    start_time = serializers.DateTimeField()
+    end_time = serializers.DateTimeField()
+
+    def validate(self, data):
+        """Validate scheduling data"""
+        booking = self.context.get('booking')
+
+        # Check if booking can be scheduled (must be draft with no start_time)
+        if booking.status not in ['draft', 'pending_payment']:
+            raise serializers.ValidationError("Only draft bookings can be scheduled")
+
+        if booking.start_time is not None:
+            raise serializers.ValidationError("This booking is already scheduled. Use reschedule instead.")
+
+        # Validate time range
+        if data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError("End time must be after start time")
+
+        if data['start_time'] < timezone.now():
+            raise serializers.ValidationError("Cannot schedule in the past")
+
+        # Validate duration matches service duration
+        service_duration = booking.service.duration_minutes
+        new_duration = int((data['end_time'] - data['start_time']).total_seconds() / 60)
+        if new_duration != service_duration:
+            raise serializers.ValidationError(
+                f"Duration must match service duration ({service_duration} minutes)"
+            )
+
+        # TODO: Check practitioner availability for time slot
+
+        return data
+
+
 class BookingRescheduleSerializer(serializers.Serializer):
     """Serializer for rescheduling bookings"""
     start_time = serializers.DateTimeField()
     end_time = serializers.DateTimeField()
     reason = serializers.CharField(required=False, allow_blank=True)
-    
+
     def validate(self, data):
         """Validate rescheduling data"""
         booking = self.context.get('booking')
-        
+
         # Check if booking can be rescheduled
         if not booking.can_be_rescheduled:
             raise serializers.ValidationError("This booking cannot be rescheduled")
-        
+
         # Validate time range
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError("End time must be after start time")
-        
+
         if data['start_time'] < timezone.now():
             raise serializers.ValidationError("Cannot reschedule to the past")
-        
+
         # Validate duration matches original
         original_duration = booking.duration_minutes
         new_duration = int((data['end_time'] - data['start_time']).total_seconds() / 60)
@@ -440,9 +476,9 @@ class BookingRescheduleSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 f"New duration must match original duration ({original_duration} minutes)"
             )
-        
+
         # TODO: Check practitioner availability for new time slot
-        
+
         return data
 
 
