@@ -37,6 +37,15 @@ app.conf.beat_schedule = {
         }
     },
 
+    # Process unread message notifications every 5 minutes
+    'process-unread-message-notifications': {
+        'task': 'process-unread-message-notifications',
+        'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        'options': {
+            'expires': 240.0,  # Task expires after 4 minutes if not executed
+        }
+    },
+
     # Create missing rooms for confirmed bookings every 30 minutes
     'create-missing-booking-rooms': {
         'task': 'create-missing-booking-rooms',

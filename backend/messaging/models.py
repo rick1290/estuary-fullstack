@@ -243,12 +243,14 @@ class MessageReceipt(BaseModel):
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(blank=True, null=True)
     delivered_at = models.DateTimeField(auto_now_add=True)
+    email_notified_at = models.DateTimeField(blank=True, null=True)
     
     class Meta:
         unique_together = ('message', 'user')
         indexes = [
             models.Index(fields=['user', 'is_read']),
             models.Index(fields=['message', 'is_read']),
+            models.Index(fields=['is_read', 'email_notified_at', 'delivered_at']),
         ]
     
     def __str__(self):
