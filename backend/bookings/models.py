@@ -46,8 +46,8 @@ class Booking(PublicModel):
                               related_name='bookings', help_text="Service being booked")
     
     # Scheduling
-    start_time = models.DateTimeField(help_text="Scheduled start time")
-    end_time = models.DateTimeField(help_text="Scheduled end time")
+    start_time = models.DateTimeField(blank=True, null=True, help_text="Scheduled start time")
+    end_time = models.DateTimeField(blank=True, null=True, help_text="Scheduled end time")
     actual_start_time = models.DateTimeField(blank=True, null=True, help_text="Actual start time")
     actual_end_time = models.DateTimeField(blank=True, null=True, help_text="Actual end time")
     timezone = models.CharField(max_length=50, default='UTC', help_text="Timezone for this booking")
@@ -157,7 +157,7 @@ class Booking(PublicModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(start_time__lt=models.F('end_time')),
+                check=models.Q(start_time__isnull=True) | models.Q(end_time__isnull=True) | models.Q(start_time__lt=models.F('end_time')),
                 name='booking_valid_time_range'
             ),
             models.CheckConstraint(
@@ -214,11 +214,15 @@ class Booking(PublicModel):
     def clean(self):
         """Validate booking data."""
         super().clean()
-        
-        # Validate time range
+
+        # Validate time range (only if times are set)
         if self.start_time and self.end_time and self.start_time >= self.end_time:
             raise ValidationError("Start time must be before end time")
-        
+
+        # For non-draft bookings, require scheduled times
+        if self.status not in ['draft', 'cancelled'] and not self.start_time:
+            raise ValidationError("Scheduled bookings must have a start time")
+
         # Validate pricing
         expected_price_cents = self.price_charged_cents - self.discount_amount_cents
         if self.final_amount_cents != expected_price_cents:
@@ -278,11 +282,15 @@ class Booking(PublicModel):
     @property
     def is_upcoming(self):
         """Check if booking is upcoming."""
+        if not self.start_time:
+            return False  # Unscheduled bookings are not upcoming
         return self.start_time > timezone.now() and self.status == 'confirmed'
 
     @property
     def is_active(self):
         """Check if booking is currently active."""
+        if not self.start_time or not self.end_time:
+            return False  # Unscheduled bookings are not active
         now = timezone.now()
         return (self.actual_start_time or self.start_time) <= now <= (self.actual_end_time or self.end_time)
 
@@ -291,7 +299,10 @@ class Booking(PublicModel):
         """Check if booking can still be canceled."""
         if self.status in ['completed', 'canceled', 'no_show']:
             return False
-        
+
+        if not self.start_time:
+            return True  # Unscheduled bookings can always be canceled
+
         # Check cancellation policy (could be moved to service level)
         min_notice_hours = 24  # This could come from service or practitioner settings
         notice_deadline = self.start_time - timezone.timedelta(hours=min_notice_hours)
@@ -305,6 +316,8 @@ class Booking(PublicModel):
     @property
     def is_past(self):
         """Check if booking is in the past."""
+        if not self.end_time:
+            return False  # Unscheduled bookings are not past
         return self.end_time < timezone.now()
     
     @property
@@ -377,10 +390,14 @@ class Booking(PublicModel):
         Returns:
             int: Refund amount in cents
         """
+        # Unscheduled bookings (no start_time) are fully refundable
+        if not self.start_time:
+            return self.final_amount_cents
+
         # If booking hasn't started yet
         if self.start_time > timezone.now():
             hours_until_start = (self.start_time - timezone.now()).total_seconds() / 3600
-            
+
             # Full refund if canceled more than 24 hours before
             if hours_until_start >= 24:
                 return self.final_amount_cents
@@ -542,8 +559,8 @@ class BookingFactory:
                     price_charged_cents=0,  # Included in parent
                     final_amount_cents=0,
                     status='draft',  # Draft until scheduled
-                    start_time=timezone.now(),  # Placeholder
-                    end_time=timezone.now() + timezone.timedelta(minutes=service.duration_minutes)
+                    start_time=None,  # Unscheduled - to be set by user later
+                    end_time=None
                 )
         
         return parent_booking
