@@ -71,6 +71,7 @@ interface BookingDetailViewProps {
 const statusConfig = {
   pending_payment: { color: "warning", label: "Pending Payment", icon: AlertCircle },
   confirmed: { color: "success", label: "Confirmed", icon: CheckCircle },
+  in_progress: { color: "default", label: "In Progress", icon: Clock },
   completed: { color: "default", label: "Completed", icon: CheckCircle },
   canceled: { color: "destructive", label: "Canceled", icon: XCircle },
   no_show: { color: "destructive", label: "No Show", icon: XCircle },
@@ -256,7 +257,28 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             <StatusIcon className="h-3 w-3" />
             {statusLabel}
           </Badge>
-          
+
+          {/* Prominent Mark Complete button for in-progress bookings */}
+          {booking.status === "in_progress" && (
+            <Button
+              onClick={handleComplete}
+              disabled={completeMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {completeMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Mark Complete
+                </>
+              )}
+            </Button>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">Actions</Button>
@@ -268,16 +290,21 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   Confirm Booking
                 </DropdownMenuItem>
               )}
-              {booking.status === "confirmed" && booking.is_upcoming && (
+              {(booking.status === "confirmed" || booking.status === "in_progress") && (
                 <>
-                  <DropdownMenuItem onClick={handleComplete}>
+                  <DropdownMenuItem
+                    onClick={handleComplete}
+                    disabled={completeMutation.isPending}
+                  >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Mark as Completed
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Reschedule
-                  </DropdownMenuItem>
+                  {booking.status === "confirmed" && (
+                    <DropdownMenuItem>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Reschedule
+                    </DropdownMenuItem>
+                  )}
                 </>
               )}
               {booking.service?.location_type === "virtual" && booking.room && isSessionJoinable(booking) && (

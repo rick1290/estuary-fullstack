@@ -17,17 +17,51 @@ logger = logging.getLogger(__name__)
 
 # ========== Booking and ServiceSession Room Creation ==========
 
-# DEPRECATED: Room creation is now handled explicitly by BookingService
-# This signal is commented out to prevent duplicate room creation
-# @receiver(post_save, sender=Booking)
-# def create_room_for_booking(sender, instance: Booking, created: bool, **kwargs):
-#     """
-#     Create a room when a booking is confirmed and requires video.
-#     
-#     NOTE: This functionality has been moved to BookingService.create_booking()
-#     for explicit room creation as part of the service layer architecture.
-#     """
-#     pass
+@receiver(post_save, sender=Booking)
+def create_room_for_confirmed_booking(sender, instance: Booking, created: bool, **kwargs):
+    """
+    Create a room when a booking is confirmed and requires video.
+
+    This signal fires on booking confirmation (status='confirmed') to ensure
+    virtual sessions have a LiveKit room. Works alongside a periodic task
+    that catches any rooms that fail to create.
+
+    Guards against duplicates and only creates for:
+    - Virtual/online services
+    - Individual sessions (not workshops/courses)
+    - Confirmed bookings
+    """
+    # Only process if booking is confirmed
+    if instance.status != 'confirmed':
+        return
+
+    # Skip if room already exists
+    if hasattr(instance, 'livekit_room') and instance.livekit_room:
+        return
+
+    # Skip if this is a group session (uses ServiceSession rooms)
+    if instance.service_session:
+        return
+
+    # Skip if service doesn't require video room
+    if not instance.service:
+        return
+
+    if instance.service.location_type not in ['virtual', 'online', 'hybrid']:
+        return
+
+    # Skip package/bundle parent bookings
+    if instance.is_package_purchase or instance.is_bundle_purchase:
+        return
+
+    try:
+        from rooms.services import RoomService
+        room_service = RoomService()
+        room = room_service.create_room_for_booking(instance)
+        logger.info(f"Signal created room {room.livekit_room_name} for booking {instance.id}")
+    except Exception as e:
+        logger.error(f"Signal failed to create room for booking {instance.id}: {e}")
+        # Don't raise - let periodic task catch this
 
 
 @receiver(post_save, sender=ServiceSession)
@@ -49,7 +83,7 @@ def create_room_for_session(sender, instance: ServiceSession, created: bool, **k
             room_type = 'group'
             if instance.service.is_course:
                 room_type = 'webinar'  # Courses typically use webinar format
-            elif instance.service.service_type and instance.service.service_type.slug == 'workshop':
+            elif instance.service.service_type and instance.service.service_type.code == 'workshop':
                 room_type = 'group'
             
             # Get or create appropriate template
@@ -60,7 +94,7 @@ def create_room_for_session(sender, instance: ServiceSession, created: bool, **k
                 service_session=instance,
                 room_type=room_type,
                 template=template,
-                created_by=instance.service.practitioner.user,
+                created_by=instance.service.primary_practitioner.user if instance.service.primary_practitioner else None,
                 name=f"{instance.service.name} - Session {instance.sequence_number or 1}",
                 scheduled_start=instance.start_time,
                 scheduled_end=instance.end_time,
@@ -70,7 +104,7 @@ def create_room_for_session(sender, instance: ServiceSession, created: bool, **k
                 metadata={
                     'service_session_id': str(instance.id),
                     'service_id': str(instance.service.id),
-                    'practitioner_id': str(instance.service.practitioner.id),
+                    'practitioner_id': str(instance.service.primary_practitioner.id) if instance.service.primary_practitioner else None,
                     'service_name': instance.service.name,
                     'session_number': instance.sequence_number or 1,
                 }
@@ -351,31 +385,27 @@ def process_recording(recording):
 def _requires_video_room(service: Service) -> bool:
     """
     Check if a service requires a video room.
-    
+
     Args:
         service: Service instance
-        
+
     Returns:
         True if video room is required
     """
     if not service:
         return False
-    
-    # Check if service is virtual
-    if hasattr(service, 'is_virtual') and service.is_virtual:
-        return True
-    
-    # Check service delivery method
-    if hasattr(service, 'delivery_method'):
-        return service.delivery_method in ['online', 'hybrid']
-    
-    # Check service type
+
+    # Check location_type (actual field on Service model)
+    if hasattr(service, 'location_type'):
+        return service.location_type in ['virtual', 'online', 'hybrid']
+
+    # Check service type as fallback
     if service.service_type:
         virtual_types = ['online_consultation', 'webinar', 'online_workshop', 'virtual_class']
         return service.service_type.code in virtual_types
-    
-    # Default to checking if it's not explicitly in-person
-    return not getattr(service, 'is_in_person', False)
+
+    # Default to False if we can't determine
+    return False
 
 
 def _should_enable_recording(service: Service) -> bool:

@@ -16,24 +16,24 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="48px 0 32px">
+      <mj-section padding="28px 0 20px">
         <mj-column>
-          <mj-text align="center" font-size="36px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="16px">
+          <mj-text align="center" font-size="26px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="12px">
             Welcome to ESTUARY, {{ user.first_name }}! 🌿
           </mj-text>
-          <mj-text align="center" font-size="18px" color="#6f7a47" padding-bottom="32px">
+          <mj-text align="center" font-size="16px" color="#6f7a47" padding-bottom="20px">
             You're now part of a growing community of wellness practitioners
           </mj-text>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="16px" padding="40px 32px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="28px 24px">
         <mj-column>
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="32px">
+          <mj-text font-size="16px" line-height="1.7" padding-bottom="24px">
             Congratulations on taking the first step to grow your practice! ESTUARY connects you with clients seeking authentic wellness experiences, and we're here to support your success.
           </mj-text>
 
-          <mj-text font-size="18px" font-weight="600" color="#3c412a" padding-bottom="16px">Get Started in 3 Steps:</mj-text>
+          <mj-text font-size="17px" font-weight="600" color="#3c412a" padding-bottom="14px">Get Started in 3 Steps:</mj-text>
 
           <mj-text padding-bottom="16px">
             <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px; font-weight: 700;">1</span>

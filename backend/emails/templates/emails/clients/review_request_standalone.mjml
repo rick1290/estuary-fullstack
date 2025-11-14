@@ -16,15 +16,15 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="40px 0 20px">
+      <mj-section padding="24px 0 16px">
         <mj-column>
-          <mj-text align="center" font-size="48px" padding-bottom="16px">⭐</mj-text>
-          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">How Was Your Session?</mj-text>
-          <mj-text align="center" font-size="16px" color="#6f7a47">Share your experience with {{ practitioner_name }}</mj-text>
+          <mj-text align="center" font-size="32px" padding-bottom="12px">⭐</mj-text>
+          <mj-text align="center" font-size="24px" font-weight="700" color="#3c412a" padding-bottom="6px">How Was Your Session?</mj-text>
+          <mj-text align="center" font-size="15px" color="#6f7a47">Share your experience with {{ practitioner_name }}</mj-text>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="24px 20px">
         <mj-column>
           <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
             Hi {{ user.first_name }},

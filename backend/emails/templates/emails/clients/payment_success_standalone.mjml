@@ -16,17 +16,17 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="40px 0 20px">
+      <mj-section padding="24px 0 16px">
         <mj-column>
-          <mj-text align="center" font-size="48px" padding-bottom="16px">✓</mj-text>
-          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">Payment Successful</mj-text>
-          <mj-text align="center" font-size="16px" color="#6f7a47">Thank you for your purchase</mj-text>
+          <mj-text align="center" font-size="32px" padding-bottom="12px">✓</mj-text>
+          <mj-text align="center" font-size="24px" font-weight="700" color="#3c412a" padding-bottom="6px">Payment Successful</mj-text>
+          <mj-text align="center" font-size="15px" color="#6f7a47">Thank you for your purchase</mj-text>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="24px 20px">
         <mj-column>
-          <mj-text font-size="18px" font-weight="600" color="#3c412a" padding-bottom="20px">Payment Details</mj-text>
+          <mj-text font-size="16px" font-weight="600" color="#3c412a" padding-bottom="16px">Payment Details</mj-text>
           <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Amount:</span> ${{ amount }}</mj-text>
           <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Date:</span> {{ payment_date }}</mj-text>
           <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Payment Method:</span> {{ payment_method }}</mj-text>

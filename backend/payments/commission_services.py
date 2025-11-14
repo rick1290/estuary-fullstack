@@ -228,9 +228,15 @@ def handle_booking_status_change(booking, old_status, new_status):
     """
     # If this is a child booking and status changed to completed
     if booking.parent_booking and new_status == 'completed':
-        # Update the parent package completion record
-        package_service = PackageCompletionService()
-        package_service.update_completion_for_child_booking(booking)
+        # Skip old PackageCompletion logic if booking uses new Order-based architecture
+        if hasattr(booking, 'order') and booking.order:
+            # New Order-based approach handles completion tracking via order.package_metadata
+            # The mark_booking_completed service handles this correctly
+            pass
+        else:
+            # Legacy bookings without order FK - use old PackageCompletionService
+            package_service = PackageCompletionService()
+            package_service.update_completion_for_child_booking(booking)
     
     # If this is a package booking and status changed to canceled
     if (booking.is_package_booking or booking.is_course_booking) and new_status == 'canceled':

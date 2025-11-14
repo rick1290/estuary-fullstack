@@ -12,6 +12,7 @@ from payments.services.payment_service import PaymentService
 from payments.services.credit_service import CreditService
 from payments.services.earnings_service import EarningsService
 from bookings.services.booking_service_fast import FastBookingService
+from bookings.models import Booking
 from services.models import Service
 from users.models import User
 
@@ -49,26 +50,31 @@ class FastCheckoutOrchestrator:
     ) -> CheckoutResult:
         """
         Process a booking payment quickly by deferring non-critical operations.
-        
+        UPDATED: Handles Order FK, package/bundle bookings, progressive earnings.
+
         Critical operations (synchronous):
         1. Validate and calculate pricing
         2. Create order record
         3. Process Stripe payment
         4. Create booking record
         5. Apply credit deductions
-        
+        6. Link order to booking
+
         Non-critical operations (deferred to background):
         - Room creation
         - Email notifications
         - Reminder scheduling
         - Earnings calculation (moved to background)
-        
+
+        Note: Package/bundle earnings are created when individual sessions
+        are completed, not at purchase time.
+
         Args:
             user: User making the booking
             service_id: ID of service to book
             payment_method_id: ID of payment method to use
             booking_data: Booking details (times, notes, etc)
-            
+
         Returns:
             CheckoutResult with booking and payment details
         """
@@ -130,30 +136,67 @@ class FastCheckoutOrchestrator:
                 'price_charged_cents': service_price_cents,
                 'credits_applied_cents': credits_to_apply_cents,
                 'amount_charged_cents': amount_to_charge_cents,
-                'payment_intent_id': payment_result.get('payment_intent', {}).id if payment_result.get('payment_intent') else None
+                'payment_intent_id': payment_result.get('payment_intent', {}).id if payment_result.get('payment_intent') else None,
+                'order': order  # Pass order so factory can link all bookings
             }
-            
+
             booking = self.booking_service.create_booking_fast(
                 user=user,
                 service=service,
                 booking_data=booking_data,
                 payment_data=payment_data
             )
-            
-            # Update credit transaction with booking reference
+
+            # 7. Link order to booking (PRIMARY financial relationship)
             if booking:
-                usage_transactions = order.user_credit_transactions.filter(
-                    transaction_type='usage',
-                    booking__isnull=True
-                )
-                for credit_txn in usage_transactions:
-                    credit_txn.booking = booking
-                    credit_txn.save()
-            
-            # Queue earnings calculation after transaction commits
-            if service.primary_practitioner:
+                booking.order = order
+
+                # Link credit usage transaction if credits were applied
+                if credits_to_apply_cents > 0:
+                    usage_transaction = order.user_credit_transactions.filter(
+                        transaction_type='usage'
+                    ).first()
+                    if usage_transaction:
+                        booking.credit_usage_transaction = usage_transaction
+                        usage_transaction.booking = booking
+                        usage_transaction.save()
+
+                booking.save()
+
+                # For package/bundle bookings, ensure ALL session bookings in order are linked
+                # (Factory creates multiple session bookings, all need order FK)
+                service_type_code = service.service_type.code if service.service_type else None
+                if service_type_code in ['package', 'bundle']:
+                    # Get all bookings created for this order
+                    order_bookings = Booking.objects.filter(
+                        order=order,
+                        user=user,
+                        created_at__gte=order.created_at
+                    )
+                    # Ensure they all have the order FK (should already be set by factory)
+                    count = order_bookings.count()
+                    if count > 1:
+                        logger.info(
+                            f"Package/bundle order {order.id} has {count} session bookings"
+                        )
+
+            # 8. Queue earnings calculation
+            # SKIP for package/bundle bookings - earnings created when sessions are completed
+            # Check the ORDER type, not service type (since booking.service might be the session service)
+            is_package_or_bundle_order = (
+                booking.order and
+                booking.order.order_type in ['package', 'bundle']
+            )
+
+            should_create_earnings = (
+                service.primary_practitioner and
+                not is_package_or_bundle_order and
+                booking.status not in ['draft']  # Skip draft bookings
+            )
+
+            if should_create_earnings:
                 from payments.tasks import create_booking_earnings_async
-                
+
                 def queue_earnings_task():
                     create_booking_earnings_async.delay(
                         practitioner_id=service.primary_practitioner.id,
@@ -161,8 +204,13 @@ class FastCheckoutOrchestrator:
                         service_id=service.id,
                         gross_amount_cents=service_price_cents
                     )
-                
+
                 transaction.on_commit(queue_earnings_task)
+            elif is_package_or_bundle_order:
+                logger.info(
+                    f"Skipping earnings for package/bundle booking {booking.id} (order {order.id}). "
+                    f"Earnings will be created when sessions are scheduled and completed."
+                )
             
             logger.info(f"Fast checkout completed for booking {booking.id}")
             

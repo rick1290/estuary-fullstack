@@ -339,6 +339,22 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                 )}
               </CardContent>
 
+              {/* Schedule Session button for unscheduled bookings */}
+              {!booking.start_time && (booking.status === "draft" || booking.status === "pending_payment") && (
+                <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
+                  <Button
+                    onClick={() => router.push(`/dashboard/user/bookings/${booking.id}/schedule`)}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    Schedule Session
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    This booking needs to be scheduled. Choose a date and time that works for you.
+                  </p>
+                </CardFooter>
+              )}
+
               {(booking.status === "confirmed" || booking.status === "in_progress") && (
                 <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
                   {service?.location_type === "virtual" && (booking.room?.public_uuid || booking.video_url) && (

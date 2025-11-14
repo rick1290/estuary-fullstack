@@ -17,8 +17,8 @@ from bookings.models import (
 from bookings.api.v1.serializers import (
     BookingListSerializer, BookingDetailSerializer,
     BookingCreateSerializer, BookingUpdateSerializer,
-    BookingStatusChangeSerializer, BookingRescheduleSerializer,
-    BookingNoteSerializer,
+    BookingStatusChangeSerializer, BookingScheduleSerializer,
+    BookingRescheduleSerializer, BookingNoteSerializer,
     AvailabilityCheckSerializer, AvailableSlotSerializer
 )
 from bookings.api.v1.filters import BookingFilter
@@ -38,6 +38,7 @@ from practitioners.utils.availability import get_practitioner_availability
     cancel=extend_schema(tags=['Bookings']),
     complete=extend_schema(tags=['Bookings']),
     no_show=extend_schema(tags=['Bookings']),
+    schedule=extend_schema(tags=['Bookings']),
     reschedule=extend_schema(tags=['Bookings']),
     notes=extend_schema(tags=['Bookings']),
     check_availability=extend_schema(tags=['Bookings']),
@@ -59,7 +60,8 @@ class BookingViewSet(viewsets.ModelViewSet):
     - POST /bookings/{id}/cancel/ - Cancel booking with reason
     - POST /bookings/{id}/complete/ - Mark booking as completed
     - POST /bookings/{id}/no-show/ - Mark as no-show
-    - POST /bookings/{id}/reschedule/ - Reschedule booking
+    - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
+    - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
     - POST /bookings/{id}/notes/ - Add note to booking
     - POST /bookings/check-availability/ - Check practitioner availability
     """
@@ -79,8 +81,8 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Base queryset with optimized relations
         queryset = Booking.objects.select_related(
             'user', 'practitioner__user', 'service', 'location',
-            'room', 'livekit_room', 'service_session', 'parent_booking',
-            'rescheduled_from', 'payment_transaction'
+            'livekit_room', 'service_session__livekit_room', 'parent_booking',
+            'rescheduled_from', 'order', 'credit_usage_transaction'
         ).prefetch_related(
             'reminders', 'notes__author',
             Prefetch('child_bookings', queryset=Booking.objects.select_related(
@@ -236,10 +238,56 @@ class BookingViewSet(viewsets.ModelViewSet):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
+    @action(detail=True, methods=['post'])
+    def schedule(self, request, pk=None):
+        """Schedule an unscheduled draft booking (sets initial time)"""
+        booking = self.get_object()
+        serializer = BookingScheduleSerializer(
+            data=request.data,
+            context={'booking': booking}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        # Update booking with scheduled times
+        try:
+            with transaction.atomic():
+                booking.start_time = serializer.validated_data['start_time']
+                booking.end_time = serializer.validated_data['end_time']
+
+                # If payment is complete, confirm the booking
+                if booking.payment_status == 'paid':
+                    booking.status = 'confirmed'
+
+                booking.save()
+
+                # Trigger room creation if needed (for virtual services)
+                if booking.status == 'confirmed' and booking.service.location_type in ['virtual', 'online', 'hybrid']:
+                    from rooms.services import RoomService
+                    try:
+                        room_service = RoomService()
+                        if not booking.room:
+                            room_service.create_room_for_booking(booking)
+                    except Exception as e:
+                        # Log but don't fail - periodic task will catch this
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Failed to create room for booking {booking.id}: {e}")
+
+            response_serializer = BookingDetailSerializer(
+                booking,
+                context={'request': request}
+            )
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     @action(detail=True, methods=['post'])
     def reschedule(self, request, pk=None):
-        """Reschedule booking to new time"""
+        """Reschedule booking to new time (creates new booking)"""
         booking = self.get_object()
         serializer = BookingRescheduleSerializer(
             data=request.data,

@@ -61,27 +61,44 @@ class EarningsService:
     ) -> Optional[EarningsTransaction]:
         """
         Create earnings transaction for a booking.
-        
+        UPDATED: Handles package/bundle child bookings and uses 'projected' status.
+
         Args:
             practitioner: Practitioner who earned
             booking: Associated booking
             service: Service provided
             gross_amount_cents: Gross amount before commission
-            
+
         Returns:
             Created earnings transaction or None if no practitioner
         """
         if not practitioner:
             return None
-        
+
+        # Determine gross amount based on booking type
+        if hasattr(booking, 'order') and booking.order and booking.order.is_package_or_bundle:
+            # Use session value from order metadata
+            gross_amount_cents = booking.order.session_value_cents
+            logger.info(
+                f"Package/bundle child booking {booking.id}: "
+                f"Using session value ${gross_amount_cents/100:.2f}"
+            )
+
         # Calculate commission
         commission_rate, commission_amount_cents, net_amount_cents = self.calculate_commission(
             practitioner=practitioner,
             service_type=service.service_type,
             gross_amount_cents=gross_amount_cents
         )
-        
-        # Create earnings transaction
+
+        # Determine available_after based on booking end time
+        if booking.end_time:
+            available_after = booking.end_time + timedelta(hours=48)
+        else:
+            # Fallback if no end time (shouldn't happen for real bookings)
+            available_after = timezone.now() + timedelta(hours=48)
+
+        # Create earnings transaction with 'projected' status
         earnings = EarningsTransaction.objects.create(
             practitioner=practitioner,
             booking=booking,
@@ -89,16 +106,16 @@ class EarningsService:
             commission_rate=commission_rate,
             commission_amount_cents=commission_amount_cents,
             net_amount_cents=net_amount_cents,
-            status='pending',
-            available_after=timezone.now() + timedelta(hours=48),
+            status='projected',  # Changed from 'pending'
+            available_after=available_after,  # Changed to use booking.end_time
             description=f"Earnings from booking for {service.name}"
         )
-        
+
         logger.info(
-            f"Created earnings for practitioner {practitioner.id}: "
+            f"Created projected earnings for practitioner {practitioner.id}: "
             f"${net_amount_cents/100:.2f} net (${commission_amount_cents/100:.2f} commission)"
         )
-        
+
         return earnings
     
     @transaction.atomic

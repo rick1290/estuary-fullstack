@@ -78,8 +78,8 @@ class PaymentService:
         special_requests: Optional[str] = None
     ) -> Order:
         """
-        Create an order record.
-        
+        Create an order record with proper snapshots for packages/bundles.
+
         Args:
             user: User making the purchase
             service: Service being purchased
@@ -88,10 +88,65 @@ class PaymentService:
             credits_to_apply_cents: Credits being applied
             amount_to_charge_cents: Amount to charge after credits
             special_requests: Any special requests
-            
+
         Returns:
             Created Order instance
         """
+        # Determine order type and prepare package metadata
+        order_type = 'direct'
+        package_metadata = None
+
+        if service and hasattr(service, 'service_type'):
+            service_type_code = service.service_type.code
+
+            if service_type_code == 'package':
+                order_type = 'package'
+                # Calculate total sessions and session value
+                child_relationships = service.child_relationships.all()
+                total_sessions = sum(rel.quantity for rel in child_relationships)
+                session_value_cents = service_price_cents // total_sessions if total_sessions > 0 else 0
+
+                # Snapshot package details
+                package_metadata = {
+                    'package_type': 'package',
+                    'package_service_id': service.id,
+                    'package_service_name': service.name,
+                    'package_service_description': service.description or '',
+                    'total_sessions': total_sessions,
+                    'sessions_completed': 0,
+                    'session_value_cents': session_value_cents,
+                    'child_services': [
+                        {
+                            'service_id': rel.child_service.id,
+                            'service_name': rel.child_service.name,
+                            'quantity': rel.quantity,
+                            'order': rel.order
+                        }
+                        for rel in child_relationships
+                    ]
+                }
+
+            elif service_type_code == 'bundle':
+                order_type = 'bundle'
+                total_sessions = service.sessions_included or 1
+                session_value_cents = service_price_cents // total_sessions if total_sessions > 0 else 0
+
+                # Snapshot bundle details
+                child_relationships = service.child_relationships.all()
+                child_service = child_relationships.first().child_service if child_relationships.exists() else None
+
+                package_metadata = {
+                    'package_type': 'bundle',
+                    'bundle_service_id': service.id,
+                    'bundle_service_name': service.name,
+                    'bundle_service_description': service.description or '',
+                    'total_sessions': total_sessions,
+                    'sessions_completed': 0,
+                    'session_value_cents': session_value_cents,
+                    'bundled_service_id': child_service.id if child_service else None,
+                    'bundled_service_name': child_service.name if child_service else None
+                }
+
         return Order.objects.create(
             user=user,
             payment_method='stripe',
@@ -100,9 +155,10 @@ class PaymentService:
             credits_applied_cents=credits_to_apply_cents,
             total_amount_cents=amount_to_charge_cents,
             status='pending',
-            order_type='direct',
+            order_type=order_type,
             service=service,
-            practitioner=service.primary_practitioner,
+            practitioner=service.primary_practitioner if service else None,
+            package_metadata=package_metadata,
             metadata={
                 'special_requests': special_requests or '',
                 'payment_method_id': str(payment_method.id)

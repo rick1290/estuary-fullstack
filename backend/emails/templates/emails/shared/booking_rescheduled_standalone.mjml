@@ -16,17 +16,17 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="40px 0 20px">
+      <mj-section padding="24px 0 16px">
         <mj-column>
-          <mj-text align="center" font-size="48px" padding-bottom="16px">📅</mj-text>
-          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">Booking Rescheduled</mj-text>
-          <mj-text align="center" font-size="16px" color="#6f7a47">Your session has been moved to a new time</mj-text>
+          <mj-text align="center" font-size="32px" padding-bottom="12px">📅</mj-text>
+          <mj-text align="center" font-size="24px" font-weight="700" color="#3c412a" padding-bottom="6px">Booking Rescheduled</mj-text>
+          <mj-text align="center" font-size="15px" color="#6f7a47">Your session has been moved to a new time</mj-text>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="24px 20px">
         <mj-column>
-          <mj-text font-size="20px" font-weight="600" color="#7a8b63" padding-bottom="16px">{{ service_name }}</mj-text>
+          <mj-text font-size="18px" font-weight="600" color="#7a8b63" padding-bottom="12px">{{ service_name }}</mj-text>
           <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">{% if is_practitioner %}Client{% else %}Practitioner{% endif %}:</span> {{ other_party_name }}</mj-text>
 
           <mj-divider border-color="#e2d5bd" padding="16px 0" />

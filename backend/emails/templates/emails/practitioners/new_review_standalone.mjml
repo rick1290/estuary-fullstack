@@ -16,20 +16,20 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="40px 0 20px">
+      <mj-section padding="24px 0 16px">
         <mj-column>
-          <mj-text align="center" font-size="48px" padding-bottom="16px">⭐</mj-text>
-          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">New Review!</mj-text>
-          <mj-text align="center" font-size="16px" color="#6f7a47">{{ client_name }} left you a review</mj-text>
+          <mj-text align="center" font-size="32px" padding-bottom="12px">⭐</mj-text>
+          <mj-text align="center" font-size="24px" font-weight="700" color="#3c412a" padding-bottom="6px">New Review!</mj-text>
+          <mj-text align="center" font-size="15px" color="#6f7a47">{{ client_name }} left you a review</mj-text>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="24px 20px">
         <mj-column>
-          <mj-text align="center" font-size="48px" color="#7a8b63" padding-bottom="16px">
+          <mj-text align="center" font-size="32px" color="#7a8b63" padding-bottom="12px">
             {% for i in range(stars) %}⭐{% endfor %}
           </mj-text>
-          <mj-text align="center" font-size="24px" font-weight="600" color="#3c412a" padding-bottom="8px">{{ stars }}.0 out of 5</mj-text>
+          <mj-text align="center" font-size="20px" font-weight="600" color="#3c412a" padding-bottom="6px">{{ stars }}.0 out of 5</mj-text>
           <mj-text align="center" color="#6f7a47" padding-bottom="24px">{{ service_name }}</mj-text>
 
           <mj-divider border-color="#e2d5bd" padding="16px 0" />

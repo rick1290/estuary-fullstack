@@ -15,11 +15,13 @@ def mark_completed_bookings():
     """
     Mark bookings as completed if they are past their end time.
     This task runs every 30 minutes via Celery Beat.
-    
+    UPDATED: Creates earnings for package/bundle child bookings when completed.
+
     For different service types:
     - Sessions: Check the booking's end_time
     - Workshops: Check the service session's end_time
     - Courses: Check the last service session's end_time
+    - Package/Bundle children: Create earnings when session completed
     """
     now = timezone.now()
     
@@ -72,21 +74,57 @@ def mark_completed_bookings():
                 # Use BookingService to mark as completed
                 # This handles status update and review request notification
                 from bookings.services import BookingService
+                from payments.services import EarningsService
+
                 booking_service = BookingService()
-                
+                earnings_service = EarningsService()
+
                 try:
+                    # Check if this is a package/bundle child booking that needs earnings created
+                    is_package_child = (
+                        hasattr(booking, 'order') and
+                        booking.order and
+                        booking.order.is_package_or_bundle
+                    )
+
+                    # If package/bundle child, create earnings if they don't exist
+                    if is_package_child:
+                        existing_earnings = EarningsTransaction.objects.filter(
+                            booking=booking,
+                            transaction_type='booking'
+                        ).first()
+
+                        if not existing_earnings and booking.practitioner:
+                            # Create earnings using session value from order
+                            try:
+                                earnings_service.create_booking_earnings(
+                                    practitioner=booking.practitioner,
+                                    booking=booking,
+                                    service=booking.service,
+                                    gross_amount_cents=booking.order.session_value_cents
+                                )
+                                logger.info(
+                                    f"Created earnings for package/bundle child booking {booking.id}: "
+                                    f"${booking.order.session_value_cents/100:.2f}"
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error creating earnings for package/bundle child booking {booking.id}: {e}"
+                                )
+
                     # Use BookingService to mark as completed
                     # This now handles status update, earnings update, and review request
                     booking_service.mark_booking_completed(booking)
-                    
+
                     logger.info(
                         f"Marked booking {booking.id} as completed. "
                         f"Service: {booking.service.name} ({booking.service.service_type_code}), "
                         f"User: {booking.user.email}, "
-                        f"End time used: {end_time_used}"
+                        f"End time used: {end_time_used}, "
+                        f"Package/Bundle child: {is_package_child}"
                     )
                     completed_count += 1
-                    
+
                 except Exception as e:
                     logger.error(
                         f"Error marking booking {booking.id} as completed: {str(e)}",

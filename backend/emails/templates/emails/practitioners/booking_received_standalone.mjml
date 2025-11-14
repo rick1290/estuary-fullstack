@@ -22,40 +22,40 @@
     <!-- Content -->
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
       <!-- New Booking Badge -->
-      <mj-section padding="40px 0 20px">
+      <mj-section padding="24px 0 16px">
         <mj-column>
-          <mj-text align="center" font-size="48px" padding-bottom="16px">
+          <mj-text align="center" font-size="32px" padding-bottom="12px">
             📅
           </mj-text>
-          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">
+          <mj-text align="center" font-size="24px" font-weight="700" color="#3c412a" padding-bottom="6px">
             New Booking!
           </mj-text>
-          <mj-text align="center" font-size="16px" color="#6f7a47">
+          <mj-text align="center" font-size="15px" color="#6f7a47">
             You have a new client session scheduled
           </mj-text>
         </mj-column>
       </mj-section>
 
       <!-- Booking Details Card -->
-      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+      <mj-section background-color="#ffffff" border-radius="16px" padding="24px 20px">
         <mj-column>
-          <mj-text font-size="18px" font-weight="600" color="#3c412a" padding-bottom="20px">
+          <mj-text font-size="16px" font-weight="600" color="#3c412a" padding-bottom="16px">
             Booking Details
           </mj-text>
 
           <!-- Client Info -->
-          <mj-text font-size="16px" font-weight="600" color="#3c412a" padding-bottom="12px">
+          <mj-text font-size="15px" font-weight="600" color="#3c412a" padding-bottom="10px">
             Client
           </mj-text>
-          <mj-text padding-bottom="20px">
+          <mj-text padding-bottom="16px">
             <span style="font-weight: 600; color: #7a8b63;">{{ client_name }}</span><br/>
             <span style="color: #6f7a47; font-size: 14px;">{{ client_email }}</span>
           </mj-text>
 
-          <mj-divider border-color="#e2d5bd" padding="16px 0" />
+          <mj-divider border-color="#e2d5bd" padding="12px 0" />
 
           <!-- Service -->
-          <mj-text font-size="20px" font-weight="600" color="#7a8b63" padding-bottom="16px">
+          <mj-text font-size="18px" font-weight="600" color="#7a8b63" padding-bottom="12px">
             {{ service_name }}
           </mj-text>
 

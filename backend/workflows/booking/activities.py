@@ -220,8 +220,8 @@ async def check_participant_attendance(booking_id: str) -> Dict[str, bool]:
     try:
         from bookings.models import Booking
         from rooms.models import RoomParticipant
-        
-        booking = Booking.objects.select_related('room').get(id=booking_id)
+
+        booking = Booking.objects.select_related('livekit_room', 'service_session__livekit_room').get(id=booking_id)
         
         if not hasattr(booking, 'room') or not booking.room:
             return {'client_joined': False, 'practitioner_joined': False}

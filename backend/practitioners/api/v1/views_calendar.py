@@ -68,7 +68,7 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
             ServiceSession.objects.select_related(
                 'service',
                 'service__service_type',
-                'room'
+                'livekit_room'
             ).prefetch_related(
                 Prefetch(
                     'bookings',
@@ -194,9 +194,13 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         )
         events.extend(individual_booking_events)
 
-        # Sort all events by start_time (most recent first based on created_at pattern)
-        # Actually, let's sort by start_time for calendar view
-        events.sort(key=lambda x: x['start_time'], reverse=True)
+        # Sort all events by start_time (most recent first)
+        # Handle None start_time for unscheduled bookings (put them at the end)
+        from datetime import datetime, timezone as dt_timezone
+        events.sort(
+            key=lambda x: x['start_time'] if x['start_time'] is not None else datetime.min.replace(tzinfo=dt_timezone.utc),
+            reverse=True
+        )
 
         return Response(events)
 
@@ -322,7 +326,7 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
             'service',
             'service__service_type',
             'user',
-            'room'
+            'livekit_room'
         )
 
         # Filter by date range

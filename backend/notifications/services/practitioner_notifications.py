@@ -175,12 +175,10 @@ class PractitionerNotificationService(BaseNotificationService):
         booking_tz = getattr(booking, 'timezone', 'UTC')
         dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
 
-        # Check if booking has a video room
+        # Check if booking has a video room (direct or via service_session)
         video_room_url = None
-        if hasattr(booking, 'livekit_room') and booking.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
-        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        if booking.room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.room.public_uuid}"
 
         data = {
             'first_name': user.first_name or 'there',
@@ -192,7 +190,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'booking_date': dt_formatted['date'],
             'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
             'gross_amount': f"${gross_amount:.2f}",
             'commission_amount': f"${commission_amount:.2f}",
             'net_earnings': f"${net_earnings:.2f}",
@@ -449,13 +447,11 @@ class PractitionerNotificationService(BaseNotificationService):
         # Calculate time until booking
         time_until = booking.start_time - timezone.now()
         
-        # Check if booking has a video room
+        # Check if booking has a video room (direct or via service_session)
         video_room_url = None
-        if hasattr(booking, 'livekit_room') and booking.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
-        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
-        
+        if booking.room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.room.public_uuid}"
+
         data = {
             'booking_id': str(booking.id),
             'client_name': client.get_full_name(),
@@ -464,7 +460,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
             'booking_time': booking.start_time.strftime('%I:%M %p'),
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
             'hours_until': hours_before,
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",

@@ -802,16 +802,16 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
         """Get sessions based on service"""
         # For detail views (retrieve, update, destroy), return all sessions
         if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return ServiceSession.objects.select_related('service', 'room', 'address')
-        
+            return ServiceSession.objects.select_related('service', 'livekit_room', 'address')
+
         # For list view, filter by service_id if provided
         service_id = self.request.query_params.get('service_id')
         if not service_id:
             return ServiceSession.objects.none()
-        
+
         return ServiceSession.objects.filter(
             service_id=service_id
-        ).select_related('service', 'room', 'address').order_by('start_time')
+        ).select_related('service', 'livekit_room', 'address').order_by('start_time')
     
     def get_permissions(self):
         """Only service owners can modify sessions"""
