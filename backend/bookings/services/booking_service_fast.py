@@ -158,7 +158,7 @@ class FastBookingService:
         """Create a package purchase."""
         booking = BookingFactory.create_package_booking(
             user=user,
-            package=service,
+            package_service=service,
             payment_intent_id=payment_data.get('payment_intent_id'),
             client_notes=booking_data.get('special_requests', '')
         )
@@ -188,7 +188,7 @@ class FastBookingService:
         """Create a bundle purchase."""
         booking = BookingFactory.create_bundle_booking(
             user=user,
-            bundle=service,
+            bundle_service=service,
             payment_intent_id=payment_data.get('payment_intent_id'),
             client_notes=booking_data.get('special_requests', '')
         )

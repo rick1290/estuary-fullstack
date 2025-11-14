@@ -121,7 +121,7 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
               </div>
 
               <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-100">
-                <p className="text-2xl font-bold text-olive-900">{item.price ? item.price : "Free"}</p>
+                <p className="text-2xl font-bold text-olive-900">{item.price ? `$${item.price}` : "Free"}</p>
 
                 <Button asChild size="sm" className="shadow-md hover:shadow-lg">
                   <Link href={getServiceDetailUrl(item)}>

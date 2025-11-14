@@ -116,7 +116,7 @@ export default function SessionOfferings({
                   </div>
 
                   <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
-                    <p className="font-semibold text-primary">{session.price ? session.price : "Free"}</p>
+                    <p className="font-semibold text-primary">{session.price ? `$${session.price}` : "Free"}</p>
 
                     <Button asChild variant="outline">
                       <Link href={getServiceDetailUrl(session)}>

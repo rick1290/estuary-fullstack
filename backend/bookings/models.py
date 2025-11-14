@@ -172,11 +172,11 @@ class Booking(PublicModel):
     def save(self, *args, **kwargs):
         """Override save to capture snapshot data on creation."""
         # Auto-calculate final amount if not set
-        if not self.final_amount_cents:
+        if self.final_amount_cents is None:
             self.final_amount_cents = self.price_charged_cents - self.discount_amount_cents
-        
+
         # Set price from service if not set
-        if not self.price_charged_cents and self.service:
+        if self.price_charged_cents is None and self.service:
             self.price_charged_cents = self.service.price_cents
         
         if not self.pk:  # Only on creation
