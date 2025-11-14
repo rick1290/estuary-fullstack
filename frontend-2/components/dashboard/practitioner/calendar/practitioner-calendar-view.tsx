@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { calendarListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
-import type { BookingListReadable } from "@/src/client/types.gen"
 import { startOfMonth, endOfMonth, addDays, format } from "date-fns"
 
 // Mock data for calendar events
@@ -225,36 +224,43 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
     }
   }, [currentDate, view, weekDays])
 
-  // Fetch bookings for the current view
-  const { data: bookingsData, isLoading } = useQuery(
-    bookingsListOptions({
+  // Fetch calendar events for the current view
+  const { data: calendarEvents, isLoading } = useQuery(
+    calendarListOptions({
       query: {
-        practitioner_id: user?.practitionerId,
-        start_date: format(dateRange.start, 'yyyy-MM-dd'),
-        end_date: format(dateRange.end, 'yyyy-MM-dd'),
-        status: 'confirmed,completed',
-        page_size: 100
+        start_date: dateRange.start.toISOString(),
+        end_date: dateRange.end.toISOString()
       }
     })
   )
 
-  // Transform bookings into calendar events
+  // Transform calendar events
   const events = useMemo(() => {
-    if (!bookingsData?.results) return []
-    
-    return bookingsData.results.map((booking: BookingListReadable) => ({
-      id: booking.id?.toString() || '',
-      bookingId: booking.id,
-      title: booking.service?.name || 'Unknown Service',
-      clientName: booking.user?.full_name || booking.user?.email || 'Unknown Client',
-      clientAvatar: booking.user?.avatar_url,
-      start: new Date(booking.start_time),
-      end: new Date(booking.end_time),
-      type: booking.service?.service_type_code || 'session',
-      location: booking.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person',
-      status: booking.status
-    }))
-  }, [bookingsData])
+    if (!calendarEvents) return []
+
+    return calendarEvents.map((event: any) => {
+      const isGroupedEvent = event.event_type === 'service_session' || event.event_type === 'grouped_booking'
+
+      return {
+        id: isGroupedEvent
+          ? (event.service_session_id?.toString() || `grouped-${event.service?.id}-${event.start_time}`)
+          : event.booking_id?.toString(),
+        eventType: event.event_type,
+        bookingId: isGroupedEvent ? event.service_session_id : event.booking_id,
+        title: event.service?.name || 'Unknown Service',
+        clientName: isGroupedEvent
+          ? `Multiple Attendees (${event.attendee_count})`
+          : (event.client?.full_name || event.client?.email || 'Unknown Client'),
+        clientAvatar: isGroupedEvent ? null : event.client?.avatar_url,
+        start: new Date(event.start_time),
+        end: new Date(event.end_time),
+        type: event.service?.service_type_code || 'session',
+        location: event.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person',
+        status: event.status,
+        attendees: event.attendees || [] // For grouped bookings
+      }
+    })
+  }, [calendarEvents])
 
   // Update helper functions to use real events
   const getEventsForDay = (day: Date) => {
@@ -285,9 +291,22 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
     })
   }
 
-  const handleEventClick = (bookingId: number | undefined) => {
-    if (bookingId) {
-      router.push(`/dashboard/practitioner/bookings/${bookingId}`)
+  const handleEventClick = (event: any) => {
+    // Route to correct detail page based on event type
+    if (event.eventType === 'service_session') {
+      // ServiceSession has a session_id to view
+      router.push(`/dashboard/practitioner/calendar/${event.bookingId}`)
+    } else if (event.eventType === 'grouped_booking') {
+      // Grouped bookings (without ServiceSession) - route to first attendee's booking
+      const firstBookingId = event.attendees?.[0]?.booking_id
+      if (firstBookingId) {
+        router.push(`/dashboard/practitioner/bookings/${firstBookingId}`)
+      }
+    } else {
+      // Individual booking
+      if (event.bookingId) {
+        router.push(`/dashboard/practitioner/bookings/${event.bookingId}`)
+      }
     }
   }
 
@@ -409,7 +428,7 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
                               ? "bg-secondary/10"
                               : "bg-green-100"
                         } flex flex-col gap-0.5`}
-                        onClick={() => handleEventClick(event.bookingId)}
+                        onClick={() => handleEventClick(event)}
                       >
                         <div className="flex justify-between items-center">
                           <p className="text-sm font-medium truncate">{event.title}</p>
@@ -426,14 +445,24 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
                         </div>
 
                         <div className="flex items-center gap-1">
-                          {event.type === "session" ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                          {event.eventType === 'service_session' ? (
+                            <Users className="h-3 w-3" />
+                          ) : (
+                            <User className="h-3 w-3" />
+                          )}
                           <div className="flex items-center gap-1">
-                            {event.clientAvatar && (
+                            {event.eventType === 'service_session' ? (
                               <Avatar className="h-5 w-5">
-                                <AvatarImage src={event.clientAvatar || "/placeholder.svg"} alt={event.clientName} />
+                                <AvatarFallback className="text-[10px]">
+                                  <Users className="h-3 w-3" />
+                                </AvatarFallback>
+                              </Avatar>
+                            ) : event.clientAvatar ? (
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={event.clientAvatar} alt={event.clientName} />
                                 <AvatarFallback className="text-[10px]">{event.clientName.charAt(0)}</AvatarFallback>
                               </Avatar>
-                            )}
+                            ) : null}
                             <span className="text-xs truncate">{event.clientName}</span>
                           </div>
                         </div>
@@ -492,7 +521,7 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
                                 ? "bg-secondary/10"
                                 : "bg-green-100"
                           } flex flex-col gap-0.5`}
-                          onClick={() => handleEventClick(event.bookingId)}
+                          onClick={() => handleEventClick(event)}
                         >
                           <div className="flex justify-between items-center">
                             <p className="text-sm font-medium truncate">{event.title}</p>
@@ -509,14 +538,24 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
                           </div>
 
                           <div className="flex items-center gap-1">
-                            {event.type === "session" ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                            {event.eventType === 'service_session' ? (
+                              <Users className="h-3 w-3" />
+                            ) : (
+                              <User className="h-3 w-3" />
+                            )}
                             <div className="flex items-center gap-1">
-                              {event.clientAvatar && (
+                              {event.eventType === 'service_session' ? (
                                 <Avatar className="h-5 w-5">
-                                  <AvatarImage src={event.clientAvatar || "/placeholder.svg"} alt={event.clientName} />
+                                  <AvatarFallback className="text-[10px]">
+                                    <Users className="h-3 w-3" />
+                                  </AvatarFallback>
+                                </Avatar>
+                              ) : event.clientAvatar ? (
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={event.clientAvatar} alt={event.clientName} />
                                   <AvatarFallback className="text-[10px]">{event.clientName.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                              )}
+                              ) : null}
                               <span className="text-xs truncate">{event.clientName}</span>
                             </div>
                           </div>
@@ -570,7 +609,7 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
                                 ? "bg-secondary/10"
                                 : "bg-green-100"
                           }`}
-                          onClick={() => handleEventClick(event.bookingId)}
+                          onClick={() => handleEventClick(event)}
                         >
                           <span className="text-xs block truncate">
                             {event.start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}

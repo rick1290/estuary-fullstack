@@ -85,25 +85,22 @@ export default function StreamsTeaserSection() {
             {/* Right Visual */}
             <div className="relative animate-slide-up" style={{animationDelay: '0.2s'}}>
               <Card className="overflow-hidden border-0 shadow-2xl">
-                <div className="relative h-[400px] bg-gradient-to-br from-sage-100 to-blush-100">
-                  <div className="absolute inset-0 texture-grain opacity-20" />
-                  
-                  {/* Placeholder for stream preview */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-20 h-20 rounded-full bg-white/80 backdrop-blur-sm mx-auto mb-4 flex items-center justify-center shadow-lg">
-                        <Play className="h-10 w-10 text-sage-700 ml-1" strokeWidth="1.5" />
-                      </div>
-                      <p className="text-olive-800 font-medium">Preview Coming Soon</p>
-                    </div>
-                  </div>
-                  
+                <div className="relative h-[400px]">
+                  {/* Stream preview image */}
+                  <Image
+                    src="/living-streams-preview.png"
+                    alt="Living Streams Preview"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+
                   {/* Live indicator */}
                   <div className="absolute top-4 left-4 flex items-center gap-2 bg-rose-500 text-white px-3 py-1.5 rounded-full">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                     <span className="text-sm font-medium">LIVE</span>
                   </div>
-                  
+
                   {/* Viewer count */}
                   <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
                     <div className="flex items-center gap-2">

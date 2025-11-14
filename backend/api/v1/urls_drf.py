@@ -29,6 +29,7 @@ from practitioners.api.v1.views import (
     CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet,
     SpecializationViewSet, StyleViewSet, TopicViewSet, ModalityViewSet
 )
+from practitioners.api.v1.views_calendar import PractitionerCalendarViewSet
 
 # Payment system
 from payments.api.v1.views import (
@@ -81,6 +82,7 @@ router.register(r'service-resources', ServiceResourceViewSet, basename='service-
 # Practitioners
 router.register(r'practitioners', PractitionerViewSet, basename='practitioner')  # Internal CRUD (uses PK)
 router.register(r'public-practitioners', PublicPractitionerViewSet, basename='public-practitioner')  # Public API (uses public_uuid)
+router.register(r'calendar', PractitionerCalendarViewSet, basename='calendar')  # Calendar events API
 router.register(r'schedules', ScheduleViewSet, basename='schedule')
 router.register(r'availability', AvailabilityViewSet, basename='availability')
 router.register(r'certifications', CertificationViewSet, basename='certification')

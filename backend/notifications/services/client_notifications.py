@@ -2,6 +2,7 @@
 Client-specific notification services.
 """
 import logging
+import pytz
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
@@ -19,27 +20,85 @@ class ClientNotificationService(BaseNotificationService):
     Handle all client-related notifications.
     """
     
-    # Courier template IDs (to be configured in settings)
+    # Email templates and subjects (using Resend)
     TEMPLATES = {
-        'welcome': 'COURIER_CLIENT_WELCOME_TEMPLATE',
-        'email_verification': 'COURIER_CLIENT_EMAIL_VERIFICATION_TEMPLATE',
-        'booking_confirmation': 'COURIER_CLIENT_BOOKING_CONFIRMATION_TEMPLATE',
-        'payment_success': 'COURIER_CLIENT_PAYMENT_SUCCESS_TEMPLATE',
-        'session_confirmation': 'COURIER_CLIENT_SESSION_CONFIRMATION_TEMPLATE',
-        'reminder_24h': 'COURIER_CLIENT_REMINDER_24H_TEMPLATE',
-        'reminder_30m': 'COURIER_CLIENT_REMINDER_30M_TEMPLATE',
-        'booking_cancelled': 'COURIER_CLIENT_BOOKING_CANCELLED_TEMPLATE',
-        'booking_rescheduled': 'COURIER_CLIENT_BOOKING_RESCHEDULED_TEMPLATE',
-        'credit_purchase': 'COURIER_CLIENT_CREDIT_PURCHASE_TEMPLATE',
-        'review_request': 'COURIER_CLIENT_REVIEW_REQUEST_TEMPLATE',
-        'practitioner_message': 'COURIER_CLIENT_PRACTITIONER_MESSAGE_TEMPLATE',
-        'booking_completed_review_request': 'COURIER_CLIENT_BOOKING_COMPLETED_REVIEW_REQUEST_TEMPLATE',
+        'welcome': {
+            'path': 'clients/welcome_standalone.mjml',
+            'subject': 'Welcome to ESTUARY!'
+        },
+        'email_verification': {
+            'path': 'clients/email_verification_standalone.mjml',
+            'subject': 'Verify Your Email Address'
+        },
+        'booking_confirmation': {
+            'path': 'clients/booking_confirmation_standalone.mjml',
+            'subject': 'Booking Confirmed - {service_name}'
+        },
+        'payment_success': {
+            'path': 'clients/payment_success_standalone.mjml',
+            'subject': 'Payment Successful'
+        },
+        'reminder': {
+            'path': 'clients/reminder_standalone.mjml',
+            'subject': 'Reminder: Your Session {time_description}'
+        },
+        'booking_cancelled': {
+            'path': 'shared/booking_cancelled_standalone.mjml',
+            'subject': 'Booking Cancelled - {service_name}'
+        },
+        'booking_rescheduled': {
+            'path': 'shared/booking_rescheduled_standalone.mjml',
+            'subject': 'Booking Rescheduled - {service_name}'
+        },
+        'credit_purchase': {
+            'path': 'clients/credit_purchase_standalone.mjml',
+            'subject': 'Credits Added to Your Account'
+        },
+        'review_request': {
+            'path': 'clients/review_request_standalone.mjml',
+            'subject': 'How Was Your Session with {practitioner_name}?'
+        },
+        'message': {
+            'path': 'shared/message_notification_standalone.mjml',
+            'subject': 'New Message from {sender_name}'
+        },
     }
-    
-    def get_template_id(self, template_key: str) -> str:
-        """Get template ID from settings."""
-        setting_key = self.TEMPLATES.get(template_key)
-        return getattr(settings, setting_key, None) if setting_key else None
+
+    def get_template(self, template_key: str) -> Dict[str, str]:
+        """Get template path and subject."""
+        return self.TEMPLATES.get(template_key, {})
+
+    def _format_datetime_with_timezone(self, dt: datetime, booking_timezone: str = 'UTC') -> Dict[str, str]:
+        """
+        Convert UTC datetime to booking timezone and return formatted strings.
+
+        Args:
+            dt: datetime object (in UTC)
+            booking_timezone: timezone string (e.g., 'America/Los_Angeles')
+
+        Returns:
+            dict with 'date', 'time', 'time_with_tz' keys
+        """
+        try:
+            # Convert to booking timezone
+            tz = pytz.timezone(booking_timezone)
+            local_dt = dt.astimezone(tz)
+
+            return {
+                'date': local_dt.strftime('%A, %B %d, %Y'),
+                'time': local_dt.strftime('%I:%M %p'),
+                'time_with_tz': local_dt.strftime('%I:%M %p %Z'),
+                'tz_abbr': local_dt.strftime('%Z')
+            }
+        except Exception as e:
+            logger.warning(f"Error converting timezone {booking_timezone}: {e}")
+            # Fallback to UTC
+            return {
+                'date': dt.strftime('%A, %B %d, %Y'),
+                'time': dt.strftime('%I:%M %p'),
+                'time_with_tz': dt.strftime('%I:%M %p UTC'),
+                'tz_abbr': 'UTC'
+            }
     
     def send_welcome_email(self, user, verification_token: Optional[str] = None):
         """
@@ -47,33 +106,34 @@ class ClientNotificationService(BaseNotificationService):
         """
         if not self.should_send_notification(user, 'system', 'email'):
             return
-        
-        template_id = self.get_template_id('welcome')
-        if not template_id:
+
+        template = self.get_template('welcome')
+        if not template:
             logger.warning("No welcome email template configured")
             return
-        
+
         data = {
             'first_name': user.first_name or 'there',
             'verification_url': f"{settings.FRONTEND_URL}/verify-email?token={verification_token}" if verification_token else None,
             'browse_services_url': f"{settings.FRONTEND_URL}/marketplace",
             'profile_url': f"{settings.FRONTEND_URL}/dashboard/user/profile"
         }
-        
+
         notification = self.create_notification_record(
             user=user,
-            title="Welcome to Estuary!",
+            title="Welcome to ESTUARY!",
             message="Welcome to our wellness marketplace. Start exploring services and practitioners.",
             notification_type='system',
             delivery_channel='email'
         )
-        
+
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=template['subject'],
             data=data,
             notification=notification,
-            idempotency_key=f"welcome-{user.id}-{timezone.now().strftime('%Y%m%d')}"
+            tags=[{'name': 'category', 'value': 'welcome'}]
         )
     
     def send_booking_confirmation(self, booking):
@@ -83,33 +143,36 @@ class ClientNotificationService(BaseNotificationService):
         user = booking.user
         if not self.should_send_notification(user, 'booking', 'email'):
             return
-        
-        template_id = self.get_template_id('booking_confirmation')
-        if not template_id:
+
+        template = self.get_template('booking_confirmation')
+        if not template:
             logger.warning("No booking confirmation template configured")
             return
-        
+
         service = booking.service
         practitioner = service.primary_practitioner
-        
-        # Format booking details
+
+        # Format booking details with timezone conversion
         booking_datetime = booking.start_time
-        
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking_datetime, booking_tz)
+
         # Check if booking has a video room
         video_room_url = None
         if hasattr(booking, 'livekit_room') and booking.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
         elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
-        
+
         data = {
+            'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'service_name': service.name,
             'service_type': service.service_type,
-            'practitioner_name': practitioner.user.get_full_name(),
-            'practitioner_slug': practitioner.slug,
-            'booking_date': booking_datetime.strftime('%A, %B %d, %Y'),
-            'booking_time': booking_datetime.strftime('%I:%M %p'),
+            'practitioner_name': practitioner.user.get_full_name() if practitioner else 'Your Practitioner',
+            'practitioner_slug': practitioner.slug if practitioner else '',
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'total_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}",
@@ -120,12 +183,12 @@ class ClientNotificationService(BaseNotificationService):
             'video_room_url': video_room_url,
             'has_video_room': bool(video_room_url)
         }
-        
+
         # Add session-specific details if applicable
         if booking.service_session:
             data['session_name'] = booking.service_session.title or f"Session {booking.service_session.sequence_number}" if booking.service_session.sequence_number else service.name
             data['session_number'] = booking.service_session.sequence_number
-        
+
         notification = self.create_notification_record(
             user=user,
             title=f"Booking Confirmed: {service.name}",
@@ -135,18 +198,19 @@ class ClientNotificationService(BaseNotificationService):
             related_object_type='booking',
             related_object_id=str(booking.id)
         )
-        
+
         # Send immediately
+        subject = template['subject'].format(service_name=service.name)
         self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"booking-confirmation-{booking.id}"
+            tags=[{'name': 'category', 'value': 'booking_confirmation'}]
         )
-        
+
         # Reminders are now handled by periodic task process_booking_reminders
-        # self._schedule_booking_reminders(booking)  # Deprecated - using periodic task instead
     
     def send_payment_success(self, order):
         """
@@ -155,27 +219,29 @@ class ClientNotificationService(BaseNotificationService):
         user = order.user
         if not self.should_send_notification(user, 'payment', 'email'):
             return
-        
-        template_id = self.get_template_id('payment_success')
-        if not template_id:
+
+        template = self.get_template('payment_success')
+        if not template:
             logger.warning("No payment success template configured")
             return
-        
+
         # Get related booking if any
         booking = None
         if hasattr(order, 'bookings') and order.bookings.exists():
             booking = order.bookings.first()
-        
+
         data = {
+            'first_name': user.first_name or 'there',
             'order_id': str(order.public_uuid),
-            'amount': f"${order.total_amount:.2f}",
+            'amount': f"{order.total_amount:.2f}",
             'payment_method': order.get_payment_method_display(),
-            'transaction_date': order.created_at.strftime('%B %d, %Y at %I:%M %p'),
+            'payment_date': order.created_at.strftime('%B %d, %Y'),
+            'transaction_id': str(order.public_uuid),
             'receipt_url': order.metadata.get('stripe_receipt_url', ''),
             'invoice_url': f"{settings.FRONTEND_URL}/dashboard/user/invoices/{order.public_uuid}",
-            'credits_applied': f"${(order.credits_applied_cents / 100):.2f}" if order.credits_applied_cents > 0 else None
+            'credits_applied': f"{(order.credits_applied_cents / 100):.2f}" if order.credits_applied_cents > 0 else None
         }
-        
+
         # Add booking details if payment is for a booking
         if booking:
             data.update({
@@ -190,25 +256,76 @@ class ClientNotificationService(BaseNotificationService):
                 'service_name': order.service.name,
                 'practitioner_name': order.service.primary_practitioner.user.get_full_name() if order.service.primary_practitioner else 'Unknown'
             })
-        
+
         notification = self.create_notification_record(
             user=user,
             title="Payment Successful",
-            message=f"Your payment of {data['amount']} has been processed successfully.",
+            message=f"Your payment of ${data['amount']} has been processed successfully.",
             notification_type='payment',
             delivery_channel='email',
             related_object_type='order',
             related_object_id=str(order.public_uuid)
         )
-        
+
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=template['subject'],
             data=data,
             notification=notification,
-            idempotency_key=f"payment-success-{order.public_uuid}"
+            tags=[{'name': 'category', 'value': 'payment'}]
         )
-    
+
+    def send_credit_purchase(self, credit_transaction):
+        """
+        Send credit purchase confirmation email.
+
+        Args:
+            credit_transaction: CreditTransaction instance
+        """
+        user = credit_transaction.user
+        if not self.should_send_notification(user, 'payment', 'email'):
+            return
+
+        template = self.get_template('credit_purchase')
+        if not template:
+            logger.warning("No credit purchase template configured")
+            return
+
+        # Get current credit balance
+        from payments.models import CreditTransaction
+        current_balance = CreditTransaction.get_balance(user)
+
+        # Calculate expiry date (assuming credits expire in 1 year)
+        expiry_date = timezone.now() + timedelta(days=365)
+
+        data = {
+            'first_name': user.first_name or 'there',
+            'credit_amount': f"{float(credit_transaction.amount):.2f}",
+            'new_balance': f"{float(current_balance):.2f}",
+            'purchase_date': credit_transaction.created_at.strftime('%B %d, %Y'),
+            'expiry_date': expiry_date.strftime('%B %d, %Y'),
+        }
+
+        notification = self.create_notification_record(
+            user=user,
+            title="Credits Added to Your Account",
+            message=f"${data['credit_amount']} in credits has been added to your account.",
+            notification_type='payment',
+            delivery_channel='email',
+            related_object_type='credit_transaction',
+            related_object_id=str(credit_transaction.id)
+        )
+
+        return self.send_email_notification(
+            user=user,
+            template_path=template['path'],
+            subject=template['subject'],
+            data=data,
+            notification=notification,
+            tags=[{'name': 'category', 'value': 'credit_purchase'}]
+        )
+
     def send_booking_reminder(self, booking, hours_before: int):
         """
         Send booking reminder (24h or 30min before).
@@ -216,53 +333,61 @@ class ClientNotificationService(BaseNotificationService):
         user = booking.user
         if not self.should_send_notification(user, 'reminder', 'email'):
             return
-        
-        template_key = 'reminder_24h' if hours_before == 24 else 'reminder_30m'
-        template_id = self.get_template_id(template_key)
-        if not template_id:
-            logger.warning(f"No {template_key} template configured")
+
+        template = self.get_template('reminder')
+        if not template:
+            logger.warning("No reminder template configured")
             return
-        
+
         service = booking.service
         practitioner = service.primary_practitioner
-        
+
         # Calculate time until booking
         time_until = booking.start_time - timezone.now()
-        
+
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+
         # Check if booking has a video room
         video_room_url = None
         if hasattr(booking, 'livekit_room') and booking.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
         elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
-        
+
+        # Determine time description for subject
+        time_description = "Tomorrow" if hours_before == 24 else "in 30 Minutes"
+
         data = {
+            'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'service_name': service.name,
-            'practitioner_name': practitioner.user.get_full_name(),
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'practitioner_name': practitioner.user.get_full_name() if practitioner else 'Your Practitioner',
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'hours_until': hours_before,
+            'time_until': f"{hours_before} hours" if hours_before > 1 else "30 minutes",
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'reschedule_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/reschedule",
-            'practitioner_contact': practitioner.user.email,
+            'practitioner_contact': practitioner.user.email if practitioner else '',
             'video_room_url': video_room_url,
             'has_video_room': bool(video_room_url)
         }
-        
+
         # Add video conference details if applicable
         if video_room_url:
             data['video_instructions'] = "Click the link above to join your video session"
         elif booking.meeting_url:
             data['video_room_url'] = booking.meeting_url
             data['video_instructions'] = "Click the link above to join your video session"
-        
+
         title = f"Reminder: {service.name} in {hours_before} {'hours' if hours_before > 1 else 'hour'}"
         message = f"Your session with {practitioner.user.get_full_name()} is coming up on {data['booking_date']} at {data['booking_time']}."
-        
+
         notification = self.create_notification_record(
             user=user,
             title=title,
@@ -272,13 +397,15 @@ class ClientNotificationService(BaseNotificationService):
             related_object_type='booking',
             related_object_id=str(booking.id)
         )
-        
+
+        subject = template['subject'].format(time_description=time_description)
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"booking-reminder-{booking.id}-{hours_before}h"
+            tags=[{'name': 'category', 'value': 'reminder'}]
         )
     
     def _schedule_booking_reminders(self, booking):
@@ -447,37 +574,43 @@ class ClientNotificationService(BaseNotificationService):
         user = booking.user
         if not self.should_send_notification(user, 'review', 'email'):
             return
-        
-        template_id = self.get_template_id('booking_completed_review_request')
-        if not template_id:
-            logger.warning("No booking completed review request template configured")
+
+        template = self.get_template('review_request')
+        if not template:
+            logger.warning("No review request template configured")
             return
-        
+
         service = booking.service
         practitioner = service.primary_practitioner
-        
+
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+
         data = {
+            'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'service_name': service.name,
             'service_type': service.service_type,
-            'practitioner_name': practitioner.user.get_full_name(),
-            'practitioner_slug': practitioner.slug,
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'practitioner_name': practitioner.user.get_full_name() if practitioner else 'Your Practitioner',
+            'practitioner_slug': practitioner.slug if practitioner else '',
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
+            'session_date': dt_formatted['date'],
             'review_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}/review",
-            'practitioner_profile_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}",
+            'practitioner_profile_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}" if practitioner else '',
             'dashboard_url': f"{settings.FRONTEND_URL}/dashboard/user"
         }
-        
+
         # Add session-specific details if applicable
         if booking.service_session:
             data['session_name'] = booking.service_session.title or f"Session {booking.service_session.sequence_number}" if booking.service_session.sequence_number else service.name
             if booking.service_session.sequence_number:
                 data['session_number'] = booking.service_session.sequence_number
-        
+
         title = f"How was your experience with {practitioner.user.get_full_name()}?"
         message = f"Your {service.name} session has been completed. We'd love to hear about your experience!"
-        
+
         notification = self.create_notification_record(
             user=user,
             title=title,
@@ -487,13 +620,15 @@ class ClientNotificationService(BaseNotificationService):
             related_object_type='booking',
             related_object_id=str(booking.id)
         )
-        
+
+        subject = template['subject'].format(practitioner_name=practitioner.user.get_full_name())
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"booking-review-request-{booking.id}"
+            tags=[{'name': 'category', 'value': 'review_request'}]
         )
     
     def send_booking_cancellation(self, booking):
@@ -503,42 +638,56 @@ class ClientNotificationService(BaseNotificationService):
         user = booking.user
         if not self.should_send_notification(user, 'booking', 'email'):
             return
-        
-        template_id = self.get_template_id('booking_cancelled')
-        if not template_id:
+
+        template = self.get_template('booking_cancelled')
+        if not template:
             logger.warning("No booking cancelled template configured")
             return
-        
+
         service = booking.service
         practitioner = service.primary_practitioner if service else booking.practitioner
-        
+
+        # Format booking time with timezone conversion
+        if booking.start_time:
+            booking_tz = getattr(booking, 'timezone', 'UTC')
+            dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+            booking_date_str = dt_formatted['date']
+            booking_time_str = dt_formatted['time_with_tz']
+        else:
+            booking_date_str = 'N/A'
+            booking_time_str = 'N/A'
+
         data = {
+            'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'service_name': service.name if service else booking.service_name_snapshot,
-            'practitioner_name': practitioner.user.get_full_name() if practitioner else booking.practitioner_name_snapshot,
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y') if booking.start_time else 'N/A',
-            'booking_time': booking.start_time.strftime('%I:%M %p') if booking.start_time else 'N/A',
+            'other_party_name': practitioner.user.get_full_name() if practitioner else booking.practitioner_name_snapshot,
+            'booking_date': booking_date_str,
+            'booking_time': booking_time_str,
             'cancelled_by': booking.cancelled_by or 'System',
-            'cancellation_reason': booking.cancellation_reason or 'No reason provided',
-            'refund_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}" if booking.final_amount_cents else None,
+            'cancellation_reason': booking.cancellation_reason if hasattr(booking, 'cancellation_reason') else None,
+            'refund_amount': f"{(booking.final_amount_cents or 0) / 100:.2f}" if booking.final_amount_cents else None,
+            'is_practitioner': False,
             'support_url': f"{settings.FRONTEND_URL}/support",
             'rebooking_url': f"{settings.FRONTEND_URL}/practitioners/{practitioner.slug}" if practitioner else settings.FRONTEND_URL
         }
-        
+
         notification = self.create_notification_record(
             user=user,
             title=f"Booking Cancelled: {data['service_name']}",
-            message=f"Your booking with {data['practitioner_name']} on {data['booking_date']} has been cancelled.",
+            message=f"Your booking with {data['other_party_name']} on {data['booking_date']} has been cancelled.",
             notification_type='booking',
             delivery_channel='email',
             related_object_type='booking',
             related_object_id=str(booking.id)
         )
-        
+
+        subject = template['subject'].format(service_name=data['service_name'])
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"booking-cancellation-{booking.id}"
+            tags=[{'name': 'category', 'value': 'booking_cancelled'}]
         )

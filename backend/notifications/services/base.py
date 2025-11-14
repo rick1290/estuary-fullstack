@@ -9,7 +9,8 @@ from django.utils import timezone
 from celery import shared_task
 
 from notifications.models import Notification, NotificationSetting
-from integrations.courier.client import courier_client
+# Updated to use Resend email service
+from emails.services import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,9 @@ class BaseNotificationService:
     Base class for notification services.
     Handles common functionality like user preferences, scheduling, and delivery.
     """
-    
+
     def __init__(self):
-        self.courier_client = courier_client
+        self.email_service = EmailService
     
     def should_send_notification(
         self, 
@@ -81,47 +82,47 @@ class BaseNotificationService:
     def send_email_notification(
         self,
         user,
-        template_id: str,
+        template_path: str,  # Changed from template_id to template_path
+        subject: str,
         data: Dict,
         notification: Optional[Notification] = None,
-        idempotency_key: Optional[str] = None
+        tags: Optional[List[Dict]] = None
     ) -> Dict:
         """
-        Send an email notification using Courier.
+        Send an email notification using Resend.
+        Now uses template_path (e.g., 'clients/welcome_standalone.mjml')
+        instead of Courier template_id.
         """
         if not user.email:
             logger.warning(f"Cannot send email: No email for user {user.id}")
             return {"error": "No email address"}
-        
+
         try:
-            # Add common data
+            # Add common data for template context
             data.update({
+                'user': user,
                 'user_name': user.get_full_name() or user.email,
                 'user_email': user.email,
-                'app_name': getattr(settings, 'APP_NAME', 'Estuary'),
-                'frontend_url': getattr(settings, 'FRONTEND_URL', 'https://estuary.app'),
-                'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@estuary.app')
             })
-            
-            # Send via Courier
-            response = self.courier_client.send_email(
-                email=user.email,
-                subject=None,  # Using template
-                body=None,     # Using template
-                data=data,
-                template_id=template_id,
-                idempotency_key=idempotency_key
+
+            # Send via Resend using our EmailService
+            response = self.email_service.send_template_email(
+                to=user.email,
+                template_path=template_path,
+                context=data,
+                subject=subject,
+                tags=tags or []
             )
-            
+
             # Update notification status if provided
-            if notification and 'request_id' in response:
+            if notification and response.get('id'):
                 notification.status = 'sent'
                 notification.sent_at = timezone.now()
-                notification.metadata['courier_request_id'] = response['request_id']
+                notification.metadata['resend_email_id'] = response['id']
                 notification.save()
-            
+
             return response
-            
+
         except Exception as e:
             logger.error(f"Error sending email to {user.email}: {str(e)}")
             if notification:
@@ -136,7 +137,8 @@ class BaseNotificationService:
         notification_type: str,
         delivery_channel: str,
         scheduled_for: datetime,
-        template_id: str,
+        template_path: str,  # Changed from template_id
+        subject: str,  # Added subject parameter
         data: Dict,
         title: str,
         message: str,
@@ -157,7 +159,8 @@ class BaseNotificationService:
             related_object_type=related_object_type,
             related_object_id=related_object_id,
             metadata={
-                'template_id': template_id,
+                'template_path': template_path,  # Changed from template_id
+                'subject': subject,  # Added subject to metadata
                 'template_data': data
             }
         )
@@ -206,12 +209,14 @@ def send_scheduled_notification(notification_id: int):
         
         # Send based on delivery channel
         if notification.delivery_channel == 'email':
-            template_id = notification.metadata.get('template_id')
+            template_path = notification.metadata.get('template_path')
+            subject = notification.metadata.get('subject')
             data = notification.metadata.get('template_data', {})
-            
+
             service.send_email_notification(
                 user=notification.user,
-                template_id=template_id,
+                template_path=template_path,
+                subject=subject,
                 data=data,
                 notification=notification
             )

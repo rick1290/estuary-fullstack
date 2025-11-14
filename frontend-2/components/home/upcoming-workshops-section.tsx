@@ -108,15 +108,15 @@ export default function UpcomingWorkshopsSection() {
         {isLoading && (
           <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="min-w-[350px] max-w-[350px] flex">
-                <div className="w-full bg-white rounded-2xl shadow-lg overflow-hidden">
-                  <Skeleton className="w-full h-48" />
-                  <div className="p-6">
+              <div key={i} className="flex-shrink-0 w-[350px]">
+                <div className="h-[520px] bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+                  <Skeleton className="w-full h-48 flex-shrink-0" />
+                  <div className="p-6 flex-1 flex flex-col">
                     <Skeleton className="h-6 w-3/4 mb-2" />
                     <Skeleton className="h-4 w-1/2 mb-4" />
                     <Skeleton className="h-4 w-full mb-2" />
                     <Skeleton className="h-4 w-2/3 mb-4" />
-                    <div className="flex justify-between items-center">
+                    <div className="mt-auto flex justify-between items-center">
                       <Skeleton className="h-6 w-16" />
                       <Skeleton className="h-8 w-20" />
                     </div>
@@ -147,7 +147,7 @@ export default function UpcomingWorkshopsSection() {
             >
               {upcomingWorkshops.length > 0 ? (
                 upcomingWorkshops.map((workshop, index) => (
-                  <div key={workshop.id} className="min-w-[350px] max-w-[350px] flex">
+                  <div key={workshop.id} className="flex-shrink-0 w-[350px] h-[520px]">
                     <ServiceCard
                       {...workshop}
                       href={getServiceDetailUrl({ id: workshop.id, slug: workshop.slug, service_type_code: 'workshop' })}

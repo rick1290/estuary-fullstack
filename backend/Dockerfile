@@ -1,11 +1,16 @@
-FROM python:3.11.5-bullseye 
+FROM python:3.11.5-bullseye
 
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1  
+ENV PYTHONUNBUFFERED 1
 
-RUN pip install --upgrade pip 
+# Install Node.js for MJML
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g mjml
+
+RUN pip install --upgrade pip
 
 COPY . /app/
 

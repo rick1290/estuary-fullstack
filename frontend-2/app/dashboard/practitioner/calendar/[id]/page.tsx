@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 import {
   ArrowLeft,
   Calendar,
@@ -16,6 +17,7 @@ import {
   ExternalLink,
   CheckCircle,
   XCircle,
+  Loader2,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -27,9 +29,19 @@ import { Textarea } from "@/components/ui/textarea"
 import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
 import ResourceCard from "@/components/dashboard/practitioner/calendar/resource-card"
 import ResourceViewerDialog from "@/components/dashboard/practitioner/calendar/resource-viewer-dialog"
+import { calendarRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { format, parseISO } from "date-fns"
 
-// Mock data for bookings
-const mockBookings = {
+// Attendance status badge variant mapping (for when we implement attendance tracking)
+const attendanceStatusVariants = {
+  confirmed: "outline",
+  attended: "success",
+  "no-show": "destructive",
+  canceled: "secondary",
+}
+
+// Mock data for bookings (TO BE REMOVED - keeping for reference)
+const mockBookings_OLD = {
   "booking-123": {
     id: "booking-123",
     title: "Mindfulness Meditation Session",
@@ -410,32 +422,19 @@ const mockBookings = {
   },
 }
 
-// Status badge variant mapping
-const statusVariants = {
-  upcoming: "default",
-  completed: "success",
-  canceled: "destructive",
-}
-
-// Attendance status badge variant mapping
-const attendanceStatusVariants = {
-  confirmed: "outline",
-  attended: "success",
-  "no-show": "destructive",
-  canceled: "secondary",
-}
-
 // Status icon mapping
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
-    case "upcoming":
+    case "confirmed":
+    case "in_progress":
       return <Calendar className="h-4 w-4" />
     case "completed":
       return <CheckCircle className="h-4 w-4" />
+    case "cancelled":
     case "canceled":
       return <XCircle className="h-4 w-4" />
     default:
-      return null
+      return <Calendar className="h-4 w-4" />
   }
 }
 
@@ -443,11 +442,15 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const router = useRouter()
   const { id } = params
 
-  // Get the booking data based on the ID
-  const booking = mockBookings[id as keyof typeof mockBookings]
+  // Fetch service session data from API
+  const { data: session, isLoading, error } = useQuery(
+    calendarRetrieveOptions({
+      path: { id: id }
+    })
+  )
 
   // State for resource management
-  const [resources, setResources] = useState(booking?.resources || [])
+  const [resources, setResources] = useState<any[]>([])
   const [selectedResource, setSelectedResource] = useState<any>(null)
   const [resourceViewerOpen, setResourceViewerOpen] = useState(false)
 
@@ -456,19 +459,30 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const [newNote, setNewNote] = useState("")
   const [newSharedNote, setNewSharedNote] = useState("")
 
-  // If booking not found, show a message or redirect
-  if (!booking) {
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="container py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    )
+  }
+
+  // Error or not found state
+  if (error || !session) {
     return (
       <div className="container py-6">
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">Booking Not Found</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Session Not Found</h1>
         </div>
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">The booking you're looking for doesn't exist or has been removed.</p>
+            <p className="text-muted-foreground">The session you're looking for doesn't exist or has been removed.</p>
             <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/calendar")}>
               Return to Calendar
             </Button>
@@ -511,26 +525,35 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
     setNewSharedNote("")
   }
 
+  // Format session title
+  const sessionTitle = session.service_session_title ||
+    `${session.service?.name}${session.sequence_number ? ` - Session ${session.sequence_number}` : ''}`
+
+  // Map status to display variant
+  const getStatusVariant = (status: string) => {
+    const variants: Record<string, any> = {
+      confirmed: "default",
+      in_progress: "default",
+      completed: "success",
+      cancelled: "destructive",
+      canceled: "destructive",
+    }
+    return variants[status] || "secondary"
+  }
+
   return (
     <div className="container py-6">
       <div className="flex items-center gap-2 mb-6">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold tracking-tight">{booking.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{sessionTitle}</h1>
         <Badge
-          variant={
-            statusVariants[booking.status as keyof typeof statusVariants] as
-              | "default"
-              | "secondary"
-              | "destructive"
-              | "outline"
-              | "success"
-          }
+          variant={getStatusVariant(session.status || 'confirmed')}
           className="ml-2 flex items-center gap-1"
         >
-          <StatusIcon status={booking.status} />
-          <span className="capitalize">{booking.status}</span>
+          <StatusIcon status={session.status || 'confirmed'} />
+          <span className="capitalize">{session.status || 'confirmed'}</span>
         </Badge>
       </div>
 
@@ -539,7 +562,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Booking Details</CardTitle>
+              <CardTitle>Session Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -548,12 +571,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   <div>
                     <p className="text-sm font-medium">Date</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(booking.date).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {session.start_time && format(parseISO(session.start_time), "EEEE, MMMM d, yyyy")}
                     </p>
                   </div>
                 </div>
@@ -562,31 +580,26 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   <div>
                     <p className="text-sm font-medium">Time</p>
                     <p className="text-sm text-muted-foreground">
-                      {booking.startTime} - {booking.endTime}
+                      {session.start_time && format(parseISO(session.start_time), "h:mm a")} - {session.end_time && format(parseISO(session.end_time), "h:mm a")}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {booking.location === "Virtual" ? (
+                  {session.service?.location_type === "virtual" ? (
                     <Video className="h-4 w-4 text-muted-foreground" />
                   ) : (
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                   )}
                   <div>
                     <p className="text-sm font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">{booking.location}</p>
-                    {booking.location === "Virtual" && booking.meetingLink && (
-                      <a
-                        href={booking.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <p className="text-sm text-muted-foreground capitalize">{session.service?.location_type}</p>
+                    {session.service?.location_type === "virtual" && session.room?.public_uuid && (
+                      <Link
+                        href={`/room/${session.room.public_uuid}/lobby`}
                         className="text-sm text-primary hover:underline flex items-center gap-1"
                       >
-                        Join Meeting <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {booking.location === "In-Person" && booking.address && (
-                      <p className="text-sm text-muted-foreground">{booking.address}</p>
+                        Join Session <ExternalLink className="h-3 w-3" />
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -594,7 +607,9 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Participants</p>
-                    <p className="text-sm text-muted-foreground">{booking.clients.length} client(s)</p>
+                    <p className="text-sm text-muted-foreground">
+                      {session.attendee_count} / {session.max_participants || '∞'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -603,19 +618,37 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
               <div>
                 <h3 className="text-sm font-medium mb-2">Description</h3>
-                <p className="text-sm text-muted-foreground">{booking.description}</p>
+                <p className="text-sm text-muted-foreground">{session.service?.description}</p>
               </div>
+
+              {session.agenda && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Agenda</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{session.agenda}</p>
+                  </div>
+                </>
+              )}
+
+              {session.what_youll_learn && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">What You'll Learn</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{session.what_youll_learn}</p>
+                  </div>
+                </>
+              )}
             </CardContent>
-            {booking.status === "upcoming" && (
+            {session.status === "confirmed" && (
               <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline">Reschedule</Button>
-                <Button variant="destructive">Cancel Booking</Button>
-                {booking.location === "Virtual" && booking.meetingLink && (
+                {session.service?.location_type === "virtual" && session.room?.public_uuid && (
                   <Button asChild>
-                    <a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">
+                    <Link href={`/room/${session.room.public_uuid}/lobby`}>
                       <Video className="h-4 w-4 mr-2" />
                       Start Session
-                    </a>
+                    </Link>
                   </Button>
                 )}
               </CardFooter>
@@ -631,60 +664,59 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Client Information</h2>
-                {booking.status === "upcoming" && (
-                  <Button variant="outline" size="sm">
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage Attendance
-                  </Button>
-                )}
+                <h2 className="text-lg font-semibold">Attendees ({session.attendee_count})</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {booking.clients.map((client) => (
-                  <Card key={client.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={client.avatar || "/placeholder.svg"} alt={client.name} />
-                            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <Link
-                              href={`/dashboard/practitioner/clients/${client.id}`}
-                              className="font-medium hover:underline"
-                            >
-                              {client.name}
-                            </Link>
-                            <p className="text-sm text-muted-foreground">{client.email}</p>
-                            <p className="text-sm text-muted-foreground">{client.phone}</p>
+                {session.attendees && session.attendees.length > 0 ? (
+                  session.attendees.map((attendee: any) => (
+                    <Card key={attendee.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={attendee.avatar_url || ""} alt={attendee.full_name} />
+                              <AvatarFallback>{attendee.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{attendee.full_name}</p>
+                              <p className="text-sm text-muted-foreground">{attendee.email}</p>
+                              {attendee.phone_number && (
+                                <p className="text-sm text-muted-foreground">{attendee.phone_number}</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge
-                            variant={
-                              attendanceStatusVariants[
-                                client.attendanceStatus as keyof typeof attendanceStatusVariants
-                              ] as "default" | "secondary" | "destructive" | "outline" | "success"
-                            }
-                            className="capitalize"
-                          >
-                            {client.attendanceStatus}
-                          </Badge>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge
+                              variant={
+                                attendanceStatusVariants[
+                                  attendee.booking_status as keyof typeof attendanceStatusVariants
+                                ] as "default" | "secondary" | "destructive" | "outline" | "success"
+                              }
+                              className="capitalize"
+                            >
+                              {attendee.booking_status}
+                            </Badge>
 
-                          {booking.status === "upcoming" && (
                             <div className="flex gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/practitioner/clients/${client.id}`}>View Profile</Link>
+                                <Link href={`/dashboard/practitioner/bookings/${attendee.booking_id}`}>
+                                  View Booking
+                                </Link>
                               </Button>
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <p className="text-muted-foreground">No attendees registered yet</p>
                     </CardContent>
                   </Card>
-                ))}
+                )}
               </div>
             </TabsContent>
 
@@ -752,22 +784,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                     </CardContent>
                   </Card>
 
-                  {booking.notes.length > 0 ? (
-                    <div className="space-y-3">
-                      {booking.notes.map((note) => (
-                        <Card key={note.id}>
-                          <CardContent className="p-4">
-                            <p className="text-sm">{note.content}</p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Added on {new Date(note.dateAdded).toLocaleDateString()}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No private notes yet</p>
-                  )}
+                  <p className="text-sm text-muted-foreground">No private notes yet</p>
                 </div>
 
                 {/* Shared Notes */}
@@ -794,22 +811,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                     </CardContent>
                   </Card>
 
-                  {booking.sharedNotes.length > 0 ? (
-                    <div className="space-y-3">
-                      {booking.sharedNotes.map((note) => (
-                        <Card key={note.id}>
-                          <CardContent className="p-4">
-                            <p className="text-sm">{note.content}</p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Shared on {new Date(note.dateAdded).toLocaleDateString()}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No shared notes yet</p>
-                  )}
+                  <p className="text-sm text-muted-foreground">No shared notes yet</p>
                 </div>
               </div>
             </TabsContent>
@@ -823,88 +825,59 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {booking.location === "Virtual" && booking.meetingLink && booking.status === "upcoming" && (
-                <Button className="w-full" asChild>
-                  <a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">
+              {session.service?.location_type === "virtual" && session.room?.public_uuid && session.status === "confirmed" && (
+                <Button className="w-full bg-sage-600 hover:bg-sage-700" asChild>
+                  <Link href={`/room/${session.room.public_uuid}/lobby`}>
                     <Video className="h-4 w-4 mr-2" />
                     Start Session
-                  </a>
+                  </Link>
                 </Button>
-              )}
-              {booking.status === "upcoming" && (
-                <>
-                  <Button variant="outline" className="w-full">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Reschedule
-                  </Button>
-                  <Button variant="outline" className="w-full text-destructive hover:text-destructive">
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Cancel Booking
-                  </Button>
-                </>
               )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Service Information</CardTitle>
+              <CardTitle>Session Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium">Service Type</p>
-                <p className="text-sm text-muted-foreground capitalize">{booking.type}</p>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {session.service?.service_type_code}
+                </p>
               </div>
+
+              {session.sequence_number && (
+                <div>
+                  <p className="text-sm font-medium">Session Number</p>
+                  <p className="text-sm text-muted-foreground">
+                    Session {session.sequence_number}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <p className="text-sm font-medium">Duration</p>
                 <p className="text-sm text-muted-foreground">
-                  {(() => {
-                    const start = new Date(
-                      `2000-01-01T${booking.startTime.replace(" AM", "").replace(" PM", "")}${
-                        booking.startTime.includes("PM") ? " PM" : " AM"
-                      }`,
-                    )
-                    const end = new Date(
-                      `2000-01-01T${booking.endTime.replace(" AM", "").replace(" PM", "")}${
-                        booking.endTime.includes("PM") ? " PM" : " AM"
-                      }`,
-                    )
-                    const diff = (end.getTime() - start.getTime()) / (1000 * 60)
-                    return `${diff} minutes`
-                  })()}
+                  {session.duration_minutes} minutes
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium">Location Type</p>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {session.service?.location_type}
                 </p>
               </div>
 
               <Button variant="outline" className="w-full" asChild>
-                <Link href={`/dashboard/practitioner/services/${booking.id}`}>View Service Details</Link>
+                <Link href={`/dashboard/practitioner/services/${session.service?.id}`}>
+                  View Service Details
+                </Link>
               </Button>
             </CardContent>
           </Card>
-
-          {booking.clients.length === 1 && booking.clients[0].name && !booking.clients[0].name.includes("Multiple") && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Client Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarImage src={booking.clients[0].avatar || "/placeholder.svg"} alt={booking.clients[0].name} />
-                    <AvatarFallback>{booking.clients[0].name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{booking.clients[0].name}</p>
-                    <p className="text-sm text-muted-foreground">{booking.clients[0].email}</p>
-                  </div>
-                </div>
-
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href={`/dashboard/practitioner/clients/${booking.clients[0].id}`}>View Client Profile</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

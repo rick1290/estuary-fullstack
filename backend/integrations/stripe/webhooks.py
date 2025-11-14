@@ -215,8 +215,9 @@ def handle_credit_purchase_succeeded(payment_intent):
         
         # Send credit purchase notification
         try:
-            from integrations.courier.utils import send_credit_purchase_confirmation
-            send_credit_purchase_confirmation(transaction)
+            from notifications.services.client_notifications import ClientNotificationService
+            notification_service = ClientNotificationService()
+            notification_service.send_credit_purchase(transaction)
             logger.info(f"Sent credit purchase notification for user {user_id}")
         except Exception as e:
             logger.error(f"Error sending credit purchase notification: {str(e)}")

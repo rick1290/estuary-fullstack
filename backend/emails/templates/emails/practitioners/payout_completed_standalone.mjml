@@ -1,0 +1,68 @@
+<mjml>
+  <mj-head>
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#3c412a" />
+      <mj-button background-color="#7a8b63" color="#ffffff" font-weight="600" border-radius="12px" padding="14px 32px" font-size="16px" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f5f1e6">
+    <mj-section background-color="#ffffff" padding="32px 24px">
+      <mj-column>
+        <mj-text align="center" font-size="20px" font-weight="700" color="#3c412a" letter-spacing="5px" padding="12px 0">ESTUARY</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
+      <mj-section padding="40px 0 20px">
+        <mj-column>
+          <mj-text align="center" font-size="48px" padding-bottom="16px">💸</mj-text>
+          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">Payout Sent!</mj-text>
+          <mj-text align="center" font-size="16px" color="#6f7a47">Your earnings are on the way</mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+        <mj-column>
+          <mj-text align="center" font-size="48px" font-weight="700" color="#7a8b63" padding-bottom="16px">${{ payout_amount }}</mj-text>
+          <mj-text align="center" padding-bottom="20px">has been transferred to your account</mj-text>
+
+          <mj-divider border-color="#e2d5bd" padding="16px 0" />
+
+          <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Payout Date:</span> {{ payout_date }}</mj-text>
+          <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Transfer ID:</span> {{ transfer_id }}</mj-text>
+          <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Bank Account:</span> ****{{ last_4_digits }}</mj-text>
+          <mj-text padding-bottom="20px"><span style="font-weight: 600; color: #3c412a;">Expected Arrival:</span> {{ expected_arrival }}</mj-text>
+
+          <mj-button href="{{ WEBSITE_URL }}/practitioner/earnings">View Earnings History</mj-button>
+        </mj-column>
+      </mj-section>
+
+      <mj-section background-color="#f5f1e6" border-radius="12px" padding="24px 28px">
+        <mj-column>
+          <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">📊 This Payout Includes</mj-text>
+          <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+            <strong>{{ session_count }} sessions</strong> · Period: {{ period_start }} - {{ period_end }}
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="32px 0">
+        <mj-column>
+          <mj-text align="center" font-size="14px" color="#8b985b">
+            Questions about your payout? <a href="{{ WEBSITE_URL }}/practitioner/help/payouts" style="color: #7a8b63; font-weight: 600;">Learn More</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <mj-section background-color="#3c412a" padding="40px 24px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="18px" font-weight="700" letter-spacing="5px" padding-bottom="16px">ESTUARY</mj-text>
+        <mj-text align="center" color="#8b985b" font-size="12px">© {{ YEAR }} ESTUARY. All rights reserved.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

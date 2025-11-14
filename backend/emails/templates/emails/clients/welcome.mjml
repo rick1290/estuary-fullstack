@@ -1,0 +1,74 @@
+{% extends "emails/base.mjml" %}
+
+{% block content %}
+<!-- Welcome Hero Section -->
+<mj-section padding="48px 0 32px">
+  <mj-column>
+    <mj-text align="center" font-size="36px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="16px">
+      Welcome to Estuary 🌿
+    </mj-text>
+    <mj-text align="center" font-size="18px" color="#6f7a47" padding-bottom="32px">
+      Hi {{ first_name }}, we're so glad you're here
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Main Message -->
+<mj-section background-color="#ffffff" border-radius="16px" padding="40px 32px">
+  <mj-column>
+    <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
+      You've just taken the first step toward transformation. Estuary connects you with experienced wellness practitioners who are ready to support your journey.
+    </mj-text>
+
+    <mj-text font-size="16px" line-height="1.7" padding-bottom="32px">
+      Here's what you can do on Estuary:
+    </mj-text>
+
+    <!-- Feature List -->
+    <mj-text padding-bottom="12px">
+      <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px;">✓</span>
+      <span style="font-weight: 600; color: #3c412a;">Book 1-on-1 sessions</span> with certified practitioners
+    </mj-text>
+
+    <mj-text padding-bottom="12px">
+      <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px;">✓</span>
+      <span style="font-weight: 600; color: #3c412a;">Join workshops</span> and learn with others
+    </mj-text>
+
+    <mj-text padding-bottom="12px">
+      <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px;">✓</span>
+      <span style="font-weight: 600; color: #3c412a;">Enroll in courses</span> for deeper transformation
+    </mj-text>
+
+    <mj-text padding-bottom="32px">
+      <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: white; margin-right: 12px;">✓</span>
+      <span style="font-weight: 600; color: #3c412a;">Access content streams</span> for inspiration
+    </mj-text>
+
+    <!-- CTA Button -->
+    {% include 'emails/components/button.mjml' with button_text="Explore Practitioners" button_url=WEBSITE_URL|add:"/marketplace" %}
+  </mj-column>
+</mj-section>
+
+<!-- Helpful Tip -->
+<mj-section background-color="#f5f1e6" border-radius="12px" border-left="4px solid #7a8b63" padding="24px 28px" css-class="info-box">
+  <mj-column>
+    <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">
+      💡 Getting Started Tip
+    </mj-text>
+    <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+      Complete your profile to help practitioners understand your goals and personalize your experience.
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Support Section -->
+<mj-section padding="32px 0">
+  <mj-column>
+    <mj-text align="center" font-size="14px" color="#8b985b">
+      Have questions? Our team is here to help.<br/>
+      <a href="{{ WEBSITE_URL }}/help" style="color: #7a8b63; text-decoration: none; font-weight: 600;">Visit Help Center →</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endblock %}

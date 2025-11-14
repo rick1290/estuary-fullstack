@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "bookings",
     "common",
     "community",
+    "emails",
     "integrations",
     "locations",
     "media",
@@ -698,3 +699,11 @@ COURIER_PRACTITIONER_VERIFICATION_REJECTED_TEMPLATE = courier_config.PRACTITIONE
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3001')
 SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@estuary.app')
 APP_NAME = 'Estuary'
+
+# ============================================================================
+# Resend Email Configuration (New System)
+# ============================================================================
+
+RESEND_API = os.environ.get('RESEND_API', '')
+EMAIL_LOGO_URL = os.environ.get('EMAIL_LOGO_URL', 'https://estuary.com/logo.png')
+WEBSITE_URL = os.environ.get('WEBSITE_URL', FRONTEND_URL)  # Use FRONTEND_URL as default

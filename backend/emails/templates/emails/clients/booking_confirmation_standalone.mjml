@@ -1,0 +1,134 @@
+<mjml>
+  <mj-head>
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#3c412a" />
+      <mj-section background-color="#fdfcf8" padding="20px 0" />
+      <mj-button background-color="#7a8b63" color="#ffffff" font-weight="600" border-radius="12px" padding="14px 32px" font-size="16px" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f5f1e6">
+    <!-- Header -->
+    <mj-section background-color="#ffffff" padding="32px 24px">
+      <mj-column>
+        <mj-text align="center" font-size="20px" font-weight="700" color="#3c412a" letter-spacing="5px" padding="12px 0">
+          ESTUARY
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Content -->
+    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
+      <!-- Success Badge -->
+      <mj-section padding="40px 0 20px">
+        <mj-column>
+          <mj-text align="center" font-size="48px" padding-bottom="16px">
+            ✓
+          </mj-text>
+          <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="8px">
+            Booking Confirmed!
+          </mj-text>
+          <mj-text align="center" font-size="16px" color="#6f7a47">
+            Your session is scheduled
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Booking Details Card -->
+      <mj-section background-color="#ffffff" border-radius="16px" padding="32px 24px">
+        <mj-column>
+          <mj-text font-size="18px" font-weight="600" color="#3c412a" padding-bottom="20px">
+            Session Details
+          </mj-text>
+
+          <!-- Service Name -->
+          <mj-text font-size="20px" font-weight="600" color="#7a8b63" padding-bottom="16px">
+            {{ service_name }}
+          </mj-text>
+
+          <!-- Date & Time -->
+          <mj-text padding-bottom="12px">
+            <span style="font-weight: 600; color: #3c412a;">📅 Date:</span> {{ booking_date }}
+          </mj-text>
+
+          <mj-text padding-bottom="12px">
+            <span style="font-weight: 600; color: #3c412a;">⏰ Time:</span> {{ booking_time }} ({{ duration_minutes }} min)
+          </mj-text>
+
+          <!-- Location -->
+          <mj-text padding-bottom="20px">
+            <span style="font-weight: 600; color: #3c412a;">📍 Location:</span> {{ location }}
+          </mj-text>
+
+          <mj-divider border-color="#e2d5bd" padding="16px 0" />
+
+          <!-- Practitioner -->
+          <mj-text font-size="16px" font-weight="600" color="#3c412a" padding-bottom="12px">
+            Your Practitioner
+          </mj-text>
+
+          <mj-text padding-bottom="20px">
+            <span style="font-weight: 600; color: #7a8b63;">{{ practitioner_name }}</span>
+          </mj-text>
+
+          <!-- CTA Button -->
+          {% if has_video_room %}
+          <mj-button href="{{ join_url }}">
+            Join Session
+          </mj-button>
+          {% else %}
+          <mj-button href="{{ booking_url }}">
+            View Booking Details
+          </mj-button>
+          {% endif %}
+        </mj-column>
+      </mj-section>
+
+      <!-- What to Expect -->
+      <mj-section background-color="#f5f1e6" border-radius="12px" border-left="4px solid #7a8b63" padding="24px 28px">
+        <mj-column>
+          <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">
+            📝 What to Expect
+          </mj-text>
+          <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+            Join 5 minutes early to test your connection. You'll receive a reminder 24 hours and 30 minutes before your session.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Calendar Links -->
+      <mj-section padding="32px 0">
+        <mj-column>
+          <mj-text align="center" font-size="14px" color="#8b985b">
+            Add to calendar:
+            <a href="#" style="color: #7a8b63; font-weight: 600;">Google</a> ·
+            <a href="#" style="color: #7a8b63; font-weight: 600;">Apple</a> ·
+            <a href="#" style="color: #7a8b63; font-weight: 600;">Outlook</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <!-- Footer -->
+    <mj-section background-color="#3c412a" padding="40px 24px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="18px" font-weight="700" letter-spacing="5px" padding-bottom="16px">
+          ESTUARY
+        </mj-text>
+        <mj-text align="center" color="#95a57f" font-size="14px" padding-bottom="24px">
+          Your journey to wellness starts here
+        </mj-text>
+        <mj-text align="center" color="#8b985b" font-size="13px" padding-bottom="16px">
+          <a href="{{ WEBSITE_URL }}/about" style="color: #7a8b63;">About</a> ·
+          <a href="{{ WEBSITE_URL }}/help" style="color: #7a8b63;">Help</a> ·
+          <a href="{{ WEBSITE_URL }}/privacy" style="color: #7a8b63;">Privacy</a>
+        </mj-text>
+        <mj-text align="center" color="#8b985b" font-size="12px">
+          © {{ YEAR }} ESTUARY. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

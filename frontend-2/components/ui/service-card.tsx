@@ -92,10 +92,10 @@ export default function ServiceCard({
   }
 
   return (
-    <Link href={href} className="group block animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
-      <Card className="h-full flex flex-col border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+    <Link href={href} className="group block h-full animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
+      <Card className="h-full w-full flex flex-col border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
         {/* Card Header with Gradient */}
-        <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-6 pb-12 relative">
+        <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-6 pb-12 relative flex-shrink-0">
           {/* Rating Badge (if available) */}
           {rating && (
             <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
@@ -112,17 +112,17 @@ export default function ServiceCard({
           </Badge>
 
           <h3 className="font-semibold text-xl text-olive-900 mb-2 line-clamp-2 pr-12">{title}</h3>
-          
-          <p className="text-olive-700 line-clamp-2">{description}</p>
+
+          <p className="text-olive-700 text-sm line-clamp-2">{description}</p>
         </div>
 
-        <CardContent className="relative flex flex-col flex-grow p-6 bg-cream-50 -mt-8 rounded-t-[2.5rem] z-10">
+        <CardContent className="relative flex flex-col flex-1 p-6 bg-cream-50 -mt-8 rounded-t-[2.5rem] z-10">
           {/* Practitioner Info */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center">
+          <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center flex-shrink-0">
               {practitioner.image ? (
-                <img 
-                  src={practitioner.image} 
+                <img
+                  src={practitioner.image}
                   alt={practitioner.name}
                   className="w-full h-full object-cover"
                 />
@@ -132,25 +132,25 @@ export default function ServiceCard({
                 </span>
               )}
             </div>
-            <div>
-              <p className="font-medium text-olive-900">{practitioner.name}</p>
-              <p className="text-sm text-olive-600">{location}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-olive-900 truncate">{practitioner.name}</p>
+              <p className="text-sm text-olive-600 truncate">{location}</p>
             </div>
           </div>
 
-          <div className="space-y-3 mb-6">
+          <div className="space-y-2 mb-4 flex-shrink-0">
             {/* Date for workshops */}
             {date && (
               <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                 <span className="text-sm">{date}</span>
               </div>
             )}
-            
+
             {/* Duration */}
             {duration && (
               <div className="flex items-center gap-2 text-olive-700">
-                <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                <Clock className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                 <span className="text-sm">
                   {typeof duration === "number" ? `${duration} minutes` : duration}
                 </span>
@@ -160,7 +160,7 @@ export default function ServiceCard({
             {/* Session count for packages/courses */}
             {sessionCount && (
               <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                 <span className="text-sm">{sessionCount} sessions</span>
               </div>
             )}
@@ -169,14 +169,13 @@ export default function ServiceCard({
             <div className="flex items-center gap-2 text-olive-700">
               {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? (
                 <>
-                  <Globe className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                  <Globe className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                   <span className="text-sm font-medium text-sage-700">Online</span>
                 </>
               ) : (
                 <>
-                  <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-sm">{location}</span>
-                  {/* Distance indicator would go here in real app */}
+                  <MapPin className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                  <span className="text-sm truncate">{location}</span>
                 </>
               )}
             </div>
@@ -184,7 +183,7 @@ export default function ServiceCard({
             {/* Capacity/Reviews */}
             {(capacity || reviewCount) && (
               <div className="flex items-center gap-2 text-olive-700">
-                <Users className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                <Users className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                 <span className="text-sm">
                   {capacity ? `${capacity} spots` : `${reviewCount} reviews`}
                 </span>
@@ -193,7 +192,7 @@ export default function ServiceCard({
           </div>
 
           {/* Categories */}
-          <div className="flex flex-wrap gap-1.5 mb-6">
+          <div className="flex flex-wrap gap-1.5 mb-4 flex-shrink-0">
             {categories.slice(0, 3).map((category) => (
               <span key={category} className="text-xs px-2.5 py-1 bg-sage-100 text-olive-700 rounded-full font-medium">
                 {category}
@@ -204,7 +203,7 @@ export default function ServiceCard({
             )}
           </div>
 
-          <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-100">
+          <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-100 flex-shrink-0">
             <div>
               <p className="text-xs text-olive-600 mb-0.5">Investment</p>
               <p className="text-2xl font-bold text-olive-900">
@@ -212,7 +211,7 @@ export default function ServiceCard({
               </p>
             </div>
 
-            <Button size="sm" className="shadow-md hover:shadow-lg group-hover:translate-x-0.5 transition-all">
+            <Button size="sm" className="shadow-md hover:shadow-lg group-hover:translate-x-0.5 transition-all flex-shrink-0">
               {getCtaText()}
             </Button>
           </div>

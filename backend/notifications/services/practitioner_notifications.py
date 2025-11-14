@@ -2,6 +2,7 @@
 Practitioner-specific notification services.
 """
 import logging
+import pytz
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 from decimal import Decimal
@@ -20,30 +21,77 @@ class PractitionerNotificationService(BaseNotificationService):
     Handle all practitioner-related notifications.
     """
     
-    # Courier template IDs (to be configured in settings)
+    # Email templates and subjects (using Resend)
     TEMPLATES = {
-        'welcome': 'COURIER_PRACTITIONER_WELCOME_TEMPLATE',
-        'profile_incomplete': 'COURIER_PRACTITIONER_PROFILE_INCOMPLETE_TEMPLATE',
-        'no_services': 'COURIER_PRACTITIONER_NO_SERVICES_TEMPLATE',
-        'service_created': 'COURIER_PRACTITIONER_SERVICE_CREATED_TEMPLATE',
-        'bundle_created': 'COURIER_PRACTITIONER_BUNDLE_CREATED_TEMPLATE',
-        'booking_received': 'COURIER_PRACTITIONER_BOOKING_RECEIVED_TEMPLATE',
-        'booking_cancelled': 'COURIER_PRACTITIONER_BOOKING_CANCELLED_TEMPLATE',
-        'booking_rescheduled': 'COURIER_PRACTITIONER_BOOKING_RESCHEDULED_TEMPLATE',
-        'payout_completed': 'COURIER_PRACTITIONER_PAYOUT_COMPLETED_TEMPLATE',
-        'reminder_24h': 'COURIER_PRACTITIONER_REMINDER_24H_TEMPLATE',
-        'reminder_30m': 'COURIER_PRACTITIONER_REMINDER_30M_TEMPLATE',
-        'new_review': 'COURIER_PRACTITIONER_NEW_REVIEW_TEMPLATE',
-        'earnings_summary': 'COURIER_PRACTITIONER_EARNINGS_SUMMARY_TEMPLATE',
-        'client_message': 'COURIER_PRACTITIONER_CLIENT_MESSAGE_TEMPLATE',
-        'verification_approved': 'COURIER_PRACTITIONER_VERIFICATION_APPROVED_TEMPLATE',
-        'verification_rejected': 'COURIER_PRACTITIONER_VERIFICATION_REJECTED_TEMPLATE',
+        'welcome': {
+            'path': 'practitioners/welcome_standalone.mjml',
+            'subject': 'Welcome to ESTUARY - Let\'s Get Started!'
+        },
+        'booking_received': {
+            'path': 'practitioners/booking_received_standalone.mjml',
+            'subject': 'New Booking: {client_name} - {service_name}'
+        },
+        'payout_completed': {
+            'path': 'practitioners/payout_completed_standalone.mjml',
+            'subject': 'Payout Sent - ${amount}'
+        },
+        'new_review': {
+            'path': 'practitioners/new_review_standalone.mjml',
+            'subject': 'New {stars}-Star Review from {client_name}'
+        },
+        'verification_approved': {
+            'path': 'practitioners/verification_approved_standalone.mjml',
+            'subject': 'Your Practitioner Profile Has Been Approved!'
+        },
+        'booking_cancelled': {
+            'path': 'shared/booking_cancelled_standalone.mjml',
+            'subject': 'Booking Cancelled - {service_name}'
+        },
+        'booking_rescheduled': {
+            'path': 'shared/booking_rescheduled_standalone.mjml',
+            'subject': 'Booking Rescheduled - {service_name}'
+        },
+        'message': {
+            'path': 'shared/message_notification_standalone.mjml',
+            'subject': 'New Message from {sender_name}'
+        },
     }
-    
-    def get_template_id(self, template_key: str) -> str:
-        """Get template ID from settings."""
-        setting_key = self.TEMPLATES.get(template_key)
-        return getattr(settings, setting_key, None) if setting_key else None
+
+    def get_template(self, template_key: str) -> Dict[str, str]:
+        """Get template path and subject."""
+        return self.TEMPLATES.get(template_key, {})
+
+    def _format_datetime_with_timezone(self, dt: datetime, booking_timezone: str = 'UTC') -> Dict[str, str]:
+        """
+        Convert UTC datetime to booking timezone and return formatted strings.
+
+        Args:
+            dt: datetime object (in UTC)
+            booking_timezone: timezone string (e.g., 'America/Los_Angeles')
+
+        Returns:
+            dict with 'date', 'time', 'time_with_tz' keys
+        """
+        try:
+            # Convert to booking timezone
+            tz = pytz.timezone(booking_timezone)
+            local_dt = dt.astimezone(tz)
+
+            return {
+                'date': local_dt.strftime('%A, %B %d, %Y'),
+                'time': local_dt.strftime('%I:%M %p'),
+                'time_with_tz': local_dt.strftime('%I:%M %p %Z'),
+                'tz_abbr': local_dt.strftime('%Z')
+            }
+        except Exception as e:
+            logger.warning(f"Error converting timezone {booking_timezone}: {e}")
+            # Fallback to UTC
+            return {
+                'date': dt.strftime('%A, %B %d, %Y'),
+                'time': dt.strftime('%I:%M %p'),
+                'time_with_tz': dt.strftime('%I:%M %p UTC'),
+                'tz_abbr': 'UTC'
+            }
     
     def send_welcome_email(self, practitioner):
         """
@@ -52,12 +100,12 @@ class PractitionerNotificationService(BaseNotificationService):
         user = practitioner.user
         if not self.should_send_notification(user, 'system', 'email'):
             return
-        
-        template_id = self.get_template_id('welcome')
-        if not template_id:
+
+        template = self.get_template('welcome')
+        if not template:
             logger.warning("No practitioner welcome template configured")
             return
-        
+
         data = {
             'first_name': user.first_name or 'there',
             'practitioner_name': practitioner.display_name or user.get_full_name(),
@@ -65,19 +113,12 @@ class PractitionerNotificationService(BaseNotificationService):
             'profile_setup_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/profile",
             'create_service_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/services/new",
             'help_center_url': f"{settings.FRONTEND_URL}/help/practitioner",
-            'commission_rate': 15.0,  # Default commission rate - TODO: Get from subscription tier
-            'onboarding_checklist': [
-                'Complete your profile',
-                'Add your availability schedule',
-                'Create your first service',
-                'Set up payment information',
-                'Get verified (optional but recommended)'
-            ]
+            'commission_rate': 5.0,  # 5% commission rate
         }
-        
+
         notification = self.create_notification_record(
             user=user,
-            title="Welcome to Estuary as a Practitioner!",
+            title="Welcome to ESTUARY as a Practitioner!",
             message="Welcome! Let's get your practitioner profile set up.",
             notification_type='system',
             delivery_channel='email'
@@ -86,12 +127,13 @@ class PractitionerNotificationService(BaseNotificationService):
         # Send welcome email
         self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=template['subject'],
             data=data,
             notification=notification,
-            idempotency_key=f"practitioner-welcome-{practitioner.id}"
+            tags=[{'name': 'category', 'value': 'practitioner_welcome'}]
         )
-        
+
         # Schedule follow-up nudges
         self._schedule_onboarding_nudges(practitioner)
     
@@ -110,13 +152,13 @@ class PractitionerNotificationService(BaseNotificationService):
         if not self.should_send_notification(user, 'booking', 'email'):
             logger.warning(f"Practitioner {user.email} has disabled booking notifications")
             return
-        
-        template_id = self.get_template_id('booking_received')
-        if not template_id:
+
+        template = self.get_template('booking_received')
+        if not template:
             logger.warning("No booking received template configured")
             return
-        
-        logger.info(f"Using template {template_id} for practitioner booking notification")
+
+        logger.info(f"Using template {template['path']} for practitioner booking notification")
         
         client = booking.user
         service = booking.service
@@ -129,21 +171,26 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+
         # Check if booking has a video room
         video_room_url = None
         if hasattr(booking, 'livekit_room') and booking.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
         elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
             video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
-        
+
         data = {
+            'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'client_name': client.get_full_name(),
             'client_email': client.email,
             'service_name': service.name,
             'service_type': service.service_type.name if service.service_type else 'Service',
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
             'gross_amount': f"${gross_amount:.2f}",
@@ -155,7 +202,9 @@ class PractitionerNotificationService(BaseNotificationService):
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
             'message_client_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/messages/new?recipient={client.id}",
             'video_room_url': video_room_url,
-            'has_video_room': bool(video_room_url)
+            'has_video_room': bool(video_room_url),
+            'monthly_bookings': 0,  # TODO: Calculate real monthly bookings
+            'monthly_earnings': '$0.00'  # TODO: Calculate real monthly earnings
         }
         
         # Add session details if applicable
@@ -178,12 +227,17 @@ class PractitionerNotificationService(BaseNotificationService):
         )
         
         # Send immediately
+        subject = template['subject'].format(
+            client_name=client.get_full_name(),
+            service_name=service.name
+        )
         result = self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"practitioner-booking-{booking.id}"
+            tags=[{'name': 'category', 'value': 'practitioner_booking'}]
         )
         
         if result and 'error' not in result:
@@ -203,13 +257,14 @@ class PractitionerNotificationService(BaseNotificationService):
         
         if not self.should_send_notification(user, 'payment', 'email'):
             return
-        
-        template_id = self.get_template_id('payout_completed')
-        if not template_id:
+
+        template = self.get_template('payout_completed')
+        if not template:
             logger.warning("No payout confirmation template configured")
             return
         
         data = {
+            'first_name': user.first_name or 'there',
             'payout_id': str(payout.id),
             'amount': f"${payout.amount:.2f}",
             'payout_method': payout.get_payout_method_display(),
@@ -233,12 +288,14 @@ class PractitionerNotificationService(BaseNotificationService):
             related_object_id=str(payout.id)
         )
         
+        subject = template['subject'].format(amount=data['amount'])
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"payout-confirmation-{payout.id}"
+            tags=[{'name': 'category', 'value': 'practitioner_payout'}]
         )
     
     def send_booking_cancelled(self, booking, cancelled_by, reason=None):
@@ -250,9 +307,9 @@ class PractitionerNotificationService(BaseNotificationService):
         
         if not self.should_send_notification(user, 'booking', 'email'):
             return
-        
-        template_id = self.get_template_id('booking_cancelled')
-        if not template_id:
+
+        template = self.get_template('booking_cancelled')
+        if not template:
             logger.warning("No booking cancelled template configured")
             return
         
@@ -265,19 +322,29 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_rate = Decimal('15.0')  # Default 15%
         commission_amount = gross_amount * commission_rate / 100
         lost_earnings = gross_amount - commission_amount
-        
+
+        # Format booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        booking_time = booking.start_datetime if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time
+        dt_formatted = self._format_datetime_with_timezone(booking_time, booking_tz)
+
         data = {
+            'first_name': user.first_name or 'there',
             'booking_id': str(booking.id),
             'client_name': client.get_full_name(),
             'service_name': service.name,
-            'original_date': booking.start_datetime.strftime('%A, %B %d, %Y'),
-            'original_time': booking.start_datetime.strftime('%I:%M %p'),
+            'original_date': dt_formatted['date'],
+            'original_time': dt_formatted['time_with_tz'],
             'cancelled_by': 'Client' if cancelled_by == client else 'System',
             'cancellation_reason': reason or 'No reason provided',
             'lost_earnings': f"${lost_earnings:.2f}",
-            'time_until_booking': self._format_time_until(booking.start_datetime - timezone.now()),
+            'time_until_booking': self._format_time_until(booking_time - timezone.now()),
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
-            'rebooking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/availability"
+            'rebooking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/availability",
+            'is_practitioner': True,
+            'other_party_name': client.get_full_name(),
+            'booking_date': dt_formatted['date'],
+            'booking_time': dt_formatted['time_with_tz']
         }
         
         notification = self.create_notification_record(
@@ -290,12 +357,14 @@ class PractitionerNotificationService(BaseNotificationService):
             related_object_id=str(booking.id)
         )
         
+        subject = template['subject'].format(service_name=service.name)
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"booking-cancelled-{booking.id}"
+            tags=[{'name': 'category', 'value': 'booking_cancelled'}]
         )
     
     def send_earnings_summary(self, practitioner, period='weekly'):
@@ -306,9 +375,9 @@ class PractitionerNotificationService(BaseNotificationService):
         
         if not self.should_send_notification(user, 'payment', 'email'):
             return
-        
-        template_id = self.get_template_id('earnings_summary')
-        if not template_id:
+
+        template = self.get_template('earnings_summary')
+        if not template:
             logger.warning("No earnings summary template configured")
             return
         
@@ -348,12 +417,14 @@ class PractitionerNotificationService(BaseNotificationService):
             delivery_channel='email'
         )
         
+        subject = template.get('subject', 'Your Earnings Summary')
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"earnings-summary-{practitioner.id}-{period}-{timezone.now().strftime('%Y%W')}"
+            tags=[{'name': 'category', 'value': 'earnings_summary'}]
         )
     
     def send_booking_reminder(self, booking, hours_before):
@@ -365,10 +436,10 @@ class PractitionerNotificationService(BaseNotificationService):
         
         if not self.should_send_notification(user, 'reminder', 'email'):
             return
-        
+
         template_key = 'reminder_24h' if hours_before == 24 else 'reminder_30m'
-        template_id = self.get_template_id(template_key)
-        if not template_id:
+        template = self.get_template(template_key)
+        if not template:
             logger.warning(f"No {template_key} template configured for practitioners")
             return
         
@@ -416,12 +487,14 @@ class PractitionerNotificationService(BaseNotificationService):
             related_object_id=str(booking.id)
         )
         
+        subject = template.get('subject', f'Reminder: {service.name}')
         return self.send_email_notification(
             user=user,
-            template_id=template_id,
+            template_path=template['path'],
+            subject=subject,
             data=data,
             notification=notification,
-            idempotency_key=f"practitioner-booking-reminder-{booking.id}-{hours_before}h"
+            tags=[{'name': 'category', 'value': 'practitioner_reminder'}]
         )
     
     def _schedule_practitioner_reminders(self, booking):
@@ -433,34 +506,40 @@ class PractitionerNotificationService(BaseNotificationService):
         # 24-hour reminder
         reminder_24h = booking.start_time - timedelta(hours=24)
         if reminder_24h > timezone.now():
-            self.schedule_notification(
-                user=practitioner.user,
-                notification_type='reminder',
-                delivery_channel='email',
-                scheduled_for=reminder_24h,
-                template_id=self.get_template_id('reminder_24h'),
-                data={},  # Will be populated when sent
-                title=f"Tomorrow: {booking.service.name} with {booking.user.get_full_name()}",
-                message=f"Reminder: You have a booking tomorrow",
-                related_object_type='booking',
-                related_object_id=str(booking.id)
-            )
-        
+            template_24h = self.get_template('reminder_24h')
+            if template_24h:
+                self.schedule_notification(
+                    user=practitioner.user,
+                    notification_type='reminder',
+                    delivery_channel='email',
+                    scheduled_for=reminder_24h,
+                    template_path=template_24h['path'],
+                    subject=template_24h.get('subject', 'Tomorrow: Session Reminder'),
+                    data={},  # Will be populated when sent
+                    title=f"Tomorrow: {booking.service.name} with {booking.user.get_full_name()}",
+                    message=f"Reminder: You have a booking tomorrow",
+                    related_object_type='booking',
+                    related_object_id=str(booking.id)
+                )
+
         # 30-minute reminder
         reminder_30m = booking.start_time - timedelta(minutes=30)
         if reminder_30m > timezone.now():
-            self.schedule_notification(
-                user=practitioner.user,
-                notification_type='reminder',
-                delivery_channel='email',
-                scheduled_for=reminder_30m,
-                template_id=self.get_template_id('reminder_30m'),
-                data={},  # Will be populated when sent
-                title=f"Starting soon: {booking.service.name}",
-                message=f"Your session starts in 30 minutes",
-                related_object_type='booking',
-                related_object_id=str(booking.id)
-            )
+            template_30m = self.get_template('reminder_30m')
+            if template_30m:
+                self.schedule_notification(
+                    user=practitioner.user,
+                    notification_type='reminder',
+                    delivery_channel='email',
+                    scheduled_for=reminder_30m,
+                    template_path=template_30m['path'],
+                    subject=template_30m.get('subject', 'Starting Soon: Session Reminder'),
+                    data={},  # Will be populated when sent
+                    title=f"Starting soon: {booking.service.name}",
+                    message=f"Your session starts in 30 minutes",
+                    related_object_type='booking',
+                    related_object_id=str(booking.id)
+                )
     
     def _schedule_onboarding_nudges(self, practitioner):
         """
@@ -468,43 +547,49 @@ class PractitionerNotificationService(BaseNotificationService):
         """
         # 3-day nudge if profile incomplete
         nudge_date = timezone.now() + timedelta(days=3)
-        notification = self.schedule_notification(
-            user=practitioner.user,
-            notification_type='system',
-            delivery_channel='email',
-            scheduled_for=nudge_date,
-            template_id=self.get_template_id('profile_incomplete'),
-            data={'nudge_type': 'profile_incomplete'},
-            title="Complete your practitioner profile",
-            message="Your profile is incomplete. Complete it to start receiving bookings."
-        )
-        
-        # Schedule the specific task to handle this nudge
-        from practitioners.tasks import send_practitioner_profile_nudge
-        send_practitioner_profile_nudge.apply_async(
-            args=[notification.id],
-            eta=nudge_date
-        )
-        
+        template_profile = self.get_template('profile_incomplete')
+        if template_profile:
+            notification = self.schedule_notification(
+                user=practitioner.user,
+                notification_type='system',
+                delivery_channel='email',
+                scheduled_for=nudge_date,
+                template_path=template_profile['path'],
+                subject=template_profile.get('subject', 'Complete your practitioner profile'),
+                data={'nudge_type': 'profile_incomplete'},
+                title="Complete your practitioner profile",
+                message="Your profile is incomplete. Complete it to start receiving bookings."
+            )
+
+            # Schedule the specific task to handle this nudge
+            from practitioners.tasks import send_practitioner_profile_nudge
+            send_practitioner_profile_nudge.apply_async(
+                args=[notification.id],
+                eta=nudge_date
+            )
+
         # 7-day nudge if no services created
         nudge_date = timezone.now() + timedelta(days=7)
-        notification = self.schedule_notification(
-            user=practitioner.user,
-            notification_type='system',
-            delivery_channel='email',
-            scheduled_for=nudge_date,
-            template_id=self.get_template_id('no_services'),
-            data={'nudge_type': 'no_services'},
-            title="Create your first service",
-            message="You haven't created any services yet. Create one to start accepting bookings."
-        )
-        
-        # Schedule the specific task to handle this nudge
-        from practitioners.tasks import send_practitioner_services_nudge
-        send_practitioner_services_nudge.apply_async(
-            args=[notification.id],
-            eta=nudge_date
-        )
+        template_services = self.get_template('no_services')
+        if template_services:
+            notification = self.schedule_notification(
+                user=practitioner.user,
+                notification_type='system',
+                delivery_channel='email',
+                scheduled_for=nudge_date,
+                template_path=template_services['path'],
+                subject=template_services.get('subject', 'Create your first service'),
+                data={'nudge_type': 'no_services'},
+                title="Create your first service",
+                message="You haven't created any services yet. Create one to start accepting bookings."
+            )
+
+            # Schedule the specific task to handle this nudge
+            from practitioners.tasks import send_practitioner_services_nudge
+            send_practitioner_services_nudge.apply_async(
+                args=[notification.id],
+                eta=nudge_date
+            )
     
     def _get_earnings_summary(self, practitioner, start_date):
         """

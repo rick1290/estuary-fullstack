@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import { MoreVertical, Calendar, Clock, User, Users, Video, MapPin, Loader2 } from "lucide-react"
+import { MoreVertical, Calendar, Clock, User, Users, Video, MapPin, Loader2, Search, Filter, Play, BookOpen, SpadeIcon as Spa } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,163 +12,141 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { bookingsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { calendarListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
-import type { BookingListReadable } from "@/src/client/types.gen"
+import { format, parseISO, isPast, isFuture } from "date-fns"
+import Link from "next/link"
 
-// Mock data for schedule
-const mockSchedule = (() => {
-  // Get current date
-  const today = new Date()
-  const currentYear = today.getFullYear()
-  const currentMonth = today.getMonth()
-  const currentDate = today.getDate()
+// Service type configuration (matching bookings list)
+const serviceTypeConfig = {
+  session: { label: "Session", icon: User, color: "primary" },
+  workshop: { label: "Workshop", icon: Users, color: "secondary" },
+  course: { label: "Course", icon: BookOpen, color: "success" },
+}
 
-  // Format date as YYYY-MM-DD
-  const formatDate = (date: Date) => {
-    return date.toISOString().split("T")[0]
-  }
+// Status badge variant mapping
+const statusVariants = {
+  confirmed: "success" as const,
+  pending: "secondary" as const,
+  pending_payment: "warning" as const,
+  cancelled: "destructive" as const,
+  canceled: "destructive" as const,
+  completed: "outline" as const,
+  in_progress: "default" as const,
+}
 
-  return [
-    {
-      id: "booking-123",
-      title: "Mindfulness Meditation Session",
-      clientName: "Emma Thompson",
-      clientAvatar: "/extraterrestrial-encounter.png",
-      date: formatDate(new Date(currentYear, currentMonth, currentDate)),
-      startTime: "10:00 AM",
-      endTime: "11:00 AM",
-      type: "session",
-      location: "Virtual",
-      status: "upcoming",
-    },
-    {
-      id: "booking-456",
-      title: "Career Coaching Session",
-      clientName: "Michael Chen",
-      clientAvatar: "/microphone-crowd.png",
-      date: formatDate(new Date(currentYear, currentMonth, currentDate + 1)),
-      startTime: "2:00 PM",
-      endTime: "3:30 PM",
-      type: "session",
-      location: "In-Person",
-      status: "upcoming",
-    },
-    {
-      id: "booking-789",
-      title: "Yoga for Stress Relief Workshop",
-      clientName: "Multiple Attendees (8)",
-      clientAvatar: null,
-      date: formatDate(new Date(currentYear, currentMonth, currentDate + 2)),
-      startTime: "9:00 AM",
-      endTime: "10:00 AM",
-      type: "workshop",
-      location: "Virtual",
-      status: "upcoming",
-    },
-    {
-      id: "booking-101",
-      title: "Nutritional Consultation",
-      clientName: "David Wilson",
-      clientAvatar: "/abstract-dw.png",
-      date: formatDate(new Date(currentYear, currentMonth, currentDate - 3)),
-      startTime: "4:00 PM",
-      endTime: "5:00 PM",
-      type: "session",
-      location: "Virtual",
-      status: "completed",
-    },
-    {
-      id: "booking-102",
-      title: "Life Coaching Course",
-      clientName: "Multiple Attendees (12)",
-      clientAvatar: null,
-      date: formatDate(new Date(currentYear, currentMonth, currentDate - 4)),
-      startTime: "11:00 AM",
-      endTime: "12:30 PM",
-      type: "course",
-      location: "Virtual",
-      status: "completed",
-    },
-    {
-      id: "booking-103",
-      title: "Group Therapy Session",
-      clientName: "Multiple Attendees (6)",
-      clientAvatar: null,
-      date: formatDate(new Date(currentYear, currentMonth, currentDate - 5)),
-      startTime: "3:00 PM",
-      endTime: "4:30 PM",
-      type: "workshop",
-      location: "In-Person",
-      status: "canceled",
-    },
-  ]
-})()
+// Check if a session can be joined (matching bookings list logic)
+const isSessionJoinable = (booking: any) => {
+  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
 
-// Type color and variant mapping
-const typeConfig = {
-  session: { color: "primary", icon: User },
-  workshop: { color: "secondary", icon: Users },
-  course: { color: "success", icon: Users },
+  const now = new Date()
+  const startTime = parseISO(booking.start_time)
+  const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+
+  // Allow joining 15 minutes before start and until the session ends
+  const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
+
+  return now >= joinWindowStart && now < endTime
 }
 
 export default function PractitionerCalendarList() {
   const router = useRouter()
   const { user } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<string>("upcoming")
+  const [selectedTab, setSelectedTab] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState<string>("")
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
 
-  // Build query params based on selected tab
+  // Build query params for calendar events API
   const getQueryParams = () => {
-    const params: any = {
-      practitioner_id: user?.practitionerId,
-      ordering: '-start_time'
+    const params: any = {}
+
+    // Service type filter
+    if (serviceTypeFilter !== "all") {
+      params.service_type = serviceTypeFilter
     }
 
-    switch (selectedTab) {
-      case 'upcoming':
-        params.status = 'confirmed'
-        params.is_upcoming = true
-        break
-      case 'completed':
-        params.status = 'completed'
-        break
-      case 'canceled':
-        params.status = 'canceled'
-        break
-      // 'all' has no additional filters
-    }
-
-    if (searchTerm) {
-      params.search = searchTerm
+    // Status filter (only apply if not filtered by tab)
+    if (statusFilter !== "all" && !["upcoming", "canceled", "past"].includes(selectedTab)) {
+      params.status = statusFilter
     }
 
     return params
   }
 
-  // Fetch bookings from API
-  const { data: bookingsData, isLoading, error } = useQuery(
-    bookingsListOptions({
+  // Fetch calendar events from API
+  const { data: calendarEvents, isLoading, error } = useQuery(
+    calendarListOptions({
       query: getQueryParams()
     })
   )
 
-  const bookings = bookingsData?.results || []
+  const events = calendarEvents || []
 
-  // Transform booking data to match the component's expected format
-  const transformedSchedule = bookings.map((booking: BookingListReadable) => ({
-    id: booking.id?.toString() || '',
-    title: booking.service?.name || 'Unknown Service',
-    clientName: booking.user?.full_name || booking.user?.email || 'Unknown Client',
-    clientAvatar: booking.user?.avatar_url,
-    date: booking.start_time ? new Date(booking.start_time).toISOString().split('T')[0] : '',
-    startTime: booking.start_time ? new Date(booking.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
-    endTime: booking.end_time ? new Date(booking.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
-    type: booking.service?.service_type_code || 'session',
-    location: booking.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person',
-    status: booking.status || 'unknown',
-    booking: booking // Keep full booking data for detail view
-  }))
+  // Filter events based on selected tab and search term
+  const filteredEvents = events.filter((event: any) => {
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      const serviceName = event.service?.name?.toLowerCase() || ''
+
+      // For service sessions, search in attendees
+      if (event.event_type === 'service_session') {
+        const attendeeMatch = event.attendees?.some((attendee: any) =>
+          attendee.full_name?.toLowerCase().includes(searchLower) ||
+          attendee.email?.toLowerCase().includes(searchLower)
+        )
+        if (!serviceName.includes(searchLower) && !attendeeMatch) return false
+      }
+      // For individual bookings, search in client
+      else if (event.event_type === 'individual_booking') {
+        const clientName = event.client?.full_name?.toLowerCase() || ''
+        const clientEmail = event.client?.email?.toLowerCase() || ''
+        if (!serviceName.includes(searchLower) && !clientName.includes(searchLower) && !clientEmail.includes(searchLower)) {
+          return false
+        }
+      }
+    }
+
+    // Tab filter
+    if (selectedTab === "all") return true
+
+    if (selectedTab === "upcoming") {
+      return event.status === "confirmed" && event.start_time && isFuture(parseISO(event.start_time))
+    } else if (selectedTab === "past") {
+      return event.status === "completed" || (event.start_time && isPast(parseISO(event.start_time)))
+    } else if (selectedTab === "canceled") {
+      return event.status === "cancelled" || event.status === "canceled"
+    }
+
+    return true
+  })
+
+  // Transform calendar event data to match the component's expected format
+  const transformedSchedule = filteredEvents.map((event: any) => {
+    const isGroupedEvent = event.event_type === 'service_session' || event.event_type === 'grouped_booking'
+
+    return {
+      id: isGroupedEvent
+        ? (event.service_session_id?.toString() || event.attendees?.[0]?.booking_id?.toString())
+        : event.booking_id?.toString(),
+      title: event.service?.name || 'Unknown Service',
+      clientName: isGroupedEvent
+        ? `Multiple Attendees (${event.attendee_count})`
+        : (event.client?.full_name || event.client?.email || 'Unknown Client'),
+      clientAvatar: isGroupedEvent ? null : event.client?.avatar_url,
+      date: event.start_time ? new Date(event.start_time).toISOString().split('T')[0] : '',
+      startTime: event.start_time ? new Date(event.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
+      endTime: event.end_time ? new Date(event.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
+      type: event.service?.service_type_code || 'session',
+      location: event.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person',
+      status: event.status || 'unknown',
+      event: event, // Keep full event data for detail view and join functionality
+      event_type: event.event_type
+    }
+  })
 
   const handleViewDetails = (eventId: string) => {
     router.push(`/dashboard/practitioner/bookings/${eventId}`)
@@ -185,7 +163,7 @@ export default function PractitionerCalendarList() {
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">Failed to load bookings</p>
+        <p className="text-muted-foreground">Failed to load calendar events</p>
         <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
           Try Again
         </Button>
@@ -194,45 +172,84 @@ export default function PractitionerCalendarList() {
   }
 
   return (
-    <div>
-      <Tabs defaultValue="upcoming" value={selectedTab} onValueChange={setSelectedTab} className="w-full mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="canceled">Canceled</TabsTrigger>
+    <div className="space-y-4">
+      {/* Tabs */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <TabsList className="bg-sage-100 p-1 rounded-lg">
+            <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Upcoming
+            </TabsTrigger>
+            <TabsTrigger value="past" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Past
+            </TabsTrigger>
+            <TabsTrigger value="canceled" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Canceled
+            </TabsTrigger>
           </TabsList>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search bookings..."
-              className="px-3 py-2 border rounded-md w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                onClick={() => setSearchTerm("")}
-              >
-                ×
-              </button>
+
+          {/* Filters */}
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 w-[200px]"
+              />
+            </div>
+
+            {/* Service Type Filter */}
+            <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
+              <SelectTrigger className="w-[140px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Service Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="session">Sessions</SelectItem>
+                <SelectItem value="workshop">Workshops</SelectItem>
+                <SelectItem value="course">Courses</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Status Filter */}
+            {!["upcoming", "canceled", "past"].includes(selectedTab) && (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
         </div>
 
-        <TabsContent value="all" className="mt-0">
-          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
-        </TabsContent>
-        <TabsContent value="upcoming" className="mt-0">
-          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
-        </TabsContent>
-        <TabsContent value="completed" className="mt-0">
-          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
-        </TabsContent>
-        <TabsContent value="canceled" className="mt-0">
-          <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
+        {/* Table Content */}
+        <TabsContent value={selectedTab} className="mt-4">
+          {transformedSchedule.length === 0 ? (
+            <div className="rounded-md border p-8 text-center">
+              <p className="text-muted-foreground">
+                {selectedTab === "upcoming" && "No upcoming events"}
+                {selectedTab === "past" && "No past events"}
+                {selectedTab === "canceled" && "No canceled events"}
+                {selectedTab === "all" && "No calendar events found"}
+              </p>
+            </div>
+          ) : (
+            <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
+          )}
         </TabsContent>
       </Tabs>
     </div>
@@ -250,135 +267,168 @@ interface ScheduleEvent {
   type: string
   location: string
   status: string
-  booking?: any
+  event?: any // Full calendar event data
+  event_type?: string // 'service_session' or 'individual_booking'
 }
 
 function ScheduleTable({
   events,
   onViewDetails,
 }: { events: ScheduleEvent[]; onViewDetails: (id: string) => void }) {
-  return (
-    <Card className="bg-white">
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Event</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Client/Attendees</TableHead>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {events.length > 0 ? (
-              events.map((event) => {
-                const TypeIcon = typeConfig[event.type as keyof typeof typeConfig].icon
+  const router = useRouter()
 
-                return (
-                  <TableRow key={event.id} className="cursor-pointer" onClick={() => onViewDetails(event.id)}>
-                    <TableCell className="font-medium">{event.title}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          event.type === "session" ? "default" : event.type === "workshop" ? "secondary" : "outline"
-                        }
-                        className="flex items-center gap-1"
-                      >
-                        <TypeIcon className="h-3 w-3" />
-                        {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {event.clientAvatar ? (
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={event.clientAvatar || "/placeholder.svg"} alt={event.clientName} />
-                            <AvatarFallback>{event.clientName.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>{event.type === "workshop" ? "W" : "C"}</AvatarFallback>
-                          </Avatar>
-                        )}
-                        <span className="text-sm">{event.clientName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {new Date(event.date).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {event.startTime} - {event.endTime}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {event.location === "Virtual" ? (
-                                <Video className="h-4 w-4 text-primary" />
-                              ) : (
-                                <MapPin className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {event.location === "Virtual" ? "Virtual Session" : "In-Person"}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <span className="text-sm">{event.location}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenuItem onClick={() => onViewDetails(event.id)}>View Details</DropdownMenuItem>
-                          {event.status === "upcoming" && (
-                            <>
-                              {event.location === "Virtual" && (
-                                <DropdownMenuItem>Join Virtual Session</DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">Cancel Event</DropdownMenuItem>
-                            </>
+  const getServiceTypeIcon = (type: string) => {
+    const config = serviceTypeConfig[type as keyof typeof serviceTypeConfig]
+    const Icon = config?.icon || Spa
+    return <Icon className="h-4 w-4" />
+  }
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Client</TableHead>
+            <TableHead>Service</TableHead>
+            <TableHead>Date & Time</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {events.map((scheduleEvent) => {
+            const calendarEvent = scheduleEvent.event
+            const isServiceSession = scheduleEvent.event_type === 'service_session'
+
+            // Get client email based on event type
+            const clientEmail = isServiceSession
+              ? calendarEvent?.attendees?.[0]?.email // Show first attendee's email for service sessions
+              : calendarEvent?.client?.email
+
+            return (
+              <TableRow key={scheduleEvent.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    {isServiceSession ? (
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>
+                          <Users className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={scheduleEvent.clientAvatar || ""} alt={scheduleEvent.clientName || ""} />
+                        <AvatarFallback>
+                          {(scheduleEvent.clientName || "U").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div>
+                      <p className="font-medium">{scheduleEvent.clientName}</p>
+                      {clientEmail && <p className="text-sm text-muted-foreground">{clientEmail}</p>}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {getServiceTypeIcon(scheduleEvent.type)}
+                    <div>
+                      <p className="font-medium">{scheduleEvent.title}</p>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {scheduleEvent.type.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p>
+                        {scheduleEvent.date && format(parseISO(scheduleEvent.date), "MMM d, yyyy")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {scheduleEvent.startTime} - {scheduleEvent.endTime}
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={statusVariants[scheduleEvent.status as keyof typeof statusVariants] || "secondary"}>
+                    {scheduleEvent.status?.charAt(0).toUpperCase() + scheduleEvent.status?.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>${calendarEvent?.total_amount || "0.00"}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    {/* Inline Join Button for virtual sessions */}
+                    {scheduleEvent.location === "Virtual" &&
+                     calendarEvent?.room?.public_uuid &&
+                     (scheduleEvent.status === "confirmed" || scheduleEvent.status === "in_progress") && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-block">
+                              <Button
+                                variant={isSessionJoinable(calendarEvent) ? "default" : "outline"}
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isSessionJoinable(calendarEvent)) {
+                                    router.push(`/room/${calendarEvent.room.public_uuid}/lobby`)
+                                  }
+                                }}
+                                disabled={!isSessionJoinable(calendarEvent)}
+                                className={isSessionJoinable(calendarEvent) ? "bg-sage-600 hover:bg-sage-700" : ""}
+                              >
+                                <Play className="h-4 w-4 mr-1" />
+                                Join
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {isSessionJoinable(calendarEvent)
+                              ? "Click to join the session"
+                              : "Join will be available 15 minutes before session start"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          {isServiceSession ? (
+                            <Link href={`/dashboard/practitioner/calendar/${scheduleEvent.id}`}>
+                              View Details
+                            </Link>
+                          ) : (
+                            <Link href={`/dashboard/practitioner/bookings/${scheduleEvent.id}`}>
+                              View Details
+                            </Link>
                           )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  No events found.
+                        </DropdownMenuItem>
+                        {scheduleEvent.status === "confirmed" && !isServiceSession && (
+                          <>
+                            <DropdownMenuItem>Reschedule</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

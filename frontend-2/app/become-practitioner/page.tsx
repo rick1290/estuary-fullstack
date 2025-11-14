@@ -180,10 +180,12 @@ export default function BecomePractitionerPage() {
               className="relative h-full min-h-[500px] lg:block hidden"
             >
               <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl">
-                <img 
-                  src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&h=600&fit=crop"
+                <Image
+                  src="/become-practitioner-hero-top.png"
                   alt="Wellness practitioner leading a workshop"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-olive-900/30 to-transparent" />
                 
@@ -286,14 +288,14 @@ export default function BecomePractitionerPage() {
                   title: "Multiple Revenue Streams",
                   description: "Offer sessions, courses, workshops, and subscription content. Build diverse income streams that work for your lifestyle.",
                   features: ["1-on-1 Sessions", "Group Workshops", "Online Courses", "Subscription Streams"],
-                  image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop",
+                  image: "/benefit-1-revenue.png",
                   imageAlt: "Practitioner dashboard showing multiple services"
                 },
                 {
                   title: "Your Practice, Your Way",
                   description: "Set your own schedule, prices, and boundaries. Work from anywhere, whether offering virtual or in-person services.",
                   features: ["Flexible Scheduling", "Custom Pricing", "Virtual & In-Person", "Automated Bookings"],
-                  image: "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=600&h=400&fit=crop",
+                  image: "/benefit-2-practice.png",
                   imageAlt: "Practitioner working remotely",
                   reverse: true
                 },
@@ -301,7 +303,7 @@ export default function BecomePractitionerPage() {
                   title: "Community & Support",
                   description: "Join a thriving community of like-minded practitioners. Get support, share insights, and grow together.",
                   features: ["Practitioner Forums", "Monthly Workshops", "Mentorship Program", "24/7 Support"],
-                  image: "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=600&h=400&fit=crop",
+                  image: "/benefit-3-community.png",
                   imageAlt: "Community of practitioners collaborating"
                 }
               ].map((benefit, index) => (
@@ -328,11 +330,12 @@ export default function BecomePractitionerPage() {
                     </div>
                   </div>
                   <div className={cn("relative", benefit.reverse && "lg:col-start-1")}>
-                    <div className="rounded-2xl overflow-hidden shadow-2xl">
-                      <img 
+                    <div className="rounded-2xl overflow-hidden shadow-2xl relative h-[400px]">
+                      <Image
                         src={benefit.image}
                         alt={benefit.imageAlt}
-                        className="w-full h-[400px] object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </div>
                     <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-terracotta-200/30 rounded-full blur-2xl" />
@@ -723,10 +726,11 @@ export default function BecomePractitionerPage() {
           >
             {/* Background Image */}
             <div className="absolute inset-0">
-              <img 
-                src="https://images.unsplash.com/photo-1552581234-26160f608093?w=1920&h=600&fit=crop"
+              <Image
+                src="/cta-clients-waiting.png"
                 alt="Successful practitioners"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-sage-900/90 via-sage-800/80 to-terracotta-900/90" />
             </div>

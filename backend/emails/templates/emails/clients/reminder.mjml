@@ -1,0 +1,98 @@
+{% extends "emails/base.mjml" %}
+
+{% block content %}
+<!-- Reminder Hero -->
+<mj-section padding="48px 0 32px">
+  <mj-column>
+    <mj-text align="center" font-size="48px" padding-bottom="16px">
+      {% if is_24h %}⏰{% else %}🔔{% endif %}
+    </mj-text>
+    <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="16px">
+      {% if is_24h %}
+        Your Session is Tomorrow
+      {% else %}
+        Your Session Starts Soon
+      {% endif %}
+    </mj-text>
+    <mj-text align="center" font-size="16px" color="#6f7a47">
+      {% if is_24h %}
+        Reminder: You have a session with {{ practitioner.display_name }} tomorrow
+      {% else %}
+        Your session with {{ practitioner.display_name }} starts in 30 minutes
+      {% endif %}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Practitioner Info -->
+{% include 'emails/components/practitioner_card.mjml' %}
+
+<!-- Spacing -->
+<mj-section padding="16px 0">
+  <mj-column></mj-column>
+</mj-section>
+
+<!-- Booking Details -->
+{% include 'emails/components/booking_card.mjml' %}
+
+<!-- Join Session (for virtual) -->
+{% if service.location_type == 'virtual' %}
+<mj-section background-color="#ffffff" border-radius="12px" padding="32px" css-class="card">
+  <mj-column>
+    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="16px">
+      {% if is_30m %}
+        Ready to Join?
+      {% else %}
+        How to Join
+      {% endif %}
+    </mj-text>
+
+    <mj-text font-size="14px" line-height="1.6" padding-bottom="20px">
+      {% if is_30m %}
+        Click the button below to join your virtual session. Your practitioner is preparing for you now.
+      {% else %}
+        You'll receive another reminder 30 minutes before your session with a link to join the video call.
+      {% endif %}
+    </mj-text>
+
+    {% if is_30m %}
+    {% include 'emails/components/button.mjml' with button_text="Join Video Session" button_url=WEBSITE_URL|add:"/room/booking/"|add:booking.id %}
+    {% endif %}
+
+    {% if is_24h %}
+    <mj-text font-size="14px" line-height="1.6" color="#6f7a47">
+      💡 <strong>Tip:</strong> Test your camera and microphone before the session to ensure a smooth experience.
+    </mj-text>
+    {% endif %}
+  </mj-column>
+</mj-section>
+{% else %}
+<!-- In-person location reminder -->
+<mj-section background-color="#f5f1e6" border-radius="12px" border-left="4px solid #7a8b63" padding="24px 28px">
+  <mj-column>
+    <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">
+      📍 Location Reminder
+    </mj-text>
+    <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+      {{ service.location }}<br/>
+      {% if is_30m %}
+        <strong>Please head over now!</strong> Your session starts in 30 minutes.
+      {% else %}
+        Plan to arrive 5 minutes early.
+      {% endif %}
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Quick Actions -->
+<mj-section padding="32px 0">
+  <mj-column>
+    {% include 'emails/components/button.mjml' with button_text="View Full Details" button_url=WEBSITE_URL|add:"/dashboard/bookings/"|add:booking.id %}
+
+    <mj-text align="center" padding-top="16px">
+      <a href="{{ WEBSITE_URL }}/dashboard/bookings/{{ booking.id }}/cancel" style="color: #8b985b; font-size: 14px;">Need to cancel?</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endblock %}
