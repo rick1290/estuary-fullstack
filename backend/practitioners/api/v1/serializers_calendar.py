@@ -110,15 +110,17 @@ class IndividualBookingEventSerializer(serializers.Serializer):
 
 class CalendarEventsQuerySerializer(serializers.Serializer):
     """Query parameters for calendar events endpoint"""
-    start_date = serializers.DateTimeField(required=False, help_text="Filter events starting from this date")
-    end_date = serializers.DateTimeField(required=False, help_text="Filter events before this date")
+    start_date = serializers.DateTimeField(required=False, allow_null=True, help_text="Filter events starting from this date")
+    end_date = serializers.DateTimeField(required=False, allow_null=True, help_text="Filter events before this date")
     service_type = serializers.ChoiceField(
         choices=['session', 'workshop', 'course'],
         required=False,
+        allow_null=True,
         help_text="Filter by service type"
     )
     status = serializers.ChoiceField(
         choices=['confirmed', 'in_progress', 'completed', 'cancelled', 'canceled'],
         required=False,
+        allow_null=True,
         help_text="Filter by booking/session status"
     )

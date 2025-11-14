@@ -176,13 +176,19 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         # Collect all events
         events = []
 
-        # 1. Get ServiceSessions (workshops and courses)
+        # 1. Get ServiceSessions (workshops and courses with ServiceSession)
         service_session_events = self._get_service_session_events(
             practitioner, start_date, end_date, service_type_filter, status_filter
         )
         events.extend(service_session_events)
 
-        # 2. Get Individual Bookings (1-on-1 sessions without ServiceSession)
+        # 2. Get grouped workshop/course bookings WITHOUT ServiceSession
+        grouped_workshop_events = self._get_grouped_workshop_events(
+            practitioner, start_date, end_date, service_type_filter, status_filter
+        )
+        events.extend(grouped_workshop_events)
+
+        # 3. Get Individual Bookings (1-on-1 sessions without ServiceSession)
         individual_booking_events = self._get_individual_booking_events(
             practitioner, start_date, end_date, service_type_filter, status_filter
         )
@@ -300,16 +306,119 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
 
         return events
 
+    def _get_grouped_workshop_events(self, practitioner, start_date=None, end_date=None, service_type=None, status_filter=None):
+        """
+        Get workshop/course events that DON'T have a ServiceSession.
+        Groups them by service and start_time to show as one aggregated event.
+        """
+        from collections import defaultdict
+
+        # Get workshop/course bookings without service_session
+        queryset = Booking.objects.filter(
+            service__primary_practitioner=practitioner,
+            service_session__isnull=True,
+            service__service_type__code__in=['workshop', 'course']
+        ).select_related(
+            'service',
+            'service__service_type',
+            'user',
+            'room'
+        )
+
+        # Filter by date range
+        if start_date:
+            queryset = queryset.filter(start_time__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(start_time__lte=end_date)
+
+        # Filter by service type
+        if service_type:
+            queryset = queryset.filter(service__service_type__code=service_type)
+
+        # Filter by status
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        # Group bookings by (service_id, start_time)
+        grouped = defaultdict(list)
+        for booking in queryset:
+            key = (booking.service.id, booking.start_time)
+            grouped[key].append(booking)
+
+        events = []
+        for (service_id, start_time), bookings in grouped.items():
+            if not bookings:
+                continue
+
+            first_booking = bookings[0]
+
+            # Aggregate attendees
+            attendees = []
+            for booking in bookings:
+                attendees.append({
+                    'id': booking.user.id,
+                    'full_name': booking.user.get_full_name() or booking.user.email,
+                    'email': booking.user.email,
+                    'avatar_url': getattr(booking.user, 'avatar_url', None),
+                    'phone_number': getattr(booking.user, 'phone_number', None),
+                    'booking_status': booking.status,
+                    'booking_id': booking.id,
+                    'public_uuid': booking.public_uuid,
+                })
+
+            # Determine overall status
+            statuses = [b.status for b in bookings]
+            if 'in_progress' in statuses:
+                event_status = 'in_progress'
+            elif all(s == 'completed' for s in statuses):
+                event_status = 'completed'
+            elif 'cancelled' in statuses or 'canceled' in statuses:
+                if all(s in ['cancelled', 'canceled'] for s in statuses):
+                    event_status = 'cancelled'
+                else:
+                    event_status = 'confirmed'
+            else:
+                event_status = 'confirmed'
+
+            # Build event (similar to service_session event but without service_session_id)
+            event = {
+                'event_type': 'grouped_booking',  # New type for grouped bookings without ServiceSession
+                'service': {
+                    'id': first_booking.service.id,
+                    'name': first_booking.service.name,
+                    'service_type_code': first_booking.service.service_type.code if first_booking.service.service_type else 'workshop',
+                    'location_type': first_booking.service.location_type,
+                    'duration_minutes': first_booking.duration_minutes or first_booking.service.duration_minutes,
+                    'description': first_booking.service.description,
+                },
+                'start_time': first_booking.start_time,
+                'end_time': first_booking.end_time,
+                'duration_minutes': first_booking.duration_minutes or first_booking.service.duration_minutes,
+                'attendee_count': len(attendees),
+                'max_participants': first_booking.service.max_participants,
+                'attendees': attendees,
+                'room': self._serialize_room(first_booking.room) if hasattr(first_booking, 'room') and first_booking.room else None,
+                'status': event_status,
+            }
+
+            events.append(event)
+
+        return events
+
     def _get_individual_booking_events(self, practitioner, start_date=None, end_date=None, service_type=None, status_filter=None):
         """
         Get individual booking events (1-on-1 sessions).
 
         These are bookings that don't have a service_session (individual appointments).
+        Only includes 'session' type bookings - workshops/courses should always have a ServiceSession.
         """
         # Base query for bookings without service_session
+        # IMPORTANT: Exclude workshop/course types as they should have ServiceSessions
         queryset = Booking.objects.filter(
             service__primary_practitioner=practitioner,
             service_session__isnull=True,  # Only bookings without group sessions
+        ).exclude(
+            service__service_type__code__in=['workshop', 'course']  # Workshops/courses should have ServiceSessions
         ).select_related(
             'service',
             'service__service_type',

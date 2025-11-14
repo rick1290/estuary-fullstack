@@ -126,15 +126,17 @@ export default function PractitionerCalendarList() {
 
   // Transform calendar event data to match the component's expected format
   const transformedSchedule = filteredEvents.map((event: any) => {
-    const isServiceSession = event.event_type === 'service_session'
+    const isGroupedEvent = event.event_type === 'service_session' || event.event_type === 'grouped_booking'
 
     return {
-      id: isServiceSession ? event.service_session_id?.toString() : event.booking_id?.toString(),
+      id: isGroupedEvent
+        ? (event.service_session_id?.toString() || event.attendees?.[0]?.booking_id?.toString())
+        : event.booking_id?.toString(),
       title: event.service?.name || 'Unknown Service',
-      clientName: isServiceSession
+      clientName: isGroupedEvent
         ? `Multiple Attendees (${event.attendee_count})`
         : (event.client?.full_name || event.client?.email || 'Unknown Client'),
-      clientAvatar: isServiceSession ? null : event.client?.avatar_url,
+      clientAvatar: isGroupedEvent ? null : event.client?.avatar_url,
       date: event.start_time ? new Date(event.start_time).toISOString().split('T')[0] : '',
       startTime: event.start_time ? new Date(event.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
       endTime: event.end_time ? new Date(event.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
