@@ -564,8 +564,19 @@ class CheckoutService:
             for booking in bookings:
                 booking.status = 'confirmed'
                 booking.payment_status = 'paid'
-                booking.payment_transaction = order
-                booking.save(update_fields=['status', 'payment_status', 'payment_transaction'])
+
+                # Link credit usage transaction if credits were applied
+                if order.credits_applied_cents > 0:
+                    usage_txn = order.user_credit_transactions.filter(
+                        transaction_type='usage'
+                    ).first()
+                    if usage_txn:
+                        booking.credit_usage_transaction = usage_txn
+                        booking.save(update_fields=['status', 'payment_status', 'credit_usage_transaction'])
+                    else:
+                        booking.save(update_fields=['status', 'payment_status'])
+                else:
+                    booking.save(update_fields=['status', 'payment_status'])
                 
                 # For bundles, create credit balance
                 if booking.is_bundle_purchase:

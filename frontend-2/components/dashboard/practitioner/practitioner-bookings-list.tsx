@@ -117,7 +117,8 @@ export default function PractitionerBookingsList() {
     return filtered
   }, [bookings, selectedTab])
 
-  const formatTime = (startTime: string, duration?: number) => {
+  const formatTime = (startTime: string | null | undefined, duration?: number) => {
+    if (!startTime) return "Not scheduled"
     try {
       const start = parseISO(startTime)
       const startStr = format(start, "h:mm a")
@@ -322,7 +323,7 @@ export default function PractitionerBookingsList() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p>{format(parseISO(booking.start_time), "MMM d, yyyy")}</p>
+                            <p>{booking.start_time ? format(parseISO(booking.start_time), "MMM d, yyyy") : "Not scheduled"}</p>
                             <p className="text-sm text-muted-foreground">
                               {formatTime(booking.start_time, booking.duration_minutes)}
                             </p>

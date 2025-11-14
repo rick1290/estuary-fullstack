@@ -157,12 +157,10 @@ class ClientNotificationService(BaseNotificationService):
         booking_tz = getattr(booking, 'timezone', 'UTC')
         dt_formatted = self._format_datetime_with_timezone(booking_datetime, booking_tz)
 
-        # Check if booking has a video room
+        # Check if booking has a video room (direct or via service_session)
         video_room_url = None
-        if hasattr(booking, 'livekit_room') and booking.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
-        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        if booking.room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.room.public_uuid}"
 
         data = {
             'first_name': user.first_name or 'there',
@@ -174,7 +172,7 @@ class ClientNotificationService(BaseNotificationService):
             'booking_date': dt_formatted['date'],
             'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
             'total_amount': f"${(booking.final_amount_cents or 0) / 100:.2f}",
             'credits_used': f"${(booking.discount_amount_cents or 0) / 100:.2f}" if booking.discount_amount_cents else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
@@ -349,12 +347,10 @@ class ClientNotificationService(BaseNotificationService):
         booking_tz = getattr(booking, 'timezone', 'UTC')
         dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
 
-        # Check if booking has a video room
+        # Check if booking has a video room (direct or via service_session)
         video_room_url = None
-        if hasattr(booking, 'livekit_room') and booking.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.livekit_room.public_uuid}"
-        elif booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
-            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.service_session.livekit_room.public_uuid}"
+        if booking.room:
+            video_room_url = f"{settings.FRONTEND_URL}/room/{booking.room.public_uuid}"
 
         # Determine time description for subject
         time_description = "Tomorrow" if hours_before == 24 else "in 30 Minutes"
@@ -367,7 +363,7 @@ class ClientNotificationService(BaseNotificationService):
             'booking_date': dt_formatted['date'],
             'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
             'hours_until': hours_before,
             'time_until': f"{hours_before} hours" if hours_before > 1 else "30 minutes",
             'time_until_human': self._format_time_until(time_until),
@@ -380,9 +376,6 @@ class ClientNotificationService(BaseNotificationService):
 
         # Add video conference details if applicable
         if video_room_url:
-            data['video_instructions'] = "Click the link above to join your video session"
-        elif booking.meeting_url:
-            data['video_room_url'] = booking.meeting_url
             data['video_instructions'] = "Click the link above to join your video session"
 
         title = f"Reminder: {service.name} in {hours_before} {'hours' if hours_before > 1 else 'hour'}"
@@ -515,7 +508,7 @@ class ClientNotificationService(BaseNotificationService):
             'session_date': session.start_time.strftime('%A, %B %d, %Y'),
             'session_time': session.start_time.strftime('%I:%M %p'),
             'duration_minutes': session.duration or service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.meeting_url else 'TBD'),
+            'location': booking.location.name if booking.location else ('Virtual' if booking.livekit_room else 'TBD'),
             'hours_until': hours_before,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'session_url': f"{settings.FRONTEND_URL}/dashboard/user/sessions/{session.id}",

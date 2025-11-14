@@ -36,7 +36,16 @@ app.conf.beat_schedule = {
             'expires': 240.0,  # Task expires after 4 minutes if not executed
         }
     },
-    
+
+    # Create missing rooms for confirmed bookings every 30 minutes
+    'create-missing-booking-rooms': {
+        'task': 'create-missing-booking-rooms',
+        'schedule': crontab(minute='*/30'),  # Every 30 minutes
+        'options': {
+            'expires': 1800.0,  # Task expires after 30 minutes if not executed
+        }
+    },
+
     # Clean up old notifications daily at 2 AM
     'cleanup-old-notifications': {
         'task': 'notifications.tasks.cleanup_old_notifications',

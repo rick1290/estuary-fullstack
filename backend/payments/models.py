@@ -24,6 +24,7 @@ class Order(PublicModel):
         ('direct', 'Direct Service Purchase'),
         ('credit', 'Credit Purchase'),
         ('package', 'Package Purchase'),
+        ('bundle', 'Bundle Purchase'),
         ('subscription', 'Subscription'),
     )
     
@@ -83,6 +84,22 @@ class Order(PublicModel):
     tax_details = models.JSONField(default=dict, blank=True)
     audit_log = models.JSONField(default=list, blank=True)
 
+    # Package/Bundle specific data
+    package_metadata = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Package/bundle specific data"
+    )
+    # Structure:
+    # {
+    #   'package_type': 'package' | 'bundle',
+    #   'total_sessions': 5,
+    #   'sessions_completed': 0,
+    #   'session_value_cents': 8000,
+    #   'package_service_id': 123,
+    #   'expires_at': '2025-12-31T00:00:00Z'
+    # }
+
     class Meta:
         indexes = [
             models.Index(fields=['user', 'created_at']),
@@ -125,6 +142,48 @@ class Order(PublicModel):
     def subtotal_amount(self):
         """Get subtotal in dollars."""
         return Decimal(self.subtotal_amount_cents) / 100
+
+    # Package/Bundle helper properties
+    @property
+    def is_package_or_bundle(self):
+        """True if this order is for a package or bundle"""
+        return self.order_type in ['package', 'bundle']
+
+    @property
+    def total_sessions(self):
+        """Total sessions in package/bundle"""
+        if self.package_metadata:
+            return self.package_metadata.get('total_sessions', 0)
+        return 0
+
+    @property
+    def sessions_completed(self):
+        """Number of completed sessions"""
+        if self.package_metadata:
+            return self.package_metadata.get('sessions_completed', 0)
+        return 0
+
+    @property
+    def session_value_cents(self):
+        """Value per session in cents"""
+        if self.package_metadata:
+            return self.package_metadata.get('session_value_cents', 0)
+        return 0
+
+    @property
+    def sessions_remaining(self):
+        """Number of sessions remaining"""
+        return self.total_sessions - self.sessions_completed
+
+    def increment_sessions_completed(self):
+        """Increment completed session count"""
+        if not self.package_metadata:
+            return
+
+        self.package_metadata['sessions_completed'] = (
+            self.package_metadata.get('sessions_completed', 0) + 1
+        )
+        self.save(update_fields=['package_metadata'])
 
 
 class UserCreditTransaction(BaseModel):
@@ -396,29 +455,30 @@ class EarningsTransaction(BaseModel):
     This replaces PractitionerCreditTransaction for clearer separation.
     """
     TRANSACTION_STATUS = (
-        ('pending', 'Pending'),  # Waiting for service completion
+        ('projected', 'Projected'),  # Future earnings (booked but not yet delivered)
+        ('pending', 'Pending'),  # Waiting for 48hr hold after service delivery
         ('available', 'Available'),  # Ready for payout
         ('paid', 'Paid'),  # Included in a payout
         ('reversed', 'Reversed'),  # Refunded or canceled
     )
-    
+
     practitioner = models.ForeignKey(
-        'practitioners.Practitioner', 
-        on_delete=models.CASCADE, 
+        'practitioners.Practitioner',
+        on_delete=models.CASCADE,
         related_name='earnings_transactions'
     )
     booking = models.ForeignKey(
-        'bookings.Booking', 
-        on_delete=models.CASCADE, 
+        'bookings.Booking',
+        on_delete=models.CASCADE,
         related_name='earnings_transactions'
     )
-    
+
     # Financial details
     gross_amount_cents = models.IntegerField(
         help_text="Service price before commission in cents"
     )
     commission_rate = models.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
         help_text="Commission percentage"
     )
@@ -428,12 +488,12 @@ class EarningsTransaction(BaseModel):
     net_amount_cents = models.IntegerField(
         help_text="Amount practitioner receives in cents"
     )
-    
+
     # Status tracking
     status = models.CharField(
-        max_length=20, 
-        choices=TRANSACTION_STATUS, 
-        default='pending'
+        max_length=20,
+        choices=TRANSACTION_STATUS,
+        default='projected'
     )
     available_after = models.DateTimeField(
         help_text="When funds become available for payout"
@@ -1005,8 +1065,9 @@ class PackageCompletionRecord(models.Model):
         self.completed_sessions = child_bookings.filter(status='completed').count()
         
         # Calculate completion percentage
+        from decimal import Decimal
         previous_percentage = self.completion_percentage
-        self.completion_percentage = (self.completed_sessions / self.total_sessions) * 100
+        self.completion_percentage = Decimal(str((self.completed_sessions / self.total_sessions) * 100))
         
         # Update status based on completion percentage
         if self.completion_percentage == 100:

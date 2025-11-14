@@ -63,11 +63,10 @@ class Booking(PublicModel):
     practitioner_notes = models.TextField(blank=True, null=True, help_text="Private notes from practitioner")
     
     # Location and delivery
-    location = models.ForeignKey('utils.Address', on_delete=models.SET_NULL, 
+    location = models.ForeignKey('utils.Address', on_delete=models.SET_NULL,
                                blank=True, null=True, related_name='bookings',
                                help_text="Physical location if in-person")
-    meeting_url = models.URLField(blank=True, null=True, help_text="Virtual meeting link")
-    meeting_id = models.CharField(max_length=100, blank=True, null=True, help_text="Meeting ID or room number")
+    # Note: meeting_url, meeting_id removed - not used
     
     # Pricing and payment (in cents)
     price_charged_cents = models.IntegerField(
@@ -79,7 +78,7 @@ class Booking(PublicModel):
         help_text="Final amount after discounts in cents")
     
     # Historical snapshot data (preserves what user booked/paid for)
-    service_name_snapshot = models.CharField(max_length=255, blank=True, 
+    service_name_snapshot = models.CharField(max_length=255, blank=True,
                                            help_text="Service name at time of booking")
     service_description_snapshot = models.TextField(blank=True,
                                                   help_text="Service description at time of booking")
@@ -87,16 +86,10 @@ class Booking(PublicModel):
                                                 help_text="Practitioner name at time of booking")
     service_duration_snapshot = models.PositiveIntegerField(blank=True, null=True,
                                                           help_text="Duration in minutes at time of booking")
-    
-    # Package/Bundle snapshot data
-    package_name_snapshot = models.CharField(max_length=255, blank=True,
-                                           help_text="Package name at time of booking")
-    package_contents_snapshot = models.JSONField(blank=True, null=True,
-                                               help_text="What was included in package at time of booking")
-    bundle_name_snapshot = models.CharField(max_length=255, blank=True,
-                                          help_text="Bundle name at time of booking")
-    bundle_sessions_snapshot = models.PositiveIntegerField(blank=True, null=True,
-                                                         help_text="Total sessions in bundle at time of booking")
+
+    # Package/Bundle snapshot data - MOVED TO Order.package_metadata
+    # Note: package_name_snapshot, package_contents_snapshot, bundle_name_snapshot, bundle_sessions_snapshot removed
+    # These are now stored in Order.package_metadata for packages/bundles
     
     # Completion tracking
     completed_at = models.DateTimeField(blank=True, null=True)
@@ -110,32 +103,37 @@ class Booking(PublicModel):
     # Status change tracking
     status_changed_at = models.DateTimeField(auto_now=True, help_text="When status last changed")
     confirmed_at = models.DateTimeField(blank=True, null=True, help_text="When booking was confirmed")
-    started_at = models.DateTimeField(blank=True, null=True, help_text="When service started")
+    # Note: started_at removed - use actual_start_time instead
     
     rescheduled_from = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True,
                                        related_name='rescheduled_to_bookings',
                                        help_text="Original booking this was rescheduled from")
     
-    # Hierarchical bookings (packages, bundles, courses)
+    # Financial relationship - PRIMARY
+    order = models.ForeignKey('payments.Order', on_delete=models.CASCADE,
+                            blank=True, null=True, related_name='bookings',
+                            help_text="Financial transaction for this booking")
+
+    # Hierarchical bookings (packages, bundles, courses) - DEPRECATED
     parent_booking = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True,
                                      related_name='child_bookings',
-                                     help_text="Parent booking for packages/bundles")
-    
+                                     help_text="DEPRECATED: Use order relationship instead")
+
     # Package and Bundle tracking
     is_package_purchase = models.BooleanField(default=False, help_text="Whether this is a package purchase")
     is_bundle_purchase = models.BooleanField(default=False, help_text="Whether this is a bundle purchase")
-    
+
     # Group bookings and sessions
-    service_session = models.ForeignKey('services.ServiceSession', on_delete=models.SET_NULL, 
+    service_session = models.ForeignKey('services.ServiceSession', on_delete=models.SET_NULL,
                                       blank=True, null=True, related_name='bookings',
                                       help_text="Specific session for workshops/courses")
     max_participants = models.PositiveIntegerField(default=1, help_text="Max participants for this booking")
-    
+
     # External integrations
-    room = models.ForeignKey('rooms.Room', on_delete=models.SET_NULL, blank=True, null=True,
-                           related_name='bookings', help_text="Video room for virtual sessions")
-    payment_transaction = models.ForeignKey('payments.UserCreditTransaction', on_delete=models.SET_NULL,
-                                          blank=True, null=True, related_name='bookings')
+    # Note: room FK removed - use livekit_room instead
+    credit_usage_transaction = models.ForeignKey('payments.UserCreditTransaction', on_delete=models.SET_NULL,
+                                          blank=True, null=True, related_name='bookings',
+                                          help_text="Specific credit usage transaction (if credits applied)")
     
     # Metadata for tracking various flags and data
     metadata = models.JSONField(default=dict, blank=True, 
@@ -189,24 +187,9 @@ class Booking(PublicModel):
             # Capture practitioner snapshot
             if self.practitioner:
                 self.practitioner_name_snapshot = self.practitioner.user.get_full_name() or self.practitioner.display_name
-            
-            # Capture package/bundle snapshot from service
-            if self.service:
-                if self.service.is_package:
-                    self.package_name_snapshot = self.service.name
-                    # Store package contents as JSON
-                    contents = []
-                    for rel in self.service.child_relationships.all():
-                        if rel.child_service:
-                            contents.append({
-                                'service_name': rel.child_service.name,
-                                'quantity': rel.quantity,
-                                'price_cents': rel.child_service.price_cents
-                            })
-                    self.package_contents_snapshot = contents
-                elif self.service.is_bundle:
-                    self.bundle_name_snapshot = self.service.name
-                    self.bundle_sessions_snapshot = self.service.total_sessions
+
+            # Note: Package/bundle snapshots now stored in Order.package_metadata
+            # (handled by PaymentService.create_order)
         
         self.clean()
         super().save(*args, **kwargs)
@@ -307,6 +290,28 @@ class Booking(PublicModel):
         min_notice_hours = 24  # This could come from service or practitioner settings
         notice_deadline = self.start_time - timezone.timedelta(hours=min_notice_hours)
         return timezone.now() < notice_deadline
+
+    @property
+    def room(self):
+        """
+        Get the video room for this booking.
+
+        Returns the room whether it's:
+        - Directly linked (individual sessions, packages, bundles)
+        - Via ServiceSession (workshops, courses)
+
+        Returns:
+            Room instance or None
+        """
+        # Individual sessions have direct room FK
+        if hasattr(self, 'livekit_room') and self.livekit_room:
+            return self.livekit_room
+
+        # Workshops/courses use service_session room
+        if self.service_session and hasattr(self.service_session, 'livekit_room'):
+            return self.service_session.livekit_room
+
+        return None
 
     @property
     def can_be_rescheduled(self):
@@ -455,7 +460,7 @@ class Booking(PublicModel):
             final_amount_cents=self.final_amount_cents,
             description=self.description,
             client_notes=self.client_notes,
-            location=self.location,
+            location=self.location if hasattr(self, 'location') and self.location else None,
             rescheduled_from=self,
             status='confirmed'
         )
@@ -486,26 +491,29 @@ class BookingFactory:
         )
     
     @classmethod
-    def create_course_booking(cls, user, course, **kwargs):
+    def create_course_booking(cls, user, course, order=None, **kwargs):
         """
         Create a booking for a course and register user as participant in all sessions.
-        
+        UPDATED: Accepts order parameter, sets order FK.
+
         Args:
             user: The user making the booking
             course: The course Service object
+            order: The Order object for this transaction
             **kwargs: Additional booking parameters
-            
+
         Returns:
             The booking object
         """
         if not course.is_course:
             raise ValueError("Service must be a course")
-            
+
         # Create main course booking (no specific time - determined by sessions)
         booking = Booking.objects.create(
             user=user,
             service=course,
             practitioner=course.primary_practitioner,
+            order=order,  # NEW: Set order FK
             start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
             end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
             price_charged_cents=course.price_cents,
@@ -514,88 +522,109 @@ class BookingFactory:
             max_participants=course.max_participants,
             **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
         )
-        
+
         return booking
     
     @classmethod
-    def create_package_booking(cls, user, package_service, **kwargs):
+    def create_package_booking(cls, user, package_service, order=None, **kwargs):
         """
-        Create a booking for a package with child bookings for included services.
-        
+        Create bookings for a package purchase.
+        SIMPLIFIED: No longer creates a parent booking - just the session bookings.
+        The Order record IS the package purchase record.
+
         Args:
-            user: The user making the booking  
+            user: The user making the booking
             package_service: The Service object with service_type='package'
+            order: The Order object for this transaction
             **kwargs: Additional booking parameters
-            
+
         Returns:
-            The parent booking object
+            List of created session bookings
         """
         if not package_service.is_package:
             raise ValueError("Service must be a package type")
-            
-        # Create parent booking
-        parent_booking = Booking.objects.create(
-            user=user,
-            service=package_service,
-            practitioner=package_service.primary_practitioner,
-            start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
-            end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
-            price_charged_cents=package_service.price_cents,
-            final_amount_cents=package_service.price_cents,
-            status=kwargs.get('status', 'confirmed'),
-            is_package_purchase=True,
-            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
-        )
-        
-        # Create child bookings for each included service
+
+        created_bookings = []
+
+        # Create session bookings for each included service
+        # These are the ACTUAL bookings (no redundant parent)
         for rel in package_service.child_relationships.all().order_by('order'):
             service = rel.child_service
-            for _ in range(rel.quantity):
-                Booking.objects.create(
+            for i in range(rel.quantity):
+                booking = Booking.objects.create(
                     user=user,
                     service=service,
                     practitioner=service.primary_practitioner,
-                    parent_booking=parent_booking,
-                    price_charged_cents=0,  # Included in parent
+                    order=order,  # Link to order (not parent_booking)
+                    price_charged_cents=0,  # Included in package
                     final_amount_cents=0,
                     status='draft',  # Draft until scheduled
                     start_time=None,  # Unscheduled - to be set by user later
-                    end_time=None
+                    end_time=None,
+                    service_name_snapshot=service.name,
+                    **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
                 )
-        
-        return parent_booking
+                created_bookings.append(booking)
+
+        # Return first booking for backward compatibility
+        # (Some code expects a single booking object)
+        return created_bookings[0] if created_bookings else None
     
     @classmethod
-    def create_bundle_booking(cls, user, bundle_service, **kwargs):
+    def create_bundle_booking(cls, user, bundle_service, order=None, **kwargs):
         """
-        Create a booking for a bundle purchase (creates credit balance).
-        
+        Create bookings for a bundle purchase (multiple sessions of same service).
+        SIMPLIFIED: Works like packages - creates N session bookings (no parent).
+
+        Bundle = Buy N sessions of the same service at once
+        Example: "10-Class Yoga Pass" creates 10 draft yoga session bookings
+
         Args:
-            user: The user making the booking  
+            user: The user making the booking
             bundle_service: The Service object with service_type='bundle'
+            order: The Order object for this transaction
             **kwargs: Additional booking parameters
-            
+
         Returns:
-            The bundle booking object
+            The first booking object (for backward compatibility)
         """
         if not bundle_service.is_bundle:
             raise ValueError("Service must be a bundle type")
-            
-        # Create bundle purchase booking
-        bundle_booking = Booking.objects.create(
-            user=user,
-            service=bundle_service,
-            practitioner=bundle_service.primary_practitioner,
-            start_time=kwargs.get('start_time', timezone.now()),  # Placeholder
-            end_time=kwargs.get('end_time', timezone.now() + timezone.timedelta(hours=1)),  # Placeholder
-            price_charged_cents=bundle_service.price_cents,
-            final_amount_cents=bundle_service.price_cents,
-            status=kwargs.get('status', 'confirmed'),
-            is_bundle_purchase=True,
-            **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
-        )
-        
-        return bundle_booking
+
+        created_bookings = []
+
+        # Get the child service (bundles typically have 1 child service repeated N times)
+        child_relationships = bundle_service.child_relationships.all()
+        if not child_relationships.exists():
+            raise ValueError("Bundle must have at least one child service relationship")
+
+        # Get total sessions from bundle.sessions_included
+        total_sessions = bundle_service.sessions_included or 1
+
+        # Create session bookings for each included session
+        for i in range(total_sessions):
+            # Use first child service (bundles usually have just one)
+            child_rel = child_relationships.first()
+            service = child_rel.child_service
+
+            booking = Booking.objects.create(
+                user=user,
+                service=service,  # The actual service (e.g., "Yoga Class")
+                practitioner=service.primary_practitioner,
+                order=order,
+                price_charged_cents=0,  # Paid as part of bundle
+                final_amount_cents=0,
+                status='draft',  # Draft until scheduled
+                start_time=None,  # Unscheduled
+                end_time=None,
+                service_name_snapshot=service.name,
+                service_description_snapshot=service.description or '',
+                practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
+                **{k: v for k, v in kwargs.items() if k not in ['start_time', 'end_time', 'status', 'payment_intent_id']}
+            )
+            created_bookings.append(booking)
+
+        return created_bookings[0] if created_bookings else None
 
 
 class BookingReminder(BaseModel):

@@ -9,3 +9,4 @@ from ..tasks import *
 # Import booking reminder tasks
 from .reminders import *
 from .reschedule import *
+from .rooms import *
