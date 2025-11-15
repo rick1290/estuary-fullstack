@@ -16,11 +16,11 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="24px 0 16px">
+      <mj-section padding="12px 0 8px">
         <mj-column>
-          <mj-text align="center" font-size="32px" padding-bottom="12px">💬</mj-text>
-          <mj-text align="center" font-size="24px" font-weight="700" color="#3c412a" padding-bottom="6px">New Message</mj-text>
-          <mj-text align="center" font-size="15px" color="#6f7a47">{{ sender_name }} sent you a message</mj-text>
+          <mj-text align="center" font-size="18px" padding-bottom="4px">💬</mj-text>
+          <mj-text align="center" font-size="18px" font-weight="700" color="#3c412a" padding-bottom="2px">New Message</mj-text>
+          <mj-text align="center" font-size="13px" color="#6f7a47">{{ sender_name }} sent you a message</mj-text>
         </mj-column>
       </mj-section>
 

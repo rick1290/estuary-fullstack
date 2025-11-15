@@ -16,12 +16,12 @@
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="28px 0 20px">
+      <mj-section padding="12px 0 8px">
         <mj-column>
-          <mj-text align="center" font-size="26px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="12px">
+          <mj-text align="center" font-size="18px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="2px">
             Welcome to ESTUARY, {{ user.first_name }}! 🌿
           </mj-text>
-          <mj-text align="center" font-size="16px" color="#6f7a47" padding-bottom="20px">
+          <mj-text align="center" font-size="13px" color="#6f7a47">
             You're now part of a growing community of wellness practitioners
           </mj-text>
         </mj-column>
