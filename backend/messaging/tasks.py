@@ -165,7 +165,7 @@ def process_unread_message_notifications():
                 # Send email
                 EmailService.send_template_email(
                     to=user.email,
-                    template_path='emails/shared/message_notification_standalone.mjml',
+                    template_path='shared/message_notification_standalone.mjml',
                     context=email_context,
                     subject=subject,
                     tags=[
