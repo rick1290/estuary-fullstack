@@ -97,7 +97,9 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         title: "Booking canceled",
         description: "The booking has been canceled successfully.",
       })
-      queryClient.invalidateQueries({ queryKey: ['bookings', bookingId] })
+      // Invalidate all booking queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
     },
     onError: (error: any) => {
       toast({
@@ -115,7 +117,9 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         title: "Booking completed",
         description: "The booking has been marked as completed.",
       })
-      queryClient.invalidateQueries({ queryKey: ['bookings', bookingId] })
+      // Invalidate all booking queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
     },
     onError: (error: any) => {
       toast({
@@ -133,7 +137,9 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         title: "Booking confirmed",
         description: "The booking has been confirmed.",
       })
-      queryClient.invalidateQueries({ queryKey: ['bookings', bookingId] })
+      // Invalidate all booking queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
     },
   })
 

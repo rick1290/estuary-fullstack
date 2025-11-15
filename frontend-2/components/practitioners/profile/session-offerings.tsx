@@ -15,7 +15,8 @@ interface Session {
   name: string
   description?: string
   price: string
-  duration: number
+  duration?: number // Legacy field
+  duration_minutes?: number // Actual API field
   location_type: string
   image_url?: string
   service_type: {
@@ -105,7 +106,7 @@ export default function SessionOfferings({
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-4 w-4" />
-                        <span>{session.duration} minutes</span>
+                        <span>{session.duration_minutes || session.duration} minutes</span>
                       </div>
 
                       <div className="flex items-center gap-1.5">

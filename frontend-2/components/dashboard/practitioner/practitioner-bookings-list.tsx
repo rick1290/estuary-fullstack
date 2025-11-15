@@ -157,7 +157,6 @@ export default function PractitionerBookingsList() {
                 <TableHead>Service</TableHead>
                 <TableHead>Date & Time</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Price</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -178,7 +177,6 @@ export default function PractitionerBookingsList() {
                     </div>
                   </TableCell>
                   <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell className="text-right">
                     <Skeleton className="h-8 w-8 ml-auto" />
                   </TableCell>
@@ -287,7 +285,6 @@ export default function PractitionerBookingsList() {
                     <TableHead>Service</TableHead>
                     <TableHead>Date & Time</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Price</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -335,7 +332,6 @@ export default function PractitionerBookingsList() {
                           {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>${booking.total_amount || "0.00"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* Inline Join Button for virtual sessions */}

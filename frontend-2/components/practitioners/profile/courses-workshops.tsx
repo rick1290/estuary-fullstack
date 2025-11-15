@@ -17,7 +17,8 @@ interface Service {
   name: string
   description: string
   price: string
-  duration: number
+  duration?: number // Legacy field
+  duration_minutes?: number // Actual API field
   location_type: string
   image_url?: string
   service_type: {
@@ -111,7 +112,7 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
                 
                 <div className="flex items-center gap-2 text-olive-700">
                   <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-sm">{item.duration} minutes</span>
+                  <span className="text-sm">{item.duration_minutes || item.duration} minutes</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-olive-700">
