@@ -222,7 +222,7 @@ export const authOptions: NextAuthOptions = {
         console.log("Fetching fresh user data due to update trigger");
         try {
           const apiUrl = getApiUrl()
-          const response = await fetch(`${apiUrl}/api/v1/auth/user/`, {
+          const response = await fetch(`${apiUrl}/api/v1/auth/me/`, {
             headers: {
               'Authorization': `Bearer ${token.accessToken}`,
             },
