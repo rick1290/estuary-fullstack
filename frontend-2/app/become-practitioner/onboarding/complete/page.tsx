@@ -146,7 +146,7 @@ export default function OnboardingCompletePage() {
           className="mb-12"
         >
           <h2 className="text-2xl font-bold text-olive-900 mb-6 text-center">
-            While You Wait, You Can:
+            Complete Your Profile
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -155,8 +155,8 @@ export default function OnboardingCompletePage() {
                 <div className="w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Plus className="h-6 w-6 text-sage-700" />
                 </div>
-                <h3 className="font-medium text-olive-900 mb-2">Add More Services</h3>
-                <p className="text-sm text-olive-600">Offer more options to potential clients</p>
+                <h3 className="font-medium text-olive-900 mb-2">Create Services</h3>
+                <p className="text-sm text-olive-600">Add sessions, workshops, or courses to offer</p>
               </CardContent>
             </Card>
 
@@ -165,8 +165,8 @@ export default function OnboardingCompletePage() {
                 <div className="w-12 h-12 bg-terracotta-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Calendar className="h-6 w-6 text-terracotta-700" />
                 </div>
-                <h3 className="font-medium text-olive-900 mb-2">Set Your Availability</h3>
-                <p className="text-sm text-olive-600">Configure your schedule and booking preferences</p>
+                <h3 className="font-medium text-olive-900 mb-2">Set Your Schedule</h3>
+                <p className="text-sm text-olive-600">Configure weekly availability and time slots</p>
               </CardContent>
             </Card>
 
@@ -175,8 +175,8 @@ export default function OnboardingCompletePage() {
                 <div className="w-12 h-12 bg-blush-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Settings className="h-6 w-6 text-blush-700" />
                 </div>
-                <h3 className="font-medium text-olive-900 mb-2">Customize Profile</h3>
-                <p className="text-sm text-olive-600">Add photos, videos, and more details</p>
+                <h3 className="font-medium text-olive-900 mb-2">Enhance Profile</h3>
+                <p className="text-sm text-olive-600">Add credentials, photos, videos, and more</p>
               </CardContent>
             </Card>
           </div>

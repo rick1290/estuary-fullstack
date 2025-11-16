@@ -7,11 +7,12 @@ import ProgressStepper from "@/components/practitioner-onboarding/progress-stepp
 import { useAuth } from "@/hooks/use-auth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Loader2 } from "lucide-react"
+import { practitionerApplicationsCompleteOnboardingCreate } from "@/src/client/sdk.gen"
 
-// Step components (we'll create these)
+// Step components
 import Step1BasicProfile from "@/components/practitioner-onboarding/step-1-basic-profile"
 import Step2Specializations from "@/components/practitioner-onboarding/step-2-specializations"
-import Step3FirstService from "@/components/practitioner-onboarding/step-3-first-service"
+import Step3SchedulingPreferences from "@/components/practitioner-onboarding/step-3-scheduling-preferences"
 import Step4Verification from "@/components/practitioner-onboarding/step-4-verification"
 import Step5PaymentSetup from "@/components/practitioner-onboarding/step-5-payment-setup"
 
@@ -29,13 +30,8 @@ interface OnboardingData {
     topic_ids?: string[]
     modality_ids?: string[]
   }
-  firstService?: {
-    name: string
-    description: string
-    service_type: string
-    duration_minutes: number
-    price_cents: number
-    location_type: string
+  schedulingPreferences?: {
+    buffer_time: number
   }
   verification?: {
     certifications?: any[]
@@ -104,7 +100,7 @@ export default function PractitionerOnboardingPage() {
     localStorage.setItem('practitioner_onboarding', JSON.stringify(dataToSave))
   }, [currentStep, completedSteps, onboardingData])
 
-  const handleStepComplete = (stepNumber: number, data: any) => {
+  const handleStepComplete = async (stepNumber: number, data: any) => {
     // Update onboarding data
     setOnboardingData(prev => ({
       ...prev,
@@ -120,7 +116,15 @@ export default function PractitionerOnboardingPage() {
     if (stepNumber < 5) {
       setCurrentStep(stepNumber + 1)
     } else {
-      // All steps complete - redirect to completion page
+      // All steps complete - mark onboarding as complete via dedicated endpoint
+      try {
+        await practitionerApplicationsCompleteOnboardingCreate()
+      } catch (error) {
+        console.error('Error marking onboarding complete:', error)
+        // Continue to completion page even if this fails
+      }
+
+      // Redirect to completion page
       router.push('/become-practitioner/onboarding/complete')
     }
   }
@@ -205,9 +209,9 @@ export default function PractitionerOnboardingPage() {
             )}
 
             {currentStep === 3 && (
-              <Step3FirstService
-                initialData={onboardingData.firstService}
-                onComplete={(data) => handleStepComplete(3, { firstService: data })}
+              <Step3SchedulingPreferences
+                initialData={onboardingData.schedulingPreferences}
+                onComplete={(data) => handleStepComplete(3, { schedulingPreferences: data })}
                 onBack={handleStepBack}
                 practitionerId={practitionerId}
               />

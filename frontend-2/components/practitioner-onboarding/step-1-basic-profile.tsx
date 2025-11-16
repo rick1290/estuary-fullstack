@@ -14,6 +14,7 @@ import { practitionersApplyCreate } from "@/src/client/sdk.gen"
 interface Step1Data {
   display_name: string
   professional_title: string
+  quote?: string
   bio: string
   years_of_experience: number
   profile_image_url?: string
@@ -43,6 +44,7 @@ export default function Step1BasicProfile({
   const [formData, setFormData] = useState<Step1Data>({
     display_name: initialData?.display_name || "",
     professional_title: initialData?.professional_title || "",
+    quote: initialData?.quote || "",
     bio: initialData?.bio || "",
     years_of_experience: initialData?.years_of_experience || 0,
     profile_image_url: initialData?.profile_image_url || ""
@@ -84,9 +86,7 @@ export default function Step1BasicProfile({
       newErrors.years_of_experience = "Please enter a realistic number of years"
     }
 
-    if (!formData.profile_image_url) {
-      newErrors.profile_image_url = "Profile photo is required"
-    }
+    // Profile image is optional - practitioners can upload it later from their dashboard
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -147,8 +147,14 @@ export default function Step1BasicProfile({
 
     try {
       // Create practitioner profile via SDK
+      // Exclude blob URLs (temporary image previews) - user can upload image later
+      const submitData = { ...formData }
+      if (submitData.profile_image_url?.startsWith('blob:')) {
+        delete submitData.profile_image_url
+      }
+
       const { data, error } = await practitionersApplyCreate({
-        body: formData
+        body: submitData
       })
 
       if (error) {
@@ -227,6 +233,22 @@ export default function Step1BasicProfile({
               <p className="text-sm text-terracotta-600">{errors.professional_title}</p>
             )}
             <p className="text-xs text-olive-500">Your credentials or designation</p>
+          </div>
+
+          {/* Quote/Tagline */}
+          <div className="space-y-2">
+            <Label htmlFor="quote" className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-sage-600" />
+              Quote or Tagline
+            </Label>
+            <Input
+              id="quote"
+              value={formData.quote || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, quote: e.target.value }))}
+              placeholder="e.g., Empowering transformation through mindful movement"
+              maxLength={150}
+            />
+            <p className="text-xs text-olive-500">A short inspirational quote or personal philosophy (optional)</p>
           </div>
 
           {/* Years of Experience */}

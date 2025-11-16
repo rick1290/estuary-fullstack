@@ -15,30 +15,30 @@ const ONBOARDING_STEPS: Step[] = [
     number: 1,
     title: "Basic Profile",
     description: "Tell us about yourself",
-    estimatedTime: "2 min"
+    estimatedTime: "3 min"
   },
   {
     number: 2,
     title: "Expertise",
-    description: "Your specializations",
-    estimatedTime: "2 min"
-  },
-  {
-    number: 3,
-    title: "First Service",
-    description: "Create your offering",
+    description: "Your specializations & approach",
     estimatedTime: "3 min"
   },
   {
+    number: 3,
+    title: "Scheduling",
+    description: "Set your preferences",
+    estimatedTime: "1 min"
+  },
+  {
     number: 4,
-    title: "Verification",
-    description: "Upload credentials",
-    estimatedTime: "Upload"
+    title: "Credentials",
+    description: "Build trust (optional)",
+    estimatedTime: "Skip ok"
   },
   {
     number: 5,
     title: "Payment Setup",
-    description: "Connect Stripe",
+    description: "Connect for payouts",
     estimatedTime: "5 min"
   }
 ]

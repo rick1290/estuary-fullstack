@@ -80,10 +80,27 @@ export default function Step3FirstService({
     setErrors({})
 
     try {
+      // Convert price_cents to dollars (backend expects decimal price, not cents)
+      const priceInDollars = formData.price_cents / 100
+
+      // Map service_type code to ID
+      // session=1, workshop=2, course=3, package=4, bundle=5
+      const serviceTypeMap: Record<string, number> = {
+        'session': 1,
+        'workshop': 2,
+        'course': 3,
+        'package': 4,
+        'bundle': 5
+      }
+
       const { error } = await servicesCreate({
         body: {
-          ...formData,
-          practitioner: practitionerId,
+          name: formData.name,
+          description: formData.description,
+          price: priceInDollars,
+          service_type_id: serviceTypeMap[formData.service_type] || 1,
+          duration_minutes: formData.duration_minutes,
+          location_type: formData.location_type,
           is_active: false // Not active until approved
         }
       })
