@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, ChevronLeft, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { practitionersPartialUpdate } from "@/src/client/sdk.gen"
 
 interface Step2Data {
   specialization_ids: string[]
@@ -82,17 +83,13 @@ export default function Step2Specializations({
     setError(null)
 
     try {
-      // Update practitioner profile
-      const response = await fetch(`/api/v1/practitioners/${practitionerId}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData)
+      // Update practitioner profile via SDK
+      const { error } = await practitionersPartialUpdate({
+        path: { id: practitionerId },
+        body: formData
       })
 
-      if (!response.ok) {
+      if (error) {
         throw new Error('Failed to update specializations')
       }
 

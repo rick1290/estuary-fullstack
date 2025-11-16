@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, ChevronLeft, Calendar, DollarSign, Clock, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { servicesCreate } from "@/src/client/sdk.gen"
 
 interface Step3Data {
   name: string
@@ -79,20 +80,15 @@ export default function Step3FirstService({
     setErrors({})
 
     try {
-      const response = await fetch('/api/v1/services/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+      const { error } = await servicesCreate({
+        body: {
           ...formData,
           practitioner: practitionerId,
           is_active: false // Not active until approved
-        })
+        }
       })
 
-      if (!response.ok) {
+      if (error) {
         throw new Error('Failed to create service')
       }
 

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, ChevronLeft, CreditCard, CheckCircle2 } from "lucide-react"
+import { practitionerApplicationsStripeConnectCreateCreate } from "@/src/client/sdk.gen"
 
 interface Step5Data {
   stripe_account_id?: string
@@ -30,28 +31,21 @@ export default function Step5PaymentSetup({
     setError(null)
 
     try {
-      // Call API to create Stripe Connect onboarding link
-      const response = await fetch('/api/v1/practitioners/stripe-connect-create/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+      // Call SDK to create Stripe Connect onboarding link
+      const { data, error } = await practitionerApplicationsStripeConnectCreateCreate({
+        body: {
           practitioner_id: practitionerId,
           return_url: `${window.location.origin}/become-practitioner/onboarding/complete?success=true`,
           refresh_url: `${window.location.origin}/become-practitioner/onboarding?step=5`
-        })
+        }
       })
 
-      if (!response.ok) {
+      if (error) {
         throw new Error('Failed to create Stripe onboarding link')
       }
 
-      const data = await response.json()
-
       // Redirect to Stripe Connect onboarding
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url
       } else {
         throw new Error('No URL returned from API')

@@ -57,52 +57,26 @@ export default function PractitionerOnboardingPage() {
   const [error, setError] = useState<string | null>(null)
   const [practitionerId, setPractitionerId] = useState<string | null>(null)
 
-  // Check if user is authenticated and doesn't already have a practitioner profile
+  // Check if user is authenticated
   useEffect(() => {
-    const checkPractitionerStatus = async () => {
+    const checkAuthStatus = async () => {
+      // Give auth state a moment to settle after signup/login
+      await new Promise(resolve => setTimeout(resolve, 800))
+
       if (!isAuthenticated) {
+        // Not authenticated after waiting - redirect to landing page
         router.push('/become-practitioner')
         return
       }
 
-      try {
-        const response = await fetch('/api/v1/practitioners/my-profile/', {
-          credentials: 'include'
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-
-          // Check if onboarding is already complete
-          if (data.is_onboarded) {
-            router.push('/dashboard/practitioner')
-            return
-          }
-
-          // Resume onboarding from where they left off
-          setPractitionerId(data.id)
-          setCurrentStep(data.onboarding_step || 1)
-
-          // Load any saved progress
-          // TODO: Fetch onboarding progress from API
-
-          setIsLoading(false)
-        } else if (response.status === 404) {
-          // No practitioner profile - they can proceed
-          setIsLoading(false)
-        } else {
-          setError('Failed to check practitioner status')
-          setIsLoading(false)
-        }
-      } catch (err) {
-        console.error('Error checking practitioner status:', err)
-        setError('An error occurred. Please try again.')
-        setIsLoading(false)
-      }
+      // User is authenticated - let them proceed
+      // They'll create their practitioner profile in Step 1
+      setIsLoading(false)
     }
 
-    checkPractitionerStatus()
-  }, [isAuthenticated, router])
+    // Only run this check once on mount
+    checkAuthStatus()
+  }, [])
 
   // Load saved progress from localStorage
   useEffect(() => {

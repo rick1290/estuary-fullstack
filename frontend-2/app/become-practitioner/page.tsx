@@ -16,6 +16,7 @@ import { useAuthModal } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
 import BackgroundPattern from "@/components/ui/background-pattern"
 import SectionConnector from "@/components/home/section-connector"
+import { practitionersMyProfileRetrieve } from "@/src/client/sdk.gen"
 
 // Animation variants for staggered animations
 const containerVariants = {
@@ -44,6 +45,7 @@ export default function BecomePractitionerPage() {
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const [scrollY, setScrollY] = useState(0)
+  const [shouldRedirect, setShouldRedirect] = useState(false)
 
   // References for scroll animations
   const benefitsRef = useRef<HTMLDivElement>(null)
@@ -60,13 +62,26 @@ export default function BecomePractitionerPage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Handle redirect after user signs up/logs in
+  useEffect(() => {
+    if (isAuthenticated && shouldRedirect) {
+      // Small delay to ensure auth state is fully settled, then go to onboarding
+      const timer = setTimeout(() => {
+        router.push('/become-practitioner/onboarding')
+        setShouldRedirect(false)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, shouldRedirect])
 
   const handleGetStarted = async () => {
     // If not authenticated, show signup modal first
     if (!isAuthenticated) {
+      // Set flag so we redirect after they sign up
+      setShouldRedirect(true)
       openAuthModal({
         defaultTab: "signup",
-        redirectUrl: "/become-practitioner/onboarding",
         serviceType: "practitioner-application",
         title: "Join as a Practitioner",
         description: "Create an account to start your wellness practice journey"
@@ -74,24 +89,9 @@ export default function BecomePractitionerPage() {
       return
     }
 
-    // Check if user is already a practitioner
-    try {
-      const response = await fetch('/api/v1/practitioners/my-profile/', {
-        credentials: 'include'
-      })
-
-      if (response.ok) {
-        // User already has a practitioner profile - redirect to dashboard
-        router.push('/dashboard/practitioner')
-      } else if (response.status === 404) {
-        // No practitioner profile - start onboarding
-        router.push('/become-practitioner/onboarding')
-      }
-    } catch (error) {
-      console.error('Error checking practitioner status:', error)
-      // On error, proceed to onboarding
-      router.push('/become-practitioner/onboarding')
-    }
+    // User is already authenticated - start onboarding
+    // The onboarding page will check if they already have a profile
+    router.push('/become-practitioner/onboarding')
   }
 
   return (

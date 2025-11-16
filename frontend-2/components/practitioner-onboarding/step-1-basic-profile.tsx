@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Upload, Loader2, User, Briefcase, FileText, Award } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { practitionersApplyCreate } from "@/src/client/sdk.gen"
 
 interface Step1Data {
   display_name: string
@@ -145,40 +146,33 @@ export default function Step1BasicProfile({
     setErrors({})
 
     try {
-      // Create practitioner profile via API
-      const response = await fetch('/api/v1/practitioners/applications/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData)
+      // Create practitioner profile via SDK
+      const { data, error } = await practitionersApplyCreate({
+        body: formData
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-
+      if (error) {
         // Handle field-specific errors
-        if (errorData.errors) {
+        if (error.errors) {
           const newErrors: any = {}
-          Object.keys(errorData.errors).forEach(field => {
-            if (errorData.errors[field] && Array.isArray(errorData.errors[field])) {
-              newErrors[field] = errorData.errors[field][0]
+          Object.keys(error.errors).forEach(field => {
+            if (error.errors[field] && Array.isArray(error.errors[field])) {
+              newErrors[field] = error.errors[field][0]
             }
           })
           setErrors(newErrors)
         } else {
-          throw new Error(errorData.message || 'Failed to create profile')
+          throw new Error(error.message || 'Failed to create profile')
         }
         setIsSubmitting(false)
         return
       }
 
-      const data = await response.json()
-      setPractitionerId(data.id || data.data?.id)
-
-      // Move to next step
-      onComplete(formData)
+      if (data) {
+        setPractitionerId(data.id)
+        // Move to next step
+        onComplete(formData)
+      }
     } catch (error: any) {
       console.error('Error creating practitioner profile:', error)
       setErrors({ display_name: error.message || 'Failed to create profile. Please try again.' })
