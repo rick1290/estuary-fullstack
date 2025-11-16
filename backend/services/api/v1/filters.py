@@ -16,7 +16,7 @@ class ServiceFilter(django_filters.FilterSet):
     category_id = django_filters.NumberFilter(field_name='category__id')
     
     # Service type filters
-    service_type = django_filters.CharFilter(field_name='service_type__code', lookup_expr='exact')
+    service_type = django_filters.CharFilter(method='filter_service_type')
     service_type_id = django_filters.NumberFilter(field_name='service_type__id')
     exclude_types = django_filters.CharFilter(method='filter_exclude_types')
     
@@ -143,13 +143,28 @@ class ServiceFilter(django_filters.FilterSet):
             )
         return queryset
     
+    def filter_service_type(self, queryset, name, value):
+        """Filter by service type(s) - supports comma-separated values"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"filter_service_type received value: {repr(value)}")
+
+        service_types = [t.strip() for t in value.split(',') if t.strip()]
+        logger.info(f"Parsed service_types: {service_types}")
+
+        if service_types:
+            result = queryset.filter(service_type__code__in=service_types)
+            logger.info(f"Query returned {result.count()} results")
+            return result
+        return queryset
+
     def filter_exclude_types(self, queryset, name, value):
         """Exclude specific service types (comma-separated)"""
         exclude_types = [t.strip() for t in value.split(',') if t.strip()]
         if exclude_types:
             return queryset.exclude(service_type__code__in=exclude_types)
         return queryset
-    
+
     def filter_search(self, queryset, name, value):
         """Full text search across multiple fields"""
         return queryset.filter(
