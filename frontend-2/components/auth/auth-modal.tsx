@@ -162,15 +162,38 @@ export default function AuthModal({
       }
     } catch (err: any) {
       let errorMessage = "Signup failed. Please try again."
-      
-      if (err?.error?.message) {
-        errorMessage = err.error.message
-      } else if (err?.error?.email) {
-        errorMessage = err.error.email[0]
+
+      // Try to extract error from Django's response format
+      if (err?.error) {
+        // First check for the main message
+        if (err.error.message) {
+          errorMessage = err.error.message
+        }
+
+        // Then check for field-specific errors in the errors object
+        if (err.error.errors) {
+          const errors = err.error.errors
+          const fieldErrors: string[] = []
+
+          // Extract errors from each field
+          Object.keys(errors).forEach(field => {
+            const fieldErrorArray = errors[field]
+            if (Array.isArray(fieldErrorArray) && fieldErrorArray.length > 0) {
+              // Capitalize field name for display
+              const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
+              fieldErrors.push(`${fieldName}: ${fieldErrorArray[0]}`)
+            }
+          })
+
+          // If we have field errors, use them instead
+          if (fieldErrors.length > 0) {
+            errorMessage = fieldErrors.join('. ')
+          }
+        }
       } else if (err?.message) {
         errorMessage = err.message
       }
-      
+
       setError(errorMessage)
     } finally {
       setIsLoading(false)
