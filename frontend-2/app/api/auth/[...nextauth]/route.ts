@@ -218,18 +218,28 @@ export const authOptions: NextAuthOptions = {
       }
       
       // Force refresh if explicitly triggered
-      if (trigger === "update" && token.refreshToken && !token.error) {
-        console.log("Force refreshing token due to update trigger");
-        // Only force refresh if we have a valid expiry time and it's close
-        if (token.accessTokenExpires) {
-          const now = Date.now()
-          const expiresIn = token.accessTokenExpires - now
-          const oneMinute = 60 * 1000
-          
-          // Only force refresh if within 1 minute of expiry
-          if (expiresIn <= oneMinute) {
-            return refreshAccessToken(token);
+      if (trigger === "update" && token.accessToken && !token.error) {
+        console.log("Fetching fresh user data due to update trigger");
+        try {
+          const apiUrl = getApiUrl()
+          const response = await fetch(`${apiUrl}/api/v1/auth/user/`, {
+            headers: {
+              'Authorization': `Bearer ${token.accessToken}`,
+            },
+          })
+
+          if (response.ok) {
+            const freshUserData = await response.json()
+            console.log("Successfully fetched fresh user data:", freshUserData)
+            return {
+              ...token,
+              user: freshUserData,
+            }
+          } else {
+            console.error("Failed to fetch fresh user data:", response.status)
           }
+        } catch (error) {
+          console.error("Error fetching fresh user data:", error)
         }
       }
       
@@ -269,7 +279,7 @@ export const authOptions: NextAuthOptions = {
             ...token.user,
             id: (token.user as any).id?.toString() || "",
             email: (token.user as any).email || session.user?.email || "",
-          }
+          } as any
         }
       }
       

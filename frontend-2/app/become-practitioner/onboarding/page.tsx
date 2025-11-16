@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import ProgressStepper from "@/components/practitioner-onboarding/progress-stepper"
 import { useAuth } from "@/hooks/use-auth"
@@ -46,6 +47,7 @@ interface OnboardingData {
 export default function PractitionerOnboardingPage() {
   const router = useRouter()
   const { isAuthenticated, user } = useAuth()
+  const { update: updateSession } = useSession()
   const [currentStep, setCurrentStep] = useState(1)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({})
@@ -119,6 +121,9 @@ export default function PractitionerOnboardingPage() {
       // All steps complete - mark onboarding as complete via dedicated endpoint
       try {
         await practitionerApplicationsCompleteOnboardingCreate()
+
+        // Refresh session to get updated practitioner data
+        await updateSession()
       } catch (error) {
         console.error('Error marking onboarding complete:', error)
         // Continue to completion page even if this fails
