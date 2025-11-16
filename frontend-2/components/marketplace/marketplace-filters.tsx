@@ -67,10 +67,11 @@ export default function MarketplaceFilters({
     // we can optionally redirect them to the dedicated page
     if (pathname === "/marketplace" && value !== "all") {
       const typeToPathMap: Record<string, string> = {
-        courses: "/courses",
-        workshops: "/workshops",
-        "one-on-one": "/sessions",
-        packages: "/sessions",
+        courses: "/marketplace/courses",
+        workshops: "/marketplace/workshops",
+        "one-on-one": "/marketplace/sessions",
+        packages: "/marketplace/packages",
+        bundles: "/marketplace/bundles",
       }
 
       if (typeToPathMap[value]) {
@@ -245,6 +246,10 @@ export default function MarketplaceFilters({
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="one-on-one" id="one-on-one" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
                   <Label htmlFor="one-on-one" className="text-sm font-normal text-olive-700 cursor-pointer">One-on-One Sessions</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="bundles" id="bundles" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                  <Label htmlFor="bundles" className="text-sm font-normal text-olive-700 cursor-pointer">Session Bundles</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="packages" id="packages" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
