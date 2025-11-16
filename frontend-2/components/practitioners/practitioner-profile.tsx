@@ -86,8 +86,18 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
   // Filter services by type
   const getServicesByType = (type: string) => {
     if (servicesData?.results) {
-      return servicesData.results.filter(service => 
+      return servicesData.results.filter(service =>
         (service.service_type_code || service.service_type?.code || service.service_type?.name) === type
+      )
+    }
+    return []
+  }
+
+  // Filter services by multiple types
+  const getServicesByTypes = (types: string[]) => {
+    if (servicesData?.results) {
+      return servicesData.results.filter(service =>
+        types.includes(service.service_type_code || service.service_type?.code || service.service_type?.name)
       )
     }
     return []
@@ -117,7 +127,7 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
 
   const upcomingSessions = getUpcomingSessions()
   const coursesAndWorkshops = [...(getServicesByType("course") || []), ...(getServicesByType("workshop") || [])]
-  const oneOnOneSessions = getServicesByType("session") || []
+  const oneOnOneSessions = getServicesByTypes(["session", "bundle", "package"]) || []
 
   // Get unique service categories from API data
   const serviceCategories = (() => {
@@ -144,7 +154,7 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
       {/* Upcoming Courses & Workshops */}
       <CoursesWorkshops coursesAndWorkshops={coursesAndWorkshops} />
 
-      {/* 1-on-1 Session Offerings */}
+      {/* Sessions, Bundles & Packages */}
       <div id="session-offerings">
         <SessionOfferings
           sessions={oneOnOneSessions}
