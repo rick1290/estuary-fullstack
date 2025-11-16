@@ -166,11 +166,12 @@ const MOCK_SERVICES = [
 interface ServiceListingsProps {
   query?: string
   serviceType?: string
+  serviceTypes?: string[]
   location?: string
   categories?: string[]
 }
 
-export default function ServiceListings({ query, serviceType, location, categories = [] }: ServiceListingsProps) {
+export default function ServiceListings({ query, serviceType, serviceTypes, location, categories = [] }: ServiceListingsProps) {
   const [page, setPage] = useState(1)
   const limit = 12  // Show 12 services per page
 
@@ -184,12 +185,19 @@ export default function ServiceListings({ query, serviceType, location, categori
     }
 
     if (query) params.search = query
-    if (serviceType) params.service_type = serviceType
+
+    // Handle both single service type and multiple service types
+    if (serviceTypes && serviceTypes.length > 0) {
+      params.service_type = serviceTypes.join(',')
+    } else if (serviceType) {
+      params.service_type = serviceType
+    }
+
     if (location) params.location = location
     if (categories.length > 0) params.categories = categories.join(',')
 
     return params
-  }, [query, serviceType, location, categories, page])
+  }, [query, serviceType, serviceTypes, location, categories, page])
 
   // Fetch services from API using public endpoint
   const { data: servicesData, isLoading, error, refetch } = useQuery({
@@ -202,11 +210,15 @@ export default function ServiceListings({ query, serviceType, location, categori
                      (servicesData?.results && Array.isArray(servicesData.results)) ? servicesData.results : []
 
   // Transform API data to component format
-  const transformedServices = apiServices.map(service => ({
-    id: service.public_uuid || service.id, // Keep for key prop
-    slug: service.slug, // Use slug for URLs
-    title: service.name || service.title || 'Service',
-    type: getServiceType(service.service_type_code || service.type),
+  const transformedServices = apiServices.map(service => {
+    // Ensure we always have a valid slug
+    const serviceSlug = service.slug || service.public_uuid || String(service.id) || 'service'
+
+    return {
+      id: service.public_uuid || service.id, // Keep for key prop
+      slug: serviceSlug, // Use slug for URLs, fallback to uuid/id
+      title: service.name || service.title || 'Service',
+      type: getServiceType(service.service_type_code || service.type),
     practitioner: {
       id: service.practitioner?.public_uuid || service.primary_practitioner?.public_uuid || service.practitioner?.id || service.primary_practitioner?.id,
       slug: service.primary_practitioner?.slug || service.practitioner?.slug,
@@ -223,17 +235,20 @@ export default function ServiceListings({ query, serviceType, location, categori
     description: service.description || 'Discover this transformative experience.',
     // Type-specific fields
     sessionCount: service.session_count,
+    sessionsIncluded: service.sessions_included,
+    savingsPercentage: service.savings_percentage,
     capacity: service.max_participants || service.capacity,
     date: service.start_date ? new Date(service.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : undefined,
-  }))
+    }
+  })
 
   // Helper function to map service type
-  function getServiceType(type: string): 'courses' | 'workshops' | 'one-on-one' | 'packages' {
+  function getServiceType(type: string): 'courses' | 'workshops' | 'one-on-one' | 'packages' | 'bundles' {
     switch (type?.toLowerCase()) {
       case 'course': return 'courses'
       case 'workshop': return 'workshops'
-      case 'package': 
-      case 'bundle': return 'packages'
+      case 'package': return 'packages'
+      case 'bundle': return 'bundles'
       case 'session':
       default: return 'one-on-one'
     }
@@ -308,7 +323,7 @@ export default function ServiceListings({ query, serviceType, location, categori
 
   // Generate proper href based on service type using slug
   const getServiceHref = (service: any) => {
-    const slug = service.slug || service.id // Fallback to id if no slug
+    const slug = service.slug // Slug is guaranteed from transform
     switch (service.type) {
       case "courses":
         return `/courses/${slug}`
@@ -316,6 +331,8 @@ export default function ServiceListings({ query, serviceType, location, categori
         return `/workshops/${slug}`
       case "one-on-one":
         return `/sessions/${slug}`
+      case "bundles":
+        return `/bundles/${slug}`
       case "packages":
         return `/packages/${slug}`
       default:

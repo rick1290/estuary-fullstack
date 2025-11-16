@@ -4,11 +4,11 @@ import MarketplaceFiltersWrapper from "@/components/marketplace/marketplace-filt
 import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata: Metadata = {
-  title: "Sessions & Bundles | Estuary Marketplace",
-  description: "Find personalized one-on-one sessions, bundles, and packages with expert practitioners",
+  title: "Session Bundles | Estuary Marketplace",
+  description: "Save with session bundles - get multiple sessions at discounted rates",
 }
 
-interface SessionsPageProps {
+interface BundlesPageProps {
   searchParams: Promise<{
     q?: string
     location?: string
@@ -16,7 +16,7 @@ interface SessionsPageProps {
   }>
 }
 
-export default async function SessionsPage({ searchParams }: SessionsPageProps) {
+export default async function BundlesPage({ searchParams }: BundlesPageProps) {
   const params = await searchParams
   const query = params?.q || ""
   const location = params?.location || ""
@@ -24,18 +24,13 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
 
   return (
     <MarketplaceLayout
-      title="Sessions & Bundles"
-      description="Connect with practitioners for one-on-one sessions, bundles, and packages"
+      title="Session Bundles"
+      description="Get more value with discounted session bundles"
       initialSearchQuery={query}
       sidebar={<MarketplaceFiltersWrapper />}
       patternType="wave"
     >
-      <ServiceListings
-        query={query}
-        serviceTypes={["session", "bundle", "package"]}
-        location={location}
-        categories={categories}
-      />
+      <ServiceListings query={query} serviceType="bundle" location={location} categories={categories} />
     </MarketplaceLayout>
   )
 }

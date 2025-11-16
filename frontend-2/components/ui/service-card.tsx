@@ -9,11 +9,13 @@ import { Clock, MapPin, Calendar, Star, Sparkles, Users, Globe } from "lucide-re
 interface ServiceCardProps {
   id: number | string
   title: string
-  type: "one-on-one" | "packages" | "workshops" | "courses"
+  type: "one-on-one" | "packages" | "bundles" | "workshops" | "courses"
   description: string
   price: number | string
   duration?: number | string
   sessionCount?: number
+  sessionsIncluded?: number
+  savingsPercentage?: number
   location: string
   date?: string
   capacity?: number
@@ -37,6 +39,8 @@ export default function ServiceCard({
   price,
   duration,
   sessionCount,
+  sessionsIncluded,
+  savingsPercentage,
   location,
   date,
   capacity,
@@ -52,8 +56,10 @@ export default function ServiceCard({
     switch (type) {
       case "one-on-one":
         return "Personal Session"
+      case "bundles":
+        return "Session Bundle"
       case "packages":
-        return "Transformation Package"
+        return "Wellness Package"
       case "workshops":
         return "Group Workshop"
       case "courses":
@@ -70,6 +76,8 @@ export default function ServiceCard({
         return "Start Journey"
       case "workshops":
         return "Reserve Spot"
+      case "bundles":
+        return "View Bundle"
       case "packages":
         return "View Package"
       default:
@@ -84,6 +92,8 @@ export default function ServiceCard({
         return "terracotta"
       case "workshops":
         return "sage"
+      case "bundles":
+        return "terracotta"
       case "packages":
         return "blush"
       default:
@@ -96,15 +106,19 @@ export default function ServiceCard({
       <Card className="h-full w-full flex flex-col border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
         {/* Card Header with Gradient */}
         <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-6 pb-12 relative flex-shrink-0">
-          {/* Rating Badge (if available) */}
-          {rating && (
+          {/* Rating Badge or Savings Badge */}
+          {savingsPercentage && savingsPercentage > 0 ? (
+            <div className="absolute top-4 right-4 bg-terracotta-500 text-white px-2.5 py-1 rounded-full shadow-sm">
+              <span className="text-sm font-semibold">Save {savingsPercentage}%</span>
+            </div>
+          ) : rating ? (
             <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
               <div className="flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
                 <span className="text-sm font-medium text-olive-800">{rating}</span>
               </div>
             </div>
-          )}
+          ) : null}
 
           <Badge variant={getBadgeVariant()} className="mb-3">
             <Sparkles className="h-3 w-3 mr-1" strokeWidth="1.5" />
@@ -162,6 +176,14 @@ export default function ServiceCard({
               <div className="flex items-center gap-2 text-olive-700">
                 <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                 <span className="text-sm">{sessionCount} sessions</span>
+              </div>
+            )}
+
+            {/* Sessions included for bundles */}
+            {sessionsIncluded && (
+              <div className="flex items-center gap-2 text-olive-700">
+                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                <span className="text-sm font-semibold">{sessionsIncluded} sessions included</span>
               </div>
             )}
 

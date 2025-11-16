@@ -56,7 +56,7 @@ export default function SessionOfferings({
 
   return (
     <div className="mb-10">
-      <h2 className="text-2xl font-bold mb-4">1-on-1 Session Offerings</h2>
+      <h2 className="text-2xl font-bold mb-4">Sessions, Bundles & Packages</h2>
 
       {/* Category Filters */}
       {categories && categories.length > 0 && (
