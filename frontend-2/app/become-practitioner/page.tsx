@@ -16,6 +16,7 @@ import { useAuthModal } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
 import BackgroundPattern from "@/components/ui/background-pattern"
 import SectionConnector from "@/components/home/section-connector"
+import { practitionersMyProfileRetrieve } from "@/src/client/sdk.gen"
 
 // Animation variants for staggered animations
 const containerVariants = {
@@ -43,12 +44,10 @@ export default function BecomePractitionerPage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
-  const [selectedTier, setSelectedTier] = useState<string | null>(null)
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [scrollY, setScrollY] = useState(0)
+  const [shouldRedirect, setShouldRedirect] = useState(false)
 
   // References for scroll animations
-  const subscriptionTiersRef = useRef<HTMLDivElement>(null)
   const benefitsRef = useRef<HTMLDivElement>(null)
   const howItWorksRef = useRef<HTMLDivElement>(null)
   const testimonialsRef = useRef<HTMLDivElement>(null)
@@ -63,26 +62,36 @@ export default function BecomePractitionerPage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const scrollToSubscriptionTiers = () => {
-    subscriptionTiersRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  // Handle redirect after user signs up/logs in
+  useEffect(() => {
+    if (isAuthenticated && shouldRedirect) {
+      // Small delay to ensure auth state is fully settled, then go to onboarding
+      const timer = setTimeout(() => {
+        router.push('/become-practitioner/onboarding')
+        setShouldRedirect(false)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, shouldRedirect])
 
-  const handleGetStarted = (tier: string) => {
-    setSelectedTier(tier)
-
-    // If already authenticated, navigate directly
-    if (isAuthenticated) {
-      router.push(`/become-practitioner/application?tier=${tier.toLowerCase()}`)
-    } else {
-      // Otherwise show auth modal
+  const handleGetStarted = async () => {
+    // If not authenticated, show signup modal first
+    if (!isAuthenticated) {
+      // Set flag so we redirect after they sign up
+      setShouldRedirect(true)
       openAuthModal({
         defaultTab: "signup",
-        redirectUrl: `/become-practitioner/application?tier=${tier.toLowerCase()}`,
         serviceType: "practitioner-application",
         title: "Join as a Practitioner",
         description: "Create an account to start your wellness practice journey"
       })
+      return
     }
+
+    // User is already authenticated - start onboarding
+    // The onboarding page will check if they already have a profile
+    router.push('/become-practitioner/onboarding')
   }
 
   return (
@@ -156,7 +165,7 @@ export default function BecomePractitionerPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  onClick={scrollToSubscriptionTiers}
+                  onClick={handleGetStarted}
                   className="px-8 py-6 text-lg bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg hover:shadow-xl transition-all"
                 >
                   Start Your Journey
@@ -348,144 +357,6 @@ export default function BecomePractitionerPage() {
         </div>
       </div>
 
-      {/* Subscription Tiers - Keep existing but add warmth */}
-      <div className="bg-gradient-to-b from-cream-50 to-white relative overflow-hidden">
-        <div className="absolute inset-0 texture-grain opacity-10" />
-        
-        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto py-20">
-          <motion.div
-            ref={subscriptionTiersRef}
-            className="scroll-mt-20"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={containerVariants}
-          >
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
-                <Sparkles className="h-4 w-4 text-terracotta-600" strokeWidth="1.5" />
-                <span className="text-sm text-olive-700 font-medium">Simple, Transparent Pricing</span>
-              </div>
-              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
-                Choose Your Growth Path
-              </h2>
-              <p className="text-lg text-olive-600 max-w-3xl mx-auto leading-relaxed">
-                Start free and scale as you grow. No hidden fees, no surprises.
-              </p>
-            </div>
-
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
-              variants={containerVariants}
-            >
-              {[
-                {
-                  name: "Flow",
-                  emoji: "🌱",
-                  price: "FREE",
-                  fee: "16% per transaction",
-                  description: "Perfect for getting started",
-                  features: [
-                    "List unlimited services",
-                    "Accept secure payments",
-                    "Basic analytics",
-                    "Community support",
-                  ],
-                  highlight: false,
-                  cta: "Start Free"
-                },
-                {
-                  name: "Rhythm",
-                  emoji: "🌿",
-                  price: "$29/mo",
-                  fee: "12% per transaction",
-                  description: "For growing practices",
-                  features: [
-                    "Everything in Flow",
-                    "Priority in search results",
-                    "Advanced messaging",
-                    "Custom booking page",
-                    "Priority support",
-                  ],
-                  highlight: true,
-                  cta: "Most Popular"
-                },
-                {
-                  name: "Thrive",
-                  emoji: "🌳",
-                  price: "$59/mo",
-                  fee: "9% per transaction",
-                  description: "For established practitioners",
-                  features: [
-                    "Everything in Rhythm",
-                    "Lowest transaction fees",
-                    "Advanced analytics",
-                    "White-label options",
-                    "Dedicated support",
-                  ],
-                  highlight: false,
-                  cta: "Scale Up"
-                },
-              ].map((tier, index) => (
-                <motion.div key={index} variants={itemVariants}>
-                  <Card
-                    className={cn(
-                      "h-full transition-all duration-500 relative border-0 rounded-2xl",
-                      hoveredCard === tier.name ? "scale-105 shadow-2xl z-10" : "scale-100 shadow-lg z-0",
-                      tier.highlight ? "bg-gradient-to-b from-sage-50 to-white" : "bg-white",
-                    )}
-                    onMouseEnter={() => setHoveredCard(tier.name)}
-                    onMouseLeave={() => setHoveredCard(null)}
-                  >
-                    {tier.highlight && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-gradient-to-r from-sage-600 to-terracotta-600 text-white px-4 py-1">
-                          MOST POPULAR
-                        </Badge>
-                      </div>
-                    )}
-
-                    <CardContent className="pt-10 pb-6 px-6 text-center">
-                      <div className="text-5xl mb-4">{tier.emoji}</div>
-                      <h3 className="text-2xl font-bold mb-2 text-olive-900">{tier.name}</h3>
-                      <p className="text-3xl font-bold mb-1 text-olive-900">{tier.price}</p>
-                      <p className="text-sage-700 font-medium mb-4">{tier.fee}</p>
-                      <p className="text-olive-600 mb-6">{tier.description}</p>
-
-                      <Separator className="my-6 bg-sage-100" />
-
-                      <ul className="space-y-4 text-left mb-8">
-                        {tier.features.map((feature, idx) => (
-                          <li key={idx} className="flex items-start">
-                            <div className="bg-sage-100 rounded-full p-1 mr-3 mt-0.5 flex-shrink-0">
-                              <Check className="h-4 w-4 text-sage-700" strokeWidth="2" />
-                            </div>
-                            <span className="text-olive-700">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-
-                    <CardFooter className="px-6 pb-6">
-                      <Button
-                        className={cn(
-                          "w-full py-6 rounded-xl transition-all duration-300",
-                          tier.highlight || hoveredCard === tier.name
-                            ? "bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 text-white shadow-lg"
-                            : "border-2 border-sage-300 text-sage-700 hover:bg-sage-50",
-                        )}
-                        onClick={() => handleGetStarted(tier.name)}
-                      >
-                        {tier.cta}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
 
       {/* Real Practitioner Stories with Photos */}
       <div className="bg-gradient-to-b from-white to-sage-50/30 relative overflow-hidden">
@@ -751,10 +622,10 @@ export default function BecomePractitionerPage() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
                     size="lg"
-                    onClick={scrollToSubscriptionTiers}
+                    onClick={handleGetStarted}
                     className="bg-white text-sage-700 hover:bg-white/90 px-10 py-6 text-lg shadow-xl"
                   >
-                    Start Free Today
+                    Start Your Journey
                   </Button>
                   <Button
                     size="lg"

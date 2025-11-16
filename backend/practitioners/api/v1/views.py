@@ -28,15 +28,16 @@ from .serializers import (
     PractitionerPrivateSerializer, PractitionerUpdateSerializer,
     PractitionerApplicationSerializer, ScheduleSerializer,
     ScheduleCreateSerializer, SchedulePreferenceSerializer,
-    ScheduleTimeSlotSerializer, OutOfOfficeSerializer, 
-    OnboardingProgressSerializer, AvailabilitySlotSerializer, 
-    AvailabilityQuerySerializer, PractitionerSearchSerializer, 
-    VerificationDocumentSerializer, CertificationSerializer, 
-    EducationSerializer, SpecializationSerializer, StyleSerializer, 
+    ScheduleTimeSlotSerializer, OutOfOfficeSerializer,
+    OnboardingProgressSerializer, AvailabilitySlotSerializer,
+    AvailabilityQuerySerializer, PractitionerSearchSerializer,
+    VerificationDocumentSerializer, CertificationSerializer,
+    EducationSerializer, SpecializationSerializer, StyleSerializer,
     TopicSerializer, ModalitySerializer, PractitionerClientSerializer
 )
 from .permissions import IsPractitionerOwner, IsPractitionerOrReadOnly
 from .filters import PractitionerFilter
+from emails.services import PractitionerEmailService
 
 
 @extend_schema_view(
@@ -1945,12 +1946,21 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
                 progress.status = 'completed'
                 progress.completed_at = timezone.now()
                 progress.save()
-                
+
                 # Update practitioner status
                 practitioner.is_onboarded = True
                 practitioner.onboarding_completed_at = timezone.now()
                 practitioner.save()
-            
+
+                # Send onboarding completion email
+                try:
+                    PractitionerEmailService.send_onboarding_completed_email(practitioner)
+                except Exception as e:
+                    # Log error but don't fail the request
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to send onboarding completion email: {str(e)}")
+
             return Response(OnboardingProgressSerializer(progress).data)
             
         except Practitioner.DoesNotExist:
@@ -1959,6 +1969,55 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
     
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def complete_onboarding(self, request):
+        """
+        Mark practitioner onboarding as complete and send confirmation email.
+        This should be called when the practitioner finishes all onboarding steps.
+        """
+        try:
+            practitioner = request.user.practitioner_profile
+
+            # Check if already onboarded
+            if practitioner.is_onboarded:
+                return Response({
+                    "detail": "Onboarding already completed",
+                    "practitioner": {
+                        "id": str(practitioner.id),
+                        "is_onboarded": True,
+                        "onboarding_completed_at": practitioner.onboarding_completed_at
+                    }
+                })
+
+            # Mark as onboarded
+            practitioner.is_onboarded = True
+            practitioner.onboarding_completed_at = timezone.now()
+            practitioner.save()
+
+            # Send onboarding completion email
+            try:
+                PractitionerEmailService.send_onboarding_completed_email(practitioner)
+            except Exception as e:
+                # Log error but don't fail the request
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send onboarding completion email to {practitioner.user.email}: {str(e)}")
+
+            return Response({
+                "detail": "Onboarding completed successfully",
+                "practitioner": {
+                    "id": str(practitioner.id),
+                    "is_onboarded": True,
+                    "onboarding_completed_at": practitioner.onboarding_completed_at
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"detail": "No practitioner profile found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def stripe_connect_status(self, request):
         """Get the current Stripe Connect status for the practitioner"""

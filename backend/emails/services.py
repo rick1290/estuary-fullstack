@@ -236,6 +236,22 @@ class PractitionerEmailService:
         )
 
     @staticmethod
+    def send_onboarding_completed_email(practitioner):
+        """Send onboarding completion confirmation email"""
+        return EmailService.send_template_email(
+            to=practitioner.user.email,
+            template_path=PRACTITIONER_EMAILS['ONBOARDING_COMPLETED'],
+            context={
+                'practitioner': practitioner,
+            },
+            subject=EMAIL_SUBJECTS['PRACTITIONER_ONBOARDING_COMPLETED'],
+            tags=[
+                {'name': 'category', 'value': 'onboarding'},
+                {'name': 'action', 'value': 'completed'},
+            ],
+        )
+
+    @staticmethod
     def send_booking_received(booking):
         """Send notification of new booking to practitioner"""
         return EmailService.send_template_email(

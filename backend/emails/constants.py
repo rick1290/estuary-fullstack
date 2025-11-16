@@ -22,6 +22,7 @@ CLIENT_EMAILS = {
 # Practitioner Email Templates
 PRACTITIONER_EMAILS = {
     'WELCOME': 'practitioners/welcome.mjml',
+    'ONBOARDING_COMPLETED': 'practitioners/onboarding_completed.mjml',
     'PROFILE_INCOMPLETE': 'practitioners/profile_incomplete.mjml',
     'NO_SERVICES': 'practitioners/no_services.mjml',
     'SERVICE_CREATED': 'practitioners/service_created.mjml',
@@ -77,6 +78,7 @@ EMAIL_SUBJECTS = {
 
     # Practitioner subjects
     'PRACTITIONER_WELCOME': 'Welcome to Estuary - Let\'s get started! <?',
+    'PRACTITIONER_ONBOARDING_COMPLETED': 'Onboarding Complete - What\'s Next?',
     'PRACTITIONER_PROFILE_INCOMPLETE': 'Complete your practitioner profile',
     'PRACTITIONER_NO_SERVICES': 'Ready to create your first service?',
     'PRACTITIONER_SERVICE_CREATED': 'Service Created: {service_name}',
