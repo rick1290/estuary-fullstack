@@ -1989,9 +1989,10 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
                     }
                 })
 
-            # Mark as onboarded
+            # Mark as onboarded and activate
             practitioner.is_onboarded = True
             practitioner.onboarding_completed_at = timezone.now()
+            practitioner.practitioner_status = 'active'
             practitioner.save()
 
             # Send onboarding completion email
