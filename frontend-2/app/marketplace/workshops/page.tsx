@@ -9,18 +9,12 @@ export const metadata: Metadata = {
 }
 
 interface WorkshopsPageProps {
-  searchParams: Promise<{
-    q?: string
-    location?: string
-    categories?: string
-  }>
+  searchParams: Promise<{ q?: string }>
 }
 
 export default async function WorkshopsPage({ searchParams }: WorkshopsPageProps) {
   const params = await searchParams
   const query = params?.q || ""
-  const location = params?.location || ""
-  const categories = params?.categories ? params.categories.split(",") : []
 
   return (
     <MarketplaceLayout
@@ -30,7 +24,7 @@ export default async function WorkshopsPage({ searchParams }: WorkshopsPageProps
       sidebar={<MarketplaceFilters />}
       patternType="flow"
     >
-      <ServiceListings query={query} serviceType="workshop" location={location} categories={categories} />
+      <ServiceListings serviceType="workshop" />
     </MarketplaceLayout>
   )
 }
