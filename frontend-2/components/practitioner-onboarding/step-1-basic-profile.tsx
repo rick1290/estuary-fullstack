@@ -54,6 +54,7 @@ export default function Step1BasicProfile({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
 
   const bioLength = formData.bio.length
   const bioMin = 150
@@ -108,31 +109,12 @@ export default function Step1BasicProfile({
       return
     }
 
-    setUploadingImage(true)
     setErrors(prev => ({ ...prev, profile_image_url: undefined }))
 
-    try {
-      // TODO: Implement actual image upload to Cloudflare R2
-      // For now, create a local preview URL
-      const previewUrl = URL.createObjectURL(file)
-      setFormData(prev => ({ ...prev, profile_image_url: previewUrl }))
-
-      // In production, you would upload to your API:
-      // const formData = new FormData()
-      // formData.append('file', file)
-      // const response = await fetch('/api/v1/media/upload/', {
-      //   method: 'POST',
-      //   body: formData,
-      //   credentials: 'include'
-      // })
-      // const data = await response.json()
-      // setFormData(prev => ({ ...prev, profile_image_url: data.url }))
-    } catch (error) {
-      console.error('Error uploading image:', error)
-      setErrors(prev => ({ ...prev, profile_image_url: "Failed to upload image" }))
-    } finally {
-      setUploadingImage(false)
-    }
+    // Store the file for later upload and create preview
+    setImageFile(file)
+    const previewUrl = URL.createObjectURL(file)
+    setFormData(prev => ({ ...prev, profile_image_url: previewUrl }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,8 +128,7 @@ export default function Step1BasicProfile({
     setErrors({})
 
     try {
-      // Create practitioner profile via SDK
-      // Exclude blob URLs (temporary image previews) - user can upload image later
+      // Create practitioner profile via SDK (without image initially)
       const submitData = { ...formData }
       if (submitData.profile_image_url?.startsWith('blob:')) {
         delete submitData.profile_image_url
@@ -176,6 +157,36 @@ export default function Step1BasicProfile({
 
       if (data) {
         setPractitionerId(data.id)
+
+        // Upload profile image if one was selected
+        if (imageFile) {
+          try {
+            setUploadingImage(true)
+            const formDataObj = new FormData()
+            formDataObj.append('file', imageFile)
+            formDataObj.append('entity_type', 'practitioner')
+            formDataObj.append('entity_id', data.public_uuid)
+            formDataObj.append('is_primary', 'true')
+            formDataObj.append('title', 'Profile Photo')
+
+            const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/media/upload/`, {
+              method: 'POST',
+              body: formDataObj,
+              credentials: 'include'
+            })
+
+            if (!uploadResponse.ok) {
+              console.error('Failed to upload profile image')
+              // Don't block progression if image upload fails
+            }
+          } catch (uploadError) {
+            console.error('Error uploading profile image:', uploadError)
+            // Don't block progression if image upload fails
+          } finally {
+            setUploadingImage(false)
+          }
+        }
+
         // Move to next step
         onComplete(formData)
       }
@@ -339,7 +350,10 @@ export default function Step1BasicProfile({
                   />
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, profile_image_url: "" }))}
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, profile_image_url: "" }))
+                      setImageFile(null)
+                    }}
                     className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow-sm"
                   >
                     <span className="text-xs px-2">Change</span>
