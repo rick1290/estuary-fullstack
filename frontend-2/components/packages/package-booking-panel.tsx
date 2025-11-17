@@ -18,6 +18,7 @@ interface PackageBookingPanelProps {
     savings_amount?: string
     savings_percentage?: number
     validity_days?: number
+    image_url?: string
     child_relationships?: Array<{
       id: number
       quantity: number
@@ -64,16 +65,33 @@ export default function PackageBookingPanel({ packageData }: PackageBookingPanel
   const savingsPercentage = packageData.savings_percentage || ((parseFloat(savingsAmount) / parseFloat(originalPrice)) * 100).toFixed(0)
 
   return (
-    <Card className="border-2 border-sage-200 shadow-lg sticky top-24">
-      <CardContent className="p-6 space-y-6">
-        {/* Package Badge */}
-        <div className="flex items-center justify-center gap-2 bg-terracotta-50 rounded-lg py-2 px-3">
-          <Package className="h-4 w-4 text-terracotta-600" />
-          <span className="text-sm font-semibold text-terracotta-700">
-            Complete Package
-          </span>
+    <Card className="border-2 border-sage-200 shadow-lg sticky top-24 overflow-hidden">
+      {/* Package Image - Udemy Style */}
+      <div className="relative w-full aspect-video bg-gradient-to-br from-blush-100 to-sage-100 overflow-hidden">
+        {packageData.image_url ? (
+          <img
+            src={packageData.image_url}
+            alt={packageData.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-sage-400 text-center">
+              <Package className="h-16 w-16 mx-auto mb-2 opacity-50" />
+              <p className="text-sm opacity-70">Package Preview</p>
+            </div>
+          </div>
+        )}
+        {/* Package Badge Overlay */}
+        <div className="absolute top-3 left-3">
+          <div className="flex items-center gap-2 bg-terracotta-500 text-white rounded-lg py-1.5 px-3 shadow-md">
+            <Package className="h-3.5 w-3.5" />
+            <span className="text-xs font-semibold">Package</span>
+          </div>
         </div>
+      </div>
 
+      <CardContent className="p-6 space-y-6">
         {/* Pricing Header */}
         <div>
           <div className="flex items-baseline gap-2 mb-2">

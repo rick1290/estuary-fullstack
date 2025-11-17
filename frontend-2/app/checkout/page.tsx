@@ -336,8 +336,7 @@ export default function CheckoutPage() {
   const creditsToApply = applyCredits ? Math.min(userCreditBalance, basePrice) : 0
   const subtotal = basePrice
   const discount = creditsToApply + promoDiscount
-  const tax = (subtotal - discount) * 0.08 // 8% tax
-  const total = subtotal - discount + tax
+  const total = subtotal - discount
 
   return (
     <>
@@ -589,11 +588,6 @@ export default function CheckoutPage() {
                         <span className="font-medium">-${promoDiscount.toFixed(2)}</span>
                       </div>
                     )}
-
-                    <div className="flex justify-between text-base">
-                      <span className="text-olive-700">Tax</span>
-                      <span className="font-medium">${tax.toFixed(2)}</span>
-                    </div>
 
                     <Separator className="my-3" />
 
