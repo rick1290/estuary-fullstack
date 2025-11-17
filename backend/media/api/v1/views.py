@@ -109,10 +109,11 @@ class MediaViewSet(viewsets.ModelViewSet):
         try:
             # Upload file to R2
             file.seek(0)
+            file_content = file.read()
             storage.client.put_object(
                 Bucket=storage.bucket_name,
                 Key=storage_key,
-                Body=file.read(),
+                Body=file_content,
                 ContentType=serializer.context.get('content_type', file.content_type)
             )
             
@@ -141,7 +142,22 @@ class MediaViewSet(viewsets.ModelViewSet):
             # Trigger processing for images and videos
             if media.media_type in [MediaType.IMAGE, MediaType.VIDEO]:
                 self._trigger_processing(media, ['thumbnail', 'optimize'])
-            
+
+            # Auto-link primary images to their entities
+            if media.is_primary and media.entity_type == 'practitioner':
+                from practitioners.models import Practitioner
+                try:
+                    practitioner = Practitioner.objects.get(public_uuid=media.entity_id)
+                    # Save the file to the ImageField
+                    from django.core.files.base import ContentFile
+                    practitioner.profile_image.save(
+                        f"{media.entity_id}{file_ext}",
+                        ContentFile(file_content),
+                        save=True
+                    )
+                except Practitioner.DoesNotExist:
+                    pass
+
             return Response(
                 MediaSerializer(media).data,
                 status=status.HTTP_201_CREATED

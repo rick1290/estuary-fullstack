@@ -9,18 +9,12 @@ export const metadata: Metadata = {
 }
 
 interface SessionsPageProps {
-  searchParams: Promise<{
-    q?: string
-    location?: string
-    categories?: string
-  }>
+  searchParams: Promise<{ q?: string }>
 }
 
 export default async function SessionsPage({ searchParams }: SessionsPageProps) {
   const params = await searchParams
   const query = params?.q || ""
-  const location = params?.location || ""
-  const categories = params?.categories ? params.categories.split(",") : []
 
   return (
     <MarketplaceLayout
@@ -30,12 +24,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
       sidebar={<MarketplaceFiltersWrapper />}
       patternType="wave"
     >
-      <ServiceListings
-        query={query}
-        serviceTypes={["session", "bundle", "package"]}
-        location={location}
-        categories={categories}
-      />
+      <ServiceListings serviceTypes={["session", "bundle", "package"]} />
     </MarketplaceLayout>
   )
 }

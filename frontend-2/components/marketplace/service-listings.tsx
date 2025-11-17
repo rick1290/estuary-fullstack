@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { publicServicesListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useMarketplaceFilters } from "@/hooks/use-marketplace-filters"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -164,18 +165,18 @@ const MOCK_SERVICES = [
 ]
 
 interface ServiceListingsProps {
-  query?: string
+  // Props are deprecated - component now reads filters from URL via hook
+  // Kept for backwards compatibility
   serviceType?: string
   serviceTypes?: string[]
-  location?: string
-  categories?: string[]
 }
 
-export default function ServiceListings({ query, serviceType, serviceTypes, location, categories = [] }: ServiceListingsProps) {
+export default function ServiceListings({ serviceType, serviceTypes }: ServiceListingsProps) {
   const [page, setPage] = useState(1)
   const limit = 12  // Show 12 services per page
+  const { filters } = useMarketplaceFilters()
 
-  // Build query parameters for API
+  // Build query parameters for API from URL filters
   const queryParams = useMemo(() => {
     const params: any = {
       limit,
@@ -184,20 +185,55 @@ export default function ServiceListings({ query, serviceType, serviceTypes, loca
       is_active: true,  // Only show active services
     }
 
-    if (query) params.search = query
+    // Search query
+    if (filters.search) {
+      params.search = filters.search
+    }
 
-    // Handle both single service type and multiple service types
+    // Service type - prioritize prop for backwards compat, then URL filter
     if (serviceTypes && serviceTypes.length > 0) {
       params.service_type = serviceTypes.join(',')
     } else if (serviceType) {
       params.service_type = serviceType
+    } else if (filters.serviceType && filters.serviceType !== 'all') {
+      params.service_type = filters.serviceType
     }
 
-    if (location) params.location = location
-    if (categories.length > 0) params.categories = categories.join(',')
+    // Modality filter (NEW!)
+    if (filters.modalities.length > 0) {
+      params.modality_id = filters.modalities.join(',')
+    }
+
+    // Category filter
+    if (filters.categories.length > 0) {
+      params.category_id = filters.categories.join(',')
+    }
+
+    // Location format (online/in-person)
+    if (filters.locationFormat && filters.locationFormat !== 'all') {
+      params.location_type = filters.locationFormat === 'online' ? 'virtual' : 'in_person'
+    }
+
+    // Location text
+    if (filters.location) {
+      params.location = filters.location
+    }
+
+    // Price range
+    if (filters.minPrice > 0) {
+      params.min_price = filters.minPrice
+    }
+    if (filters.maxPrice < 500) {
+      params.max_price = filters.maxPrice
+    }
+
+    // Rating - convert to min_rating
+    if (filters.rating !== 'any') {
+      params.min_rating = parseFloat(filters.rating.replace('+', ''))
+    }
 
     return params
-  }, [query, serviceType, serviceTypes, location, categories, page])
+  }, [filters, serviceType, serviceTypes, page])
 
   // Fetch services from API using public endpoint
   const { data: servicesData, isLoading, error, refetch } = useQuery({
@@ -256,12 +292,11 @@ export default function ServiceListings({ query, serviceType, serviceTypes, loca
 
   // Use API data if available, otherwise fallback to mock data
   const services = transformedServices.length > 0 ? transformedServices : MOCK_SERVICES
-  // Filter mock services for development fallback
+  // Filter mock services for development fallback using URL filters
   const filteredServices = services === MOCK_SERVICES ? MOCK_SERVICES.filter((service) => {
-    if (query && !service.title.toLowerCase().includes(query.toLowerCase()) && !service.practitioner.name.toLowerCase().includes(query.toLowerCase())) return false
+    if (filters.search && !service.title.toLowerCase().includes(filters.search.toLowerCase()) && !service.practitioner.name.toLowerCase().includes(filters.search.toLowerCase())) return false
     if (serviceType && service.type !== serviceType) return false
-    if (location && !service.location.toLowerCase().includes(location.toLowerCase())) return false
-    if (categories.length > 0 && !categories.some((cat) => service.categories.map((c) => c.toLowerCase()).includes(cat.toLowerCase()))) return false
+    if (filters.location && !service.location.toLowerCase().includes(filters.location.toLowerCase())) return false
     return true
   }) : services
 

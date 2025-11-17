@@ -4,7 +4,7 @@ Booking viewsets for DRF API
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Q, Prefetch
 from django.utils import timezone
 from django.db import transaction
@@ -361,9 +361,9 @@ class BookingViewSet(viewsets.ModelViewSet):
             response_serializer = BookingNoteSerializer(note)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def check_availability(self, request):
-        """Check practitioner availability for a service"""
+        """Check practitioner availability for a service (public endpoint)"""
         serializer = AvailabilityCheckSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         

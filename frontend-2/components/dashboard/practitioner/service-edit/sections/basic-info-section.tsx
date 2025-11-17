@@ -16,8 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import { X, Plus, Tag } from "lucide-react"
 import type { ServiceReadable } from "@/src/client/types.gen"
 import { useQuery } from "@tanstack/react-query"
-import { 
-  serviceCategoriesListOptions,
+import {
+  modalitiesListOptions,
   practitionerCategoriesListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import {
@@ -36,7 +36,8 @@ interface BasicInfoSectionProps {
     title?: string
     description?: string
     short_description?: string
-    category_id?: number
+    modality_ids?: number[]
+    practitioner_category_id?: number
     tags?: string[]
   }
   onChange: (data: any) => void
@@ -57,9 +58,9 @@ export function BasicInfoSection({
   const [tagInput, setTagInput] = useState("")
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
 
-  // Fetch categories
-  const { data: globalCategories, refetch: refetchGlobalCategories } = useQuery({
-    ...serviceCategoriesListOptions({}),
+  // Fetch modalities and practitioner categories
+  const { data: modalities } = useQuery({
+    ...modalitiesListOptions({}),
   })
 
   const { data: practitionerCategories, refetch: refetchPractitionerCategories } = useQuery({
@@ -90,12 +91,6 @@ export function BasicInfoSection({
     const currentTags = localData.tags || []
     handleChange("tags", currentTags.filter(tag => tag !== tagToRemove))
   }
-
-  // Get all categories (both global and practitioner)
-  const allCategories = [
-    ...(globalCategories?.results || []).map(cat => ({ ...cat, type: 'global' })),
-    ...(practitionerCategories?.results || []).map(cat => ({ ...cat, type: 'practitioner' }))
-  ]
 
   return (
     <div className="space-y-6">
@@ -148,12 +143,39 @@ export function BasicInfoSection({
           </p>
         </div>
 
-        {/* Category */}
+        {/* Modality */}
+        <div className="space-y-2">
+          <Label htmlFor="modality" className="flex items-center">
+            <Tag className="h-4 w-4 mr-2" />
+            Modality
+          </Label>
+          <Select
+            value={localData.modality_ids?.[0]?.toString() || "none"}
+            onValueChange={(value) => handleChange("modality_ids", value === "none" ? [] : [parseInt(value)])}
+          >
+            <SelectTrigger className="max-w-md">
+              <SelectValue placeholder="Select a modality" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No modality</SelectItem>
+              {modalities?.results?.map((modality) => (
+                <SelectItem key={modality.id} value={modality.id.toString()}>
+                  {modality.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            The primary practice modality for this service (e.g., Yoga, Meditation)
+          </p>
+        </div>
+
+        {/* Practitioner Category */}
         <div className="space-y-2">
           <div className="flex items-center justify-between max-w-md">
-            <Label htmlFor="category" className="flex items-center">
+            <Label htmlFor="practitioner_category" className="flex items-center">
               <Tag className="h-4 w-4 mr-2" />
-              Category
+              Your Category (Optional)
             </Label>
             <Button
               type="button"
@@ -163,49 +185,33 @@ export function BasicInfoSection({
               className="text-xs h-7"
             >
               <Plus className="h-3 w-3 mr-1" />
-              Manage Categories
+              Manage
             </Button>
           </div>
           <Select
-            value={localData.category_id?.toString() || "none"}
-            onValueChange={(value) => handleChange("category_id", value === "none" ? undefined : parseInt(value))}
-            key={allCategories.length} // Force re-render when categories change
+            value={localData.practitioner_category_id?.toString() || "none"}
+            onValueChange={(value) => handleChange("practitioner_category_id", value === "none" ? undefined : parseInt(value))}
           >
             <SelectTrigger className="max-w-md">
-              <SelectValue placeholder="Select a category" />
+              <SelectValue placeholder="Select your category" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No category</SelectItem>
-              {globalCategories?.results?.length > 0 && (
-                <>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Global Categories</div>
-                  {globalCategories.results.map((category) => (
-                    <SelectItem key={`global-${category.id}`} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </>
-              )}
-              {practitionerCategories?.results?.length > 0 && (
-                <>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2">Your Categories</div>
-                  {practitionerCategories.results.map((category) => (
-                    <SelectItem key={`practitioner-${category.id}`} value={category.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: category.color || '#9CAF88' }}
-                        />
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </>
-              )}
+              {practitionerCategories?.results?.map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: category.color || '#9CAF88' }}
+                    />
+                    {category.name}
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">
-            Categories help customers find your services
+            Your personal categories help you organize your services
           </p>
         </div>
 
@@ -269,10 +275,9 @@ export function BasicInfoSection({
       {/* Category Manager Dialog */}
       <Dialog open={showCategoryDialog} onOpenChange={(open) => {
         setShowCategoryDialog(open)
-        // Refetch categories when dialog closes
+        // Refetch practitioner categories when dialog closes
         if (!open) {
           refetchPractitionerCategories()
-          refetchGlobalCategories()
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -284,7 +289,6 @@ export function BasicInfoSection({
           </DialogHeader>
           <CompactCategoryManager onCategoryChange={() => {
             refetchPractitionerCategories()
-            refetchGlobalCategories()
           }} />
         </DialogContent>
       </Dialog>

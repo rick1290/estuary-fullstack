@@ -90,15 +90,73 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
 
   return (
     <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-8 text-center">
-        <p className="text-sm text-olive-700 mb-2">Transform Your Weekend</p>
-        <div className="flex items-baseline justify-center gap-2">
-          <span className="text-4xl font-bold text-olive-900">${workshop.price}</span>
-          <span className="text-olive-700">per person</span>
-        </div>
-        <p className="text-sm text-olive-600 mt-2">{Math.floor(workshop.duration / 60)} hours of transformation</p>
+      {/* Workshop Image - Udemy Style */}
+      <div className="relative w-full aspect-video bg-gradient-to-br from-sage-100 to-terracotta-100 overflow-hidden">
+        {workshop.image ? (
+          <img
+            src={workshop.image}
+            alt={workshop.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-sage-400 text-center">
+              <Sparkles className="h-16 w-16 mx-auto mb-2 opacity-50" />
+              <p className="text-sm opacity-70">Workshop Preview</p>
+            </div>
+          </div>
+        )}
       </div>
-      <CardContent className="p-8">
+
+      {/* Pricing Section */}
+      <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-6">
+        <div className="flex items-baseline justify-between mb-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-bold text-olive-900">${workshop.price}</span>
+            <span className="text-olive-700">per person</span>
+          </div>
+        </div>
+        <p className="text-sm text-olive-600">{Math.floor(workshop.duration / 60)} hours total</p>
+      </div>
+
+      <CardContent className="p-6 space-y-6">
+        {/* Key Info Points */}
+        <div className="space-y-3 pb-6 border-b border-sage-200">
+          <div className="flex items-center gap-3 text-olive-700">
+            <Clock className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+            <span className="text-sm font-medium">{Math.floor(workshop.duration / 60)} hours</span>
+          </div>
+          <div className="flex items-center gap-3 text-olive-700">
+            {workshop.location === 'Virtual' ? (
+              <>
+                <Calendar className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                <span className="text-sm font-medium">Online workshop</span>
+              </>
+            ) : workshop.location?.includes('Hybrid') ? (
+              <>
+                <Calendar className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                <span className="text-sm font-medium">In-person & Online</span>
+              </>
+            ) : (
+              <>
+                <MapPin className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                <span className="text-sm font-medium">In-person</span>
+              </>
+            )}
+          </div>
+          {workshop.capacity && (
+            <div className="flex items-center gap-3 text-olive-700">
+              <Users className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+              <span className="text-sm font-medium">Max {workshop.capacity} participants</span>
+            </div>
+          )}
+          {workshop.experienceLevel && (
+            <div className="flex items-center gap-3 text-olive-700">
+              <span className="text-sm font-medium capitalize">{workshop.experienceLevel.replace('-', ' ')}</span>
+            </div>
+          )}
+        </div>
+
         {/* Session Selection */}
         {upcomingSessions.length > 0 ? (
           <div className="mb-6">

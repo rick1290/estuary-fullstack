@@ -17,21 +17,30 @@ from services.models import (
 from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
 from users.models import User
+from common.models import Modality
+
+
+class ModalitySerializer(serializers.ModelSerializer):
+    """Serializer for modalities"""
+    class Meta:
+        model = Modality
+        fields = ['id', 'name', 'slug', 'description', 'icon', 'is_featured']
+        read_only_fields = ['id', 'slug']
 
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     """Serializer for service categories"""
     service_count = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = ServiceCategory
         fields = [
-            'id', 'name', 'slug', 'description', 'icon', 
+            'id', 'name', 'slug', 'description', 'icon',
             'is_active', 'is_featured', 'order', 'service_count',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['slug', 'created_at', 'updated_at']
-    
+
     def get_service_count(self, obj):
         """Get count of active services in this category"""
         return obj.services.filter(is_active=True, is_public=True).count()
@@ -319,6 +328,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
     """Serializer for service listing"""
     price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     category = ServiceCategorySerializer(read_only=True)
+    modalities = ModalitySerializer(many=True, read_only=True)
     primary_practitioner = SimplePractitionerSerializer(read_only=True)
     service_type_display = serializers.CharField(source='service_type.name', read_only=True)
     service_type_code = serializers.CharField(read_only=True)
@@ -328,14 +338,14 @@ class ServiceListSerializer(serializers.ModelSerializer):
     duration_display = serializers.CharField(read_only=True)
     primary_image = serializers.SerializerMethodField()
     schedule = SimpleScheduleSerializer(read_only=True)
-    
+
     class Meta:
         model = Service
         fields = [
             'id', 'public_uuid', 'name', 'slug', 'short_description', 'price_cents',
             'price', 'duration_minutes', 'duration_display', 'service_type',
-            'service_type_display', 'service_type_code', 'category', 
-            'primary_practitioner', 'max_participants', 'experience_level', 
+            'service_type_display', 'service_type_code', 'category', 'modalities',
+            'primary_practitioner', 'max_participants', 'experience_level',
             'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
             'primary_image', 'created_at', 'updated_at'
@@ -449,6 +459,12 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating services"""
     price = serializers.DecimalField(max_digits=10, decimal_places=2, write_only=True)
     category_id = serializers.IntegerField(required=False, allow_null=True)
+    modality_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True,
+        help_text="List of modality IDs to associate with this service"
+    )
     practitioner_category_id = serializers.IntegerField(required=False, allow_null=True)
     service_type_id = serializers.IntegerField(required=True)
     image = serializers.ImageField(required=False, allow_null=True, help_text="Service cover image")
@@ -483,7 +499,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         model = Service
         fields = [
             'id', 'public_uuid', 'name', 'slug', 'description', 'short_description', 'price', 'price_cents',
-            'duration_minutes', 'service_type_id', 'category_id',
+            'duration_minutes', 'service_type_id', 'category_id', 'modality_ids',
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
             'address', 'schedule', 'what_youll_learn', 'prerequisites', 'includes',
@@ -544,18 +560,24 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         """Create service with relationships"""
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', [])
+        modality_ids = validated_data.pop('modality_ids', [])
         child_service_configs = validated_data.pop('child_service_configs', [])
         # Remove reverse relationships that can't be directly assigned
         validated_data.pop('agenda_items', None)
         validated_data.pop('benefits', None)
-        
+
         # Set primary practitioner
         practitioner = self.context['request'].user.practitioner_profile
         validated_data['primary_practitioner'] = practitioner
-        
+
         # Create service
         service = super().create(validated_data)
-        
+
+        # Set modalities
+        if modality_ids:
+            modalities = Modality.objects.filter(id__in=modality_ids)
+            service.modalities.set(modalities)
+
         # Create primary practitioner relationship
         ServicePractitioner.objects.create(
             service=service,
@@ -605,23 +627,24 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         print(f"Validated data keys: {list(validated_data.keys())}")
         print(f"Current image field value: {instance.image}")
         print(f"Current image file exists: {bool(instance.image)}")
-        
+
         if 'image' in validated_data:
             print(f"\n=== Image Update Debug ===")
             print(f"New image field type: {type(validated_data['image'])}")
             print(f"New image field value: {validated_data['image']}")
-            
+
             if hasattr(validated_data['image'], 'name'):
                 print(f"Image file name: {validated_data['image'].name}")
                 print(f"Image file size: {validated_data['image'].size}")
-            
+
             # Handle empty string as image removal
             if validated_data['image'] == '':
                 print("Empty string detected - removing image")
                 validated_data['image'] = None
-        
+
         # Extract relationship data
         additional_practitioner_ids = validated_data.pop('additional_practitioner_ids', None)
+        modality_ids = validated_data.pop('modality_ids', None)
         child_service_configs = validated_data.pop('child_service_configs', None)
         # Remove reverse relationships that can't be directly assigned
         validated_data.pop('agenda_items', None)
@@ -649,11 +672,16 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             except Exception as e:
                 print(f"Error accessing image file: {e}")
         
+        # Update modalities if provided
+        if modality_ids is not None:
+            modalities = Modality.objects.filter(id__in=modality_ids)
+            service.modalities.set(modalities)
+
         # Update additional practitioners if provided
         if additional_practitioner_ids is not None:
             # Remove existing non-primary practitioners
             service.practitioner_relationships.filter(is_primary=False).delete()
-            
+
             # Add new practitioners
             for prac_id in additional_practitioner_ids:
                 try:

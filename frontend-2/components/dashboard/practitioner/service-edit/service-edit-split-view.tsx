@@ -225,7 +225,8 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
           title: service.title,
           description: service.description,
           short_description: service.short_description,
-          category_id: service.category?.id,
+          modality_ids: service.modalities?.map(m => m.id) || [],
+          practitioner_category_id: service.practitioner_category?.id,
           tags: service.tags,
         },
         "pricing-duration": {
@@ -297,7 +298,8 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
           title: service.title,
           description: service.description,
           short_description: service.short_description,
-          category_id: service.category?.id,
+          modality_ids: service.modalities?.map(m => m.id) || [],
+          practitioner_category_id: service.practitioner_category?.id,
           tags: service.tags,
         },
         "pricing-duration": {

@@ -14,7 +14,11 @@ class ServiceFilter(django_filters.FilterSet):
     # Category filters
     category = django_filters.CharFilter(field_name='category__slug', lookup_expr='exact')
     category_id = django_filters.NumberFilter(field_name='category__id')
-    
+
+    # Modality filters
+    modality = django_filters.CharFilter(method='filter_modality')
+    modality_id = django_filters.CharFilter(method='filter_modality_id')
+
     # Service type filters
     service_type = django_filters.CharFilter(method='filter_service_type')
     service_type_id = django_filters.NumberFilter(field_name='service_type__id')
@@ -88,7 +92,7 @@ class ServiceFilter(django_filters.FilterSet):
     class Meta:
         model = Service
         fields = [
-            'category', 'category_id', 'service_type', 'service_type_id', 'exclude_types',
+            'category', 'category_id', 'modality', 'modality_id', 'service_type', 'service_type_id', 'exclude_types',
             'practitioner', 'practitioner_slug', 'min_price', 'max_price',
             'min_duration', 'max_duration', 'min_participants', 'max_participants',
             'location_type', 'experience_level', 'age', 'is_featured',
@@ -163,6 +167,36 @@ class ServiceFilter(django_filters.FilterSet):
         exclude_types = [t.strip() for t in value.split(',') if t.strip()]
         if exclude_types:
             return queryset.exclude(service_type__code__in=exclude_types)
+        return queryset
+
+    def filter_modality(self, queryset, name, value):
+        """Filter by modality slug(s) - supports comma-separated values"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"filter_modality received value: {repr(value)}")
+
+        modality_slugs = [slug.strip() for slug in value.split(',') if slug.strip()]
+        logger.info(f"Parsed modality_slugs: {modality_slugs}")
+
+        if modality_slugs:
+            result = queryset.filter(modalities__slug__in=modality_slugs).distinct()
+            logger.info(f"Query returned {result.count()} results")
+            return result
+        return queryset
+
+    def filter_modality_id(self, queryset, name, value):
+        """Filter by modality ID(s) - supports comma-separated values"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"filter_modality_id received value: {repr(value)}")
+
+        modality_ids = [id.strip() for id in value.split(',') if id.strip()]
+        logger.info(f"Parsed modality_ids: {modality_ids}")
+
+        if modality_ids:
+            result = queryset.filter(modalities__id__in=modality_ids).distinct()
+            logger.info(f"Query returned {result.count()} results")
+            return result
         return queryset
 
     def filter_search(self, queryset, name, value):

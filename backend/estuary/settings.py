@@ -179,12 +179,31 @@ CLOUDFLARE_R2_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_ENDPOINT_URL', '')
 CLOUDFLARE_R2_REGION_NAME = os.getenv('CLOUDFLARE_R2_REGION_NAME', 'auto')
 CLOUDFLARE_R2_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_CUSTOM_DOMAIN', '')
 
-# Use Cloudflare R2 for media storage in production
-if not DEBUG and CLOUDFLARE_R2_ACCESS_KEY_ID:
-    DEFAULT_FILE_STORAGE = 'integrations.cloudflare_r2.storage.CloudflareR2Storage'
+# Django 4.2+ STORAGES configuration
+# Configure default and staticfiles storage
+if CLOUDFLARE_R2_ACCESS_KEY_ID and CLOUDFLARE_R2_STORAGE_BUCKET_NAME:
+    # Use Cloudflare R2 for media files
+    STORAGES = {
+        "default": {
+            "BACKEND": "integrations.cloudflare_r2.storage.CloudflareR2Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 else:
-    # Use local storage for development
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    # Fallback to local storage if R2 is not configured
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    if not DEBUG:
+        import warnings
+        warnings.warn("R2 storage not configured in production! Using local filesystem.")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

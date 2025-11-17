@@ -1469,9 +1469,8 @@ class PublicPractitionerViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_url_kwarg = 'public_uuid'
     
     def get_queryset(self):
-        """Get public practitioners only - active and verified"""
+        """Get public practitioners only - active practitioners"""
         return Practitioner.objects.filter(
-            is_verified=True,
             practitioner_status='active'
         ).select_related(
             'user', 'primary_location'
@@ -1989,9 +1988,10 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
                     }
                 })
 
-            # Mark as onboarded
+            # Mark as onboarded and activate
             practitioner.is_onboarded = True
             practitioner.onboarding_completed_at = timezone.now()
+            practitioner.practitioner_status = 'active'
             practitioner.save()
 
             # Send onboarding completion email
