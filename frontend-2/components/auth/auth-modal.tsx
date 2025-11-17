@@ -56,6 +56,11 @@ export default function AuthModal({
   const [loginSuccessful, setLoginSuccessful] = useState(false)
   const [activeTab, setActiveTab] = useState(defaultTab)
 
+  // Sync activeTab when defaultTab prop changes
+  useEffect(() => {
+    setActiveTab(defaultTab)
+  }, [defaultTab])
+
   // Handle redirection after successful login
   useEffect(() => {
     if (loginSuccessful && redirectUrl) {

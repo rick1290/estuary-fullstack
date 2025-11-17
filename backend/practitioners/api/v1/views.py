@@ -1469,9 +1469,8 @@ class PublicPractitionerViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_url_kwarg = 'public_uuid'
     
     def get_queryset(self):
-        """Get public practitioners only - active and verified"""
+        """Get public practitioners only - active practitioners"""
         return Practitioner.objects.filter(
-            is_verified=True,
             practitioner_status='active'
         ).select_related(
             'user', 'primary_location'
