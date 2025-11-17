@@ -117,20 +117,20 @@ export default function HeroSection() {
               </p>
 
               {/* Search Bar */}
-              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-sm shadow-xl mb-8 border border-sage-200 animate-slide-up hover:shadow-2xl transition-shadow" style={{animationDelay: '0.4s'}}>
-                <div className="flex items-center">
-                  <div className="flex items-center pl-4">
+              <div className="p-4 rounded-2xl bg-white/90 backdrop-blur-sm shadow-xl mb-8 border border-sage-200 animate-slide-up hover:shadow-2xl transition-shadow" style={{animationDelay: '0.4s'}}>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center pl-2">
                     <SearchIcon className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                   </div>
                   <Input
-                    className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4 text-olive-800 placeholder:text-olive-400/70 transition-all"
+                    className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-olive-800 placeholder:text-olive-400/70 transition-all"
                     placeholder={placeholders[searchPlaceholder]}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={handleKeyPress}
                   />
                   <Button
-                    className="mr-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg hover:shadow-xl transition-all"
+                    className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg hover:shadow-xl transition-all px-6"
                     size="lg"
                     onClick={handleSearch}
                   >
