@@ -53,7 +53,7 @@
             <span style="padding-left: 44px; display: block; color: #6f7a47; font-size: 14px; padding-top: 4px;">Start accepting bookings and connecting with clients</span>
           </mj-text>
 
-          <mj-button href="{{ WEBSITE_URL }}/practitioner/setup">Complete Setup</mj-button>
+          <mj-button href="{{ WEBSITE_URL }}{{ URL_PATHS.PRACTITIONER_DASHBOARD }}">Complete Setup</mj-button>
         </mj-column>
       </mj-section>
 
@@ -70,7 +70,7 @@
         <mj-column>
           <mj-text align="center" font-size="14px" color="#8b985b">
             Questions? We're here to help.<br/>
-            <a href="{{ WEBSITE_URL }}/practitioner/help" style="color: #7a8b63; font-weight: 600;">Visit Practitioner Help Center →</a>
+            <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #7a8b63; font-weight: 600;">Visit Practitioner Help Center →</a>
           </mj-text>
         </mj-column>
       </mj-section>

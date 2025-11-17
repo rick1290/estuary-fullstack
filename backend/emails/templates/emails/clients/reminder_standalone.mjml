@@ -85,7 +85,7 @@
       <mj-section padding="32px 0">
         <mj-column>
           <mj-text align="center" font-size="14px" color="#8b985b">
-            Need to reschedule? <a href="{{ WEBSITE_URL }}/bookings" style="color: #7a8b63; font-weight: 600;">Manage Booking →</a>
+            Need to reschedule? <a href="{{ WEBSITE_URL }}{{ URL_PATHS.USER_BOOKINGS }}" style="color: #7a8b63; font-weight: 600;">Manage Booking →</a>
           </mj-text>
         </mj-column>
       </mj-section>
@@ -101,9 +101,9 @@
           Your journey to wellness starts here
         </mj-text>
         <mj-text align="center" color="#8b985b" font-size="13px" padding-bottom="16px">
-          <a href="{{ WEBSITE_URL }}/about" style="color: #7a8b63;">About</a> ·
-          <a href="{{ WEBSITE_URL }}/help" style="color: #7a8b63;">Help</a> ·
-          <a href="{{ WEBSITE_URL }}/privacy" style="color: #7a8b63;">Privacy</a>
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color: #7a8b63;">About</a> ·
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #7a8b63;">Help</a> ·
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color: #7a8b63;">Privacy</a>
         </mj-text>
         <mj-text align="center" color="#8b985b" font-size="12px">
           © {{ YEAR }} ESTUARY. All rights reserved.

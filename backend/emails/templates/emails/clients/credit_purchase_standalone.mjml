@@ -35,7 +35,7 @@
           <mj-text padding-bottom="12px"><span style="font-weight: 600; color: #3c412a;">Purchase Date:</span> {{ purchase_date }}</mj-text>
           <mj-text padding-bottom="20px"><span style="font-weight: 600; color: #3c412a;">Expires:</span> {{ expiry_date }}</mj-text>
 
-          <mj-button href="{{ WEBSITE_URL }}/marketplace">Browse Services</mj-button>
+          <mj-button href="{{ WEBSITE_URL }}{{ URL_PATHS.MARKETPLACE }}">Browse Services</mj-button>
         </mj-column>
       </mj-section>
 
