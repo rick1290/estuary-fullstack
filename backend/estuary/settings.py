@@ -179,12 +179,16 @@ CLOUDFLARE_R2_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_ENDPOINT_URL', '')
 CLOUDFLARE_R2_REGION_NAME = os.getenv('CLOUDFLARE_R2_REGION_NAME', 'auto')
 CLOUDFLARE_R2_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_CUSTOM_DOMAIN', '')
 
-# Use Cloudflare R2 for media storage in production
-if not DEBUG and CLOUDFLARE_R2_ACCESS_KEY_ID:
+# Use Cloudflare R2 for media storage if credentials are available
+# This allows using R2 in both development and production
+if CLOUDFLARE_R2_ACCESS_KEY_ID and CLOUDFLARE_R2_STORAGE_BUCKET_NAME:
     DEFAULT_FILE_STORAGE = 'integrations.cloudflare_r2.storage.CloudflareR2Storage'
 else:
-    # Use local storage for development
+    # Fallback to local storage if R2 is not configured
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    if not DEBUG:
+        import warnings
+        warnings.warn("R2 storage not configured in production! Using local filesystem.")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

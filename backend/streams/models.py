@@ -69,8 +69,18 @@ class Stream(PublicModel):
     about = models.TextField(blank=True, null=True, help_text="Detailed about section")
     
     # Media
-    cover_image_url = models.URLField(blank=True, null=True)
-    profile_image_url = models.URLField(blank=True, null=True)
+    cover_image = models.ImageField(
+        upload_to='streams/covers/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text="Stream cover image (stored in R2)"
+    )
+    profile_image = models.ImageField(
+        upload_to='streams/profiles/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text="Stream profile image (stored in R2)"
+    )
     intro_video_url = models.URLField(blank=True, null=True)
     
     # Categories and tags
@@ -172,6 +182,20 @@ class Stream(PublicModel):
     def is_launched(self):
         """Check if stream has been launched"""
         return self.launched_at is not None and self.launched_at <= timezone.now()
+
+    @property
+    def cover_image_url(self):
+        """Get cover image URL (backwards compatibility)."""
+        if self.cover_image:
+            return self.cover_image.url
+        return None
+
+    @property
+    def profile_image_url(self):
+        """Get profile image URL (backwards compatibility)."""
+        if self.profile_image:
+            return self.profile_image.url
+        return None
     
     def get_tier_price_cents(self, tier):
         """Get price for a specific tier"""

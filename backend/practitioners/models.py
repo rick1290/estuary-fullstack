@@ -46,8 +46,12 @@ class Practitioner(PublicModel):
                            help_text="Inspirational quote or motto")
     
     # Media
-    profile_image_url = models.URLField(blank=True, null=True, 
-                                      help_text="URL to practitioner's profile image")
+    profile_image = models.ImageField(
+        upload_to='practitioners/profiles/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text="Practitioner's profile image (stored in R2)"
+    )
     profile_video_url = models.URLField(blank=True, null=True,
                                       help_text="URL to practitioner's intro video")
     
@@ -105,6 +109,13 @@ class Practitioner(PublicModel):
     def full_name(self):
         """Return practitioner's full name."""
         return self.user.full_name
+
+    @property
+    def profile_image_url(self):
+        """Get the profile image URL (backwards compatibility)."""
+        if self.profile_image:
+            return self.profile_image.url
+        return None
     
     @property
     def average_rating(self):

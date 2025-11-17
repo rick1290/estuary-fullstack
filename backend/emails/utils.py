@@ -91,12 +91,16 @@ class EmailRenderer:
         Returns:
             Compiled HTML email
         """
+        from .constants import build_url, URL_PATHS
+
         # Add default context variables
         default_context = {
             'WEBSITE_URL': settings.WEBSITE_URL,
             'SUPPORT_EMAIL': settings.SUPPORT_EMAIL,
             'LOGO_URL': settings.EMAIL_LOGO_URL,
             'YEAR': __import__('datetime').datetime.now().year,
+            'build_url': build_url,  # URL builder function
+            'URL_PATHS': URL_PATHS,  # All URL path constants
         }
 
         # Merge with provided context

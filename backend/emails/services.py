@@ -130,6 +130,8 @@ class ClientEmailService:
     @staticmethod
     def send_booking_confirmation(booking):
         """Send booking confirmation email"""
+        from .constants import build_url
+
         return EmailService.send_template_email(
             to=booking.user.email,
             template_path=CLIENT_EMAILS['BOOKING_CONFIRMATION'],
@@ -138,6 +140,9 @@ class ClientEmailService:
                 'booking': booking,
                 'service': booking.service,
                 'practitioner': booking.service.practitioner,
+                'booking_url': build_url('USER_BOOKING_DETAIL', id=booking.id),
+                'join_url': build_url('ROOM_BOOKING_LOBBY', booking_id=booking.id) if hasattr(booking, 'room') else None,
+                'has_video_room': hasattr(booking, 'room'),
             },
             subject=EMAIL_SUBJECTS['CLIENT_BOOKING_CONFIRMATION'].format(
                 service_name=booking.service.title
@@ -254,6 +259,8 @@ class PractitionerEmailService:
     @staticmethod
     def send_booking_received(booking):
         """Send notification of new booking to practitioner"""
+        from .constants import build_url
+
         return EmailService.send_template_email(
             to=booking.service.practitioner.user.email,
             template_path=PRACTITIONER_EMAILS['BOOKING_RECEIVED'],
@@ -262,6 +269,8 @@ class PractitionerEmailService:
                 'booking': booking,
                 'service': booking.service,
                 'client': booking.user,
+                'booking_url': build_url('PRACTITIONER_BOOKING_DETAIL', id=booking.id),
+                'client_url': build_url('PRACTITIONER_CLIENT_DETAIL', id=booking.user.id),
             },
             subject=EMAIL_SUBJECTS['PRACTITIONER_BOOKING_RECEIVED'].format(
                 client_name=booking.user.get_full_name(),
