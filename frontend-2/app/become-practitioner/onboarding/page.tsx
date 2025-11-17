@@ -14,7 +14,9 @@ import { practitionerApplicationsCompleteOnboardingCreate } from "@/src/client/s
 import Step1BasicProfile from "@/components/practitioner-onboarding/step-1-basic-profile"
 import Step2Specializations from "@/components/practitioner-onboarding/step-2-specializations"
 import Step3SchedulingPreferences from "@/components/practitioner-onboarding/step-3-scheduling-preferences"
+import Step4Credentials from "@/components/practitioner-onboarding/step-4-credentials"
 import Step4Verification from "@/components/practitioner-onboarding/step-4-verification"
+import Step6CommonQuestions from "@/components/practitioner-onboarding/step-6-common-questions"
 import Step5PaymentSetup from "@/components/practitioner-onboarding/step-5-payment-setup"
 
 interface OnboardingData {
@@ -34,10 +36,15 @@ interface OnboardingData {
   schedulingPreferences?: {
     buffer_time: number
   }
+  credentials?: {
+    certifications: any[]
+    educations: any[]
+  }
   verification?: {
-    certifications?: any[]
-    educations?: any[]
     background_check_consent: boolean
+  }
+  commonQuestions?: {
+    questions: any[]
   }
   paymentSetup?: {
     stripe_account_id?: string
@@ -115,7 +122,7 @@ export default function PractitionerOnboardingPage() {
     }
 
     // Move to next step
-    if (stepNumber < 5) {
+    if (stepNumber < 7) {
       setCurrentStep(stepNumber + 1)
     } else {
       // All steps complete - mark onboarding as complete via dedicated endpoint
@@ -223,18 +230,36 @@ export default function PractitionerOnboardingPage() {
             )}
 
             {currentStep === 4 && (
-              <Step4Verification
-                initialData={onboardingData.verification}
-                onComplete={(data) => handleStepComplete(4, { verification: data })}
+              <Step4Credentials
+                initialData={onboardingData.credentials}
+                onComplete={(data) => handleStepComplete(4, { credentials: data })}
                 onBack={handleStepBack}
                 practitionerId={practitionerId}
               />
             )}
 
             {currentStep === 5 && (
+              <Step4Verification
+                initialData={onboardingData.verification}
+                onComplete={(data) => handleStepComplete(5, { verification: data })}
+                onBack={handleStepBack}
+                practitionerId={practitionerId}
+              />
+            )}
+
+            {currentStep === 6 && (
+              <Step6CommonQuestions
+                initialData={onboardingData.commonQuestions}
+                onComplete={(data) => handleStepComplete(6, { commonQuestions: data })}
+                onBack={handleStepBack}
+                practitionerId={practitionerId}
+              />
+            )}
+
+            {currentStep === 7 && (
               <Step5PaymentSetup
                 initialData={onboardingData.paymentSetup}
-                onComplete={(data) => handleStepComplete(5, { paymentSetup: data })}
+                onComplete={(data) => handleStepComplete(7, { paymentSetup: data })}
                 onBack={handleStepBack}
                 practitionerId={practitionerId}
               />

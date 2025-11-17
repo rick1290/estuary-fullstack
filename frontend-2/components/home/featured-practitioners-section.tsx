@@ -7,56 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
-import { practitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useRef, useState, useEffect } from "react"
-
-// Fallback mock data for development
-const MOCK_PRACTITIONERS = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    specialty: "Mindfulness Coach",
-    location: "New York, NY",
-    image: "https://i.pravatar.cc/150?img=47",
-    rating: 4.9,
-    reviews: 124,
-    modalities: ["Meditation", "MBSR", "Breathwork"],
-    nextAvailable: "Today",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    specialty: "Nutritional Therapist",
-    location: "Los Angeles, CA",
-    image: "https://i.pravatar.cc/150?img=33",
-    rating: 4.8,
-    reviews: 98,
-    modalities: ["Nutrition", "Holistic Health", "Detox"],
-    nextAvailable: "Tomorrow",
-  },
-  {
-    id: 3,
-    name: "Aisha Patel",
-    specialty: "Life Coach",
-    location: "Virtual",
-    image: "https://i.pravatar.cc/150?img=44",
-    rating: 5.0,
-    reviews: 87,
-    modalities: ["Life Coaching", "NLP", "Goal Setting"],
-    nextAvailable: "This Week",
-  },
-  {
-    id: 4,
-    name: "James Wilson",
-    specialty: "Sound Healer",
-    location: "Chicago, IL",
-    image: "https://i.pravatar.cc/150?img=12",
-    rating: 4.7,
-    reviews: 65,
-    modalities: ["Sound Therapy", "Reiki", "Energy Work"],
-    nextAvailable: "Available",
-  },
-]
 
 export default function FeaturedPractitionersSection() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -65,36 +17,34 @@ export default function FeaturedPractitionersSection() {
 
   // Fetch featured practitioners from API
   const { data: practitionersData, isLoading, error } = useQuery({
-    ...practitionersListOptions({
+    ...publicPractitionersListOptions({
       query: {
-        featured: true,
+        is_featured: true,
         limit: 8,
-        ordering: '-is_featured,-average_rating'
+        ordering: '-average_rating'
       }
     }),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
   // Extract practitioners array and handle both paginated and direct responses
-  const apiPractitioners = Array.isArray(practitionersData) ? practitionersData : 
-                          (practitionersData?.results && Array.isArray(practitionersData.results)) ? practitionersData.results : []
+  const apiPractitioners = Array.isArray(practitionersData?.data?.results) ? practitionersData.data.results :
+                          Array.isArray(practitionersData?.results) ? practitionersData.results :
+                          Array.isArray(practitionersData) ? practitionersData : []
 
   // Transform API data to component format
-  const transformedPractitioners = apiPractitioners.map(practitioner => ({
+  const featuredPractitioners = apiPractitioners.map(practitioner => ({
     id: practitioner.public_uuid || practitioner.id,
     slug: practitioner.slug,
     name: practitioner.display_name || practitioner.full_name || 'Practitioner',
-    specialty: practitioner.primary_specialty || practitioner.title || 'Wellness Practitioner',
-    location: practitioner.location || 'Location TBD',
+    specialty: practitioner.primary_specialty || practitioner.professional_title || 'Wellness Practitioner',
+    location: practitioner.primary_location?.city || practitioner.location || 'Virtual',
     image: practitioner.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
     rating: practitioner.average_rating || 4.8,
     reviews: practitioner.total_reviews || 0,
     modalities: practitioner.modalities?.map(m => m.name) || practitioner.primary_services?.slice(0,3).map(s => s.name) || ['Wellness'],
     nextAvailable: 'Available',
   }))
-
-  // Use API data if available, otherwise fallback to mock data
-  const featuredPractitioners = transformedPractitioners.length > 0 ? transformedPractitioners : MOCK_PRACTITIONERS
 
   const checkScrollButtons = () => {
     const container = scrollContainerRef.current
