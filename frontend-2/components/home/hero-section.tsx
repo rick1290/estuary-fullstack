@@ -5,18 +5,8 @@ import { SearchIcon, ChevronDown, Sparkles, Users, Star, TrendingUp } from "luci
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-
-// Trending topics
-const TRENDING_TOPICS = [
-  "Meditation",
-  "Mental Health",
-  "Nutrition",
-  "Sound Healing",
-  "Yoga",
-  "Mindfulness",
-  "Life Coaching",
-  "Breathwork",
-]
+import { useQuery } from "@tanstack/react-query"
+import { modalitiesListOptions } from "@/src/client/@tanstack/react-query.gen"
 
 // Animated stats
 const STATS = [
@@ -28,13 +18,38 @@ const STATS = [
 export default function HeroSection() {
   const [searchPlaceholder, setSearchPlaceholder] = useState(0)
   const [animatedValues, setAnimatedValues] = useState(STATS.map(() => 0))
-  
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Fetch modalities from API
+  const { data: modalitiesData } = useQuery({
+    ...modalitiesListOptions({}),
+  })
+
+  // Get featured modalities (first 8)
+  const featuredModalities = (modalitiesData?.results || []).slice(0, 8)
+
   const placeholders = [
     "Search for meditation coaches...",
     "Find yoga instructors near you...",
     "Discover mindfulness experts...",
     "Browse wellness workshops...",
   ]
+
+  // Handle search
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      window.location.href = `/marketplace?q=${encodeURIComponent(searchQuery.trim())}`
+    } else {
+      window.location.href = '/marketplace'
+    }
+  }
+
+  // Handle Enter key in search input
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
 
   // Rotate search placeholders
   useEffect(() => {
@@ -110,26 +125,33 @@ export default function HeroSection() {
                   <Input
                     className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4 text-olive-800 placeholder:text-olive-400/70 transition-all"
                     placeholder={placeholders[searchPlaceholder]}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
                   />
-                  <Button className="mr-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg hover:shadow-xl transition-all" size="lg">
+                  <Button
+                    className="mr-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg hover:shadow-xl transition-all"
+                    size="lg"
+                    onClick={handleSearch}
+                  >
                     Begin Journey
                   </Button>
                 </div>
               </div>
 
-              {/* Trending Topics */}
+              {/* Featured Modalities */}
               <div className="mb-12 animate-fade-in" style={{animationDelay: '0.6s'}}>
                 <p className="mb-5 text-sm text-olive-600 font-medium">Popular Transformations</p>
                 <div className="flex flex-wrap gap-3">
-                  {TRENDING_TOPICS.map((topic, index) => (
+                  {featuredModalities.map((modality: any, index: number) => (
                     <Badge
-                      key={topic}
+                      key={modality.id}
                       variant="outline"
                       className="text-olive-700 bg-sage-50 hover:bg-sage-100 border-sage-300 hover:border-sage-400 px-5 py-2.5 text-sm font-medium transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer animate-fade-in"
                       style={{animationDelay: `${0.6 + index * 0.05}s`}}
                       asChild
                     >
-                      <Link href={`/marketplace?topic=${topic}`}>{topic}</Link>
+                      <Link href={`/marketplace?modality=${modality.id}`}>{modality.name}</Link>
                     </Badge>
                   ))}
                 </div>
