@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -12,10 +12,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { ImagePlus, Upload, X, Save, CheckCircle, Copy } from "lucide-react"
+import { ImagePlus, Upload, X, Save, CheckCircle, Copy, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import LoadingSpinner from "@/components/ui/loading-spinner"
-import { practitionersMyProfileRetrieveOptions, practitionersPartialUpdateMutation } from "@/src/client/@tanstack/react-query.gen"
+import { practitionersMyProfileRetrieveOptions, practitionersPartialUpdateMutation, mediaUploadCreateMutation } from "@/src/client/@tanstack/react-query.gen"
 
 // Form schema with validation
 const profileFormSchema = z.object({
@@ -34,6 +34,8 @@ interface PractitionerProfileFormProps {
 export default function PractitionerProfileForm({ isOnboarding = false }: PractitionerProfileFormProps) {
   const [showSuccess, setShowSuccess] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -87,6 +89,27 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
     }
   })
 
+  // Setup mutation for image upload
+  const uploadMutation = useMutation({
+    ...mediaUploadCreateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Image Uploaded",
+        description: "Your profile image has been updated successfully.",
+      })
+      // Invalidate queries to refetch updated profile
+      queryClient.invalidateQueries({ queryKey: ['practitionersMyProfileRetrieve'] })
+    },
+    onError: (error) => {
+      console.error('Image upload error:', error)
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      })
+    }
+  })
+
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
     if (!practitioner?.id) return
@@ -99,11 +122,54 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
 
   // Handle profile image upload
   const handleImageUpload = () => {
-    // In a real app, this would open a file picker and upload the image
-    toast({
-      title: "Image Upload",
-      description: "Profile image upload functionality would be implemented here.",
-    })
+    fileInputRef.current?.click()
+  }
+
+  // Handle file selection and upload
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !practitioner?.public_uuid) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file (JPG, PNG, GIF, WEBP).",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: "Image must be less than 10MB.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUploadingImage(true)
+
+    try {
+      // Upload using TanStack mutation
+      await uploadMutation.mutateAsync({
+        body: {
+          file,
+          entity_type: 'practitioner',
+          entity_id: practitioner.public_uuid,
+          is_primary: true,
+        }
+      })
+    } finally {
+      setIsUploadingImage(false)
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
   }
 
   // Handle profile video upload
@@ -136,6 +202,15 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {!isOnboarding && (
         <div>
           <h2 className="text-2xl font-semibold mb-2">Basic Information</h2>
@@ -156,9 +231,24 @@ export default function PractitionerProfileForm({ isOnboarding = false }: Practi
                   <AvatarFallback>{practitioner?.display_name?.charAt(0) || "P"}</AvatarFallback>
                 </Avatar>
 
-                <Button variant="outline" size="sm" onClick={handleImageUpload} className="w-full">
-                  <ImagePlus className="mr-2 h-4 w-4" />
-                  Change Photo
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleImageUpload}
+                  disabled={isUploadingImage}
+                  className="w-full"
+                >
+                  {isUploadingImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="mr-2 h-4 w-4" />
+                      Change Photo
+                    </>
+                  )}
                 </Button>
 
                 <div className="w-full pt-4 border-t">
