@@ -94,28 +94,23 @@ export default function CheckoutPage() {
   const selectedTime = searchParams.get("time")
   const selectedSessionIds = searchParams.get("sessions")?.split(",").map(Number) || []
 
-  // For demo purposes, auto-login with test credentials
+  // Check authentication and show modal if needed
   useEffect(() => {
-    const autoLogin = async () => {
-      if (!isAuthenticated) {
-        try {
-          // Auto-login with test credentials for demo purposes
-          await login("testuser@example.com", "test1234")
-        } catch (error) {
-          console.error("Auto-login failed:", error)
-          openAuthModal({
-            defaultTab: "login",
-            redirectUrl: `/checkout?serviceId=${serviceId}&type=${serviceType}`,
-            serviceType: serviceType,
-            title: "Sign in to Continue",
-            description: "Please sign in to complete your booking"
-          })
-        }
-      }
-    }
+    if (!isAuthenticated) {
+      const currentUrl = `/checkout?serviceId=${serviceId}&type=${serviceType}`
+      const fullUrl = selectedDate && selectedTime
+        ? `${currentUrl}&date=${selectedDate}&time=${selectedTime}`
+        : currentUrl
 
-    autoLogin()
-  }, [isAuthenticated, login])
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: fullUrl,
+        serviceType: serviceType,
+        title: "Sign in to Continue",
+        description: "Please sign in to complete your booking"
+      })
+    }
+  }, [isAuthenticated, serviceId, serviceType, selectedDate, selectedTime, openAuthModal])
 
   // Fetch service data from API using ID
   const { data: serviceData, isLoading: loadingService, error: serviceError } = useQuery({
@@ -123,13 +118,6 @@ export default function CheckoutPage() {
     enabled: !!serviceId && !isNaN(parseInt(serviceId)),
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
-
-  // Check authentication on component mount
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.back()
-    }
-  }, [isAuthenticated, router])
 
   // Create direct payment mutation
   const directPayment = useMutation({
