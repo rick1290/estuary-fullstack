@@ -53,9 +53,13 @@ class PractitionerFilter(django_filters.FilterSet):
         field_name='topics__id',
         label='Topic ID'
     )
-    modality = django_filters.NumberFilter(
-        field_name='modalities__id',
-        label='Modality ID'
+    modality = django_filters.CharFilter(
+        method='filter_modality',
+        label='Modality slug(s) - comma-separated'
+    )
+    modality_id = django_filters.CharFilter(
+        method='filter_modality_id',
+        label='Modality ID(s) - comma-separated'
     )
     
     # Experience and qualifications
@@ -128,7 +132,7 @@ class PractitionerFilter(django_filters.FilterSet):
         model = Practitioner
         fields = [
             'city', 'state', 'country', 'service_type', 'service_category',
-            'specialization', 'style', 'topic', 'modality',
+            'specialization', 'style', 'topic', 'modality', 'modality_id',
             'min_experience', 'max_experience', 'min_price', 'max_price',
             'is_verified', 'featured', 'practitioner_status',
             'available_now', 'location_type', 'language', 'search'
@@ -182,6 +186,36 @@ class PractitionerFilter(django_filters.FilterSet):
             Q(specializations__content__icontains=value) |
             Q(primary_services__name__icontains=value)
         ).distinct()
+
+    def filter_modality(self, queryset, name, value):
+        """Filter by modality slug(s) - supports comma-separated values"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"filter_modality received value: {repr(value)}")
+
+        modality_slugs = [slug.strip() for slug in value.split(',') if slug.strip()]
+        logger.info(f"Parsed modality_slugs: {modality_slugs}")
+
+        if modality_slugs:
+            result = queryset.filter(modalities__slug__in=modality_slugs).distinct()
+            logger.info(f"Query returned {result.count()} results")
+            return result
+        return queryset
+
+    def filter_modality_id(self, queryset, name, value):
+        """Filter by modality ID(s) - supports comma-separated values"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"filter_modality_id received value: {repr(value)}")
+
+        modality_ids = [id.strip() for id in value.split(',') if id.strip()]
+        logger.info(f"Parsed modality_ids: {modality_ids}")
+
+        if modality_ids:
+            result = queryset.filter(modalities__id__in=modality_ids).distinct()
+            logger.info(f"Query returned {result.count()} results")
+            return result
+        return queryset
 
 
 class AvailabilityFilter(django_filters.FilterSet):

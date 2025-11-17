@@ -153,12 +153,18 @@ class Service(PublicModel):
     # Relationships
     service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, 
                                    help_text="Type of service")
-    category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, 
+    category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL,
                                blank=True, null=True, related_name='services',
-                               help_text="Global category for discovery")
-    practitioner_category = models.ForeignKey(PractitionerServiceCategory, 
+                               help_text="DEPRECATED: Use modalities instead. Global category for discovery")
+    modalities = models.ManyToManyField(
+        'common.Modality',
+        related_name='services',
+        blank=True,
+        help_text="Treatment modalities for this service (e.g., Yoga, Meditation)"
+    )
+    practitioner_category = models.ForeignKey(PractitionerServiceCategory,
                                             on_delete=models.SET_NULL,
-                                            blank=True, null=True, 
+                                            blank=True, null=True,
                                             related_name='services',
                                             help_text="Practitioner's custom category")
     primary_practitioner = models.ForeignKey('practitioners.Practitioner', 

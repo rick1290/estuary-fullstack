@@ -187,6 +187,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             'primary_practitioner', 'primary_practitioner__user', 'address',
             'schedule'
         ).prefetch_related(
+            'modalities',
             'additional_practitioners',
             'languages',
             'benefits',
@@ -751,6 +752,7 @@ class PackageViewSet(viewsets.ModelViewSet):
         ).select_related(
             'service_type', 'category', 'primary_practitioner'
         ).prefetch_related(
+            'modalities',
             'child_relationships__child_service',
             'additional_practitioners'
         )
@@ -778,6 +780,7 @@ class BundleViewSet(viewsets.ModelViewSet):
         ).select_related(
             'service_type', 'category', 'primary_practitioner'
         ).prefetch_related(
+            'modalities',
             'child_relationships__child_service',
             'additional_practitioners'
         )
