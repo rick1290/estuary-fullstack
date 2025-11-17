@@ -532,8 +532,7 @@ class AvailabilityCheckSerializer(serializers.Serializer):
         try:
             practitioner = Practitioner.objects.get(
                 id=data['practitioner_id'],
-                practitioner_status='active',
-                is_verified=True
+                practitioner_status='active'
             )
             data['practitioner'] = practitioner
         except Practitioner.DoesNotExist:
