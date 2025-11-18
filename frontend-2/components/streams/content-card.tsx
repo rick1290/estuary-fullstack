@@ -206,7 +206,7 @@ export default function ContentCard({ post }: ContentCardProps) {
   })
 
   const handlePractitionerClick = () => {
-    router.push(`/practitioners/${post.practitionerId}`)
+    router.push(`/practitioners/${post.practitionerSlug || post.practitionerId}`)
   }
 
   const handleShare = () => {
@@ -332,13 +332,18 @@ export default function ContentCard({ post }: ContentCardProps) {
                       {!isAuthenticated ? "Sign in to watch" : "Subscribe to Watch"}
                     </Button>
                   </div>
-                ) : (
+                ) : post.mediaUrls[0] && post.mediaUrls[0].startsWith('http') ? (
                   <Image
-                    src={post.mediaUrls[0] || "/placeholder.svg"}
+                    src={post.mediaUrls[0]}
                     alt="Video thumbnail"
                     fill
                     className="object-cover"
+                    unoptimized
                   />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-400">No thumbnail</span>
+                  </div>
                 )}
                 {(!post.isPremium || post.hasAccess) && (
                   <div className="absolute inset-0 flex items-center justify-center group cursor-pointer">
@@ -354,31 +359,45 @@ export default function ContentCard({ post }: ContentCardProps) {
                 {post.mediaUrls.length === 1 ? (
                   // Single image - full width
                   <div className="relative">
-                    <Image
-                      src={post.mediaUrls[0] || "/placeholder.svg"}
-                      alt="Post media"
-                      width={800}
-                      height={450}
-                      className="w-full rounded-xl object-cover"
-                      style={{
-                        filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                      }}
-                    />
+                    {post.mediaUrls[0] && post.mediaUrls[0].startsWith('http') ? (
+                      <Image
+                        src={post.mediaUrls[0]}
+                        alt="Post media"
+                        width={800}
+                        height={450}
+                        className="w-full rounded-xl object-cover"
+                        style={{
+                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                        }}
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-[450px] bg-gray-200 rounded-xl flex items-center justify-center">
+                        <span className="text-gray-400">No media available</span>
+                      </div>
+                    )}
                   </div>
                 ) : post.mediaUrls.length === 2 ? (
                   // Two images - side by side
                   <div className="grid grid-cols-2 gap-2">
                     {post.mediaUrls.slice(0, 2).map((url, index) => (
                       <div key={index} className="relative aspect-square">
-                        <Image
-                          src={url || "/placeholder.svg"}
-                          alt={`Post media ${index + 1}`}
-                          fill
-                          className="rounded-xl object-cover"
-                          style={{
-                            filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                          }}
-                        />
+                        {url && url.startsWith('http') ? (
+                          <Image
+                            src={url}
+                            alt={`Post media ${index + 1}`}
+                            fill
+                            className="rounded-xl object-cover"
+                            style={{
+                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                            }}
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 rounded-xl flex items-center justify-center">
+                            <span className="text-gray-400 text-sm">No media</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -386,28 +405,38 @@ export default function ContentCard({ post }: ContentCardProps) {
                   // Three images - first one larger, two smaller
                   <div className="grid grid-cols-2 gap-2">
                     <div className="relative aspect-square">
-                      <Image
-                        src={post.mediaUrls[0] || "/placeholder.svg"}
-                        alt="Post media 1"
-                        fill
-                        className="rounded-xl object-cover"
-                        style={{
-                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                        }}
-                      />
+                      {post.mediaUrls[0] && post.mediaUrls[0].startsWith('http') ? (
+                        <Image
+                          src={post.mediaUrls[0]}
+                          alt="Post media 1"
+                          fill
+                          className="rounded-xl object-cover"
+                          style={{
+                            filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                          }}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 rounded-xl" />
+                      )}
                     </div>
                     <div className="grid grid-rows-2 gap-2">
                       {post.mediaUrls.slice(1, 3).map((url, index) => (
                         <div key={index + 1} className="relative aspect-square">
-                          <Image
-                            src={url || "/placeholder.svg"}
-                            alt={`Post media ${index + 2}`}
-                            fill
-                            className="rounded-xl object-cover"
-                            style={{
-                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                            }}
-                          />
+                          {url && url.startsWith('http') ? (
+                            <Image
+                              src={url}
+                              alt={`Post media ${index + 2}`}
+                              fill
+                              className="rounded-xl object-cover"
+                              style={{
+                                filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                              }}
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 rounded-xl" />
+                          )}
                         </div>
                       ))}
                     </div>
@@ -417,27 +446,37 @@ export default function ContentCard({ post }: ContentCardProps) {
                   <div className="grid grid-cols-2 gap-2">
                     {post.mediaUrls.slice(0, 3).map((url, index) => (
                       <div key={index} className="relative aspect-square">
+                        {url && url.startsWith('http') ? (
+                          <Image
+                            src={url}
+                            alt={`Post media ${index + 1}`}
+                            fill
+                            className="rounded-xl object-cover"
+                            style={{
+                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                            }}
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 rounded-xl" />
+                        )}
+                      </div>
+                    ))}
+                    <div className="relative aspect-square">
+                      {post.mediaUrls[3] && post.mediaUrls[3].startsWith('http') ? (
                         <Image
-                          src={url || "/placeholder.svg"}
-                          alt={`Post media ${index + 1}`}
+                          src={post.mediaUrls[3]}
+                          alt="Post media 4"
                           fill
                           className="rounded-xl object-cover"
                           style={{
                             filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
                           }}
+                          unoptimized
                         />
-                      </div>
-                    ))}
-                    <div className="relative aspect-square">
-                      <Image
-                        src={post.mediaUrls[3] || "/placeholder.svg"}
-                        alt="Post media 4"
-                        fill
-                        className="rounded-xl object-cover"
-                        style={{
-                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                        }}
-                      />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 rounded-xl" />
+                      )}
                       {post.mediaUrls.length > 4 && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
                           <span className="text-white font-semibold text-lg">

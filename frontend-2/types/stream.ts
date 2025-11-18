@@ -1,6 +1,7 @@
 export interface StreamPost {
   id: string
   practitionerId: string
+  practitionerSlug: string
   practitionerName: string
   practitionerImage: string
   streamId?: string
