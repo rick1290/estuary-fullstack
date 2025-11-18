@@ -43,7 +43,12 @@ export function ServiceSessionsSection({
   const [duration, setDuration] = useState(service.duration_minutes || 60)
   const [sessionTitle, setSessionTitle] = useState("")
   const [sessionDescription, setSessionDescription] = useState("")
-  
+
+  // State for editing existing sessions
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null)
+  const [editDate, setEditDate] = useState<Date | undefined>()
+  const [editTime, setEditTime] = useState("09:00")
+
   const isWorkshop = service.service_type_code === 'workshop'
   const isCourse = service.service_type_code === 'course'
 
@@ -90,14 +95,15 @@ export function ServiceSessionsSection({
         title: "Session updated",
         description: "The session has been updated successfully."
       })
-      queryClient.invalidateQueries({ 
-        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey 
+      queryClient.invalidateQueries({
+        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey
       })
     },
     onError: (error: any) => {
+      const errorMessage = error?.body?.detail || error?.message || "Something went wrong"
       toast({
-        title: "Failed to update session",
-        description: error.message || "Something went wrong",
+        title: "Cannot update session",
+        description: errorMessage,
         variant: "destructive"
       })
     }
@@ -110,14 +116,15 @@ export function ServiceSessionsSection({
         title: "Session removed",
         description: "The session has been removed successfully."
       })
-      queryClient.invalidateQueries({ 
-        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey 
+      queryClient.invalidateQueries({
+        queryKey: serviceSessionsListOptions({ query: { service_id: service.id } }).queryKey
       })
     },
     onError: (error: any) => {
+      const errorMessage = error?.body?.detail || error?.message || "Something went wrong"
       toast({
-        title: "Failed to remove session",
-        description: error.message || "Something went wrong",
+        title: "Cannot remove session",
+        description: errorMessage,
         variant: "destructive"
       })
     }
@@ -161,46 +168,60 @@ export function ServiceSessionsSection({
     <div className="space-y-4">
       {/* Existing Sessions */}
       <div className="space-y-2">
-        {sessions.map((session: any, index: number) => (
-          <Card key={session.id} className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {isCourse ? `Module ${index + 1}` : `Session ${index + 1}`}
-                  </Badge>
-                  {session.title && (
-                    <h4 className="font-medium">{session.title}</h4>
+        {sessions.map((session: any, index: number) => {
+          const hasBookings = (session.booking_count || 0) > 0
+          return (
+            <Card key={session.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {isCourse ? `Module ${index + 1}` : `Session ${index + 1}`}
+                    </Badge>
+                    {session.title && (
+                      <h4 className="font-medium">{session.title}</h4>
+                    )}
+                    {hasBookings && (
+                      <Badge variant="secondary" className="text-xs">
+                        {session.booking_count} booking{session.booking_count !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <CalendarIcon className="h-3 w-3" />
+                      {format(new Date(session.start_time), "PPP")}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(session.start_time), "p")} - {format(new Date(session.end_time), "p")}
+                    </div>
+                  </div>
+                  {session.description && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {session.description}
+                    </p>
+                  )}
+                  {hasBookings && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      ⚠️ This session has bookings and cannot be deleted or rescheduled
+                    </p>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    {format(new Date(session.start_time), "PPP")}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {format(new Date(session.start_time), "p")} - {format(new Date(session.end_time), "p")}
-                  </div>
-                </div>
-                {session.description && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {session.description}
-                  </p>
-                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeSession(session.id)}
+                  disabled={deleteMutation.isPending || hasBookings}
+                  title={hasBookings ? "Cannot delete session with bookings" : "Delete session"}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeSession(session.id)}
-                disabled={deleteMutation.isPending}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          )
+        })}
       </div>
 
       {/* Add New Session Form */}
@@ -246,39 +267,45 @@ export function ServiceSessionsSection({
             </div>
           </div>
 
-          {/* Duration */}
-          <div className="space-y-2">
-            <Label>Duration (minutes)</Label>
-            <Input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
-              min={15}
-              step={15}
-              className="max-w-[200px]"
-            />
-          </div>
+          {/* Duration - Only show for courses */}
+          {!isWorkshop && (
+            <div className="space-y-2">
+              <Label>Duration (minutes)</Label>
+              <Input
+                type="number"
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
+                min={15}
+                step={15}
+                className="max-w-[200px]"
+              />
+            </div>
+          )}
 
-          {/* Session Title (optional) */}
-          <div className="space-y-2">
-            <Label>{isCourse ? 'Module Title' : 'Session Title'} (optional)</Label>
-            <Input
-              value={sessionTitle}
-              onChange={(e) => setSessionTitle(e.target.value)}
-              placeholder={isCourse ? "e.g., Introduction to Mindfulness" : "e.g., Morning Session"}
-            />
-          </div>
+          {/* Session Title - Only show for courses */}
+          {!isWorkshop && (
+            <div className="space-y-2">
+              <Label>{isCourse ? 'Module Title' : 'Session Title'} (optional)</Label>
+              <Input
+                value={sessionTitle}
+                onChange={(e) => setSessionTitle(e.target.value)}
+                placeholder={isCourse ? "e.g., Introduction to Mindfulness" : "e.g., Morning Session"}
+              />
+            </div>
+          )}
 
-          {/* Session Description (optional) */}
-          <div className="space-y-2">
-            <Label>Description (optional)</Label>
-            <Textarea
-              value={sessionDescription}
-              onChange={(e) => setSessionDescription(e.target.value)}
-              placeholder="What will be covered in this session?"
-              rows={3}
-            />
-          </div>
+          {/* Session Description - Only show for courses */}
+          {!isWorkshop && (
+            <div className="space-y-2">
+              <Label>Description (optional)</Label>
+              <Textarea
+                value={sessionDescription}
+                onChange={(e) => setSessionDescription(e.target.value)}
+                placeholder="What will be covered in this session?"
+                rows={3}
+              />
+            </div>
+          )}
 
           <Button
             type="button"

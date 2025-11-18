@@ -183,18 +183,19 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
     benefits = ServiceBenefitSerializer(many=True, read_only=True)
     participant_count = serializers.IntegerField(source='current_participants', read_only=True)
     waitlist_count = serializers.SerializerMethodField()
-    
+    booking_count = serializers.SerializerMethodField()
+
     class Meta:
         model = ServiceSession
         fields = [
             'id', 'service', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
-            'participant_count', 'waitlist_count', 'sequence_number',
+            'participant_count', 'waitlist_count', 'booking_count', 'sequence_number',
             'room', 'status', 'agenda', 'agenda_items', 'benefits',
             'what_youll_learn', 'practitioner_location', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'current_participants', 'participant_count', 'room', 'created_at', 'updated_at']
-    
+        read_only_fields = ['id', 'current_participants', 'participant_count', 'booking_count', 'room', 'created_at', 'updated_at']
+
     def get_room(self, obj):
         """Get room information for this session"""
         if hasattr(obj, 'livekit_room') and obj.livekit_room:
@@ -209,10 +210,14 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
                 'scheduled_end': room.scheduled_end,
             }
         return None
-    
+
     def get_waitlist_count(self, obj):
         """Get count of waiting users for this session"""
         return obj.waitlist_entries.filter(status='waiting').count()
+
+    def get_booking_count(self, obj):
+        """Get count of bookings for this session"""
+        return obj.bookings.count()
 
 
 class ServiceResourceSerializer(serializers.ModelSerializer):

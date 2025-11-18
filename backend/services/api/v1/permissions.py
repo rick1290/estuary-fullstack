@@ -33,15 +33,21 @@ class IsPractitionerOrReadOnly(permissions.BasePermission):
 class IsServiceOwner(permissions.BasePermission):
     """
     Custom permission to only allow the primary practitioner of a service to edit it.
+    Handles both Service and ServiceSession objects.
     """
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
+
         # Write permissions are only allowed to the primary practitioner
         if hasattr(request.user, 'practitioner_profile'):
-            return obj.primary_practitioner == request.user.practitioner_profile
+            # Handle ServiceSession - check the service's primary practitioner
+            if hasattr(obj, 'service') and hasattr(obj.service, 'primary_practitioner'):
+                return obj.service.primary_practitioner == request.user.practitioner_profile
+            # Handle Service directly
+            elif hasattr(obj, 'primary_practitioner'):
+                return obj.primary_practitioner == request.user.practitioner_profile
         return False
 
 
