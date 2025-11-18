@@ -189,9 +189,9 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'service', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
-            'participant_count', 'waitlist_count', 'sequence_number', 
+            'participant_count', 'waitlist_count', 'sequence_number',
             'room', 'status', 'agenda', 'agenda_items', 'benefits',
-            'what_youll_learn', 'address', 'created_at', 'updated_at'
+            'what_youll_learn', 'practitioner_location', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'current_participants', 'participant_count', 'room', 'created_at', 'updated_at']
     
@@ -404,7 +404,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
         fields = ServiceListSerializer.Meta.fields + [
             'description', 'practitioner_category', 'additional_practitioners',
             'min_participants', 'age_min', 'age_max', 'what_youll_learn',
-            'prerequisites', 'requirements', 'includes', 'address', 'image',
+            'prerequisites', 'requirements', 'includes', 'practitioner_location', 'image',
             'tags', 'languages', 'published_at', 'validity_days',
             'is_transferable', 'is_shareable', 'sessions_included',
             'bonus_sessions', 'max_per_customer', 'available_from',
@@ -502,7 +502,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
             'duration_minutes', 'service_type_id', 'category_id', 'modality_ids',
             'practitioner_category_id', 'max_participants', 'min_participants',
             'experience_level', 'age_min', 'age_max', 'location_type',
-            'address', 'schedule', 'what_youll_learn', 'prerequisites', 'includes',
+            'practitioner_location', 'schedule', 'what_youll_learn', 'prerequisites', 'includes',
             'image', 'tags', 'is_active', 'is_featured',
             'is_public', 'status', 'validity_days', 'is_transferable',
             'is_shareable', 'sessions_included', 'bonus_sessions',

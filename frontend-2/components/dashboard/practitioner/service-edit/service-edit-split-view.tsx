@@ -261,7 +261,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         },
         "location": {
           location_type: service.location_type,
-          address_id: service.address?.id,
+          practitioner_location_id: service.practitioner_location?.id,
         },
         "media": {
           image: service.image_url || service.image,
@@ -334,7 +334,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
         },
         "location": {
           location_type: service.location_type,
-          address_id: service.address?.id,
+          practitioner_location_id: service.practitioner_location?.id,
         },
         "media": {
           image: service.image_url || service.image,
@@ -419,7 +419,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   // Save specific section
   const handleSaveSection = useCallback(async (sectionId: string) => {
     let updates = { ...sectionData[sectionId] }
-    
+
     // Map scheduleId to schedule field for API
     if (sectionId === 'schedule-selection' && updates.scheduleId) {
       updates = {
@@ -427,7 +427,13 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       }
       delete updates.scheduleId
     }
-    
+
+    // Map practitioner_location_id to practitioner_location field for API
+    if (sectionId === 'location' && updates.practitioner_location_id) {
+      updates.practitioner_location = parseInt(updates.practitioner_location_id)
+      delete updates.practitioner_location_id
+    }
+
     // Simply send the update
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },
@@ -454,6 +460,12 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       if (sectionId === 'schedule-selection' && sectionUpdates.scheduleId) {
         sectionUpdates.schedule = parseInt(sectionUpdates.scheduleId)
         delete sectionUpdates.scheduleId
+      }
+
+      // Map practitioner_location_id to practitioner_location field for API
+      if (sectionId === 'location' && sectionUpdates.practitioner_location_id) {
+        sectionUpdates.practitioner_location = parseInt(sectionUpdates.practitioner_location_id)
+        delete sectionUpdates.practitioner_location_id
       }
 
       // Ensure includes is always an array or null (never a string)
