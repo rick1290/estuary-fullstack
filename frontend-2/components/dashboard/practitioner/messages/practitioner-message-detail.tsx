@@ -25,8 +25,6 @@ import {
   Paperclip,
   Smile,
   MoreVertical,
-  Phone,
-  Video,
   Info,
   Calendar,
   FileText,
@@ -39,11 +37,12 @@ import {
   WifiOff,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { 
+import {
   conversationsRetrieveOptions,
   conversationsMessagesRetrieveOptions,
   conversationsSendMessageCreateMutation,
-  conversationsMarkReadCreateMutation
+  conversationsMarkReadCreateMutation,
+  servicesListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import type { MessageReadable } from "@/src/client/types.gen"
 import { formatDistanceToNow } from "date-fns"
@@ -51,37 +50,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/hooks/use-auth"
 import { useWebSocketMessaging } from "@/hooks/use-websocket-messaging"
 import { toast } from "sonner"
-
-// Mock data for services
-const mockServices = [
-  {
-    id: "1",
-    type: "session",
-    title: "One-on-One Coaching Session",
-    duration: "60 min",
-    price: "$120",
-    image: "/session-image-1.jpg",
-    icon: <User className="h-4 w-4" />,
-  },
-  {
-    id: "2",
-    type: "course",
-    title: "Mindfulness Fundamentals",
-    duration: "6 weeks",
-    price: "$299",
-    image: "/course-image-1.jpg",
-    icon: <GraduationCap className="h-4 w-4" />,
-  },
-  {
-    id: "3",
-    type: "workshop",
-    title: "Stress Management Workshop",
-    duration: "3 hours",
-    price: "$85",
-    image: "/workshop-image-1.jpg",
-    icon: <Users className="h-4 w-4" />,
-  },
-]
 
 export default function PractitionerMessageDetail() {
   const searchParams = useSearchParams()
@@ -144,6 +112,18 @@ export default function PractitionerMessageDetail() {
     staleTime: 0, // Always consider data stale
     refetchInterval: false, // Don't auto-refetch
   })
+
+  // Fetch practitioner's active services
+  const { data: servicesData } = useQuery({
+    ...servicesListOptions({
+      query: {
+        is_active: true,
+        ordering: '-created_at'
+      }
+    })
+  })
+
+  const services = servicesData?.results || []
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -294,10 +274,27 @@ export default function PractitionerMessageDetail() {
     setPreviewUrl(null)
   }
 
-  const handleShareService = (serviceId: string) => {
-    // In a real app, you would send the service to the client here
-    console.log("Sharing service:", serviceId)
+  const handleShareService = (serviceId: number) => {
+    const service = services.find(s => s.id === serviceId)
+    if (!service || !conversationId) return
+
+    // Create a formatted message with service details
+    const serviceUrl = `${window.location.origin}/services/${service.slug || service.id}`
+    const price = service.price_cents ? `$${(service.price_cents / 100).toFixed(2)}` : 'Price TBD'
+    const duration = service.duration_minutes ? `${service.duration_minutes} min` : ''
+
+    const message = `I'd like to share this service with you:\n\n📋 ${service.name}\n💰 ${price}${duration ? `\n⏱️ ${duration}` : ''}\n\n${service.description || ''}\n\nBook here: ${serviceUrl}`
+
+    // Send the message
+    sendMessageMutation.mutate({
+      path: { id: conversationId },
+      body: {
+        content: message
+      }
+    })
+
     setShowShareService(false)
+    toast.success(`Shared "${service.name}" with ${otherUser?.first_name || 'client'}`)
   }
 
   if (!conversationId) {
@@ -381,11 +378,11 @@ export default function PractitionerMessageDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Voice call">
-            <Phone className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Share a service" onClick={() => setShowShareService(true)}>
+            <FileText className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" title="Video call">
-            <Video className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Schedule a session">
+            <Calendar className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" title="Client info" onClick={() => setShowClientInfo(true)}>
             <Info className="h-4 w-4" />
@@ -397,15 +394,6 @@ export default function PractitionerMessageDetail() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowShareService(true)}>
-                <Calendar className="h-4 w-4 mr-2" />
-                Share a service
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule a session
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <X className="h-4 w-4 mr-2" />
                 Clear conversation
@@ -644,37 +632,52 @@ export default function PractitionerMessageDetail() {
 
           <p className="text-sm mb-4">Select a service to share with {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'this client'}:</p>
 
-          <div className="space-y-3">
-            {mockServices.map((service) => (
-              <Card
-                key={service.id}
-                className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => handleShareService(service.id)}
-              >
-                <CardContent className="p-3 flex items-center">
-                  <div className="relative h-12 w-12 rounded overflow-hidden mr-3 flex-shrink-0">
-                    <Image
-                      src={service.image || "/placeholder.svg"}
-                      alt={service.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate">{service.title}</h4>
-                    <div className="flex items-center mt-1">
-                      <Badge variant="outline" className="mr-2">
-                        {service.type}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {service.duration} • {service.price}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-3 pr-4">
+              {services.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No active services found.</p>
+                  <p className="text-sm mt-2">Create a service to share with clients.</p>
+                </div>
+              ) : (
+                services.map((service: any) => {
+                  const price = service.price_cents ? `$${(service.price_cents / 100).toFixed(2)}` : 'Price TBD'
+                  const duration = service.duration_minutes ? `${service.duration_minutes} min` : ''
+
+                  return (
+                    <Card
+                      key={service.id}
+                      className="cursor-pointer hover:bg-accent transition-colors"
+                      onClick={() => handleShareService(service.id)}
+                    >
+                      <CardContent className="p-3 flex items-center">
+                        <div className="relative h-12 w-12 rounded overflow-hidden mr-3 flex-shrink-0 bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                          {service.service_type === 'Workshop' ? (
+                            <Users className="h-6 w-6 text-sage-600" />
+                          ) : service.service_type === 'Course' ? (
+                            <GraduationCap className="h-6 w-6 text-terracotta-600" />
+                          ) : (
+                            <User className="h-6 w-6 text-olive-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">{service.name}</h4>
+                          <div className="flex items-center mt-1">
+                            <Badge variant="outline" className="mr-2 text-xs">
+                              {service.service_type}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {duration && `${duration} • `}{price}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })
+              )}
+            </div>
+          </ScrollArea>
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowShareService(false)}>

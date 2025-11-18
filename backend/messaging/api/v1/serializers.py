@@ -24,7 +24,18 @@ class UserSummarySerializer(serializers.ModelSerializer):
                   'display_name', 'avatar_url', 'is_practitioner']
     
     def get_avatar_url(self, obj):
-        """Get avatar URL from user profile."""
+        """Get avatar URL - practitioner profile image for practitioners, user profile for others."""
+        # If user is a practitioner, use their practitioner profile image
+        if obj.is_practitioner:
+            try:
+                practitioner = obj.practitioner_profile
+                if practitioner and practitioner.profile_image_url:
+                    return practitioner.profile_image_url
+            except Exception:
+                # Practitioner profile doesn't exist or error accessing it
+                pass
+
+        # Otherwise use regular user profile avatar
         if hasattr(obj, 'profile') and obj.profile:
             return obj.profile.avatar_url
         return None
