@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, Clock, MapPin, Video, Loader2 } from "lucide-react"
+import { Calendar, Clock, MapPin, Video, Loader2, User, Users } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
@@ -65,17 +65,17 @@ export default function UserUpcomingBookings() {
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border-2 border-sage-200">
               <CardContent className="p-6">
-                <div className="space-y-3">
-                  <Skeleton className="h-5 w-3/4" />
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-6 w-6 rounded-full" />
+                <div className="flex gap-4">
+                  <Skeleton className="h-24 w-24 rounded-lg" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-4 w-32" />
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-24" />
+                    <Separator />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -118,90 +118,120 @@ export default function UserUpcomingBookings() {
           {bookings.map((booking: any) => {
             const status = getBookingStatus(booking.status)
             const service = booking.service
-            const practitioner = service?.practitioner || service?.primary_practitioner
-            
+            const practitioner = booking.practitioner
+
             return (
               <Card key={booking.id} className="border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="md:col-span-3">
-                      <h3 className="font-medium text-lg text-olive-900">
-                        {service?.name || booking.service_name || "Service"}
-                      </h3>
-
-                      {practitioner && (
-                        <div className="flex items-center mt-2 mb-3">
-                          <Avatar className="h-6 w-6 mr-2">
+                  <div className="flex gap-4">
+                    {/* Practitioner Image */}
+                    <div className="flex-shrink-0 relative">
+                      {practitioner?.profile_image_url ? (
+                        <div className="relative">
+                          <Avatar className="h-24 w-24 rounded-lg">
                             <AvatarImage
                               src={practitioner.profile_image_url}
-                              alt={practitioner.display_name}
+                              alt={practitioner.name}
+                              className="object-cover"
                             />
-                            <AvatarFallback>
-                              {practitioner.display_name?.charAt(0) || "P"}
+                            <AvatarFallback className="rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 text-2xl">
+                              {practitioner.name?.charAt(0) || "P"}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-olive-700">
-                            with {practitioner.display_name}
-                          </span>
+                          {/* Service type badge */}
+                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-gray-200">
+                            {service?.service_type === "Workshop" ? (
+                              <Users className="h-4 w-4 text-sage-600" />
+                            ) : service?.service_type === "Course" ? (
+                              <Calendar className="h-4 w-4 text-terracotta-600" />
+                            ) : (
+                              <User className="h-4 w-4 text-olive-600" />
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                          {service?.service_type === "Workshop" ? (
+                            <Users className="h-10 w-10 text-sage-600" />
+                          ) : service?.service_type === "Course" ? (
+                            <Calendar className="h-10 w-10 text-terracotta-600" />
+                          ) : (
+                            <User className="h-10 w-10 text-olive-600" />
+                          )}
                         </div>
                       )}
+                    </div>
+
+                    {/* Booking Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-lg text-olive-900">
+                            {service?.name || booking.service_name || "Service"}
+                          </h3>
+                          {practitioner && (
+                            <p className="text-sm text-olive-700 mt-1">
+                              with {practitioner.name}
+                            </p>
+                          )}
+                        </div>
+                        <Badge variant={status.variant} className="ml-4">
+                          {status.label}
+                        </Badge>
+                      </div>
 
                       <Separator className="my-3" />
 
-                      <div className="space-y-2">
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-sage-600" />
-                          <span className="text-sm text-olive-700">
-                            {formatDate(booking.start_time)}
-                          </span>
+                      <div className="flex items-start gap-6">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-2 text-sage-600" />
+                            <span className="text-sm text-olive-700">
+                              {formatDate(booking.start_time)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-2 text-sage-600" />
+                            <span className="text-sm text-olive-700">
+                              {formatTime(booking.start_time)}
+                              {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center">
+                            {booking.location_type === "virtual" ? (
+                              <>
+                                <Video className="h-4 w-4 mr-2 text-sage-600" />
+                                <span className="text-sm text-olive-700">Virtual Session</span>
+                              </>
+                            ) : (
+                              <>
+                                <MapPin className="h-4 w-4 mr-2 text-sage-600" />
+                                <span className="text-sm text-olive-700">
+                                  {booking.location || "In-person"}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2 text-sage-600" />
-                          <span className="text-sm text-olive-700">
-                            {formatTime(booking.start_time)}
-                            {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center">
-                          {booking.location_type === "virtual" ? (
-                            <>
-                              <Video className="h-4 w-4 mr-2 text-sage-600" />
-                              <span className="text-sm text-olive-700">Virtual Session</span>
-                            </>
-                          ) : (
-                            <>
-                              <MapPin className="h-4 w-4 mr-2 text-sage-600" />
-                              <span className="text-sm text-olive-700">
-                                {booking.location || "In-person"}
-                              </span>
-                            </>
+                        <div className="flex flex-col gap-2 min-w-[140px]">
+                          <Button variant="outline" size="sm" asChild className="w-full border-sage-300 text-sage-700 hover:bg-sage-50">
+                            <Link href={`/dashboard/user/bookings/${booking.id}`}>
+                              View Details
+                            </Link>
+                          </Button>
+                          {booking.status === "confirmed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-terracotta-600 border-terracotta-300 hover:bg-terracotta-50"
+                            >
+                              Reschedule
+                            </Button>
                           )}
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col justify-between md:items-end">
-                      <Badge variant={status.variant} className="mb-4 self-start md:self-end">
-                        {status.label}
-                      </Badge>
-
-                      <div className="flex flex-col gap-2 w-full">
-                        <Button variant="outline" size="sm" asChild className="w-full border-sage-300 text-sage-700 hover:bg-sage-50">
-                          <Link href={`/dashboard/user/bookings/${booking.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
-                        {booking.status === "confirmed" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-terracotta-600 border-terracotta-300 hover:bg-terracotta-50"
-                          >
-                            Reschedule
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>
