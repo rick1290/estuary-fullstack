@@ -184,7 +184,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         """Get services with optimized queries"""
         queryset = Service.objects.select_related(
             'service_type', 'category', 'practitioner_category',
-            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'primary_practitioner', 'primary_practitioner__user', 'practitioner_location',
             'schedule'
         ).prefetch_related(
             'modalities',
@@ -376,7 +376,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             age_min=service.age_min,
             age_max=service.age_max,
             location_type=service.location_type,
-            address=service.address,
+            practitioner_location=service.practitioner_location,
             what_youll_learn=service.what_youll_learn,
             prerequisites=service.prerequisites,
             includes=service.includes,
@@ -805,7 +805,7 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
         """Get sessions based on service"""
         # For detail views (retrieve, update, destroy), return all sessions
         if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return ServiceSession.objects.select_related('service', 'livekit_room', 'address')
+            return ServiceSession.objects.select_related('service', 'livekit_room', 'practitioner_location')
 
         # For list view, filter by service_id if provided
         service_id = self.request.query_params.get('service_id')
@@ -814,7 +814,7 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
 
         return ServiceSession.objects.filter(
             service_id=service_id
-        ).select_related('service', 'livekit_room', 'address').order_by('start_time')
+        ).select_related('service', 'livekit_room', 'practitioner_location').order_by('start_time')
     
     def get_permissions(self):
         """Only service owners can modify sessions"""
@@ -915,7 +915,7 @@ class PublicServiceViewSet(viewsets.ReadOnlyModelViewSet):
             is_public=True
         ).select_related(
             'service_type', 'category', 'practitioner_category',
-            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'primary_practitioner', 'primary_practitioner__user', 'practitioner_location',
             'schedule'
         ).prefetch_related(
             'additional_practitioners',

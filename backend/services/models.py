@@ -192,11 +192,13 @@ class Service(PublicModel):
     age_max = models.PositiveIntegerField(blank=True, null=True, help_text="Maximum age")
     
     # Location and delivery
-    location_type = models.CharField(max_length=20, choices=LOCATION_TYPE_CHOICES, 
+    location_type = models.CharField(max_length=20, choices=LOCATION_TYPE_CHOICES,
                                    default='virtual')
-    address = models.ForeignKey('utils.Address', on_delete=models.SET_NULL,
-                               null=True, blank=True, related_name='services',
-                               help_text="Physical address for in-person/hybrid services")
+    practitioner_location = models.ForeignKey('locations.PractitionerLocation',
+                                            on_delete=models.SET_NULL,
+                                            null=True, blank=True,
+                                            related_name='services',
+                                            help_text="Practitioner location where this service is offered")
     
     # Scheduling (for session-type services)
     schedule = models.ForeignKey('practitioners.Schedule', on_delete=models.SET_NULL,
@@ -698,13 +700,13 @@ class ServiceSession(models.Model):
     what_youll_learn = models.TextField(blank=True, null=True, help_text="Describe what clients will learn or gain from this specific session")
     
     # Location handling for in-person sessions
-    address = models.ForeignKey(
-        'utils.Address',
+    practitioner_location = models.ForeignKey(
+        'locations.PractitionerLocation',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='sessions',
-        help_text="Address where this session takes place (for in-person sessions)"
+        help_text="Practitioner location where this session takes place (for in-person sessions)"
     )
     
     class Meta:
@@ -724,11 +726,11 @@ class ServiceSession(models.Model):
         # If max_participants not specified, use the service's value
         if self.max_participants is None and self.service and hasattr(self.service, 'max_participants'):
             self.max_participants = self.service.max_participants
-            
-        # If address not specified but service has one, use it
-        if self.address is None and self.service and hasattr(self.service, 'address') and self.service.address:
-            self.address = self.service.address
-            
+
+        # If practitioner_location not specified but service has one, use it
+        if self.practitioner_location is None and self.service and hasattr(self.service, 'practitioner_location') and self.service.practitioner_location:
+            self.practitioner_location = self.service.practitioner_location
+
         super().save(*args, **kwargs)
         
     def create_room(self):
