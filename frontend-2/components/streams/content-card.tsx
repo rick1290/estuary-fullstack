@@ -1,15 +1,15 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { useAuth } from "@/hooks/use-auth"
 import type { StreamPost } from "@/types/stream"
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { 
-  streamPostsLikeCreateMutation, 
+import {
+  streamPostsLikeCreateMutation,
   streamPostsSaveCreateMutation,
   streamPostsCommentsCreateMutation,
   streamPostsCommentsListOptions
@@ -25,6 +25,18 @@ import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MessageCircle, Share2, Bookmark, MoreHorizontal, Lock, Play, Heart } from "lucide-react"
 import { useAuthModal } from "@/components/auth/auth-provider"
+
+// Helper function to validate URLs
+function isValidUrl(urlString: string | undefined | null): boolean {
+  if (!urlString || typeof urlString !== 'string') return false
+
+  try {
+    const url = new URL(urlString)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
 interface ContentCardProps {
   post: StreamPost
@@ -42,6 +54,12 @@ export default function ContentCard({ post }: ContentCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
   const [likeCount, setLikeCount] = useState(post.likes)
+
+  // Filter out invalid URLs from mediaUrls to prevent Image component errors
+  const validMediaUrls = useMemo(() => {
+    if (!post.mediaUrls || !Array.isArray(post.mediaUrls)) return []
+    return post.mediaUrls.filter(isValidUrl)
+  }, [post.mediaUrls])
 
   // Initialize liked state
   useEffect(() => {
@@ -222,14 +240,22 @@ export default function ContentCard({ post }: ContentCardProps) {
       <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm rounded-2xl">
       {/* Card header with practitioner info */}
       <div className="flex items-center p-5">
-        <div className="h-10 w-10 cursor-pointer ring-2 ring-sage-200 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg" onClick={handlePractitionerClick}>
-          <span className="text-sm font-medium text-olive-800">
+        <Avatar
+          className="h-10 w-10 cursor-pointer ring-2 ring-sage-200 shadow-lg"
+          onClick={handlePractitionerClick}
+        >
+          <AvatarImage
+            src={post.practitionerImage}
+            alt={post.practitionerName}
+            className="object-cover"
+          />
+          <AvatarFallback className="bg-gradient-to-br from-sage-200 to-terracotta-200 text-olive-800 text-sm font-medium">
             {post.practitionerName.split(' ').map(n => n[0]).join('')}
-          </span>
-        </div>
+          </AvatarFallback>
+        </Avatar>
         <div className="ml-3 flex-1">
-          <p 
-            className="font-medium text-olive-900 cursor-pointer hover:text-sage-700 transition-colors" 
+          <p
+            className="font-medium text-olive-900 cursor-pointer hover:text-sage-700 transition-colors"
             onClick={handlePractitionerClick}
           >
             {post.practitionerName}
@@ -301,7 +327,7 @@ export default function ContentCard({ post }: ContentCardProps) {
         </div>
 
         {/* Content media */}
-        {post.mediaUrls && post.mediaUrls.length > 0 && (
+        {validMediaUrls.length > 0 && (
           <div className="relative mb-4 overflow-hidden rounded-xl">
             {post.contentType === "video" ? (
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
@@ -312,7 +338,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                     </div>
                     <h3 className="text-lg font-medium text-white mb-2">{post.tierLevel} Content</h3>
                     <p className="text-sm text-white/80 mb-4">Subscribe to watch this video</p>
-                    <Button 
+                    <Button
                       className="bg-white text-gray-900 hover:bg-gray-100"
                       onClick={() => {
                         if (!isAuthenticated) {
@@ -332,9 +358,9 @@ export default function ContentCard({ post }: ContentCardProps) {
                       {!isAuthenticated ? "Sign in to watch" : "Subscribe to Watch"}
                     </Button>
                   </div>
-                ) : post.mediaUrls[0] && post.mediaUrls[0].startsWith('http') ? (
+                ) : validMediaUrls[0] ? (
                   <Image
-                    src={post.mediaUrls[0]}
+                    src={validMediaUrls[0]}
                     alt="Video thumbnail"
                     fill
                     className="object-cover"
@@ -356,59 +382,29 @@ export default function ContentCard({ post }: ContentCardProps) {
             ) : (
               <div className="relative">
                 {/* Multi-image gallery layout */}
-                {post.mediaUrls.length === 1 ? (
+                {validMediaUrls.length === 1 ? (
                   // Single image - full width
                   <div className="relative">
-                    {post.mediaUrls[0] && post.mediaUrls[0].startsWith('http') ? (
-                      <Image
-                        src={post.mediaUrls[0]}
-                        alt="Post media"
-                        width={800}
-                        height={450}
-                        className="w-full rounded-xl object-cover"
-                        style={{
-                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                        }}
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="w-full h-[450px] bg-gray-200 rounded-xl flex items-center justify-center">
-                        <span className="text-gray-400">No media available</span>
-                      </div>
-                    )}
+                    <Image
+                      src={validMediaUrls[0]}
+                      alt="Post media"
+                      width={800}
+                      height={450}
+                      className="w-full rounded-xl object-cover"
+                      style={{
+                        filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                      }}
+                      unoptimized
+                    />
                   </div>
-                ) : post.mediaUrls.length === 2 ? (
+                ) : validMediaUrls.length === 2 ? (
                   // Two images - side by side
                   <div className="grid grid-cols-2 gap-2">
-                    {post.mediaUrls.slice(0, 2).map((url, index) => (
+                    {validMediaUrls.slice(0, 2).map((url, index) => (
                       <div key={index} className="relative aspect-square">
-                        {url && url.startsWith('http') ? (
-                          <Image
-                            src={url}
-                            alt={`Post media ${index + 1}`}
-                            fill
-                            className="rounded-xl object-cover"
-                            style={{
-                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                            }}
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 rounded-xl flex items-center justify-center">
-                            <span className="text-gray-400 text-sm">No media</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : post.mediaUrls.length === 3 ? (
-                  // Three images - first one larger, two smaller
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="relative aspect-square">
-                      {post.mediaUrls[0] && post.mediaUrls[0].startsWith('http') ? (
                         <Image
-                          src={post.mediaUrls[0]}
-                          alt="Post media 1"
+                          src={url}
+                          alt={`Post media ${index + 1}`}
                           fill
                           className="rounded-xl object-cover"
                           style={{
@@ -416,27 +412,37 @@ export default function ContentCard({ post }: ContentCardProps) {
                           }}
                           unoptimized
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 rounded-xl" />
-                      )}
+                      </div>
+                    ))}
+                  </div>
+                ) : validMediaUrls.length === 3 ? (
+                  // Three images - first one larger, two smaller
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative aspect-square">
+                      <Image
+                        src={validMediaUrls[0]}
+                        alt="Post media 1"
+                        fill
+                        className="rounded-xl object-cover"
+                        style={{
+                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                        }}
+                        unoptimized
+                      />
                     </div>
                     <div className="grid grid-rows-2 gap-2">
-                      {post.mediaUrls.slice(1, 3).map((url, index) => (
+                      {validMediaUrls.slice(1, 3).map((url, index) => (
                         <div key={index + 1} className="relative aspect-square">
-                          {url && url.startsWith('http') ? (
-                            <Image
-                              src={url}
-                              alt={`Post media ${index + 2}`}
-                              fill
-                              className="rounded-xl object-cover"
-                              style={{
-                                filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                              }}
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 rounded-xl" />
-                          )}
+                          <Image
+                            src={url}
+                            alt={`Post media ${index + 2}`}
+                            fill
+                            className="rounded-xl object-cover"
+                            style={{
+                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                            }}
+                            unoptimized
+                          />
                         </div>
                       ))}
                     </div>
@@ -444,29 +450,11 @@ export default function ContentCard({ post }: ContentCardProps) {
                 ) : (
                   // Four or more images - 2x2 grid with "+X more" overlay
                   <div className="grid grid-cols-2 gap-2">
-                    {post.mediaUrls.slice(0, 3).map((url, index) => (
+                    {validMediaUrls.slice(0, 3).map((url, index) => (
                       <div key={index} className="relative aspect-square">
-                        {url && url.startsWith('http') ? (
-                          <Image
-                            src={url}
-                            alt={`Post media ${index + 1}`}
-                            fill
-                            className="rounded-xl object-cover"
-                            style={{
-                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
-                            }}
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 rounded-xl" />
-                        )}
-                      </div>
-                    ))}
-                    <div className="relative aspect-square">
-                      {post.mediaUrls[3] && post.mediaUrls[3].startsWith('http') ? (
                         <Image
-                          src={post.mediaUrls[3]}
-                          alt="Post media 4"
+                          src={url}
+                          alt={`Post media ${index + 1}`}
                           fill
                           className="rounded-xl object-cover"
                           style={{
@@ -474,13 +462,23 @@ export default function ContentCard({ post }: ContentCardProps) {
                           }}
                           unoptimized
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 rounded-xl" />
-                      )}
-                      {post.mediaUrls.length > 4 && (
+                      </div>
+                    ))}
+                    <div className="relative aspect-square">
+                      <Image
+                        src={validMediaUrls[3]}
+                        alt="Post media 4"
+                        fill
+                        className="rounded-xl object-cover"
+                        style={{
+                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                        }}
+                        unoptimized
+                      />
+                      {validMediaUrls.length > 4 && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
                           <span className="text-white font-semibold text-lg">
-                            +{post.mediaUrls.length - 4} more
+                            +{validMediaUrls.length - 4} more
                           </span>
                         </div>
                       )}

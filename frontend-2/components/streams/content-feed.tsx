@@ -100,10 +100,11 @@ export default function ContentFeed({
     // For public users or non-subscribers, we want to show content preview (no full access)
     // The API should return all posts when include_all_tiers is true
     const hasAccess = apiPost.tier_level === 'free' || (apiPost.can_access || false)
-    
+
     return {
       id: apiPost.public_uuid || apiPost.id,
       practitionerId: apiPost.practitioner_id || '',
+      practitionerSlug: apiPost.practitioner_slug || '',
       practitionerName: apiPost.practitioner_name || 'Unknown Practitioner',
       practitionerImage: apiPost.practitioner_image || '/placeholder.svg',
       streamId: apiPost.stream || '',
