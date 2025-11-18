@@ -915,7 +915,7 @@ class PublicServiceViewSet(viewsets.ReadOnlyModelViewSet):
             is_public=True
         ).select_related(
             'service_type', 'category', 'practitioner_category',
-            'primary_practitioner', 'primary_practitioner__user', 'address',
+            'primary_practitioner', 'primary_practitioner__user', 'practitioner_location',
             'schedule'
         ).prefetch_related(
             'additional_practitioners',
