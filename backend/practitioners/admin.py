@@ -23,7 +23,7 @@ class PractitionerAdmin(admin.ModelAdmin):
             'fields': ('display_name', 'professional_title', 'bio', 'quote')
         }),
         ('Media', {
-            'fields': ('profile_image_url', 'profile_video_url')
+            'fields': ('profile_image', 'profile_video_url')
         }),
         ('Verification & Status', {
             'fields': ('is_verified', 'practitioner_status', 'featured')
