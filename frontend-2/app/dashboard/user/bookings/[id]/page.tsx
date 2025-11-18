@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { bookingsRetrieveOptions, bookingsCancelCreateOptions } from "@/src/client/@tanstack/react-query.gen"
-import { conversationsCreate } from "@/src/client"
+import { conversationsCreate, conversationsList } from "@/src/client"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -89,7 +89,22 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
     }
 
     try {
-      // Try to create or get existing conversation
+      // First, check if a conversation already exists with this practitioner
+      const conversationsResponse = await conversationsList()
+
+      // Find existing conversation with this practitioner
+      const existingConversation = conversationsResponse.data?.results?.find((conv: any) => {
+        // Check if any participant in the conversation is the practitioner
+        return conv.participants?.some((p: any) => p.user_id === booking.practitioner.user_id)
+      })
+
+      if (existingConversation) {
+        // Navigate to existing conversation
+        router.push(`/dashboard/user/messages?conversationId=${existingConversation.id}`)
+        return
+      }
+
+      // No existing conversation found, create a new one
       const response = await conversationsCreate({
         body: {
           other_user_id: booking.practitioner.user_id,
@@ -98,13 +113,12 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
       })
 
       if (response.data?.id) {
-        // Navigate to messages with conversation ID
+        // Navigate to new conversation
         router.push(`/dashboard/user/messages?conversationId=${response.data.id}`)
       }
     } catch (error: any) {
-      console.error('Failed to create conversation:', error)
-      // If conversation already exists, just navigate to messages
-      router.push('/dashboard/user/messages')
+      console.error('Failed to open conversation:', error)
+      toast.error("Unable to open conversation. Please try again.")
     }
   }
 
