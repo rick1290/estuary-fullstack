@@ -32,12 +32,17 @@ class BookingPractitionerSerializer(serializers.ModelSerializer):
     """Simplified practitioner serializer for bookings"""
     name = serializers.CharField(source='display_name', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
-    avatar_url = serializers.CharField(source='user.avatar_url', read_only=True)
-    
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    profile_image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Practitioner
-        fields = ['id', 'public_uuid', 'name', 'email', 'avatar_url', 'bio']
+        fields = ['id', 'public_uuid', 'name', 'email', 'user_id', 'profile_image_url', 'bio', 'slug']
         read_only_fields = fields
+
+    def get_profile_image_url(self, obj):
+        """Get the profile image URL"""
+        return obj.profile_image_url if hasattr(obj, 'profile_image_url') else None
 
 
 class BookingServiceSerializer(serializers.ModelSerializer):

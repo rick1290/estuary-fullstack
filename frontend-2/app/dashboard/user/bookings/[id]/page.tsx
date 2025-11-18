@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { bookingsRetrieveOptions, bookingsCancelCreateOptions } from "@/src/client/@tanstack/react-query.gen"
+import { conversationsCreate } from "@/src/client"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -80,6 +81,33 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
     },
   })
 
+  // Message practitioner handler
+  const handleMessagePractitioner = async () => {
+    if (!booking?.practitioner?.user_id) {
+      toast.error("Unable to message practitioner")
+      return
+    }
+
+    try {
+      // Try to create or get existing conversation
+      const response = await conversationsCreate({
+        body: {
+          other_user_id: booking.practitioner.user_id,
+          initial_message: `Hi, I have a question about my booking for "${booking.service?.name}".`
+        }
+      })
+
+      if (response.data?.id) {
+        // Navigate to messages with conversation ID
+        router.push(`/dashboard/user/messages?conversationId=${response.data.id}`)
+      }
+    } catch (error: any) {
+      console.error('Failed to create conversation:', error)
+      // If conversation already exists, just navigate to messages
+      router.push('/dashboard/user/messages')
+    }
+  }
+
   if (isLoading) {
     return (
       <UserDashboardLayout title="Booking Details">
@@ -138,7 +166,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   }
 
   const service = booking.service
-  const practitioner = service?.practitioner || service?.primary_practitioner
+  const practitioner = booking.practitioner
 
   // Check if session is joinable (15 minutes before start until end of session)
   const isSessionJoinable = () => {
@@ -217,7 +245,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                       {service?.name || "Service"}
                     </CardTitle>
                     <CardDescription className="text-base mt-1">
-                      with {practitioner?.display_name || "Practitioner"}
+                      with {practitioner?.name || "Practitioner"}
                     </CardDescription>
                   </div>
                   {getStatusBadge()}
@@ -511,25 +539,29 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                      <AvatarImage 
-                        src={practitioner.profile_image_url} 
-                        alt={practitioner.display_name} 
+                      <AvatarImage
+                        src={practitioner.profile_image_url}
+                        alt={practitioner.name}
                       />
                       <AvatarFallback>
-                        {practitioner.display_name?.charAt(0) || "P"}
+                        {practitioner.name?.charAt(0) || "P"}
                       </AvatarFallback>
                     </Avatar>
 
                     <div>
-                      <h3 className="font-semibold text-lg">{practitioner.display_name}</h3>
+                      <h3 className="font-semibold text-lg">{practitioner.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {practitioner.title || "Wellness Practitioner"}
+                        {practitioner.bio || "Wellness Practitioner"}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2 mt-4">
-                    <Button variant="outline" className="flex items-center justify-center gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      className="flex items-center justify-center gap-2 w-full"
+                      onClick={handleMessagePractitioner}
+                    >
                       <MessageSquare className="h-4 w-4" />
                       Message
                     </Button>
@@ -580,7 +612,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         <CancelBookingDialog
           bookingId={booking.public_uuid || String(booking.id)}
           serviceName={service?.name || "Service"}
-          practitionerName={practitioner?.display_name || "Practitioner"}
+          practitionerName={practitioner?.name || "Practitioner"}
           date={booking.start_time ? format(parseISO(booking.start_time), "MMMM d, yyyy") : ""}
           time={booking.start_time ? format(parseISO(booking.start_time), "h:mm a") : ""}
           price={`$${booking.final_amount || 0}`}

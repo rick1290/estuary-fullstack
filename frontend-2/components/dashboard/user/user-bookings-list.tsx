@@ -91,12 +91,12 @@ export default function UserBookingsList() {
     if (searchQuery) {
       filtered = filtered.filter((booking: any) => {
         const service = booking.service
-        const practitioner = service?.practitioner || service?.primary_practitioner
+        const practitioner = booking.practitioner
         const searchLower = searchQuery.toLowerCase()
-        
+
         return (
           service?.name?.toLowerCase().includes(searchLower) ||
-          practitioner?.display_name?.toLowerCase().includes(searchLower) ||
+          practitioner?.name?.toLowerCase().includes(searchLower) ||
           booking.booking_reference?.toLowerCase().includes(searchLower)
         )
       })
@@ -352,7 +352,7 @@ export default function UserBookingsList() {
         <div className="space-y-4">
           {paginatedBookings.map((booking: any) => {
             const service = booking.service
-            const practitioner = service?.practitioner || service?.primary_practitioner
+            const practitioner = booking.practitioner
             const isUnscheduled = booking.status === "pending" || !booking.start_time
 
             return (
@@ -377,17 +377,42 @@ export default function UserBookingsList() {
 
                 <CardContent className="p-6">
                   <div className="flex gap-4">
-                    {/* Service Image/Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
-                        {service?.service_type === "workshop" ? (
-                          <Users className="h-10 w-10 text-sage-600" />
-                        ) : service?.service_type === "course" ? (
-                          <Calendar className="h-10 w-10 text-terracotta-600" />
-                        ) : (
-                          <User className="h-10 w-10 text-olive-600" />
-                        )}
-                      </div>
+                    {/* Practitioner Image */}
+                    <div className="flex-shrink-0 relative">
+                      {practitioner?.profile_image_url ? (
+                        <div className="relative">
+                          <Avatar className="h-24 w-24 rounded-lg">
+                            <AvatarImage
+                              src={practitioner.profile_image_url}
+                              alt={practitioner.name}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 text-2xl">
+                              {practitioner.name?.charAt(0) || "P"}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* Service type badge */}
+                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-gray-200">
+                            {service?.service_type === "workshop" ? (
+                              <Users className="h-4 w-4 text-sage-600" />
+                            ) : service?.service_type === "course" ? (
+                              <Calendar className="h-4 w-4 text-terracotta-600" />
+                            ) : (
+                              <User className="h-4 w-4 text-olive-600" />
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                          {service?.service_type === "workshop" ? (
+                            <Users className="h-10 w-10 text-sage-600" />
+                          ) : service?.service_type === "course" ? (
+                            <Calendar className="h-10 w-10 text-terracotta-600" />
+                          ) : (
+                            <User className="h-10 w-10 text-olive-600" />
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Booking Details */}
@@ -397,20 +422,9 @@ export default function UserBookingsList() {
                           {service?.name || "Service"}
                         </h3>
                         {practitioner && (
-                          <div className="flex items-center mt-1">
-                            <Avatar className="h-5 w-5 mr-2">
-                              <AvatarImage
-                                src={practitioner.profile_image_url}
-                                alt={practitioner.display_name}
-                              />
-                              <AvatarFallback>
-                                {practitioner.display_name?.charAt(0) || "P"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm text-gray-600">
-                              {practitioner.display_name}
-                            </span>
-                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            with {practitioner.name}
+                          </p>
                         )}
                       </div>
 
