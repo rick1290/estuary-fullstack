@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Send, Paperclip, MoreVertical, Phone, Video, Info, Calendar, FileText, X, MessageSquare, Wifi, WifiOff } from "lucide-react"
+import { Send, Paperclip, MoreVertical, Info, Calendar, FileText, X, MessageSquare, Wifi, WifiOff } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   conversationsRetrieveOptions,
@@ -318,12 +318,6 @@ export default function UserMessageDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Voice call">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" title="Video call">
-            <Video className="h-4 w-4" />
-          </Button>
           <Button variant="ghost" size="icon" title="Practitioner info" onClick={() => setShowPractitionerInfo(true)}>
             <Info className="h-4 w-4" />
           </Button>

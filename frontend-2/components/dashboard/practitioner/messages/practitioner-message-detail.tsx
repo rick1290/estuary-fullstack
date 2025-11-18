@@ -25,8 +25,6 @@ import {
   Paperclip,
   Smile,
   MoreVertical,
-  Phone,
-  Video,
   Info,
   Calendar,
   FileText,
@@ -380,11 +378,11 @@ export default function PractitionerMessageDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Voice call">
-            <Phone className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Share a service" onClick={() => setShowShareService(true)}>
+            <FileText className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" title="Video call">
-            <Video className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Schedule a session">
+            <Calendar className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" title="Client info" onClick={() => setShowClientInfo(true)}>
             <Info className="h-4 w-4" />
@@ -396,15 +394,6 @@ export default function PractitionerMessageDetail() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowShareService(true)}>
-                <Calendar className="h-4 w-4 mr-2" />
-                Share a service
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule a session
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <X className="h-4 w-4 mr-2" />
                 Clear conversation
