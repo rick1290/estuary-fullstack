@@ -90,12 +90,13 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
     // For public users or non-subscribers, show preview access (no full access)
     // For subscribers, check actual access
     const hasAccess = userTier ? (apiPost.can_access || false) : false
-    
+
     return {
       id: apiPost.public_uuid || apiPost.id,
       practitionerId: apiPost.practitioner_id || stream?.practitioner_id || '',
+      practitionerSlug: apiPost.practitioner_slug || stream?.practitioner_slug || '',
       practitionerName: apiPost.practitioner_name || stream?.practitioner_name || 'Unknown Practitioner',
-      practitionerImage: apiPost.practitioner_image || stream?.profile_image_url || '/placeholder.svg',
+      practitionerImage: apiPost.practitioner_image || stream?.practitioner_image || '/placeholder.svg',
       streamId: apiPost.stream || stream?.id || '',
       streamTitle: apiPost.stream_title || stream?.title || '',
       content: apiPost.content || '',
@@ -176,10 +177,13 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
             <Card className="shadow-xl">
               <CardHeader>
                 <div className="flex items-start gap-4">
-                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg overflow-hidden">
-                    {stream.profile_image_url ? (
-                      <img 
-                        src={stream.profile_image_url} 
+                  <div
+                    className="h-20 w-20 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-sage-400 transition-all"
+                    onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
+                  >
+                    {stream.practitioner_image ? (
+                      <img
+                        src={stream.practitioner_image}
                         alt={stream.practitioner_name}
                         className="w-full h-full object-cover"
                       />
@@ -191,7 +195,12 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                   </div>
                   <div className="flex-1">
                     <h1 className="text-2xl font-bold mb-1">{stream.title}</h1>
-                    <p className="text-muted-foreground mb-2">by {stream.practitioner_name}</p>
+                    <p
+                      className="text-muted-foreground mb-2 cursor-pointer hover:text-sage-700 transition-colors"
+                      onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
+                    >
+                      by {stream.practitioner_name}
+                    </p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Users className="h-4 w-4" />

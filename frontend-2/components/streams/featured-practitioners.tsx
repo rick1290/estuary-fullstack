@@ -25,8 +25,8 @@ export default function FeaturedPractitioners() {
     })
   })
 
-  const handlePractitionerClick = (practitionerId: string) => {
-    router.push(`/practitioners/${practitionerId}`)
+  const handlePractitionerClick = (stream: any) => {
+    router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)
   }
 
   const handleViewStreamClick = (streamId: string | number, event: React.MouseEvent) => {
@@ -58,7 +58,7 @@ export default function FeaturedPractitioners() {
         <Card
           key={stream.id}
           className="cursor-pointer rounded-2xl border-0 bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:translate-y-[-4px] hover:shadow-xl"
-          onClick={() => handlePractitionerClick(stream.practitioner?.public_uuid || stream.practitioner?.id)}
+          onClick={() => handlePractitionerClick(stream)}
         >
           <div
             className="h-[80px] bg-gradient-to-br from-sage-200 to-terracotta-200 rounded-t-2xl"
@@ -70,21 +70,21 @@ export default function FeaturedPractitioners() {
           />
           <div className="flex flex-col items-center -mt-5">
             <div className="h-16 w-16 border-4 border-white rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg overflow-hidden">
-              {stream.practitioner?.profile_image_url ? (
-                <img 
-                  src={stream.practitioner.profile_image_url} 
-                  alt={stream.practitioner.display_name}
+              {stream.practitioner_image ? (
+                <img
+                  src={stream.practitioner_image}
+                  alt={stream.practitioner_name}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-lg font-medium text-olive-800">
-                  {stream.practitioner?.display_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                  {stream.practitioner_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
                 </span>
               )}
             </div>
             <CardContent className="text-center pt-1 px-3">
               <h3 className="mb-1 font-semibold text-sm text-olive-900">{stream.title}</h3>
-              <p className="mb-1 text-xs text-olive-600">{stream.practitioner?.display_name}</p>
+              <p className="mb-1 text-xs text-olive-600">{stream.practitioner_name}</p>
               <div className="mb-2 flex flex-wrap justify-center gap-1">
                 {(stream.tags || []).slice(0, 2).map((tag: string) => (
                   <Badge key={tag} className="text-xs bg-sage-100 text-olive-700 hover:bg-sage-200">

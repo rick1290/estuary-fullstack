@@ -31,6 +31,8 @@ class StreamSerializer(BaseSerializer):
     """Serializer for content streams."""
     practitioner_name = serializers.CharField(source='practitioner.display_name', read_only=True)
     practitioner_id = serializers.IntegerField(source='practitioner.id', read_only=True)
+    practitioner_slug = serializers.CharField(source='practitioner.slug', read_only=True)
+    practitioner_image = serializers.CharField(source='practitioner.profile_image_url', read_only=True)
     categories = StreamCategorySerializer(many=True, read_only=True)
     category_ids = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -41,11 +43,12 @@ class StreamSerializer(BaseSerializer):
     )
     is_subscribed = serializers.SerializerMethodField()
     subscription_tier = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Stream
         fields = [
             'id', 'public_uuid', 'practitioner', 'practitioner_id', 'practitioner_name',
+            'practitioner_slug', 'practitioner_image',
             'title', 'tagline', 'description', 'about',
             'cover_image_url', 'profile_image_url', 'intro_video_url',
             'categories', 'category_ids', 'tags',
@@ -63,6 +66,7 @@ class StreamSerializer(BaseSerializer):
         ]
         read_only_fields = [
             'public_uuid', 'practitioner', 'practitioner_id', 'practitioner_name',
+            'practitioner_slug', 'practitioner_image',
             'subscriber_count', 'free_subscriber_count', 'paid_subscriber_count',
             'post_count', 'total_revenue_cents', 'is_launched',
             'created_at', 'updated_at'
@@ -169,6 +173,7 @@ class StreamPostSerializer(BaseSerializer):
     stream_title = serializers.CharField(source='stream.title', read_only=True)
     practitioner_name = serializers.CharField(source='stream.practitioner.display_name', read_only=True)
     practitioner_id = serializers.IntegerField(source='stream.practitioner.id', read_only=True)
+    practitioner_slug = serializers.CharField(source='stream.practitioner.slug', read_only=True)
     practitioner_image = serializers.CharField(source='stream.practitioner.profile_image_url', read_only=True)
     media = StreamPostMediaSerializer(many=True, read_only=True)
     can_access = serializers.SerializerMethodField()
@@ -179,7 +184,7 @@ class StreamPostSerializer(BaseSerializer):
         model = StreamPost
         fields = [
             'id', 'public_uuid', 'stream', 'stream_title',
-            'practitioner_name', 'practitioner_id', 'practitioner_image',
+            'practitioner_name', 'practitioner_id', 'practitioner_slug', 'practitioner_image',
             'title', 'content', 'post_type', 'tier_level',
             'teaser_text', 'blur_preview',
             'is_published', 'published_at', 'is_pinned', 'expires_at',
@@ -190,7 +195,7 @@ class StreamPostSerializer(BaseSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'public_uuid', 'stream_title', 'practitioner_name', 'practitioner_id', 'practitioner_image',
+            'public_uuid', 'stream_title', 'practitioner_name', 'practitioner_id', 'practitioner_slug', 'practitioner_image',
             'view_count', 'unique_view_count', 'like_count', 'comment_count', 'share_count',
             'created_at', 'updated_at'
         ]
