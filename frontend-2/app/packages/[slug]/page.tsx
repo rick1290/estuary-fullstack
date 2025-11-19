@@ -283,7 +283,7 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                   <img
                     src={packageData.image_url}
                     alt={packageData.name}
-                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">

@@ -288,7 +288,7 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
                   <img
                     src={bundle.image_url}
                     alt={bundle.name}
-                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
