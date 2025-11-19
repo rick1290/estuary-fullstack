@@ -120,43 +120,6 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
       </div>
 
       <CardContent className="p-6 space-y-6">
-        {/* Key Info Points */}
-        <div className="space-y-3 pb-6 border-b border-sage-200">
-          <div className="flex items-center gap-3 text-olive-700">
-            <Clock className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-            <span className="text-sm font-medium">{Math.floor(workshop.duration / 60)} hours</span>
-          </div>
-          <div className="flex items-center gap-3 text-olive-700">
-            {workshop.location === 'Virtual' ? (
-              <>
-                <Calendar className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm font-medium">Online workshop</span>
-              </>
-            ) : workshop.location?.includes('Hybrid') ? (
-              <>
-                <Calendar className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm font-medium">In-person & Online</span>
-              </>
-            ) : (
-              <>
-                <MapPin className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm font-medium">In-person</span>
-              </>
-            )}
-          </div>
-          {workshop.capacity && (
-            <div className="flex items-center gap-3 text-olive-700">
-              <Users className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-              <span className="text-sm font-medium">Max {workshop.capacity} participants</span>
-            </div>
-          )}
-          {workshop.experienceLevel && (
-            <div className="flex items-center gap-3 text-olive-700">
-              <span className="text-sm font-medium capitalize">{workshop.experienceLevel.replace('-', ' ')}</span>
-            </div>
-          )}
-        </div>
-
         {/* Session Selection */}
         {upcomingSessions.length > 0 ? (
           <div className="mb-6">
