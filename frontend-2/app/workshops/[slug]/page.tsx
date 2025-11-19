@@ -465,6 +465,16 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
+  // Get upcoming sessions and calculate spots remaining
+  const upcomingSessions = (serviceData?.sessions || [])
+    .filter((session: any) => new Date(session.start_time) > new Date() && session.is_published !== false)
+    .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+
+  // Use the first upcoming session's spots or the minimum across all sessions
+  const spotsRemaining = upcomingSessions.length > 0
+    ? upcomingSessions[0].spots_available ?? 0
+    : 0
+
   // Transform API data to component format
   const workshop = serviceData ? {
     id: serviceData.id,
@@ -472,13 +482,13 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
     description: serviceData.short_description || serviceData.description || 'A transformative workshop experience.',
     image: serviceData.image_url || serviceData.featured_image || '/workshop-image-1.jpg',
     startTime: serviceData.start_time || "9:00 AM",
-    endTime: serviceData.end_time || "5:00 PM", 
+    endTime: serviceData.end_time || "5:00 PM",
     duration: serviceData.duration_minutes || 480,
     location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location_type === 'hybrid' ? 'Hybrid (In-person & Online)' : 'In-person',
     venue: serviceData.venue_name || 'Workshop Center',
     address: serviceData.venue_address || serviceData.location || 'Location TBD',
     capacity: serviceData.max_participants || serviceData.capacity || 20,
-    spotsRemaining: serviceData.spots_remaining || serviceData.available_spots || serviceData.capacity || 20,
+    spotsRemaining: spotsRemaining,
     experienceLevel: serviceData.experience_level || 'all-levels',
     price: serviceData.price_cents ? Math.floor(serviceData.price_cents / 100) : 0,
     categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Workshop'],
@@ -512,15 +522,13 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
       { id: "3", title: "Community", description: "Connect with like-minded individuals on similar journeys." },
       { id: "4", title: "Expert Guidance", description: "Benefit from professional facilitation and support." },
     ],
-    dates: serviceData.workshop_dates || serviceData.upcoming_dates || [
-      {
-        id: 1,
-        date: serviceData.start_date ? new Date(serviceData.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'TBD',
-        startTime: serviceData.start_time || "9:00 AM",
-        endTime: serviceData.end_time || "5:00 PM",
-        spotsRemaining: serviceData.spots_remaining || serviceData.available_spots || serviceData.capacity || 20,
-      },
-    ],
+    dates: upcomingSessions.map((session: any) => ({
+      id: session.id,
+      date: new Date(session.start_time).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      startTime: new Date(session.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      endTime: new Date(session.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      spotsRemaining: session.spots_available ?? 0,
+    })),
   } : null
 
   // Get the service ID for API calls
@@ -996,19 +1004,17 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               </div>
               
               {/* Urgency Card */}
-              <Card className="mt-6 border-2 border-terracotta-200 bg-terracotta-50">
-                <CardContent className="p-6 text-center">
-                  <Sparkles className="h-8 w-8 text-terracotta-600 mx-auto mb-3" strokeWidth="1.5" />
-                  <h3 className="font-semibold text-olive-900 mb-2">Limited Availability</h3>
-                  <p className="text-sm text-olive-700 mb-4">
-                    Only <span className="font-bold text-terracotta-600">{workshop.spotsRemaining} spots</span> remaining for this transformative experience
-                  </p>
-                  <div className="flex justify-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-terracotta-400 animate-pulse" />
-                    <p className="text-xs text-olive-600">3 people viewing now</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {workshop.spotsRemaining > 0 && (
+                <Card className="mt-6 border-2 border-terracotta-200 bg-terracotta-50">
+                  <CardContent className="p-6 text-center">
+                    <Sparkles className="h-8 w-8 text-terracotta-600 mx-auto mb-3" strokeWidth="1.5" />
+                    <h3 className="font-semibold text-olive-900 mb-2">Limited Availability</h3>
+                    <p className="text-sm text-olive-700">
+                      Only <span className="font-bold text-terracotta-600">{workshop.spotsRemaining} {workshop.spotsRemaining === 1 ? 'spot' : 'spots'} left</span> for the next session
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
