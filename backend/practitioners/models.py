@@ -721,3 +721,90 @@ class ClientNote(BaseModel):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class FeatureRequest(BaseModel):
+    """
+    Feature requests/wishlist items submitted by practitioners.
+    Allows practitioners to submit feedback and feature requests.
+    """
+    CATEGORY_CHOICES = [
+        ('scheduling', 'Scheduling'),
+        ('payments', 'Payments & Billing'),
+        ('analytics', 'Analytics & Reports'),
+        ('client_management', 'Client Management'),
+        ('messaging', 'Messaging'),
+        ('ui_ux', 'UI/UX'),
+        ('mobile', 'Mobile App'),
+        ('integrations', 'Integrations'),
+        ('other', 'Other'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    STATUS_CHOICES = [
+        ('submitted', 'Submitted'),
+        ('under_review', 'Under Review'),
+        ('planned', 'Planned'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('declined', 'Declined'),
+    ]
+
+    practitioner = models.ForeignKey(
+        Practitioner,
+        on_delete=models.CASCADE,
+        related_name='feature_requests',
+        help_text='Practitioner who submitted the request'
+    )
+    title = models.CharField(
+        max_length=255,
+        help_text='Short title/summary of the feature request'
+    )
+    description = models.TextField(
+        help_text='Detailed description of the feature request'
+    )
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='other',
+        help_text='Category of the feature request'
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        help_text="Practitioner's perceived priority"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='submitted',
+        help_text='Current status of the request'
+    )
+    admin_notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Internal notes from admin/development team'
+    )
+    votes = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of practitioners who voted for this feature'
+    )
+
+    class Meta:
+        verbose_name = 'Feature Request'
+        verbose_name_plural = 'Feature Requests'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['practitioner', '-created_at']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['category', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.practitioner.display_name or self.practitioner.user.email}"

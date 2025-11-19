@@ -10,7 +10,8 @@ from .views import (
     AvailabilityViewSet,
     CertificationViewSet,
     EducationViewSet,
-    PractitionerApplicationViewSet
+    PractitionerApplicationViewSet,
+    FeatureRequestViewSet
 )
 from .views_calendar import PractitionerCalendarViewSet
 
@@ -25,6 +26,7 @@ router.register(r'certifications', CertificationViewSet, basename='certification
 router.register(r'education', EducationViewSet, basename='education')
 router.register(r'applications', PractitionerApplicationViewSet, basename='practitioner-application')
 router.register(r'calendar', PractitionerCalendarViewSet, basename='practitioner-calendar')
+router.register(r'feature-requests', FeatureRequestViewSet, basename='feature-request')
 
 # URL patterns
 urlpatterns = [
