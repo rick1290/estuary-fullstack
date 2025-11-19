@@ -184,13 +184,6 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
               </div>
               <span className="font-semibold text-olive-900">{workshop.location}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Max Participants</span>
-              </div>
-              <span className="font-semibold text-olive-900">{workshop.capacity}</span>
-            </div>
           </div>
 
           <Separator className="bg-sage-200 mb-6" />
