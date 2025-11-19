@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format, addWeeks, setHours, setMinutes } from "date-fns"
-import { CalendarIcon, Clock, Plus, X, GripVertical, Loader2 } from "lucide-react"
+import { CalendarIcon, Clock, Plus, X, GripVertical, Loader2, Edit, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ServiceReadable } from "@/src/client/types.gen"
 
@@ -156,6 +156,41 @@ export function ServiceSessionsSection({
     })
   }
 
+  const startEditSession = (session: any) => {
+    setEditingSessionId(session.id)
+    setEditDate(new Date(session.start_time))
+    setEditTime(format(new Date(session.start_time), "HH:mm"))
+  }
+
+  const cancelEdit = () => {
+    setEditingSessionId(null)
+    setEditDate(undefined)
+    setEditTime("09:00")
+  }
+
+  const saveSessionEdit = async (sessionId: number, session: any) => {
+    if (!editDate || !editTime) return
+
+    const [hours, minutes] = editTime.split(':').map(Number)
+    const startTime = setMinutes(setHours(editDate, hours), minutes)
+
+    // Calculate end time based on original duration
+    const originalDuration = (new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / 60000
+    const endTime = new Date(startTime.getTime() + originalDuration * 60000)
+
+    await updateMutation.mutateAsync({
+      path: { id: sessionId },
+      body: {
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString()
+      }
+    })
+
+    setEditingSessionId(null)
+    setEditDate(undefined)
+    setEditTime("09:00")
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -170,10 +205,12 @@ export function ServiceSessionsSection({
       <div className="space-y-2">
         {sessions.map((session: any, index: number) => {
           const hasBookings = (session.booking_count || 0) > 0
+          const isEditing = editingSessionId === session.id
+
           return (
             <Card key={session.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-1">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">
                       {isCourse ? `Module ${index + 1}` : `Session ${index + 1}`}
@@ -187,37 +224,127 @@ export function ServiceSessionsSection({
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="h-3 w-3" />
-                      {format(new Date(session.start_time), "PPP")}
+
+                  {isEditing ? (
+                    /* Edit Mode */
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Edit Date */}
+                      <div className="space-y-2">
+                        <Label className="text-xs">Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !editDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-3 w-3" />
+                              {editDate ? format(editDate, "PPP") : "Select date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={editDate}
+                              onSelect={setEditDate}
+                              initialFocus
+                              disabled={(date) => date < new Date()}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* Edit Time */}
+                      <div className="space-y-2">
+                        <Label className="text-xs">Start Time</Label>
+                        <Input
+                          type="time"
+                          size-sm
+                          value={editTime}
+                          onChange={(e) => setEditTime(e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(session.start_time), "p")} - {format(new Date(session.end_time), "p")}
-                    </div>
-                  </div>
-                  {session.description && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {session.description}
-                    </p>
-                  )}
-                  {hasBookings && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      ⚠️ This session has bookings and cannot be deleted or rescheduled
-                    </p>
+                  ) : (
+                    /* View Mode */
+                    <>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-3 w-3" />
+                          {format(new Date(session.start_time), "PPP")}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(session.start_time), "p")} - {format(new Date(session.end_time), "p")}
+                        </div>
+                      </div>
+                      {session.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {session.description}
+                        </p>
+                      )}
+                      {hasBookings && (
+                        <p className="text-xs text-amber-600">
+                          ⚠️ This session has bookings and cannot be deleted or rescheduled
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeSession(session.id)}
-                  disabled={deleteMutation.isPending || hasBookings}
-                  title={hasBookings ? "Cannot delete session with bookings" : "Delete session"}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-1">
+                  {isEditing ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => saveSessionEdit(session.id, session)}
+                        disabled={updateMutation.isPending || !editDate || !editTime}
+                        title="Save changes"
+                      >
+                        <Check className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={cancelEdit}
+                        disabled={updateMutation.isPending}
+                        title="Cancel editing"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => startEditSession(session)}
+                        disabled={hasBookings || deleteMutation.isPending}
+                        title={hasBookings ? "Cannot edit session with bookings" : "Edit session"}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeSession(session.id)}
+                        disabled={deleteMutation.isPending || hasBookings}
+                        title={hasBookings ? "Cannot delete session with bookings" : "Delete session"}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
           )
