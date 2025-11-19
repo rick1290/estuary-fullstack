@@ -135,21 +135,21 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
                 <SelectContent>
                     {upcomingSessions.map((session: ServiceSession) => (
                       <SelectItem key={session.id} value={session.id.toString()}>
-                        <div className="flex justify-between items-center w-full">
-                          <div>
-                            <div className="font-medium">
+                        <div className="flex justify-between items-center w-full gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">
                               {format(new Date(session.start_time), 'EEE, MMM d, yyyy')}
                             </div>
-                            <div className="text-xs text-olive-600">
+                            <div className="text-xs text-olive-600 truncate">
                               {format(new Date(session.start_time), 'h:mm a')} - {format(new Date(session.end_time), 'h:mm a')}
                             </div>
                           </div>
                           {session.spots_available !== undefined && (
                             <Badge
                               variant={session.spots_available < 5 ? "destructive" : "secondary"}
-                              className="ml-2"
+                              className="ml-auto text-[10px] px-1.5 py-0.5 h-auto leading-tight flex-shrink-0 whitespace-nowrap"
                             >
-                              {session.spots_available} spots left
+                              {session.spots_available} left
                             </Badge>
                           )}
                         </div>
