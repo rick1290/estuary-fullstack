@@ -29,6 +29,8 @@ interface ServiceCardProps {
   }
   href: string
   index?: number
+  firstSessionDate?: string
+  nextSessionDate?: string
 }
 
 export default function ServiceCard({
@@ -49,7 +51,9 @@ export default function ServiceCard({
   categories,
   practitioner,
   href,
-  index = 0
+  index = 0,
+  firstSessionDate,
+  nextSessionDate
 }: ServiceCardProps) {
   // Get service type label
   const getServiceTypeLabel = () => {
@@ -153,11 +157,37 @@ export default function ServiceCard({
           </div>
 
           <div className="space-y-2 mb-4 flex-shrink-0">
-            {/* Date for workshops */}
-            {date && (
+            {/* Date for workshops - fallback to old date field */}
+            {type === "workshops" && date && !nextSessionDate && (
               <div className="flex items-center gap-2 text-olive-700">
                 <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
                 <span className="text-sm">{date}</span>
+              </div>
+            )}
+
+            {/* Next session date for workshops */}
+            {type === "workshops" && nextSessionDate && (
+              <div className="flex items-center gap-2 text-olive-700">
+                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                <span className="text-sm">
+                  Next: {new Date(nextSessionDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+            )}
+
+            {/* Start date for courses */}
+            {type === "courses" && firstSessionDate && (
+              <div className="flex items-center gap-2 text-olive-700">
+                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                <span className="text-sm">
+                  Starts {new Date(firstSessionDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
               </div>
             )}
 

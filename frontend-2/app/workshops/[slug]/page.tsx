@@ -491,6 +491,9 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
     spotsRemaining: spotsRemaining,
     experienceLevel: serviceData.experience_level || 'all-levels',
     price: serviceData.price_cents ? Math.floor(serviceData.price_cents / 100) : 0,
+    nextSessionDate: serviceData.next_session_date,
+    firstSessionDate: serviceData.first_session_date,
+    lastSessionDate: serviceData.last_session_date,
     categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Workshop'],
     practitioners: serviceData.instructors || (serviceData.practitioner || serviceData.primary_practitioner) ? [{
       id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
@@ -736,15 +739,26 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               
               {/* Key Details */}
               <div className="bg-cream-100 rounded-2xl p-6 space-y-3">
-                {workshop.dates && workshop.dates[0] && (
+                {workshop.nextSessionDate && (
                   <div className="flex items-center gap-3 text-olive-700">
                     <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                    <span className="font-medium">Next Date: {workshop.dates[0].date}</span>
+                    <span className="font-medium">
+                      Next Date: {new Date(workshop.nextSessionDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
                   </div>
                 )}
                 <div className="flex items-center gap-3 text-olive-700">
                   <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="font-medium">{workshop.startTime} - {workshop.endTime}</span>
+                  <span className="font-medium">
+                    {workshop.nextSessionDate && upcomingSessions.length > 0
+                      ? `${new Date(upcomingSessions[0].start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${new Date(upcomingSessions[0].end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+                      : `${workshop.startTime} - ${workshop.endTime}`
+                    }
+                  </span>
                 </div>
                 {workshop.venue && (
                   <div className="flex items-center gap-3 text-olive-700">

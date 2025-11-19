@@ -350,6 +350,9 @@ class ServiceListSerializer(serializers.ModelSerializer):
     duration_display = serializers.CharField(read_only=True)
     primary_image = serializers.SerializerMethodField()
     schedule = SimpleScheduleSerializer(read_only=True)
+    first_session_date = serializers.DateTimeField(read_only=True)
+    last_session_date = serializers.DateTimeField(read_only=True)
+    next_session_date = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Service
@@ -360,7 +363,8 @@ class ServiceListSerializer(serializers.ModelSerializer):
             'primary_practitioner', 'max_participants', 'experience_level',
             'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
-            'primary_image', 'created_at', 'updated_at'
+            'primary_image', 'first_session_date', 'last_session_date', 'next_session_date',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'public_uuid', 'slug', 'created_at', 'updated_at']
     

@@ -177,6 +177,9 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
     location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Virtual',
     rating: serviceData.average_rating || 4.6,
     reviewCount: serviceData.total_reviews || 0,
+    firstSessionDate: serviceData.first_session_date,
+    lastSessionDate: serviceData.last_session_date,
+    nextSessionDate: serviceData.next_session_date,
     categories: Array.isArray(serviceData.categories)
       ? serviceData.categories.map(c => c.name)
       : serviceData.category
@@ -425,11 +428,20 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               
               {/* Course Stats */}
               <div className="flex flex-wrap items-center gap-8">
-                <div>
-                  <p className="text-3xl font-bold text-olive-900">{course.duration}</p>
-                  <p className="text-olive-600">Total Duration</p>
-                </div>
-                <div className="w-px h-12 bg-sage-300" />
+                {course.firstSessionDate && (
+                  <>
+                    <div>
+                      <p className="text-3xl font-bold text-olive-900">
+                        {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                      <p className="text-olive-600">Starts</p>
+                    </div>
+                    <div className="w-px h-12 bg-sage-300" />
+                  </>
+                )}
                 <div>
                   <p className="text-3xl font-bold text-olive-900">{course.sessionCount}</p>
                   <p className="text-olive-600">Live Sessions</p>

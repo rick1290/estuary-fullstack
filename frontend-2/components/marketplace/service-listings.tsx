@@ -275,6 +275,8 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
     savingsPercentage: service.savings_percentage,
     capacity: service.max_participants || service.capacity,
     date: service.start_date ? new Date(service.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : undefined,
+    firstSessionDate: service.first_session_date,
+    nextSessionDate: service.next_session_date,
     }
   })
 

@@ -354,6 +354,14 @@ export function ServiceSessionsSection({
       {/* Add New Session Form */}
       <Card className="p-4 border-dashed">
         <div className="space-y-4">
+          {/* Timezone Indicator */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+            <Clock className="h-4 w-4" />
+            <span>
+              All times are in <strong>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</strong> (your local timezone)
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Date Selection */}
             <div className="space-y-2">
