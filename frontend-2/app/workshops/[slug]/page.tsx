@@ -494,6 +494,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
     categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Workshop'],
     practitioners: serviceData.instructors || (serviceData.practitioner || serviceData.primary_practitioner) ? [{
       id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
+      slug: (serviceData.practitioner?.slug || serviceData.primary_practitioner?.slug),
       name: (serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Workshop Leader'),
       image: (serviceData.practitioner?.profile_image_url || serviceData.primary_practitioner?.profile_image_url || '/practitioner-1.jpg'),
       title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Workshop Facilitator'),
@@ -787,10 +788,10 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             <div className="relative animate-scale-in">
               <div className="relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-blush-100 shadow-2xl">
                 {workshop.image ? (
-                  <img 
-                    src={workshop.image} 
+                  <img
+                    src={workshop.image}
                     alt={workshop.title}
-                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-70"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -813,7 +814,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                   <p className="text-sm text-olive-600 mb-3">Your Lead Facilitator</p>
                   <div className="flex items-center gap-4">
                     {workshop.practitioners[0].image ? (
-                      <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
                         <img
                           src={workshop.practitioners[0].image}
                           alt={workshop.practitioners[0].name}
@@ -821,7 +822,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                         />
                       </div>
                     ) : (
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
                         <span className="text-2xl font-bold text-white">
                           {workshop.practitioners[0].name.split(' ').map((n: string) => n[0]).join('')}
                         </span>
@@ -945,7 +946,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                         <div className="flex flex-col md:flex-row">
                           <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-100 to-sage-100 flex items-center justify-center">
                             {practitioner.image ? (
-                              <div className="w-28 h-28 rounded-full bg-white shadow-xl overflow-hidden">
+                              <div className="w-28 h-28 rounded-2xl bg-white shadow-xl overflow-hidden">
                                 <img
                                   src={practitioner.image}
                                   alt={practitioner.name}
@@ -953,7 +954,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                                 />
                               </div>
                             ) : (
-                              <div className="w-28 h-28 rounded-full bg-white shadow-xl flex items-center justify-center">
+                              <div className="w-28 h-28 rounded-2xl bg-white shadow-xl flex items-center justify-center">
                                 <span className="text-4xl font-bold text-olive-800">
                                   {practitioner.name.split(' ').map((n: string) => n[0]).join('')}
                                 </span>
@@ -965,7 +966,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                             <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
                             <p className="text-olive-600 leading-relaxed mb-4">{practitioner.bio}</p>
                             <Link
-                              href={`/practitioners/${practitioner.id}`}
+                              href={`/practitioners/${practitioner.slug || practitioner.id}`}
                               className="text-sage-600 hover:text-sage-800 font-medium text-sm inline-flex items-center gap-1 transition-colors"
                             >
                               View Profile
