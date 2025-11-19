@@ -599,7 +599,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
             {/* Your Learning Journey */}
             <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">Your Learning Journey</h2>
+              <h2 className="text-3xl font-bold text-olive-900 mb-6">Your Learning Journey</h2>
+              <div className="flex items-center gap-2 text-sm text-olive-600 bg-sage-50/50 rounded-lg p-3 mb-6">
+                <Clock className="h-4 w-4" />
+                <span>
+                  All times are in <strong>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</strong> (your local timezone)
+                </span>
+              </div>
               <div className="space-y-6">
                 {course.sessions.map((session, index) => (
                   <Card key={session.id} className="border-2 border-sage-200 hover:border-sage-300 transition-all overflow-hidden group">
@@ -626,22 +632,21 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                     </div>
                     <CardContent className="p-6 bg-cream-50">
                       <div className="flex flex-wrap gap-4 text-sm text-olive-600 mb-4">
-                        {session.start_time && (
+                        {session.start_time && session.end_time && (
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" strokeWidth="1.5" />
                             <span>
                               {new Date(session.start_time).toLocaleString('en-US', {
+                                weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
                                 hour: 'numeric',
                                 minute: '2-digit'
+                              })} - {new Date(session.end_time).toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit'
                               })}
                             </span>
-                          </div>
-                        )}
-                        {session.duration_minutes && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{session.duration_minutes} min</span>
                           </div>
                         )}
                         {!session.start_time && session.startTime && (
@@ -650,18 +655,22 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                             <span>{session.startTime} - {session.endTime}</span>
                           </div>
                         )}
+                        {session.duration_minutes && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-olive-500">({session.duration_minutes} min)</span>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-olive-800 mb-3">What we'll explore:</p>
+                      {session.agenda && session.agenda.length > 0 && (
                         <div className="grid gap-2">
-                          {(session.agenda || []).map((item, i) => (
+                          {session.agenda.map((item, i) => (
                             <div key={i} className="flex gap-3">
                               <div className="w-1.5 h-1.5 rounded-full bg-terracotta-400 mt-2 flex-shrink-0" />
                               <span className="text-olive-600">{item}</span>
                             </div>
                           ))}
                         </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
