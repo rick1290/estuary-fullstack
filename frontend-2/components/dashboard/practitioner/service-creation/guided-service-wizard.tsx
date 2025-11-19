@@ -40,11 +40,11 @@ import {
   Sparkles,
   HelpCircle
 } from "lucide-react"
-import { 
+import {
   servicesCreateMutation,
-  serviceCategoriesListOptions,
   practitionerCategoriesListOptions,
-  schedulesListOptions
+  schedulesListOptions,
+  modalitiesListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import Link from "next/link"
 import {
@@ -80,7 +80,7 @@ const phase2Schema = z.object({
 })
 
 const phase3Schema = z.object({
-  categoryId: z.string().optional(),
+  modalityId: z.string().optional(),
   practitionerCategoryId: z.string().optional(),
   includes: z.string().optional(),
   description: z.string().min(50, "Please provide a detailed description").max(2000),
@@ -194,8 +194,8 @@ export function GuidedServiceWizard() {
   const [useTemplate, setUseTemplate] = useState(false)
 
   // Fetch data
-  const { data: globalCategories, refetch: refetchGlobalCategories } = useQuery({
-    ...serviceCategoriesListOptions({}),
+  const { data: modalities } = useQuery({
+    ...modalitiesListOptions({}),
   })
 
   const { data: practitionerCategories, refetch: refetchPractitionerCategories } = useQuery({
@@ -216,7 +216,7 @@ export function GuidedServiceWizard() {
       duration_minutes: 60,
       max_participants: 1,
       location_type: "virtual",
-      categoryId: "",
+      modalityId: "",
       practitionerCategoryId: "",
       shortDescription: "",
       description: "",
@@ -321,7 +321,7 @@ export function GuidedServiceWizard() {
         includes: data.includes ? data.includes.split('\n').filter(item => item.trim()).map(item => item.trim()) : [],
         // Optional fields
         ...(data.schedule_id && data.schedule_id !== "none" && { schedule: parseInt(data.schedule_id) }),
-        ...(data.categoryId && { category_id: parseInt(data.categoryId) }),
+        ...(data.modalityId && data.modalityId !== "none" && { modality_ids: [parseInt(data.modalityId)] }),
         ...(data.practitionerCategoryId && { practitioner_category_id: parseInt(data.practitionerCategoryId) }),
       }
     })
@@ -778,33 +778,39 @@ export function GuidedServiceWizard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Categories */}
+                    {/* Modality and Practitioner Category */}
                     <div className="grid gap-4 md:grid-cols-2">
-                      {/* Global Category */}
+                      {/* Modality */}
                       <FormField
                         control={form.control}
-                        name="categoryId"
+                        name="modalityId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Category (Optional)</FormLabel>
-                            <Select 
-                              onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
+                            <FormLabel className="flex items-center">
+                              <Tag className="h-4 w-4 mr-2" />
+                              Modality
+                            </FormLabel>
+                            <Select
+                              onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
                               value={field.value || "none"}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select a category" />
+                                  <SelectValue placeholder="Select a modality" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="none">No category</SelectItem>
-                                {globalCategories?.results?.map((category) => (
-                                  <SelectItem key={category.id} value={category.id.toString()}>
-                                    {category.name}
+                                <SelectItem value="none">No modality</SelectItem>
+                                {modalities?.results?.map((modality) => (
+                                  <SelectItem key={modality.id} value={modality.id.toString()}>
+                                    {modality.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormDescription>
+                              The primary practice modality for this service (e.g., Yoga, Meditation)
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1007,7 +1013,6 @@ export function GuidedServiceWizard() {
         setShowCategoryDialog(open)
         if (!open) {
           refetchPractitionerCategories()
-          refetchGlobalCategories()
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -1019,7 +1024,6 @@ export function GuidedServiceWizard() {
           </DialogHeader>
           <CompactCategoryManager onCategoryChange={() => {
             refetchPractitionerCategories()
-            refetchGlobalCategories()
           }} />
         </DialogContent>
       </Dialog>

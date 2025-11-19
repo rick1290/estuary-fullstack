@@ -296,12 +296,15 @@ export default function PractitionerBookingsList() {
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={booking.user?.avatar_url || ""} alt={booking.user?.full_name || ""} />
                             <AvatarFallback>
-                              {(booking.user?.full_name || booking.user?.email || "U").charAt(0).toUpperCase()}
+                              {(booking.user?.full_name || booking.user?.email || "U")
+                                .split(' ')
+                                .map(n => n[0])
+                                .join('')
+                                .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{booking.user?.full_name || booking.user?.email || "Unknown"}</p>
-                            <p className="text-sm text-muted-foreground">{booking.user?.email}</p>
                           </div>
                         </div>
                       </TableCell>

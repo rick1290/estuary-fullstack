@@ -449,27 +449,12 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
-                  <Badge
-                    variant="destructive"
-                    className="absolute -right-1 -top-1 h-4 w-4 p-0 flex items-center justify-center"
-                  >
-                    4
-                  </Badge>
                   <span className="sr-only">Notifications</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80">
-                <div className="p-2">
-                  <p className="text-sm">New booking confirmation</p>
-                </div>
-                <div className="p-2">
-                  <p className="text-sm">You have a new message</p>
-                </div>
-                <div className="p-2">
-                  <p className="text-sm">Upcoming session reminder</p>
-                </div>
-                <div className="p-2">
-                  <p className="text-sm">New client inquiry</p>
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  No new notifications
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="justify-center">

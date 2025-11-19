@@ -236,17 +236,22 @@ export default function ClientsList() {
                       </Button>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center">
-                        <Avatar className="h-9 w-9 mr-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src={client.avatar_url || "/generic-media-placeholder.png"}
+                            src={client.avatar_url || ""}
                             alt={client.name}
                           />
-                          <AvatarFallback>{client.name?.charAt(0) || '?'}</AvatarFallback>
+                          <AvatarFallback>
+                            {(client.name || "U")
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')
+                              .toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
                         </div>
                       </div>
                     </TableCell>

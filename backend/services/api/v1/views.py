@@ -800,7 +800,7 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ServiceSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         """Get sessions based on service"""
         # For detail views (retrieve, update, destroy), return all sessions
@@ -815,12 +815,36 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
         return ServiceSession.objects.filter(
             service_id=service_id
         ).select_related('service', 'livekit_room', 'practitioner_location').order_by('start_time')
-    
+
     def get_permissions(self):
         """Only service owners can modify sessions"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAuthenticated(), IsServiceOwner()]
         return super().get_permissions()
+
+    def perform_destroy(self, instance):
+        """Prevent deletion of sessions with bookings"""
+        # Check if there are any bookings for this session
+        booking_count = instance.bookings.count()
+        if booking_count > 0:
+            raise ValidationError({
+                'detail': f'Cannot delete session with {booking_count} existing booking(s). Please cancel the bookings first.'
+            })
+        instance.delete()
+
+    def perform_update(self, serializer):
+        """Prevent editing date/time of sessions with bookings"""
+        instance = self.get_object()
+
+        # Check if start_time or end_time is being changed
+        if 'start_time' in serializer.validated_data or 'end_time' in serializer.validated_data:
+            booking_count = instance.bookings.count()
+            if booking_count > 0:
+                raise ValidationError({
+                    'detail': f'Cannot modify session date/time with {booking_count} existing booking(s). Please cancel the bookings first.'
+                })
+
+        serializer.save()
 
 
 @extend_schema_view(

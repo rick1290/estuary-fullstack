@@ -25,7 +25,7 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
       {/* Overall Rating Summary */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
         <div className="bg-primary text-primary-foreground p-4 rounded-lg flex items-center">
-          <span className="text-3xl font-bold mr-2">{(practitioner.average_rating || practitioner.average_rating_float || 0).toFixed(1)}</span>
+          <span className="text-3xl font-bold mr-2">{Number(practitioner.average_rating || practitioner.average_rating_float || 0).toFixed(1)}</span>
           <span className="text-sm">out of 5</span>
         </div>
 
@@ -37,9 +37,9 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
                 <Star
                   key={i}
                   className={`h-5 w-5 ${
-                    i < Math.round(practitioner.average_rating || practitioner.average_rating_float || 0) ? "text-amber-500" : "text-muted-foreground/30"
+                    i < Math.round(Number(practitioner.average_rating || practitioner.average_rating_float || 0)) ? "text-amber-500" : "text-muted-foreground/30"
                   }`}
-                  fill={i < Math.round(practitioner.average_rating || practitioner.average_rating_float || 0) ? "currentColor" : "none"}
+                  fill={i < Math.round(Number(practitioner.average_rating || practitioner.average_rating_float || 0)) ? "currentColor" : "none"}
                 />
               ))}
             <span className="ml-2 text-sm text-muted-foreground">Based on {practitioner.total_reviews || 0} reviews</span>

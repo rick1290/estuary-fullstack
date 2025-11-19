@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Star, Mail, Phone, MapPin, Calendar, DollarSign, BookOpen } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Star, MessageCircle, Phone, MapPin, Calendar, DollarSign, BookOpen } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
 import { practitionersClientsRetrieve2Options } from "@/src/client/@tanstack/react-query.gen"
+import { conversationsList, conversationsCreate } from "@/src/client/sdk.gen"
+import { useToast } from "@/components/ui/use-toast"
 import { format, parseISO } from "date-fns"
 
 interface ClientProfileProps {
@@ -17,7 +20,10 @@ interface ClientProfileProps {
 }
 
 export default function ClientProfile({ clientId }: ClientProfileProps) {
+  const router = useRouter()
+  const { toast } = useToast()
   const [isFavorite, setIsFavorite] = useState(false)
+  const [isMessaging, setIsMessaging] = useState(false)
 
   // Fetch client details from API
   const { data: client, isLoading, error } = useQuery({
@@ -31,6 +37,54 @@ export default function ClientProfile({ clientId }: ClientProfileProps) {
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite)
     // TODO: Implement API call to save favorite status
+  }
+
+  const handleMessageClient = async () => {
+    if (!client?.user_id) {
+      toast({
+        title: "Unable to message client",
+        description: "Client information is not available",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsMessaging(true)
+    try {
+      // First, check if a conversation already exists with this client
+      const conversationsResponse = await conversationsList()
+
+      // Find existing conversation with this client
+      const existingConversation = conversationsResponse.data?.results?.find((conv: any) => {
+        return conv.participants?.some((p: any) => p.user_id === client.user_id)
+      })
+
+      if (existingConversation) {
+        router.push(`/dashboard/practitioner/messages?conversationId=${existingConversation.id}`)
+        return
+      }
+
+      // No existing conversation found, create a new one
+      const response = await conversationsCreate({
+        body: {
+          other_user_id: client.user_id,
+          initial_message: `Hi ${client.full_name || client.display_name || 'there'}, I wanted to reach out to you.`
+        }
+      })
+
+      if (response.data?.id) {
+        router.push(`/dashboard/practitioner/messages?conversationId=${response.data.id}`)
+      }
+    } catch (error: any) {
+      console.error('Failed to open conversation:', error)
+      toast({
+        title: "Unable to open conversation",
+        description: "Please try again later",
+        variant: "destructive"
+      })
+    } finally {
+      setIsMessaging(false)
+    }
   }
 
   if (isLoading) {
@@ -79,16 +133,31 @@ export default function ClientProfile({ clientId }: ClientProfileProps) {
         <div className="relative inline-block mx-auto">
           <Avatar className="h-20 w-20 mx-auto mb-4">
             <AvatarImage src={client.avatar_url || "/generic-media-placeholder.png"} alt={name} />
-            <AvatarFallback>{name?.charAt(0) || "?"}</AvatarFallback>
+            <AvatarFallback>
+              {name?.split(' ').map(n => n[0]).join('').toUpperCase() || "?"}
+            </AvatarFallback>
           </Avatar>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-background shadow-sm"
-            onClick={toggleFavorite}
-          >
-            {isFavorite ? <Star className="h-4 w-4 fill-primary text-primary" /> : <Star className="h-4 w-4" />}
-          </Button>
+          <div className="absolute -top-2 -right-2 flex gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-background shadow-sm"
+              onClick={handleMessageClient}
+              disabled={isMessaging}
+              title="Message client"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-background shadow-sm"
+              onClick={toggleFavorite}
+              title="Mark as favorite"
+            >
+              {isFavorite ? <Star className="h-4 w-4 fill-primary text-primary" /> : <Star className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
         <h2 className="text-xl font-bold mb-1">{name}</h2>
         <p className="text-sm text-muted-foreground mb-4">Member since {memberSince}</p>
@@ -104,13 +173,6 @@ export default function ClientProfile({ clientId }: ClientProfileProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-4">
-          <div className="flex items-start">
-            <Mail className="h-4 w-4 mr-3 mt-1 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="break-all">{client.email}</p>
-            </div>
-          </div>
           {client.phone_number && (
             <div className="flex items-start">
               <Phone className="h-4 w-4 mr-3 mt-1 text-muted-foreground" />
