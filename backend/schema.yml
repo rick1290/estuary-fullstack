@@ -596,7 +596,8 @@ paths:
         - POST /bookings/{id}/cancel/ - Cancel booking with reason
         - POST /bookings/{id}/complete/ - Mark booking as completed
         - POST /bookings/{id}/no-show/ - Mark as no-show
-        - POST /bookings/{id}/reschedule/ - Reschedule booking
+        - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
+        - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
         - POST /bookings/{id}/notes/ - Add note to booking
         - POST /bookings/check-availability/ - Check practitioner availability
       parameters:
@@ -651,7 +652,8 @@ paths:
         - POST /bookings/{id}/cancel/ - Cancel booking with reason
         - POST /bookings/{id}/complete/ - Mark booking as completed
         - POST /bookings/{id}/no-show/ - Mark as no-show
-        - POST /bookings/{id}/reschedule/ - Reschedule booking
+        - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
+        - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
         - POST /bookings/{id}/notes/ - Add note to booking
         - POST /bookings/check-availability/ - Check practitioner availability
       tags:
@@ -732,7 +734,8 @@ paths:
         - POST /bookings/{id}/cancel/ - Cancel booking with reason
         - POST /bookings/{id}/complete/ - Mark booking as completed
         - POST /bookings/{id}/no-show/ - Mark as no-show
-        - POST /bookings/{id}/reschedule/ - Reschedule booking
+        - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
+        - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
         - POST /bookings/{id}/notes/ - Add note to booking
         - POST /bookings/check-availability/ - Check practitioner availability
       parameters:
@@ -768,7 +771,8 @@ paths:
         - POST /bookings/{id}/cancel/ - Cancel booking with reason
         - POST /bookings/{id}/complete/ - Mark booking as completed
         - POST /bookings/{id}/no-show/ - Mark as no-show
-        - POST /bookings/{id}/reschedule/ - Reschedule booking
+        - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
+        - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
         - POST /bookings/{id}/notes/ - Add note to booking
         - POST /bookings/check-availability/ - Check practitioner availability
       parameters:
@@ -815,7 +819,8 @@ paths:
         - POST /bookings/{id}/cancel/ - Cancel booking with reason
         - POST /bookings/{id}/complete/ - Mark booking as completed
         - POST /bookings/{id}/no-show/ - Mark as no-show
-        - POST /bookings/{id}/reschedule/ - Reschedule booking
+        - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
+        - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
         - POST /bookings/{id}/notes/ - Add note to booking
         - POST /bookings/check-availability/ - Check practitioner availability
       parameters:
@@ -1058,7 +1063,7 @@ paths:
   /api/v1/bookings/{id}/reschedule/:
     post:
       operationId: bookings_reschedule_create
-      description: Reschedule booking to new time
+      description: Reschedule booking to new time (creates new booking)
       parameters:
       - in: path
         name: id
@@ -1089,10 +1094,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingReschedule'
           description: ''
+  /api/v1/bookings/{id}/schedule/:
+    post:
+      operationId: bookings_schedule_create
+      description: Schedule an unscheduled draft booking (sets initial time)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
   /api/v1/bookings/check_availability/:
     post:
       operationId: bookings_check_availability_create
-      description: Check practitioner availability for a service
+      description: Check practitioner availability for a service (public endpoint)
       tags:
       - Bookings
       requestBody:
@@ -1110,6 +1149,7 @@ paths:
       security:
       - cookieAuth: []
       - bearerAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -1379,6 +1419,77 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/calendar/:
+    get:
+      operationId: calendar_list
+      description: Get practitioner's calendar events with aggregated attendees
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date-time
+        description: Filter events before this date
+      - in: query
+        name: service_type
+        schema:
+          type: string
+          enum:
+          - course
+          - session
+          - workshop
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date-time
+        description: Filter events from this date
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - completed
+          - confirmed
+          - in_progress
+      tags:
+      - calendar
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceSessionEvent'
+          description: ''
+  /api/v1/calendar/{id}/:
+    get:
+      operationId: calendar_retrieve
+      description: Get detailed information about a specific ServiceSession with all
+        attendees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - calendar
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceSessionEvent'
+          description: ''
   /api/v1/certifications/:
     get:
       operationId: certifications_list
@@ -2398,6 +2509,236 @@ paths:
       - {}
       responses:
         '200':
+          description: No response body
+  /api/v1/feature-requests/:
+    get:
+      operationId: feature_requests_list
+      description: List all feature requests for the authenticated practitioner
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - analytics
+          - client_management
+          - integrations
+          - messaging
+          - mobile
+          - other
+          - payments
+          - scheduling
+          - ui_ux
+        description: |-
+          Category of the feature request
+
+          * `scheduling` - Scheduling
+          * `payments` - Payments & Billing
+          * `analytics` - Analytics & Reports
+          * `client_management` - Client Management
+          * `messaging` - Messaging
+          * `ui_ux` - UI/UX
+          * `mobile` - Mobile App
+          * `integrations` - Integrations
+          * `other` - Other
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: string
+          enum:
+          - high
+          - low
+          - medium
+        description: |-
+          Practitioner's perceived priority
+
+          * `low` - Low
+          * `medium` - Medium
+          * `high` - High
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - completed
+          - declined
+          - in_progress
+          - planned
+          - submitted
+          - under_review
+        description: |-
+          Current status of the request
+
+          * `submitted` - Submitted
+          * `under_review` - Under Review
+          * `planned` - Planned
+          * `in_progress` - In Progress
+          * `completed` - Completed
+          * `declined` - Declined
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFeatureRequestList'
+          description: ''
+    post:
+      operationId: feature_requests_create
+      description: Create a new feature request
+      tags:
+      - Practitioners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeatureRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeatureRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequest'
+          description: ''
+  /api/v1/feature-requests/{id}/:
+    get:
+      operationId: feature_requests_retrieve
+      description: Get a specific feature request
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Feature Request.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequest'
+          description: ''
+    put:
+      operationId: feature_requests_update
+      description: Update a feature request (only if status is submitted)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Feature Request.
+        required: true
+      tags:
+      - Practitioners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeatureRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeatureRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequest'
+          description: ''
+    patch:
+      operationId: feature_requests_partial_update
+      description: Partially update a feature request (only if status is submitted)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Feature Request.
+        required: true
+      tags:
+      - Practitioners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFeatureRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFeatureRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFeatureRequestRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequest'
+          description: ''
+    delete:
+      operationId: feature_requests_destroy
+      description: Delete a feature request (only if status is submitted)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Feature Request.
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
           description: No response body
   /api/v1/health/:
     get:
@@ -4468,6 +4809,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerPayout'
           description: ''
+  /api/v1/practitioner-applications/complete_onboarding/:
+    post:
+      operationId: practitioner_applications_complete_onboarding_create
+      description: |-
+        Mark practitioner onboarding as complete and send confirmation email.
+        This should be called when the practitioner finishes all onboarding steps.
+      tags:
+      - practitioner-applications
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/practitioner-applications/complete_step/:
     post:
       operationId: practitioner_applications_complete_step_create
@@ -5199,8 +5554,13 @@ paths:
       - in: query
         name: modality
         schema:
-          type: integer
-        description: Modality ID
+          type: string
+        description: Modality slug(s) - comma-separated
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+        description: Modality ID(s) - comma-separated
       - name: ordering
         required: false
         in: query
@@ -5954,6 +6314,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/PractitionerDetail'
           description: ''
+  /api/v1/practitioners/clients/{client_id}/:
+    get:
+      operationId: practitioners_clients_retrieve_2
+      description: |-
+        Get detailed information about a specific client.
+        Returns client profile and booking statistics.
+      parameters:
+      - in: path
+        name: client_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - Practitioners
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerDetail'
+          description: ''
   /api/v1/practitioners/clients/{client_id}/notes/:
     get:
       operationId: practitioners_clients_notes_retrieve
@@ -6263,8 +6648,13 @@ paths:
       - in: query
         name: modality
         schema:
-          type: integer
-        description: Modality ID
+          type: string
+        description: Modality slug(s) - comma-separated
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+        description: Modality ID(s) - comma-separated
       - name: ordering
         required: false
         in: query
@@ -6514,6 +6904,14 @@ paths:
         name: min_price
         schema:
           type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
       - name: ordering
         required: false
         in: query
@@ -8374,6 +8772,14 @@ paths:
         name: min_price
         schema:
           type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
       - name: ordering
         required: false
         in: query
@@ -8577,6 +8983,1158 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/services/{id}/agenda/:
+    post:
+      operationId: services_agenda_create
+      description: Create a new agenda item for this service
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionAgendaItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionAgendaItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionAgendaItemRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSessionAgendaItemList'
+          description: ''
+  /api/v1/services/{id}/agenda/{agenda_id}/:
+    put:
+      operationId: services_agenda_update
+      description: Update a specific agenda item
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: path
+        name: agenda_id
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionAgendaItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionAgendaItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionAgendaItemRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSessionAgendaItemList'
+          description: ''
+    delete:
+      operationId: services_agenda_destroy
+      description: Delete a specific agenda item
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: path
+        name: agenda_id
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Services
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSessionAgendaItemList'
+          description: ''
+  /api/v1/services/{id}/benefits/:
+    post:
+      operationId: services_benefits_create
+      description: Create a new benefit for this service
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceBenefitRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceBenefitRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceBenefitRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceBenefitList'
+          description: ''
+  /api/v1/services/{id}/benefits/{benefit_id}/:
+    put:
+      operationId: services_benefits_update
+      description: Update a specific benefit
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: path
+        name: benefit_id
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceBenefitRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceBenefitRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceBenefitRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceBenefitList'
+          description: ''
+    delete:
+      operationId: services_benefits_destroy
+      description: Delete a specific benefit
+      parameters:
+      - in: query
+        name: age
+        schema:
+          type: number
+      - in: query
+        name: available_now
+        schema:
+          type: boolean
+      - in: path
+        name: benefit_id
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+      - in: query
+        name: exclude_types
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - advanced
+          - all_levels
+          - beginner
+          - intermediate
+        description: |-
+          * `beginner` - Beginner
+          * `intermediate` - Intermediate
+          * `advanced` - Advanced
+          * `all_levels` - All Levels
+      - in: query
+        name: has_bonus
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Service.
+        required: true
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_bundle
+        schema:
+          type: boolean
+      - in: query
+        name: is_featured
+        schema:
+          type: boolean
+      - in: query
+        name: is_package
+        schema:
+          type: boolean
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: location_type
+        schema:
+          type: string
+          enum:
+          - hybrid
+          - in_person
+          - virtual
+        description: |-
+          * `virtual` - Virtual
+          * `in_person` - In Person
+          * `hybrid` - Hybrid
+      - in: query
+        name: max_duration
+        schema:
+          type: integer
+      - in: query
+        name: max_participants
+        schema:
+          type: integer
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_duration
+        schema:
+          type: integer
+      - in: query
+        name: min_participants
+        schema:
+          type: integer
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - in: query
+        name: modality_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: practitioner
+        schema:
+          type: integer
+      - in: query
+        name: practitioner_slug
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service_type
+        schema:
+          type: string
+      - in: query
+        name: service_type_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - discontinued
+          - draft
+          - paused
+          - published
+        description: |-
+          Service publication status
+
+          * `draft` - Draft
+          * `published` - Published
+          * `paused` - Paused
+          * `discontinued` - Discontinued
+      tags:
+      - Services
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceBenefitList'
+          description: ''
   /api/v1/services/{id}/duplicate/:
     post:
       operationId: services_duplicate_create
@@ -11095,10 +12653,12 @@ components:
         start_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled start time
         end_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled end time
         timezone:
           type: string
@@ -11127,9 +12687,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/BookingDetail'
           readOnly: true
-      required:
-      - end_time
-      - start_time
     BookingCreateRequest:
       type: object
       description: Serializer for creating bookings
@@ -11149,10 +12706,12 @@ components:
         start_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled start time
         end_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled end time
         timezone:
           type: string
@@ -11179,10 +12738,8 @@ components:
           type: integer
           default: 0
       required:
-      - end_time
       - practitioner_id
       - service_id
-      - start_time
     BookingDetail:
       type: object
       description: Detailed booking serializer
@@ -11208,8 +12765,7 @@ components:
           - $ref: '#/components/schemas/BookingService'
           readOnly: true
         room:
-          allOf:
-          - $ref: '#/components/schemas/BookingRoom'
+          type: string
           readOnly: true
         location:
           allOf:
@@ -11218,10 +12774,12 @@ components:
         start_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled start time
         end_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled end time
         actual_start_time:
           type: string
@@ -11266,17 +12824,6 @@ components:
           type: string
           nullable: true
           description: Private notes from practitioner
-        meeting_url:
-          type: string
-          format: uri
-          nullable: true
-          description: Virtual meeting link
-          maxLength: 200
-        meeting_id:
-          type: string
-          nullable: true
-          description: Meeting ID or room number
-          maxLength: 100
         price_charged:
           type: string
           format: decimal
@@ -11324,23 +12871,6 @@ components:
           readOnly: true
           nullable: true
           description: Duration in minutes at time of booking
-        package_name_snapshot:
-          type: string
-          readOnly: true
-          description: Package name at time of booking
-        package_contents_snapshot:
-          readOnly: true
-          nullable: true
-          description: What was included in package at time of booking
-        bundle_name_snapshot:
-          type: string
-          readOnly: true
-          description: Bundle name at time of booking
-        bundle_sessions_snapshot:
-          type: integer
-          readOnly: true
-          nullable: true
-          description: Total sessions in bundle at time of booking
         completed_at:
           type: string
           format: date-time
@@ -11371,12 +12901,6 @@ components:
           readOnly: true
           nullable: true
           description: When booking was confirmed
-        started_at:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-          description: When service started
         status_changed_at:
           type: string
           format: date-time
@@ -11449,10 +12973,8 @@ components:
           format: date-time
           readOnly: true
       required:
-      - end_time
       - final_amount_cents
       - price_charged_cents
-      - start_time
     BookingDetailRequest:
       type: object
       description: Detailed booking serializer
@@ -11460,10 +12982,12 @@ components:
         start_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled start time
         end_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled end time
         timezone:
           type: string
@@ -11491,17 +13015,6 @@ components:
           type: string
           nullable: true
           description: Private notes from practitioner
-        meeting_url:
-          type: string
-          format: uri
-          nullable: true
-          description: Virtual meeting link
-          maxLength: 200
-        meeting_id:
-          type: string
-          nullable: true
-          description: Meeting ID or room number
-          maxLength: 100
         price_charged_cents:
           type: integer
           maximum: 2147483647
@@ -11521,10 +13034,8 @@ components:
           type: string
           nullable: true
       required:
-      - end_time
       - final_amount_cents
       - price_charged_cents
-      - start_time
     BookingList:
       type: object
       description: Booking list serializer with minimal details
@@ -11549,16 +13060,17 @@ components:
           - $ref: '#/components/schemas/BookingService'
           readOnly: true
         room:
-          allOf:
-          - $ref: '#/components/schemas/BookingRoom'
+          type: string
           readOnly: true
         start_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled start time
         end_time:
           type: string
           format: date-time
+          nullable: true
           description: Scheduled end time
         status:
           $ref: '#/components/schemas/Status8faEnum'
@@ -11597,9 +13109,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-      required:
-      - end_time
-      - start_time
     BookingNote:
       type: object
       description: Booking note serializer
@@ -11660,7 +13169,10 @@ components:
           type: string
           format: email
           readOnly: true
-        avatar_url:
+        user_id:
+          type: integer
+          readOnly: true
+        profile_image_url:
           type: string
           readOnly: true
         bio:
@@ -11668,6 +13180,11 @@ components:
           readOnly: true
           nullable: true
           description: Professional biography and description
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
     BookingReminder:
       type: object
       description: Booking reminder serializer
@@ -11750,28 +13267,6 @@ components:
       required:
       - end_time
       - start_time
-    BookingRoom:
-      type: object
-      description: Simplified room serializer for bookings
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        public_uuid:
-          type: string
-          format: uuid
-          readOnly: true
-          description: Public UUID for API exposure
-        name:
-          type: string
-          readOnly: true
-        room_name:
-          type: string
-          readOnly: true
-        status:
-          allOf:
-          - $ref: '#/components/schemas/Status91cEnum'
-          readOnly: true
     BookingService:
       type: object
       description: Simplified service serializer for bookings
@@ -11837,17 +13332,6 @@ components:
         location_id:
           type: integer
           nullable: true
-        meeting_url:
-          type: string
-          format: uri
-          nullable: true
-          description: Virtual meeting link
-          maxLength: 200
-        meeting_id:
-          type: string
-          nullable: true
-          description: Meeting ID or room number
-          maxLength: 100
         timezone:
           type: string
           description: Timezone for this booking
@@ -11872,17 +13356,6 @@ components:
         location_id:
           type: integer
           nullable: true
-        meeting_url:
-          type: string
-          format: uri
-          nullable: true
-          description: Virtual meeting link
-          maxLength: 200
-        meeting_id:
-          type: string
-          nullable: true
-          description: Meeting ID or room number
-          maxLength: 100
         timezone:
           type: string
           minLength: 1
@@ -11988,6 +13461,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/ServiceCategory'
           readOnly: true
+        modalities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
+          readOnly: true
         primary_practitioner:
           allOf:
           - $ref: '#/components/schemas/SimplePractitioner'
@@ -12082,20 +13560,27 @@ components:
           type: string
           readOnly: true
         includes:
+          type: array
+          items:
+            type: string
+          readOnly: true
           nullable: true
-          description: What's included in the service
-        address:
+          description: What's included in the service - array of items
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: uri
           nullable: true
           description: Service cover image
         tags:
+          type: array
+          items:
+            type: string
+          readOnly: true
           nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -12299,21 +13784,15 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
-        includes:
-          nullable: true
-          description: What's included in the service
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
-        tags:
-          nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -12375,6 +13854,82 @@ components:
       - name
       - price_cents
       - service_type
+    CalendarEventAttendee:
+      type: object
+      description: Simplified attendee info for calendar events
+      properties:
+        id:
+          type: integer
+        full_name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        phone_number:
+          type: string
+          nullable: true
+        booking_status:
+          type: string
+        booking_id:
+          type: integer
+        public_uuid:
+          type: string
+          format: uuid
+      required:
+      - booking_id
+      - booking_status
+      - email
+      - full_name
+      - id
+      - public_uuid
+    CalendarEventRoom:
+      type: object
+      description: Room info for calendar events
+      properties:
+        id:
+          type: integer
+        public_uuid:
+          type: string
+          format: uuid
+        livekit_room_name:
+          type: string
+        status:
+          type: string
+        max_participants:
+          type: integer
+          nullable: true
+      required:
+      - id
+      - livekit_room_name
+      - public_uuid
+      - status
+    CalendarEventService:
+      type: object
+      description: Service info for calendar events
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        service_type_code:
+          type: string
+        location_type:
+          type: string
+        duration_minutes:
+          type: integer
+        description:
+          type: string
+          nullable: true
+      required:
+      - duration_minutes
+      - id
+      - location_type
+      - name
+      - service_type_code
     CanceledByEnum:
       enum:
       - client
@@ -12387,6 +13942,28 @@ components:
         * `practitioner` - Practitioner
         * `system` - System
         * `admin` - Admin
+    CategoryEnum:
+      enum:
+      - scheduling
+      - payments
+      - analytics
+      - client_management
+      - messaging
+      - ui_ux
+      - mobile
+      - integrations
+      - other
+      type: string
+      description: |-
+        * `scheduling` - Scheduling
+        * `payments` - Payments & Billing
+        * `analytics` - Analytics & Reports
+        * `client_management` - Client Management
+        * `messaging` - Messaging
+        * `ui_ux` - UI/UX
+        * `mobile` - Mobile App
+        * `integrations` - Integrations
+        * `other` - Other
     Certification:
       type: object
       description: Serializer for practitioner certifications
@@ -12806,6 +14383,134 @@ components:
         * `intermediate` - Intermediate
         * `advanced` - Advanced
         * `all_levels` - All Levels
+    FeatureRequest:
+      type: object
+      description: Serializer for feature requests submitted by practitioners
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          description: Short title/summary of the feature request
+          maxLength: 255
+        description:
+          type: string
+          description: Detailed description of the feature request
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          description: |-
+            Category of the feature request
+
+            * `scheduling` - Scheduling
+            * `payments` - Payments & Billing
+            * `analytics` - Analytics & Reports
+            * `client_management` - Client Management
+            * `messaging` - Messaging
+            * `ui_ux` - UI/UX
+            * `mobile` - Mobile App
+            * `integrations` - Integrations
+            * `other` - Other
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          description: |-
+            Practitioner's perceived priority
+
+            * `low` - Low
+            * `medium` - Medium
+            * `high` - High
+        status:
+          allOf:
+          - $ref: '#/components/schemas/FeatureStatusEnum'
+          readOnly: true
+          description: |-
+            Current status of the request
+
+            * `submitted` - Submitted
+            * `under_review` - Under Review
+            * `planned` - Planned
+            * `in_progress` - In Progress
+            * `completed` - Completed
+            * `declined` - Declined
+        votes:
+          type: integer
+          readOnly: true
+          description: Number of practitioners who voted for this feature
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        practitioner_name:
+          type: string
+          readOnly: true
+        can_edit:
+          type: string
+          readOnly: true
+      required:
+      - description
+      - title
+    FeatureRequestRequest:
+      type: object
+      description: Serializer for feature requests submitted by practitioners
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Short title/summary of the feature request
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+          description: Detailed description of the feature request
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          description: |-
+            Category of the feature request
+
+            * `scheduling` - Scheduling
+            * `payments` - Payments & Billing
+            * `analytics` - Analytics & Reports
+            * `client_management` - Client Management
+            * `messaging` - Messaging
+            * `ui_ux` - UI/UX
+            * `mobile` - Mobile App
+            * `integrations` - Integrations
+            * `other` - Other
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          description: |-
+            Practitioner's perceived priority
+
+            * `low` - Low
+            * `medium` - Medium
+            * `high` - High
+      required:
+      - description
+      - title
+    FeatureStatusEnum:
+      enum:
+      - submitted
+      - under_review
+      - planned
+      - in_progress
+      - completed
+      - declined
+      type: string
+      description: |-
+        * `submitted` - Submitted
+        * `under_review` - Under Review
+        * `planned` - Planned
+        * `in_progress` - In Progress
+        * `completed` - Completed
+        * `declined` - Declined
     LocationTypeEnum:
       enum:
       - virtual
@@ -13333,9 +15038,23 @@ components:
         name:
           type: string
           maxLength: 100
+        slug:
+          type: string
+          readOnly: true
+          nullable: true
+          description: URL-friendly version of name
+          pattern: ^[-a-zA-Z0-9_]+$
         description:
           type: string
           nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Icon class or identifier
+          maxLength: 50
+        is_featured:
+          type: boolean
+          description: Whether to feature this modality on homepage and marketing
       required:
       - name
     ModalityRequest:
@@ -13349,6 +15068,14 @@ components:
         description:
           type: string
           nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Icon class or identifier
+          maxLength: 50
+        is_featured:
+          type: boolean
+          description: Whether to feature this modality on homepage and marketing
       required:
       - name
     Notification:
@@ -13683,12 +15410,14 @@ components:
       - direct
       - credit
       - package
+      - bundle
       - subscription
       type: string
       description: |-
         * `direct` - Direct Service Purchase
         * `credit` - Credit Purchase
         * `package` - Package Purchase
+        * `bundle` - Bundle Purchase
         * `subscription` - Subscription
     Package:
       type: object
@@ -13746,6 +15475,11 @@ components:
         category:
           allOf:
           - $ref: '#/components/schemas/ServiceCategory'
+          readOnly: true
+        modalities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
           readOnly: true
         primary_practitioner:
           allOf:
@@ -13841,20 +15575,27 @@ components:
           type: string
           readOnly: true
         includes:
+          type: array
+          items:
+            type: string
+          readOnly: true
           nullable: true
-          description: What's included in the service
-        address:
+          description: What's included in the service - array of items
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: uri
           nullable: true
           description: Service cover image
         tags:
+          type: array
+          items:
+            type: string
+          readOnly: true
           nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -14058,21 +15799,15 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
-        includes:
-          nullable: true
-          description: What's included in the service
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
-        tags:
-          nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -14295,6 +16030,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Education'
+    PaginatedFeatureRequestList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureRequest'
     PaginatedMediaList:
       type: object
       required:
@@ -14686,6 +16444,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Schedule'
+    PaginatedServiceBenefitList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceBenefit'
     PaginatedServiceCategoryList:
       type: object
       required:
@@ -14801,6 +16582,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceSession'
+    PaginatedSessionAgendaItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionAgendaItem'
     PaginatedSpecializationList:
       type: object
       required:
@@ -15045,17 +16849,6 @@ components:
         location_id:
           type: integer
           nullable: true
-        meeting_url:
-          type: string
-          format: uri
-          nullable: true
-          description: Virtual meeting link
-          maxLength: 200
-        meeting_id:
-          type: string
-          nullable: true
-          description: Meeting ID or room number
-          maxLength: 100
         timezone:
           type: string
           minLength: 1
@@ -15143,21 +16936,15 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
-        includes:
-          nullable: true
-          description: What's included in the service
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
-        tags:
-          nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -15269,6 +17056,43 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
+    PatchedFeatureRequestRequest:
+      type: object
+      description: Serializer for feature requests submitted by practitioners
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Short title/summary of the feature request
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+          description: Detailed description of the feature request
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          description: |-
+            Category of the feature request
+
+            * `scheduling` - Scheduling
+            * `payments` - Payments & Billing
+            * `analytics` - Analytics & Reports
+            * `client_management` - Client Management
+            * `messaging` - Messaging
+            * `ui_ux` - UI/UX
+            * `mobile` - Mobile App
+            * `integrations` - Integrations
+            * `other` - Other
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          description: |-
+            Practitioner's perceived priority
+
+            * `low` - Low
+            * `medium` - Medium
+            * `high` - High
     PatchedMediaRequest:
       type: object
       description: Main serializer for Media objects
@@ -15426,21 +17250,15 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
-        includes:
-          nullable: true
-          description: What's included in the service
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
-        tags:
-          nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -15693,12 +17511,6 @@ components:
           nullable: true
           description: Inspirational quote or motto
           maxLength: 500
-        profile_image_url:
-          type: string
-          format: uri
-          nullable: true
-          description: URL to practitioner's profile image
-          maxLength: 200
         profile_video_url:
           type: string
           format: uri
@@ -16276,6 +18088,11 @@ components:
         category_id:
           type: integer
           nullable: true
+        modality_ids:
+          type: array
+          items:
+            type: integer
+          description: List of modality IDs to associate with this service
         practitioner_category_id:
           type: integer
           nullable: true
@@ -16305,10 +18122,10 @@ components:
           description: Maximum age
         location_type:
           $ref: '#/components/schemas/LocationTypeEnum'
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         schedule:
           type: integer
           nullable: true
@@ -16322,16 +18139,23 @@ components:
           nullable: true
           description: What participants need before joining
         includes:
+          type: array
+          items:
+            type: string
+            minLength: 1
           nullable: true
-          description: What's included in the service
+          description: What's included in the service - array of items
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
         tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
           nullable: true
-          description: Searchable tags
         is_active:
           type: boolean
         is_featured:
@@ -16521,10 +18345,11 @@ components:
           nullable: true
           description: Describe what clients will learn or gain from this specific
             session
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Address where this session takes place (for in-person sessions)
+          description: Practitioner location where this session takes place (for in-person
+            sessions)
     PatchedStreamPostRequest:
       type: object
       description: Serializer for stream posts.
@@ -16603,16 +18428,6 @@ components:
           type: string
           nullable: true
           description: Detailed about section
-        cover_image_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        profile_image_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
         intro_video_url:
           type: string
           format: uri
@@ -16849,10 +18664,7 @@ components:
           description: Years of professional experience
         profile_image_url:
           type: string
-          format: uri
-          nullable: true
-          description: URL to practitioner's profile image
-          maxLength: 200
+          readOnly: true
     PractitionerApplicationRequest:
       type: object
       description: Serializer for practitioner applications
@@ -16878,12 +18690,6 @@ components:
           minimum: 0
           nullable: true
           description: Years of professional experience
-        profile_image_url:
-          type: string
-          format: uri
-          nullable: true
-          description: URL to practitioner's profile image
-          maxLength: 200
     PractitionerDetail:
       type: object
       description: Detailed serializer for public practitioner profiles
@@ -16923,10 +18729,7 @@ components:
           description: Inspirational quote or motto
         profile_image_url:
           type: string
-          format: uri
           readOnly: true
-          nullable: true
-          description: URL to practitioner's profile image
         profile_video_url:
           type: string
           format: uri
@@ -17031,10 +18834,7 @@ components:
           description: Professional title/designation
         profile_image_url:
           type: string
-          format: uri
           readOnly: true
-          nullable: true
-          description: URL to practitioner's profile image
         years_of_experience:
           type: integer
           readOnly: true
@@ -17422,10 +19222,7 @@ components:
           description: Inspirational quote or motto
         profile_image_url:
           type: string
-          format: uri
           readOnly: true
-          nullable: true
-          description: URL to practitioner's profile image
         profile_video_url:
           type: string
           format: uri
@@ -17739,10 +19536,7 @@ components:
           maxLength: 500
         profile_image_url:
           type: string
-          format: uri
-          nullable: true
-          description: URL to practitioner's profile image
-          maxLength: 200
+          readOnly: true
         profile_video_url:
           type: string
           format: uri
@@ -17792,12 +19586,6 @@ components:
           nullable: true
           description: Inspirational quote or motto
           maxLength: 500
-        profile_image_url:
-          type: string
-          format: uri
-          nullable: true
-          description: URL to practitioner's profile image
-          maxLength: 200
         profile_video_url:
           type: string
           format: uri
@@ -17853,6 +19641,16 @@ components:
           writeOnly: true
       required:
       - slug
+    PriorityEnum:
+      enum:
+      - low
+      - medium
+      - high
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
     QuestionTypeEnum:
       enum:
       - rating
@@ -20583,6 +22381,11 @@ components:
         category_id:
           type: integer
           nullable: true
+        modality_ids:
+          type: array
+          items:
+            type: integer
+          description: List of modality IDs to associate with this service
         practitioner_category_id:
           type: integer
           nullable: true
@@ -20612,10 +22415,10 @@ components:
           description: Maximum age
         location_type:
           $ref: '#/components/schemas/LocationTypeEnum'
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         schedule:
           type: integer
           nullable: true
@@ -20629,16 +22432,21 @@ components:
           nullable: true
           description: What participants need before joining
         includes:
+          type: array
+          items:
+            type: string
           nullable: true
-          description: What's included in the service
+          description: What's included in the service - array of items
         image:
           type: string
           format: uri
           nullable: true
           description: Service cover image
         tags:
+          type: array
+          items:
+            type: string
           nullable: true
-          description: Searchable tags
         is_active:
           type: boolean
         is_featured:
@@ -20751,6 +22559,11 @@ components:
         category_id:
           type: integer
           nullable: true
+        modality_ids:
+          type: array
+          items:
+            type: integer
+          description: List of modality IDs to associate with this service
         practitioner_category_id:
           type: integer
           nullable: true
@@ -20780,10 +22593,10 @@ components:
           description: Maximum age
         location_type:
           $ref: '#/components/schemas/LocationTypeEnum'
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         schedule:
           type: integer
           nullable: true
@@ -20797,16 +22610,23 @@ components:
           nullable: true
           description: What participants need before joining
         includes:
+          type: array
+          items:
+            type: string
+            minLength: 1
           nullable: true
-          description: What's included in the service
+          description: What's included in the service - array of items
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
         tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
           nullable: true
-          description: Searchable tags
         is_active:
           type: boolean
         is_featured:
@@ -20944,6 +22764,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/ServiceCategory'
           readOnly: true
+        modalities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
+          readOnly: true
         primary_practitioner:
           allOf:
           - $ref: '#/components/schemas/SimplePractitioner'
@@ -21038,20 +22863,27 @@ components:
           type: string
           readOnly: true
         includes:
+          type: array
+          items:
+            type: string
+          readOnly: true
           nullable: true
-          description: What's included in the service
-        address:
+          description: What's included in the service - array of items
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: uri
           nullable: true
           description: Service cover image
         tags:
+          type: array
+          items:
+            type: string
+          readOnly: true
           nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -21255,21 +23087,15 @@ components:
           type: string
           nullable: true
           description: What participants need before joining
-        includes:
-          nullable: true
-          description: What's included in the service
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Physical address for in-person/hybrid services
+          description: Practitioner location where this service is offered
         image:
           type: string
           format: binary
           nullable: true
           description: Service cover image
-        tags:
-          nullable: true
-          description: Searchable tags
         languages:
           type: array
           items:
@@ -21387,6 +23213,11 @@ components:
         category:
           allOf:
           - $ref: '#/components/schemas/ServiceCategory'
+          readOnly: true
+        modalities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
           readOnly: true
         primary_practitioner:
           allOf:
@@ -21719,6 +23550,12 @@ components:
         waitlist_count:
           type: string
           readOnly: true
+        booking_count:
+          type: string
+          readOnly: true
+        spots_available:
+          type: string
+          readOnly: true
         sequence_number:
           type: integer
           maximum: 2147483647
@@ -21747,10 +23584,11 @@ components:
           nullable: true
           description: Describe what clients will learn or gain from this specific
             session
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Address where this session takes place (for in-person sessions)
+          description: Practitioner location where this session takes place (for in-person
+            sessions)
         created_at:
           type: string
           format: date-time
@@ -21763,6 +23601,58 @@ components:
       - end_time
       - service
       - start_time
+    ServiceSessionEvent:
+      type: object
+      description: |-
+        Calendar event for a ServiceSession (workshop/course class)
+        Aggregates all bookings for this session
+      properties:
+        event_type:
+          type: string
+          readOnly: true
+          default: service_session
+        service_session_id:
+          type: integer
+        service_session_title:
+          type: string
+          nullable: true
+        sequence_number:
+          type: integer
+          nullable: true
+        service:
+          $ref: '#/components/schemas/CalendarEventService'
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        duration_minutes:
+          type: integer
+        attendee_count:
+          type: integer
+        max_participants:
+          type: integer
+          nullable: true
+        attendees:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarEventAttendee'
+        room:
+          allOf:
+          - $ref: '#/components/schemas/CalendarEventRoom'
+          nullable: true
+        status:
+          type: string
+      required:
+      - attendee_count
+      - attendees
+      - duration_minutes
+      - service
+      - service_session_id
+      - start_time
+      - status
     ServiceSessionRequest:
       type: object
       description: Serializer for service sessions (workshops/courses)
@@ -21809,10 +23699,11 @@ components:
           nullable: true
           description: Describe what clients will learn or gain from this specific
             session
-        address:
+        practitioner_location:
           type: integer
           nullable: true
-          description: Address where this session takes place (for in-person sessions)
+          description: Practitioner location where this session takes place (for in-person
+            sessions)
       required:
       - end_time
       - service
@@ -22943,6 +24834,12 @@ components:
         practitioner_name:
           type: string
           readOnly: true
+        practitioner_slug:
+          type: string
+          readOnly: true
+        practitioner_image:
+          type: string
+          readOnly: true
         title:
           type: string
           maxLength: 255
@@ -22958,14 +24855,10 @@ components:
           description: Detailed about section
         cover_image_url:
           type: string
-          format: uri
-          nullable: true
-          maxLength: 200
+          readOnly: true
         profile_image_url:
           type: string
-          format: uri
-          nullable: true
-          maxLength: 200
+          readOnly: true
         intro_video_url:
           type: string
           format: uri
@@ -23161,6 +25054,9 @@ components:
           readOnly: true
         practitioner_id:
           type: integer
+          readOnly: true
+        practitioner_slug:
+          type: string
           readOnly: true
         practitioner_image:
           type: string
@@ -23507,16 +25403,6 @@ components:
           type: string
           nullable: true
           description: Detailed about section
-        cover_image_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
-        profile_image_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 200
         intro_video_url:
           type: string
           format: uri

@@ -16,7 +16,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from practitioners.models import (
     Practitioner, Schedule, ScheduleTimeSlot, SchedulePreference,
     OutOfOffice, VerificationDocument, PractitionerOnboardingProgress,
-    Certification, Education
+    Certification, Education, FeatureRequest
 )
 # from practitioners.utils.availability import AvailabilityCalculator
 from bookings.models import Booking
@@ -33,7 +33,8 @@ from .serializers import (
     AvailabilityQuerySerializer, PractitionerSearchSerializer,
     VerificationDocumentSerializer, CertificationSerializer,
     EducationSerializer, SpecializationSerializer, StyleSerializer,
-    TopicSerializer, ModalitySerializer, PractitionerClientSerializer
+    TopicSerializer, ModalitySerializer, PractitionerClientSerializer,
+    FeatureRequestSerializer
 )
 from .permissions import IsPractitionerOwner, IsPractitionerOrReadOnly
 from .filters import PractitionerFilter
@@ -2242,8 +2243,45 @@ class ModalityViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for viewing modalities"""
     serializer_class = ModalitySerializer
     permission_classes = [AllowAny]
-    
+
     def get_queryset(self):
         """Get all modalities"""
         from common.models import Modality
         return Modality.objects.all().order_by('name')
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['Practitioners'], description='List all feature requests for the authenticated practitioner'),
+    create=extend_schema(tags=['Practitioners'], description='Create a new feature request'),
+    retrieve=extend_schema(tags=['Practitioners'], description='Get a specific feature request'),
+    update=extend_schema(tags=['Practitioners'], description='Update a feature request (only if status is submitted)'),
+    partial_update=extend_schema(tags=['Practitioners'], description='Partially update a feature request (only if status is submitted)'),
+    destroy=extend_schema(tags=['Practitioners'], description='Delete a feature request (only if status is submitted)')
+)
+class FeatureRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for practitioners to submit and manage feature requests.
+    Practitioners can only view and edit their own requests.
+    Only requests with 'submitted' status can be edited or deleted.
+    """
+    serializer_class = FeatureRequestSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['category', 'priority', 'status']
+    ordering_fields = ['created_at', 'priority', 'votes']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        """Return only the authenticated practitioner's feature requests"""
+        if not hasattr(self.request.user, 'practitioner_profile'):
+            return FeatureRequest.objects.none()
+        return FeatureRequest.objects.filter(
+            practitioner=self.request.user.practitioner_profile
+        )
+
+    def perform_destroy(self, instance):
+        """Only allow deletion if status is 'submitted'"""
+        if instance.status != 'submitted':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only delete feature requests that are in 'submitted' status")
+        instance.delete()

@@ -10,7 +10,8 @@ from decimal import Decimal
 from practitioners.models import (
     Practitioner, Specialize, Style, Topic, Certification, Education,
     Schedule, ScheduleTimeSlot, SchedulePreference, OutOfOffice,
-    VerificationDocument, PractitionerOnboardingProgress, Question, ClientNote
+    VerificationDocument, PractitionerOnboardingProgress, Question, ClientNote,
+    FeatureRequest
 )
 from locations.models import PractitionerLocation
 from services.models import Service, ServiceType
@@ -643,6 +644,39 @@ class ClientNoteSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not hasattr(request.user, 'practitioner_profile'):
             raise serializers.ValidationError("You must be a practitioner to create notes")
-        
+
         validated_data['practitioner'] = request.user.practitioner_profile
         return super().create(validated_data)
+
+
+class FeatureRequestSerializer(serializers.ModelSerializer):
+    """Serializer for feature requests submitted by practitioners"""
+    practitioner_name = serializers.CharField(source='practitioner.display_name', read_only=True)
+    can_edit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FeatureRequest
+        fields = [
+            'id', 'title', 'description', 'category', 'priority', 'status',
+            'votes', 'created_at', 'updated_at', 'practitioner_name', 'can_edit'
+        ]
+        read_only_fields = ['id', 'status', 'votes', 'created_at', 'updated_at', 'practitioner_name', 'can_edit']
+
+    def get_can_edit(self, obj):
+        """Check if the request can be edited (only submitted status can be edited)"""
+        return obj.status == 'submitted'
+
+    def create(self, validated_data):
+        """Create a new feature request"""
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'practitioner_profile'):
+            raise serializers.ValidationError("You must be a practitioner to submit feature requests")
+
+        validated_data['practitioner'] = request.user.practitioner_profile
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """Only allow updates if status is 'submitted'"""
+        if instance.status != 'submitted':
+            raise serializers.ValidationError("You can only edit feature requests that are in 'submitted' status")
+        return super().update(instance, validated_data)

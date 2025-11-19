@@ -27,7 +27,7 @@ from services.api.v1.views import (
 from practitioners.api.v1.views import (
     PractitionerViewSet, PublicPractitionerViewSet, ScheduleViewSet, AvailabilityViewSet,
     CertificationViewSet, EducationViewSet, PractitionerApplicationViewSet,
-    SpecializationViewSet, StyleViewSet, TopicViewSet, ModalityViewSet
+    SpecializationViewSet, StyleViewSet, TopicViewSet, ModalityViewSet, FeatureRequestViewSet
 )
 from practitioners.api.v1.views_calendar import PractitionerCalendarViewSet
 
@@ -92,6 +92,7 @@ router.register(r'specializations', SpecializationViewSet, basename='specializat
 router.register(r'styles', StyleViewSet, basename='style')
 router.register(r'topics', TopicViewSet, basename='topic')
 router.register(r'modalities', ModalityViewSet, basename='modality')
+router.register(r'feature-requests', FeatureRequestViewSet, basename='feature-request')
 
 # Payments
 router.register(r'payment-methods', PaymentMethodViewSet, basename='payment-method')
