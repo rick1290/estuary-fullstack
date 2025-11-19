@@ -706,7 +706,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                         <div className="flex flex-col md:flex-row">
                           <div className="md:w-48 h-48 bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
                             {practitioner.image ? (
-                              <div className="w-24 h-24 rounded-2xl bg-white shadow-xl overflow-hidden">
+                              <div className="w-36 h-36 rounded-2xl bg-white shadow-xl overflow-hidden">
                                 <img
                                   src={practitioner.image}
                                   alt={practitioner.name}
@@ -714,8 +714,8 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                                 />
                               </div>
                             ) : (
-                              <div className="w-24 h-24 rounded-2xl bg-white shadow-xl flex items-center justify-center">
-                                <span className="text-3xl font-bold text-olive-800">
+                              <div className="w-36 h-36 rounded-2xl bg-white shadow-xl flex items-center justify-center">
+                                <span className="text-4xl font-bold text-olive-800">
                                   {practitioner.name.split(' ').map(n => n[0]).join('')}
                                 </span>
                               </div>
