@@ -22,7 +22,7 @@ interface ServiceSession {
   end_time: string
   duration?: number
   capacity?: number
-  spots_remaining?: number
+  spots_available?: number
   is_published?: boolean
   location?: string
   room?: any
@@ -143,12 +143,12 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
                             {format(new Date(session.start_time), 'h:mm a')} - {format(new Date(session.end_time), 'h:mm a')}
                           </div>
                         </div>
-                        {session.spots_remaining !== undefined && (
-                          <Badge 
-                            variant={session.spots_remaining < 5 ? "destructive" : "secondary"} 
+                        {session.spots_available !== undefined && (
+                          <Badge
+                            variant={session.spots_available < 5 ? "destructive" : "secondary"}
                             className="ml-2"
                           >
-                            {session.spots_remaining} spots
+                            {session.spots_available} spots
                           </Badge>
                         )}
                       </div>
@@ -167,24 +167,14 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
           )}
 
           {/* Workshop Details */}
-          {selectedSession && (
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-olive-700">Date</span>
-                </div>
-                <span className="font-semibold text-olive-900">
-                  {format(new Date(selectedSession.start_time), 'EEE, MMM d, yyyy')}
-                </span>
-            </div>
+          <div className="space-y-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Time</span>
+                <span className="text-olive-700">Duration</span>
               </div>
               <span className="font-semibold text-olive-900">
-                {format(new Date(selectedSession.start_time), 'h:mm a')} - {format(new Date(selectedSession.end_time), 'h:mm a')}
+                {Math.floor(workshop.duration / 60)} hours
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -197,14 +187,11 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Available Spots</span>
+                <span className="text-olive-700">Max Participants</span>
               </div>
-              <Badge variant="terracotta" className="font-semibold">
-                {selectedSession.spots_remaining || 0} spots available
-              </Badge>
+              <span className="font-semibold text-olive-900">{workshop.capacity}</span>
             </div>
-            </div>
-          )}
+          </div>
 
           <Separator className="bg-sage-200 mb-6" />
 
