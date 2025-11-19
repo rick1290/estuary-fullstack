@@ -234,7 +234,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       {/* Immersive Hero Section */}
       <section className="relative min-h-[70vh] bg-gradient-to-b from-sage-50 via-cream-100 to-cream-50 overflow-hidden">
         {/* Background texture */}
-        <div className="absolute inset-0 texture-grain opacity-30" />
+        <div className="absolute inset-0 texture-grain opacity-5" />
         
         {/* Decorative blob shapes */}
         <div className="absolute top-20 -right-40 w-96 h-96 bg-terracotta-200/20 rounded-full blur-3xl" />
@@ -370,7 +370,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                   <img
                     src={service.image_url}
                     alt={service.name}
-                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -499,10 +499,10 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                       <img
                         src={service.primary_practitioner.profile_image_url}
                         alt={service.primary_practitioner.display_name}
-                        className="w-32 h-32 rounded-full object-cover shadow-xl"
+                        className="w-32 h-32 rounded-2xl object-cover shadow-xl"
                       />
                     ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
+                      <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
                         <span className="text-4xl font-medium text-olive-800">
                           {service.primary_practitioner.display_name.charAt(0)}
                         </span>

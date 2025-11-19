@@ -195,10 +195,16 @@ export default function StreamsDashboardV2() {
         }
       })
       
-      // Use direct fetch for FormData uploads since generated client doesn't handle it properly
-      fetch('/api/v1/stream-posts/', {
+      // Use direct fetch for FormData uploads with proper API URL and auth
+      const session = await fetch('/api/auth/session').then(r => r.json())
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+      fetch(`${apiUrl}/api/v1/stream-posts/`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken || ''}`
+        },
         credentials: 'include'
       }).then(async (response) => {
         if (response.ok) {
