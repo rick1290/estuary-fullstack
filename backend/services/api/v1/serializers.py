@@ -184,17 +184,18 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(source='current_participants', read_only=True)
     waitlist_count = serializers.SerializerMethodField()
     booking_count = serializers.SerializerMethodField()
+    spots_available = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceSession
         fields = [
             'id', 'service', 'title', 'description', 'start_time', 'end_time',
             'duration', 'max_participants', 'current_participants',
-            'participant_count', 'waitlist_count', 'booking_count', 'sequence_number',
+            'participant_count', 'waitlist_count', 'booking_count', 'spots_available', 'sequence_number',
             'room', 'status', 'agenda', 'agenda_items', 'benefits',
             'what_youll_learn', 'practitioner_location', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'current_participants', 'participant_count', 'booking_count', 'room', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'current_participants', 'participant_count', 'booking_count', 'spots_available', 'room', 'created_at', 'updated_at']
 
     def get_room(self, obj):
         """Get room information for this session"""
@@ -218,6 +219,12 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
     def get_booking_count(self, obj):
         """Get count of bookings for this session"""
         return obj.bookings.count()
+
+    def get_spots_available(self, obj):
+        """Calculate available spots: max_participants - confirmed/pending bookings"""
+        # Only count confirmed and pending bookings (not cancelled/completed)
+        booking_count = obj.bookings.filter(status__in=['confirmed', 'pending']).count()
+        return max(0, obj.max_participants - booking_count)
 
 
 class ServiceResourceSerializer(serializers.ModelSerializer):
