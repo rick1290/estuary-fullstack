@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -36,23 +37,24 @@ export function MediaSection({ service }: MediaSectionProps) {
   const [aiPrompt, setAiPrompt] = useState("")
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
   const [generatedImageId, setGeneratedImageId] = useState<number | null>(null)
+  const [generationsRemaining, setGenerationsRemaining] = useState<number | null>(null)
 
   // Generate dynamic prompt based on actual service data
   const generateExamplePrompt = () => {
     const serviceName = service.name || "wellness service"
     const description = service.description || ""
 
-    // Clean up description (take first 100 chars, remove excess whitespace)
+    // Clean up description (take first 150 chars, remove excess whitespace)
     const cleanDescription = description
       .replace(/\s+/g, ' ')
       .trim()
-      .substring(0, 100)
+      .substring(0, 150)
 
     // Build dynamic prompt with just service name and description
     if (cleanDescription) {
-      return `"${serviceName}" - ${cleanDescription}. Professional, peaceful, and inviting atmosphere.`
+      return `"${serviceName}" - ${cleanDescription}`
     } else {
-      return `"${serviceName}". Professional, peaceful, and inviting atmosphere.`
+      return `"${serviceName}"`
     }
   }
 
@@ -95,6 +97,9 @@ export function MediaSection({ service }: MediaSectionProps) {
         setGeneratedImageUrl(data.image_url)
         setGeneratedImageId(data.id)
       }
+      if (typeof data.generations_remaining_today === 'number') {
+        setGenerationsRemaining(data.generations_remaining_today)
+      }
     },
     onError: (error: any) => {
       const errorMessage = error?.body?.error || error?.message || "Failed to generate image"
@@ -109,12 +114,40 @@ export function MediaSection({ service }: MediaSectionProps) {
   // Set initial preview from service image
   useEffect(() => {
     if (service.image_url) {
-      const imageUrl = service.image_url.startsWith('http') 
-        ? service.image_url 
+      const imageUrl = service.image_url.startsWith('http')
+        ? service.image_url
         : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${service.image_url}`
       setCoverImagePreview(imageUrl)
     }
   }, [service.image_url])
+
+  // Fetch initial generation stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const session = await fetch('/api/auth/session').then(r => r.json())
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+        const response = await fetch(`${apiUrl}/api/v1/ai-images/stats/`, {
+          headers: {
+            'Authorization': `Bearer ${session?.accessToken || ''}`
+          },
+          credentials: 'include'
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (typeof data.generations_remaining_today === 'number') {
+            setGenerationsRemaining(data.generations_remaining_today)
+          }
+        }
+      } catch (error) {
+        // Silently fail - not critical
+      }
+    }
+
+    fetchStats()
+  }, [])
 
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -394,8 +427,15 @@ export function MediaSection({ service }: MediaSectionProps) {
                 <Card className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
                   <div className="flex items-start gap-3">
                     <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5" />
-                    <div className="space-y-1">
-                      <h4 className="font-medium text-sm">AI Image Generation</h4>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">AI Image Generation</h4>
+                        {generationsRemaining !== null && (
+                          <Badge variant="secondary" className="text-xs">
+                            {generationsRemaining} left today
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Describe your ideal service image and AI will create it for you. Images are generated following wellness brand guidelines.
                       </p>
