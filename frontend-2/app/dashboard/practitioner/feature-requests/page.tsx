@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import FeatureRequestForm from "@/components/dashboard/practitioner/feature-requests/feature-request-form"
-import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner/practitioner-dashboard-page-layout"
+import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 
 export const metadata: Metadata = {
   title: "Feature Requests | Practitioner Portal",
