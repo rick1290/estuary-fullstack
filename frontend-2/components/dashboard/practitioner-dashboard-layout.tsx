@@ -31,6 +31,7 @@ import {
   CreditCard,
   Receipt,
   ChevronUp,
+  Lightbulb,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -252,6 +253,19 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               Earn 20% Referral
             </Link>
             <Link
+              href="/dashboard/practitioner/feature-requests"
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                pathname === "/dashboard/practitioner/feature-requests"
+                  ? "bg-gradient-to-r from-sage-100 to-terracotta-50 text-sage-800 shadow-sm"
+                  : "hover:bg-gradient-to-r hover:from-sage-50 hover:to-terracotta-25 hover:text-sage-700"
+              )}
+            >
+              <Lightbulb className="h-4 w-4 text-terracotta-500" />
+              <span>Feature Requests</span>
+              <Badge variant="secondary" className="ml-auto bg-terracotta-100 text-terracotta-700 text-xs">New</Badge>
+            </Link>
+            <Link
               href="/dashboard/practitioner/settings"
               className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
@@ -357,6 +371,19 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   >
                     <Gift className="h-4 w-4" />
                     Earn 20% Referral
+                  </Link>
+                  <Link
+                    href="/dashboard/practitioner/feature-requests"
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      pathname === "/dashboard/practitioner/feature-requests"
+                        ? "bg-gradient-to-r from-sage-100 to-terracotta-50 text-sage-800 shadow-sm"
+                        : "hover:bg-gradient-to-r hover:from-sage-50 hover:to-terracotta-25 hover:text-sage-700"
+                    )}
+                  >
+                    <Lightbulb className="h-4 w-4 text-terracotta-500" />
+                    <span>Feature Requests</span>
+                    <Badge variant="secondary" className="ml-auto bg-terracotta-100 text-terracotta-700 text-xs">New</Badge>
                   </Link>
                   <Link
                     href="/dashboard/practitioner/settings"
