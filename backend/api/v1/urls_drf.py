@@ -65,6 +65,9 @@ from messaging.api.v1.views import ConversationViewSet, MessageViewSet, Practiti
 # Rooms (LiveKit video)
 from rooms.api.v1.views import RoomViewSet
 
+# AI Image Generation
+from ai_images.api.v1.views import GeneratedImageViewSet
+
 # Register all ViewSets properly
 # Bookings
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -134,6 +137,9 @@ router.register(r'practitioner-messaging', PractitionerMessagingViewSet, basenam
 
 # Rooms (LiveKit video)
 router.register(r'rooms', RoomViewSet, basename='room')
+
+# AI Image Generation
+router.register(r'ai-images', GeneratedImageViewSet, basename='ai-images')
 
 # Import documentation views
 from api.v1.docs import (
