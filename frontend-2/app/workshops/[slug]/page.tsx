@@ -760,12 +760,6 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                     }
                   </span>
                 </div>
-                {workshop.venue && (
-                  <div className="flex items-center gap-3 text-olive-700">
-                    <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                    <span className="font-medium">{workshop.venue}</span>
-                  </div>
-                )}
               </div>
               
               {/* CTA Section */}
