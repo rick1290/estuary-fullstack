@@ -473,10 +473,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             <div className="relative animate-scale-in">
               <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100 shadow-2xl">
                 {course.image ? (
-                  <img 
-                    src={course.image} 
+                  <img
+                    src={course.image}
                     alt={course.title}
-                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-70"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -528,7 +528,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             <section className="animate-fade-in">
               <h2 className="text-3xl font-bold text-olive-900 mb-8">Begin Your Transformation</h2>
               <div className="prose prose-lg prose-olive max-w-none">
-                <p className="text-lg text-olive-700 leading-relaxed whitespace-pre-line">
+                <p className="text-lg text-olive-700 leading-relaxed whitespace-pre-line break-words">
                   {course.longDescription}
                 </p>
               </div>
