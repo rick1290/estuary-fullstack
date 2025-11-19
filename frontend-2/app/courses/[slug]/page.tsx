@@ -602,9 +602,14 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                           </div>
                           <p className="text-olive-700 ml-14">{session.description}</p>
                         </div>
-                        <Badge variant="terracotta" className="ml-4">
-                          {session.date}
-                        </Badge>
+                        {session.start_time && (
+                          <Badge variant="terracotta" className="ml-4 flex-shrink-0">
+                            {new Date(session.start_time).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <CardContent className="p-6 bg-cream-50">
