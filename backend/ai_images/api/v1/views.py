@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.core.files.base import ContentFile
 from datetime import timedelta
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -9,6 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from ai_images.models import GeneratedImage
 from ai_images.services import ImageGenerationService
 from practitioners.models import Practitioner
+from services.models import Service
 from .serializers import (
     GenerateImageRequestSerializer,
     GeneratedImageSerializer,
@@ -200,3 +202,83 @@ class GeneratedImageViewSet(viewsets.ReadOnlyModelViewSet):
             'images_applied': images_applied,
             'daily_limit': self.MAX_GENERATIONS_PER_DAY
         })
+
+    @extend_schema(
+        request={'application/json': {'type': 'object', 'properties': {'service_id': {'type': 'integer'}}}},
+        responses={
+            200: {'description': 'Image applied successfully'},
+            403: {'description': 'Not authorized'},
+            404: {'description': 'Generated image or service not found'},
+        },
+        description="Apply a generated image to a service as its cover image"
+    )
+    @action(detail=True, methods=['post'], url_path='apply-to-service')
+    def apply_to_service(self, request, pk=None):
+        """
+        Apply a generated image to a service.
+
+        POST /api/v1/ai-images/{id}/apply-to-service/
+        Body: { "service_id": 123 }
+        """
+        generated_image = self.get_object()
+
+        # Get service_id from request
+        service_id = request.data.get('service_id')
+        if not service_id:
+            return Response(
+                {"error": "service_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get the service
+        try:
+            service = Service.objects.get(id=service_id)
+        except Service.DoesNotExist:
+            return Response(
+                {"error": "Service not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verify practitioner owns the service
+        try:
+            practitioner = request.user.practitioner_profile
+            if service.primary_practitioner != practitioner:
+                return Response(
+                    {"error": "You don't have permission to edit this service"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except Practitioner.DoesNotExist:
+            return Response(
+                {"error": "Only practitioners can apply images to services"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Copy the generated image to the service
+        try:
+            # Read the generated image file
+            image_file = generated_image.image
+            image_file.open('rb')
+            image_content = image_file.read()
+            image_file.close()
+
+            # Save to service image field
+            filename = image_file.name.split('/')[-1]
+            service.image.save(filename, ContentFile(image_content), save=True)
+
+            # Mark generated image as applied
+            generated_image.is_applied = True
+            generated_image.service = service
+            generated_image.applied_at = timezone.now()
+            generated_image.save()
+
+            return Response({
+                'message': 'Image applied successfully',
+                'service_id': service.id,
+                'image_url': service.image.url if service.image else None
+            })
+
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to apply image: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
