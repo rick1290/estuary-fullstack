@@ -812,11 +812,21 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                 <div className="absolute bottom-6 left-6 right-6 bg-cream-50/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
                   <p className="text-sm text-olive-600 mb-3">Your Lead Facilitator</p>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-white">
-                        {workshop.practitioners[0].name.split(' ').map((n: string) => n[0]).join('')}
-                      </span>
-                    </div>
+                    {workshop.practitioners[0].image ? (
+                      <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg">
+                        <img
+                          src={workshop.practitioners[0].image}
+                          alt={workshop.practitioners[0].name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-white">
+                          {workshop.practitioners[0].name.split(' ').map((n: string) => n[0]).join('')}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex-1">
                       <p className="font-semibold text-olive-900">{workshop.practitioners[0].name}</p>
                       <p className="text-sm text-olive-600">{workshop.practitioners[0].title}</p>
@@ -930,24 +940,36 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                 </h2>
                 <div className="space-y-6">
                   {workshop.practitioners.map((practitioner: any) => (
-                    <Card key={practitioner.id} className="border-2 border-sage-200 overflow-hidden group hover:border-sage-300 transition-all">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row">
-                          <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-100 to-sage-100 flex items-center justify-center">
-                            <div className="w-28 h-28 rounded-full bg-white shadow-xl flex items-center justify-center">
-                              <span className="text-4xl font-bold text-olive-800">
-                                {practitioner.name.split(' ').map((n: string) => n[0]).join('')}
-                              </span>
+                    <Link key={practitioner.id} href={`/practitioners/${practitioner.id}`}>
+                      <Card className="border-2 border-sage-200 overflow-hidden group hover:border-sage-300 transition-all cursor-pointer">
+                        <CardContent className="p-0">
+                          <div className="flex flex-col md:flex-row">
+                            <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-100 to-sage-100 flex items-center justify-center">
+                              {practitioner.image ? (
+                                <div className="w-28 h-28 rounded-full bg-white shadow-xl overflow-hidden">
+                                  <img
+                                    src={practitioner.image}
+                                    alt={practitioner.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-28 h-28 rounded-full bg-white shadow-xl flex items-center justify-center">
+                                  <span className="text-4xl font-bold text-olive-800">
+                                    {practitioner.name.split(' ').map((n: string) => n[0]).join('')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 p-8">
+                              <h3 className="text-2xl font-semibold text-olive-900 mb-2 group-hover:text-sage-700 transition-colors">{practitioner.name}</h3>
+                              <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
+                              <p className="text-olive-600 leading-relaxed">{practitioner.bio}</p>
                             </div>
                           </div>
-                          <div className="flex-1 p-8">
-                            <h3 className="text-2xl font-semibold text-olive-900 mb-2">{practitioner.name}</h3>
-                            <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
-                            <p className="text-olive-600 leading-relaxed">{practitioner.bio}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
               </section>
