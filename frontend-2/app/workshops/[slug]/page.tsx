@@ -940,36 +940,41 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                 </h2>
                 <div className="space-y-6">
                   {workshop.practitioners.map((practitioner: any) => (
-                    <Link key={practitioner.id} href={`/practitioners/${practitioner.id}`}>
-                      <Card className="border-2 border-sage-200 overflow-hidden group hover:border-sage-300 transition-all cursor-pointer">
-                        <CardContent className="p-0">
-                          <div className="flex flex-col md:flex-row">
-                            <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-100 to-sage-100 flex items-center justify-center">
-                              {practitioner.image ? (
-                                <div className="w-28 h-28 rounded-full bg-white shadow-xl overflow-hidden">
-                                  <img
-                                    src={practitioner.image}
-                                    alt={practitioner.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-28 h-28 rounded-full bg-white shadow-xl flex items-center justify-center">
-                                  <span className="text-4xl font-bold text-olive-800">
-                                    {practitioner.name.split(' ').map((n: string) => n[0]).join('')}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 p-8">
-                              <h3 className="text-2xl font-semibold text-olive-900 mb-2 group-hover:text-sage-700 transition-colors">{practitioner.name}</h3>
-                              <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
-                              <p className="text-olive-600 leading-relaxed">{practitioner.bio}</p>
-                            </div>
+                    <Card key={practitioner.id} className="border-2 border-sage-200 overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row">
+                          <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-100 to-sage-100 flex items-center justify-center">
+                            {practitioner.image ? (
+                              <div className="w-28 h-28 rounded-full bg-white shadow-xl overflow-hidden">
+                                <img
+                                  src={practitioner.image}
+                                  alt={practitioner.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-28 h-28 rounded-full bg-white shadow-xl flex items-center justify-center">
+                                <span className="text-4xl font-bold text-olive-800">
+                                  {practitioner.name.split(' ').map((n: string) => n[0]).join('')}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                          <div className="flex-1 p-8">
+                            <h3 className="text-2xl font-semibold text-olive-900 mb-2">{practitioner.name}</h3>
+                            <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
+                            <p className="text-olive-600 leading-relaxed mb-4">{practitioner.bio}</p>
+                            <Link
+                              href={`/practitioners/${practitioner.id}`}
+                              className="text-sage-600 hover:text-sage-800 font-medium text-sm inline-flex items-center gap-1 transition-colors"
+                            >
+                              View Profile
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </section>
