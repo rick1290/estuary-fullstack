@@ -483,9 +483,16 @@ class Service(PublicModel):
     
     @property
     def total_sessions(self):
-        """Total sessions for bundles (including bonus sessions)."""
+        """Total sessions for bundles (including bonus sessions) and courses/workshops."""
+        # For bundles, use sessions_included field
         if self.is_bundle and self.sessions_included:
             return self.sessions_included + self.bonus_sessions
+
+        # For courses and workshops, count actual ServiceSession records
+        if self.is_course or (self.service_type and self.service_type.code == 'workshop'):
+            return self.sessions.count()
+
+        # For individual sessions and other types
         return 1
     
     @property
