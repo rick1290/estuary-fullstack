@@ -293,16 +293,6 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                         </div>
                       </>
                     )}
-
-                    <div className="flex items-center">
-                      <DollarSign className="h-5 w-5 mr-3 text-primary" />
-                      <div>
-                        <p className="font-medium">Total Amount</p>
-                        <p className="text-muted-foreground">
-                          ${booking.total_amount || 0}
-                        </p>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="space-y-3">
