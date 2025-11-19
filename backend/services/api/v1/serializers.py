@@ -497,6 +497,48 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
         allow_empty=True,
         help_text="List of dicts with child_service_id, quantity, discount_percentage, etc."
     )
+
+    def validate_child_service_configs(self, value):
+        """Handle JSON string from FormData and ensure proper list of dicts"""
+        import json
+
+        if not value:
+            return value
+
+        # If it's already a list, check if items are strings that need parsing
+        if isinstance(value, list):
+            parsed_configs = []
+            for item in value:
+                if isinstance(item, str):
+                    # Parse JSON string
+                    try:
+                        parsed_item = json.loads(item)
+                        if not isinstance(parsed_item, dict):
+                            raise serializers.ValidationError("Each config must be a dictionary")
+                        parsed_configs.append(parsed_item)
+                    except json.JSONDecodeError:
+                        raise serializers.ValidationError("Invalid JSON in child_service_configs")
+                elif isinstance(item, dict):
+                    parsed_configs.append(item)
+                else:
+                    raise serializers.ValidationError("Each config must be a dictionary")
+            return parsed_configs
+
+        # If it's a string, try to parse it
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                # Ensure it's a list
+                if isinstance(parsed, dict):
+                    return [parsed]  # Single config wrapped in list
+                elif isinstance(parsed, list):
+                    return parsed
+                else:
+                    raise serializers.ValidationError("child_service_configs must be a list or dict")
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Invalid JSON in child_service_configs")
+
+        return value
     # Sessions are now managed via the dedicated ServiceSession endpoint
     # Remove sessions field to simplify the API
     

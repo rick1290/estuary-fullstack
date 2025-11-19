@@ -356,7 +356,7 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
   // Save specific section
   const handleSaveSection = useCallback(async (sectionId: string) => {
     let updates = { ...sectionData[sectionId] }
-    
+
     // Map scheduleId to schedule field for API
     if (sectionId === 'schedule-selection' && updates.scheduleId) {
       updates = {
@@ -364,20 +364,29 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
       }
       delete updates.scheduleId
     }
-    
+
+    // For bundle configuration, ensure child_service_configs is properly formatted as array
+    if (sectionId === 'bundle-configuration' && updates.child_service_configs) {
+      // Ensure it's an array
+      if (!Array.isArray(updates.child_service_configs)) {
+        updates.child_service_configs = [updates.child_service_configs]
+      }
+      console.log('Saving bundle with child_service_configs:', updates.child_service_configs)
+    }
+
     // Debug logging for package and bundle sections
     if (sectionId === 'package-composition' || sectionId === 'bundle-configuration') {
       console.log(`Saving ${sectionId}:`, updates)
     }
-    
+
     // For package, bundle, and service sessions, the data is already properly formatted
     // No special handling needed
-    
+
     await updateMutation.mutateAsync({
       path: { id: parseInt(serviceId) },
       body: updates,
     })
-    
+
     setUnsavedChanges(prev => {
       const newSet = new Set(prev)
       newSet.delete(sectionId)
