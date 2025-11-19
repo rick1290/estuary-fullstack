@@ -106,7 +106,7 @@ export default function PractitionerServicesManagerV2() {
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(!isMobile)
-  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
 
