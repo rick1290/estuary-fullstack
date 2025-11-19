@@ -327,7 +327,10 @@ export default function CheckoutPage() {
     practitioner: {
       name: serviceData.primary_practitioner?.display_name || serviceData.practitioner?.display_name || 'Practitioner'
     },
-    image: serviceData.image_url || serviceData.featured_image
+    image: serviceData.image_url || serviceData.featured_image,
+    firstSessionDate: serviceData.first_session_date,
+    lastSessionDate: serviceData.last_session_date,
+    nextSessionDate: serviceData.next_session_date
   }
 
   // Calculate pricing - ensure all values are numbers
@@ -500,7 +503,11 @@ export default function CheckoutPage() {
                           <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Date</p>
-                            <p className="text-muted-foreground">{selectedDate || "Flexible"}</p>
+                            <p className="text-muted-foreground">
+                              {serviceType === "courses" && service.firstSessionDate && service.lastSessionDate
+                                ? `${new Date(service.firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(service.lastSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                                : selectedDate || "Flexible"}
+                            </p>
                           </div>
                         </div>
 
