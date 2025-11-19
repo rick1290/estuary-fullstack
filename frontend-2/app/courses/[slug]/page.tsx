@@ -45,6 +45,7 @@ This course is perfect for anyone interested in improving their health through b
   categories: ["Nutrition", "Health"],
   image: "/course-image-1.jpg",
   experienceLevel: "beginner",
+  includes: [],
   whatYoullLearn: [
     "Understand the role of macronutrients and micronutrients in the body",
     "Learn how to read and interpret nutrition labels",
@@ -183,6 +184,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
       : ['Wellness'],
     image: serviceData.image_url || serviceData.featured_image || '/course-image-1.jpg',
     experienceLevel: serviceData.experience_level || "beginner",
+    includes: Array.isArray(serviceData.includes) ? serviceData.includes : [],
     whatYoullLearn: Array.isArray(serviceData.learning_objectives)
       ? serviceData.learning_objectives
       : Array.isArray(serviceData.what_youll_learn)
@@ -241,6 +243,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
       : (serviceData.practitioner || serviceData.primary_practitioner)
       ? [{
           id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
+          slug: (serviceData.practitioner?.slug || serviceData.primary_practitioner?.slug),
           name: (serviceData.practitioner?.display_name || serviceData.primary_practitioner?.display_name || 'Instructor'),
           title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Course Instructor'),
           bio: (serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced instructor dedicated to your learning journey.'),
@@ -491,11 +494,21 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                 <div className="absolute bottom-6 left-6 right-6 bg-cream-50/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
                   <p className="text-sm text-olive-600 mb-2">Your Instructor</p>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-white">
-                        {course.practitioners[0].name.charAt(0)}
-                      </span>
-                    </div>
+                    {course.practitioners[0].image ? (
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
+                        <img
+                          src={course.practitioners[0].image}
+                          alt={course.practitioners[0].name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-white">
+                          {course.practitioners[0].name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <p className="font-semibold text-olive-900">{course.practitioners[0].name}</p>
                       <p className="text-sm text-olive-600">{course.practitioners[0].title}</p>
@@ -551,6 +564,27 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </div>
             </section>
 
+            {/* What's Included */}
+            {course.includes && course.includes.length > 0 && (
+              <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
+                <h2 className="text-3xl font-bold text-olive-900 mb-10">What's Included</h2>
+                <div className="bg-gradient-to-br from-terracotta-50 to-sage-50 rounded-3xl p-8">
+                  <div className="grid gap-4">
+                    {course.includes.map((item, index) => (
+                      <div key={index} className="flex gap-4 items-start">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400 flex items-center justify-center">
+                            <Check className="h-4 w-4 text-white" strokeWidth="2" />
+                          </div>
+                        </div>
+                        <p className="text-olive-700 leading-relaxed flex-1">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Your Learning Journey */}
             <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
               <h2 className="text-3xl font-bold text-olive-900 mb-10">Your Learning Journey</h2>
@@ -574,9 +608,31 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                       </div>
                     </div>
                     <CardContent className="p-6 bg-cream-50">
-                      <div className="text-sm text-olive-600 mb-4">
-                        <Clock className="h-4 w-4 inline mr-2" strokeWidth="1.5" />
-                        {session.startTime} - {session.endTime}
+                      <div className="flex flex-wrap gap-4 text-sm text-olive-600 mb-4">
+                        {session.start_time && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" strokeWidth="1.5" />
+                            <span>
+                              {new Date(session.start_time).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        )}
+                        {session.duration_minutes && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{session.duration_minutes} min</span>
+                          </div>
+                        )}
+                        {!session.start_time && session.startTime && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" strokeWidth="1.5" />
+                            <span>{session.startTime} - {session.endTime}</span>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-olive-800 mb-3">What we'll explore:</p>
@@ -623,17 +679,27 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row">
                           <div className="md:w-48 h-48 bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
-                            <div className="w-24 h-24 rounded-full bg-white shadow-xl flex items-center justify-center">
-                              <span className="text-3xl font-bold text-olive-800">
-                                {practitioner.name.split(' ').map(n => n[0]).join('')}
-                              </span>
-                            </div>
+                            {practitioner.image ? (
+                              <div className="w-24 h-24 rounded-2xl bg-white shadow-xl overflow-hidden">
+                                <img
+                                  src={practitioner.image}
+                                  alt={practitioner.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-24 h-24 rounded-2xl bg-white shadow-xl flex items-center justify-center">
+                                <span className="text-3xl font-bold text-olive-800">
+                                  {practitioner.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1 p-8">
                             <h3 className="text-2xl font-semibold text-olive-900 mb-2">{practitioner.name}</h3>
                             <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
                             <p className="text-olive-600 leading-relaxed mb-4">{practitioner.bio}</p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-4">
                               <div className="flex">
                                 {[...Array(5)].map((_, i) => (
                                   <Star key={i} className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
@@ -641,6 +707,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                               </div>
                               <span className="text-sm text-olive-600">{practitioner.rating} ({practitioner.reviewCount} reviews)</span>
                             </div>
+                            <Link
+                              href={`/practitioners/${practitioner.slug || practitioner.id}`}
+                              className="text-sage-600 hover:text-sage-800 font-medium text-sm inline-flex items-center gap-1 transition-colors"
+                            >
+                              View Profile
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
                           </div>
                         </div>
                       </CardContent>
