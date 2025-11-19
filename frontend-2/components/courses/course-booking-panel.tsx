@@ -54,6 +54,34 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
               </div>
               <span className="font-semibold text-olive-900">{course.sessionCount}</span>
             </div>
+            {course.firstSessionDate && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                  <span className="text-olive-700">Starts</span>
+                </div>
+                <span className="font-semibold text-olive-900">
+                  {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+            )}
+            {course.lastSessionDate && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                  <span className="text-olive-700">Ends</span>
+                </div>
+                <span className="font-semibold text-olive-900">
+                  {new Date(course.lastSessionDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />

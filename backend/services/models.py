@@ -494,7 +494,34 @@ class Service(PublicModel):
 
         # For individual sessions and other types
         return 1
-    
+
+    @property
+    def first_session_date(self):
+        """Get the start time of the first session for courses/workshops."""
+        if self.is_course or (self.service_type and self.service_type.code == 'workshop'):
+            first_session = self.sessions.order_by('start_time').first()
+            return first_session.start_time if first_session else None
+        return None
+
+    @property
+    def last_session_date(self):
+        """Get the end time of the last session for courses/workshops."""
+        if self.is_course or (self.service_type and self.service_type.code == 'workshop'):
+            last_session = self.sessions.order_by('-end_time').first()
+            return last_session.end_time if last_session else None
+        return None
+
+    @property
+    def next_session_date(self):
+        """Get the start time of the next upcoming session for courses/workshops."""
+        if self.is_course or (self.service_type and self.service_type.code == 'workshop'):
+            from django.utils import timezone
+            upcoming_session = self.sessions.filter(
+                start_time__gte=timezone.now()
+            ).order_by('start_time').first()
+            return upcoming_session.start_time if upcoming_session else None
+        return None
+
     @property
     def price_per_session_cents(self):
         """Calculate effective price per session for bundles in cents."""
