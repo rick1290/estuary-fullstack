@@ -148,7 +148,7 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
                             variant={session.spots_available < 5 ? "destructive" : "secondary"}
                             className="ml-2"
                           >
-                            {session.spots_available} spots
+                            {session.spots_available} spots left
                           </Badge>
                         )}
                       </div>
