@@ -36,9 +36,16 @@ class UserSummarySerializer(serializers.ModelSerializer):
                 pass
 
         # Otherwise use regular user profile avatar
-        if hasattr(obj, 'profile') and obj.profile:
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.avatar_url:
             return obj.profile.avatar_url
-        return None
+
+        # Return default avatar with user's initials
+        initials = f"{obj.first_name[0] if obj.first_name else ''}{obj.last_name[0] if obj.last_name else ''}".upper()
+        if not initials:
+            initials = obj.email[0].upper() if obj.email else "U"
+
+        # Use UI Avatars service for default avatars
+        return f"https://ui-avatars.com/api/?name={initials}&background=9CAF88&color=fff&size=128"
 
 
 class AttachmentSerializer(serializers.Serializer):
