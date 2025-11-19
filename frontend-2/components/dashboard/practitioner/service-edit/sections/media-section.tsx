@@ -37,6 +37,25 @@ export function MediaSection({ service }: MediaSectionProps) {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
   const [generatedImageId, setGeneratedImageId] = useState<number | null>(null)
 
+  // Generate dynamic prompt based on actual service data
+  const generateExamplePrompt = () => {
+    const serviceName = service.name || "wellness service"
+    const description = service.description || ""
+
+    // Clean up description (take first 100 chars, remove excess whitespace)
+    const cleanDescription = description
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 100)
+
+    // Build dynamic prompt with just service name and description
+    if (cleanDescription) {
+      return `"${serviceName}" - ${cleanDescription}. Professional, peaceful, and inviting atmosphere.`
+    } else {
+      return `"${serviceName}". Professional, peaceful, and inviting atmosphere.`
+    }
+  }
+
   const uploadCoverImageMutation = useMutation({
     ...servicesUploadCoverImageCreateMutation(),
     onSuccess: (data) => {
@@ -385,17 +404,29 @@ export function MediaSection({ service }: MediaSectionProps) {
                 </Card>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ai-prompt">Describe Your Image</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="ai-prompt">Describe Your Image</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAiPrompt(generateExamplePrompt())}
+                      className="h-7 text-xs"
+                    >
+                      <Wand2 className="h-3 w-3 mr-1" />
+                      Use Example
+                    </Button>
+                  </div>
                   <Textarea
                     id="ai-prompt"
-                    placeholder="E.g., A peaceful yoga studio with natural light and plants..."
+                    placeholder={generateExamplePrompt()}
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     rows={4}
                     className="resize-none"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Tip: Be specific about mood, setting, and elements you want to see
+                    💡 Click "Use Example" to see a personalized prompt for "{service.name || 'your service'}"
                   </p>
                 </div>
 
