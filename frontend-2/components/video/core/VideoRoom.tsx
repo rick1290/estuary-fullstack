@@ -76,6 +76,8 @@ export function VideoRoom({
   // Get session info
   const sessionInfo = bookingDetails || sessionDetails;
   const practitioner = sessionInfo?.practitioner;
+  // Prefer session title (for workshops/courses), then service name
+  const sessionTitle = sessionInfo?.title || sessionInfo?.service?.name || 'Video Session';
 
   // Room options based on room type
   const roomOptions = useMemo(() => ({
@@ -180,11 +182,27 @@ export function VideoRoom({
           <div className="bg-estuary-900/80 backdrop-blur-md border-b border-wellness-700/30 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
+                {/* Practitioner Avatar */}
+                {practitioner && (
+                  <Avatar className="h-11 w-11 border-2 border-wellness-600 ring-2 ring-wellness-600/30">
+                    <AvatarImage src={practitioner.profile_photo} alt={practitioner.name} />
+                    <AvatarFallback className="bg-wellness-700 text-white">
+                      {practitioner.name?.split(' ').map((n: string) => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+
                 <div>
                   <h2 className="text-lg font-semibold text-white">
-                    {sessionInfo?.service?.name || 'Video Session'}
+                    {sessionTitle}
                   </h2>
                   <div className="flex items-center gap-3 text-sm text-wellness-200">
+                    {practitioner && (
+                      <>
+                        <span className="text-wellness-100">with {practitioner.name}</span>
+                        <span>•</span>
+                      </>
+                    )}
                     <Badge variant="secondary" className="bg-wellness-700/30 text-wellness-100 border-wellness-600">
                       {isHost ? 'Host' : 'Participant'}
                     </Badge>
@@ -198,23 +216,6 @@ export function VideoRoom({
                     </div>
                   </div>
                 </div>
-
-                {practitioner && !isHost && (
-                  <div className="flex items-center gap-3 pl-6 border-l border-wellness-700/30">
-                    <Avatar className="h-10 w-10 border-2 border-wellness-600">
-                      <AvatarImage src={practitioner.profile_photo} alt={practitioner.name} />
-                      <AvatarFallback className="bg-wellness-700 text-white">
-                        {practitioner.name?.split(' ').map((n: string) => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium text-white">{practitioner.name}</p>
-                      {practitioner.specialization && (
-                        <p className="text-xs text-wellness-200">{practitioner.specialization}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center gap-2">

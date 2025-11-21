@@ -47,10 +47,14 @@ export function PreJoinScreen({
 
   // Get session info
   const sessionInfo = bookingDetails || sessionDetails;
-  const sessionTitle = sessionInfo?.service?.name || sessionInfo?.title || 'Video Session';
+  // Prefer session title (for workshops/courses), then service name, then fallback
+  const sessionTitle = sessionInfo?.title || sessionInfo?.service?.name || 'Video Session';
+  const serviceName = sessionInfo?.service?.name;
   const sessionTime = sessionInfo?.start_time ? new Date(sessionInfo.start_time) : null;
   const practitioner = sessionInfo?.practitioner;
-  const serviceType = sessionInfo?.service?.service_type || 'session';
+  const serviceType = sessionInfo?.session_type || sessionInfo?.service?.service_type || 'session';
+  const serviceImage = sessionInfo?.service?.image_url;
+  const durationMinutes = sessionInfo?.service?.duration_minutes;
 
   const getServiceTypeBadge = () => {
     switch (serviceType) {
@@ -131,46 +135,80 @@ export function PreJoinScreen({
           {/* Session Info & Tips - Sidebar */}
           <div className="space-y-6">
             {/* Session Details Card */}
-            <Card className="border-sage-200 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-cream-100 to-sage-100 rounded-t-lg">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-lg text-estuary-900">{sessionTitle}</CardTitle>
-                  {getServiceTypeBadge()}
+            <Card className="border-sage-200 shadow-lg overflow-hidden">
+              {/* Service Image Header */}
+              {serviceImage && (
+                <div className="relative h-32 w-full">
+                  <img
+                    src={serviceImage}
+                    alt={serviceName || sessionTitle}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4">
+                    {getServiceTypeBadge()}
+                  </div>
+                </div>
+              )}
+
+              <CardHeader className={serviceImage ? "pt-4" : "bg-gradient-to-r from-cream-100 to-sage-100 rounded-t-lg"}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg text-estuary-900 leading-tight">{sessionTitle}</CardTitle>
+                    {/* Show service name if different from session title */}
+                    {serviceName && serviceName !== sessionTitle && (
+                      <p className="text-sm text-gray-500 mt-1">{serviceName}</p>
+                    )}
+                  </div>
+                  {!serviceImage && getServiceTypeBadge()}
                 </div>
               </CardHeader>
-              <CardContent className="pt-6">
-                {sessionTime && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                    <Calendar className="h-4 w-4 text-sage-600" />
-                    <span>{format(sessionTime, 'EEEE, MMMM d')}</span>
-                  </div>
-                )}
-                {sessionTime && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                    <Clock className="h-4 w-4 text-sage-600" />
-                    <span>{format(sessionTime, 'h:mm a')}</span>
-                  </div>
-                )}
-                
+
+              <CardContent className="pt-4">
+                {/* Practitioner - Show prominently at top */}
                 {practitioner && (
-                  <div className="border-t pt-4">
-                    <p className="text-sm text-gray-500 mb-2">Your practitioner</p>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={practitioner.profile_photo} alt={practitioner.name} />
-                        <AvatarFallback className="bg-sage-100 text-sage-700">
-                          {practitioner.name?.split(' ').map((n: string) => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-estuary-900">{practitioner.name}</p>
-                        {practitioner.specialization && (
-                          <p className="text-xs text-gray-500">{practitioner.specialization}</p>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3 mb-4 pb-4 border-b">
+                    <Avatar className="h-12 w-12 ring-2 ring-sage-100">
+                      <AvatarImage src={practitioner.profile_photo} alt={practitioner.name} />
+                      <AvatarFallback className="bg-sage-100 text-sage-700 text-lg">
+                        {practitioner.name?.split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-estuary-900">{practitioner.name}</p>
+                      {practitioner.specialization && (
+                        <p className="text-xs text-gray-500 line-clamp-2">{practitioner.specialization}</p>
+                      )}
                     </div>
                   </div>
                 )}
+
+                {/* Date/Time Info */}
+                <div className="space-y-2">
+                  {sessionTime && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-sage-50">
+                        <Calendar className="h-4 w-4 text-sage-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-estuary-900">{format(sessionTime, 'EEEE, MMMM d')}</p>
+                        <p className="text-gray-500">{format(sessionTime, 'h:mm a')}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {durationMinutes && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-sage-50">
+                        <Clock className="h-4 w-4 text-sage-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-estuary-900">{durationMinutes} minutes</p>
+                        <p className="text-gray-500">Session duration</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 

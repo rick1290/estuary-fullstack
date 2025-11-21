@@ -189,10 +189,36 @@ export default function RoomPage() {
     );
   }
 
-  // Build session details from access data, enhanced with booking details
-  const sessionDetails = accessData?.service_session || 
-    (bookingData ? bookingData : accessData?.booking) || 
-    { room: accessData?.room };
+  // Build session details from access data - pass all info to VideoRoom
+  const sessionDetails = {
+    // Session info
+    id: accessData?.service_session?.id,
+    title: accessData?.service_session?.title,
+    description: accessData?.service_session?.description,
+    start_time: accessData?.service_session?.start_time,
+    end_time: accessData?.service_session?.end_time,
+    session_type: accessData?.service_session?.session_type,
+    // Service info
+    service: accessData?.service ? {
+      id: accessData.service.id,
+      name: accessData.service.name,
+      description: accessData.service.description,
+      service_type: accessData.service.service_type,
+      image_url: accessData.service.image_url,
+      duration_minutes: accessData.service.duration_minutes,
+    } : undefined,
+    // Practitioner info
+    practitioner: accessData?.practitioner ? {
+      id: accessData.practitioner.id,
+      name: accessData.practitioner.name,
+      profile_photo: accessData.practitioner.profile_photo,
+      specialization: accessData.practitioner.specialization,
+    } : undefined,
+    // Room info
+    room: accessData?.room,
+    // Booking info if available
+    booking: accessData?.my_booking,
+  };
 
   return (
     <VideoRoom
