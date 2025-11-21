@@ -25,6 +25,9 @@ urlpatterns = [
 
     # API v1 endpoints
     path("api/v1/", include("api.v1.urls_drf")),
+
+    # Webhooks (outside of /api/v1/)
+    path("api/", include("rooms.api.v1.webhook_urls")),
 ]
 
 # Serve static and media files in development

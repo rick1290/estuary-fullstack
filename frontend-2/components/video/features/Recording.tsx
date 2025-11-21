@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Radio, RadioOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Radio, Circle, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RecordingControlsProps {
@@ -43,7 +43,7 @@ export function RecordingControls({
   const [showStopDialog, setShowStopDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [recordingOptions, setRecordingOptions] = useState<RecordingOptions>({
     audioOnly: false,
     outputFormat: 'mp4',
@@ -51,16 +51,28 @@ export function RecordingControls({
     notifyParticipants: true
   });
 
-  if (!isHost) return null;
+  // Debug logs
+  useEffect(() => {
+    console.log('RecordingControls state updated:', { showStartDialog, showStopDialog, isHost, isRecording });
+  }, [showStartDialog, showStopDialog, isHost, isRecording]);
+
+  if (!isHost) {
+    console.log('Not showing recording controls - not host');
+    return null;
+  }
 
   const handleStartRecording = async () => {
+    console.log('handleStartRecording called!', { recordingOptions, onStartRecording });
     setLoading(true);
     setError(null);
-    
+
     try {
+      console.log('Calling onStartRecording...');
       await onStartRecording(recordingOptions);
+      console.log('Recording started successfully!');
       setShowStartDialog(false);
     } catch (err) {
+      console.error('Error starting recording:', err);
       setError(err instanceof Error ? err.message : 'Failed to start recording');
     } finally {
       setLoading(false);
@@ -87,7 +99,16 @@ export function RecordingControls({
       <Button
         variant="secondary"
         size="icon"
-        onClick={() => isRecording ? setShowStopDialog(true) : setShowStartDialog(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          console.log('Recording button clicked!', { isRecording, showStartDialog, showStopDialog });
+          if (isRecording) {
+            setShowStopDialog(true);
+          } else {
+            setShowStartDialog(true);
+          }
+        }}
         className={cn(
           "rounded-full relative",
           isRecording && "bg-red-500 hover:bg-red-600 text-white",
@@ -95,15 +116,38 @@ export function RecordingControls({
         )}
         title={isRecording ? "Stop recording" : "Start recording"}
       >
-        {isRecording ? <RadioOff className="h-4 w-4" /> : <Radio className="h-4 w-4" />}
+        {isRecording ? <Circle className="h-4 w-4 fill-white" /> : <Radio className="h-4 w-4" />}
         {isRecording && (
           <span className="absolute top-0 right-0 h-2 w-2 bg-red-400 rounded-full animate-pulse" />
         )}
       </Button>
 
       {/* Start Recording Dialog */}
-      <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
-        <DialogContent className="sm:max-w-md">
+      {showStartDialog && (
+        <Dialog
+          open={showStartDialog}
+          onOpenChange={(open) => {
+            console.log('Dialog onOpenChange called:', open);
+            if (!open) {
+              console.log('Preventing dialog close');
+            }
+            // Only allow closing via Cancel button
+          }}
+          modal={true}
+        >
+          <DialogContent
+            className="sm:max-w-md z-[9999]"
+            onInteractOutside={(e) => {
+              // Prevent closing when clicking outside
+              console.log('onInteractOutside triggered');
+              e.preventDefault();
+            }}
+            onEscapeKeyDown={(e) => {
+              // Prevent closing on Escape key
+              console.log('Escape key pressed');
+              e.preventDefault();
+            }}
+          >
           <DialogHeader>
             <DialogTitle>Start Recording</DialogTitle>
             <DialogDescription>
@@ -224,10 +268,21 @@ export function RecordingControls({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Stop Recording Dialog */}
-      <Dialog open={showStopDialog} onOpenChange={setShowStopDialog}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog
+        open={showStopDialog}
+        onOpenChange={setShowStopDialog}
+        modal={true}
+      >
+        <DialogContent
+          className="sm:max-w-md z-[9999]"
+          onInteractOutside={(e) => {
+            // Prevent closing when clicking outside
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Stop Recording</DialogTitle>
             <DialogDescription>

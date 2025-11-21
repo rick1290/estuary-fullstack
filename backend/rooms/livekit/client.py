@@ -23,16 +23,28 @@ class LiveKitClient:
         self.api_key = getattr(settings, 'LIVEKIT_API_KEY', os.environ.get('LIVEKIT_API_KEY'))
         self.api_secret = getattr(settings, 'LIVEKIT_API_SECRET', os.environ.get('LIVEKIT_API_SECRET'))
         self.server_url = getattr(settings, 'LIVEKIT_HOST', os.environ.get('LIVEKIT_HOST', 'http://localhost:7880'))
-        
+
         if not self.api_key or not self.api_secret:
             raise ValueError("LiveKit API key and secret must be configured")
-        
-        # Initialize API client
-        self.lk_api = api.LiveKitAPI(
-            url=self.server_url,
-            api_key=self.api_key,
-            api_secret=self.api_secret
-        )
+
+        # Don't initialize API client here - it requires an event loop
+        # Will be initialized lazily when needed
+        self._lk_api = None
+
+    def _ensure_api_client(self):
+        """Ensure LiveKit API client is initialized (must be called from async context)."""
+        if self._lk_api is None:
+            self._lk_api = api.LiveKitAPI(
+                url=self.server_url,
+                api_key=self.api_key,
+                api_secret=self.api_secret
+            )
+        return self._lk_api
+
+    @property
+    def lk_api(self):
+        """Get LiveKit API client, initializing if needed."""
+        return self._ensure_api_client()
     
     # Room Management
     
@@ -281,7 +293,66 @@ class LiveKitClient:
             raise
     
     # Recording Management
-    
+
+    async def start_room_composite_egress(
+        self,
+        room_name: str,
+        file_key: str,
+        layout: str = 'speaker',
+        audio_only: bool = False,
+        file_format: str = 'mp4'
+    ) -> Dict[str, Any]:
+        """
+        Start room composite egress (recording) with R2 storage.
+
+        Args:
+            room_name: Room name to record
+            file_key: File path/key in R2 bucket (e.g., 'recordings/room-123/video.mp4')
+            layout: Layout type ('speaker', 'grid', 'single-speaker')
+            audio_only: Whether to record audio only
+            file_format: Output format ('mp4', 'webm')
+
+        Returns:
+            Egress info object
+        """
+        try:
+            from livekit.protocol import egress as egress_pb
+
+            # Configure S3-compatible upload for R2
+            s3_upload = egress_pb.S3Upload(
+                access_key=settings.CLOUDFLARE_R2_ACCESS_KEY_ID,
+                secret=settings.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+                region=settings.CLOUDFLARE_R2_REGION_NAME,
+                endpoint=settings.CLOUDFLARE_R2_ENDPOINT_URL,
+                bucket=settings.CLOUDFLARE_R2_STORAGE_BUCKET_NAME,
+                force_path_style=True,  # Required for R2
+            )
+
+            # Configure file output
+            file_output = egress_pb.EncodedFileOutput(
+                file_type=egress_pb.EncodedFileType.MP4 if file_format == 'mp4' else egress_pb.EncodedFileType.OGG,
+                filepath=file_key,
+                s3=s3_upload
+            )
+
+            # Create egress request
+            request = egress_pb.RoomCompositeEgressRequest(
+                room_name=room_name,
+                layout=layout,
+                audio_only=audio_only,
+                file_outputs=[file_output]
+            )
+
+            # Start egress
+            response = await self.lk_api.egress.start_room_composite_egress(request)
+
+            logger.info(f"Started recording for room {room_name}, egress ID: {response.egress_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Failed to start recording for room {room_name}: {e}")
+            raise
+
     async def start_room_recording(
         self,
         room_name: str,
@@ -291,37 +362,24 @@ class LiveKitClient:
         preset: str = "HD_30"
     ) -> Dict[str, Any]:
         """
-        Start recording a room.
-        
+        Legacy method - use start_room_composite_egress instead.
+
         Args:
             room_name: Room name
             output_filepath: S3/GCS/Azure path for output
             audio_only: Whether to record audio only
             video_codec: Video codec to use
             preset: Recording preset
-            
+
         Returns:
             Egress info object
         """
-        try:
-            request = api.RoomCompositeEgressRequest(
-                room_name=room_name,
-                audio_only=audio_only,
-                video_codec=video_codec,
-                preset=preset
-            )
-            
-            # Configure file output
-            request.file_outputs.append(
-                {"filepath": output_filepath}
-            )
-            
-            response = await self.egress_service.start_room_composite_egress(request)
-            logger.info(f"Started recording for room {room_name}, egress ID: {response.egress_id}")
-            return response
-        except Exception as e:
-            logger.error(f"Failed to start recording for room {room_name}: {e}")
-            raise
+        logger.warning("start_room_recording is deprecated, use start_room_composite_egress")
+        return await self.start_room_composite_egress(
+            room_name=room_name,
+            file_key=output_filepath,
+            audio_only=audio_only
+        )
     
     async def stop_egress(self, egress_id: str) -> Dict[str, Any]:
         """
@@ -334,7 +392,7 @@ class LiveKitClient:
             Final egress info
         """
         try:
-            response = await self.egress_service.stop_egress(
+            response = await self.lk_api.egress.stop_egress(
                 api.StopEgressRequest(egress_id=egress_id)
             )
             logger.info(f"Stopped egress {egress_id}")
@@ -453,7 +511,9 @@ class LiveKitClient:
         Returns:
             WebhookReceiver instance
         """
-        return api.WebhookReceiver(self.api_key, self.api_secret)
+        # WebhookReceiver now requires a TokenVerifier object
+        token_verifier = api.TokenVerifier(api_key=self.api_key, api_secret=self.api_secret)
+        return api.WebhookReceiver(token_verifier)
     
     async def health_check(self) -> bool:
         """
@@ -471,18 +531,15 @@ class LiveKitClient:
             return False
 
 
-# Singleton instance
-_client = None
-
-
 def get_livekit_client() -> LiveKitClient:
     """
-    Get or create LiveKit client singleton.
-    
+    Create a new LiveKit client instance.
+
+    NOTE: Cannot use singleton pattern with aiohttp because sessions
+    are tied to specific event loops. Each async operation needs its
+    own client instance.
+
     Returns:
-        LiveKitClient instance
+        New LiveKitClient instance
     """
-    global _client
-    if _client is None:
-        _client = LiveKitClient()
-    return _client
+    return LiveKitClient()

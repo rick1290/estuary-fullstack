@@ -172,12 +172,12 @@ class CreateRoomSerializer(serializers.Serializer):
     scheduled_start = serializers.DateTimeField(required=False)
     scheduled_end = serializers.DateTimeField(required=False)
     max_participants = serializers.IntegerField(
-        min_value=1, 
-        max_value=1000, 
+        min_value=1,
+        max_value=1000,
         default=100
     )
     recording_enabled = serializers.BooleanField(default=False)
-    
+
     def validate(self, data):
         if data.get('scheduled_start') and data.get('scheduled_end'):
             if data['scheduled_start'] >= data['scheduled_end']:
@@ -185,3 +185,33 @@ class CreateRoomSerializer(serializers.Serializer):
                     "Scheduled end time must be after start time."
                 )
         return data
+
+
+class StartRecordingSerializer(serializers.Serializer):
+    """
+    Serializer for starting a room recording.
+    """
+    layout = serializers.ChoiceField(
+        choices=['speaker', 'grid', 'single-speaker'],
+        default='speaker',
+        help_text="Layout type for the recording"
+    )
+    file_format = serializers.ChoiceField(
+        choices=['mp4', 'webm'],
+        default='mp4',
+        help_text="Output file format"
+    )
+    audio_only = serializers.BooleanField(
+        default=False,
+        help_text="Record audio only (no video)"
+    )
+
+
+class RecordingResponseSerializer(serializers.Serializer):
+    """
+    Response serializer for recording operations.
+    """
+    recording_id = serializers.CharField()
+    status = serializers.CharField()
+    message = serializers.CharField()
+    recording = RoomRecordingSerializer(required=False)

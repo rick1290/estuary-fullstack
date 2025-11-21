@@ -32,16 +32,18 @@ class LiveKitWebhookHandler:
     def verify_webhook(self, body: bytes, auth_header: str) -> Optional[webhook_pb2.WebhookEvent]:
         """
         Verify webhook signature and parse event.
-        
+
         Args:
             body: Raw request body
             auth_header: Authorization header value
-            
+
         Returns:
             Parsed webhook event or None if invalid
         """
         try:
-            event = self.webhook_receiver.receive(body, auth_header)
+            # LiveKit SDK expects body as string, not bytes
+            body_str = body.decode('utf-8') if isinstance(body, bytes) else body
+            event = self.webhook_receiver.receive(body_str, auth_header)
             return event
         except Exception as e:
             logger.error(f"Failed to verify webhook: {e}")
@@ -320,31 +322,41 @@ class LiveKitWebhookHandler:
     def _handle_egress_ended(self, event: webhook_pb2.WebhookEvent) -> Dict[str, Any]:
         """Handle recording ended event."""
         egress_info = event.egress_info
-        
+
         try:
             recording = RoomRecording.objects.get(egress_id=egress_info.egress_id)
             room = recording.room
-            
+
             # Update recording record
             recording.status = 'ready' if egress_info.status == webhook_pb2.EgressStatus.EGRESS_COMPLETE else 'failed'
             recording.ended_at = timezone.now()
-            
+
             # Extract file info if available
             if egress_info.file_results:
                 file_result = egress_info.file_results[0]
-                recording.file_url = file_result.location
+                # File URL from LiveKit points to the file in R2
+                # We'll verify and get our own URL from R2MediaStorage
                 recording.file_size_bytes = file_result.size
                 recording.duration_seconds = int(file_result.duration / 1_000_000_000)  # Convert from nanoseconds
-            
+
             recording.save()
-            
+
             # Update room recording status
             room.recording_status = 'stopped'
             room.save(update_fields=['recording_status', 'updated_at'])
-            
+
+            # Process completed recording (verify in R2, generate URLs, etc.)
+            if recording.status == 'ready':
+                try:
+                    from rooms.services.recording_service import RecordingService
+                    recording_service = RecordingService()
+                    recording_service.process_completed_recording(recording)
+                except Exception as e:
+                    logger.error(f"Failed to process completed recording {recording.recording_id}: {e}")
+
             logger.info(f"Recording ended for room {room.name}")
             return {"status": "success", "recording_id": str(recording.id)}
-            
+
         except RoomRecording.DoesNotExist:
             logger.error(f"Recording not found: {egress_info.egress_id}")
             return {"status": "error", "message": "Recording not found"}

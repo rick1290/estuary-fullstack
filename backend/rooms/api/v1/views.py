@@ -11,10 +11,12 @@ from django.db.models import Q
 from rooms.models import Room, RoomParticipant, RoomToken, RoomRecording
 from rooms.livekit.tokens import generate_room_token
 from rooms.livekit.client import LiveKitClient
+from rooms.services.recording_service import RecordingService
 from .serializers import (
     RoomSerializer, RoomDetailSerializer, RoomTokenRequestSerializer,
     RoomTokenResponseSerializer, RoomParticipantSerializer,
-    RoomRecordingSerializer, CreateRoomSerializer
+    RoomRecordingSerializer, CreateRoomSerializer,
+    StartRecordingSerializer, RecordingResponseSerializer
 )
 from bookings.models import Booking
 from services.models import ServiceSession
@@ -317,7 +319,7 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         """
         room = self.get_object()
         user = request.user
-        
+
         # Check permissions - only host can start recording
         is_host = False
         if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
@@ -326,43 +328,48 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
             is_host = True
         elif room.created_by == user:
             is_host = True
-        
+
         if not is_host:
             return Response(
                 {'error': 'Only the host can start recording.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if not room.recording_enabled:
             return Response(
                 {'error': 'Recording is not enabled for this room.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        if room.recording_status in ['active', 'starting']:
+
+        # Validate request data
+        serializer = StartRecordingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            # Start recording via RecordingService
+            recording_service = RecordingService()
+            recording = recording_service.start_recording(
+                room=room,
+                layout=serializer.validated_data.get('layout', 'speaker'),
+                file_format=serializer.validated_data.get('file_format', 'mp4'),
+                audio_only=serializer.validated_data.get('audio_only', False)
+            )
+
+            response_data = {
+                'recording_id': recording.recording_id,
+                'status': recording.status,
+                'message': 'Recording started successfully.',
+                'recording': RoomRecordingSerializer(recording).data
+            }
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except ValueError as e:
+            logger.warning(f"Invalid recording request for room {room.id}: {str(e)}")
             return Response(
-                {'error': 'Recording is already in progress.'},
+                {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        try:
-            # Start recording via LiveKit client
-            client = LiveKitClient()
-            recording_info = client.start_room_recording(
-                room_name=room.livekit_room_name,
-                output_format='mp4'
-            )
-            
-            # Update room recording status
-            room.recording_status = 'starting'
-            room.recording_id = recording_info.get('egress_id')
-            room.save(update_fields=['recording_status', 'recording_id'])
-            
-            return Response({
-                'message': 'Recording started successfully.',
-                'recording_id': room.recording_id
-            })
-            
         except Exception as e:
             logger.error(f"Failed to start recording for room {room.id}: {str(e)}")
             return Response(
@@ -377,7 +384,7 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         """
         room = self.get_object()
         user = request.user
-        
+
         # Check permissions - only host can stop recording
         is_host = False
         if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
@@ -386,32 +393,33 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
             is_host = True
         elif room.created_by == user:
             is_host = True
-        
+
         if not is_host:
             return Response(
                 {'error': 'Only the host can stop recording.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
-        if room.recording_status not in ['active', 'starting']:
-            return Response(
-                {'error': 'No active recording to stop.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+
         try:
-            # Stop recording via LiveKit client
-            client = LiveKitClient()
-            client.stop_room_recording(room.recording_id)
-            
-            # Update room recording status
-            room.recording_status = 'stopping'
-            room.save(update_fields=['recording_status'])
-            
-            return Response({
-                'message': 'Recording stopped successfully.'
-            })
-            
+            # Stop recording via RecordingService
+            recording_service = RecordingService()
+            recording = recording_service.stop_recording(room=room)
+
+            if not recording:
+                return Response(
+                    {'error': 'No active recording to stop.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            response_data = {
+                'recording_id': recording.recording_id,
+                'status': recording.status,
+                'message': 'Recording stopped successfully.',
+                'recording': RoomRecordingSerializer(recording).data
+            }
+
+            return Response(response_data)
+
         except Exception as e:
             logger.error(f"Failed to stop recording for room {room.id}: {str(e)}")
             return Response(

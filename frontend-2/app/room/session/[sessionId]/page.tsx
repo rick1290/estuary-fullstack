@@ -43,29 +43,41 @@ export default function SessionRoomPage() {
     }
   };
 
-  const handleStartRecording = async () => {
-    if (!roomInfo?.roomName || !permissions.canRecord) return;
-    
+  const handleStartRecording = async (options: {
+    audioOnly: boolean;
+    outputFormat: 'mp4' | 'webm' | 'hls';
+    includeScreenShare: boolean;
+    notifyParticipants: boolean;
+  }) => {
+    if (!roomInfo?.public_uuid) return;
+
     try {
       await startRecordingMutation.mutateAsync({
-        path: { id: roomInfo.roomName }
+        path: { public_uuid: roomInfo.public_uuid },
+        body: {
+          layout: 'grid', // Grid layout for group sessions
+          file_format: options.outputFormat === 'hls' ? 'mp4' : options.outputFormat,
+          audio_only: options.audioOnly
+        }
       });
       setIsRecording(true);
     } catch (error) {
       console.error('Failed to start recording:', error);
+      throw error;
     }
   };
 
   const handleStopRecording = async () => {
-    if (!roomInfo?.roomName || !permissions.canRecord) return;
-    
+    if (!roomInfo?.public_uuid) return;
+
     try {
       await stopRecordingMutation.mutateAsync({
-        path: { id: roomInfo.roomName }
+        path: { public_uuid: roomInfo.public_uuid }
       });
       setIsRecording(false);
     } catch (error) {
       console.error('Failed to stop recording:', error);
+      throw error;
     }
   };
 
@@ -154,6 +166,10 @@ export default function SessionRoomPage() {
         console.error('Room error:', error);
         // Could show a toast notification here
       }}
+      // Recording props
+      isRecording={isRecording}
+      onStartRecording={handleStartRecording}
+      onStopRecording={handleStopRecording}
     />
   );
 }
