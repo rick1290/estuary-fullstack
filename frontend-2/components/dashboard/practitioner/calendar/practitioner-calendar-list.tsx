@@ -39,11 +39,11 @@ const statusVariants = {
 
 // Check if a session can be joined (matching bookings list logic)
 const isSessionJoinable = (booking: any) => {
-  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
 
   const now = new Date()
-  const startTime = parseISO(booking.start_time)
-  const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  const startTime = parseISO(booking.service_session?.start_time)
+  const endTime = booking.service_session?.end_time ? parseISO(booking.service_session?.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
 
   // Allow joining 15 minutes before start and until the session ends
   const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
@@ -405,7 +405,7 @@ function ScheduleTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           {isServiceSession ? (
-                            <Link href={`/dashboard/practitioner/calendar/${scheduleEvent.id}`}>
+                            <Link href={`/dashboard/practitioner/sessions/${scheduleEvent.id}`}>
                               View Details
                             </Link>
                           ) : (

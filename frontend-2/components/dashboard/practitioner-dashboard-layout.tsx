@@ -95,7 +95,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
     { text: "Manage Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
     { text: "Streams", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/streams" },
     { text: "Availability", icon: <Clock className="h-4 w-4" />, path: "/dashboard/practitioner/availability" },
-    { text: "Calendar", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/calendar" },
+    { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
     { text: "Bookings", icon: <CalendarCheck className="h-4 w-4" />, path: "/dashboard/practitioner/bookings" },
     { text: "Clients", icon: <Users className="h-4 w-4" />, path: "/dashboard/practitioner/clients" },
     { 

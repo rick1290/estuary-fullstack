@@ -44,6 +44,24 @@ class CalendarEventRoomSerializer(serializers.Serializer):
     max_participants = serializers.IntegerField(required=False, allow_null=True)
 
 
+class CalendarEventRecordingSerializer(serializers.Serializer):
+    """Recording info for calendar events"""
+    id = serializers.IntegerField()
+    recording_id = serializers.CharField()
+    status = serializers.CharField()
+    started_at = serializers.DateTimeField()
+    ended_at = serializers.DateTimeField(required=False, allow_null=True)
+    duration_seconds = serializers.IntegerField()
+    duration_formatted = serializers.CharField()
+    file_size_bytes = serializers.IntegerField()
+    file_format = serializers.CharField()
+    file_url = serializers.URLField()
+    thumbnail_url = serializers.URLField(required=False, allow_null=True)
+    is_processed = serializers.BooleanField()
+    download_url = serializers.URLField(required=False, allow_null=True)
+    created_at = serializers.DateTimeField()
+
+
 class ServiceSessionEventSerializer(serializers.Serializer):
     """
     Calendar event for a ServiceSession (workshop/course class)
@@ -72,8 +90,15 @@ class ServiceSessionEventSerializer(serializers.Serializer):
     # Room info (for virtual sessions)
     room = CalendarEventRoomSerializer(required=False, allow_null=True)
 
+    # Recordings
+    recordings = CalendarEventRecordingSerializer(many=True, required=False)
+
     # Status
     status = serializers.CharField()  # confirmed, in_progress, completed, cancelled
+
+    # Additional session info
+    agenda = serializers.CharField(required=False, allow_null=True)
+    what_youll_learn = serializers.CharField(required=False, allow_null=True)
 
 
 class IndividualBookingEventSerializer(serializers.Serializer):

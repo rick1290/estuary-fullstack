@@ -77,6 +77,39 @@ class BookingAddressSerializer(serializers.ModelSerializer):
         fields = ['id', 'city', 'state_province', 'country_code']
 
 
+class ServiceSessionSerializer(serializers.ModelSerializer):
+    """
+    ServiceSession serializer for bookings.
+
+    NEW: Exposes session details including scheduling info.
+    """
+    service_name = serializers.CharField(source='service.name', read_only=True)
+    duration_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceSession
+        fields = [
+            'id', 'session_type', 'visibility', 'title', 'description',
+            'start_time', 'end_time', 'duration', 'duration_display',
+            'max_participants', 'current_participants', 'sequence_number',
+            'status', 'service_name', 'agenda', 'what_youll_learn'
+        ]
+        read_only_fields = fields
+
+    def get_duration_display(self, obj):
+        """Format duration as human-readable string"""
+        if not obj.duration:
+            return None
+        hours = obj.duration // 60
+        minutes = obj.duration % 60
+        if hours > 0 and minutes > 0:
+            return f"{hours}h {minutes}m"
+        elif hours > 0:
+            return f"{hours}h"
+        else:
+            return f"{minutes}m"
+
+
 class BookingReminderSerializer(serializers.ModelSerializer):
     """Booking reminder serializer"""
     class Meta:
@@ -107,6 +140,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     user = BookingUserSerializer(read_only=True)
     practitioner = BookingPractitionerSerializer(read_only=True)
     service = BookingServiceSerializer(read_only=True)
+    service_session = ServiceSessionSerializer(read_only=True)  # NEW: Expose session details
     room = serializers.SerializerMethodField(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     payment_status_display = serializers.CharField(source='get_payment_status_display', read_only=True)
@@ -125,7 +159,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id', 'public_uuid', 'user', 'practitioner', 'service', 'room', 'start_time', 'end_time',
+            'id', 'public_uuid', 'user', 'practitioner', 'service', 'service_session', 'room',
             'status', 'status_display', 'payment_status', 'payment_status_display',
             'price_charged', 'final_amount', 'duration_minutes', 'is_upcoming',
             'location_type', 'created_at', 'updated_at'
@@ -137,41 +171,35 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     user = BookingUserSerializer(read_only=True)
     practitioner = BookingPractitionerSerializer(read_only=True)
     service = BookingServiceSerializer(read_only=True)
+    service_session = ServiceSessionSerializer(read_only=True)
     room = serializers.SerializerMethodField(read_only=True)
-    location = BookingAddressSerializer(read_only=True)
     reminders = BookingReminderSerializer(many=True, read_only=True)
     notes = BookingNoteSerializer(many=True, read_only=True)
     recordings = serializers.SerializerMethodField(read_only=True)
-    
+
     # Computed fields
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     payment_status_display = serializers.CharField(source='get_payment_status_display', read_only=True)
-    price_charged = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    discount_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    final_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    credits_allocated_dollars = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     duration_minutes = serializers.IntegerField(read_only=True)
     is_upcoming = serializers.BooleanField(read_only=True)
     is_active = serializers.BooleanField(read_only=True)
     can_be_canceled = serializers.BooleanField(read_only=True)
     can_be_rescheduled = serializers.BooleanField(read_only=True)
-    
+
     # Booking type flags
     is_individual_session = serializers.BooleanField(read_only=True)
     is_group_session = serializers.BooleanField(read_only=True)
     is_package_booking = serializers.BooleanField(read_only=True)
     is_course_booking = serializers.BooleanField(read_only=True)
     is_parent_booking = serializers.BooleanField(read_only=True)
-    
-    # Child bookings (for packages)
-    child_bookings = serializers.SerializerMethodField()
-    
-    # Parent booking reference
-    parent_booking_id = serializers.IntegerField(source='parent_booking.id', read_only=True)
-    parent_booking_uuid = serializers.CharField(source='parent_booking.public_uuid', read_only=True)
-    
+
+    # Related bookings (for packages/bundles via order)
+    related_bookings = serializers.SerializerMethodField()
+
     # Review status
     has_review = serializers.SerializerMethodField()
-    
+
     # Rescheduling info
     rescheduled_from_id = serializers.IntegerField(source='rescheduled_from.id', read_only=True)
     rescheduled_from_uuid = serializers.CharField(source='rescheduled_from.public_uuid', read_only=True)
@@ -179,27 +207,23 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id', 'public_uuid', 'user', 'practitioner', 'service', 'room', 'location',
-            'start_time', 'end_time', 'actual_start_time', 'actual_end_time',
-            'timezone', 'status', 'status_display', 'payment_status', 'payment_status_display',
-            'title', 'description', 'client_notes', 'practitioner_notes',
-            'price_charged', 'discount_amount', 'final_amount',
-            'price_charged_cents', 'discount_amount_cents', 'final_amount_cents',
-            'service_name_snapshot', 'service_description_snapshot', 'practitioner_name_snapshot',
-            'service_duration_snapshot',
+            'id', 'public_uuid', 'user', 'practitioner', 'service', 'service_session', 'room',
+            'status', 'status_display', 'payment_status', 'payment_status_display',
+            'client_notes', 'practitioner_notes',
+            'credits_allocated', 'credits_allocated_dollars',
+            # Snapshot data removed - now accessed via service_session
+            # Pricing fields removed - now on Order level
             'completed_at', 'no_show_at', 'canceled_at', 'canceled_by', 'cancellation_reason',
             'confirmed_at', 'status_changed_at',
             'duration_minutes', 'is_upcoming', 'is_active', 'can_be_canceled', 'can_be_rescheduled',
             'is_individual_session', 'is_group_session', 'is_package_booking', 'is_course_booking',
-            'is_parent_booking', 'child_bookings', 'parent_booking_id', 'parent_booking_uuid',
+            'is_parent_booking', 'related_bookings',
             'has_review', 'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
             'recordings', 'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'public_uuid', 'actual_start_time', 'actual_end_time',
-            'price_charged', 'discount_amount', 'final_amount',
-            'service_name_snapshot', 'service_description_snapshot', 'practitioner_name_snapshot',
-            'service_duration_snapshot',
+            'id', 'public_uuid',
+            'credits_allocated_dollars',
             'completed_at', 'no_show_at', 'canceled_at', 'canceled_by',
             'confirmed_at', 'status_changed_at',
             'created_at', 'updated_at'
@@ -211,13 +235,16 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             return BookingRoomSerializer(obj.room).data
         return None
 
-    def get_child_bookings(self, obj):
-        """Get child bookings for packages"""
-        if not obj.is_parent_booking:
+    def get_related_bookings(self, obj):
+        """Get related bookings for packages/bundles (via order)"""
+        if not obj.is_parent_booking or not obj.order:
             return []
-        child_bookings = obj.child_bookings.select_related('service', 'practitioner__user')
-        return BookingListSerializer(child_bookings, many=True).data
-    
+        # Get all bookings in the same order, excluding this one
+        related = obj.order.bookings.exclude(
+            public_uuid=obj.public_uuid
+        ).select_related('service', 'practitioner__user', 'service_session')
+        return BookingListSerializer(related, many=True).data
+
     def get_has_review(self, obj):
         """Check if this booking has been reviewed by the user"""
         return obj.reviews.filter(user=obj.user).exists()
@@ -246,22 +273,19 @@ class BookingCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating bookings"""
     practitioner_id = serializers.IntegerField(write_only=True)
     service_id = serializers.IntegerField(write_only=True)
-    location_id = serializers.IntegerField(required=False, allow_null=True)
     service_session_id = serializers.IntegerField(required=False, allow_null=True)
-    
-    # Optional pricing override
-    price_override_cents = serializers.IntegerField(required=False, allow_null=True)
-    discount_amount_cents = serializers.IntegerField(default=0)
-    
+
+    # Credits allocated to this booking
+    credits_allocated = serializers.IntegerField(default=0)
+
     # Computed fields returned after creation
     booking = BookingDetailSerializer(read_only=True)
-    
+
     class Meta:
         model = Booking
         fields = [
-            'practitioner_id', 'service_id', 'location_id', 'service_session_id',
-            'start_time', 'end_time', 'timezone', 'title', 'description',
-            'client_notes', 'price_override_cents', 'discount_amount_cents',
+            'practitioner_id', 'service_id', 'service_session_id',
+            'client_notes', 'credits_allocated',
             'booking'
         ]
     
@@ -276,7 +300,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             data['practitioner'] = practitioner
         except Practitioner.DoesNotExist:
             raise serializers.ValidationError("Invalid practitioner")
-        
+
         # Validate service exists and is active
         try:
             service = Service.objects.get(
@@ -286,35 +310,11 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             data['service'] = service
         except Service.DoesNotExist:
             raise serializers.ValidationError("Invalid service")
-        
+
         # Validate service belongs to practitioner
         if not service.practitioners.filter(id=practitioner.id).exists():
             raise serializers.ValidationError("Service not offered by this practitioner")
-        
-        # Validate time range
-        if data['start_time'] >= data['end_time']:
-            raise serializers.ValidationError("End time must be after start time")
-        
-        if data['start_time'] < timezone.now():
-            raise serializers.ValidationError("Cannot book in the past")
-        
-        # Validate duration matches service duration (for individual sessions)
-        if service.service_type_code == 'session':
-            expected_duration = service.duration_minutes
-            actual_duration = int((data['end_time'] - data['start_time']).total_seconds() / 60)
-            if actual_duration != expected_duration:
-                raise serializers.ValidationError(
-                    f"Booking duration must match service duration ({expected_duration} minutes)"
-                )
-        
-        # Validate location if provided
-        if data.get('location_id'):
-            try:
-                location = Address.objects.get(id=data['location_id'])
-                data['location'] = location
-            except Address.DoesNotExist:
-                raise serializers.ValidationError("Invalid location")
-        
+
         # Validate service session if provided (for workshops/courses)
         if data.get('service_session_id'):
             try:
@@ -323,50 +323,35 @@ class BookingCreateSerializer(serializers.ModelSerializer):
                     service=service
                 )
                 data['service_session'] = session
-                # Override times with session times
-                data['start_time'] = session.start_time
-                data['end_time'] = session.end_time
             except ServiceSession.DoesNotExist:
                 raise serializers.ValidationError("Invalid service session")
-        
+
         return data
-    
+
     def create(self, validated_data):
         """Create booking with proper initialization"""
         # Extract non-model fields
         practitioner = validated_data.pop('practitioner')
         service = validated_data.pop('service')
-        location = validated_data.pop('location', None)
         service_session = validated_data.pop('service_session', None)
-        price_override_cents = validated_data.pop('price_override_cents', None)
-        
+
         # Remove write-only fields
         validated_data.pop('practitioner_id', None)
         validated_data.pop('service_id', None)
-        validated_data.pop('location_id', None)
         validated_data.pop('service_session_id', None)
-        
-        # Set pricing
-        price_charged_cents = price_override_cents or service.price_cents
-        discount_amount_cents = validated_data.get('discount_amount_cents', 0)
-        final_amount_cents = price_charged_cents - discount_amount_cents
-        
+
         # Create booking
         with transaction.atomic():
             booking = Booking.objects.create(
                 user=self.context['request'].user,
                 practitioner=practitioner,
                 service=service,
-                location=location,
                 service_session=service_session,
-                price_charged_cents=price_charged_cents,
-                discount_amount_cents=discount_amount_cents,
-                final_amount_cents=final_amount_cents,
                 status='pending_payment',
                 payment_status='unpaid',
                 **validated_data
             )
-            
+
             # Return the created booking
             self.instance = booking
             return booking
@@ -380,33 +365,19 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
 class BookingUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating booking details"""
-    location_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = Booking
         fields = [
-            'title', 'description', 'client_notes', 'location_id', 'timezone'
+            'client_notes', 'practitioner_notes'
         ]
-    
-    def validate_location_id(self, value):
-        """Validate location if provided"""
-        if value:
-            try:
-                return Address.objects.get(id=value)
-            except Address.DoesNotExist:
-                raise serializers.ValidationError("Invalid location")
-        return None
-    
+
     def update(self, instance, validated_data):
         """Update booking with validation"""
         # Don't allow updates to completed/canceled bookings
         if instance.status in ['completed', 'canceled', 'no_show']:
             raise serializers.ValidationError("Cannot update booking in terminal status")
-        
-        # Handle location update
-        if 'location_id' in validated_data:
-            instance.location = validated_data.pop('location_id')
-        
+
         return super().update(instance, validated_data)
 
 
@@ -451,7 +422,8 @@ class BookingScheduleSerializer(serializers.Serializer):
         if booking.status not in ['draft', 'pending_payment']:
             raise serializers.ValidationError("Only draft bookings can be scheduled")
 
-        if booking.start_time is not None:
+        # Check if already scheduled (service_session has start_time)
+        if booking.service_session and booking.service_session.start_time is not None:
             raise serializers.ValidationError("This booking is already scheduled. Use reschedule instead.")
 
         # Validate time range

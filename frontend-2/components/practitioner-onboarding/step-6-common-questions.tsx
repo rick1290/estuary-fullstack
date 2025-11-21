@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Question {
   title: string
+  answer: string
   order: number
 }
 
@@ -34,6 +35,7 @@ export default function Step6CommonQuestions({
 }: Step6CommonQuestionsProps) {
   const [questions, setQuestions] = useState<Question[]>(initialData?.questions || [])
   const [currentQuestion, setCurrentQuestion] = useState("")
+  const [currentAnswer, setCurrentAnswer] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,9 +44,10 @@ export default function Step6CommonQuestions({
   })
 
   const addQuestion = () => {
-    if (currentQuestion.trim()) {
-      setQuestions([...questions, { title: currentQuestion, order: questions.length }])
+    if (currentQuestion.trim() && currentAnswer.trim()) {
+      setQuestions([...questions, { title: currentQuestion, answer: currentAnswer, order: questions.length }])
       setCurrentQuestion("")
+      setCurrentAnswer("")
     }
   }
 
@@ -85,26 +88,27 @@ export default function Step6CommonQuestions({
   }
 
   const suggestedQuestions = [
-    "What should I expect during our first session?",
-    "What is your cancellation policy?",
-    "Do you offer virtual sessions?",
-    "What forms of payment do you accept?",
-    "How long is a typical session?",
-    "Do you offer packages or discounts?",
+    { title: "What should I expect during our first session?", answer: "" },
+    { title: "What is your cancellation policy?", answer: "" },
+    { title: "Do you offer virtual sessions?", answer: "" },
+    { title: "What forms of payment do you accept?", answer: "" },
+    { title: "How long is a typical session?", answer: "" },
+    { title: "Do you offer packages or discounts?", answer: "" },
   ]
 
   const addSuggestedQuestion = (question: string) => {
     if (!questions.find(q => q.title === question)) {
-      setQuestions([...questions, { title: question, order: questions.length }])
+      // Add the question - user will need to provide the answer
+      setCurrentQuestion(question)
     }
   }
 
   return (
     <Card className="border-0 shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl text-olive-900">Common Questions (Optional)</CardTitle>
+        <CardTitle className="text-2xl text-olive-900">FAQ - Common Questions (Optional)</CardTitle>
         <CardDescription className="text-olive-600">
-          Add questions clients often ask to help them feel more prepared
+          Add questions and answers that clients often ask to help them feel more prepared
         </CardDescription>
       </CardHeader>
 
@@ -116,75 +120,89 @@ export default function Step6CommonQuestions({
               <MessageCircleQuestion className="h-5 w-5 text-sage-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-olive-700">
                 <p className="font-medium mb-1">Help clients feel comfortable</p>
-                <p>Adding common questions helps set expectations and reduces pre-session anxiety. These will appear on your profile for potential clients to see.</p>
+                <p>Adding FAQs with your answers helps set expectations and reduces pre-session anxiety. These will appear on your public profile for potential clients to see.</p>
               </div>
             </div>
           </div>
 
           {/* Added Questions */}
           {questions.length > 0 && (
-            <div className="space-y-2">
-              <Label>Your Questions</Label>
+            <div className="space-y-3">
+              <Label>Your Questions & Answers</Label>
               {questions.map((question, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-sage-50 rounded-lg border border-sage-200">
-                  <MessageCircleQuestion className="h-4 w-4 text-sage-600 mt-1 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-olive-900">{question.title}</p>
+                <div key={index} className="p-4 bg-sage-50 rounded-lg border border-sage-200">
+                  <div className="flex items-start gap-3">
+                    <MessageCircleQuestion className="h-4 w-4 text-sage-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-olive-900 mb-2">{question.title}</p>
+                      <p className="text-sm text-olive-600">{question.answer}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeQuestion(index)}
+                      className="text-terracotta-600 hover:text-terracotta-700 hover:bg-terracotta-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeQuestion(index)}
-                    className="text-terracotta-600 hover:text-terracotta-700 hover:bg-terracotta-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
             </div>
           )}
 
           {/* Add Question Form */}
-          <div className="space-y-3">
-            <Label htmlFor="question">Add a Question</Label>
-            <div className="flex gap-2">
+          <div className="space-y-4 p-4 border border-sage-200 rounded-lg bg-white">
+            <div className="space-y-2">
+              <Label htmlFor="question">Question</Label>
               <Textarea
                 id="question"
                 value={currentQuestion}
                 onChange={(e) => setCurrentQuestion(e.target.value)}
                 placeholder="e.g., What should I expect during our first session?"
                 rows={2}
-                className="flex-1"
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addQuestion}
-                disabled={!currentQuestion.trim()}
-                className="self-start"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="answer">Your Answer</Label>
+              <Textarea
+                id="answer"
+                value={currentAnswer}
+                onChange={(e) => setCurrentAnswer(e.target.value)}
+                placeholder="e.g., In our first session, we'll discuss your goals and create a personalized plan..."
+                rows={3}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addQuestion}
+              disabled={!currentQuestion.trim() || !currentAnswer.trim()}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Question & Answer
+            </Button>
           </div>
 
           {/* Suggested Questions */}
           <div className="space-y-3">
             <Label>Suggested Questions</Label>
-            <p className="text-sm text-olive-600">Click to add any of these common questions:</p>
-            <div className="space-y-2">
-              {suggestedQuestions.map((question, index) => (
+            <p className="text-sm text-olive-600">Click to pre-fill a question, then add your answer:</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestedQuestions.map((suggestion, index) => (
                 <Button
                   key={index}
                   type="button"
                   variant="outline"
-                  onClick={() => addSuggestedQuestion(question)}
-                  disabled={questions.some(q => q.title === question)}
-                  className="w-full justify-start text-left h-auto py-2 px-3 text-sm"
+                  size="sm"
+                  onClick={() => addSuggestedQuestion(suggestion.title)}
+                  disabled={questions.some(q => q.title === suggestion.title) || currentQuestion === suggestion.title}
+                  className="text-xs"
                 >
-                  <Plus className="h-3 w-3 mr-2 flex-shrink-0" />
-                  <span className="text-olive-700">{question}</span>
+                  <Plus className="h-3 w-3 mr-1" />
+                  {suggestion.title.length > 40 ? suggestion.title.substring(0, 40) + "..." : suggestion.title}
                 </Button>
               ))}
             </div>
@@ -199,7 +217,7 @@ export default function Step6CommonQuestions({
           {/* Skip Info */}
           <div className="p-4 bg-terracotta-50 rounded-lg border border-terracotta-200">
             <p className="text-sm text-olive-700 text-center">
-              <span className="font-medium">Not ready to add questions?</span> You can skip this step and add them later from your dashboard.
+              <span className="font-medium">Not ready to add FAQs?</span> You can skip this step and add them later from your dashboard profile.
             </p>
           </div>
 

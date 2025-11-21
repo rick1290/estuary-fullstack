@@ -186,7 +186,7 @@ export default function RecordingViewerPage() {
                   <p className="text-xs text-muted-foreground">Session Date</p>
                   <p className="text-sm font-medium">
                     {booking?.start_time
-                      ? format(parseISO(booking.start_time), "EEEE, MMM d, yyyy")
+                      ? format(parseISO(booking.service_session?.start_time), "EEEE, MMM d, yyyy")
                       : 'N/A'}
                   </p>
                 </div>
@@ -195,7 +195,7 @@ export default function RecordingViewerPage() {
                   <p className="text-xs text-muted-foreground">Time</p>
                   <p className="text-sm font-medium">
                     {booking?.start_time && booking?.end_time
-                      ? `${format(parseISO(booking.start_time), "h:mm a")} - ${format(parseISO(booking.end_time), "h:mm a")}`
+                      ? `${format(parseISO(booking.service_session?.start_time), "h:mm a")} - ${format(parseISO(booking.service_session?.end_time), "h:mm a")}`
                       : 'N/A'}
                   </p>
                 </div>

@@ -47,6 +47,7 @@ import {
   modalitiesListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import Link from "next/link"
+import { PractitionerPageHeader } from "../practitioner-page-header"
 import {
   Dialog,
   DialogContent,
@@ -66,7 +67,7 @@ import CompactCategoryManager from "../categories/compact-category-manager"
 const phase1Schema = z.object({
   serviceType: z.string().min(1, "Please select a service type"),
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  shortDescription: z.string().min(10, "Description must be at least 10 characters").max(200),
+  shortDescription: z.string().min(10, "Description must be at least 10 characters").max(300),
 })
 
 const phase2Schema = z.object({
@@ -75,7 +76,7 @@ const phase2Schema = z.object({
   }),
   duration_minutes: z.number().min(15, "Duration must be at least 15 minutes"),
   max_participants: z.number().min(1),
-  location_type: z.enum(["virtual", "in_person", "hybrid"]),
+  location_type: z.enum(["virtual", "in_person"]),
   schedule_id: z.string().optional(),
 })
 
@@ -222,6 +223,7 @@ export function GuidedServiceWizard() {
       description: "",
       includes: "",
     },
+    mode: "onSubmit", // Only validate on submit, not on change
   })
 
   // Apply template when service type changes
@@ -262,24 +264,26 @@ export function GuidedServiceWizard() {
     },
   })
 
-  // Phase validation
+  // Phase validation - now 4 phases
   const validatePhase = async (phase: number) => {
     switch (phase) {
       case 1:
-        return await form.trigger(["serviceType", "name", "shortDescription"])
+        return await form.trigger(["serviceType"])
       case 2:
-        return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+        return await form.trigger(["name", "shortDescription"])
       case 3:
+        return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+      case 4:
         return await form.trigger(["description"])
       default:
         return true
     }
   }
 
-  // Navigation
+  // Navigation - now 4 phases
   const handleNext = async () => {
     const isValid = await validatePhase(currentPhase)
-    if (isValid && currentPhase < 3) {
+    if (isValid && currentPhase < 4) {
       setCurrentPhase(currentPhase + 1)
     }
   }
@@ -327,8 +331,8 @@ export function GuidedServiceWizard() {
     })
   }
 
-  // Progress calculation
-  const progress = (currentPhase / 3) * 100
+  // Progress calculation - now 4 phases
+  const progress = (currentPhase / 4) * 100
 
   // Get schema for current phase
   const getCurrentSchema = () => {
@@ -342,30 +346,23 @@ export function GuidedServiceWizard() {
 
   return (
     <TooltipProvider>
-      <div className="container max-w-4xl py-8">
-        {/* Header */}
-      <div className="mb-8">
-        <Link href="/dashboard/practitioner/services">
-          <Button variant="ghost" size="sm" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Services
-          </Button>
-        </Link>
-        
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Create Your Service</h1>
-          <p className="text-muted-foreground">Let's build something amazing for your clients</p>
-        </div>
+      <>
+        {/* Standardized Header */}
+        <PractitionerPageHeader
+          title="Create Service"
+          backLink="/dashboard/practitioner/services"
+          backLabel="Services"
+        />
 
-        {/* Progress Bar */}
-        <div className="mt-6 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="font-medium">Phase {currentPhase} of 3</span>
-            <span className="text-muted-foreground">{Math.round(progress)}% Complete</span>
+        <div className="px-6 py-4">
+          {/* Progress Bar */}
+          <div className="mb-6 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Step {currentPhase} of 4</span>
+              <span className="text-muted-foreground">{Math.round(progress)}% Complete</span>
+            </div>
+            <Progress value={progress} className="h-2" />
           </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -417,6 +414,10 @@ export function GuidedServiceWizard() {
                               onValueChange={(value) => {
                                 field.onChange(value)
                                 setSelectedServiceType(value)
+                                // Auto-advance to next phase after selection
+                                setTimeout(() => {
+                                  setCurrentPhase(2)
+                                }, 300)
                               }}
                               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                             >
@@ -462,25 +463,45 @@ export function GuidedServiceWizard() {
                       )}
                     />
 
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Phase 2: Basic Info */}
+            {currentPhase === 2 && (
+              <motion.div
+                key="phase2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tell us about your {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name || 'service'}</CardTitle>
+                    <CardDescription>
+                      Give your service a name and description
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     {/* Template Option */}
-                    {selectedServiceType && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
-                      >
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={useTemplate}
-                            onChange={(e) => setUseTemplate(e.target.checked)}
-                            className="rounded"
-                          />
-                          Use our recommended template for {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name}s
-                        </label>
-                      </motion.div>
-                    )}
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
+                    >
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={useTemplate}
+                          onChange={(e) => setUseTemplate(e.target.checked)}
+                          className="rounded"
+                        />
+                        Use our recommended template for {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name}s
+                      </label>
+                    </motion.div>
 
                     {/* Service Name */}
                     <FormField
@@ -490,9 +511,9 @@ export function GuidedServiceWizard() {
                         <FormItem>
                           <FormLabel>Service Name</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g., 60-Minute Yoga Session, 8-Week Mindfulness Course" 
-                              {...field} 
+                            <Input
+                              placeholder="e.g., 60-Minute Yoga Session, 8-Week Mindfulness Course"
+                              {...field}
                             />
                           </FormControl>
                           <FormDescription>
@@ -511,11 +532,11 @@ export function GuidedServiceWizard() {
                         <FormItem>
                           <FormLabel>Brief Description</FormLabel>
                           <FormControl>
-                            <Textarea 
+                            <Textarea
                               placeholder="Give a brief overview of what this service offers..."
                               className="resize-none"
                               rows={3}
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <div className="flex justify-between text-sm">
@@ -524,9 +545,9 @@ export function GuidedServiceWizard() {
                             </FormDescription>
                             <span className={cn(
                               "text-muted-foreground",
-                              field.value.length > 200 && "text-destructive"
+                              field.value.length > 300 && "text-destructive"
                             )}>
-                              {field.value.length}/200
+                              {field.value.length}/300
                             </span>
                           </div>
                           <FormMessage />
@@ -538,10 +559,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 2: Delivery Details */}
-            {currentPhase === 2 && (
+            {/* Phase 3: Delivery Details */}
+            {currentPhase === 3 && (
               <motion.div
-                key="phase2"
+                key="phase3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -625,7 +646,7 @@ export function GuidedServiceWizard() {
                             <RadioGroup
                               value={field.value}
                               onValueChange={field.onChange}
-                              className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                             >
                               <label
                                 htmlFor="virtual"
@@ -666,27 +687,6 @@ export function GuidedServiceWizard() {
                                 <div>
                                   <p className="font-medium">In-Person</p>
                                   <p className="text-xs text-muted-foreground">Physical location</p>
-                                </div>
-                              </label>
-                              
-                              <label
-                                htmlFor="hybrid"
-                                className={cn(
-                                  "flex items-center gap-3 p-4 cursor-pointer rounded-lg border-2 transition-all",
-                                  field.value === "hybrid"
-                                    ? "border-primary bg-primary/5"
-                                    : "border-border hover:border-primary/50"
-                                )}
-                              >
-                                <RadioGroupItem
-                                  id="hybrid"
-                                  value="hybrid"
-                                  className="sr-only"
-                                />
-                                <Users className="h-5 w-5" />
-                                <div>
-                                  <p className="font-medium">Hybrid</p>
-                                  <p className="text-xs text-muted-foreground">Both options</p>
                                 </div>
                               </label>
                             </RadioGroup>
@@ -751,6 +751,14 @@ export function GuidedServiceWizard() {
                             <FormDescription>
                               Choose which availability schedule to use
                             </FormDescription>
+                            {(!schedules?.results || schedules.results.length === 0) && (
+                              <p className="text-sm text-destructive mt-2">
+                                You haven't created any availability schedules yet. You can add one later in your{" "}
+                                <Link href="/dashboard/practitioner/availability" className="underline hover:text-destructive/80">
+                                  availability settings
+                                </Link>.
+                              </p>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
@@ -761,10 +769,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 3: Polish & Publish */}
-            {currentPhase === 3 && (
+            {/* Phase 4: Polish & Publish */}
+            {currentPhase === 4 && (
               <motion.div
-                key="phase3"
+                key="phase4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -863,6 +871,9 @@ export function GuidedServiceWizard() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormDescription>
+                              Organize your services into your own custom categories (e.g., "Beginner Classes", "Premium Sessions")
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -975,7 +986,7 @@ export function GuidedServiceWizard() {
                 Save Draft
               </Button>
 
-              {currentPhase < 3 ? (
+              {currentPhase < 4 ? (
                 <Button
                   type="button"
                   onClick={handleNext}
@@ -1027,7 +1038,8 @@ export function GuidedServiceWizard() {
           }} />
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </>
     </TooltipProvider>
   )
 }

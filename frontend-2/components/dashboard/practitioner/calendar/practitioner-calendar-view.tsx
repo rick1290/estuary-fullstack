@@ -295,7 +295,7 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
     // Route to correct detail page based on event type
     if (event.eventType === 'service_session') {
       // ServiceSession has a session_id to view
-      router.push(`/dashboard/practitioner/calendar/${event.bookingId}`)
+      router.push(`/dashboard/practitioner/sessions/${event.bookingId}`)
     } else if (event.eventType === 'grouped_booking') {
       // Grouped bookings (without ServiceSession) - route to first attendee's booking
       const firstBookingId = event.attendees?.[0]?.booking_id

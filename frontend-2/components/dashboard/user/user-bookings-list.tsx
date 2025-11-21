@@ -75,13 +75,15 @@ export default function UserBookingsList() {
     if (activeTab !== "all") {
       filtered = filtered.filter((booking: any) => {
         if (activeTab === "upcoming") {
-          return booking.status === "confirmed" && isFuture(parseISO(booking.start_time))
+          const startTime = booking.service_session?.start_time
+          return booking.status === "confirmed" && startTime && isFuture(parseISO(startTime))
         } else if (activeTab === "past") {
-          return booking.status === "completed" || isPast(parseISO(booking.start_time))
+          const startTime = booking.service_session?.start_time
+          return booking.status === "completed" || (startTime && isPast(parseISO(startTime)))
         } else if (activeTab === "canceled") {
           return booking.status === "canceled"
         } else if (activeTab === "unscheduled") {
-          return booking.status === "pending" || !booking.start_time
+          return booking.status === "pending" || !booking.service_session?.start_time
         }
         return true
       })
@@ -141,17 +143,18 @@ export default function UserBookingsList() {
   }, [activeTab, searchQuery, selectedServiceTypes])
 
   const getStatusBadge = (booking: any) => {
+    const startTime = booking.service_session?.start_time
     if (booking.status === "canceled") {
       return <Badge variant="destructive">Canceled</Badge>
     } else if (booking.status === "completed") {
       return <Badge variant="outline">Completed</Badge>
-    } else if (booking.status === "confirmed" && booking.start_time) {
-      if (isFuture(parseISO(booking.start_time))) {
+    } else if (booking.status === "confirmed" && startTime) {
+      if (isFuture(parseISO(startTime))) {
         return <Badge variant="default">Upcoming</Badge>
       } else {
         return <Badge variant="outline">Past</Badge>
       }
-    } else if (booking.status === "pending" || !booking.start_time) {
+    } else if (booking.status === "pending" || !startTime) {
       return <Badge variant="secondary">Unscheduled</Badge>
     }
     return <Badge variant="outline">{booking.status}</Badge>
@@ -172,25 +175,28 @@ export default function UserBookingsList() {
   }
 
   const isSessionJoinable = (booking: any) => {
-    if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
-    
+    const sessionStartTime = booking.service_session?.start_time
+    const sessionEndTime = booking.service_session?.end_time
+    if (!sessionStartTime || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+
     const now = new Date()
-    const startTime = parseISO(booking.start_time)
-    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
-    
+    const startTime = parseISO(sessionStartTime)
+    const endTime = sessionEndTime ? parseISO(sessionEndTime) : new Date(startTime.getTime() + 60 * 60 * 1000)
+
     // Allow joining 15 minutes before start and until the session ends
     const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
-    
+
     return now >= joinWindowStart && now < endTime
   }
 
   const isSessionStartingSoon = (booking: any) => {
-    if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
-    
+    const sessionStartTime = booking.service_session?.start_time
+    if (!sessionStartTime || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+
     const now = new Date()
-    const startTime = parseISO(booking.start_time)
+    const startTime = parseISO(sessionStartTime)
     const timeUntilStart = startTime.getTime() - now.getTime()
-    
+
     // Session starts within 15 minutes
     return timeUntilStart > 0 && timeUntilStart <= 15 * 60 * 1000
   }
@@ -353,14 +359,15 @@ export default function UserBookingsList() {
           {paginatedBookings.map((booking: any) => {
             const service = booking.service
             const practitioner = booking.practitioner
-            const isUnscheduled = booking.status === "pending" || !booking.start_time
+            const sessionStartTime = booking.service_session?.start_time
+            const isUnscheduled = booking.status === "pending" || !sessionStartTime
 
             return (
               <Card
                 key={booking.id}
                 className={`relative overflow-hidden hover:shadow-md transition-all cursor-pointer ${
-                  isSessionStartingSoon(booking) && booking.location_type === "virtual" 
-                    ? "ring-2 ring-sage-500 ring-opacity-50" 
+                  isSessionStartingSoon(booking) && booking.location_type === "virtual"
+                    ? "ring-2 ring-sage-500 ring-opacity-50"
                     : ""
                 }`}
                 onClick={() => router.push(`/dashboard/user/bookings/${booking.id}`)}
@@ -449,16 +456,16 @@ export default function UserBookingsList() {
                           </>
                         ) : (
                           <>
-                            {booking.start_time && (
+                            {sessionStartTime && (
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-2" />
-                                {format(parseISO(booking.start_time), "EEEE, MMMM d, yyyy")}
+                                {format(parseISO(sessionStartTime), "EEEE, MMMM d, yyyy")}
                               </div>
                             )}
-                            {booking.start_time && (
+                            {sessionStartTime && (
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-2" />
-                                {format(parseISO(booking.start_time), "h:mm a")}
+                                {format(parseISO(sessionStartTime), "h:mm a")}
                                 {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
                               </div>
                             )}
@@ -471,7 +478,7 @@ export default function UserBookingsList() {
                               ) : (
                                 <>
                                   <MapPin className="h-4 w-4 mr-2" />
-                                  {booking.location || "In-person"}
+                                  In-person
                                 </>
                               )}
                             </div>
@@ -514,23 +521,25 @@ export default function UserBookingsList() {
                                     return "Join video session now"
                                   }
                                   
-                                  if (!booking.start_time) {
+                                  const sessionStartTime = booking.service_session?.start_time
+                                  const sessionEndTime = booking.service_session?.end_time
+                                  if (!sessionStartTime) {
                                     return "Session time not set"
                                   }
-                                  
-                                  const startTime = parseISO(booking.start_time)
+
+                                  const startTime = parseISO(sessionStartTime)
                                   const now = new Date()
                                   const timeUntilStart = startTime.getTime() - now.getTime()
-                                  
+
                                   if (isPast(startTime)) {
-                                    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
+                                    const endTime = sessionEndTime ? parseISO(sessionEndTime) : new Date(startTime.getTime() + 60 * 60 * 1000)
                                     if (isPast(endTime)) {
                                       return "Session has ended"
                                     }
                                     // This case should not happen because isSessionJoinable would return true
                                     return "Join video session now"
                                   }
-                                  
+
                                   // Session hasn't started yet
                                   return "Join will be available 15 minutes before session start"
                                 })()}

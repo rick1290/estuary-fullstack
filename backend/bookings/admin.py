@@ -16,31 +16,30 @@ class BookingNoteInline(admin.TabularInline):
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = ['public_uuid_short', 'user_email', 'practitioner_name', 'service_name',
-                   'start_time', 'status', 'payment_status', 'final_amount_display', 'created_at']
+                   'session_start', 'status', 'payment_status', 'final_amount_display', 'created_at']
     list_filter = ['status', 'payment_status', 'created_at']
     search_fields = ['public_uuid', 'user__email', 'practitioner__user__email',
                     'practitioner__display_name', 'service__name']
     readonly_fields = ['id', 'public_uuid', 'created_at', 'updated_at', 'duration_minutes',
-                      'is_upcoming', 'is_active', 'can_be_canceled', 'can_be_rescheduled']
-    date_hierarchy = 'start_time'
+                      'is_upcoming', 'is_active', 'can_be_canceled', 'can_be_rescheduled',
+                      'session_start', 'session_end']
+    date_hierarchy = 'created_at'
     list_per_page = 50  # Prevent server-side cursor issues
     list_max_show_all = 200  # Limit "Show all" to prevent cursor errors
-    
+
     fieldsets = (
         ('Booking Information', {
-            'fields': ('id', 'public_uuid', 'title', 'description')
+            'fields': ('id', 'public_uuid')
         }),
         ('Relationships', {
-            'fields': ('user', 'practitioner', 'service', 'parent_booking', 'service_session')
+            'fields': ('user', 'practitioner', 'service', 'service_session', 'order')
         }),
         ('Scheduling', {
-            'fields': ('start_time', 'end_time', 'actual_start_time', 'actual_end_time', 'timezone')
+            'fields': ('session_start', 'session_end'),
+            'description': 'Times are managed via ServiceSession'
         }),
         ('Status & Payment', {
             'fields': ('status', 'payment_status', 'price_charged_cents', 'discount_amount_cents', 'final_amount_cents')
-        }),
-        ('Location & Meeting', {
-            'fields': ('location', 'meeting_url', 'meeting_id', 'room')
         }),
         ('Notes', {
             'fields': ('client_notes', 'practitioner_notes')
@@ -91,10 +90,20 @@ class BookingAdmin(admin.ModelAdmin):
         return f"${obj.final_amount}"
     final_amount_display.short_description = 'Final Amount'
     final_amount_display.admin_order_field = 'final_amount_cents'
-    
+
+    def session_start(self, obj):
+        """Display start time from service_session"""
+        return obj.get_start_time()
+    session_start.short_description = 'Start Time'
+
+    def session_end(self, obj):
+        """Display end time from service_session"""
+        return obj.get_end_time()
+    session_end.short_description = 'End Time'
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'user', 'practitioner__user', 'service', 'location', 'room'
+            'user', 'practitioner__user', 'service', 'service_session', 'order'
         )
 
 

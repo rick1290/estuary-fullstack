@@ -131,18 +131,12 @@ export default function UserMessageDetail() {
   )?.user
 
   useEffect(() => {
-    // Scroll to bottom when messages load or change
+    // Scroll to bottom when messages load or conversation changes
     if (messages && messages.length > 0) {
-      scrollToBottom(true) // Instant scroll on initial load
+      // Use longer delay when conversation changes to ensure DOM is ready
+      scrollToBottom(true, 150)
     }
-  }, [messages])
-
-  useEffect(() => {
-    // Scroll to bottom when conversation changes
-    if (conversationId && messages && messages.length > 0) {
-      scrollToBottom(true) // Instant scroll when switching conversations
-    }
-  }, [conversationId])
+  }, [messages, conversationId])
 
   useEffect(() => {
     // Mark messages as read when viewing conversation
@@ -165,16 +159,16 @@ export default function UserMessageDetail() {
     }
   }, [selectedFile])
 
-  const scrollToBottom = (instant = false) => {
+  const scrollToBottom = (instant = false, delay = 100) => {
     setTimeout(() => {
       if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ 
+        messagesEndRef.current.scrollIntoView({
           behavior: instant ? "instant" : "smooth",
           block: "end",
-          inline: "nearest" // This prevents horizontal scrolling
+          inline: "nearest"
         })
       }
-    }, 50)
+    }, delay)
   }
 
   const handleSendMessage = () => {
@@ -244,7 +238,7 @@ export default function UserMessageDetail() {
 
   if (!conversationId) {
     return (
-      <div className="flex flex-col justify-center items-center h-full p-6 text-center">
+      <div className="flex flex-col justify-center items-center h-full w-full p-6 text-center">
         <div className="mb-4">
           <MessageSquare className="h-12 w-12 text-muted-foreground" />
         </div>
@@ -256,7 +250,7 @@ export default function UserMessageDetail() {
 
   if (conversationLoading || messagesLoading) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -279,14 +273,14 @@ export default function UserMessageDetail() {
 
   if (!conversation || !practitioner) {
     return (
-      <div className="flex flex-col justify-center items-center h-full p-6 text-center">
+      <div className="flex flex-col justify-center items-center h-full w-full p-6 text-center">
         <h3 className="text-lg font-medium">Conversation not found</h3>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Header - Fixed */}
       <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center">
@@ -384,7 +378,38 @@ export default function UserMessageDetail() {
                         isSentByMe ? "bg-primary text-primary-foreground" : "bg-card"
                       }`}
                     >
-                      <p>{message.content}</p>
+                      {/* Render message content with service link detection */}
+                      {(() => {
+                        const serviceUrlMatch = message.content?.match(/(?:Book here:|View service:)\s*(https?:\/\/[^\s]+\/services\/[^\s]+)/i)
+
+                        if (serviceUrlMatch) {
+                          // Split content: everything before the "Book here:" line
+                          const parts = message.content.split(/(?:Book here:|View service:)/i)
+                          const textContent = parts[0]?.trim()
+                          const serviceUrl = serviceUrlMatch[1]
+
+                          return (
+                            <>
+                              {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
+                              <a
+                                href={serviceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`mt-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                                  isSentByMe
+                                    ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                }`}
+                              >
+                                <Calendar className="h-4 w-4" />
+                                View & Book Service
+                              </a>
+                            </>
+                          )
+                        }
+
+                        return <p className="whitespace-pre-wrap">{message.content}</p>
+                      })()}
 
                       {message.attachments && message.attachments.length > 0 && (
                         message.attachments.map((attachment: any, idx: number) => (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -18,6 +18,9 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  Film,
+  PlayCircle,
+  Download,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -29,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea"
 import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
 import ResourceCard from "@/components/dashboard/practitioner/calendar/resource-card"
 import ResourceViewerDialog from "@/components/dashboard/practitioner/calendar/resource-viewer-dialog"
-import { calendarRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { serviceSessionsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 
 // Attendance status badge variant mapping (for when we implement attendance tracking)
@@ -438,14 +441,14 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 }
 
-export default function BookingDetailPage({ params }: { params: { id: string } }) {
+export default function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const { id } = params
+  const { id } = use(params)
 
   // Fetch service session data from API
   const { data: session, isLoading, error } = useQuery(
-    calendarRetrieveOptions({
-      path: { id: id }
+    serviceSessionsRetrieveOptions({
+      path: { id: parseInt(id) }
     })
   )
 
@@ -483,8 +486,8 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">The session you're looking for doesn't exist or has been removed.</p>
-            <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/calendar")}>
-              Return to Calendar
+            <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/schedule")}>
+              Return to Schedule
             </Button>
           </CardContent>
         </Card>
@@ -525,9 +528,13 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
     setNewSharedNote("")
   }
 
-  // Format session title
-  const sessionTitle = session.service_session_title ||
-    `${session.service?.name}${session.sequence_number ? ` - Session ${session.sequence_number}` : ''}`
+  // Format session title - use title from new sessions API, fallback to service name
+  const sessionTitle = session.title ||
+    `${session.service_name || session.service?.name}${session.sequence_number ? ` - Session ${session.sequence_number}` : ''}`
+
+  // Map bookings to attendees format for compatibility
+  const attendees = session.bookings || []
+  const attendeeCount = session.booking_count || attendees.length || 0
 
   // Map status to display variant
   const getStatusVariant = (status: string) => {
@@ -608,7 +615,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   <div>
                     <p className="text-sm font-medium">Participants</p>
                     <p className="text-sm text-muted-foreground">
-                      {session.attendee_count} / {session.max_participants || '∞'}
+                      {attendeeCount} / {session.max_participants || '∞'}
                     </p>
                   </div>
                 </div>
@@ -656,51 +663,49 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
           </Card>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3">
+            <TabsList className="grid grid-cols-4">
               <TabsTrigger value="details">Clients</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="recordings">Recordings</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Attendees ({session.attendee_count})</h2>
+                <h2 className="text-lg font-semibold">Attendees ({attendeeCount})</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {session.attendees && session.attendees.length > 0 ? (
-                  session.attendees.map((attendee: any) => (
-                    <Card key={attendee.id}>
+                {attendees && attendees.length > 0 ? (
+                  attendees.map((booking: any) => (
+                    <Card key={booking.id}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                              <AvatarImage src={attendee.avatar_url || ""} alt={attendee.full_name} />
-                              <AvatarFallback>{attendee.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                              <AvatarImage src={booking.user_avatar_url || ""} alt={booking.user_name} />
+                              <AvatarFallback>{booking.user_name?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{attendee.full_name}</p>
-                              <p className="text-sm text-muted-foreground">{attendee.email}</p>
-                              {attendee.phone_number && (
-                                <p className="text-sm text-muted-foreground">{attendee.phone_number}</p>
-                              )}
+                              <p className="font-medium">{booking.user_name}</p>
+                              <p className="text-sm text-muted-foreground">{booking.user_email}</p>
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             <Badge
                               variant={
                                 attendanceStatusVariants[
-                                  attendee.booking_status as keyof typeof attendanceStatusVariants
+                                  booking.status as keyof typeof attendanceStatusVariants
                                 ] as "default" | "secondary" | "destructive" | "outline" | "success"
                               }
                               className="capitalize"
                             >
-                              {attendee.booking_status}
+                              {booking.status_display || booking.status}
                             </Badge>
 
                             <div className="flex gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/practitioner/bookings/${attendee.booking_id}`}>
+                                <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
                                   View Booking
                                 </Link>
                               </Button>
@@ -757,6 +762,109 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 open={resourceViewerOpen}
                 onOpenChange={setResourceViewerOpen}
               />
+            </TabsContent>
+
+            <TabsContent value="recordings" className="space-y-4 mt-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Session Recordings</h2>
+              </div>
+
+              {session.recordings && session.recordings.length > 0 ? (
+                <div className="space-y-3">
+                  {session.recordings.map((recording: any, index: number) => (
+                    <Card
+                      key={recording.recording_id || index}
+                      className="border border-sage-100 hover:shadow-md transition-all hover:border-sage-300"
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Film className="h-4 w-4 text-primary" />
+                              <h4 className="font-medium">
+                                Recording {index + 1}
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {recording.file_format?.toUpperCase() || 'MP4'}
+                              </Badge>
+                              <Badge
+                                variant={recording.status === 'completed' ? 'success' : 'secondary'}
+                                className="text-xs capitalize"
+                              >
+                                {recording.status}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>{recording.duration_formatted || `${Math.floor(recording.duration_seconds / 60)} min`}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>
+                                  {recording.started_at ? format(parseISO(recording.started_at), "MMM d, h:mm a") : 'N/A'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {recording.file_size_bytes && (
+                              <p className="text-xs text-muted-foreground">
+                                Size: {(recording.file_size_bytes / 1024 / 1024).toFixed(1)} MB
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {recording.file_url && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-primary hover:bg-primary/90"
+                                  asChild
+                                >
+                                  <a
+                                    href={recording.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <PlayCircle className="h-4 w-4 mr-1.5" />
+                                    Watch
+                                  </a>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  asChild
+                                >
+                                  <a
+                                    href={recording.download_url || recording.file_url}
+                                    download
+                                    className="flex items-center gap-1.5"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    Download
+                                  </a>
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Film className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-muted-foreground">No recordings available yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Recordings will appear here after the session is recorded
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="notes" className="space-y-4 mt-4">

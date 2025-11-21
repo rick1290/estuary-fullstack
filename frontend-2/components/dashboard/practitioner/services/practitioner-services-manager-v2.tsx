@@ -85,7 +85,7 @@ const convertServiceForDisplay = (service: ServiceListReadable): any => {
     is_active: service.is_active || false,
     is_featured: service.is_featured || false,
     status: service.status || 'draft',
-    image_url: service.primary_image || '/images/placeholder-service.jpg',
+    image_url: service.image_url || null,
     average_rating: service.average_rating || null,
     total_reviews: parseInt(service.total_reviews || '0'),
     total_bookings: parseInt(service.total_bookings || '0'),

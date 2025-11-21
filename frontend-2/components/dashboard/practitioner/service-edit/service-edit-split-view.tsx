@@ -752,7 +752,24 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
               
               <div className="space-y-3">
                 <div>
-                  <h2 className="font-semibold text-sm truncate pr-2">{service.name}</h2>
+                  <div className="flex items-start justify-between gap-2">
+                    <h2 className="font-semibold text-sm truncate">{service.name}</h2>
+                    {/* Quick Actions */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" asChild>
+                            <Link href={getServiceDetailUrl(service)} target="_blank">
+                              <Eye className="h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p className="text-xs">Preview</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex items-center gap-1.5">
                       <Progress value={progressPercentage} className="h-1.5 w-20" />
@@ -766,7 +783,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                     </div>
                   </div>
                 </div>
-                
+
                 {unsavedChanges.size > 0 && (
                   <Button
                     size="sm"
@@ -792,47 +809,6 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
               </div>
             </div>
             
-            {/* Bottom Actions */}
-            <div className="flex-shrink-0 p-3 pt-2 border-t bg-background/80">
-              <div className="flex gap-1.5">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs" asChild>
-                        <Link href={getServiceDetailUrl(service)} target="_blank">
-                          <Eye className="h-3 w-3" />
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p className="text-xs">Preview Service</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs">
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p className="text-xs">Duplicate Service</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex-1 h-7 text-xs">
-                        <Archive className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p className="text-xs">Archive Service</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
           </div>
         </div>
 

@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign } from "lucide-react"
+import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign, ImageIcon } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
 import { getServiceDetailUrl } from "@/lib/service-utils"
@@ -74,12 +74,18 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
     <Card className="overflow-hidden flex flex-col h-full">
       {/* Service image */}
       <div className="relative aspect-video">
-        <Image
-          src={service.coverImage || "/placeholder.svg?height=200&width=400&query=service"}
-          alt={service.name || "Service"}
-          fill
-          className="object-cover"
-        />
+        {service.image_url || service.coverImage ? (
+          <Image
+            src={service.image_url || service.coverImage}
+            alt={service.name || "Service"}
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+          </div>
+        )}
 
         {/* Type and status badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between">

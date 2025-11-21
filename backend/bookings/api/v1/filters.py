@@ -12,8 +12,8 @@ class BookingFilter(django_filters.FilterSet):
     
     status = django_filters.CharFilter(method='filter_status')
     payment_status = django_filters.CharFilter(method='filter_payment_status')
-    start_date = django_filters.DateFilter(field_name='start_time__date', lookup_expr='gte')
-    end_date = django_filters.DateFilter(field_name='start_time__date', lookup_expr='lte')
+    start_date = django_filters.DateFilter(field_name='service_session__start_time__date', lookup_expr='gte')
+    end_date = django_filters.DateFilter(field_name='service_session__start_time__date', lookup_expr='lte')
     is_upcoming = django_filters.BooleanFilter(method='filter_upcoming')
     booking_type = django_filters.ChoiceFilter(
         method='filter_booking_type',
@@ -67,7 +67,7 @@ class BookingFilter(django_filters.FilterSet):
         if value:
             from django.utils import timezone
             return queryset.filter(
-                start_time__gt=timezone.now(),
+                service_session__start_time__gt=timezone.now(),
                 status='confirmed'
             )
         return queryset
@@ -75,21 +75,26 @@ class BookingFilter(django_filters.FilterSet):
     def filter_booking_type(self, queryset, name, value):
         """Filter by booking type"""
         if value == 'individual':
+            # Individual bookings: not part of package/bundle/course, typically have service_session
             return queryset.filter(
-                service_session__isnull=True,
-                is_package_purchase=False,
-                is_bundle_purchase=False,
-                service__is_course=False
+                service__is_package=False,
+                service__is_bundle=False,
+                service__is_course=False,
+                order__order_type='single'
             )
         elif value == 'group':
-            return queryset.filter(service_session__isnull=False)
+            # Group bookings have service_session and are not individual
+            return queryset.filter(
+                service_session__isnull=False,
+                service_session__session_type='group'
+            )
         elif value == 'package':
             return queryset.filter(
-                Q(is_package_purchase=True) | Q(service__is_package=True)
+                Q(order__order_type='package') | Q(service__is_package=True)
             )
         elif value == 'bundle':
             return queryset.filter(
-                Q(is_bundle_purchase=True) | Q(service__is_bundle=True)
+                Q(order__order_type='bundle') | Q(service__is_bundle=True)
             )
         elif value == 'course':
             return queryset.filter(service__is_course=True)

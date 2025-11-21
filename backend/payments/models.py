@@ -1051,18 +1051,22 @@ class PackageCompletionRecord(models.Model):
         return f"Package {self.package_booking.id} - {self.completion_percentage}% complete"
     
     def update_completion_status(self):
-        """Update the completion status based on child bookings."""
+        """Update the completion status based on bookings in the order."""
         from django.utils import timezone
-        
-        # Get all child bookings
-        child_bookings = self.package_booking.child_bookings.all()
-        self.total_sessions = child_bookings.count()
-        
+
+        # Get all bookings for this order (package/bundle sessions)
+        # In new architecture: all related bookings share the same order
+        if not self.package_booking.order:
+            return
+
+        order_bookings = self.package_booking.order.bookings.all()
+        self.total_sessions = order_bookings.count()
+
         if self.total_sessions == 0:
             return
-        
+
         # Count completed sessions
-        self.completed_sessions = child_bookings.filter(status='completed').count()
+        self.completed_sessions = order_bookings.filter(status='completed').count()
         
         # Calculate completion percentage
         from decimal import Decimal

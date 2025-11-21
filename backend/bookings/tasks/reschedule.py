@@ -51,38 +51,37 @@ def handle_session_reschedule(session_id: int, old_start_time: str, new_start_ti
         logger.info(f"Found {affected_bookings.count()} bookings affected by session {session_id} reschedule")
         
         # Update each booking and handle notifications
+        # Note: Times are now stored in ServiceSession, not on Booking directly
+        # This task only updates metadata and sends notifications
         for booking in affected_bookings:
             try:
-                # Store old times for notification
-                old_booking_start = booking.start_time
-                old_booking_end = booking.end_time
-                
-                # Update booking times
-                booking.start_time = new_start_dt
-                booking.end_time = new_end_dt
-                
+                # Get old times from service_session's original_start_time or metadata
+                session = booking.service_session
+                old_booking_start = session.original_start_time if session and session.original_start_time else None
+                old_booking_end = session.original_end_time if session and session.original_end_time else None
+
                 # Clear old reminder flags so new ones can be scheduled
                 reminder_keys = [
                     'client_24h_reminder_sent',
-                    'client_0.5h_reminder_sent', 
+                    'client_0.5h_reminder_sent',
                     'practitioner_24h_reminder_sent',
                     'practitioner_0.5h_reminder_sent'
                 ]
-                
+
                 for key in reminder_keys:
                     if key in booking.metadata:
                         del booking.metadata[key]
-                
+
                 # Add reschedule metadata
                 booking.metadata.update({
                     'rescheduled_by': 'practitioner',
                     'rescheduled_at': timezone.now().isoformat(),
-                    'old_start_time': old_booking_start.isoformat(),
-                    'old_end_time': old_booking_end.isoformat(),
+                    'old_start_time': old_booking_start.isoformat() if old_booking_start else None,
+                    'old_end_time': old_booking_end.isoformat() if old_booking_end else None,
                     'reschedule_reason': 'session_time_changed'
                 })
-                
-                booking.save(update_fields=['start_time', 'end_time', 'metadata'])
+
+                booking.save(update_fields=['metadata'])
                 
                 # Send reschedule notification to client
                 send_session_reschedule_notification.delay(

@@ -18,13 +18,15 @@ export default function UserUpcomingBookings() {
     ...bookingsListOptions({
       query: {
         status: "confirmed",
-        ordering: "start_time",
-        limit: 4
+        ordering: "service_session__start_time",
+        page_size: 4
       }
     }),
   })
 
   const bookings = data?.results || []
+  const totalCount = data?.count || 0
+  const hasMore = totalCount > 4
 
   const formatDate = (dateString: string) => {
     try {
@@ -184,20 +186,24 @@ export default function UserUpcomingBookings() {
 
                       <div className="flex items-start gap-6">
                         <div className="flex-1 space-y-2">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 text-sage-600" />
-                            <span className="text-sm text-olive-700">
-                              {formatDate(booking.start_time)}
-                            </span>
-                          </div>
+                          {booking.service_session?.start_time && (
+                            <>
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2 text-sage-600" />
+                                <span className="text-sm text-olive-700">
+                                  {formatDate(booking.service_session.start_time)}
+                                </span>
+                              </div>
 
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-2 text-sage-600" />
-                            <span className="text-sm text-olive-700">
-                              {formatTime(booking.start_time)}
-                              {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
-                            </span>
-                          </div>
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 mr-2 text-sage-600" />
+                                <span className="text-sm text-olive-700">
+                                  {formatTime(booking.service_session.start_time)}
+                                  {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
+                                </span>
+                              </div>
+                            </>
+                          )}
 
                           <div className="flex items-center">
                             {booking.location_type === "virtual" ? (
@@ -209,7 +215,7 @@ export default function UserUpcomingBookings() {
                               <>
                                 <MapPin className="h-4 w-4 mr-2 text-sage-600" />
                                 <span className="text-sm text-olive-700">
-                                  {booking.location || "In-person"}
+                                  In-person
                                 </span>
                               </>
                             )}
@@ -240,11 +246,15 @@ export default function UserUpcomingBookings() {
             )
           })}
 
-          <div className="text-center mt-6">
-            <Button variant="outline" asChild className="border-sage-300 text-sage-700 hover:bg-sage-50">
-              <Link href="/dashboard/user/bookings">View All Bookings</Link>
-            </Button>
-          </div>
+          {hasMore && (
+            <div className="text-center mt-4">
+              <Button variant="link" asChild className="text-sage-700">
+                <Link href="/dashboard/user/bookings">
+                  Show More ({totalCount - 4} more bookings)
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

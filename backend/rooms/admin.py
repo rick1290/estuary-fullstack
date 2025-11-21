@@ -104,7 +104,7 @@ class RoomAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.select_related('booking', 'service_session', 'template')
+        return qs.select_related('service_session', 'template')
 
 
 @admin.register(RoomParticipant)

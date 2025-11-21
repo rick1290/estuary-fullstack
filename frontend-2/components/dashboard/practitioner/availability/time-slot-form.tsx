@@ -14,11 +14,47 @@ interface TimeSlotFormProps {
   slots: TimeSlot[]
 }
 
+// Helper to convert time string to minutes for comparison
+const timeToMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number)
+  return hours * 60 + minutes
+}
+
+// Check if two time slots overlap
+const slotsOverlap = (slot1Start: string, slot1End: string, slot2Start: string, slot2End: string): boolean => {
+  const s1Start = timeToMinutes(slot1Start)
+  const s1End = timeToMinutes(slot1End)
+  const s2Start = timeToMinutes(slot2Start)
+  const s2End = timeToMinutes(slot2End)
+
+  // Check if one slot starts before the other ends and vice versa
+  return s1Start < s2End && s2Start < s1End
+}
+
 export function TimeSlotForm({ day, onAdd, onRemove, slots }: TimeSlotFormProps) {
   const [startTime, setStartTime] = useState("09:00")
   const [endTime, setEndTime] = useState("17:00")
+  const [error, setError] = useState<string | null>(null)
 
   const handleAddTimeSlot = () => {
+    setError(null)
+
+    // Validate end time is after start time
+    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      setError("End time must be after start time")
+      return
+    }
+
+    // Check for overlaps with existing slots
+    const hasOverlap = slots.some(slot =>
+      slotsOverlap(startTime, endTime, slot.start_time.substring(0, 5), slot.end_time.substring(0, 5))
+    )
+
+    if (hasOverlap) {
+      setError("This time slot overlaps with an existing slot")
+      return
+    }
+
     const newTimeSlot: TimeSlot = {
       id: `slot-${uuidv4()}`,
       day,
@@ -105,6 +141,10 @@ export function TimeSlotForm({ day, onAdd, onRemove, slots }: TimeSlotFormProps)
 
         <Button onClick={handleAddTimeSlot}>Add</Button>
       </div>
+
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
     </div>
   )
 }

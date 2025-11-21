@@ -5,11 +5,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, ArrowLeft } from "lucide-react"
 
 interface PractitionerPageHeaderProps {
   title: string
   helpLink?: string
+  backLink?: string
+  backLabel?: string
   action?: {
     label: string
     icon?: ReactNode
@@ -29,6 +31,8 @@ interface PractitionerPageHeaderProps {
 export function PractitionerPageHeader({
   title,
   helpLink,
+  backLink,
+  backLabel,
   action,
   tabs,
   activeTab,
@@ -39,13 +43,25 @@ export function PractitionerPageHeader({
   return (
     <div className={cn("bg-muted/30", className)}>
       <div className="px-6">
+        {/* Back link if provided */}
+        {backLink && (
+          <div className="pt-3">
+            <Link href={backLink}>
+              <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                {backLabel || "Back"}
+              </Button>
+            </Link>
+          </div>
+        )}
+
         {/* Title row with action - compact spacing */}
-        <div className="flex items-center justify-between gap-4 py-4">
+        <div className={cn("flex items-center justify-between gap-4 py-4", backLink && "pt-2")}>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
             {helpLink && (
-              <Link 
-                href={helpLink} 
+              <Link
+                href={helpLink}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
               >
                 Help docs

@@ -713,26 +713,86 @@ class ServiceRelationship(models.Model):
 
 class ServiceSession(models.Model):
     """
-    Model representing a scheduled occurrence of a service (workshop or course session).
+    Model representing a scheduled occurrence of ANY service type.
+
+    - For individual 1-to-1 sessions: Created dynamically when user books
+    - For workshops: Pre-created by practitioner, multiple users can book
+    - For courses: Multiple pre-created sessions (one per class)
+
+    This model is the single source of truth for session scheduling.
+    Bookings reference ServiceSession instead of storing times directly.
     """
+    # Session type choices
+    SESSION_TYPE_CHOICES = [
+        ('individual', 'Individual Session'),
+        ('workshop', 'Workshop'),
+        ('course_session', 'Course Session'),
+    ]
+
+    # Visibility choices
+    VISIBILITY_CHOICES = [
+        ('public', 'Public'),        # Workshops/courses - shown in listings
+        ('private', 'Private'),      # 1-to-1 sessions - not shown publicly
+        ('unlisted', 'Unlisted'),    # Can access with link, not in listings
+    ]
+
     id = models.BigAutoField(primary_key=True)
     service = models.ForeignKey(Service, models.CASCADE, related_name='sessions')
+
+    # Session categorization (NEW)
+    session_type = models.CharField(
+        max_length=20,
+        choices=SESSION_TYPE_CHOICES,
+        default='individual',
+        help_text="Type of session - determines visibility and booking behavior"
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=VISIBILITY_CHOICES,
+        default='public',
+        help_text="Controls whether session appears in public listings"
+    )
+
     title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Start time of the session. NULL for draft/unscheduled sessions."
+    )
+    end_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="End time of the session. NULL for draft/unscheduled sessions."
+    )
     duration = models.PositiveIntegerField(help_text="Duration in minutes", blank=True, null=True)
+
+    # Actual times (when session actually started/ended)
+    actual_start_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the session actually started (for billing/analytics)"
+    )
+    actual_end_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the session actually ended (for billing/analytics)"
+    )
+
     max_participants = models.IntegerField(null=True, blank=True)
     current_participants = models.IntegerField(default=0)
-    sequence_number = models.PositiveIntegerField(default=0)
-    room = models.ForeignKey('rooms.Room', models.SET_NULL, null=True, blank=True, related_name='service_sessions')
+    sequence_number = models.PositiveIntegerField(default=0, help_text="For ordering course sessions")
+
+    # DEPRECATED: room FK removed - use livekit_room (reverse OneToOne) instead
+    # Access room via: service_session.livekit_room
+    # room = REMOVED - use livekit_room instead
     price_cents = models.IntegerField(blank=True, null=True, help_text="Price override in cents")
     status = models.CharField(max_length=20, default='scheduled')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     agenda = models.TextField(blank=True, null=True)
     what_youll_learn = models.TextField(blank=True, null=True, help_text="Describe what clients will learn or gain from this specific session")
-    
+
     # Location handling for in-person sessions
     practitioner_location = models.ForeignKey(
         'locations.PractitionerLocation',
@@ -742,11 +802,47 @@ class ServiceSession(models.Model):
         related_name='sessions',
         help_text="Practitioner location where this session takes place (for in-person sessions)"
     )
-    
+
+    # Reschedule tracking
+    reschedule_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times this session has been rescheduled"
+    )
+    original_start_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Original start time before any rescheduling (preserved for history)"
+    )
+    original_end_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Original end time before any rescheduling (preserved for history)"
+    )
+    last_rescheduled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this session was last rescheduled"
+    )
+    rescheduled_by = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rescheduled_sessions',
+        help_text="Who last rescheduled this session"
+    )
+
     class Meta:
         db_table = 'service_sessions'
         ordering = ['start_time', 'sequence_number']
-        unique_together = (('service', 'start_time'),)
+        # NOTE: Removed unique_together on (service, start_time) to allow multiple
+        # individual sessions for the same service at different times
+        indexes = [
+            models.Index(fields=['service', 'start_time']),
+            models.Index(fields=['session_type', 'visibility']),
+            models.Index(fields=['visibility', 'start_time']),
+            models.Index(fields=['status', 'start_time']),
+        ]
 
     def __str__(self):
         return f"{self.service.name} - Session {self.sequence_number}" if self.service else f"Session {self.id}"
@@ -756,7 +852,7 @@ class ServiceSession(models.Model):
         if not self.duration and self.start_time and self.end_time:
             delta = self.end_time - self.start_time
             self.duration = int(delta.total_seconds() / 60)
-            
+
         # If max_participants not specified, use the service's value
         if self.max_participants is None and self.service and hasattr(self.service, 'max_participants'):
             self.max_participants = self.service.max_participants
@@ -764,6 +860,24 @@ class ServiceSession(models.Model):
         # If practitioner_location not specified but service has one, use it
         if self.practitioner_location is None and self.service and hasattr(self.service, 'practitioner_location') and self.service.practitioner_location:
             self.practitioner_location = self.service.practitioner_location
+
+        # Auto-set session_type based on service type if not explicitly set
+        if not self.pk and self.service:  # Only on creation
+            service_type_code = self.service.service_type.code if self.service.service_type else None
+
+            # Infer session_type from service type if not already set
+            if self.session_type == 'individual':  # Default value
+                if service_type_code == 'workshop':
+                    self.session_type = 'workshop'
+                elif service_type_code == 'course':
+                    self.session_type = 'course_session'
+                # else: remains 'individual' (for session type services)
+
+            # Auto-set visibility based on session_type
+            if self.visibility == 'public':  # Default value
+                if self.session_type == 'individual':
+                    self.visibility = 'private'
+                # else: remains 'public' for workshops/courses
 
         super().save(*args, **kwargs)
         
@@ -774,27 +888,82 @@ class ServiceSession(models.Model):
         """
         if self.room:
             return self.room
-            
+
         from apps.integrations.daily.utils import create_daily_room
-        
+
         # Create a unique room name
         room_name = f"session-{self.id}-{self.service.id}"
-        
+
         # Create the room
         room = create_daily_room(
             room_name=room_name,
             metadata={
                 "service_id": str(self.service.id),
                 "session_id": str(self.id),
-                "session_type": "workshop" if self.service.service_type and self.service.service_type.code == 'workshop' else "course",
+                "session_type": self.session_type,  # Use the session_type field directly
+                "visibility": self.visibility,
             }
         )
-        
+
         # Associate the room with this session
         self.room = room
         self.save(update_fields=['room'])
-        
+
         return room
+
+    def reschedule(self, new_start_time, new_end_time, rescheduled_by_user=None):
+        """
+        Reschedule this session to new times.
+
+        This is the new paradigm: instead of creating new bookings,
+        we update the ServiceSession times. All linked bookings
+        are automatically updated since they reference this session.
+
+        Args:
+            new_start_time: New start time for the session
+            new_end_time: New end time for the session
+            rescheduled_by_user: User who initiated the reschedule
+
+        Returns:
+            self (the updated ServiceSession)
+        """
+        from django.utils import timezone
+
+        # Preserve original times on first reschedule
+        if self.reschedule_count == 0:
+            self.original_start_time = self.start_time
+            self.original_end_time = self.end_time
+
+        # Update times
+        self.start_time = new_start_time
+        self.end_time = new_end_time
+
+        # Update duration
+        if new_start_time and new_end_time:
+            self.duration = int((new_end_time - new_start_time).total_seconds() / 60)
+
+        # Update tracking fields
+        self.reschedule_count += 1
+        self.last_rescheduled_at = timezone.now()
+        self.rescheduled_by = rescheduled_by_user
+
+        self.save()
+
+        return self
+
+    def get_affected_users(self):
+        """
+        Get all users who have bookings for this session.
+        Useful for sending reschedule notifications.
+
+        Returns:
+            QuerySet of User objects
+        """
+        from users.models import User
+        return User.objects.filter(
+            bookings__service_session=self,
+            bookings__status__in=['confirmed', 'pending_payment']
+        ).distinct()
 
 
 class SessionParticipant(models.Model):

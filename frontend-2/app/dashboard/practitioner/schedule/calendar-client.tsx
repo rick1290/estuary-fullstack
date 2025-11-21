@@ -20,8 +20,8 @@ export default function CalendarClient() {
     <>
       {/* Standardized Header */}
       <PractitionerPageHeader
-        title="Calendar"
-        helpLink="/help/practitioner/calendar"
+        title="Schedule"
+        helpLink="/help/practitioner/schedule"
         tabs={CALENDAR_TABS}
         activeTab={activeTab}
         onTabChange={setActiveTab}

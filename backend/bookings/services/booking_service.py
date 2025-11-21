@@ -60,12 +60,14 @@ class BookingService:
             booking = self._create_default_booking(user, service, booking_data, payment_data)
         
         # Create room if needed (explicit, not via signal)
+        # NEW: Always create room for service_session (not booking directly)
         if self._should_create_room(service, booking):
             try:
-                room = self.room_service.create_room_for_booking(booking)
-                logger.info(f"Created room {room.livekit_room_name} for booking {booking.id}")
+                # NEW: Create room for ServiceSession (works for all booking types)
+                room = self.room_service.create_room_for_session(booking.service_session)
+                logger.info(f"Created room {room.livekit_room_name} for ServiceSession {booking.service_session.id}")
             except Exception as e:
-                logger.error(f"Failed to create room for booking {booking.id}: {e}")
+                logger.error(f"Failed to create room for ServiceSession {booking.service_session.id}: {e}")
                 # Don't fail the booking if room creation fails
                 # Can be retried later
         
@@ -85,25 +87,44 @@ class BookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a one-on-one session booking."""
-        return Booking.objects.create(
+        """
+        Create a one-on-one session booking.
+
+        NEW ARCHITECTURE:
+        1. Creates a ServiceSession (private, individual)
+        2. Links Booking to ServiceSession
+        3. ServiceSession stores scheduling info (not Booking)
+        """
+        # Step 1: Create ServiceSession for this individual booking
+        service_session = ServiceSession.objects.create(
+            service=service,
+            session_type='individual',  # NEW: Marks as 1-to-1
+            visibility='private',       # NEW: Not shown in public listings
+            start_time=booking_data['start_time'],
+            end_time=booking_data['end_time'],
+            max_participants=1,  # Individual session
+            current_participants=0,
+            # Auto-calculated by ServiceSession.save():
+            # - duration (from start/end times)
+            # - practitioner_location (from service if set)
+        )
+
+        # Step 2: Create Booking linked to ServiceSession
+        booking = Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            service_session=service_session,
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=booking_data['start_time'],
-            end_time=booking_data['end_time'],
-            timezone=booking_data.get('timezone', 'UTC'),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )
+
+        logger.info(f"Created ServiceSession {service_session.id} and Booking {booking.id} for 1-to-1 session")
+        return booking
     
     def _create_workshop_booking(
         self,
@@ -112,28 +133,25 @@ class BookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a workshop booking."""
+        """
+        Create a workshop booking.
+
+        User selects an existing ServiceSession and books a seat.
+        Times come from service_session, not duplicated on booking.
+        """
         service_session = get_object_or_404(ServiceSession, id=booking_data['service_session_id'])
-        
+
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
             service_session=service_session,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=service_session.start_time,
-            end_time=service_session.end_time,
-            timezone=booking_data.get('timezone', 'UTC'),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
-            confirmed_at=timezone.now(),
-            max_participants=service_session.max_participants
+            confirmed_at=timezone.now()
         )
     
     def _create_course_booking(
@@ -143,18 +161,27 @@ class BookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a course enrollment."""
-        booking = BookingFactory.create_course_booking(
+        """
+        Create a course enrollment.
+        Creates one booking per ServiceSession in the course.
+        Returns the first booking for backward compatibility.
+        """
+        bookings = BookingFactory.create_course_booking(
             user=user,
             course=service,
-            payment_intent_id=payment_data.get('payment_intent_id'),
+            order=payment_data.get('order'),  # Link all bookings to same order
             client_notes=booking_data.get('special_requests', '')
         )
-        booking.payment_status = 'paid'
-        booking.status = 'confirmed'
-        booking.confirmed_at = timezone.now()
-        booking.save()
-        return booking
+
+        # Update all bookings with payment status
+        for booking in bookings:
+            booking.payment_status = 'paid'
+            booking.status = 'confirmed'
+            booking.confirmed_at = timezone.now()
+            booking.save()
+
+        # Return first booking for backward compatibility
+        return bookings[0] if bookings else None
     
     def _create_package_booking(
         self,
@@ -187,15 +214,19 @@ class BookingService:
 
         # Schedule first session if time provided
         first_session_time = booking_data.get('start_time')
-        if first_session_time and first_booking:
-            first_booking.start_time = first_session_time
-            first_booking.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+        if first_session_time and first_booking and first_booking.service_session:
+            # Update ServiceSession with the scheduled time
+            first_booking.service_session.start_time = first_session_time
+            first_booking.service_session.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            first_booking.service_session.status = 'scheduled'
+            first_booking.service_session.save()
+
             first_booking.status = 'confirmed'  # Scheduled
             first_booking.confirmed_at = timezone.now()
             first_booking.save()
 
         return first_booking
-    
+
     def _create_bundle_booking(
         self,
         user: User,
@@ -226,15 +257,19 @@ class BookingService:
 
         # Schedule first session if time provided
         first_session_time = booking_data.get('start_time')
-        if first_session_time and first_booking:
-            first_booking.start_time = first_session_time
-            first_booking.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+        if first_session_time and first_booking and first_booking.service_session:
+            # Update ServiceSession with the scheduled time
+            first_booking.service_session.start_time = first_session_time
+            first_booking.service_session.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            first_booking.service_session.status = 'scheduled'
+            first_booking.service_session.save()
+
             first_booking.status = 'confirmed'  # Scheduled
             first_booking.confirmed_at = timezone.now()
             first_booking.save()
 
         return first_booking
-    
+
     def _create_default_booking(
         self,
         user: User,
@@ -242,53 +277,66 @@ class BookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a default booking for unknown service types."""
+        """Create a default booking for unknown service types with ServiceSession."""
+        start_time = booking_data.get('start_time', timezone.now())
+        end_time = booking_data.get('end_time', timezone.now() + timezone.timedelta(hours=1))
+
+        # Create ServiceSession
+        service_session = ServiceSession.objects.create(
+            service=service,
+            session_type='individual',
+            visibility='private',
+            start_time=start_time,
+            end_time=end_time,
+            max_participants=1,
+            current_participants=1,
+        )
+
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            service_session=service_session,
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=booking_data.get('start_time', timezone.now()),
-            end_time=booking_data.get('end_time', timezone.now() + timezone.timedelta(hours=1)),
-            timezone=booking_data.get('timezone', 'UTC'),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )
     
     def _should_create_room(self, service: Service, booking: Booking) -> bool:
         """
         Determine if a room should be created for this booking.
-        
+
+        NEW ARCHITECTURE:
+        - All bookings have service_session
+        - Room always linked to service_session (not booking)
+        - Check if service_session already has room
+
         Args:
             service: Service being booked
             booking: Created booking
-            
+
         Returns:
             True if room should be created
         """
-        # Skip if booking already has a room
-        if hasattr(booking, 'livekit_room') and booking.livekit_room:
+        # Must have service_session
+        if not booking.service_session:
             return False
-        
-        # Skip if this is a group session (uses ServiceSession rooms)
-        if booking.service_session:
+
+        # Skip if service_session already has a room
+        if hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
             return False
-        
+
         # Skip if not virtual
         if service.location_type not in ['virtual', 'online', 'hybrid']:
             return False
-        
+
         # Skip package/bundle parent bookings
-        if booking.is_package_purchase or booking.is_bundle_purchase:
+        if booking.is_package_booking:
             return False
-        
+
         return True
     
     @transaction.atomic

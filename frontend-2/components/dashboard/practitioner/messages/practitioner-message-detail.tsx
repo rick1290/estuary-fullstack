@@ -64,6 +64,7 @@ export default function PractitionerMessageDetail() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState(false)
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -209,15 +210,54 @@ export default function PractitionerMessageDetail() {
     }, 50)
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (newMessage.trim() === "" && !selectedFile) return
     if (!conversationId) return
 
+    let attachments: any[] = []
+    let messageType = "text"
+
+    // If there's a file, upload it first
+    if (selectedFile) {
+      setIsUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", selectedFile)
+        formData.append("entity_type", "conversation")
+        formData.append("entity_id", conversationId)
+
+        const response = await mediaUploadCreate({
+          body: formData as any
+        })
+
+        if (response.data?.url) {
+          const isImage = selectedFile.type.startsWith("image/")
+          attachments = [{
+            type: isImage ? "image" : "file",
+            url: response.data.url,
+            filename: selectedFile.name,
+            size: selectedFile.size,
+            mime_type: selectedFile.type,
+            thumbnail_url: response.data.thumbnail_url || null,
+          }]
+          messageType = isImage ? "image" : "file"
+        }
+      } catch (error) {
+        console.error("Failed to upload file:", error)
+        toast.error("Failed to upload file")
+        setIsUploading(false)
+        return
+      }
+      setIsUploading(false)
+    }
+
+    // Send the message
     sendMessageMutation.mutate({
       path: { id: conversationId },
       body: {
-        content: newMessage,
-        message_type: "text"
+        content: newMessage || (selectedFile ? `Sent ${selectedFile.type.startsWith("image/") ? "an image" : "a file"}` : ""),
+        message_type: messageType,
+        attachments: attachments
       }
     })
   }
@@ -299,7 +339,7 @@ export default function PractitionerMessageDetail() {
 
   if (!conversationId) {
     return (
-      <div className="flex flex-col justify-center items-center h-full p-6 text-center">
+      <div className="flex flex-col justify-center items-center h-full w-full p-6 text-center">
         <div className="mb-4">
           <MessageSquare className="h-12 w-12 text-muted-foreground" />
         </div>
@@ -311,7 +351,7 @@ export default function PractitionerMessageDetail() {
 
   if (conversationLoading || messagesLoading) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -334,7 +374,7 @@ export default function PractitionerMessageDetail() {
 
   if (!conversation || !otherUser) {
     return (
-      <div className="flex flex-col justify-center items-center h-full p-6 text-center">
+      <div className="flex flex-col justify-center items-center h-full w-full p-6 text-center">
         <h3 className="text-lg font-medium">Conversation not found</h3>
       </div>
     )
@@ -342,7 +382,7 @@ export default function PractitionerMessageDetail() {
 
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Header - Fixed */}
       <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center">
@@ -445,23 +485,82 @@ export default function PractitionerMessageDetail() {
                         isSentByMe ? "bg-primary text-primary-foreground" : "bg-card"
                       }`}
                     >
-                      <p>{message.content}</p>
+                      {/* Render message content with service link detection */}
+                      {(() => {
+                        const serviceUrlMatch = message.content?.match(/(?:Book here:|View service:)\s*(https?:\/\/[^\s]+\/services\/[^\s]+)/i)
+
+                        if (serviceUrlMatch) {
+                          // Split content: everything before the "Book here:" line
+                          const parts = message.content.split(/(?:Book here:|View service:)/i)
+                          const textContent = parts[0]?.trim()
+                          const serviceUrl = serviceUrlMatch[1]
+
+                          return (
+                            <>
+                              {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
+                              <a
+                                href={serviceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`mt-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                                  isSentByMe
+                                    ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                }`}
+                              >
+                                <Calendar className="h-4 w-4" />
+                                View & Book Service
+                              </a>
+                            </>
+                          )
+                        }
+
+                        return <p className="whitespace-pre-wrap">{message.content}</p>
+                      })()}
 
                       {message.attachments && message.attachments.length > 0 && (
-                        message.attachments.map((attachment: any, idx: number) => (
-                          <div key={idx} className="flex items-center mt-2 p-2 bg-background/50 rounded">
-                            <FileText className="h-4 w-4 mr-2" />
-                            <div>
-                              <p className="text-sm">{attachment.filename}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {(attachment.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
-                            <Button size="sm" variant="ghost" className="ml-auto">
-                              Download
-                            </Button>
-                          </div>
-                        ))
+                        <div className="mt-2 space-y-2">
+                          {message.attachments.map((attachment: any, idx: number) => (
+                            attachment.type === "image" ? (
+                              <a
+                                key={idx}
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block"
+                              >
+                                <div className="relative rounded-lg overflow-hidden max-w-[280px]">
+                                  <Image
+                                    src={attachment.url}
+                                    alt={attachment.filename || "Image"}
+                                    width={280}
+                                    height={200}
+                                    className="object-cover rounded-lg hover:opacity-90 transition-opacity"
+                                    style={{ maxHeight: "200px", width: "auto" }}
+                                  />
+                                </div>
+                              </a>
+                            ) : (
+                              <a
+                                key={idx}
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`flex items-center p-2 rounded ${
+                                  isSentByMe ? "bg-primary-foreground/10" : "bg-muted"
+                                } hover:opacity-80 transition-opacity`}
+                              >
+                                <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm truncate">{attachment.filename}</p>
+                                  <p className="text-xs opacity-70">
+                                    {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : "File"}
+                                  </p>
+                                </div>
+                              </a>
+                            )
+                          ))}
+                        </div>
                       )}
                     </div>
                     <p
@@ -546,9 +645,13 @@ export default function PractitionerMessageDetail() {
             size="icon"
             className="flex-shrink-0"
             onClick={handleSendMessage}
-            disabled={newMessage.trim() === "" && !selectedFile || sendMessageMutation.isPending}
+            disabled={(newMessage.trim() === "" && !selectedFile) || sendMessageMutation.isPending || isUploading}
           >
-            <Send className="h-4 w-4" />
+            {isUploading ? (
+              <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -625,19 +728,22 @@ export default function PractitionerMessageDetail() {
 
       {/* Share Service Dialog */}
       <Dialog open={showShareService} onOpenChange={setShowShareService}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
-            <DialogTitle>Share a Service</DialogTitle>
+            <DialogTitle className="text-xl">Share a Service</DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm mb-4">Select a service to share with {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'this client'}:</p>
+          <p className="text-muted-foreground">
+            Select a service to share with {otherUser ? `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim() : 'this client'}
+          </p>
 
-          <ScrollArea className="max-h-[400px]">
+          <ScrollArea className="max-h-[450px] mt-2">
             <div className="space-y-3 pr-4">
               {services.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No active services found.</p>
-                  <p className="text-sm mt-2">Create a service to share with clients.</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No active services found</p>
+                  <p className="text-sm mt-1">Create a service to share with clients.</p>
                 </div>
               ) : (
                 services.map((service: any) => {
@@ -647,28 +753,50 @@ export default function PractitionerMessageDetail() {
                   return (
                     <Card
                       key={service.id}
-                      className="cursor-pointer hover:bg-accent transition-colors"
+                      className="cursor-pointer hover:bg-accent/50 hover:border-primary/30 transition-all"
                       onClick={() => handleShareService(service.id)}
                     >
-                      <CardContent className="p-3 flex items-center">
-                        <div className="relative h-12 w-12 rounded overflow-hidden mr-3 flex-shrink-0 bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
-                          {service.service_type === 'Workshop' ? (
-                            <Users className="h-6 w-6 text-sage-600" />
-                          ) : service.service_type === 'Course' ? (
-                            <GraduationCap className="h-6 w-6 text-terracotta-600" />
+                      <CardContent className="p-4 flex gap-4">
+                        {/* Service Image */}
+                        <div className="relative h-20 w-20 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                          {service.image_url ? (
+                            <Image
+                              src={service.image_url}
+                              alt={service.name}
+                              fill
+                              className="object-cover"
+                            />
                           ) : (
-                            <User className="h-6 w-6 text-olive-600" />
+                            <div className="w-full h-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                              {service.service_type === 'Workshop' ? (
+                                <Users className="h-8 w-8 text-sage-600" />
+                              ) : service.service_type === 'Course' ? (
+                                <GraduationCap className="h-8 w-8 text-terracotta-600" />
+                              ) : (
+                                <User className="h-8 w-8 text-olive-600" />
+                              )}
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium truncate">{service.name}</h4>
-                          <div className="flex items-center mt-1">
-                            <Badge variant="outline" className="mr-2 text-xs">
-                              {service.service_type}
+
+                        {/* Service Details */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <h4 className="font-semibold text-base leading-tight line-clamp-2">
+                            {service.name}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="secondary" className="text-xs font-normal">
+                              {service.service_type_display || service.service_type || 'Session'}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {duration && `${duration} • `}{price}
-                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2 text-sm">
+                            <span className="font-semibold text-primary">{price}</span>
+                            {duration && (
+                              <>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground">{duration}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </CardContent>

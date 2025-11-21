@@ -199,7 +199,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             'total_revenue': queryset.filter(
                 payment_status='paid'
             ).aggregate(
-                total=models.Sum('final_amount_cents')
+                total=models.Sum('credits_allocated')
             )['total'] or 0,
         }
         

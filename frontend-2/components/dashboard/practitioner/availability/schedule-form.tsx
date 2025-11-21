@@ -11,7 +11,13 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Copy, Plus, Trash2, AlertCircle, Loader2 } from "lucide-react"
+import { Copy, Plus, Trash2, AlertCircle, Loader2, ChevronDown } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import {
   schedulesAddTimeSlotCreateMutation,
@@ -60,6 +66,117 @@ const formatTime12Hour = (time24: string) => {
   const period = hours >= 12 ? 'PM' : 'AM'
   const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
   return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
+// Helper to convert time string to minutes for overlap checking
+const timeToMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number)
+  return hours * 60 + minutes
+}
+
+// Check if two time slots overlap
+const slotsOverlap = (slot1Start: string, slot1End: string, slot2Start: string, slot2End: string): boolean => {
+  const s1Start = timeToMinutes(slot1Start)
+  const s1End = timeToMinutes(slot1End)
+  const s2Start = timeToMinutes(slot2Start)
+  const s2End = timeToMinutes(slot2End)
+  return s1Start < s2End && s2Start < s1End
+}
+
+// Find a non-overlapping time slot for a day
+const findNextAvailableSlot = (existingSlots: ScheduleTimeSlotWritable[], day: number): { start: string; end: string } | null => {
+  const daySlots = existingSlots.filter(s => s.day === day).sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time))
+
+  if (daySlots.length === 0) {
+    return { start: "09:00:00", end: "17:00:00" }
+  }
+
+  // Try to find a gap after the last slot
+  const lastSlot = daySlots[daySlots.length - 1]
+  const lastEndMinutes = timeToMinutes(lastSlot.end_time)
+
+  if (lastEndMinutes < 23 * 60) { // Before 11 PM
+    const newStartMinutes = lastEndMinutes
+    const newEndMinutes = Math.min(newStartMinutes + 60, 24 * 60) // 1 hour or end of day
+    const newStart = `${Math.floor(newStartMinutes / 60).toString().padStart(2, '0')}:${(newStartMinutes % 60).toString().padStart(2, '0')}:00`
+    const newEnd = `${Math.floor(newEndMinutes / 60).toString().padStart(2, '0')}:${(newEndMinutes % 60).toString().padStart(2, '0')}:00`
+    return { start: newStart, end: newEnd }
+  }
+
+  // No room available
+  return null
+}
+
+// Component for copying a day's slots to other days
+function CopyDayDropdown({
+  sourceDay,
+  activeDays,
+  onCopy,
+}: {
+  sourceDay: number
+  activeDays: Record<number, boolean>
+  onCopy: (sourceDay: number, targetDays: number[]) => void
+}) {
+  const [selectedDays, setSelectedDays] = useState<number[]>([])
+
+  const otherDays = DAYS_OF_WEEK.filter((d) => d.value !== sourceDay)
+
+  const handleToggleDay = (dayValue: number) => {
+    setSelectedDays((prev) =>
+      prev.includes(dayValue)
+        ? prev.filter((d) => d !== dayValue)
+        : [...prev, dayValue]
+    )
+  }
+
+  const handleApply = () => {
+    if (selectedDays.length > 0) {
+      onCopy(sourceDay, selectedDays)
+      setSelectedDays([])
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="whitespace-nowrap">
+          <Copy className="mr-1 h-4 w-4 flex-shrink-0" />
+          Copy
+          <ChevronDown className="ml-1 h-3 w-3 flex-shrink-0" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+          Select days to copy to:
+        </div>
+        {otherDays.map((day) => (
+          <DropdownMenuCheckboxItem
+            key={day.value}
+            checked={selectedDays.includes(day.value)}
+            onCheckedChange={() => handleToggleDay(day.value)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {day.label}
+            {activeDays[day.value] && (
+              <span className="ml-auto text-xs text-muted-foreground">(has slots)</span>
+            )}
+          </DropdownMenuCheckboxItem>
+        ))}
+        {selectedDays.length > 0 && (
+          <div className="p-2 border-t">
+            <Button
+              type="button"
+              size="sm"
+              className="w-full"
+              onClick={handleApply}
+            >
+              Copy to {selectedDays.length} day{selectedDays.length > 1 ? "s" : ""}
+            </Button>
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }
 
 export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading }: ScheduleFormProps) {
@@ -140,10 +257,21 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
   }
 
   const handleAddTimeSlot = (day: number) => {
+    const nextSlot = findNextAvailableSlot(timeSlots, day)
+
+    if (!nextSlot) {
+      toast({
+        title: "Cannot add time slot",
+        description: "No available time remaining for this day.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const newSlot: ScheduleTimeSlotWritable = {
       day,
-      start_time: "09:00:00",
-      end_time: "17:00:00",
+      start_time: nextSlot.start,
+      end_time: nextSlot.end,
       is_active: true,
     }
     setTimeSlots([...timeSlots, newSlot])
@@ -163,13 +291,30 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
 
   const handleTimeSlotChange = (index: number, field: keyof ScheduleTimeSlotWritable, value: any) => {
     const updatedSlots = [...timeSlots]
-    updatedSlots[index] = { ...updatedSlots[index], [field]: value }
+    const updatedSlot = { ...updatedSlots[index], [field]: value }
+
+    // Check for overlaps with other slots on the same day (excluding self)
+    const otherDaySlots = updatedSlots.filter((s, i) => s.day === updatedSlot.day && i !== index)
+    const hasOverlap = otherDaySlots.some(slot =>
+      slotsOverlap(updatedSlot.start_time, updatedSlot.end_time, slot.start_time, slot.end_time)
+    )
+
+    if (hasOverlap) {
+      toast({
+        title: "Time slot overlap",
+        description: "This time overlaps with another slot on this day.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    updatedSlots[index] = updatedSlot
     setTimeSlots(updatedSlots)
   }
 
   const handleCopyToAllDays = () => {
     const firstDaySlots = timeSlots.filter((slot) => slot.day === Math.min(...timeSlots.map((s) => s.day)))
-    
+
     if (firstDaySlots.length === 0) {
       toast({
         title: "No time slots to copy",
@@ -191,10 +336,51 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
 
     setTimeSlots(newSlots)
     setActiveDays(DAYS_OF_WEEK.reduce((acc, day) => ({ ...acc, [day.value]: true }), {}))
-    
+
     toast({
       title: "Schedule copied",
       description: "Time slots have been copied to all days.",
+    })
+  }
+
+  const handleCopyDayToOthers = (sourceDay: number, targetDays: number[]) => {
+    const sourceDaySlots = timeSlots.filter((slot) => slot.day === sourceDay)
+
+    if (sourceDaySlots.length === 0) {
+      toast({
+        title: "No time slots to copy",
+        description: "This day has no time slots to copy.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Remove existing slots from target days and add copied slots
+    const slotsToKeep = timeSlots.filter((slot) => !targetDays.includes(slot.day))
+    const newSlots: ScheduleTimeSlotWritable[] = []
+
+    targetDays.forEach((targetDay) => {
+      sourceDaySlots.forEach((slot) => {
+        newSlots.push({
+          ...slot,
+          day: targetDay,
+        })
+      })
+    })
+
+    setTimeSlots([...slotsToKeep, ...newSlots])
+
+    // Update active days
+    const newActiveDays = { ...activeDays }
+    targetDays.forEach((day) => {
+      newActiveDays[day] = true
+    })
+    setActiveDays(newActiveDays)
+
+    const dayNames = targetDays.map((d) => DAYS_OF_WEEK[d].label).join(", ")
+    toast({
+      title: "Time slots copied",
+      description: `Copied to ${dayNames}`,
     })
   }
 
@@ -303,11 +489,11 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
 
         {/* Day Selection */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-2 mb-4">
             <Label>Select Days</Label>
-            <Button type="button" variant="outline" size="sm" onClick={handleCopyToAllDays}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy to All Days
+            <Button type="button" variant="outline" size="sm" onClick={handleCopyToAllDays} className="whitespace-nowrap">
+              <Copy className="mr-2 h-4 w-4 flex-shrink-0" />
+              Copy All
             </Button>
           </div>
           <div className="grid grid-cols-7 gap-2">
@@ -343,18 +529,27 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
               const daySlots = timeSlots.filter((slot) => slot.day === day.value)
               
               return (
-                <div key={day.value} className="space-y-2">
+                <div key={day.value} className="space-y-2 p-3 border rounded-lg">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">{day.label}</h4>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddTimeSlot(day.value)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Time Slot
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {daySlots.length > 0 && (
+                        <CopyDayDropdown
+                          sourceDay={day.value}
+                          activeDays={activeDays}
+                          onCopy={handleCopyDayToOthers}
+                        />
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddTimeSlot(day.value)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Time Slot
+                      </Button>
+                    </div>
                   </div>
                   
                   {daySlots.map((slot, slotIndex) => {

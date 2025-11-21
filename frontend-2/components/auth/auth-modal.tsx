@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { X, Check, Users, Star, Shield, ArrowRight, Eye, EyeOff } from "lucide-react"
+import { X, Check, Users, Star, Shield, ArrowRight, Eye, EyeOff, Sparkles, Heart } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { authRegisterCreate } from "@/src/client/sdk.gen"
 import type { UserRegisterRequest } from "@/src/client/types.gen"
@@ -49,17 +49,46 @@ export default function AuthModal({
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  
+
   // UI states
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loginSuccessful, setLoginSuccessful] = useState(false)
   const [activeTab, setActiveTab] = useState(defaultTab)
 
+  // Signup role selection: null = not selected, 'client' = finding services, 'practitioner' = offering services
+  const [signupRole, setSignupRole] = useState<'client' | 'practitioner' | null>(null)
+
+  // Password validation
+  const validatePassword = (pwd: string) => {
+    const minLength = pwd.length >= 8
+    const hasUppercase = /[A-Z]/.test(pwd)
+    const hasLowercase = /[a-z]/.test(pwd)
+    const hasNumber = /[0-9]/.test(pwd)
+    return { minLength, hasUppercase, hasLowercase, hasNumber, isValid: minLength && hasUppercase && hasLowercase && hasNumber }
+  }
+
+  const passwordValidation = validatePassword(password)
+
   // Sync activeTab when defaultTab prop changes
   useEffect(() => {
     setActiveTab(defaultTab)
   }, [defaultTab])
+
+  // Reset signupRole when switching tabs or closing modal
+  useEffect(() => {
+    if (activeTab === 'login') {
+      setSignupRole(null)
+    }
+  }, [activeTab])
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setSignupRole(null)
+      setError(null)
+    }
+  }, [open])
 
   // Handle redirection after successful login
   useEffect(() => {
@@ -131,6 +160,12 @@ export default function AuthModal({
     setError(null)
     setIsLoading(true)
 
+    if (!passwordValidation.isValid) {
+      setError("Password must be at least 8 characters with uppercase, lowercase, and a number")
+      setIsLoading(false)
+      return
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match")
       setIsLoading(false)
@@ -160,8 +195,12 @@ export default function AuthModal({
         await login(email, password)
         setLoginSuccessful(true)
         onClose()
-        
-        if (redirectUrl) {
+
+        // Redirect based on role selection
+        if (signupRole === 'practitioner') {
+          // Send practitioners to onboarding flow
+          window.location.href = '/become-practitioner/onboarding'
+        } else if (redirectUrl) {
           window.location.href = redirectUrl
         }
       }
@@ -423,7 +462,79 @@ export default function AuthModal({
 
                 {/* Signup Tab */}
                 <TabsContent value="signup">
+                  {/* Role Selection Step */}
+                  {signupRole === null ? (
+                    <div className="space-y-6">
+                      <div className="text-center mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900">What brings you to Estuary?</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Choose how you'd like to use the platform</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Client Option */}
+                        <button
+                          type="button"
+                          onClick={() => setSignupRole('client')}
+                          className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-sage-500 hover:bg-sage-50 transition-all text-left group"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-sage-100 flex items-center justify-center group-hover:bg-sage-200 transition-colors">
+                              <Heart className="h-6 w-6 text-sage-600" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900">I'm looking for wellness services</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Find and book sessions with top practitioners, join workshops, and explore courses
+                              </p>
+                            </div>
+                            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-sage-600 mt-1" />
+                          </div>
+                        </button>
+
+                        {/* Practitioner Option */}
+                        <button
+                          type="button"
+                          onClick={() => setSignupRole('practitioner')}
+                          className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-terracotta-500 hover:bg-terracotta-50 transition-all text-left group"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-terracotta-100 flex items-center justify-center group-hover:bg-terracotta-200 transition-colors">
+                              <Sparkles className="h-6 w-6 text-terracotta-600" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900">I'm a wellness practitioner</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Offer your services, manage bookings, and grow your wellness business
+                              </p>
+                            </div>
+                            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-terracotta-600 mt-1" />
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                  /* Signup Form */
                   <form onSubmit={handleSignup} className="space-y-4">
+                    {/* Role indicator with back button */}
+                    <div className="flex items-center gap-2 mb-4 pb-4 border-b">
+                      <button
+                        type="button"
+                        onClick={() => setSignupRole(null)}
+                        className="text-sm text-muted-foreground hover:text-gray-900 flex items-center gap-1"
+                      >
+                        <ArrowRight className="h-4 w-4 rotate-180" />
+                        Back
+                      </button>
+                      <span className="text-sm text-muted-foreground">|</span>
+                      <span className="text-sm font-medium">
+                        {signupRole === 'practitioner' ? (
+                          <span className="text-terracotta-600">Signing up as a Practitioner</span>
+                        ) : (
+                          <span className="text-sage-600">Signing up to find services</span>
+                        )}
+                      </span>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
@@ -486,6 +597,26 @@ export default function AuthModal({
                           )}
                         </Button>
                       </div>
+                      {/* Password requirements */}
+                      {password && !passwordValidation.isValid && (
+                        <div className="text-xs space-y-1 mt-2 p-2 bg-muted/50 rounded">
+                          <p className="text-muted-foreground font-medium">Password must have:</p>
+                          <ul className="space-y-0.5 text-muted-foreground">
+                            <li className={passwordValidation.minLength ? "text-green-600" : ""}>
+                              {passwordValidation.minLength ? "✓" : "○"} At least 8 characters
+                            </li>
+                            <li className={passwordValidation.hasUppercase ? "text-green-600" : ""}>
+                              {passwordValidation.hasUppercase ? "✓" : "○"} One uppercase letter
+                            </li>
+                            <li className={passwordValidation.hasLowercase ? "text-green-600" : ""}>
+                              {passwordValidation.hasLowercase ? "✓" : "○"} One lowercase letter
+                            </li>
+                            <li className={passwordValidation.hasNumber ? "text-green-600" : ""}>
+                              {passwordValidation.hasNumber ? "✓" : "○"} One number
+                            </li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -554,6 +685,7 @@ export default function AuthModal({
                       )}
                     </Button>
                   </form>
+                  )}
                 </TabsContent>
 
                 {/* Social Auth */}

@@ -164,16 +164,22 @@ class PractitionerNotificationService(BaseNotificationService):
         service = booking.service
         
         # Calculate earnings - convert cents to dollars
-        gross_amount_cents = booking.final_amount_cents or 0
+        gross_amount_cents = booking.credits_allocated or 0
         gross_amount = Decimal(str(gross_amount_cents / 100.0))
         # TODO: Get commission rate from subscription tier
         commission_rate = Decimal('15.0')  # Default 15%
         commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
-        # Format booking time with timezone conversion
+        # Format booking time with timezone conversion using helper method
+        booking_start = booking.get_start_time()
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+        dt_formatted = self._format_datetime_with_timezone(booking_start, booking_tz) if booking_start else {
+            'date': 'TBD',
+            'time': 'TBD',
+            'time_with_tz': 'TBD',
+            'tz_abbr': ''
+        }
 
         # Check if booking has a video room (direct or via service_session)
         video_room_url = None
@@ -321,10 +327,15 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_amount = gross_amount * commission_rate / 100
         lost_earnings = gross_amount - commission_amount
 
-        # Format booking time with timezone conversion
+        # Format booking time with timezone conversion using helper method
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        booking_time = booking.start_datetime if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time
-        dt_formatted = self._format_datetime_with_timezone(booking_time, booking_tz)
+        booking_time = booking.get_start_time()
+        dt_formatted = self._format_datetime_with_timezone(booking_time, booking_tz) if booking_time else {
+            'date': 'N/A',
+            'time': 'N/A',
+            'time_with_tz': 'N/A',
+            'tz_abbr': ''
+        }
 
         data = {
             'first_name': user.first_name or 'there',
@@ -364,7 +375,99 @@ class PractitionerNotificationService(BaseNotificationService):
             notification=notification,
             tags=[{'name': 'category', 'value': 'booking_cancelled'}]
         )
-    
+
+    def send_booking_rescheduled(self, booking, rescheduled_by=None):
+        """
+        Send booking rescheduled notification to practitioner.
+
+        Args:
+            booking: The rescheduled booking
+            rescheduled_by: User who initiated the reschedule
+        """
+        practitioner = booking.service.primary_practitioner
+        if not practitioner:
+            logger.warning(f"No primary practitioner for service {booking.service.id}")
+            return
+
+        user = practitioner.user
+        if not self.should_send_notification(user, 'booking', 'email'):
+            return
+
+        template = self.get_template('booking_rescheduled')
+        if not template:
+            logger.warning("No booking rescheduled template configured")
+            return
+
+        client = booking.user
+        service = booking.service
+        service_session = booking.service_session
+
+        # Get new times from service_session
+        new_start = service_session.start_time if service_session else None
+        new_end = service_session.end_time if service_session else None
+
+        # Format new booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        if new_start:
+            dt_formatted = self._format_datetime_with_timezone(new_start, booking_tz)
+            new_date_str = dt_formatted['date']
+            new_time_str = dt_formatted['time_with_tz']
+        else:
+            new_date_str = 'TBD'
+            new_time_str = 'TBD'
+
+        # Get original times if available (from service_session reschedule tracking)
+        original_date_str = 'N/A'
+        original_time_str = 'N/A'
+        if service_session and service_session.original_start_time:
+            original_dt = self._format_datetime_with_timezone(service_session.original_start_time, booking_tz)
+            original_date_str = original_dt['date']
+            original_time_str = original_dt['time_with_tz']
+
+        # Determine who rescheduled
+        rescheduled_by_name = 'Unknown'
+        if rescheduled_by:
+            if rescheduled_by.id == client.id:
+                rescheduled_by_name = client.get_full_name()
+            else:
+                rescheduled_by_name = rescheduled_by.get_full_name()
+
+        data = {
+            'first_name': user.first_name or 'there',
+            'booking_id': str(booking.id),
+            'client_name': client.get_full_name(),
+            'service_name': service.name,
+            'new_date': new_date_str,
+            'new_time': new_time_str,
+            'original_date': original_date_str,
+            'original_time': original_time_str,
+            'rescheduled_by': rescheduled_by_name,
+            'is_practitioner': True,
+            'other_party_name': client.get_full_name(),
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar"
+        }
+
+        notification = self.create_notification_record(
+            user=user,
+            title=f"Booking Rescheduled: {service.name}",
+            message=f"{client.get_full_name()} has rescheduled their booking to {data['new_date']} at {data['new_time']}.",
+            notification_type='booking',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+
+        subject = template['subject'].format(service_name=service.name)
+        return self.send_email_notification(
+            user=user,
+            template_path=template['path'],
+            subject=subject,
+            data=data,
+            notification=notification,
+            tags=[{'name': 'category', 'value': 'booking_rescheduled'}]
+        )
+
     def send_earnings_summary(self, practitioner, period='weekly'):
         """
         Send earnings summary to practitioner.
@@ -443,10 +546,16 @@ class PractitionerNotificationService(BaseNotificationService):
         
         client = booking.user
         service = booking.service
-        
+
+        # Get start time using helper method
+        booking_start = booking.get_start_time()
+        if not booking_start:
+            logger.warning(f"Booking {booking.id} has no start time, cannot send reminder")
+            return
+
         # Calculate time until booking
-        time_until = booking.start_time - timezone.now()
-        
+        time_until = booking_start - timezone.now()
+
         # Check if booking has a video room (direct or via service_session)
         video_room_url = None
         if booking.room:
@@ -457,8 +566,8 @@ class PractitionerNotificationService(BaseNotificationService):
             'client_name': client.get_full_name(),
             'client_email': client.email,
             'service_name': service.name,
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'booking_date': booking_start.strftime('%A, %B %d, %Y'),
+            'booking_time': booking_start.strftime('%I:%M %p'),
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
             'hours_until': hours_before,
@@ -498,9 +607,15 @@ class PractitionerNotificationService(BaseNotificationService):
         Schedule reminder notifications for practitioner.
         """
         practitioner = booking.service.primary_practitioner
-        
+
+        # Get start time using helper method
+        booking_start = booking.get_start_time()
+        if not booking_start:
+            logger.warning(f"Booking {booking.id} has no start time, cannot schedule reminders")
+            return
+
         # 24-hour reminder
-        reminder_24h = booking.start_time - timedelta(hours=24)
+        reminder_24h = booking_start - timedelta(hours=24)
         if reminder_24h > timezone.now():
             template_24h = self.get_template('reminder_24h')
             if template_24h:
@@ -519,7 +634,7 @@ class PractitionerNotificationService(BaseNotificationService):
                 )
 
         # 30-minute reminder
-        reminder_30m = booking.start_time - timedelta(minutes=30)
+        reminder_30m = booking_start - timedelta(minutes=30)
         if reminder_30m > timezone.now():
             template_30m = self.get_template('reminder_30m')
             if template_30m:
@@ -607,9 +722,9 @@ class PractitionerNotificationService(BaseNotificationService):
         # Calculate earnings
         completed_bookings = period_bookings.filter(status='completed')
         earnings_data = completed_bookings.aggregate(
-            total_gross_cents=Sum('final_amount_cents'),
+            total_gross_cents=Sum('credits_allocated'),
             count=Count('id'),
-            avg_amount_cents=Avg('final_amount_cents')
+            avg_amount_cents=Avg('credits_allocated')
         )
         
         # Convert cents to dollars
@@ -633,17 +748,17 @@ class PractitionerNotificationService(BaseNotificationService):
             'service__name'
         ).annotate(
             count=Count('id'),
-            revenue_cents=Sum('final_amount_cents')
+            revenue_cents=Sum('credits_allocated')
         ).order_by('-count')[:3]
         
         # Calculate comparison with previous period
         previous_start = start_date - (end_date - start_date)
         previous_bookings = Booking.objects.filter(
             service__primary_practitioner=practitioner,
-            start_time__gte=previous_start,
-            start_time__lt=start_date,
+            service_session__start_time__gte=previous_start,
+            service_session__start_time__lt=start_date,
             status='completed'
-        ).aggregate(total_cents=Sum('final_amount_cents'))
+        ).aggregate(total_cents=Sum('credits_allocated'))
         
         previous_total_cents = previous_bookings['total_cents'] or 0
         previous_total = Decimal(str(previous_total_cents / 100.0)) if previous_total_cents else Decimal('0')

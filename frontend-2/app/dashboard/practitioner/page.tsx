@@ -35,10 +35,10 @@ export default function PractitionerDashboardPage() {
   // App shortcuts for quick navigation
   const appShortcuts = [
     {
-      title: "Calendar",
+      title: "Schedule",
       description: "View your schedule",
       icon: Calendar,
-      href: "/dashboard/practitioner/calendar",
+      href: "/dashboard/practitioner/schedule",
       color: "bg-sage-100 hover:bg-sage-200 text-sage-700"
     },
     {

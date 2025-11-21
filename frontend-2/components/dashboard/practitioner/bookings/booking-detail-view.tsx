@@ -50,12 +50,12 @@ import {
 
 // Check if a session can be joined
 const isSessionJoinable = (booking: any) => {
-  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
   
   const now = new Date()
-  const startTime = typeof booking.start_time === 'string' ? parseISO(booking.start_time) : new Date(booking.start_time)
-  const endTime = booking.end_time 
-    ? (typeof booking.end_time === 'string' ? parseISO(booking.end_time) : new Date(booking.end_time))
+  const startTime = typeof booking.service_session?.start_time === 'string' ? parseISO(booking.service_session?.start_time) : new Date(booking.service_session?.start_time)
+  const endTime = booking.service_session?.end_time 
+    ? (typeof booking.service_session?.end_time === 'string' ? parseISO(booking.service_session?.end_time) : new Date(booking.service_session?.end_time))
     : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
   
   // Allow joining 15 minutes before start and until the session ends
@@ -236,8 +236,8 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
     })
   }
 
-  const startTime = booking.start_time ? new Date(booking.start_time) : null
-  const endTime = booking.end_time ? new Date(booking.end_time) : null
+  const startTime = booking.service_session?.start_time ? new Date(booking.service_session?.start_time) : null
+  const endTime = booking.service_session?.end_time ? new Date(booking.service_session?.end_time) : null
 
   return (
     <div className="space-y-6">
@@ -398,9 +398,9 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                     <MapPin className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">In-Person</p>
-                      {booking.location && (
+                      {service.location && (
                         <p className="text-sm text-muted-foreground">
-                          {booking.location.city}, {booking.location.state_province}
+                          {service.location.city}, {service.location.state_province}
                         </p>
                       )}
                     </div>
@@ -423,7 +423,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                       <Video className="h-4 w-4" />
                       {isSessionJoinable(booking) ? "Join Session Now" : "Join Session"}
                     </Button>
-                    {!isSessionJoinable(booking) && booking.start_time && (
+                    {!isSessionJoinable(booking) && booking.service_session?.start_time && (
                       <p className="text-xs text-muted-foreground text-center">
                         Join will be available 15 minutes before session start
                       </p>

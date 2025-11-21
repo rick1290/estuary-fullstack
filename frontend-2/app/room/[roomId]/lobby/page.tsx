@@ -9,7 +9,7 @@ import { useRoomToken } from '@/components/video/hooks';
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, AlertCircle, Users, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { EstuaryLogo } from '@/components/ui/estuary-logo';
 
 export default function RoomLobbyPage() {
@@ -90,17 +90,35 @@ export default function RoomLobbyPage() {
     );
   }
 
-  // Build session details from access data
-  const sessionDetails = accessData?.service_session ? {
-    id: accessData.service_session.id,
-    start_time: accessData.service_session.start_time,
-    end_time: accessData.service_session.end_time,
-    room: accessData.room,
-  } : accessData?.booking ? {
-    booking: accessData.booking,
-    room: accessData.room,
-  } : {
+  // Build session details from access data - pass all info to PreJoinScreen
+  const sessionDetails = {
+    // Session info
+    id: accessData?.service_session?.id,
+    title: accessData?.service_session?.title,
+    description: accessData?.service_session?.description,
+    start_time: accessData?.service_session?.start_time,
+    end_time: accessData?.service_session?.end_time,
+    session_type: accessData?.service_session?.session_type,
+    // Service info
+    service: accessData?.service ? {
+      id: accessData.service.id,
+      name: accessData.service.name,
+      description: accessData.service.description,
+      service_type: accessData.service.service_type,
+      image_url: accessData.service.image_url,
+      duration_minutes: accessData.service.duration_minutes,
+    } : undefined,
+    // Practitioner info
+    practitioner: accessData?.practitioner ? {
+      id: accessData.practitioner.id,
+      name: accessData.practitioner.name,
+      profile_photo: accessData.practitioner.profile_photo,
+      specialization: accessData.practitioner.specialization,
+    } : undefined,
+    // Room info
     room: accessData?.room,
+    // Booking info if available
+    booking: accessData?.my_booking,
   };
 
   return (
@@ -125,23 +143,6 @@ export default function RoomLobbyPage() {
         loading={tokenLoading}
         error={tokenError?.message}
       />
-      
-      {/* Session Info */}
-      {accessData?.room && (
-        <div className="fixed bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
-          <div className="flex items-center gap-3">
-            <Users className="h-5 w-5 text-sage-600" />
-            <div>
-              <p className="font-medium text-sm">
-                {accessData.room.room_type === 'individual' ? '1-on-1 Session' : 'Group Session'}
-              </p>
-              <p className="text-xs text-gray-500">
-                You will join as {accessData.role}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

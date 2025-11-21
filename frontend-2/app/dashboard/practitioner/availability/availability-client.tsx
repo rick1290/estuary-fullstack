@@ -314,11 +314,11 @@ export default function AvailabilityClient() {
       <PractitionerPageHeader
         title="Availability"
         helpLink="/help/practitioner/availability"
-        action={{
+        action={!isCreating && !editingSchedule ? {
           label: "New Schedule",
           icon: <PlusCircle className="h-4 w-4" />,
           onClick: handleCreateSchedule
-        }}
+        } : undefined}
       />
 
       <div className="px-6 py-4">
