@@ -405,7 +405,7 @@ function ScheduleTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           {isServiceSession ? (
-                            <Link href={`/dashboard/practitioner/calendar/${scheduleEvent.id}`}>
+                            <Link href={`/dashboard/practitioner/sessions/${scheduleEvent.id}`}>
                               View Details
                             </Link>
                           ) : (

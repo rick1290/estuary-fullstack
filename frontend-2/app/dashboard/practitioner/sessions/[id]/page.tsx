@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea"
 import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
 import ResourceCard from "@/components/dashboard/practitioner/calendar/resource-card"
 import ResourceViewerDialog from "@/components/dashboard/practitioner/calendar/resource-viewer-dialog"
-import { calendarRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import { serviceSessionsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 
 // Attendance status badge variant mapping (for when we implement attendance tracking)
@@ -441,14 +441,14 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 }
 
-export default function BookingDetailPage({ params }: { params: { id: string } }) {
+export default function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const { id } = params
+  const { id } = use(params)
 
   // Fetch service session data from API
   const { data: session, isLoading, error } = useQuery(
-    calendarRetrieveOptions({
-      path: { id: id }
+    serviceSessionsRetrieveOptions({
+      path: { id: parseInt(id) }
     })
   )
 
@@ -486,8 +486,8 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">The session you're looking for doesn't exist or has been removed.</p>
-            <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/calendar")}>
-              Return to Calendar
+            <Button className="mt-4" onClick={() => router.push("/dashboard/practitioner/schedule")}>
+              Return to Schedule
             </Button>
           </CardContent>
         </Card>
@@ -528,9 +528,13 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
     setNewSharedNote("")
   }
 
-  // Format session title
-  const sessionTitle = session.service_session_title ||
-    `${session.service?.name}${session.sequence_number ? ` - Session ${session.sequence_number}` : ''}`
+  // Format session title - use title from new sessions API, fallback to service name
+  const sessionTitle = session.title ||
+    `${session.service_name || session.service?.name}${session.sequence_number ? ` - Session ${session.sequence_number}` : ''}`
+
+  // Map bookings to attendees format for compatibility
+  const attendees = session.bookings || []
+  const attendeeCount = session.booking_count || attendees.length || 0
 
   // Map status to display variant
   const getStatusVariant = (status: string) => {
@@ -611,7 +615,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   <div>
                     <p className="text-sm font-medium">Participants</p>
                     <p className="text-sm text-muted-foreground">
-                      {session.attendee_count} / {session.max_participants || '∞'}
+                      {attendeeCount} / {session.max_participants || '∞'}
                     </p>
                   </div>
                 </div>
@@ -668,43 +672,40 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Attendees ({session.attendee_count})</h2>
+                <h2 className="text-lg font-semibold">Attendees ({attendeeCount})</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {session.attendees && session.attendees.length > 0 ? (
-                  session.attendees.map((attendee: any) => (
-                    <Card key={attendee.id}>
+                {attendees && attendees.length > 0 ? (
+                  attendees.map((booking: any) => (
+                    <Card key={booking.id}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                              <AvatarImage src={attendee.avatar_url || ""} alt={attendee.full_name} />
-                              <AvatarFallback>{attendee.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                              <AvatarImage src={booking.user_avatar_url || ""} alt={booking.user_name} />
+                              <AvatarFallback>{booking.user_name?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{attendee.full_name}</p>
-                              <p className="text-sm text-muted-foreground">{attendee.email}</p>
-                              {attendee.phone_number && (
-                                <p className="text-sm text-muted-foreground">{attendee.phone_number}</p>
-                              )}
+                              <p className="font-medium">{booking.user_name}</p>
+                              <p className="text-sm text-muted-foreground">{booking.user_email}</p>
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             <Badge
                               variant={
                                 attendanceStatusVariants[
-                                  attendee.booking_status as keyof typeof attendanceStatusVariants
+                                  booking.status as keyof typeof attendanceStatusVariants
                                 ] as "default" | "secondary" | "destructive" | "outline" | "success"
                               }
                               className="capitalize"
                             >
-                              {attendee.booking_status}
+                              {booking.status_display || booking.status}
                             </Badge>
 
                             <div className="flex gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/practitioner/bookings/${attendee.booking_id}`}>
+                                <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
                                   View Booking
                                 </Link>
                               </Button>

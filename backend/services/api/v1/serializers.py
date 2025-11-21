@@ -464,7 +464,7 @@ class ServiceSessionDetailSerializer(serializers.ModelSerializer):
             'payment_status': booking.payment_status,
             'credits_allocated': booking.credits_allocated,
             'can_reschedule': booking.can_be_rescheduled,
-            'can_cancel': booking.can_be_cancelled,
+            'can_cancel': booking.can_be_canceled,
             'created_at': booking.created_at,
         }
 
