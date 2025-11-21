@@ -19,12 +19,14 @@ export default function UserUpcomingBookings() {
       query: {
         status: "confirmed",
         ordering: "service_session__start_time",
-        limit: 4
+        page_size: 4
       }
     }),
   })
 
   const bookings = data?.results || []
+  const totalCount = data?.count || 0
+  const hasMore = totalCount > 4
 
   const formatDate = (dateString: string) => {
     try {
@@ -244,11 +246,15 @@ export default function UserUpcomingBookings() {
             )
           })}
 
-          <div className="text-center mt-6">
-            <Button variant="outline" asChild className="border-sage-300 text-sage-700 hover:bg-sage-50">
-              <Link href="/dashboard/user/bookings">View All Bookings</Link>
-            </Button>
-          </div>
+          {hasMore && (
+            <div className="text-center mt-4">
+              <Button variant="link" asChild className="text-sage-700">
+                <Link href="/dashboard/user/bookings">
+                  Show More ({totalCount - 4} more bookings)
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

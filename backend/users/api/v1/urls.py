@@ -21,6 +21,7 @@ from .views import (
     set_modality_preferences,
     add_modality_preference,
     remove_modality_preference,
+    user_recommendations,
 )
 
 app_name = 'users_api_v1'
@@ -53,4 +54,7 @@ urlpatterns = [
     path('modality-preferences/set/', set_modality_preferences, name='set_modality_preferences'),
     path('modality-preferences/add/', add_modality_preference, name='add_modality_preference'),
     path('modality-preferences/<int:modality_id>/remove/', remove_modality_preference, name='remove_modality_preference'),
+
+    # Recommendations endpoint
+    path('recommendations/', user_recommendations, name='user_recommendations'),
 ]

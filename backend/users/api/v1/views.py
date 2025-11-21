@@ -288,7 +288,7 @@ def user_stats(request):
     upcoming_bookings = Booking.objects.filter(
         user=user,
         status='confirmed',
-        start_time__gte=timezone.now()
+        service_session__start_time__gte=timezone.now()
     ).count()
     
     # Get favorites count
@@ -790,3 +790,204 @@ def remove_modality_preference(request, modality_id):
             {'error': 'Preference not found'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+# Recommendations endpoint
+@extend_schema(
+    operation_id='user_recommendations',
+    summary='Get personalized recommendations',
+    description='Get recommended services and practitioners based on user modality preferences. Falls back to featured/popular items if no preferences set.',
+    responses={
+        200: OpenApiResponse(description='Personalized recommendations'),
+        401: OpenApiResponse(description='Not authenticated'),
+    },
+    tags=['User']
+)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_recommendations(request):
+    """Get personalized recommendations for the authenticated user"""
+    from users.models import UserModalityPreference
+    from services.models import Service
+    from practitioners.models import Practitioner
+    from django.db.models import Avg, Count, Case, When, IntegerField
+
+    # Get limit from query params (default 6)
+    services_limit = int(request.query_params.get('services_limit', 6))
+    practitioners_limit = int(request.query_params.get('practitioners_limit', 6))
+
+    # Get user's modality preferences ordered by priority
+    user_modalities = UserModalityPreference.objects.filter(
+        user=request.user
+    ).select_related('modality').order_by('priority')
+
+    modality_ids = [pref.modality_id for pref in user_modalities]
+
+    recommended_services = []
+    recommended_practitioners = []
+    recommendation_reason = 'personalized'
+
+    if modality_ids:
+        # Build priority ordering for modalities
+        # Services with higher priority modalities appear first
+        priority_cases = [
+            When(modalities__id=mod_id, then=idx)
+            for idx, mod_id in enumerate(modality_ids)
+        ]
+
+        # Get services matching user's modalities
+        services_qs = Service.objects.filter(
+            is_active=True,
+            status='active',
+            modalities__id__in=modality_ids
+        ).annotate(
+            modality_priority=Case(
+                *priority_cases,
+                default=999,
+                output_field=IntegerField()
+            ),
+            reviews_count=Count('reviews'),
+            avg_rating=Avg('reviews__rating')
+        ).select_related(
+            'primary_practitioner__user',
+            'category'
+        ).prefetch_related('modalities').distinct().order_by(
+            'modality_priority',
+            '-is_featured',
+            '-avg_rating'
+        )[:services_limit]
+
+        # Get practitioners matching user's modalities
+        practitioners_qs = Practitioner.objects.filter(
+            practitioner_status='active',
+            is_verified=True,
+            modalities__id__in=modality_ids
+        ).annotate(
+            modality_priority=Case(
+                *priority_cases,
+                default=999,
+                output_field=IntegerField()
+            ),
+            reviews_count=Count('reviews'),
+            avg_rating=Avg('reviews__rating'),
+            services_count=Count('primary_services', filter=Q(primary_services__is_active=True))
+        ).select_related('user').prefetch_related('modalities').distinct().order_by(
+            'modality_priority',
+            '-featured',
+            '-avg_rating'
+        )[:practitioners_limit]
+
+        recommended_services = list(services_qs)
+        recommended_practitioners = list(practitioners_qs)
+
+    # Fallback if no modality preferences or not enough results
+    if len(recommended_services) < services_limit:
+        recommendation_reason = 'featured' if not modality_ids else 'personalized'
+
+        # Get featured services first, then popular ones
+        exclude_ids = [s.id for s in recommended_services]
+        fallback_services = Service.objects.filter(
+            is_active=True,
+            status='active'
+        ).exclude(
+            id__in=exclude_ids
+        ).annotate(
+            reviews_count=Count('reviews'),
+            avg_rating=Avg('reviews__rating'),
+            bookings_count=Count('bookings')
+        ).select_related(
+            'primary_practitioner__user',
+            'category'
+        ).prefetch_related('modalities').order_by(
+            '-is_featured',
+            '-avg_rating',
+            '-bookings_count'
+        )[:services_limit - len(recommended_services)]
+
+        recommended_services.extend(list(fallback_services))
+
+    if len(recommended_practitioners) < practitioners_limit:
+        # Get featured practitioners first, then popular ones
+        exclude_ids = [p.id for p in recommended_practitioners]
+        fallback_practitioners = Practitioner.objects.filter(
+            practitioner_status='active',
+            is_verified=True
+        ).exclude(
+            id__in=exclude_ids
+        ).annotate(
+            reviews_count=Count('reviews'),
+            avg_rating=Avg('reviews__rating'),
+            services_count=Count('primary_services', filter=Q(primary_services__is_active=True))
+        ).select_related('user').prefetch_related('modalities').order_by(
+            '-featured',
+            '-avg_rating',
+            '-reviews_count'
+        )[:practitioners_limit - len(recommended_practitioners)]
+
+        recommended_practitioners.extend(list(fallback_practitioners))
+
+    # Serialize the results
+    services_data = []
+    for service in recommended_services:
+        practitioner = service.primary_practitioner
+        services_data.append({
+            'id': service.id,
+            'slug': service.slug,
+            'name': service.name,
+            'short_description': service.short_description,
+            'price_cents': service.price_cents,
+            'duration_minutes': service.duration_minutes,
+            'image_url': service.image_url,
+            'average_rating': getattr(service, 'avg_rating', None),
+            'total_reviews': getattr(service, 'reviews_count', 0),
+            'is_featured': service.is_featured,
+            'service_type_code': service.service_type.code if service.service_type else None,
+            'category': {
+                'id': service.category.id,
+                'name': service.category.name,
+                'slug': service.category.slug
+            } if service.category else None,
+            'modalities': [
+                {'id': m.id, 'name': m.name, 'slug': m.slug}
+                for m in service.modalities.all()
+            ],
+            'practitioner': {
+                'id': practitioner.id,
+                'display_name': practitioner.display_name or f"{practitioner.user.first_name} {practitioner.user.last_name}".strip(),
+                'slug': practitioner.slug,
+                'profile_image_url': practitioner.profile_image_url,
+            } if practitioner else None
+        })
+
+    practitioners_data = []
+    for practitioner in recommended_practitioners:
+        practitioners_data.append({
+            'id': practitioner.id,
+            'slug': practitioner.slug,
+            'display_name': practitioner.display_name or f"{practitioner.user.first_name} {practitioner.user.last_name}".strip(),
+            'professional_title': practitioner.professional_title,
+            'bio': practitioner.bio,
+            'profile_image_url': practitioner.profile_image_url,
+            'is_verified': practitioner.is_verified,
+            'is_featured': practitioner.featured,
+            'average_rating': getattr(practitioner, 'avg_rating', None),
+            'total_reviews': getattr(practitioner, 'reviews_count', 0),
+            'services_count': getattr(practitioner, 'services_count', 0),
+            'modalities': [
+                {'id': m.id, 'name': m.name, 'slug': m.slug}
+                for m in practitioner.modalities.all()
+            ],
+        })
+
+    # Get the modalities the user selected for context
+    user_modalities_data = [
+        {'id': pref.modality.id, 'name': pref.modality.name, 'slug': pref.modality.slug}
+        for pref in user_modalities
+    ]
+
+    return Response({
+        'recommendation_reason': recommendation_reason,
+        'user_modalities': user_modalities_data,
+        'services': services_data,
+        'practitioners': practitioners_data
+    })

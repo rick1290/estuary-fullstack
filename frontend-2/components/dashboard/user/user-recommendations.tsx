@@ -2,204 +2,216 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Heart, Clock, MapPin, Star } from "lucide-react"
-
-// Mock data for recommended services
-const recommendedServices = [
-  {
-    id: 1,
-    name: "Advanced Meditation Techniques",
-    practitioner: "Dr. Sarah Johnson",
-    duration: "75 min",
-    price: "$85",
-    type: "Virtual",
-    image: "/session-image-1.jpg",
-    isFavorite: false,
-  },
-  {
-    id: 2,
-    name: "Holistic Wellness Workshop",
-    practitioner: "Michael Chen",
-    duration: "120 min",
-    price: "$150",
-    type: "In-person",
-    image: "/workshop-image-2.jpg",
-    isFavorite: false,
-  },
-  {
-    id: 3,
-    name: "Mindful Movement Course",
-    practitioner: "Emma Wilson",
-    duration: "60 min",
-    price: "$70",
-    type: "Virtual",
-    image: "/course-image-2.jpg",
-    isFavorite: true,
-  },
-  {
-    id: 4,
-    name: "Nutritional Wellness Package",
-    practitioner: "Dr. Robert Smith",
-    duration: "45 min",
-    price: "$95",
-    type: "Virtual",
-    image: "/package-image-1.jpg",
-    isFavorite: false,
-  },
-]
-
-// Mock data for recommended practitioners
-const recommendedPractitioners = [
-  {
-    id: 1,
-    name: "Dr. Lisa Martinez",
-    title: "Holistic Health Coach",
-    rating: 4.7,
-    reviewCount: 89,
-    specialties: ["Nutrition", "Holistic Health"],
-    image: "/practitioner-4.jpg",
-    isFavorite: false,
-  },
-  {
-    id: 2,
-    name: "James Wilson",
-    title: "Meditation Expert",
-    rating: 4.9,
-    reviewCount: 112,
-    specialties: ["Meditation", "Mindfulness"],
-    image: "/practitioner-2.jpg",
-    isFavorite: true,
-  },
-]
+import { Clock, Star, ImageIcon, Sparkles } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { Skeleton } from "@/components/ui/skeleton"
+import { userRecommendationsOptions } from "@/src/client/@tanstack/react-query.gen"
 
 export default function UserRecommendations() {
   const [activeTab, setActiveTab] = useState("services")
-  const [services, setServices] = useState(recommendedServices)
-  const [practitioners, setPractitioners] = useState(recommendedPractitioners)
 
-  const toggleFavorite = (type: "service" | "practitioner", id: number) => {
-    if (type === "service") {
-      setServices((prev) =>
-        prev.map((service) => (service.id === id ? { ...service, isFavorite: !service.isFavorite } : service)),
-      )
-    } else {
-      setPractitioners((prev) =>
-        prev.map((practitioner) =>
-          practitioner.id === id ? { ...practitioner, isFavorite: !practitioner.isFavorite } : practitioner,
-        ),
-      )
-    }
+  const { data, isLoading, error } = useQuery({
+    ...userRecommendationsOptions({
+      query: {
+        services_limit: 4,
+        practitioners_limit: 4
+      }
+    }),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Handle both wrapped and unwrapped response formats
+  const responseData = data?.data || data
+  const services = responseData?.services || []
+  const practitioners = responseData?.practitioners || []
+  const recommendationReason = responseData?.recommendation_reason
+  const userModalities = responseData?.user_modalities || []
+
+  if (isLoading) {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Recommended For You</h2>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-48" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || (services.length === 0 && practitioners.length === 0)) {
+    return null // Don't show section if no recommendations
   }
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Recommended For You</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xl font-semibold">Recommended For You</h2>
+        {recommendationReason === 'personalized' && userModalities.length > 0 && (
+          <Badge variant="secondary" className="text-xs">
+            <Sparkles className="h-3 w-3 mr-1" />
+            Based on your interests
+          </Badge>
+        )}
+      </div>
+
+      {userModalities.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {userModalities.slice(0, 3).map((modality: any) => (
+            <Badge key={modality.id} variant="outline" className="text-xs">
+              {modality.name}
+            </Badge>
+          ))}
+          {userModalities.length > 3 && (
+            <Badge variant="outline" className="text-xs">
+              +{userModalities.length - 3} more
+            </Badge>
+          )}
+        </div>
+      )}
+
       <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="services">Services</TabsTrigger>
-          <TabsTrigger value="practitioners">Practitioners</TabsTrigger>
+        <TabsList className="mb-4">
+          <TabsTrigger value="services">Services ({services.length})</TabsTrigger>
+          <TabsTrigger value="practitioners">Practitioners ({practitioners.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="services">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {services.map((service) => (
-              <Card key={service.id} className="overflow-hidden">
-                <div className="relative h-40">
-                  <Image src={service.image || "/placeholder.svg"} alt={service.name} fill className="object-cover" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`absolute top-2 right-2 rounded-full bg-white/80 ${
-                      service.isFavorite ? "text-rose-500" : "text-gray-500"
-                    } hover:bg-white`}
-                    onClick={() => toggleFavorite("service", service.id)}
-                  >
-                    <Heart className={`h-5 w-5 ${service.isFavorite ? "fill-current" : ""}`} />
-                  </Button>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold line-clamp-1">{service.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">by {service.practitioner}</p>
-
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{service.duration}</span>
+          {services.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4">No recommended services yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {services.map((service: any) => (
+                <Card key={service.id} className="overflow-hidden">
+                  <div className="relative h-32">
+                    {service.image_url ? (
+                      <Image
+                        src={service.image_url}
+                        alt={service.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                      </div>
+                    )}
+                    {service.is_featured && (
+                      <Badge className="absolute top-2 left-2 text-xs">Featured</Badge>
+                    )}
                   </div>
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold text-sm line-clamp-1">{service.name}</h3>
+                    {service.practitioner && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        by {service.practitioner.display_name}
+                      </p>
+                    )}
 
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" />
-                    <span>{service.type}</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-0 flex items-center justify-between">
-                  <p className="font-semibold text-primary">{service.price}</p>
-                  <Button size="sm">Book Now</Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {service.duration_minutes && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{service.duration_minutes} min</span>
+                        </div>
+                      )}
+                      {service.average_rating && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span>{service.average_rating.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-3 pt-0 flex items-center justify-between">
+                    <p className="font-semibold text-primary text-sm">
+                      ${(service.price_cents / 100).toFixed(0)}
+                    </p>
+                    <Button size="sm" asChild>
+                      <Link href={`/services/${service.slug || service.id}`}>
+                        View
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="practitioners">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {practitioners.map((practitioner) => (
-              <Card key={practitioner.id} className="overflow-hidden">
-                <div className="relative h-48">
-                  <Image
-                    src={practitioner.image || "/placeholder.svg"}
-                    alt={practitioner.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`absolute top-2 right-2 rounded-full bg-white/80 ${
-                      practitioner.isFavorite ? "text-rose-500" : "text-gray-500"
-                    } hover:bg-white`}
-                    onClick={() => toggleFavorite("practitioner", practitioner.id)}
-                  >
-                    <Heart className={`h-5 w-5 ${practitioner.isFavorite ? "fill-current" : ""}`} />
-                  </Button>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold">{practitioner.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">{practitioner.title}</p>
+          {practitioners.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4">No recommended practitioners yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {practitioners.map((practitioner: any) => (
+                <Card key={practitioner.id} className="overflow-hidden">
+                  <div className="relative h-36">
+                    {practitioner.profile_image_url ? (
+                      <Image
+                        src={practitioner.profile_image_url}
+                        alt={practitioner.display_name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                      </div>
+                    )}
+                    {practitioner.is_featured && (
+                      <Badge className="absolute top-2 left-2 text-xs">Featured</Badge>
+                    )}
+                  </div>
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold text-sm">{practitioner.display_name}</h3>
+                    {practitioner.professional_title && (
+                      <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                        {practitioner.professional_title}
+                      </p>
+                    )}
 
-                  <div className="flex items-center gap-1 mb-3">
-                    <div className="flex text-amber-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(practitioner.rating) ? "fill-current" : "text-gray-300"
-                          }`}
-                        />
-                      ))}
+                    <div className="flex items-center gap-2 mb-2">
+                      {practitioner.average_rating && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span className="text-xs">{practitioner.average_rating.toFixed(1)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({practitioner.total_reviews})
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-muted-foreground ml-1">({practitioner.reviewCount})</span>
-                  </div>
 
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {practitioner.specialties.map((specialty) => (
-                      <Badge key={specialty} variant="outline" className="text-xs">
-                        {specialty}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-0">
-                  <Button className="w-full" variant="outline">
-                    View Profile
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                    {practitioner.modalities && practitioner.modalities.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {practitioner.modalities.slice(0, 2).map((modality: any) => (
+                          <Badge key={modality.id} variant="outline" className="text-xs">
+                            {modality.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter className="p-3 pt-0">
+                    <Button className="w-full" variant="outline" size="sm" asChild>
+                      <Link href={`/practitioners/${practitioner.slug || practitioner.id}`}>
+                        View Profile
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
