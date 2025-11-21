@@ -90,12 +90,16 @@ def create_room_for_session(sender, instance: ServiceSession, created: bool, **k
             return
         
         try:
-            # Determine room type based on service
-            room_type = 'group'
+            # Determine room type: service type takes precedence over session_type
+            # This ensures courses/workshops always get the right room type
+            room_type = 'group'  # Default
             if instance.service.is_course:
-                room_type = 'webinar'  # Courses typically use webinar format
+                room_type = 'group'  # Courses are interactive group classes
             elif instance.service.service_type and instance.service.service_type.code == 'workshop':
-                room_type = 'group'
+                room_type = 'group'  # Workshops are collaborative
+            elif instance.service.service_type and instance.service.service_type.code == 'session':
+                # Only standalone sessions (not course/workshop) get individual rooms
+                room_type = 'individual'
             
             # Get or create appropriate template
             template = _get_room_template_for_service(instance.service, room_type)

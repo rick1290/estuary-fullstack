@@ -49,14 +49,16 @@ class RoomService:
         """
         service = service_session.service
 
-        # Determine room type based on session_type first, then service type
+        # Determine room type: service type takes precedence over session_type
+        # This ensures courses/workshops always get the right room type
         room_type = 'group'  # Default
-        if service_session.session_type == 'individual':
-            room_type = 'individual'
-        elif service.is_course:
-            room_type = 'webinar'
+        if service.is_course:
+            room_type = 'group'  # Courses are interactive group classes
         elif service.service_type and service.service_type.code == 'workshop':
-            room_type = 'group'
+            room_type = 'group'  # Workshops are collaborative
+        elif service.service_type and service.service_type.code == 'session':
+            # Only standalone sessions (not course/workshop) get individual rooms
+            room_type = 'individual'
         
         # Get or create appropriate template
         template = self._get_room_template(room_type)

@@ -899,6 +899,11 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), IsServiceOwner()]
         return super().get_permissions()
 
+    def perform_create(self, serializer):
+        """Create session and ensure room is created for virtual services"""
+        session = serializer.save()
+        self._ensure_room_for_session(session)
+
     def perform_destroy(self, instance):
         """Prevent deletion of sessions with bookings"""
         # Check if there are any bookings for this session
@@ -908,6 +913,38 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
                 'detail': f'Cannot delete session with {booking_count} existing booking(s). Please cancel the bookings first.'
             })
         instance.delete()
+
+    def _ensure_room_for_session(self, session):
+        """
+        Ensure a room exists for virtual/hybrid service sessions.
+        Called after session creation or update.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Skip if session already has a room
+        if hasattr(session, 'livekit_room') and session.livekit_room:
+            logger.info(f"Session {session.id} already has room {session.livekit_room.id}")
+            return
+
+        # Check if service requires a video room
+        service = session.service
+        if not service:
+            return
+
+        location_type = getattr(service, 'location_type', None)
+        if location_type not in ['virtual', 'online', 'hybrid']:
+            logger.info(f"Session {session.id} service location_type={location_type}, skipping room creation")
+            return
+
+        # Create room via RoomService
+        try:
+            from rooms.services import RoomService
+            room_service = RoomService()
+            room = room_service.create_room_for_session(session)
+            logger.info(f"Created room {room.livekit_room_name} for session {session.id}")
+        except Exception as e:
+            logger.error(f"Failed to create room for session {session.id}: {e}")
 
     def perform_update(self, serializer):
         """Prevent editing date/time of sessions with bookings via regular update"""
@@ -1023,6 +1060,41 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
             'old_start_time': old_start_time.isoformat() if old_start_time else None,
             'new_start_time': new_start_time.isoformat(),
         })
+
+    @action(detail=True, methods=['post'])
+    def create_room(self, request, pk=None):
+        """
+        Create a room for this session if one doesn't exist.
+        Useful for backfilling sessions that were created before room auto-creation.
+        """
+        session = self.get_object()
+
+        # Check if room already exists
+        if hasattr(session, 'livekit_room') and session.livekit_room:
+            return Response({
+                'message': 'Room already exists',
+                'room_id': session.livekit_room.id,
+                'room_uuid': str(session.livekit_room.public_uuid),
+                'room_name': session.livekit_room.livekit_room_name
+            })
+
+        # Create room
+        self._ensure_room_for_session(session)
+
+        # Refresh from DB
+        session.refresh_from_db()
+
+        if hasattr(session, 'livekit_room') and session.livekit_room:
+            return Response({
+                'message': 'Room created successfully',
+                'room_id': session.livekit_room.id,
+                'room_uuid': str(session.livekit_room.public_uuid),
+                'room_name': session.livekit_room.livekit_room_name
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': 'Failed to create room. Check if service is virtual/online/hybrid.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(
