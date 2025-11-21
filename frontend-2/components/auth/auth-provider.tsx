@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import AuthModal from "./auth-modal"
 
@@ -61,18 +61,23 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     }
   }, [searchParams, router])
 
-  const openAuthModal = (options: AuthModalOptions = {}) => {
+  const openAuthModal = useCallback((options: AuthModalOptions = {}) => {
     setModalOptions(options)
     setIsOpen(true)
-  }
+  }, [])
 
-  const closeAuthModal = () => {
+  const closeAuthModal = useCallback(() => {
     setIsOpen(false)
     setModalOptions({})
-  }
+  }, [])
+
+  const contextValue = useMemo(() => ({
+    openAuthModal,
+    closeAuthModal
+  }), [openAuthModal, closeAuthModal])
 
   return (
-    <AuthModalContext.Provider value={{ openAuthModal, closeAuthModal }}>
+    <AuthModalContext.Provider value={contextValue}>
       {children}
       <AuthModal
         open={isOpen}
