@@ -603,6 +603,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
     total_bookings = serializers.ReadOnlyField()
     duration_display = serializers.CharField(read_only=True)
     primary_image = serializers.SerializerMethodField()
+    image_url = serializers.CharField(read_only=True)
     schedule = SimpleScheduleSerializer(read_only=True)
     first_session_date = serializers.DateTimeField(read_only=True)
     last_session_date = serializers.DateTimeField(read_only=True)
@@ -617,20 +618,29 @@ class ServiceListSerializer(serializers.ModelSerializer):
             'primary_practitioner', 'max_participants', 'experience_level',
             'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
-            'primary_image', 'first_session_date', 'last_session_date', 'next_session_date',
+            'primary_image', 'image_url', 'first_session_date', 'last_session_date', 'next_session_date',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'public_uuid', 'slug', 'created_at', 'updated_at']
-    
+
     def get_primary_image(self, obj):
-        """Get primary image for the service"""
+        """Get primary image for the service - checks direct image field first, then Media table"""
+        # First check if service has a direct image
+        if obj.image:
+            return {
+                'url': obj.image_url,
+                'is_primary': True,
+                'media_type': 'image',
+            }
+
+        # Fall back to Media table
         primary_media = Media.objects.filter(
             entity_type=MediaEntityType.SERVICE,
             entity_id=obj.id,
             is_primary=True,
             media_type='image'
         ).first()
-        
+
         if primary_media:
             return MediaAttachmentSerializer(primary_media).data
         return None

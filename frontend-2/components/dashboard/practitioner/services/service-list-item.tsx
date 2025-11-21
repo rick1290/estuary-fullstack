@@ -78,7 +78,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
           {/* Service image (only visible on larger screens) */}
           <div className="relative w-full sm:w-48 h-32 sm:h-auto flex-shrink-0">
             <Image
-              src={service.coverImage || "/placeholder.svg?height=200&width=400&query=service"}
+              src={service.image_url || service.coverImage || "/placeholder.svg?height=200&width=400&query=service"}
               alt={service.name || "Service"}
               fill
               className="object-cover"

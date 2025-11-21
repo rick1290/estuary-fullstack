@@ -75,7 +75,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
       {/* Service image */}
       <div className="relative aspect-video">
         <Image
-          src={service.coverImage || "/placeholder.svg?height=200&width=400&query=service"}
+          src={service.image_url || service.coverImage || "/placeholder.svg?height=200&width=400&query=service"}
           alt={service.name || "Service"}
           fill
           className="object-cover"
