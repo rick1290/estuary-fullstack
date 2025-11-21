@@ -335,16 +335,13 @@ class LiveKitClient:
                 s3=s3_upload
             )
 
-            # Create egress request with room_timeout
-            # Auto-stop recording if room is empty for 90 seconds
+            # Create egress request
+            # Recording will auto-stop when room closes (controlled by room's empty_timeout)
             request = egress_pb.RoomCompositeEgressRequest(
                 room_name=room_name,
                 layout=layout,
                 audio_only=audio_only,
-                file_outputs=[file_output],
-                options=egress_pb.RoomCompositeOptions(
-                    room_timeout=90  # Stop recording if room empty for 90 seconds
-                )
+                file_outputs=[file_output]
             )
 
             # Start egress
