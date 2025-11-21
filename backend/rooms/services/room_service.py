@@ -48,10 +48,12 @@ class RoomService:
             Created Room instance
         """
         service = service_session.service
-        
-        # Determine room type
-        room_type = 'group'
-        if service.is_course:
+
+        # Determine room type based on session_type first, then service type
+        room_type = 'group'  # Default
+        if service_session.session_type == 'individual':
+            room_type = 'individual'
+        elif service.is_course:
             room_type = 'webinar'
         elif service.service_type and service.service_type.code == 'workshop':
             room_type = 'group'

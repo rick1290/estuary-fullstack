@@ -228,30 +228,24 @@ class Room(PublicModel):
         return f"Room {self.name} ({self.get_room_type_display()})"
     
     def clean(self):
-        """Validate that room has either booking or service_session, not both."""
-        if self.booking and self.service_session:
-            raise ValidationError("Room cannot be linked to both booking and service session")
-    
+        """Validate room configuration."""
+        # Room must have service_session (booking FK removed)
+        pass
+
     def save(self, *args, **kwargs):
         if not self.livekit_room_name:
             # Generate unique LiveKit room name
             self.livekit_room_name = f"{self.room_type}-{uuid.uuid4().hex[:12]}"
-        
+
         if not self.name:
-            # Generate human-readable name
-            if self.booking:
-                self.name = f"{self.booking.service.name} - {self.booking.start_time.strftime('%Y%m%d-%H%M')}"
-            elif self.service_session:
-                self.name = f"{self.service_session.service.name} Session {self.service_session.sequence_number}"
-        
-        # Set scheduled times from booking or session
-        if not self.scheduled_start:
-            if self.booking:
-                self.scheduled_start = self.booking.start_time
-                self.scheduled_end = self.booking.end_time
-            elif self.service_session:
-                self.scheduled_start = self.service_session.start_time
-                self.scheduled_end = self.service_session.end_time
+            # Generate human-readable name from service_session
+            if self.service_session:
+                self.name = f"{self.service_session.service.name} Session {self.service_session.sequence_number or 1}"
+
+        # Set scheduled times from service_session
+        if not self.scheduled_start and self.service_session:
+            self.scheduled_start = self.service_session.start_time
+            self.scheduled_end = self.service_session.end_time
         
         # Apply template settings if template is set and this is a new room
         # Only apply if values haven't been explicitly set
@@ -282,21 +276,20 @@ class Room(PublicModel):
         """Check if room can be started."""
         if self.status not in ['pending', 'ended']:
             return False
-        
-        # Get the actual start time from booking or service session (source of truth)
+
+        # Get the actual start time from service_session (source of truth)
+        # booking FK was removed - all times now from service_session
         actual_start_time = None
-        if self.booking:
-            actual_start_time = self.booking.start_time
-        elif self.service_session:
+        if self.service_session:
             actual_start_time = self.service_session.start_time
         elif self.scheduled_start:
             actual_start_time = self.scheduled_start
-        
+
         # Allow starting 15 minutes before actual scheduled time
         if actual_start_time:
             buffer_time = actual_start_time - timedelta(minutes=15)
             return timezone.now() >= buffer_time
-        
+
         return True
     
     @property

@@ -40,28 +40,24 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         user = self.request.user
 
         # Base queryset with all needed relations
+        # NOTE: booking FK removed - access bookings via service_session.bookings
         queryset = Room.objects.select_related(
             'created_by',
-            'booking',
-            'booking__service',
-            'booking__service__primary_practitioner',
-            'booking__service__primary_practitioner__user',
             'service_session',
             'service_session__service',
             'service_session__service__primary_practitioner',
             'service_session__service__primary_practitioner__user'
-        ).prefetch_related('participants')
-        
+        ).prefetch_related('participants', 'service_session__bookings')
+
         # Filter based on user role and relationships
         if user.is_staff:
             # Staff can see all rooms
             return queryset
-        
+
         # Users can see rooms they're involved in
+        # All access now through service_session
         return queryset.filter(
             Q(created_by=user) |  # Rooms they created
-            Q(booking__user=user) |  # Rooms for their bookings
-            Q(booking__service__primary_practitioner__user=user) |  # Rooms where they're the practitioner
             Q(service_session__service__primary_practitioner__user=user) |  # Their service session rooms
             Q(service_session__bookings__user=user)  # Rooms for sessions they're booked in
         ).distinct()
@@ -128,38 +124,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                 'role': 'host',
             })
             return Response(response_data)
-        
-        # Check for direct booking relationship
-        if room.booking:
-            booking = room.booking
-            # Check if user is the practitioner of the SERVICE (not the booking)
-            is_practitioner = (
-                booking.service and 
-                booking.service.primary_practitioner and 
-                booking.service.primary_practitioner.user == user
-            )
-            is_client = booking.user == user
-            
-            if not (is_practitioner or is_client):
-                response_data['reason'] = 'Not associated with this booking'
-                return Response(response_data)
-            
-            if booking.status not in ['confirmed', 'in_progress']:
-                response_data['reason'] = f'Booking is {booking.status}'
-                return Response(response_data)
-            
-            response_data.update({
-                'can_join': True,
-                'role': 'host' if is_practitioner else 'participant',
-                'booking': {
-                    'id': booking.id,
-                    'public_uuid': booking.public_uuid,
-                    'status': booking.status,
-                }
-            })
-            return Response(response_data)
-        
-        # Check for service session relationship
+
+        # All room access is now through service_session
+        # (booking FK was removed from Room)
         if room.service_session:
             session = room.service_session
             service = session.service
@@ -243,9 +210,8 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         role = 'participant'  # Default role
         
         # Check if user is the practitioner/host
-        if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
-            role = 'host'
-        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
+        # All access now through service_session (booking FK removed from Room)
+        if room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             role = 'host'
         elif room.created_by == user:
             role = 'host'
@@ -324,10 +290,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         user = request.user
 
         # Check permissions - only host can start recording
+        # All access now through service_session (booking FK removed from Room)
         is_host = False
-        if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
-            is_host = True
-        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
+        if room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             is_host = True
         elif room.created_by == user:
             is_host = True
@@ -393,10 +358,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         user = request.user
 
         # Check permissions - only host can stop recording
+        # All access now through service_session (booking FK removed from Room)
         is_host = False
-        if room.booking and room.booking.service and room.booking.service.primary_practitioner and room.booking.service.primary_practitioner.user == user:
-            is_host = True
-        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
+        if room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             is_host = True
         elif room.created_by == user:
             is_host = True
@@ -444,19 +408,14 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         # Only show participants if user is in the room or is staff
         user = request.user
         can_view = user.is_staff or room.created_by == user
-        
+
         if not can_view:
-            # Check if user is a participant
-            if room.booking:
-                can_view = room.booking.user == user or (
-                    room.booking.service and 
-                    room.booking.service.primary_practitioner and 
-                    room.booking.service.primary_practitioner.user == user
-                )
-            elif room.service_session:
+            # Check if user is a participant via service_session
+            # (booking FK removed from Room)
+            if room.service_session:
                 can_view = (
-                    room.service_session.service.primary_practitioner and
-                    room.service_session.service.primary_practitioner.user == user or
+                    (room.service_session.service.primary_practitioner and
+                     room.service_session.service.primary_practitioner.user == user) or
                     room.service_session.bookings.filter(user=user).exists()
                 )
         
