@@ -352,8 +352,8 @@ export default function CheckoutPage() {
       {/* Logo - Full Width */}
       <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-block">
-            <h1 className="text-2xl font-medium tracking-tight text-olive-900">ESTUARY</h1>
+          <Link href="/" className="flex items-center font-bold text-xl tracking-widest">
+            ESTUARY
           </Link>
         </div>
       </div>
@@ -364,26 +364,6 @@ export default function CheckoutPage() {
             {/* Checkout Form */}
             <div className="lg:col-span-3">
               <h1 className="text-3xl font-medium mb-8">Checkout</h1>
-
-              {/* Credits Section */}
-              {userCreditBalance > 0 && (
-                <Card className="mb-6">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">Available Credits</h3>
-                        <p className="text-sm text-muted-foreground">
-                          You have ${userCreditBalance.toFixed(2)} in credits available
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="apply-credits" checked={applyCredits} onCheckedChange={setApplyCredits} />
-                        <Label htmlFor="apply-credits">{applyCredits ? "Applied" : "Apply to order"}</Label>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               <form onSubmit={handleSubmit}>
                 {/* Error Display */}
@@ -413,7 +393,7 @@ export default function CheckoutPage() {
                       placeholder="Any special requirements or information for the practitioner..."
                       value={specialRequests}
                       onChange={(e) => setSpecialRequests(e.target.value)}
-                      className="resize-none"
+                      className="resize-none bg-white"
                       rows={3}
                     />
                   </div>
@@ -540,32 +520,59 @@ export default function CheckoutPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Promo Code */}
-                  <div className="pt-2">
-                    <Label htmlFor="promo-code" className="text-sm font-medium">
-                      Promo Code
-                    </Label>
-                    <div className="flex mt-1">
-                      <Input
-                        id="promo-code"
-                        placeholder="Enter code"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        className="rounded-r-none"
-                        disabled={promoApplied}
-                      />
-                      <Button
-                        onClick={handleApplyPromo}
-                        className="rounded-l-none"
-                        variant={promoApplied ? "outline" : "default"}
-                        disabled={!promoCode || promoApplied}
-                      >
-                        {promoApplied ? <Check className="h-4 w-4" /> : "Apply"}
-                      </Button>
+                  {/* Credits & Promo Code */}
+                  <div className="space-y-3 pt-2">
+                    {/* Credits */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Available Credits</span>
+                      <div className="flex items-center gap-2">
+                        <span className={userCreditBalance > 0 ? "font-medium text-sage-700" : "text-muted-foreground"}>
+                          ${userCreditBalance.toFixed(2)}
+                        </span>
+                        {userCreditBalance > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Switch
+                              id="apply-credits"
+                              checked={applyCredits}
+                              onCheckedChange={setApplyCredits}
+                              className="scale-75"
+                            />
+                            <Label htmlFor="apply-credits" className="text-xs cursor-pointer">
+                              {applyCredits ? "Applied" : "Apply"}
+                            </Label>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {promoApplied && (
-                      <p className="text-xs text-primary mt-1">Promo code applied: ${promoDiscount.toFixed(2)} off</p>
-                    )}
+
+                    {/* Promo Code */}
+                    <div>
+                      <Label htmlFor="promo-code" className="text-sm text-muted-foreground">
+                        Promo Code
+                      </Label>
+                      <div className="flex mt-1">
+                        <Input
+                          id="promo-code"
+                          placeholder="Enter code"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value)}
+                          className="rounded-r-none h-9 text-sm"
+                          disabled={promoApplied}
+                        />
+                        <Button
+                          onClick={handleApplyPromo}
+                          className="rounded-l-none h-9"
+                          size="sm"
+                          variant={promoApplied ? "outline" : "default"}
+                          disabled={!promoCode || promoApplied}
+                        >
+                          {promoApplied ? <Check className="h-4 w-4" /> : "Apply"}
+                        </Button>
+                      </div>
+                      {promoApplied && (
+                        <p className="text-xs text-primary mt-1">Promo code applied: ${promoDiscount.toFixed(2)} off</p>
+                      )}
+                    </div>
                   </div>
 
                   <Separator className="my-4" />
