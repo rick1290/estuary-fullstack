@@ -229,7 +229,7 @@ export function BasicInfoSection({
                   handleAddTag()
                 }
               }}
-              placeholder="Add tags (press Enter)"
+              placeholder="e.g., beginner-friendly, stress-relief"
               className="flex-1"
             />
             <Button
@@ -241,6 +241,9 @@ export function BasicInfoSection({
               Add
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Add keywords to help clients find your service. Examples: relaxation, weight-loss, anxiety, couples, prenatal
+          </p>
           {localData.tags && localData.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {localData.tags.map((tag) => (
