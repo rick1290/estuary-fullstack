@@ -83,7 +83,7 @@ class NotificationService:
     def send_credit_purchase_confirmation(self, user_email: str, amount: float) -> None:
         """
         Send credit purchase confirmation.
-        
+
         Args:
             user_email: User's email
             amount: Amount of credits purchased
@@ -93,3 +93,28 @@ class NotificationService:
             logger.info(f"Sent credit purchase confirmation to {user_email} for ${amount}")
         except Exception as e:
             logger.error(f"Failed to send credit purchase confirmation: {e}")
+
+    def send_booking_rescheduled(self, booking: Booking, rescheduled_by=None) -> None:
+        """
+        Send booking reschedule notifications to client and practitioner.
+
+        Args:
+            booking: The rescheduled booking
+            rescheduled_by: User who initiated the reschedule
+        """
+        # Send to client
+        try:
+            self.client_service.send_booking_rescheduled(booking, rescheduled_by)
+            logger.info(f"Sent reschedule notification to client {booking.user.email}")
+        except Exception as e:
+            logger.error(f"Failed to send client reschedule notification: {e}")
+
+        # Send to practitioner (if they didn't initiate the reschedule)
+        if booking.practitioner:
+            practitioner_user = booking.practitioner.user
+            if not rescheduled_by or rescheduled_by.id != practitioner_user.id:
+                try:
+                    self.practitioner_service.send_booking_rescheduled(booking, rescheduled_by)
+                    logger.info(f"Sent reschedule notification to practitioner {practitioner_user.email}")
+                except Exception as e:
+                    logger.error(f"Failed to send practitioner reschedule notification: {e}")

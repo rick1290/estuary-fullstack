@@ -114,19 +114,12 @@ class BookingService:
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
-            service_session=service_session,  # NEW: Link to session
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            service_session=service_session,
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=booking_data['start_time'],  # Legacy field for backward compatibility
-            end_time=booking_data['end_time'],      # Legacy field for backward compatibility
-            timezone=booking_data.get('timezone', 'UTC'),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )
 
@@ -152,20 +145,13 @@ class BookingService:
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
-            service_session=service_session,  # All scheduling info here
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            service_session=service_session,
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            # REMOVED: start_time, end_time (now in service_session)
-            timezone=booking_data.get('timezone', 'UTC'),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
-            confirmed_at=timezone.now(),
-            max_participants=service_session.max_participants
+            confirmed_at=timezone.now()
         )
     
     def _create_course_booking(
@@ -228,15 +214,19 @@ class BookingService:
 
         # Schedule first session if time provided
         first_session_time = booking_data.get('start_time')
-        if first_session_time and first_booking:
-            first_booking.start_time = first_session_time
-            first_booking.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+        if first_session_time and first_booking and first_booking.service_session:
+            # Update ServiceSession with the scheduled time
+            first_booking.service_session.start_time = first_session_time
+            first_booking.service_session.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            first_booking.service_session.status = 'scheduled'
+            first_booking.service_session.save()
+
             first_booking.status = 'confirmed'  # Scheduled
             first_booking.confirmed_at = timezone.now()
             first_booking.save()
 
         return first_booking
-    
+
     def _create_bundle_booking(
         self,
         user: User,
@@ -267,15 +257,19 @@ class BookingService:
 
         # Schedule first session if time provided
         first_session_time = booking_data.get('start_time')
-        if first_session_time and first_booking:
-            first_booking.start_time = first_session_time
-            first_booking.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+        if first_session_time and first_booking and first_booking.service_session:
+            # Update ServiceSession with the scheduled time
+            first_booking.service_session.start_time = first_session_time
+            first_booking.service_session.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            first_booking.service_session.status = 'scheduled'
+            first_booking.service_session.save()
+
             first_booking.status = 'confirmed'  # Scheduled
             first_booking.confirmed_at = timezone.now()
             first_booking.save()
 
         return first_booking
-    
+
     def _create_default_booking(
         self,
         user: User,
@@ -283,23 +277,31 @@ class BookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a default booking for unknown service types."""
+        """Create a default booking for unknown service types with ServiceSession."""
+        start_time = booking_data.get('start_time', timezone.now())
+        end_time = booking_data.get('end_time', timezone.now() + timezone.timedelta(hours=1))
+
+        # Create ServiceSession
+        service_session = ServiceSession.objects.create(
+            service=service,
+            session_type='individual',
+            visibility='private',
+            start_time=start_time,
+            end_time=end_time,
+            max_participants=1,
+            current_participants=1,
+        )
+
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            service_session=service_session,
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=booking_data.get('start_time', timezone.now()),
-            end_time=booking_data.get('end_time', timezone.now() + timezone.timedelta(hours=1)),
-            timezone=booking_data.get('timezone', 'UTC'),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )
     

@@ -181,13 +181,18 @@ class PackageCompletionService:
         Returns:
             PackageCompletionRecord: The updated record or None if no parent booking
         """
-        # Check if this booking has a parent
-        if not child_booking.parent_booking:
+        # Check if this booking is part of a multi-booking order
+        if not child_booking.order or child_booking.order.bookings.count() <= 1:
             return None
-        
+
+        # Get the first booking in the order as the "parent" for completion tracking
+        parent_booking = child_booking.order.bookings.order_by('created_at').first()
+        if not parent_booking or parent_booking.id == child_booking.id:
+            return None
+
         # Get or create the completion record for the parent booking
         record, created = PackageCompletionRecord.objects.get_or_create(
-            package_booking=child_booking.parent_booking
+            package_booking=parent_booking
         )
         
         # Update the completion status
@@ -226,15 +231,12 @@ def handle_booking_status_change(booking, old_status, new_status):
         old_status: The previous status
         new_status: The new status
     """
-    # If this is a child booking and status changed to completed
-    if booking.parent_booking and new_status == 'completed':
-        # Skip old PackageCompletion logic if booking uses new Order-based architecture
+    # If this is part of a multi-booking order and status changed to completed
+    if booking.is_parent_booking and new_status == 'completed':
+        # New Order-based approach handles completion tracking
         if hasattr(booking, 'order') and booking.order:
-            # New Order-based approach handles completion tracking via order.package_metadata
+            # Order-based approach handles completion tracking via order.package_metadata
             # The mark_booking_completed service handles this correctly
-            pass
-        else:
-            # Legacy bookings without order FK - use old PackageCompletionService
             package_service = PackageCompletionService()
             package_service.update_completion_for_child_booking(booking)
     

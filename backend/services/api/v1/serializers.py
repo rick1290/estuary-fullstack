@@ -227,6 +227,260 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
         return max(0, obj.max_participants - booking_count)
 
 
+class SessionBookingSerializer(serializers.Serializer):
+    """Simplified booking serializer for session context"""
+    id = serializers.IntegerField()
+    user_id = serializers.IntegerField(source='user.id')
+    user_name = serializers.CharField(source='user.get_full_name')
+    user_email = serializers.EmailField(source='user.email')
+    user_avatar_url = serializers.CharField(source='user.avatar_url', allow_null=True)
+    status = serializers.CharField()
+    status_display = serializers.CharField(source='get_status_display')
+    payment_status = serializers.CharField()
+    credits_allocated = serializers.IntegerField()
+    created_at = serializers.DateTimeField()
+
+
+class SessionRecordingSerializer(serializers.Serializer):
+    """Simplified recording serializer for session context"""
+    id = serializers.IntegerField()
+    recording_id = serializers.CharField()
+    status = serializers.CharField()
+    started_at = serializers.DateTimeField()
+    ended_at = serializers.DateTimeField(allow_null=True)
+    duration_seconds = serializers.IntegerField()
+    file_url = serializers.URLField(allow_blank=True)
+    file_size_bytes = serializers.IntegerField()
+
+
+class ServiceSessionListSerializer(serializers.ModelSerializer):
+    """Enhanced list serializer for service sessions with service info"""
+    room = serializers.SerializerMethodField()
+    service_name = serializers.CharField(source='service.name', read_only=True)
+    service_type = serializers.CharField(source='service.service_type.code', read_only=True)
+    practitioner_id = serializers.SerializerMethodField()
+    practitioner_name = serializers.SerializerMethodField()
+    booking_count = serializers.SerializerMethodField()
+    spots_available = serializers.SerializerMethodField()
+    has_recordings = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceSession
+        fields = [
+            'id', 'service', 'service_name', 'service_type',
+            'practitioner_id', 'practitioner_name',
+            'title', 'description', 'session_type', 'visibility',
+            'start_time', 'end_time', 'duration',
+            'max_participants', 'current_participants', 'booking_count', 'spots_available',
+            'sequence_number', 'status', 'room', 'has_recordings',
+            'reschedule_count', 'practitioner_location',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
+
+    def get_room(self, obj):
+        if hasattr(obj, 'livekit_room') and obj.livekit_room:
+            room = obj.livekit_room
+            return {
+                'id': room.id,
+                'public_uuid': str(room.public_uuid),
+                'status': room.status,
+                'recording_status': room.recording_status,
+            }
+        return None
+
+    def get_practitioner_id(self, obj):
+        if obj.service and obj.service.primary_practitioner:
+            return obj.service.primary_practitioner.id
+        return None
+
+    def get_practitioner_name(self, obj):
+        if obj.service and obj.service.primary_practitioner:
+            return obj.service.primary_practitioner.display_name
+        return None
+
+    def get_booking_count(self, obj):
+        return obj.bookings.filter(status__in=['confirmed', 'pending_payment']).count()
+
+    def get_spots_available(self, obj):
+        if obj.max_participants:
+            booking_count = obj.bookings.filter(status__in=['confirmed', 'pending_payment']).count()
+            return max(0, obj.max_participants - booking_count)
+        return None
+
+    def get_has_recordings(self, obj):
+        if hasattr(obj, 'livekit_room') and obj.livekit_room:
+            return obj.livekit_room.recordings.exists()
+        return False
+
+
+class ServiceSessionDetailSerializer(serializers.ModelSerializer):
+    """Detail serializer for service sessions with full bookings, recordings, etc."""
+    room = serializers.SerializerMethodField()
+    agenda_items = SessionAgendaItemSerializer(many=True, read_only=True)
+    benefits = ServiceBenefitSerializer(many=True, read_only=True)
+
+    # Service info
+    service_name = serializers.CharField(source='service.name', read_only=True)
+    service_type = serializers.CharField(source='service.service_type.code', read_only=True)
+    service_description = serializers.CharField(source='service.description', read_only=True)
+    practitioner = serializers.SerializerMethodField()
+
+    # Counts
+    booking_count = serializers.SerializerMethodField()
+    spots_available = serializers.SerializerMethodField()
+    waitlist_count = serializers.SerializerMethodField()
+
+    # Related data
+    bookings = serializers.SerializerMethodField()
+    recordings = serializers.SerializerMethodField()
+    my_booking = serializers.SerializerMethodField()
+
+    # Reschedule info
+    reschedule_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceSession
+        fields = [
+            'id', 'service', 'service_name', 'service_type', 'service_description',
+            'practitioner',
+            'title', 'description', 'session_type', 'visibility',
+            'start_time', 'end_time', 'duration',
+            'actual_start_time', 'actual_end_time',
+            'max_participants', 'current_participants', 'booking_count', 'spots_available', 'waitlist_count',
+            'sequence_number', 'status', 'room',
+            'agenda', 'agenda_items', 'benefits', 'what_youll_learn',
+            'practitioner_location',
+            'bookings', 'recordings', 'my_booking', 'reschedule_info',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
+
+    def get_room(self, obj):
+        if hasattr(obj, 'livekit_room') and obj.livekit_room:
+            room = obj.livekit_room
+            return {
+                'id': room.id,
+                'public_uuid': str(room.public_uuid),
+                'livekit_room_name': room.livekit_room_name,
+                'status': room.status,
+                'recording_enabled': room.recording_enabled,
+                'recording_status': room.recording_status,
+                'max_participants': room.max_participants,
+                'current_participants': room.current_participants,
+                'scheduled_start': room.scheduled_start,
+                'scheduled_end': room.scheduled_end,
+                'actual_start': room.actual_start,
+                'actual_end': room.actual_end,
+            }
+        return None
+
+    def get_practitioner(self, obj):
+        if obj.service and obj.service.primary_practitioner:
+            p = obj.service.primary_practitioner
+            return {
+                'id': p.id,
+                'user_id': p.user.id,
+                'display_name': p.display_name,
+                'slug': p.slug,
+                'profile_image_url': p.profile_image_url if hasattr(p, 'profile_image_url') else None,
+            }
+        return None
+
+    def get_booking_count(self, obj):
+        return obj.bookings.filter(status__in=['confirmed', 'pending_payment']).count()
+
+    def get_spots_available(self, obj):
+        if obj.max_participants:
+            booking_count = obj.bookings.filter(status__in=['confirmed', 'pending_payment']).count()
+            return max(0, obj.max_participants - booking_count)
+        return None
+
+    def get_waitlist_count(self, obj):
+        return obj.waitlist_entries.filter(status='waiting').count()
+
+    def get_bookings(self, obj):
+        """
+        Get bookings for this session.
+
+        - Practitioners see all bookings (participant list)
+        - Regular users only see their own booking
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return []
+
+        user = request.user
+        is_practitioner = hasattr(user, 'practitioner_profile')
+
+        # Check if user is the practitioner who owns this service
+        is_owner = (
+            is_practitioner and
+            obj.service and
+            obj.service.primary_practitioner and
+            obj.service.primary_practitioner.id == user.practitioner_profile.id
+        )
+
+        if is_owner:
+            # Practitioners see all bookings
+            bookings = obj.bookings.select_related('user').filter(
+                status__in=['confirmed', 'pending_payment', 'completed', 'cancelled']
+            ).order_by('-created_at')
+        else:
+            # Regular users only see their own booking
+            bookings = obj.bookings.select_related('user').filter(
+                user=user,
+                status__in=['confirmed', 'pending_payment', 'completed', 'cancelled']
+            )
+
+        return SessionBookingSerializer(bookings, many=True).data
+
+    def get_recordings(self, obj):
+        """Get all recordings for this session's room"""
+        if hasattr(obj, 'livekit_room') and obj.livekit_room:
+            recordings = obj.livekit_room.recordings.all().order_by('-started_at')
+            return SessionRecordingSerializer(recordings, many=True).data
+        return []
+
+    def get_my_booking(self, obj):
+        """
+        Get the current user's booking for this session.
+        Convenience field for frontend to access booking actions.
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+
+        user = request.user
+        booking = obj.bookings.filter(user=user).first()
+
+        if not booking:
+            return None
+
+        return {
+            'id': booking.id,
+            'status': booking.status,
+            'status_display': booking.get_status_display(),
+            'payment_status': booking.payment_status,
+            'credits_allocated': booking.credits_allocated,
+            'can_reschedule': booking.can_be_rescheduled,
+            'can_cancel': booking.can_be_cancelled,
+            'created_at': booking.created_at,
+        }
+
+    def get_reschedule_info(self, obj):
+        """Get reschedule history info"""
+        if obj.reschedule_count > 0:
+            return {
+                'reschedule_count': obj.reschedule_count,
+                'original_start_time': obj.original_start_time,
+                'original_end_time': obj.original_end_time,
+                'last_rescheduled_at': obj.last_rescheduled_at,
+                'rescheduled_by': obj.rescheduled_by.get_full_name() if obj.rescheduled_by else None,
+            }
+        return None
+
+
 class ServiceResourceSerializer(serializers.ModelSerializer):
     """Serializer for service resources"""
     uploaded_by_name = serializers.CharField(source='uploaded_by.display_name', read_only=True)

@@ -100,18 +100,14 @@ class FastBookingService:
             service=service,
             practitioner=service.primary_practitioner,
             service_session=service_session,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )
-    
+
     def _create_workshop_booking(
         self,
         user: User,
@@ -121,24 +117,20 @@ class FastBookingService:
     ) -> Booking:
         """Create a workshop booking."""
         service_session = get_object_or_404(ServiceSession, id=booking_data['service_session_id'])
-        
+
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
             service_session=service_session,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )
-    
+
     def _create_course_booking(
         self,
         user: User,
@@ -326,14 +318,10 @@ class FastBookingService:
             service=service,
             practitioner=service.primary_practitioner,
             service_session=service_session,
-            price_charged_cents=payment_data['price_charged_cents'],
-            discount_amount_cents=payment_data['credits_applied_cents'],
-            final_amount_cents=payment_data['amount_charged_cents'],
+            order=payment_data.get('order'),
+            credits_allocated=payment_data.get('amount_charged_cents', 0),
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            service_name_snapshot=service.name,
-            service_description_snapshot=service.description or '',
-            practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
             confirmed_at=timezone.now()
         )

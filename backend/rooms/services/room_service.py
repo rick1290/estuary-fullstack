@@ -20,38 +20,21 @@ class RoomService:
     def create_room_for_booking(self, booking: Booking) -> Room:
         """
         Create a room for an individual booking.
-        
+
+        UPDATED: Now creates room linked to service_session instead of booking directly.
+
         Args:
             booking: Booking that needs a room
-            
+
         Returns:
             Created Room instance
         """
-        # Get or create appropriate template
-        template = self._get_room_template('individual')
-        
-        # Create room
-        room = Room.objects.create(
-            booking=booking,
-            room_type='individual',
-            template=template,
-            created_by=booking.practitioner.user if booking.practitioner else booking.user,
-            name=f"{booking.service_name_snapshot} - {booking.user.get_full_name()}",
-            scheduled_start=booking.start_time,
-            scheduled_end=booking.end_time,
-            max_participants=2,  # Practitioner + Client
-            recording_enabled=True,  # Enable recording by default for all rooms
-            metadata={
-                'booking_id': str(booking.id),
-                'service_id': str(booking.service.id) if booking.service else None,
-                'practitioner_id': str(booking.practitioner.id) if booking.practitioner else None,
-                'client_id': str(booking.user.id),
-                'service_name': booking.service_name_snapshot,
-            }
-        )
-        
-        logger.info(f"Created room {room.livekit_room_name} for booking {booking.id}")
-        return room
+        # Must have service_session
+        if not booking.service_session:
+            raise ValueError("Booking must have a service_session to create a room")
+
+        # Delegate to create_room_for_session
+        return self.create_room_for_session(booking.service_session)
     
     @transaction.atomic
     def create_room_for_session(self, service_session: ServiceSession) -> Room:

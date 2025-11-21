@@ -66,29 +66,24 @@ class Booking(PublicModel):
     practitioner_notes = models.TextField(blank=True, null=True, help_text="Private notes from practitioner")
 
     # Location - REMOVED: Use service_session.practitioner_location instead
-    
-    # Pricing and payment (in cents)
-    price_charged_cents = models.IntegerField(
-        help_text="Amount charged for this booking in cents")
-    discount_amount_cents = models.IntegerField(
-        default=0,
-        help_text="Discount applied in cents")
-    final_amount_cents = models.IntegerField(
-        help_text="Final amount after discounts in cents")
-    
-    # Historical snapshot data (preserves what user booked/paid for)
-    service_name_snapshot = models.CharField(max_length=255, blank=True,
-                                           help_text="Service name at time of booking")
-    service_description_snapshot = models.TextField(blank=True,
-                                                  help_text="Service description at time of booking")
-    practitioner_name_snapshot = models.CharField(max_length=255, blank=True,
-                                                help_text="Practitioner name at time of booking")
-    service_duration_snapshot = models.PositiveIntegerField(blank=True, null=True,
-                                                          help_text="Duration in minutes at time of booking")
 
-    # Package/Bundle snapshot data - MOVED TO Order.package_metadata
-    # Note: package_name_snapshot, package_contents_snapshot, bundle_name_snapshot, bundle_sessions_snapshot removed
-    # These are now stored in Order.package_metadata for packages/bundles
+    # Credits allocated to this booking (in cents)
+    # For individual sessions: full order amount
+    # For courses: order amount / number of sessions
+    # For packages/bundles: order amount / number of sessions
+    credits_allocated = models.IntegerField(
+        default=0,
+        help_text="Credit value allocated to this booking in cents")
+
+    # Pricing fields REMOVED - payment handled at Order level
+    # Access via: booking.order.total_amount_cents, booking.order.credits_used_cents, etc.
+
+    # Historical snapshot data - REMOVED
+    # Snapshot data now lives on ServiceSession (title, description, duration)
+    # ServiceSession is immutable after booking, so it preserves what was booked
+    # Access via: booking.service_session.title, booking.service_session.description, etc.
+    #
+    # Package/Bundle snapshot data stored in Order.package_metadata
     
     # Completion tracking
     completed_at = models.DateTimeField(blank=True, null=True)
@@ -123,12 +118,8 @@ class Booking(PublicModel):
 
     # max_participants - REMOVED: Use service_session.max_participants instead
 
-    # External integrations
-    # Note: room FK removed - use livekit_room instead
-    credit_usage_transaction = models.ForeignKey('payments.UserCreditTransaction', on_delete=models.SET_NULL,
-                                          blank=True, null=True, related_name='bookings',
-                                          help_text="Specific credit usage transaction (if credits applied)")
-    
+    # credit_usage_transaction - REMOVED: Payment/credit tracking now at Order level
+
     # Metadata for tracking various flags and data
     metadata = models.JSONField(default=dict, blank=True, 
                               help_text="Additional data like reminder flags, custom fields, etc.")
@@ -148,8 +139,8 @@ class Booking(PublicModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(final_amount_cents__gte=0),
-                name='booking_non_negative_amount'
+                check=models.Q(credits_allocated__gte=0),
+                name='booking_non_negative_credits'
             ),
         ]
 
@@ -157,29 +148,7 @@ class Booking(PublicModel):
         return f"Booking #{self.id}: {self.service.name if self.service else 'Package/Bundle'} - {self.user.email}"
 
     def save(self, *args, **kwargs):
-        """Override save to capture snapshot data on creation."""
-        # Auto-calculate final amount if not set
-        if self.final_amount_cents is None:
-            self.final_amount_cents = self.price_charged_cents - self.discount_amount_cents
-
-        # Set price from service if not set
-        if self.price_charged_cents is None and self.service:
-            self.price_charged_cents = self.service.price_cents
-        
-        if not self.pk:  # Only on creation
-            # Capture service snapshot
-            if self.service:
-                self.service_name_snapshot = self.service.name
-                self.service_description_snapshot = self.service.description
-                self.service_duration_snapshot = self.service.duration_minutes
-            
-            # Capture practitioner snapshot
-            if self.practitioner:
-                self.practitioner_name_snapshot = self.practitioner.user.get_full_name() or self.practitioner.display_name
-
-            # Note: Package/bundle snapshots now stored in Order.package_metadata
-            # (handled by PaymentService.create_order)
-        
+        """Override save to validate data."""
         self.clean()
         super().save(*args, **kwargs)
 
@@ -203,26 +172,11 @@ class Booking(PublicModel):
                 # Confirmed booking without times - might be package/bundle, allow it
                 pass
 
-        # Validate pricing
-        expected_price_cents = self.price_charged_cents - self.discount_amount_cents
-        if self.final_amount_cents != expected_price_cents:
-            raise ValidationError("Final amount doesn't match price calculation")
-
-    # Price properties in dollars
+    # Credits property in dollars
     @property
-    def price_charged(self):
-        """Get price charged in dollars."""
-        return Decimal(self.price_charged_cents) / 100
-
-    @property
-    def discount_amount(self):
-        """Get discount amount in dollars."""
-        return Decimal(self.discount_amount_cents) / 100
-
-    @property
-    def final_amount(self):
-        """Get final amount in dollars."""
-        return Decimal(self.final_amount_cents) / 100
+    def credits_allocated_dollars(self):
+        """Get credits allocated in dollars."""
+        return Decimal(self.credits_allocated) / 100
 
     # Time properties - Access times through service_session
     def get_start_time(self):
@@ -431,13 +385,13 @@ class Booking(PublicModel):
         Calculate refund amount based on cancellation policy.
 
         Returns:
-            int: Refund amount in cents
+            int: Refund amount in cents (based on credits_allocated)
         """
         start = self.get_start_time()
 
         # Unscheduled bookings (no start_time) are fully refundable
         if not start:
-            return self.final_amount_cents
+            return self.credits_allocated
 
         # If booking hasn't started yet
         if start > timezone.now():
@@ -445,10 +399,10 @@ class Booking(PublicModel):
 
             # Full refund if canceled more than 24 hours before
             if hours_until_start >= 24:
-                return self.final_amount_cents
+                return self.credits_allocated
             # 50% refund if canceled 6-24 hours before
             elif hours_until_start >= 6:
-                return int(self.final_amount_cents * 0.5)
+                return int(self.credits_allocated * 0.5)
             # No refund if canceled less than 6 hours before
             else:
                 return 0
@@ -464,7 +418,7 @@ class Booking(PublicModel):
         self.transition_to('canceled', reason=reason, canceled_by=canceled_by)
 
         # Process refund if payment was made
-        if self.payment_status == 'paid' and self.final_amount_cents > 0:
+        if self.payment_status == 'paid' and self.credits_allocated > 0:
             from payments.tasks import process_refund_credits
             # Calculate refund amount based on cancellation policy
             refund_amount_cents = self.calculate_refund_amount()
@@ -486,45 +440,35 @@ class Booking(PublicModel):
                     canceled_by='system'
                 )
 
-    def reschedule(self, new_start_time, new_end_time):
-        """Reschedule this booking to a new time."""
+    def reschedule(self, new_start_time, new_end_time, rescheduled_by_user=None):
+        """
+        Reschedule this booking to a new time.
+
+        NEW PARADIGM: Updates the ServiceSession times instead of creating
+        a new booking. The booking stays the same, only the session times change.
+
+        Args:
+            new_start_time: New start time
+            new_end_time: New end time
+            rescheduled_by_user: User who initiated the reschedule
+
+        Returns:
+            self (the same booking, now with updated session times)
+        """
         if not self.can_be_rescheduled:
             raise ValidationError("This booking cannot be rescheduled")
 
-        # Create ServiceSession for the new booking
-        from services.models import ServiceSession
-        duration = int((new_end_time - new_start_time).total_seconds() / 60)
+        if not self.service_session:
+            raise ValidationError("Cannot reschedule booking without a service_session")
 
-        service_session = ServiceSession.objects.create(
-            service=self.service,
-            session_type='individual',
-            visibility='private',
-            start_time=new_start_time,
-            end_time=new_end_time,
-            duration=duration,
-            max_participants=1,
-            current_participants=1,
+        # Update the ServiceSession times (this handles tracking automatically)
+        self.service_session.reschedule(
+            new_start_time=new_start_time,
+            new_end_time=new_end_time,
+            rescheduled_by_user=rescheduled_by_user or self.user
         )
 
-        # Create new booking linked to ServiceSession
-        new_booking = Booking.objects.create(
-            user=self.user,
-            practitioner=self.practitioner,
-            service=self.service,
-            service_session=service_session,
-            price_charged_cents=self.price_charged_cents,
-            discount_amount_cents=self.discount_amount_cents,
-            final_amount_cents=self.final_amount_cents,
-            client_notes=self.client_notes,
-            rescheduled_from=self,
-            status='confirmed'
-        )
-
-        # Mark original as rescheduled
-        self.status = 'rescheduled'
-        self.save(update_fields=['status'])
-
-        return new_booking
+        return self
 
 
 # Factory methods for complex booking creation
@@ -550,13 +494,12 @@ class BookingFactory:
         )
 
         # Create booking linked to ServiceSession
+        # Note: credits_allocated should be set by caller or via Order
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=practitioner,
             service_session=service_session,
-            price_charged_cents=service.price_cents,
-            final_amount_cents=service.price_cents,
             **kwargs
         )
     
@@ -592,6 +535,12 @@ class BookingFactory:
             raise ValueError("Course must have at least one ServiceSession")
 
         created_bookings = []
+        num_sessions = service_sessions.count()
+
+        # Calculate credits per session (divide order total by number of sessions)
+        credits_per_session = 0
+        if order and order.total_amount_cents and num_sessions > 0:
+            credits_per_session = order.total_amount_cents // num_sessions
 
         # Create one booking per ServiceSession
         for session in service_sessions:
@@ -601,9 +550,7 @@ class BookingFactory:
                 practitioner=course.primary_practitioner,
                 service_session=session,
                 order=order,
-                price_charged_cents=0,  # Paid as part of course enrollment
-                discount_amount_cents=0,
-                final_amount_cents=0,
+                credits_allocated=credits_per_session,
                 status=kwargs.get('status', 'confirmed'),
                 **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_intent_id']}
             )
@@ -630,15 +577,22 @@ class BookingFactory:
         if not package_service.is_package:
             raise ValueError("Service must be a package type")
 
+        # Count total sessions first
+        from services.models import ServiceSession
+        total_sessions = sum(rel.quantity for rel in package_service.child_relationships.all())
+
+        # Calculate credits per session
+        credits_per_session = 0
+        if order and order.total_amount_cents and total_sessions > 0:
+            credits_per_session = order.total_amount_cents // total_sessions
+
         created_bookings = []
 
         # Create session bookings for each included service
         # These are the ACTUAL bookings (no redundant parent)
-        from services.models import ServiceSession
-
         for rel in package_service.child_relationships.all().order_by('order'):
             service = rel.child_service
-            for i in range(rel.quantity):
+            for _ in range(rel.quantity):
                 # Create draft ServiceSession (will be scheduled later)
                 service_session = ServiceSession.objects.create(
                     service=service,
@@ -658,10 +612,8 @@ class BookingFactory:
                     practitioner=service.primary_practitioner,
                     service_session=service_session,  # Link to draft session
                     order=order,  # Link to order (not parent_booking)
-                    price_charged_cents=0,  # Included in package
-                    final_amount_cents=0,
+                    credits_allocated=credits_per_session,
                     status='draft',  # Draft until scheduled
-                    service_name_snapshot=service.name,
                     **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_intent_id']}
                 )
                 created_bookings.append(booking)
@@ -691,8 +643,6 @@ class BookingFactory:
         if not bundle_service.is_bundle:
             raise ValueError("Service must be a bundle type")
 
-        created_bookings = []
-
         # Get the child service (bundles typically have 1 child service repeated N times)
         child_relationships = bundle_service.child_relationships.all()
         if not child_relationships.exists():
@@ -701,10 +651,17 @@ class BookingFactory:
         # Get total sessions from bundle.sessions_included
         total_sessions = bundle_service.sessions_included or 1
 
+        # Calculate credits per session
+        credits_per_session = 0
+        if order and order.total_amount_cents and total_sessions > 0:
+            credits_per_session = order.total_amount_cents // total_sessions
+
+        created_bookings = []
+
         # Create session bookings for each included session
         from services.models import ServiceSession
 
-        for i in range(total_sessions):
+        for _ in range(total_sessions):
             # Use first child service (bundles usually have just one)
             child_rel = child_relationships.first()
             service = child_rel.child_service
@@ -728,12 +685,8 @@ class BookingFactory:
                 practitioner=service.primary_practitioner,
                 service_session=service_session,  # Link to draft session
                 order=order,
-                price_charged_cents=0,  # Paid as part of bundle
-                final_amount_cents=0,
+                credits_allocated=credits_per_session,
                 status='draft',  # Draft until scheduled
-                service_name_snapshot=service.name,
-                service_description_snapshot=service.description or '',
-                practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
                 **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_intent_id']}
             )
             created_bookings.append(booking)

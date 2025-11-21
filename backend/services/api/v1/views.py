@@ -24,6 +24,7 @@ from reviews.models import Review
 from .serializers import (
     ServiceCategorySerializer, ServiceListSerializer, ServiceDetailSerializer,
     ServiceCreateUpdateSerializer, ServiceTypeSerializer, ServiceSessionSerializer,
+    ServiceSessionListSerializer, ServiceSessionDetailSerializer,
     ServiceResourceSerializer, PractitionerServiceCategorySerializer,
     PackageSerializer, BundleSerializer, WaitlistSerializer, ServiceSearchSerializer,
     MediaAttachmentSerializer, ServiceBenefitSerializer, SessionAgendaItemSerializer
@@ -797,28 +798,104 @@ class BundleViewSet(viewsets.ModelViewSet):
 class ServiceSessionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for service sessions (workshops/courses).
+
+    List: GET /api/v1/services/sessions/
+        - Returns all sessions for the authenticated practitioner
+        - Optional filters: service_id, status, start_date, end_date, session_type
+
+    Detail: GET /api/v1/services/sessions/{id}/
+        - Returns full session details including bookings, recordings, etc.
     """
-    serializer_class = ServiceSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = ['start_time', 'created_at', 'status']
+    ordering = ['start_time']
+
+    def get_serializer_class(self):
+        """Use different serializers for list vs detail"""
+        if self.action == 'list':
+            return ServiceSessionListSerializer
+        elif self.action == 'retrieve':
+            return ServiceSessionDetailSerializer
+        return ServiceSessionSerializer
 
     def get_queryset(self):
-        """Get sessions based on service"""
-        # For detail views (retrieve, update, destroy), return all sessions
-        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return ServiceSession.objects.select_related('service', 'livekit_room', 'practitioner_location')
+        """
+        Get sessions with filtering support.
 
-        # For list view, filter by service_id if provided
+        For practitioners: Returns all sessions for their services
+        For users: Returns sessions they have bookings for
+        """
+        user = self.request.user
+        queryset = ServiceSession.objects.select_related(
+            'service',
+            'service__service_type',
+            'service__primary_practitioner',
+            'service__primary_practitioner__user',
+            'livekit_room',
+            'practitioner_location',
+            'rescheduled_by'
+        ).prefetch_related(
+            'bookings',
+            'bookings__user',
+            'livekit_room__recordings',
+            'agenda_items',
+            'benefits',
+            'waitlist_entries'
+        )
+
+        # Check if user is a practitioner
+        is_practitioner = hasattr(user, 'practitioner_profile')
+
+        if is_practitioner:
+            # Practitioners see all their sessions
+            practitioner = user.practitioner_profile
+            queryset = queryset.filter(service__primary_practitioner=practitioner)
+        else:
+            # Regular users see sessions they have bookings for
+            queryset = queryset.filter(bookings__user=user).distinct()
+
+        # Apply filters
         service_id = self.request.query_params.get('service_id')
-        if not service_id:
-            return ServiceSession.objects.none()
+        if service_id:
+            queryset = queryset.filter(service_id=service_id)
 
-        return ServiceSession.objects.filter(
-            service_id=service_id
-        ).select_related('service', 'livekit_room', 'practitioner_location').order_by('start_time')
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+
+        session_type = self.request.query_params.get('session_type')
+        if session_type:
+            queryset = queryset.filter(session_type=session_type)
+
+        visibility = self.request.query_params.get('visibility')
+        if visibility:
+            queryset = queryset.filter(visibility=visibility)
+
+        # Date range filters
+        start_date = self.request.query_params.get('start_date')
+        if start_date:
+            queryset = queryset.filter(start_time__date__gte=start_date)
+
+        end_date = self.request.query_params.get('end_date')
+        if end_date:
+            queryset = queryset.filter(start_time__date__lte=end_date)
+
+        # Filter for upcoming only
+        upcoming = self.request.query_params.get('upcoming')
+        if upcoming and upcoming.lower() == 'true':
+            queryset = queryset.filter(start_time__gte=timezone.now())
+
+        # Filter for past only
+        past = self.request.query_params.get('past')
+        if past and past.lower() == 'true':
+            queryset = queryset.filter(start_time__lt=timezone.now())
+
+        return queryset
 
     def get_permissions(self):
         """Only service owners can modify sessions"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'reschedule']:
             return [permissions.IsAuthenticated(), IsServiceOwner()]
         return super().get_permissions()
 
@@ -833,7 +910,7 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
         instance.delete()
 
     def perform_update(self, serializer):
-        """Prevent editing date/time of sessions with bookings"""
+        """Prevent editing date/time of sessions with bookings via regular update"""
         instance = self.get_object()
 
         # Check if start_time or end_time is being changed
@@ -841,10 +918,111 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
             booking_count = instance.bookings.count()
             if booking_count > 0:
                 raise ValidationError({
-                    'detail': f'Cannot modify session date/time with {booking_count} existing booking(s). Please cancel the bookings first.'
+                    'detail': f'Cannot modify session date/time with {booking_count} existing booking(s). Use the reschedule endpoint instead.'
                 })
 
         serializer.save()
+
+    @action(detail=True, methods=['post'])
+    def reschedule(self, request, pk=None):
+        """
+        Reschedule a service session to new times.
+
+        This endpoint is for practitioners to reschedule workshops, courses, etc.
+        All users with bookings for this session will be notified.
+
+        Request body:
+        {
+            "start_time": "2024-01-15T14:00:00Z",
+            "end_time": "2024-01-15T15:00:00Z"
+        }
+        """
+        from rest_framework import status
+        from django.utils import timezone
+        from datetime import datetime
+
+        session = self.get_object()
+
+        # Validate request data
+        start_time_str = request.data.get('start_time')
+        end_time_str = request.data.get('end_time')
+
+        if not start_time_str or not end_time_str:
+            return Response(
+                {'detail': 'start_time and end_time are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Parse datetime strings
+            from django.utils.dateparse import parse_datetime
+            new_start_time = parse_datetime(start_time_str)
+            new_end_time = parse_datetime(end_time_str)
+
+            if not new_start_time or not new_end_time:
+                raise ValueError("Invalid datetime format")
+        except (ValueError, TypeError) as e:
+            return Response(
+                {'detail': f'Invalid datetime format: {e}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate times
+        if new_start_time >= new_end_time:
+            return Response(
+                {'detail': 'End time must be after start time'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if new_start_time < timezone.now():
+            return Response(
+                {'detail': 'Cannot reschedule to a time in the past'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Store old times for notification
+        old_start_time = session.start_time
+        old_end_time = session.end_time
+
+        # Perform reschedule
+        session.reschedule(
+            new_start_time=new_start_time,
+            new_end_time=new_end_time,
+            rescheduled_by_user=request.user
+        )
+
+        # Send notifications to all affected users
+        try:
+            from notifications.services import NotificationService
+            notification_service = NotificationService()
+
+            affected_users = session.get_affected_users()
+            for user in affected_users:
+                # Get the user's booking for this session
+                booking = session.bookings.filter(
+                    user=user,
+                    status__in=['confirmed', 'pending_payment']
+                ).first()
+                if booking:
+                    notification_service.send_booking_rescheduled(
+                        booking,
+                        rescheduled_by=request.user
+                    )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Failed to send reschedule notifications: {e}")
+
+        # Return updated session
+        serializer = self.get_serializer(session)
+        return Response({
+            'session': serializer.data,
+            'affected_bookings_count': session.bookings.filter(
+                status__in=['confirmed', 'pending_payment']
+            ).count(),
+            'reschedule_count': session.reschedule_count,
+            'old_start_time': old_start_time.isoformat() if old_start_time else None,
+            'new_start_time': new_start_time.isoformat(),
+        })
 
 
 @extend_schema_view(

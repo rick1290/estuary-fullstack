@@ -375,7 +375,99 @@ class PractitionerNotificationService(BaseNotificationService):
             notification=notification,
             tags=[{'name': 'category', 'value': 'booking_cancelled'}]
         )
-    
+
+    def send_booking_rescheduled(self, booking, rescheduled_by=None):
+        """
+        Send booking rescheduled notification to practitioner.
+
+        Args:
+            booking: The rescheduled booking
+            rescheduled_by: User who initiated the reschedule
+        """
+        practitioner = booking.service.primary_practitioner
+        if not practitioner:
+            logger.warning(f"No primary practitioner for service {booking.service.id}")
+            return
+
+        user = practitioner.user
+        if not self.should_send_notification(user, 'booking', 'email'):
+            return
+
+        template = self.get_template('booking_rescheduled')
+        if not template:
+            logger.warning("No booking rescheduled template configured")
+            return
+
+        client = booking.user
+        service = booking.service
+        service_session = booking.service_session
+
+        # Get new times from service_session
+        new_start = service_session.start_time if service_session else None
+        new_end = service_session.end_time if service_session else None
+
+        # Format new booking time with timezone conversion
+        booking_tz = getattr(booking, 'timezone', 'UTC')
+        if new_start:
+            dt_formatted = self._format_datetime_with_timezone(new_start, booking_tz)
+            new_date_str = dt_formatted['date']
+            new_time_str = dt_formatted['time_with_tz']
+        else:
+            new_date_str = 'TBD'
+            new_time_str = 'TBD'
+
+        # Get original times if available (from service_session reschedule tracking)
+        original_date_str = 'N/A'
+        original_time_str = 'N/A'
+        if service_session and service_session.original_start_time:
+            original_dt = self._format_datetime_with_timezone(service_session.original_start_time, booking_tz)
+            original_date_str = original_dt['date']
+            original_time_str = original_dt['time_with_tz']
+
+        # Determine who rescheduled
+        rescheduled_by_name = 'Unknown'
+        if rescheduled_by:
+            if rescheduled_by.id == client.id:
+                rescheduled_by_name = client.get_full_name()
+            else:
+                rescheduled_by_name = rescheduled_by.get_full_name()
+
+        data = {
+            'first_name': user.first_name or 'there',
+            'booking_id': str(booking.id),
+            'client_name': client.get_full_name(),
+            'service_name': service.name,
+            'new_date': new_date_str,
+            'new_time': new_time_str,
+            'original_date': original_date_str,
+            'original_time': original_time_str,
+            'rescheduled_by': rescheduled_by_name,
+            'is_practitioner': True,
+            'other_party_name': client.get_full_name(),
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar"
+        }
+
+        notification = self.create_notification_record(
+            user=user,
+            title=f"Booking Rescheduled: {service.name}",
+            message=f"{client.get_full_name()} has rescheduled their booking to {data['new_date']} at {data['new_time']}.",
+            notification_type='booking',
+            delivery_channel='email',
+            related_object_type='booking',
+            related_object_id=str(booking.id)
+        )
+
+        subject = template['subject'].format(service_name=service.name)
+        return self.send_email_notification(
+            user=user,
+            template_path=template['path'],
+            subject=subject,
+            data=data,
+            notification=notification,
+            tags=[{'name': 'category', 'value': 'booking_rescheduled'}]
+        )
+
     def send_earnings_summary(self, practitioner, period='weekly'):
         """
         Send earnings summary to practitioner.

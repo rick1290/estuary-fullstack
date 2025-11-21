@@ -82,7 +82,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Base queryset with optimized relations
         queryset = Booking.objects.select_related(
             'user', 'practitioner__user', 'service', 'service_session',
-            'rescheduled_from', 'order', 'credit_usage_transaction'
+            'rescheduled_from', 'order'
         ).prefetch_related(
             'reminders', 'notes__author'
         )
@@ -278,10 +278,6 @@ class BookingViewSet(viewsets.ModelViewSet):
                     )
                     booking.service_session = service_session
 
-                # Also set legacy fields for backward compatibility
-                booking.start_time = start_time
-                booking.end_time = end_time
-
                 # If payment is complete, confirm the booking
                 if booking.payment_status == 'paid':
                     booking.status = 'confirmed'
@@ -293,13 +289,16 @@ class BookingViewSet(viewsets.ModelViewSet):
                     from rooms.services import RoomService
                     try:
                         room_service = RoomService()
-                        if not booking.room:
-                            room_service.create_room_for_booking(booking)
+                        # Create room for ServiceSession (not booking directly)
+                        if booking.service_session and not hasattr(booking.service_session, 'livekit_room'):
+                            room_service.create_room_for_session(booking.service_session)
+                        elif booking.service_session and not booking.service_session.livekit_room:
+                            room_service.create_room_for_session(booking.service_session)
                     except Exception as e:
                         # Log but don't fail - periodic task will catch this
                         import logging
                         logger = logging.getLogger(__name__)
-                        logger.error(f"Failed to create room for booking {booking.id}: {e}")
+                        logger.error(f"Failed to create room for session {booking.service_session.id}: {e}")
 
             response_serializer = BookingDetailSerializer(
                 booking,
@@ -314,7 +313,12 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def reschedule(self, request, pk=None):
-        """Reschedule booking to new time (creates new booking)"""
+        """
+        Reschedule booking to new time.
+
+        NEW PARADIGM: Updates the ServiceSession times instead of creating
+        a new booking. The booking stays the same, only the session times change.
+        """
         booking = self.get_object()
         serializer = BookingRescheduleSerializer(
             data=request.data,
@@ -322,34 +326,44 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
 
-        # Store old start time for reminder handling (use helper method)
+        # Store old start time for reminder handling
         old_start_time_obj = booking.get_start_time()
         old_start_time = old_start_time_obj.isoformat() if old_start_time_obj else None
 
-        # Reschedule booking
+        # Reschedule booking (updates ServiceSession, returns same booking)
         try:
-            new_booking = booking.reschedule(
+            booking.reschedule(
                 new_start_time=serializer.validated_data['start_time'],
-                new_end_time=serializer.validated_data['end_time']
+                new_end_time=serializer.validated_data['end_time'],
+                rescheduled_by_user=request.user
             )
 
             # Handle reminder rescheduling
             from bookings.tasks import handle_booking_reschedule
-            new_start_time_obj = new_booking.get_start_time()
+            new_start_time_obj = booking.get_start_time()
             new_start_time = new_start_time_obj.isoformat() if new_start_time_obj else None
 
             if old_start_time and new_start_time:
                 handle_booking_reschedule.delay(
-                    new_booking.id,
+                    booking.id,
                     old_start_time,
                     new_start_time
                 )
 
+            # Send reschedule notification
+            try:
+                from notifications.services import NotificationService
+                notification_service = NotificationService()
+                notification_service.send_booking_rescheduled(booking, request.user)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to send reschedule notification: {e}")
+
             response_serializer = BookingDetailSerializer(
-                new_booking,
+                booking,
                 context={'request': request}
             )
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response(
                 {"detail": str(e)},

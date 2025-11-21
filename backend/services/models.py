@@ -802,7 +802,36 @@ class ServiceSession(models.Model):
         related_name='sessions',
         help_text="Practitioner location where this session takes place (for in-person sessions)"
     )
-    
+
+    # Reschedule tracking
+    reschedule_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times this session has been rescheduled"
+    )
+    original_start_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Original start time before any rescheduling (preserved for history)"
+    )
+    original_end_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Original end time before any rescheduling (preserved for history)"
+    )
+    last_rescheduled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this session was last rescheduled"
+    )
+    rescheduled_by = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rescheduled_sessions',
+        help_text="Who last rescheduled this session"
+    )
+
     class Meta:
         db_table = 'service_sessions'
         ordering = ['start_time', 'sequence_number']
@@ -881,6 +910,60 @@ class ServiceSession(models.Model):
         self.save(update_fields=['room'])
 
         return room
+
+    def reschedule(self, new_start_time, new_end_time, rescheduled_by_user=None):
+        """
+        Reschedule this session to new times.
+
+        This is the new paradigm: instead of creating new bookings,
+        we update the ServiceSession times. All linked bookings
+        are automatically updated since they reference this session.
+
+        Args:
+            new_start_time: New start time for the session
+            new_end_time: New end time for the session
+            rescheduled_by_user: User who initiated the reschedule
+
+        Returns:
+            self (the updated ServiceSession)
+        """
+        from django.utils import timezone
+
+        # Preserve original times on first reschedule
+        if self.reschedule_count == 0:
+            self.original_start_time = self.start_time
+            self.original_end_time = self.end_time
+
+        # Update times
+        self.start_time = new_start_time
+        self.end_time = new_end_time
+
+        # Update duration
+        if new_start_time and new_end_time:
+            self.duration = int((new_end_time - new_start_time).total_seconds() / 60)
+
+        # Update tracking fields
+        self.reschedule_count += 1
+        self.last_rescheduled_at = timezone.now()
+        self.rescheduled_by = rescheduled_by_user
+
+        self.save()
+
+        return self
+
+    def get_affected_users(self):
+        """
+        Get all users who have bookings for this session.
+        Useful for sending reschedule notifications.
+
+        Returns:
+            QuerySet of User objects
+        """
+        from users.models import User
+        return User.objects.filter(
+            bookings__service_session=self,
+            bookings__status__in=['confirmed', 'pending_payment']
+        ).distinct()
 
 
 class SessionParticipant(models.Model):
