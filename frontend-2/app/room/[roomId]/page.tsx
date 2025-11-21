@@ -19,12 +19,24 @@ export default function RoomPage() {
   const { user, isAuthenticated } = useAuth();
   
   const [isRecording, setIsRecording] = useState(false);
-  
+
   // Check room access using the new endpoint
   const { data: accessData, isLoading: loadingAccess, error: accessError } = useQuery({
     ...roomsCheckAccessRetrieveOptions({ path: { public_uuid: roomId } }),
     enabled: !!roomId && isAuthenticated
   });
+
+  // Initialize recording state from API response
+  useEffect(() => {
+    if (accessData?.room?.recording_status) {
+      const isActive = ['starting', 'active'].includes(accessData.room.recording_status);
+      setIsRecording(isActive);
+      console.log('Initialized recording state from API:', {
+        recording_status: accessData.room.recording_status,
+        isRecording: isActive
+      });
+    }
+  }, [accessData?.room?.recording_status]);
   
   const { token, loading: tokenLoading, error: tokenError, roomInfo } = useRoomToken({ roomId });
   

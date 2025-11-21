@@ -226,11 +226,12 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         """Get all processed recordings for this booking's room"""
         # Get the room - works for both individual sessions and workshops/courses
         room = None
-        if obj.livekit_room:
-            # Individual session
+
+        # Check for individual session room (OneToOneField requires hasattr check)
+        if hasattr(obj, 'livekit_room'):
             room = obj.livekit_room
-        elif obj.service_session and obj.service_session.livekit_room:
-            # Workshop/course session
+        # Check for workshop/course session room
+        elif obj.service_session and hasattr(obj.service_session, 'livekit_room'):
             room = obj.service_session.livekit_room
 
         if not room:

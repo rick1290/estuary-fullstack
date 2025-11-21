@@ -17,7 +17,7 @@ export default function BookingRoomPage() {
   const bookingId = params.bookingId as string;
   
   const [isRecording, setIsRecording] = useState(false);
-  
+
   const { permissions, loading: permissionsLoading } = useRoomPermissions({ bookingId });
   const { token, loading: tokenLoading, error: tokenError, roomInfo } = useRoomToken({ bookingId });
 
@@ -26,6 +26,18 @@ export default function BookingRoomPage() {
     ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId) } }),
     enabled: !!bookingId
   });
+
+  // Initialize recording state from booking room data
+  useEffect(() => {
+    if (bookingDetails?.room?.recording_status) {
+      const isActive = ['starting', 'active'].includes(bookingDetails.room.recording_status);
+      setIsRecording(isActive);
+      console.log('Initialized recording state from booking:', {
+        recording_status: bookingDetails.room.recording_status,
+        isRecording: isActive
+      });
+    }
+  }, [bookingDetails?.room?.recording_status]);
 
   // Recording mutations
   const startRecordingMutation = useMutation(roomsStartRecordingCreateMutation());

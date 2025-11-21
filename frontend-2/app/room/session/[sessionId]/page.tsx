@@ -17,7 +17,7 @@ export default function SessionRoomPage() {
   const sessionId = params.sessionId as string;
   
   const [isRecording, setIsRecording] = useState(false);
-  
+
   const { permissions, loading: permissionsLoading } = useRoomPermissions({ sessionId });
   const { token, loading: tokenLoading, error: tokenError, roomInfo } = useRoomToken({ sessionId });
 
@@ -26,6 +26,18 @@ export default function SessionRoomPage() {
     ...serviceSessionsRetrieveOptions({ path: { id: parseInt(sessionId) } }),
     enabled: !!sessionId
   });
+
+  // Initialize recording state from session room data
+  useEffect(() => {
+    if (sessionDetails?.room?.recording_status) {
+      const isActive = ['starting', 'active'].includes(sessionDetails.room.recording_status);
+      setIsRecording(isActive);
+      console.log('Initialized recording state from session:', {
+        recording_status: sessionDetails.room.recording_status,
+        isRecording: isActive
+      });
+    }
+  }, [sessionDetails?.room?.recording_status]);
 
   // Recording mutations
   const startRecordingMutation = useMutation(roomsStartRecordingCreateMutation());
