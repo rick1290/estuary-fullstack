@@ -251,16 +251,18 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def send_message(self, request, pk=None):
         """Send a message in a conversation"""
         conversation = self.get_object()
-        
+
         # Validate message data
         serializer = MessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        # Create message
+
+        # Create message with attachments support
         message = Message.objects.create(
             conversation=conversation,
             sender=request.user,
-            content=serializer.validated_data['content']
+            content=serializer.validated_data['content'],
+            message_type=serializer.validated_data.get('message_type', 'text'),
+            attachments=serializer.validated_data.get('attachments', [])
         )
         
         # Send WebSocket notification
