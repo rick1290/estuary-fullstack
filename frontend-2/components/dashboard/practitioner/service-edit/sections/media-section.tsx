@@ -32,6 +32,7 @@ export function MediaSection({ service }: MediaSectionProps) {
   const queryClient = useQueryClient()
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [activeTab, setActiveTab] = useState("upload")
 
   // AI Generation state
   const [aiPrompt, setAiPrompt] = useState("")
@@ -264,6 +265,9 @@ export function MediaSection({ service }: MediaSectionProps) {
       setGeneratedImageId(null)
       setAiPrompt("")
 
+      // Switch to upload tab to show the result
+      setActiveTab("upload")
+
       // Invalidate queries to refresh service data
       queryClient.invalidateQueries({ queryKey: ['services'] })
 
@@ -296,7 +300,7 @@ export function MediaSection({ service }: MediaSectionProps) {
           </p>
         </div>
 
-        <Tabs defaultValue="upload" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />

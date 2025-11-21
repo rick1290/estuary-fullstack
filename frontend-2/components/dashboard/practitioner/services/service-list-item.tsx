@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign, Users } from "lucide-react"
+import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign, Users, ImageIcon } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
 import { getServiceDetailUrl } from "@/lib/service-utils"
@@ -77,12 +77,18 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
         <div className="flex flex-col sm:flex-row">
           {/* Service image (only visible on larger screens) */}
           <div className="relative w-full sm:w-48 h-32 sm:h-auto flex-shrink-0">
-            <Image
-              src={service.image_url || service.coverImage || "/placeholder.svg?height=200&width=400&query=service"}
-              alt={service.name || "Service"}
-              fill
-              className="object-cover"
-            />
+            {service.image_url || service.coverImage ? (
+              <Image
+                src={service.image_url || service.coverImage}
+                alt={service.name || "Service"}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center min-h-[8rem]">
+                <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+              </div>
+            )}
           </div>
 
           {/* Service details */}
