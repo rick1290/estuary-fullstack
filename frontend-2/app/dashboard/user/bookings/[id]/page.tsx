@@ -30,6 +30,9 @@ import {
   DollarSign,
   FileText,
   Star,
+  PlayCircle,
+  Download,
+  Film,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
@@ -507,8 +510,8 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                         {booking.has_review ? "Thank you for your review!" : "How was your experience?"}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {booking.has_review 
-                          ? "Your feedback helps others find great practitioners" 
+                        {booking.has_review
+                          ? "Your feedback helps others find great practitioners"
                           : "Share your feedback to help others"}
                       </p>
                     </div>
@@ -518,8 +521,8 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                         Reviewed
                       </Badge>
                     ) : (
-                      <Button 
-                        variant="default" 
+                      <Button
+                        variant="default"
                         onClick={() => setReviewDialogOpen(true)}
                         className="bg-amber-600 hover:bg-amber-700"
                       >
@@ -527,6 +530,91 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                       </Button>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Session Recordings */}
+            {booking.recordings && booking.recordings.length > 0 && (
+              <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Film className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Session Recordings</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {booking.recordings.length} {booking.recordings.length === 1 ? 'recording' : 'recordings'} available
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {booking.recordings.map((recording: any, index: number) => (
+                    <div
+                      key={recording.recording_id || index}
+                      className="border border-sage-100 rounded-lg p-4 hover:shadow-md transition-all hover:border-sage-300 group"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Film className="h-4 w-4 text-primary" />
+                            <h4 className="font-medium">
+                              Recording {index + 1}
+                            </h4>
+                            <Badge variant="outline" className="text-xs">
+                              {recording.file_format?.toUpperCase() || 'MP4'}
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{recording.duration_formatted || `${Math.floor(recording.duration_seconds / 60)} min`}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>
+                                {recording.started_at ? format(parseISO(recording.started_at), "MMM d, h:mm a") : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {recording.file_size_bytes && (
+                            <p className="text-xs text-muted-foreground">
+                              Size: {(recording.file_size_bytes / 1024 / 1024).toFixed(1)} MB
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          {recording.file_url && (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-primary hover:bg-primary/90"
+                                onClick={() => router.push(`/dashboard/user/bookings/${booking.id}/recordings/${recording.id}`)}
+                              >
+                                <PlayCircle className="h-4 w-4 mr-1.5" />
+                                Watch
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                asChild
+                              >
+                                <a
+                                  href={recording.download_url || recording.file_url}
+                                  download
+                                  className="flex items-center gap-1.5"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Download
+                                </a>
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             )}

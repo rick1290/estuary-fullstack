@@ -250,13 +250,14 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Use custom name if provided, otherwise user's full name
         participant_name = serializer.validated_data.get(
-            'participant_name', 
+            'participant_name',
             user.get_full_name()
         )
-        
+
         # Generate identity (unique identifier for LiveKit)
-        identity = f"{user.id}-{user.email}"
-        
+        # Just use user ID - simpler and more robust than parsing email
+        identity = str(user.id)
+
         # Generate token with 4-hour expiry
         token_info = generate_room_token(
             room_name=room.livekit_room_name,

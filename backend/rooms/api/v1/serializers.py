@@ -141,14 +141,14 @@ class RoomRecordingSerializer(serializers.ModelSerializer):
     """
     duration_formatted = serializers.ReadOnlyField()
     download_url = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = RoomRecording
         fields = [
             'id', 'recording_id', 'status', 'started_at', 'ended_at',
             'duration_seconds', 'duration_formatted', 'file_size_bytes',
-            'file_format', 'thumbnail_url', 'is_processed', 'download_url',
-            'created_at'
+            'file_format', 'file_url', 'thumbnail_url', 'is_processed',
+            'download_url', 'created_at'
         ]
         read_only_fields = fields
     

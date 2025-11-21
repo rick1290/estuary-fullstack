@@ -13,6 +13,7 @@ from bookings.models import (
 from practitioners.models import Practitioner
 from services.models import Service, ServiceSession
 from rooms.models import Room
+from rooms.api.v1.serializers import RoomRecordingSerializer
 from utils.models import Address
 from users.models import User
 
@@ -140,6 +141,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     location = BookingAddressSerializer(read_only=True)
     reminders = BookingReminderSerializer(many=True, read_only=True)
     notes = BookingNoteSerializer(many=True, read_only=True)
+    recordings = serializers.SerializerMethodField(read_only=True)
     
     # Computed fields
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -191,7 +193,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'is_individual_session', 'is_group_session', 'is_package_booking', 'is_course_booking',
             'is_parent_booking', 'child_bookings', 'parent_booking_id', 'parent_booking_uuid',
             'has_review', 'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
-            'created_at', 'updated_at'
+            'recordings', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'public_uuid', 'actual_start_time', 'actual_end_time',
@@ -219,6 +221,24 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     def get_has_review(self, obj):
         """Check if this booking has been reviewed by the user"""
         return obj.reviews.filter(user=obj.user).exists()
+
+    def get_recordings(self, obj):
+        """Get all processed recordings for this booking's room"""
+        # Get the room - works for both individual sessions and workshops/courses
+        room = None
+        if obj.livekit_room:
+            # Individual session
+            room = obj.livekit_room
+        elif obj.service_session and obj.service_session.livekit_room:
+            # Workshop/course session
+            room = obj.service_session.livekit_room
+
+        if not room:
+            return []
+
+        # Return only processed recordings
+        recordings = room.recordings.filter(is_processed=True).order_by('-started_at')
+        return RoomRecordingSerializer(recordings, many=True).data
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):

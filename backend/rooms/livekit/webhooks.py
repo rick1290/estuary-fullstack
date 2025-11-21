@@ -216,18 +216,13 @@ class LiveKitWebhookHandler:
             room = Room.objects.get(livekit_room_name=room_info.name)
             logger.info(f"[PARTICIPANT_JOINED] Found room: ID={room.id}, Name={room.name}, Current participants: {room.current_participants}")
 
-            # Extract user ID from identity (format: "user_id-email")
+            # Extract user ID from identity (identity is just the user ID as a string)
             user_id = None
-            if '-' in participant_info.identity:
-                user_id_str = participant_info.identity.split('-')[0]
-                logger.info(f"[PARTICIPANT_JOINED] Extracted user_id_str: '{user_id_str}' from identity")
-                try:
-                    user_id = int(user_id_str)
-                    logger.info(f"[PARTICIPANT_JOINED] Successfully parsed user_id: {user_id}")
-                except ValueError as e:
-                    logger.warning(f"[PARTICIPANT_JOINED] Failed to parse user_id from '{user_id_str}': {e}")
-            else:
-                logger.warning(f"[PARTICIPANT_JOINED] No '-' separator found in identity: {participant_info.identity}")
+            try:
+                user_id = int(participant_info.identity)
+                logger.info(f"[PARTICIPANT_JOINED] Successfully parsed user_id: {user_id}")
+            except ValueError as e:
+                logger.warning(f"[PARTICIPANT_JOINED] Failed to parse user_id from identity '{participant_info.identity}': {e}")
 
             # Skip if we couldn't extract a valid user_id
             if user_id is None:
