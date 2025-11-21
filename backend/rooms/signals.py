@@ -31,28 +31,42 @@ def create_room_for_confirmed_booking(sender, instance: Booking, created: bool, 
     - Individual sessions (not workshops/courses)
     - Confirmed bookings
     """
+    logger.info(f"🔥 Room creation signal triggered for booking {instance.id}, status={instance.status}")
+
     # Only process if booking is confirmed
     if instance.status != 'confirmed':
+        logger.info(f"❌ Skipping booking {instance.id}: status is {instance.status}, not 'confirmed'")
         return
 
     # Skip if room already exists
-    if hasattr(instance, 'livekit_room') and instance.livekit_room:
-        return
+    try:
+        if instance.livekit_room:
+            logger.info(f"❌ Skipping booking {instance.id}: room already exists")
+            return
+    except Booking.livekit_room.RelatedObjectDoesNotExist:
+        pass  # Room doesn't exist, continue
 
     # Skip if this is a group session (uses ServiceSession rooms)
     if instance.service_session:
+        logger.info(f"❌ Skipping booking {instance.id}: has service_session (group booking)")
         return
 
     # Skip if service doesn't require video room
     if not instance.service:
+        logger.info(f"❌ Skipping booking {instance.id}: no service attached")
         return
 
-    if instance.service.location_type not in ['virtual', 'online', 'hybrid']:
+    location_type = instance.service.location_type if instance.service else None
+    if location_type not in ['virtual', 'online', 'hybrid']:
+        logger.info(f"❌ Skipping booking {instance.id}: location_type='{location_type}' not in ['virtual', 'online', 'hybrid']")
         return
 
     # Skip package/bundle parent bookings
     if instance.is_package_purchase or instance.is_bundle_purchase:
+        logger.info(f"❌ Skipping booking {instance.id}: is package/bundle purchase")
         return
+
+    logger.info(f"✅ All guards passed for booking {instance.id}, creating room...")
 
     try:
         from rooms.services import RoomService
