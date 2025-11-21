@@ -386,13 +386,13 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         total_revenue = current_month_bookings.filter(
             status='completed'
         ).aggregate(
-            total=Sum('final_amount_cents')
+            total=Sum('credits_allocated')
         )['total'] or 0
-        
+
         total_revenue_last = last_month_bookings.filter(
             status='completed'
         ).aggregate(
-            total=Sum('final_amount_cents')
+            total=Sum('credits_allocated')
         )['total'] or 0
         
         # Active clients (unique users with bookings in the last 30 days)

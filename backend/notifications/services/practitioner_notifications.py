@@ -164,7 +164,7 @@ class PractitionerNotificationService(BaseNotificationService):
         service = booking.service
         
         # Calculate earnings - convert cents to dollars
-        gross_amount_cents = booking.final_amount_cents or 0
+        gross_amount_cents = booking.credits_allocated or 0
         gross_amount = Decimal(str(gross_amount_cents / 100.0))
         # TODO: Get commission rate from subscription tier
         commission_rate = Decimal('15.0')  # Default 15%
@@ -722,9 +722,9 @@ class PractitionerNotificationService(BaseNotificationService):
         # Calculate earnings
         completed_bookings = period_bookings.filter(status='completed')
         earnings_data = completed_bookings.aggregate(
-            total_gross_cents=Sum('final_amount_cents'),
+            total_gross_cents=Sum('credits_allocated'),
             count=Count('id'),
-            avg_amount_cents=Avg('final_amount_cents')
+            avg_amount_cents=Avg('credits_allocated')
         )
         
         # Convert cents to dollars
@@ -748,17 +748,17 @@ class PractitionerNotificationService(BaseNotificationService):
             'service__name'
         ).annotate(
             count=Count('id'),
-            revenue_cents=Sum('final_amount_cents')
+            revenue_cents=Sum('credits_allocated')
         ).order_by('-count')[:3]
         
         # Calculate comparison with previous period
         previous_start = start_date - (end_date - start_date)
         previous_bookings = Booking.objects.filter(
             service__primary_practitioner=practitioner,
-            start_time__gte=previous_start,
-            start_time__lt=start_date,
+            service_session__start_time__gte=previous_start,
+            service_session__start_time__lt=start_date,
             status='completed'
-        ).aggregate(total_cents=Sum('final_amount_cents'))
+        ).aggregate(total_cents=Sum('credits_allocated'))
         
         previous_total_cents = previous_bookings['total_cents'] or 0
         previous_total = Decimal(str(previous_total_cents / 100.0)) if previous_total_cents else Decimal('0')

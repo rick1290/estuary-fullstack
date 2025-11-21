@@ -66,7 +66,7 @@ import CompactCategoryManager from "../categories/compact-category-manager"
 const phase1Schema = z.object({
   serviceType: z.string().min(1, "Please select a service type"),
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  shortDescription: z.string().min(10, "Description must be at least 10 characters").max(200),
+  shortDescription: z.string().min(10, "Description must be at least 10 characters").max(300),
 })
 
 const phase2Schema = z.object({
@@ -524,9 +524,9 @@ export function GuidedServiceWizard() {
                             </FormDescription>
                             <span className={cn(
                               "text-muted-foreground",
-                              field.value.length > 200 && "text-destructive"
+                              field.value.length > 300 && "text-destructive"
                             )}>
-                              {field.value.length}/200
+                              {field.value.length}/300
                             </span>
                           </div>
                           <FormMessage />
@@ -751,6 +751,14 @@ export function GuidedServiceWizard() {
                             <FormDescription>
                               Choose which availability schedule to use
                             </FormDescription>
+                            {(!schedules?.results || schedules.results.length === 0) && (
+                              <p className="text-sm text-destructive mt-2">
+                                You haven't created any availability schedules yet. You can add one later in your{" "}
+                                <Link href="/dashboard/practitioner/availability" className="underline hover:text-destructive/80">
+                                  availability settings
+                                </Link>.
+                              </p>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
@@ -863,6 +871,9 @@ export function GuidedServiceWizard() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormDescription>
+                              Organize your services into your own custom categories (e.g., "Beginner Classes", "Premium Sessions")
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}

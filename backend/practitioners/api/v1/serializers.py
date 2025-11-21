@@ -568,10 +568,10 @@ class PractitionerSearchSerializer(serializers.Serializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-    """Serializer for practitioner questions"""
+    """Serializer for practitioner FAQ questions and answers"""
     class Meta:
         model = Question
-        fields = ['id', 'title', 'order']
+        fields = ['id', 'title', 'answer', 'order']
         read_only_fields = ['id']
 
 

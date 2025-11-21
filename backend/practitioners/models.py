@@ -452,14 +452,24 @@ class OutOfOffice(BaseModel):
 
 class Question(BaseModel):
     """
-    Model representing a question for user feedback.
+    Model representing a FAQ question and answer for a practitioner's profile.
     Updated to use BaseModel for consistency.
     """
-    title = models.TextField(blank=True, null=True)
+    practitioner = models.ForeignKey(
+        'Practitioner',
+        on_delete=models.CASCADE,
+        related_name='faq_questions',
+        null=True,
+        blank=True,
+        help_text="The practitioner this FAQ belongs to"
+    )
+    title = models.TextField(blank=True, null=True, help_text="The question text")
+    answer = models.TextField(blank=True, null=True, help_text="The answer to the question")
     order = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'questions'
+        ordering = ['order']
 
     def __str__(self):
         return self.title or f"Question {self.id}"

@@ -32,6 +32,7 @@ import {
 interface Question {
   id: number
   title: string
+  answer: string | null
   order: number
 }
 
@@ -45,6 +46,7 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [questionText, setQuestionText] = useState("")
+  const [answerText, setAnswerText] = useState("")
 
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -104,10 +106,10 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
 
   // Add or update question
   const saveQuestion = async () => {
-    if (!questionText || !practitioner?.id) {
+    if (!questionText || !answerText || !practitioner?.id) {
       toast({
         title: "Missing Information",
-        description: "Please fill in the question field.",
+        description: "Please fill in both the question and answer fields.",
         variant: "destructive",
       })
       return
@@ -115,6 +117,7 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
 
     const questionData = {
       title: questionText,
+      answer: answerText,
       order: editingQuestion ? editingQuestion.order : questions.length + 1
     }
 
@@ -134,6 +137,7 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
 
     // Reset form and close dialog
     setQuestionText("")
+    setAnswerText("")
     setEditingQuestion(null)
     setDialogOpen(false)
   }
@@ -142,6 +146,7 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
   const editQuestion = (question: Question) => {
     setEditingQuestion(question)
     setQuestionText(question.title)
+    setAnswerText(question.answer || "")
     setDialogOpen(true)
   }
 
@@ -158,17 +163,17 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
     if (index <= 0 || !practitioner?.id) return
     const q1 = questions[index]
     const q2 = questions[index - 1]
-    
+
     // Update both questions with swapped order values
     await updateQuestionMutation.mutateAsync({
       path: { id: practitioner.id, question_id: q1.id },
-      body: { title: q1.title, order: q2.order }
+      body: { title: q1.title, answer: q1.answer, order: q2.order }
     })
     await updateQuestionMutation.mutateAsync({
       path: { id: practitioner.id, question_id: q2.id },
-      body: { title: q2.title, order: q1.order }
+      body: { title: q2.title, answer: q2.answer, order: q1.order }
     })
-    
+
     refreshAllData()
   }
 
@@ -177,17 +182,17 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
     if (index >= questions.length - 1 || !practitioner?.id) return
     const q1 = questions[index]
     const q2 = questions[index + 1]
-    
+
     // Update both questions with swapped order values
     await updateQuestionMutation.mutateAsync({
       path: { id: practitioner.id, question_id: q1.id },
-      body: { title: q1.title, order: q2.order }
+      body: { title: q1.title, answer: q1.answer, order: q2.order }
     })
     await updateQuestionMutation.mutateAsync({
       path: { id: practitioner.id, question_id: q2.id },
-      body: { title: q2.title, order: q1.order }
+      body: { title: q2.title, answer: q2.answer, order: q1.order }
     })
-    
+
     refreshAllData()
   }
 
@@ -217,16 +222,20 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order</TableHead>
+                  <TableHead className="w-16">Order</TableHead>
                   <TableHead>Question</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Answer</TableHead>
+                  <TableHead className="text-right w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {questions.map((q, index) => (
                   <TableRow key={q.id}>
                     <TableCell>{q.order}</TableCell>
-                    <TableCell className="max-w-md">{q.title}</TableCell>
+                    <TableCell className="max-w-xs">{q.title}</TableCell>
+                    <TableCell className="max-w-sm text-muted-foreground text-sm">
+                      {q.answer ? (q.answer.length > 100 ? q.answer.substring(0, 100) + "..." : q.answer) : <span className="italic">No answer yet</span>}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -269,6 +278,7 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
                 onClick={() => {
                   setEditingQuestion(null)
                   setQuestionText("")
+                  setAnswerText("")
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -277,9 +287,9 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>{editingQuestion ? "Edit Question" : "Add Question"}</DialogTitle>
+                <DialogTitle>{editingQuestion ? "Edit Question & Answer" : "Add Question & Answer"}</DialogTitle>
                 <DialogDescription>
-                  Add a common question that will help potential clients understand your practice better.
+                  Add a common question and answer that will help potential clients understand your practice better.
                 </DialogDescription>
               </DialogHeader>
 
@@ -291,7 +301,17 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
                     value={questionText}
                     onChange={(e) => setQuestionText(e.target.value)}
                     placeholder="e.g., What can clients expect in their first session with you?"
-                    className="min-h-[100px]"
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="answer">Answer</Label>
+                  <Textarea
+                    id="answer"
+                    value={answerText}
+                    onChange={(e) => setAnswerText(e.target.value)}
+                    placeholder="e.g., In your first session, we'll discuss your goals and create a personalized plan..."
+                    className="min-h-[120px]"
                   />
                 </div>
               </div>

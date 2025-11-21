@@ -112,7 +112,7 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                       className={cn(
                         "text-sm font-bold",
                         (isCurrent || isPast) && "text-white",
-                        isFuture && "text-sage-400"
+                        isFuture && "text-olive-400"
                       )}
                     >
                       {step.number}
@@ -130,7 +130,7 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                     {step.title}
                   </p>
                   <p className="text-xs text-olive-600 mb-1">{step.description}</p>
-                  <p className="text-xs text-sage-600 font-medium">{step.estimatedTime}</p>
+                  <p className="text-xs text-olive-500 font-medium">{step.estimatedTime}</p>
                 </div>
               </div>
 
@@ -177,7 +177,7 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                     className={cn(
                       "text-sm font-bold",
                       (isCurrent || isPast) && "text-white",
-                      isFuture && "text-sage-400"
+                      isFuture && "text-olive-400"
                     )}
                   >
                     {step.number}
@@ -195,7 +195,7 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                   )}>
                     {step.title}
                   </p>
-                  <span className="text-xs text-sage-600 font-medium">{step.estimatedTime}</span>
+                  <span className="text-xs text-olive-500 font-medium">{step.estimatedTime}</span>
                 </div>
                 <p className="text-xs text-olive-600">{step.description}</p>
               </div>

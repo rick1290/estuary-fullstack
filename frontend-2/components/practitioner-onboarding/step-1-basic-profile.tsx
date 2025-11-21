@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Upload, Loader2, User, Briefcase, FileText, Award } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { practitionersApplyCreate } from "@/src/client/sdk.gen"
+import { practitionersApplyCreate, mediaUploadCreate } from "@/src/client/sdk.gen"
 
 interface Step1Data {
   display_name: string
@@ -159,24 +159,22 @@ export default function Step1BasicProfile({
         setPractitionerId(data.id)
 
         // Upload profile image if one was selected
-        if (imageFile) {
+        if (imageFile && data.public_uuid) {
           try {
             setUploadingImage(true)
-            const formDataObj = new FormData()
-            formDataObj.append('file', imageFile)
-            formDataObj.append('entity_type', 'practitioner')
-            formDataObj.append('entity_id', data.public_uuid)
-            formDataObj.append('is_primary', 'true')
-            formDataObj.append('title', 'Profile Photo')
 
-            const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/media/upload/`, {
-              method: 'POST',
-              body: formDataObj,
-              credentials: 'include'
+            const { error: uploadError } = await mediaUploadCreate({
+              body: {
+                file: imageFile,
+                entity_type: 'practitioner',
+                entity_id: data.public_uuid,
+                is_primary: true,
+                title: 'Profile Photo'
+              }
             })
 
-            if (!uploadResponse.ok) {
-              console.error('Failed to upload profile image')
+            if (uploadError) {
+              console.error('Failed to upload profile image:', uploadError)
               // Don't block progression if image upload fails
             }
           } catch (uploadError) {
