@@ -341,6 +341,10 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Note: We're not checking active_participants in DB because participant_joined
+        # webhooks may not have processed yet. LiveKit will fail with "Start signal not received"
+        # if the room is actually empty, so we let LiveKit handle that validation.
+
         # Validate request data
         serializer = StartRecordingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
