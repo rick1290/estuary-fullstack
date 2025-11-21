@@ -33,10 +33,30 @@ export default function ClientServiceHistory({ clientId }: ClientServiceHistoryP
 
   const bookings = data?.results || []
 
+  // Normalize service type to match filter values
+  const normalizeServiceType = (service: any): string => {
+    // Check is_course, is_package, is_bundle flags first
+    if (service?.is_course) return "course"
+    if (service?.is_package) return "package"
+    if (service?.is_bundle) return "bundle"
+
+    // Fall back to service_type - could be name or code
+    const serviceType = service?.service_type?.toLowerCase() || ""
+
+    // Handle various session types
+    if (serviceType.includes("session")) return "session"
+    if (serviceType.includes("workshop")) return "workshop"
+    if (serviceType.includes("course")) return "course"
+    if (serviceType.includes("package")) return "package"
+    if (serviceType.includes("bundle")) return "bundle"
+
+    return "session" // Default fallback
+  }
+
   const getFilteredHistory = () => {
     if (tabValue === "all") return bookings
     return bookings.filter((booking: any) => {
-      const serviceType = booking.service?.service_type || "session"
+      const serviceType = normalizeServiceType(booking.service)
       return serviceType === tabValue
     })
   }
@@ -139,8 +159,8 @@ export default function ClientServiceHistory({ clientId }: ClientServiceHistoryP
             <TableBody>
               {filteredHistory.map((booking: any) => {
                 const service = booking.service
-                const serviceType = service?.service_type || "session"
-                
+                const serviceType = normalizeServiceType(service)
+
                 return (
                   <TableRow key={booking.id} className="hover:bg-muted/50">
                     <TableCell>

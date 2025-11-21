@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Star, MessageCircle, Phone, MapPin, Calendar, DollarSign, BookOpen } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -132,37 +132,28 @@ export default function ClientProfile({ clientId }: ClientProfileProps) {
       <CardHeader className="text-center pb-0">
         <div className="relative inline-block mx-auto">
           <Avatar className="h-20 w-20 mx-auto mb-4">
-            <AvatarImage src={client.avatar_url || "/generic-media-placeholder.png"} alt={name} />
-            <AvatarFallback>
-              {name?.split(' ').map(n => n[0]).join('').toUpperCase() || "?"}
+            <AvatarFallback className="text-xl">
+              {(name || "U")
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute -top-2 -right-2 flex gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-full bg-background shadow-sm"
-              onClick={handleMessageClient}
-              disabled={isMessaging}
-              title="Message client"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-full bg-background shadow-sm"
-              onClick={toggleFavorite}
-              title="Mark as favorite"
-            >
-              {isFavorite ? <Star className="h-4 w-4 fill-primary text-primary" /> : <Star className="h-4 w-4" />}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-background shadow-sm"
+            onClick={toggleFavorite}
+            title="Mark as favorite"
+          >
+            {isFavorite ? <Star className="h-4 w-4 fill-primary text-primary" /> : <Star className="h-4 w-4" />}
+          </Button>
         </div>
         <h2 className="text-xl font-bold mb-1">{name}</h2>
-        <p className="text-sm text-muted-foreground mb-4">Member since {memberSince}</p>
+        <p className="text-sm text-muted-foreground mb-2">Member since {memberSince}</p>
         {tags.length > 0 && (
-          <div className="flex justify-center flex-wrap gap-2 my-4">
+          <div className="flex justify-center flex-wrap gap-2 mb-4">
             {tags.map((tag: string) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
@@ -170,6 +161,15 @@ export default function ClientProfile({ clientId }: ClientProfileProps) {
             ))}
           </div>
         )}
+        <Button
+          variant="default"
+          className="w-full"
+          onClick={handleMessageClient}
+          disabled={isMessaging}
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          {isMessaging ? "Opening..." : "Send Message"}
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-4">

@@ -476,11 +476,11 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                 bookings__practitioner=practitioner,
                 bookings__status__in=['completed', 'confirmed', 'in_progress']
             )),
-            total_spent=Sum('bookings__final_amount_cents', filter=Q(
+            total_spent=Sum('bookings__credits_allocated', filter=Q(
                 bookings__practitioner=practitioner,
                 bookings__status='completed'
             )),
-            last_booking_date=Max('bookings__start_time', filter=Q(
+            last_booking_date=Max('bookings__service_session__start_time', filter=Q(
                 bookings__practitioner=practitioner
             )),
             # Get next upcoming booking
@@ -489,8 +489,8 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                     user=OuterRef('pk'),
                     practitioner=practitioner,
                     status='confirmed',
-                    start_time__gte=timezone.now()
-                ).order_by('start_time').values('start_time')[:1]
+                    service_session__start_time__gte=timezone.now()
+                ).order_by('service_session__start_time').values('service_session__start_time')[:1]
             )
         ).select_related('profile').order_by('-last_booking_date')
         
@@ -554,11 +554,11 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                 bookings__practitioner=practitioner,
                 bookings__status__in=['completed', 'confirmed', 'in_progress']
             )),
-            total_spent=Sum('bookings__final_amount_cents', filter=Q(
+            total_spent=Sum('bookings__credits_allocated', filter=Q(
                 bookings__practitioner=practitioner,
                 bookings__status='completed'
             )),
-            last_booking_date=Max('bookings__start_time', filter=Q(
+            last_booking_date=Max('bookings__service_session__start_time', filter=Q(
                 bookings__practitioner=practitioner
             )),
             next_booking_date=Subquery(
@@ -566,8 +566,8 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                     user=OuterRef('pk'),
                     practitioner=practitioner,
                     status='confirmed',
-                    start_time__gte=timezone.now()
-                ).order_by('start_time').values('start_time')[:1]
+                    service_session__start_time__gte=timezone.now()
+                ).order_by('service_session__start_time').values('service_session__start_time')[:1]
             )
         ).select_related('profile').first()
 
