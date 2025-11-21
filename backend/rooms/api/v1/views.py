@@ -116,6 +116,8 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                 'livekit_room_name': room.livekit_room_name,
                 'status': room.status,
                 'room_type': room.room_type,
+                'recording_status': room.recording_status,
+                'recording_enabled': room.recording_enabled,
             }
         }
         
