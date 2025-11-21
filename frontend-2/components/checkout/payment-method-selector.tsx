@@ -2,24 +2,27 @@
 
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { 
-  paymentMethodsListOptions, 
+import {
+  paymentMethodsListOptions,
   paymentMethodsSetDefaultCreateMutation,
   paymentMethodsDestroyMutation
 } from "@/src/client/@tanstack/react-query.gen"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { 
-  CreditCard, 
-  Plus, 
-  Trash2, 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  CreditCard,
+  Plus,
+  Trash2,
   AlertCircle,
-  CheckCircle,
-  Clock
+  ChevronDown
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -33,9 +36,9 @@ interface PaymentMethodSelectorProps {
 const brandDisplayNames: Record<string, string> = {
   'visa': 'Visa',
   'mastercard': 'Mastercard',
-  'amex': 'American Express',
+  'amex': 'Amex',
   'discover': 'Discover',
-  'diners': 'Diners Club',
+  'diners': 'Diners',
   'jcb': 'JCB',
   'unionpay': 'UnionPay',
   'unknown': 'Card'
@@ -67,14 +70,6 @@ export default function PaymentMethodSelector({
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   })
 
-  // Mutation to set default payment method
-  const setDefaultMutation = useMutation({
-    ...paymentMethodsSetDefaultCreateMutation(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paymentMethodsList'] })
-    },
-  })
-
   // Mutation to delete payment method
   const deleteMutation = useMutation({
     ...paymentMethodsDestroyMutation(),
@@ -87,17 +82,14 @@ export default function PaymentMethodSelector({
     }
   })
 
-  const handleSetDefault = async (methodId: number) => {
-    await setDefaultMutation.mutateAsync({
-      path: { id: methodId }
-    })
-  }
+  const handleDelete = async (e: React.MouseEvent, methodId: number) => {
+    e.preventDefault()
+    e.stopPropagation()
 
-  const handleDelete = async (methodId: number) => {
     if (!confirm("Are you sure you want to remove this payment method?")) {
       return
     }
-    
+
     setDeletingId(methodId)
     await deleteMutation.mutateAsync({
       path: { id: methodId }
@@ -109,7 +101,7 @@ export default function PaymentMethodSelector({
     const now = new Date()
     const currentYear = now.getFullYear()
     const currentMonth = now.getMonth() + 1
-    
+
     return expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)
   }
 
@@ -122,177 +114,126 @@ export default function PaymentMethodSelector({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Methods</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <Label>Payment Method</Label>
+        <Skeleton className="h-10 w-full" />
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Methods</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load payment methods. Please try again.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <Label>Payment Method</Label>
+        <div className="flex items-center gap-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          Failed to load payment methods
+        </div>
+      </div>
     )
   }
 
   const methods = paymentMethods?.results || []
-  const hasValidMethods = methods.some(method => !isExpired(method.exp_month, method.exp_year))
+  const validMethods = methods.filter(method => !isExpired(method.exp_month, method.exp_year))
+  const selectedMethod = methods.find(m => m.id.toString() === selectedMethodId)
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Payment Methods</CardTitle>
+  // No payment methods
+  if (methods.length === 0) {
+    return (
+      <div className="space-y-2">
+        <Label>Payment Method</Label>
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={onAddNewCard}
-          className="gap-2"
+          className="w-full justify-start gap-2 h-11"
         >
           <Plus className="h-4 w-4" />
-          Add New Card
+          Add Payment Method
         </Button>
-      </CardHeader>
-      <CardContent>
-        {methods.length === 0 ? (
-          <div className="text-center py-8">
-            <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No payment methods saved</p>
-            <Button type="button" onClick={onAddNewCard} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Payment Method
-            </Button>
-          </div>
-        ) : (
-          <>
-            {!hasValidMethods && (
-              <Alert className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  All your saved cards have expired. Please add a new payment method.
-                </AlertDescription>
-              </Alert>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>Payment Method</Label>
+      <Select
+        value={selectedMethodId || ""}
+        onValueChange={(value) => {
+          if (value === "add-new") {
+            onAddNewCard()
+          } else {
+            onSelectMethod(value)
+          }
+        }}
+      >
+        <SelectTrigger className="w-full h-11 bg-white">
+          <SelectValue placeholder="Select payment method">
+            {selectedMethod && (
+              <div className="flex items-center gap-2">
+                <CreditCard className={cn("h-4 w-4", brandColors[selectedMethod.brand])} />
+                <span>
+                  {brandDisplayNames[selectedMethod.brand]} •••• {selectedMethod.last4}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {formatExpiry(selectedMethod.exp_month, selectedMethod.exp_year)}
+                </span>
+              </div>
             )}
-            
-            <RadioGroup
-              value={selectedMethodId || ""}
-              onValueChange={onSelectMethod}
-              className="space-y-3"
-            >
-              {methods.map((method) => {
-                const expired = isExpired(method.exp_month, method.exp_year)
-                const isDeleting = deletingId === method.id
-                
-                return (
-                  <div
-                    key={method.id}
-                    className={cn(
-                      "relative rounded-lg border p-4",
-                      selectedMethodId === method.id.toString() && "border-primary bg-primary/5",
-                      expired && "opacity-60"
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {methods.map((method) => {
+            const expired = isExpired(method.exp_month, method.exp_year)
+
+            return (
+              <SelectItem
+                key={method.id}
+                value={method.id.toString()}
+                disabled={expired}
+                className="py-3"
+              >
+                <div className="flex items-center justify-between w-full gap-4">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className={cn("h-4 w-4", brandColors[method.brand])} />
+                    <span className={expired ? "text-muted-foreground" : ""}>
+                      {brandDisplayNames[method.brand]} •••• {method.last4}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      {formatExpiry(method.exp_month, method.exp_year)}
+                    </span>
+                    {expired && (
+                      <span className="text-destructive text-xs">(Expired)</span>
                     )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <RadioGroupItem
-                        value={method.id.toString()}
-                        id={`method-${method.id}`}
-                        disabled={expired || isDeleting}
-                        className="mt-1"
-                      />
-                      <Label
-                        htmlFor={`method-${method.id}`}
-                        className="flex-1 cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <CreditCard className={cn(
-                              "h-5 w-5",
-                              brandColors[method.brand] || "text-gray-600"
-                            )} />
-                            <div>
-                              <p className="font-medium">
-                                {brandDisplayNames[method.brand] || method.brand} •••• {method.last4}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Expires {formatExpiry(method.exp_month, method.exp_year)}
-                                {expired && (
-                                  <span className="text-destructive ml-2">
-                                    (Expired)
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {method.is_default && (
-                              <div className="flex items-center gap-1 text-primary">
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="text-sm font-medium">Default</span>
-                              </div>
-                            )}
-                            
-                            {!method.is_default && !expired && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  handleSetDefault(method.id)
-                                }}
-                                disabled={setDefaultMutation.isPending}
-                              >
-                                Set as default
-                              </Button>
-                            )}
-                            
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                handleDelete(method.id)
-                              }}
-                              disabled={isDeleting}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              {isDeleting ? (
-                                <Clock className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
+                    {method.is_default && !expired && (
+                      <span className="text-xs text-primary font-medium">Default</span>
+                    )}
                   </div>
-                )
-              })}
-            </RadioGroup>
-          </>
-        )}
-      </CardContent>
-    </Card>
+                </div>
+              </SelectItem>
+            )
+          })}
+
+          {/* Add new card option */}
+          <SelectItem value="add-new" className="py-3 border-t mt-1">
+            <div className="flex items-center gap-2 text-primary">
+              <Plus className="h-4 w-4" />
+              <span>Add new card</span>
+            </div>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Manage cards link */}
+      {methods.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Manage your saved cards in{" "}
+          <a href="/dashboard/user/profile" className="underline hover:text-foreground">
+            account settings
+          </a>
+        </p>
+      )}
+    </div>
   )
 }

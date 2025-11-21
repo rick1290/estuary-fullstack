@@ -196,8 +196,8 @@ export default function StreamCheckoutPage() {
       {/* Logo - Full Width */}
       <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-block">
-            <h1 className="text-2xl font-medium tracking-tight text-olive-900">ESTUARY</h1>
+          <Link href="/" className="flex items-center font-bold text-xl tracking-widest">
+            ESTUARY
           </Link>
         </div>
       </div>

@@ -325,7 +325,9 @@ export default function CheckoutPage() {
     price: serviceData.price_cents ? serviceData.price_cents / 100 : 0,
     location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Virtual',
     practitioner: {
-      name: serviceData.primary_practitioner?.display_name || serviceData.practitioner?.display_name || 'Practitioner'
+      name: serviceData.primary_practitioner?.display_name || serviceData.practitioner?.display_name || 'Practitioner',
+      image: serviceData.primary_practitioner?.profile_image_url || serviceData.practitioner?.profile_image_url,
+      slug: serviceData.primary_practitioner?.slug || serviceData.practitioner?.slug
     },
     image: serviceData.image_url || serviceData.featured_image,
     firstSessionDate: serviceData.first_session_date,
@@ -352,8 +354,8 @@ export default function CheckoutPage() {
       {/* Logo - Full Width */}
       <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-block">
-            <h1 className="text-2xl font-medium tracking-tight text-olive-900">ESTUARY</h1>
+          <Link href="/" className="flex items-center font-bold text-xl tracking-widest">
+            ESTUARY
           </Link>
         </div>
       </div>
@@ -363,27 +365,19 @@ export default function CheckoutPage() {
           <div className="grid gap-8 lg:gap-12 lg:grid-cols-5">
             {/* Checkout Form */}
             <div className="lg:col-span-3">
-              <h1 className="text-3xl font-medium mb-8">Checkout</h1>
+              {/* Back link */}
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                Back to service
+              </button>
 
-              {/* Credits Section */}
-              {userCreditBalance > 0 && (
-                <Card className="mb-6">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">Available Credits</h3>
-                        <p className="text-sm text-muted-foreground">
-                          You have ${userCreditBalance.toFixed(2)} in credits available
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="apply-credits" checked={applyCredits} onCheckedChange={setApplyCredits} />
-                        <Label htmlFor="apply-credits">{applyCredits ? "Applied" : "Apply to order"}</Label>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <h1 className="text-3xl font-medium mb-8">Checkout</h1>
 
               <form onSubmit={handleSubmit}>
                 {/* Error Display */}
@@ -406,22 +400,22 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <div className="pt-2">
                     <Label htmlFor="special-requests" className="mb-2 block">
-                      Special Requests or Notes
+                      Special Requests or Notes <span className="text-muted-foreground font-normal">(Optional)</span>
                     </Label>
                     <Textarea
                       id="special-requests"
                       placeholder="Any special requirements or information for the practitioner..."
                       value={specialRequests}
                       onChange={(e) => setSpecialRequests(e.target.value)}
-                      className="resize-none"
+                      className="resize-none bg-white"
                       rows={3}
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg" 
-                    size="lg" 
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg"
+                    size="lg"
                     disabled={processingPayment}
                   >
                     {processingPayment ? (
@@ -430,30 +424,30 @@ export default function CheckoutPage() {
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
                       </>
                     ) : (
-                      `Complete Payment ($${total.toFixed(2)})`
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Complete Payment (${total.toFixed(2)})
+                      </>
                     )}
                   </Button>
 
-                  {/* Add the legal language and security information below the button */}
+                  {/* Legal language and security information */}
                   <div className="mt-3 text-center space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      By pressing the "Complete Payment" button, you agree to Estuary's Refund and Payment Policy
+                      By completing this payment, you agree to Estuary's{" "}
+                      <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link>
+                      {" "}and{" "}
+                      <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
                     </p>
-                    <p className="text-xs text-muted-foreground flex items-center justify-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3 mr-1"
-                      >
+                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      It's safe to pay on Estuary. All transactions are protected by SSL encryption.
+                      Secure checkout powered by Stripe
                     </p>
                   </div>
                 </div>
@@ -463,155 +457,135 @@ export default function CheckoutPage() {
             {/* Order Summary */}
             <div className="lg:col-span-2">
               <Card className="sticky top-6">
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Order Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-gradient-to-br from-sage-50 to-terracotta-50 rounded-lg border border-sage-200">
-                    <div className="flex items-start gap-4">
-                      <div className="h-20 w-20 rounded-lg bg-white border border-sage-200 overflow-hidden flex-shrink-0">
-                        {service.image ? (
+                <CardContent className="space-y-3">
+                  {/* Service + Practitioner */}
+                  <div className="flex items-start gap-3">
+                    <div className="h-14 w-14 rounded-lg bg-white border border-sage-200 overflow-hidden flex-shrink-0">
+                      {service.image ? (
+                        <img
+                          src={service.image || "/placeholder.svg"}
+                          alt={service.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                          <span className="text-lg font-medium text-olive-700">{service.title?.charAt(0) || "S"}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-olive-900 text-sm line-clamp-2">{service.title}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        {service.practitioner?.image ? (
                           <img
-                            src={service.image || "/placeholder.svg"}
-                            alt={service.title}
-                            className="h-full w-full object-cover"
+                            src={service.practitioner.image}
+                            alt={service.practitioner.name}
+                            className="h-5 w-5 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="h-full w-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
-                            <span className="text-2xl font-medium text-olive-700">{service.title?.charAt(0) || "S"}</span>
+                          <div className="h-5 w-5 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                            <User className="h-3 w-3 text-olive-600" />
                           </div>
                         )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-olive-900 line-clamp-2">{service.title}</h3>
-                        <p className="text-sm text-olive-600 mt-1">
-                          {serviceType === "one-on-one" ? "Session" : 
-                           serviceType === "workshops" ? "Workshop" :
-                           serviceType === "courses" ? "Course" :
-                           serviceType.charAt(0).toUpperCase() + serviceType.slice(1)}
-                        </p>
+                        <span className="text-xs text-muted-foreground">{service.practitioner?.name}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Booking Details */}
-                  <Card className="bg-sage-50/50 border border-sage-200">
-                    <CardContent className="space-y-4 p-4">
-                      <h3 className="font-medium">Booking Details</h3>
-                      <div className="grid gap-3">
-                        <div className="flex items-start gap-3">
-                          <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Date</p>
-                            <p className="text-muted-foreground">
-                              {serviceType === "courses" && service.firstSessionDate && service.lastSessionDate
-                                ? `${new Date(service.firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(service.lastSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                                : selectedDate || "Flexible"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Time</p>
-                            <p className="text-muted-foreground">{selectedTime || "To be confirmed"}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Location</p>
-                            <p className="text-muted-foreground">{service.location || "Online"}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Practitioner</p>
-                            <p className="text-muted-foreground">
-                              {service.practitioner?.name || "Various practitioners"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Promo Code */}
-                  <div className="pt-2">
-                    <Label htmlFor="promo-code" className="text-sm font-medium">
-                      Promo Code
-                    </Label>
-                    <div className="flex mt-1">
-                      <Input
-                        id="promo-code"
-                        placeholder="Enter code"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        className="rounded-r-none"
-                        disabled={promoApplied}
-                      />
-                      <Button
-                        onClick={handleApplyPromo}
-                        className="rounded-l-none"
-                        variant={promoApplied ? "outline" : "default"}
-                        disabled={!promoCode || promoApplied}
-                      >
-                        {promoApplied ? <Check className="h-4 w-4" /> : "Apply"}
-                      </Button>
+                  {/* Booking Details - Compact */}
+                  <div className="grid grid-cols-2 gap-2 text-sm bg-sage-50/50 rounded-lg p-3 border border-sage-100">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground truncate">
+                        {serviceType === "courses" && service.firstSessionDate && service.lastSessionDate
+                          ? `${new Date(service.firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                          : selectedDate || "Flexible"}
+                      </span>
                     </div>
-                    {promoApplied && (
-                      <p className="text-xs text-primary mt-1">Promo code applied: ${promoDiscount.toFixed(2)} off</p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground truncate">{selectedTime || "TBC"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 col-span-2">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground truncate">{service.location || "Virtual"}</span>
+                    </div>
                   </div>
 
-                  <Separator className="my-4" />
+                  <Separator className="my-3" />
 
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-base">
-                      <span className="text-olive-700">Subtotal</span>
-                      <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  {/* Price Breakdown */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>${subtotal.toFixed(2)}</span>
                     </div>
 
-                    {creditsToApply > 0 && (
-                      <div className="flex justify-between text-sage-700">
-                        <span className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4" />
-                          Credits Applied
-                        </span>
-                        <span className="font-medium">-${creditsToApply.toFixed(2)}</span>
+                    {/* Credits */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Credits</span>
+                      <div className="flex items-center gap-2">
+                        {userCreditBalance > 0 ? (
+                          <>
+                            <span className={applyCredits ? "text-sage-700" : "text-muted-foreground"}>
+                              {applyCredits ? `-$${creditsToApply.toFixed(2)}` : `$${userCreditBalance.toFixed(2)} available`}
+                            </span>
+                            <Switch
+                              id="apply-credits"
+                              checked={applyCredits}
+                              onCheckedChange={setApplyCredits}
+                              className="scale-75"
+                            />
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">$0.00</span>
+                        )}
                       </div>
-                    )}
+                    </div>
 
                     {promoDiscount > 0 && (
                       <div className="flex justify-between text-sage-700">
-                        <span className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4" />
-                          Promo Discount
-                        </span>
-                        <span className="font-medium">-${promoDiscount.toFixed(2)}</span>
+                        <span>Promo</span>
+                        <span>-${promoDiscount.toFixed(2)}</span>
                       </div>
                     )}
 
-                    <Separator className="my-3" />
+                    {/* Promo Code Input */}
+                    {!promoApplied && (
+                      <div className="flex gap-1 pt-1">
+                        <Input
+                          id="promo-code"
+                          placeholder="Promo code"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                        <Button
+                          onClick={handleApplyPromo}
+                          className="h-8 px-3"
+                          size="sm"
+                          disabled={!promoCode}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    )}
 
-                    <div className="flex justify-between text-lg font-bold text-olive-900">
+                    <Separator className="my-2" />
+
+                    <div className="flex justify-between text-base font-semibold text-olive-900">
                       <span>Total</span>
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="rounded-lg bg-sage-100/50 border border-sage-200 p-4">
-                    <div className="flex gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-sage-700 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-medium text-olive-900">Satisfaction Guaranteed</p>
-                        <p className="text-olive-600">Full refund if you're not completely satisfied</p>
-                      </div>
-                    </div>
+                  {/* Satisfaction Guarantee - Compact */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-sage-600" />
+                    <span>Satisfaction guaranteed · Full refund available</span>
                   </div>
                 </CardContent>
               </Card>
