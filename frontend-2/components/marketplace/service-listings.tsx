@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { publicServicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useMarketplaceFilters } from "@/hooks/use-marketplace-filters"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import ServiceCard from "@/components/ui/service-card"
 
 // Fallback mock data for development
@@ -172,15 +172,15 @@ interface ServiceListingsProps {
 }
 
 export default function ServiceListings({ serviceType, serviceTypes }: ServiceListingsProps) {
-  const [page, setPage] = useState(1)
-  const limit = 12  // Show 12 services per page
-  const { filters } = useMarketplaceFilters()
+  const PAGE_SIZE = 12  // Show 12 services per page
+  const { filters, updateFilter } = useMarketplaceFilters()
+  const page = filters.page
 
   // Build query parameters for API from URL filters
   const queryParams = useMemo(() => {
     const params: any = {
-      limit,
-      offset: (page - 1) * limit,
+      page_size: PAGE_SIZE,
+      page: page,
       ordering: '-is_featured,-average_rating',
       is_active: true,  // Only show active services
     }
@@ -233,7 +233,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
     }
 
     return params
-  }, [filters, serviceType, serviceTypes, page])
+  }, [filters, serviceType, serviceTypes, page, PAGE_SIZE])
 
   // Fetch services from API using public endpoint
   const { data: servicesData, isLoading, error, refetch } = useQuery({
@@ -379,15 +379,67 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
 
   // Pagination info
   const totalResults = servicesData?.count || filteredServices.length
+  const totalPages = Math.ceil(totalResults / PAGE_SIZE)
   const hasMore = servicesData?.next != null
+  const hasPrevious = servicesData?.previous != null || page > 1
   const currentCount = filteredServices.length
+
+  // Calculate the range of results being shown
+  const startResult = (page - 1) * PAGE_SIZE + 1
+  const endResult = Math.min(page * PAGE_SIZE, totalResults)
+
+  // Go to specific page
+  const goToPage = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      updateFilter('page', newPage, false)
+      // Scroll to top of listings
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = []
+    const showPages = 5 // Max number of page buttons to show
+
+    if (totalPages <= showPages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // Always show first page
+      pages.push(1)
+
+      if (page > 3) {
+        pages.push('ellipsis')
+      }
+
+      // Show pages around current
+      const start = Math.max(2, page - 1)
+      const end = Math.min(totalPages - 1, page + 1)
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      if (page < totalPages - 2) {
+        pages.push('ellipsis')
+      }
+
+      // Always show last page
+      pages.push(totalPages)
+    }
+
+    return pages
+  }
 
   return (
     <div className="w-full">
       {/* Results count */}
       <div className="mb-6">
         <p className="text-sm text-muted-foreground">
-          Showing {currentCount} of {totalResults} results
+          Showing {startResult}-{endResult} of {totalResults} results
         </p>
       </div>
 
@@ -404,27 +456,62 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
       </div>
 
       {/* Pagination controls */}
-      {(hasMore || page > 1) && (
-        <div className="mt-12 flex items-center justify-center gap-4">
-          <Button 
-            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+      {totalPages > 1 && (
+        <div className="mt-12 flex items-center justify-center gap-2">
+          {/* Previous button */}
+          <Button
+            onClick={() => goToPage(page - 1)}
             variant="outline"
-            size="default"
+            size="icon"
             disabled={page === 1 || isLoading}
+            className="h-10 w-10"
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous page</span>
           </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page}
-          </span>
-          <Button 
-            onClick={() => setPage(prev => prev + 1)}
+
+          {/* Page numbers */}
+          <div className="flex items-center gap-1">
+            {getPageNumbers().map((pageNum, idx) =>
+              pageNum === 'ellipsis' ? (
+                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
+                  ...
+                </span>
+              ) : (
+                <Button
+                  key={pageNum}
+                  onClick={() => goToPage(pageNum)}
+                  variant={page === pageNum ? "default" : "outline"}
+                  size="icon"
+                  disabled={isLoading}
+                  className="h-10 w-10"
+                >
+                  {pageNum}
+                </Button>
+              )
+            )}
+          </div>
+
+          {/* Next button */}
+          <Button
+            onClick={() => goToPage(page + 1)}
             variant="outline"
-            size="default"
+            size="icon"
             disabled={!hasMore || isLoading}
+            className="h-10 w-10"
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next page</span>
           </Button>
+        </div>
+      )}
+
+      {/* Page info */}
+      {totalPages > 1 && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </p>
         </div>
       )}
     </div>

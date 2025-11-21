@@ -165,8 +165,7 @@ export default function UserFavoritesList({ type = "practitioners" }: UserFavori
                     setRemovedServiceIds(prev => new Set(prev).add(service.id?.toString() || service.public_uuid))
                   }}
                 />
-              ))
-              })}
+              ))}
             </div>
           ) : (
             <div className="text-center py-12">

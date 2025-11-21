@@ -2,12 +2,12 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { useMarketplaceFilters } from "@/hooks/use-marketplace-filters"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import ClientPractitionerRowCard from "./client-practitioner-row-card"
 
 interface PractitionerListingsProps {
@@ -21,15 +21,16 @@ export default function PractitionerListings({
   location,
   categories = [],
 }: PractitionerListingsProps) {
-  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 12
+  const { filters, updateFilter } = useMarketplaceFilters()
+  const page = filters.page
   const [sortBy, setSortBy] = useState("relevance")
-  const limit = 12
 
   // Build query parameters for API
   const queryParams = useMemo(() => {
     const params: any = {
-      limit,
-      offset: (page - 1) * limit,
+      page_size: PAGE_SIZE,
+      page: page,
       ordering: getOrdering(sortBy),
     }
 
@@ -38,7 +39,7 @@ export default function PractitionerListings({
     if (categories.length > 0) params.categories = categories.join(',')
 
     return params
-  }, [query, location, categories, page, sortBy])
+  }, [query, location, categories, page, sortBy, PAGE_SIZE])
 
   // Fetch practitioners from API using public endpoint
   const { data: practitionersData, isLoading, error, refetch } = useQuery({
@@ -124,14 +125,50 @@ export default function PractitionerListings({
 
   // Pagination info
   const totalResults = practitionersData?.count || apiPractitioners.length
+  const totalPages = Math.ceil(totalResults / PAGE_SIZE)
   const hasMore = practitionersData?.next != null
   const currentCount = apiPractitioners.length
+
+  // Calculate the range of results being shown
+  const startResult = (page - 1) * PAGE_SIZE + 1
+  const endResult = Math.min(page * PAGE_SIZE, totalResults)
+
+  // Go to specific page
+  const goToPage = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      updateFilter('page', newPage, false)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = []
+    const showPages = 5
+
+    if (totalPages <= showPages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      pages.push(1)
+      if (page > 3) pages.push('ellipsis')
+      const start = Math.max(2, page - 1)
+      const end = Math.min(totalPages - 1, page + 1)
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+      if (page < totalPages - 2) pages.push('ellipsis')
+      pages.push(totalPages)
+    }
+    return pages
+  }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
         <p className="text-sm text-olive-600">
-          Showing <span className="font-medium text-olive-900">{currentCount}</span> of <span className="font-medium text-olive-900">{totalResults}</span> practitioners
+          Showing <span className="font-medium text-olive-900">{startResult}-{endResult}</span> of <span className="font-medium text-olive-900">{totalResults}</span> practitioners
         </p>
 
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -154,17 +191,59 @@ export default function PractitionerListings({
         ))}
       </div>
 
-      {/* Load more button */}
-      {hasMore && (
-        <div className="mt-12 text-center">
-          <Button 
-            onClick={() => setPage(prev => prev + 1)}
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="mt-12 flex items-center justify-center gap-2">
+          <Button
+            onClick={() => goToPage(page - 1)}
             variant="outline"
-            size="lg"
-            disabled={isLoading}
+            size="icon"
+            disabled={page === 1 || isLoading}
+            className="h-10 w-10"
           >
-            {isLoading ? 'Loading...' : 'Load More Practitioners'}
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous page</span>
           </Button>
+
+          <div className="flex items-center gap-1">
+            {getPageNumbers().map((pageNum, idx) =>
+              pageNum === 'ellipsis' ? (
+                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
+                  ...
+                </span>
+              ) : (
+                <Button
+                  key={pageNum}
+                  onClick={() => goToPage(pageNum)}
+                  variant={page === pageNum ? "default" : "outline"}
+                  size="icon"
+                  disabled={isLoading}
+                  className="h-10 w-10"
+                >
+                  {pageNum}
+                </Button>
+              )
+            )}
+          </div>
+
+          <Button
+            onClick={() => goToPage(page + 1)}
+            variant="outline"
+            size="icon"
+            disabled={!hasMore || isLoading}
+            className="h-10 w-10"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next page</span>
+          </Button>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </p>
         </div>
       )}
     </div>

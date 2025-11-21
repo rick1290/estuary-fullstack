@@ -14,6 +14,7 @@ export interface MarketplaceFilters {
   maxPrice: number
   rating: string
   search: string
+  page: number
 }
 
 /**
@@ -38,11 +39,12 @@ export function useMarketplaceFilters() {
       maxPrice: parseInt(searchParams.get('maxPrice') || '500'),
       rating: searchParams.get('rating') || 'any',
       search: searchParams.get('q') || '',
+      page: parseInt(searchParams.get('page') || '1'),
     }
   }, [searchParams])
 
   // Update a single filter and push to URL
-  const updateFilter = useCallback((key: keyof MarketplaceFilters, value: any) => {
+  const updateFilter = useCallback((key: keyof MarketplaceFilters, value: any, resetPage = true) => {
     const params = new URLSearchParams(searchParams.toString())
 
     if (Array.isArray(value)) {
@@ -54,9 +56,17 @@ export function useMarketplaceFilters() {
     } else if (value === null || value === undefined || value === '' || value === 'all' || value === 'any') {
       // Remove param if empty/default
       params.delete(getParamKey(key))
+    } else if (key === 'page' && value === 1) {
+      // Remove page param if it's 1 (default)
+      params.delete('page')
     } else {
       // Set param for all other values
       params.set(getParamKey(key), String(value))
+    }
+
+    // Reset page to 1 when changing other filters (unless we're changing the page itself)
+    if (key !== 'page' && resetPage) {
+      params.delete('page')
     }
 
     // Navigate with new params
@@ -128,6 +138,7 @@ function getParamKey(key: keyof MarketplaceFilters): string {
     maxPrice: 'maxPrice',
     rating: 'rating',
     search: 'q',
+    page: 'page',
   }
   return mapping[key]
 }
