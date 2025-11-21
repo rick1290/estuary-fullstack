@@ -325,7 +325,9 @@ export default function CheckoutPage() {
     price: serviceData.price_cents ? serviceData.price_cents / 100 : 0,
     location: serviceData.location_type === 'virtual' ? 'Virtual' : serviceData.location || 'Virtual',
     practitioner: {
-      name: serviceData.primary_practitioner?.display_name || serviceData.practitioner?.display_name || 'Practitioner'
+      name: serviceData.primary_practitioner?.display_name || serviceData.practitioner?.display_name || 'Practitioner',
+      image: serviceData.primary_practitioner?.profile_image_url || serviceData.practitioner?.profile_image_url,
+      slug: serviceData.primary_practitioner?.slug || serviceData.practitioner?.slug
     },
     image: serviceData.image_url || serviceData.featured_image,
     firstSessionDate: serviceData.first_session_date,
@@ -363,6 +365,18 @@ export default function CheckoutPage() {
           <div className="grid gap-8 lg:gap-12 lg:grid-cols-5">
             {/* Checkout Form */}
             <div className="lg:col-span-3">
+              {/* Back link */}
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                Back to service
+              </button>
+
               <h1 className="text-3xl font-medium mb-8">Checkout</h1>
 
               <form onSubmit={handleSubmit}>
@@ -386,7 +400,7 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <div className="pt-2">
                     <Label htmlFor="special-requests" className="mb-2 block">
-                      Special Requests or Notes
+                      Special Requests or Notes <span className="text-muted-foreground font-normal">(Optional)</span>
                     </Label>
                     <Textarea
                       id="special-requests"
@@ -398,10 +412,10 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg" 
-                    size="lg" 
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg"
+                    size="lg"
                     disabled={processingPayment}
                   >
                     {processingPayment ? (
@@ -410,30 +424,30 @@ export default function CheckoutPage() {
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
                       </>
                     ) : (
-                      `Complete Payment ($${total.toFixed(2)})`
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Complete Payment (${total.toFixed(2)})
+                      </>
                     )}
                   </Button>
 
-                  {/* Add the legal language and security information below the button */}
+                  {/* Legal language and security information */}
                   <div className="mt-3 text-center space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      By pressing the "Complete Payment" button, you agree to Estuary's Refund and Payment Policy
+                      By completing this payment, you agree to Estuary's{" "}
+                      <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link>
+                      {" "}and{" "}
+                      <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
                     </p>
-                    <p className="text-xs text-muted-foreground flex items-center justify-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3 mr-1"
-                      >
+                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      It's safe to pay on Estuary. All transactions are protected by SSL encryption.
+                      Secure checkout powered by Stripe
                     </p>
                   </div>
                 </div>
@@ -508,7 +522,17 @@ export default function CheckoutPage() {
                         </div>
 
                         <div className="flex items-start gap-3">
-                          <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          {service.practitioner?.image ? (
+                            <img
+                              src={service.practitioner.image}
+                              alt={service.practitioner.name}
+                              className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
+                              <User className="h-4 w-4 text-olive-600" />
+                            </div>
+                          )}
                           <div>
                             <p className="font-medium">Practitioner</p>
                             <p className="text-muted-foreground">
