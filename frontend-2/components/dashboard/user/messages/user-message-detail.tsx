@@ -131,18 +131,12 @@ export default function UserMessageDetail() {
   )?.user
 
   useEffect(() => {
-    // Scroll to bottom when messages load or change
+    // Scroll to bottom when messages load or conversation changes
     if (messages && messages.length > 0) {
-      scrollToBottom(true) // Instant scroll on initial load
+      // Use longer delay when conversation changes to ensure DOM is ready
+      scrollToBottom(true, 150)
     }
-  }, [messages])
-
-  useEffect(() => {
-    // Scroll to bottom when conversation changes
-    if (conversationId && messages && messages.length > 0) {
-      scrollToBottom(true) // Instant scroll when switching conversations
-    }
-  }, [conversationId])
+  }, [messages, conversationId])
 
   useEffect(() => {
     // Mark messages as read when viewing conversation
@@ -165,16 +159,16 @@ export default function UserMessageDetail() {
     }
   }, [selectedFile])
 
-  const scrollToBottom = (instant = false) => {
+  const scrollToBottom = (instant = false, delay = 100) => {
     setTimeout(() => {
       if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ 
+        messagesEndRef.current.scrollIntoView({
           behavior: instant ? "instant" : "smooth",
           block: "end",
-          inline: "nearest" // This prevents horizontal scrolling
+          inline: "nearest"
         })
       }
-    }, 50)
+    }, delay)
   }
 
   const handleSendMessage = () => {
