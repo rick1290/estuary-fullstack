@@ -153,9 +153,15 @@ class ClientNotificationService(BaseNotificationService):
         practitioner = service.primary_practitioner
 
         # Format booking details with timezone conversion
-        booking_datetime = booking.start_time
+        # Use helper method to get start time (service_session or legacy field)
+        booking_datetime = booking.get_start_time()
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        dt_formatted = self._format_datetime_with_timezone(booking_datetime, booking_tz)
+        dt_formatted = self._format_datetime_with_timezone(booking_datetime, booking_tz) if booking_datetime else {
+            'date': 'TBD',
+            'time': 'TBD',
+            'time_with_tz': 'TBD',
+            'tz_abbr': ''
+        }
 
         # Check if booking has a video room (direct or via service_session)
         video_room_url = None
@@ -242,11 +248,12 @@ class ClientNotificationService(BaseNotificationService):
 
         # Add booking details if payment is for a booking
         if booking:
+            booking_start = booking.get_start_time()
             data.update({
                 'service_name': booking.service.name,
                 'practitioner_name': booking.service.primary_practitioner.user.get_full_name() if booking.service.primary_practitioner else 'Unknown',
-                'booking_date': booking.start_time.strftime('%A, %B %d, %Y') if booking.start_time else '',
-                'booking_time': booking.start_time.strftime('%I:%M %p') if booking.start_time else ''
+                'booking_date': booking_start.strftime('%A, %B %d, %Y') if booking_start else '',
+                'booking_time': booking_start.strftime('%I:%M %p') if booking_start else ''
             })
         elif order.service:
             # For service orders without booking
@@ -340,12 +347,18 @@ class ClientNotificationService(BaseNotificationService):
         service = booking.service
         practitioner = service.primary_practitioner
 
+        # Get start time using helper method
+        booking_start = booking.get_start_time()
+        if not booking_start:
+            logger.warning(f"Booking {booking.id} has no start time, cannot send reminder")
+            return
+
         # Calculate time until booking
-        time_until = booking.start_time - timezone.now()
+        time_until = booking_start - timezone.now()
 
         # Format booking time with timezone conversion
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+        dt_formatted = self._format_datetime_with_timezone(booking_start, booking_tz)
 
         # Check if booking has a video room (direct or via service_session)
         video_room_url = None
@@ -416,8 +429,14 @@ class ClientNotificationService(BaseNotificationService):
         """
         Schedule standard reminders for sessions, workshops, and packages.
         """
+        # Get start time using helper method
+        booking_start = booking.get_start_time()
+        if not booking_start:
+            logger.warning(f"Booking {booking.id} has no start time, cannot schedule reminders")
+            return
+
         # 24-hour reminder
-        reminder_24h = booking.start_time - timedelta(hours=24)
+        reminder_24h = booking_start - timedelta(hours=24)
         if reminder_24h > timezone.now():
             self.schedule_notification(
                 user=booking.user,
@@ -431,9 +450,9 @@ class ClientNotificationService(BaseNotificationService):
                 related_object_type='booking',
                 related_object_id=str(booking.id)
             )
-        
+
         # 30-minute reminder
-        reminder_30m = booking.start_time - timedelta(minutes=30)
+        reminder_30m = booking_start - timedelta(minutes=30)
         if reminder_30m > timezone.now():
             self.schedule_notification(
                 user=booking.user,
@@ -576,9 +595,15 @@ class ClientNotificationService(BaseNotificationService):
         service = booking.service
         practitioner = service.primary_practitioner
 
-        # Format booking time with timezone conversion
+        # Format booking time with timezone conversion using helper method
+        booking_start = booking.get_start_time()
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+        dt_formatted = self._format_datetime_with_timezone(booking_start, booking_tz) if booking_start else {
+            'date': 'N/A',
+            'time': 'N/A',
+            'time_with_tz': 'N/A',
+            'tz_abbr': ''
+        }
 
         data = {
             'first_name': user.first_name or 'there',
@@ -640,10 +665,11 @@ class ClientNotificationService(BaseNotificationService):
         service = booking.service
         practitioner = service.primary_practitioner if service else booking.practitioner
 
-        # Format booking time with timezone conversion
-        if booking.start_time:
+        # Format booking time with timezone conversion using helper method
+        booking_start = booking.get_start_time()
+        if booking_start:
             booking_tz = getattr(booking, 'timezone', 'UTC')
-            dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+            dt_formatted = self._format_datetime_with_timezone(booking_start, booking_tz)
             booking_date_str = dt_formatted['date']
             booking_time_str = dt_formatted['time_with_tz']
         else:

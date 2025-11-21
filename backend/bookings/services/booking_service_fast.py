@@ -77,20 +77,35 @@ class FastBookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a one-on-one session booking."""
+        """Create a one-on-one session booking with ServiceSession."""
+        start_time = booking_data['start_time']
+        end_time = booking_data['end_time']
+
+        # Create ServiceSession for this individual booking
+        duration = int((end_time - start_time).total_seconds() / 60)
+        service_session = ServiceSession.objects.create(
+            service=service,
+            session_type='individual',
+            visibility='private',
+            start_time=start_time,
+            end_time=end_time,
+            duration=duration,
+            max_participants=1,
+            current_participants=1,
+        )
+
+        # Create booking linked to ServiceSession
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
+            service_session=service_session,
             price_charged_cents=payment_data['price_charged_cents'],
             discount_amount_cents=payment_data['credits_applied_cents'],
             final_amount_cents=payment_data['amount_charged_cents'],
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=booking_data['start_time'],
-            end_time=booking_data['end_time'],
-            timezone=booking_data.get('timezone', 'UTC'),
             service_name_snapshot=service.name,
             service_description_snapshot=service.description or '',
             practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
@@ -118,14 +133,10 @@ class FastBookingService:
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=service_session.start_time,
-            end_time=service_session.end_time,
-            timezone=booking_data.get('timezone', 'UTC'),
             service_name_snapshot=service.name,
             service_description_snapshot=service.description or '',
             practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',
-            confirmed_at=timezone.now(),
-            max_participants=service_session.max_participants
+            confirmed_at=timezone.now()
         )
     
     def _create_course_booking(
@@ -135,18 +146,27 @@ class FastBookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a course enrollment."""
-        booking = BookingFactory.create_course_booking(
+        """
+        Create a course enrollment.
+        Creates one booking per ServiceSession in the course.
+        Returns the first booking for backward compatibility.
+        """
+        bookings = BookingFactory.create_course_booking(
             user=user,
             course=service,
-            payment_intent_id=payment_data.get('payment_intent_id'),
+            order=payment_data.get('order'),  # Link all bookings to same order
             client_notes=booking_data.get('special_requests', '')
         )
-        booking.payment_status = 'paid'
-        booking.status = 'confirmed'
-        booking.confirmed_at = timezone.now()
-        booking.save()
-        return booking
+
+        # Update all bookings with payment status
+        for booking in bookings:
+            booking.payment_status = 'paid'
+            booking.status = 'confirmed'
+            booking.confirmed_at = timezone.now()
+            booking.save()
+
+        # Return first booking for backward compatibility
+        return bookings[0] if bookings else None
     
     def _create_package_booking(
         self,
@@ -179,8 +199,33 @@ class FastBookingService:
         # Schedule first session if time provided
         first_session_time = booking_data.get('start_time')
         if first_session_time and first_booking:
-            first_booking.start_time = first_session_time
-            first_booking.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            start_time = first_session_time
+            end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            duration = int((end_time - start_time).total_seconds() / 60)
+
+            # Update draft ServiceSession with actual times
+            if first_booking.service_session:
+                first_booking.service_session.start_time = start_time
+                first_booking.service_session.end_time = end_time
+                first_booking.service_session.duration = duration
+                first_booking.service_session.current_participants = 1
+                first_booking.service_session.status = 'scheduled'
+                first_booking.service_session.save()
+            else:
+                # Fallback: Create new ServiceSession (shouldn't happen with new architecture)
+                service_session = ServiceSession.objects.create(
+                    service=first_booking.service,
+                    session_type='individual',
+                    visibility='private',
+                    start_time=start_time,
+                    end_time=end_time,
+                    duration=duration,
+                    max_participants=1,
+                    current_participants=1,
+                    status='scheduled',
+                )
+                first_booking.service_session = service_session
+
             first_booking.status = 'confirmed'  # Now it has times, can be confirmed
             first_booking.confirmed_at = timezone.now()
             first_booking.save()
@@ -218,8 +263,33 @@ class FastBookingService:
         # Schedule first session if time provided
         first_session_time = booking_data.get('start_time')
         if first_session_time and first_booking:
-            first_booking.start_time = first_session_time
-            first_booking.end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            start_time = first_session_time
+            end_time = booking_data.get('end_time', first_session_time + timezone.timedelta(hours=1))
+            duration = int((end_time - start_time).total_seconds() / 60)
+
+            # Update draft ServiceSession with actual times
+            if first_booking.service_session:
+                first_booking.service_session.start_time = start_time
+                first_booking.service_session.end_time = end_time
+                first_booking.service_session.duration = duration
+                first_booking.service_session.current_participants = 1
+                first_booking.service_session.status = 'scheduled'
+                first_booking.service_session.save()
+            else:
+                # Fallback: Create new ServiceSession (shouldn't happen with new architecture)
+                service_session = ServiceSession.objects.create(
+                    service=first_booking.service,
+                    session_type='individual',
+                    visibility='private',
+                    start_time=start_time,
+                    end_time=end_time,
+                    duration=duration,
+                    max_participants=1,
+                    current_participants=1,
+                    status='scheduled',
+                )
+                first_booking.service_session = service_session
+
             first_booking.status = 'confirmed'  # Now it has times, can be confirmed
             first_booking.confirmed_at = timezone.now()
             first_booking.save()
@@ -233,20 +303,35 @@ class FastBookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a default booking for unknown service types."""
+        """Create a default booking for unknown service types with ServiceSession."""
+        start_time = booking_data.get('start_time', timezone.now())
+        end_time = booking_data.get('end_time', timezone.now() + timezone.timedelta(hours=1))
+
+        # Create ServiceSession for this booking
+        duration = int((end_time - start_time).total_seconds() / 60)
+        service_session = ServiceSession.objects.create(
+            service=service,
+            session_type='individual',
+            visibility='private',
+            start_time=start_time,
+            end_time=end_time,
+            duration=duration,
+            max_participants=1,
+            current_participants=1,
+        )
+
+        # Create booking linked to ServiceSession
         return Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
+            service_session=service_session,
             price_charged_cents=payment_data['price_charged_cents'],
             discount_amount_cents=payment_data['credits_applied_cents'],
             final_amount_cents=payment_data['amount_charged_cents'],
             status='confirmed',
             payment_status='paid',
             client_notes=booking_data.get('special_requests', ''),
-            start_time=booking_data.get('start_time', timezone.now()),
-            end_time=booking_data.get('end_time', timezone.now() + timezone.timedelta(hours=1)),
-            timezone=booking_data.get('timezone', 'UTC'),
             service_name_snapshot=service.name,
             service_description_snapshot=service.description or '',
             practitioner_name_snapshot=service.primary_practitioner.display_name if service.primary_practitioner else '',

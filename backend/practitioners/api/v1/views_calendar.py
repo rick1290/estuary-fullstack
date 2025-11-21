@@ -1,9 +1,16 @@
 """
 Calendar Events API Views
 
-Provides unified calendar view for practitioners showing:
-- ServiceSessions (workshops/courses) with attendee counts
-- Individual bookings (1-on-1 sessions)
+Provides unified calendar view for practitioners showing all ServiceSessions.
+
+After migration, ALL bookings have service_session (including 1-on-1 sessions),
+so the calendar API simply queries ServiceSessions with their associated bookings.
+
+Each event shows:
+- Session details (time, duration, location)
+- All attendees/bookings for that session
+- Room information for virtual sessions
+- Aggregated status across all bookings
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -20,9 +27,9 @@ from practitioners.models import Practitioner
 from services.models import ServiceSession, Service
 from bookings.models import Booking
 from rooms.models import Room
+from rooms.api.v1.serializers import RoomRecordingSerializer
 from .serializers_calendar import (
     ServiceSessionEventSerializer,
-    IndividualBookingEventSerializer,
     CalendarEventsQuerySerializer,
 )
 import logging
@@ -34,11 +41,13 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
     """
     Calendar Events endpoint for practitioners.
 
-    Returns a unified list of calendar events combining:
-    - ServiceSessions (workshops/courses) with aggregated attendees
-    - Individual bookings (1-on-1 sessions)
+    Returns all ServiceSessions (events) with their associated bookings/attendees.
+    Works for all service types:
+    - Workshops: Group sessions with multiple attendees
+    - Courses: Multiple class sessions with multiple attendees
+    - 1-on-1 Sessions: Individual sessions with single attendee
 
-    This provides a "what's on my schedule" view vs raw bookings.
+    This provides a "what's on my schedule" view organized by time slots.
     """
     permission_classes = [IsAuthenticated]
 
@@ -109,6 +118,12 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         else:
             event_status = 'confirmed'
 
+        # Get recordings if room exists
+        recordings = []
+        if hasattr(service_session, 'livekit_room') and service_session.livekit_room:
+            recordings_qs = service_session.livekit_room.recordings.filter(is_processed=True).order_by('-started_at')
+            recordings = RoomRecordingSerializer(recordings_qs, many=True).data
+
         # Build response
         response_data = {
             'event_type': 'service_session',
@@ -129,7 +144,8 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
             'attendee_count': len(attendees),
             'max_participants': service_session.max_participants,
             'attendees': attendees,
-            'room': self._serialize_room(service_session.room) if service_session.room else None,
+            'room': self._serialize_room(service_session.livekit_room) if hasattr(service_session, 'livekit_room') and service_session.livekit_room else None,
+            'recordings': recordings,
             'status': event_status,
             'agenda': service_session.agenda,
             'what_youll_learn': service_session.what_youll_learn,
@@ -151,7 +167,7 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         """
         Get all calendar events for the authenticated practitioner.
 
-        Returns ServiceSessions (grouped) + Individual Bookings (ungrouped)
+        Returns all ServiceSessions with their associated bookings/attendees.
         """
         user = request.user
 
@@ -173,29 +189,15 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         service_type_filter = query_serializer.validated_data.get('service_type')
         status_filter = query_serializer.validated_data.get('status')
 
-        # Collect all events
-        events = []
-
-        # 1. Get ServiceSessions (workshops and courses with ServiceSession)
-        service_session_events = self._get_service_session_events(
+        # Get all ServiceSession events
+        # NOTE: After migration, ALL bookings have service_session (including 1-on-1 sessions)
+        # So we only need to query ServiceSessions to get the full calendar
+        events = self._get_service_session_events(
             practitioner, start_date, end_date, service_type_filter, status_filter
         )
-        events.extend(service_session_events)
-
-        # 2. Get grouped workshop/course bookings WITHOUT ServiceSession
-        grouped_workshop_events = self._get_grouped_workshop_events(
-            practitioner, start_date, end_date, service_type_filter, status_filter
-        )
-        events.extend(grouped_workshop_events)
-
-        # 3. Get Individual Bookings (1-on-1 sessions without ServiceSession)
-        individual_booking_events = self._get_individual_booking_events(
-            practitioner, start_date, end_date, service_type_filter, status_filter
-        )
-        events.extend(individual_booking_events)
 
         # Sort all events by start_time (most recent first)
-        # Handle None start_time for unscheduled bookings (put them at the end)
+        # Handle None start_time for unscheduled sessions (put them at the end)
         from datetime import datetime, timezone as dt_timezone
         events.sort(
             key=lambda x: x['start_time'] if x['start_time'] is not None else datetime.min.replace(tzinfo=dt_timezone.utc),
@@ -208,8 +210,10 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         """
         Get ServiceSession events with aggregated attendee information.
 
-        For workshops: One ServiceSession with multiple bookings
-        For courses: Multiple ServiceSessions (one per class) with multiple bookings each
+        Returns all ServiceSessions for this practitioner with their bookings:
+        - Workshops: One ServiceSession with multiple bookings
+        - Courses: Multiple ServiceSessions (one per class) with multiple bookings each
+        - 1-on-1 Sessions: Individual ServiceSessions with single booking each
         """
         # Base query for ServiceSessions belonging to practitioner's services
         queryset = ServiceSession.objects.filter(
@@ -282,6 +286,12 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
             else:
                 event_status = 'confirmed'
 
+            # Get recordings if room exists
+            recordings = []
+            if hasattr(session, 'livekit_room') and session.livekit_room:
+                recordings_qs = session.livekit_room.recordings.filter(is_processed=True).order_by('-started_at')
+                recordings = RoomRecordingSerializer(recordings_qs, many=True).data
+
             # Build event
             event = {
                 'event_type': 'service_session',
@@ -303,182 +313,8 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
                 'max_participants': session.max_participants,
                 'attendees': attendees,
                 'room': self._serialize_room(session.livekit_room) if hasattr(session, 'livekit_room') and session.livekit_room else None,
+                'recordings': recordings,
                 'status': event_status,
-            }
-
-            events.append(event)
-
-        return events
-
-    def _get_grouped_workshop_events(self, practitioner, start_date=None, end_date=None, service_type=None, status_filter=None):
-        """
-        Get workshop/course events that DON'T have a ServiceSession.
-        Groups them by service and start_time to show as one aggregated event.
-        """
-        from collections import defaultdict
-
-        # Get workshop/course bookings without service_session
-        queryset = Booking.objects.filter(
-            service__primary_practitioner=practitioner,
-            service_session__isnull=True,
-            service__service_type__code__in=['workshop', 'course']
-        ).select_related(
-            'service',
-            'service__service_type',
-            'user',
-            'livekit_room'
-        )
-
-        # Filter by date range
-        if start_date:
-            queryset = queryset.filter(start_time__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(start_time__lte=end_date)
-
-        # Filter by service type
-        if service_type:
-            queryset = queryset.filter(service__service_type__code=service_type)
-
-        # Filter by status
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        # Group bookings by (service_id, start_time)
-        grouped = defaultdict(list)
-        for booking in queryset:
-            key = (booking.service.id, booking.start_time)
-            grouped[key].append(booking)
-
-        events = []
-        for (service_id, start_time), bookings in grouped.items():
-            if not bookings:
-                continue
-
-            first_booking = bookings[0]
-
-            # Aggregate attendees
-            attendees = []
-            for booking in bookings:
-                attendees.append({
-                    'id': booking.user.id,
-                    'full_name': booking.user.get_full_name() or booking.user.email,
-                    'email': booking.user.email,
-                    'avatar_url': getattr(booking.user, 'avatar_url', None),
-                    'phone_number': getattr(booking.user, 'phone_number', None),
-                    'booking_status': booking.status,
-                    'booking_id': booking.id,
-                    'public_uuid': booking.public_uuid,
-                })
-
-            # Determine overall status
-            statuses = [b.status for b in bookings]
-            if 'in_progress' in statuses:
-                event_status = 'in_progress'
-            elif all(s == 'completed' for s in statuses):
-                event_status = 'completed'
-            elif 'cancelled' in statuses or 'canceled' in statuses:
-                if all(s in ['cancelled', 'canceled'] for s in statuses):
-                    event_status = 'cancelled'
-                else:
-                    event_status = 'confirmed'
-            else:
-                event_status = 'confirmed'
-
-            # Build event (similar to service_session event but without service_session_id)
-            event = {
-                'event_type': 'grouped_booking',  # New type for grouped bookings without ServiceSession
-                'service': {
-                    'id': first_booking.service.id,
-                    'name': first_booking.service.name,
-                    'service_type_code': first_booking.service.service_type.code if first_booking.service.service_type else 'workshop',
-                    'location_type': first_booking.service.location_type,
-                    'duration_minutes': first_booking.duration_minutes or first_booking.service.duration_minutes,
-                    'description': first_booking.service.description,
-                },
-                'start_time': first_booking.start_time,
-                'end_time': first_booking.end_time,
-                'duration_minutes': first_booking.duration_minutes or first_booking.service.duration_minutes,
-                'attendee_count': len(attendees),
-                'max_participants': first_booking.service.max_participants,
-                'attendees': attendees,
-                'room': self._serialize_room(first_booking.room) if hasattr(first_booking, 'room') and first_booking.room else None,
-                'status': event_status,
-            }
-
-            events.append(event)
-
-        return events
-
-    def _get_individual_booking_events(self, practitioner, start_date=None, end_date=None, service_type=None, status_filter=None):
-        """
-        Get individual booking events (1-on-1 sessions).
-
-        These are bookings that don't have a service_session (individual appointments).
-        Only includes 'session' type bookings - workshops/courses should always have a ServiceSession.
-        """
-        # Base query for bookings without service_session
-        # IMPORTANT: Exclude workshop/course types as they should have ServiceSessions
-        queryset = Booking.objects.filter(
-            service__primary_practitioner=practitioner,
-            service_session__isnull=True,  # Only bookings without group sessions
-        ).exclude(
-            service__service_type__code__in=['workshop', 'course']  # Workshops/courses should have ServiceSessions
-        ).select_related(
-            'service',
-            'service__service_type',
-            'user',
-            'livekit_room'
-        )
-
-        # Filter by date range
-        if start_date:
-            queryset = queryset.filter(start_time__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(start_time__lte=end_date)
-
-        # Filter by service type
-        if service_type:
-            queryset = queryset.filter(service__service_type__code=service_type)
-
-        # Filter by status
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        events = []
-
-        for booking in queryset:
-            # Build client info
-            client = {
-                'id': booking.user.id,
-                'full_name': booking.user.get_full_name() or booking.user.email,
-                'email': booking.user.email,
-                'avatar_url': getattr(booking.user, 'avatar_url', None),
-                'phone_number': getattr(booking.user, 'phone_number', None),
-                'booking_status': booking.status,
-                'booking_id': booking.id,
-                'public_uuid': booking.public_uuid,
-            }
-
-            # Build event
-            event = {
-                'event_type': 'individual_booking',
-                'booking_id': booking.id,
-                'public_uuid': booking.public_uuid,
-                'service': {
-                    'id': booking.service.id,
-                    'name': booking.service.name,
-                    'service_type_code': booking.service.service_type.code if booking.service.service_type else 'session',
-                    'location_type': booking.service.location_type,
-                    'duration_minutes': booking.duration_minutes or booking.service.duration_minutes,
-                    'description': booking.service.description,
-                },
-                'start_time': booking.start_time,
-                'end_time': booking.end_time,
-                'duration_minutes': booking.duration_minutes or booking.service.duration_minutes,
-                'client': client,
-                'room': self._serialize_room(booking.room) if hasattr(booking, 'room') and booking.room else None,
-                'total_amount': str(booking.final_amount) if booking.final_amount else '0.00',
-                'status': booking.status,
             }
 
             events.append(event)

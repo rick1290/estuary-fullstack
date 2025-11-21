@@ -157,11 +157,11 @@ export default function ClientServiceHistory({ clientId }: ClientServiceHistoryP
                       </div>
                     </TableCell>
                     <TableCell>
-                      {booking.start_time ? (
+                      {booking.service_session?.start_time ? (
                         <>
-                          <p>{format(parseISO(booking.start_time), "MMM d, yyyy")}</p>
+                          <p>{format(parseISO(booking.service_session?.start_time), "MMM d, yyyy")}</p>
                           <p className="text-xs text-muted-foreground">
-                            {format(parseISO(booking.start_time), "h:mm a")}
+                            {format(parseISO(booking.service_session?.start_time), "h:mm a")}
                           </p>
                         </>
                       ) : (
@@ -171,7 +171,7 @@ export default function ClientServiceHistory({ clientId }: ClientServiceHistoryP
                     <TableCell>{getStatusBadge(booking.status)}</TableCell>
                     <TableCell>${booking.total_amount || 0}</TableCell>
                     <TableCell>
-                      {booking.location_type === "virtual" ? "Virtual" : "In-Person"}
+                      {service.location_type === "virtual" ? "Virtual" : "In-Person"}
                     </TableCell>
                     <TableCell>
                       <TooltipProvider>

@@ -187,9 +187,11 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   // Check if session is joinable (15 minutes before start until end of session)
   const isSessionJoinable = () => {
-    if ((booking.status !== "confirmed" && booking.status !== "in_progress") || !booking.start_time) return false
-    const startTime = parseISO(booking.start_time)
-    const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000)
+    const sessionStartTime = booking.service_session?.start_time
+    const sessionEndTime = booking.service_session?.end_time
+    if ((booking.status !== "confirmed" && booking.status !== "in_progress") || !sessionStartTime) return false
+    const startTime = parseISO(sessionStartTime)
+    const endTime = sessionEndTime ? parseISO(sessionEndTime) : new Date(startTime.getTime() + 60 * 60 * 1000)
     const now = new Date()
     const minutesUntilStart = differenceInMinutes(startTime, now)
     const minutesUntilEnd = differenceInMinutes(endTime, now)
@@ -198,8 +200,9 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   // Check if reschedulable/cancellable (more than 24 hours before start)
   const isModifiable = () => {
-    if (booking.status !== "confirmed" || !booking.start_time) return false
-    const startTime = parseISO(booking.start_time)
+    const sessionStartTime = booking.service_session?.start_time
+    if (booking.status !== "confirmed" || !sessionStartTime) return false
+    const startTime = parseISO(sessionStartTime)
     const hoursUntilStart = differenceInHours(startTime, new Date())
     return hoursUntilStart >= 24
   }
@@ -223,19 +226,21 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   const modifiable = isModifiable()
   
   // Debug logging
+  const sessionStartTime = booking.service_session?.start_time
+  const sessionEndTime = booking.service_session?.end_time
   console.log('Booking details:', {
     id: booking.id,
     status: booking.status,
-    start_time: booking.start_time,
-    end_time: booking.end_time,
+    start_time: sessionStartTime,
+    end_time: sessionEndTime,
     service_location_type: service?.location_type,
     has_room: !!booking.room,
     room_uuid: booking.room?.public_uuid,
     has_video_url: !!booking.video_url,
     joinable,
     modifiable,
-    minutesUntilStart: booking.start_time ? differenceInMinutes(parseISO(booking.start_time), new Date()) : null,
-    minutesUntilEnd: booking.end_time ? differenceInMinutes(parseISO(booking.end_time), new Date()) : null
+    minutesUntilStart: sessionStartTime ? differenceInMinutes(parseISO(sessionStartTime), new Date()) : null,
+    minutesUntilEnd: sessionEndTime ? differenceInMinutes(parseISO(sessionEndTime), new Date()) : null
   })
 
   return (
@@ -272,14 +277,14 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-3">
-                    {booking.start_time && (
+                    {booking.service_session?.start_time && (
                       <>
                         <div className="flex items-center">
                           <Calendar className="h-5 w-5 mr-3 text-primary" />
                           <div>
                             <p className="font-medium">Date</p>
                             <p className="text-muted-foreground">
-                              {format(parseISO(booking.start_time), "EEEE, MMMM d, yyyy")}
+                              {format(parseISO(booking.service_session.start_time), "EEEE, MMMM d, yyyy")}
                             </p>
                           </div>
                         </div>
@@ -289,7 +294,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                           <div>
                             <p className="font-medium">Time</p>
                             <p className="text-muted-foreground">
-                              {format(parseISO(booking.start_time), "h:mm a")}
+                              {format(parseISO(booking.service_session.start_time), "h:mm a")}
                               {booking.duration_minutes && ` (${booking.duration_minutes} min)`}
                             </p>
                           </div>
@@ -314,7 +319,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                           <div>
                             <p className="font-medium">Location</p>
                             <p className="text-muted-foreground">
-                              {booking.location || "In-person"}
+                              In-person
                             </p>
                           </div>
                         </>
@@ -375,7 +380,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
               </CardContent>
 
               {/* Schedule Session button for unscheduled bookings */}
-              {!booking.start_time && (booking.status === "draft" || booking.status === "pending_payment") && (
+              {!booking.service_session?.start_time && (booking.status === "draft" || booking.status === "pending_payment") && (
                 <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
                   <Button
                     onClick={() => router.push(`/dashboard/user/bookings/${booking.id}/schedule`)}
@@ -416,7 +421,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                             </Button>
                           </span>
                         </TooltipTrigger>
-                        {!joinable && booking.start_time && (
+                        {!joinable && booking.service_session?.start_time && (
                           <TooltipContent>
                             <p>Join will be available 15 minutes before session start</p>
                           </TooltipContent>
@@ -705,8 +710,8 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
           bookingId={booking.public_uuid || String(booking.id)}
           serviceName={service?.name || "Service"}
           practitionerName={practitioner?.name || "Practitioner"}
-          date={booking.start_time ? format(parseISO(booking.start_time), "MMMM d, yyyy") : ""}
-          time={booking.start_time ? format(parseISO(booking.start_time), "h:mm a") : ""}
+          date={booking.service_session?.start_time ? format(parseISO(booking.service_session.start_time), "MMMM d, yyyy") : ""}
+          time={booking.service_session?.start_time ? format(parseISO(booking.service_session.start_time), "h:mm a") : ""}
           price={`$${booking.final_amount || 0}`}
           open={cancelDialogOpen}
           onOpenChange={setCancelDialogOpen}

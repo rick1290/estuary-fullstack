@@ -171,9 +171,15 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
-        # Format booking time with timezone conversion
+        # Format booking time with timezone conversion using helper method
+        booking_start = booking.get_start_time()
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        dt_formatted = self._format_datetime_with_timezone(booking.start_time, booking_tz)
+        dt_formatted = self._format_datetime_with_timezone(booking_start, booking_tz) if booking_start else {
+            'date': 'TBD',
+            'time': 'TBD',
+            'time_with_tz': 'TBD',
+            'tz_abbr': ''
+        }
 
         # Check if booking has a video room (direct or via service_session)
         video_room_url = None
@@ -321,10 +327,15 @@ class PractitionerNotificationService(BaseNotificationService):
         commission_amount = gross_amount * commission_rate / 100
         lost_earnings = gross_amount - commission_amount
 
-        # Format booking time with timezone conversion
+        # Format booking time with timezone conversion using helper method
         booking_tz = getattr(booking, 'timezone', 'UTC')
-        booking_time = booking.start_datetime if hasattr(booking, 'start_datetime') and booking.start_datetime else booking.start_time
-        dt_formatted = self._format_datetime_with_timezone(booking_time, booking_tz)
+        booking_time = booking.get_start_time()
+        dt_formatted = self._format_datetime_with_timezone(booking_time, booking_tz) if booking_time else {
+            'date': 'N/A',
+            'time': 'N/A',
+            'time_with_tz': 'N/A',
+            'tz_abbr': ''
+        }
 
         data = {
             'first_name': user.first_name or 'there',
@@ -443,10 +454,16 @@ class PractitionerNotificationService(BaseNotificationService):
         
         client = booking.user
         service = booking.service
-        
+
+        # Get start time using helper method
+        booking_start = booking.get_start_time()
+        if not booking_start:
+            logger.warning(f"Booking {booking.id} has no start time, cannot send reminder")
+            return
+
         # Calculate time until booking
-        time_until = booking.start_time - timezone.now()
-        
+        time_until = booking_start - timezone.now()
+
         # Check if booking has a video room (direct or via service_session)
         video_room_url = None
         if booking.room:
@@ -457,8 +474,8 @@ class PractitionerNotificationService(BaseNotificationService):
             'client_name': client.get_full_name(),
             'client_email': client.email,
             'service_name': service.name,
-            'booking_date': booking.start_time.strftime('%A, %B %d, %Y'),
-            'booking_time': booking.start_time.strftime('%I:%M %p'),
+            'booking_date': booking_start.strftime('%A, %B %d, %Y'),
+            'booking_time': booking_start.strftime('%I:%M %p'),
             'duration_minutes': service.duration_minutes,
             'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
             'hours_until': hours_before,
@@ -498,9 +515,15 @@ class PractitionerNotificationService(BaseNotificationService):
         Schedule reminder notifications for practitioner.
         """
         practitioner = booking.service.primary_practitioner
-        
+
+        # Get start time using helper method
+        booking_start = booking.get_start_time()
+        if not booking_start:
+            logger.warning(f"Booking {booking.id} has no start time, cannot schedule reminders")
+            return
+
         # 24-hour reminder
-        reminder_24h = booking.start_time - timedelta(hours=24)
+        reminder_24h = booking_start - timedelta(hours=24)
         if reminder_24h > timezone.now():
             template_24h = self.get_template('reminder_24h')
             if template_24h:
@@ -519,7 +542,7 @@ class PractitionerNotificationService(BaseNotificationService):
                 )
 
         # 30-minute reminder
-        reminder_30m = booking.start_time - timedelta(minutes=30)
+        reminder_30m = booking_start - timedelta(minutes=30)
         if reminder_30m > timezone.now():
             template_30m = self.get_template('reminder_30m')
             if template_30m:

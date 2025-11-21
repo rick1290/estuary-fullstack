@@ -60,7 +60,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
   const isReschedulable = React.useMemo(() => {
     if (!booking) return false
     
-    const bookingDate = new Date(booking.start_time)
+    const bookingDate = new Date(booking.service_session?.start_time)
     const now = new Date()
     const hoursUntilBooking = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60)
     
@@ -255,10 +255,10 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
                       with {booking.service?.primary_practitioner?.display_name || booking.practitioner?.display_name}
                     </p>
                     <p className="text-sm">
-                      {booking.start_time ? format(parseISO(booking.start_time), 'EEEE, MMMM d, yyyy') : 'N/A'}
+                      {booking.service_session?.start_time ? format(parseISO(booking.service_session?.start_time), 'EEEE, MMMM d, yyyy') : 'N/A'}
                     </p>
                     <p className="text-sm font-medium">
-                      {booking.start_time ? format(parseISO(booking.start_time), 'h:mm a') : 'N/A'} ({booking.service?.duration || 60} min)
+                      {booking.service_session?.start_time ? format(parseISO(booking.service_session?.start_time), 'h:mm a') : 'N/A'} ({booking.service?.duration || 60} min)
                     </p>
                   </div>
                   <Badge variant="secondary">Current</Badge>

@@ -69,25 +69,22 @@ class BookingViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = BookingFilter
-    search_fields = ['title', 'description', 'service__name', 'practitioner__user__first_name',
-                     'practitioner__user__last_name', 'practitioner__display_name']
-    ordering_fields = ['start_time', 'created_at', 'price_charged_cents']
-    ordering = ['-start_time']
-    
+    search_fields = ['service__name', 'practitioner__user__first_name',
+                     'practitioner__user__last_name', 'practitioner__display_name',
+                     'client_notes']
+    ordering_fields = ['created_at', 'price_charged_cents', 'status']
+    ordering = ['-created_at']
+
     def get_queryset(self):
         """Get bookings based on user role"""
         user = self.request.user
 
         # Base queryset with optimized relations
         queryset = Booking.objects.select_related(
-            'user', 'practitioner__user', 'service', 'location',
-            'livekit_room', 'service_session__livekit_room', 'parent_booking',
+            'user', 'practitioner__user', 'service', 'service_session',
             'rescheduled_from', 'order', 'credit_usage_transaction'
         ).prefetch_related(
-            'reminders', 'notes__author',
-            Prefetch('child_bookings', queryset=Booking.objects.select_related(
-                'service', 'practitioner__user'
-            ))
+            'reminders', 'notes__author'
         )
 
         # Check if filtering by practitioner
@@ -252,8 +249,38 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Update booking with scheduled times
         try:
             with transaction.atomic():
-                booking.start_time = serializer.validated_data['start_time']
-                booking.end_time = serializer.validated_data['end_time']
+                start_time = serializer.validated_data['start_time']
+                end_time = serializer.validated_data['end_time']
+                duration = int((end_time - start_time).total_seconds() / 60)
+
+                # Update existing ServiceSession or create new one
+                if booking.service_session:
+                    # Update draft ServiceSession with actual times
+                    booking.service_session.start_time = start_time
+                    booking.service_session.end_time = end_time
+                    booking.service_session.duration = duration
+                    booking.service_session.current_participants = 1
+                    booking.service_session.status = 'scheduled'
+                    booking.service_session.save()
+                else:
+                    # Create new ServiceSession (shouldn't happen with new architecture)
+                    from services.models import ServiceSession
+                    service_session = ServiceSession.objects.create(
+                        service=booking.service,
+                        session_type='individual',
+                        visibility='private',
+                        start_time=start_time,
+                        end_time=end_time,
+                        duration=duration,
+                        max_participants=1,
+                        current_participants=1,
+                        status='scheduled',
+                    )
+                    booking.service_session = service_session
+
+                # Also set legacy fields for backward compatibility
+                booking.start_time = start_time
+                booking.end_time = end_time
 
                 # If payment is complete, confirm the booking
                 if booking.payment_status == 'paid':
@@ -294,25 +321,30 @@ class BookingViewSet(viewsets.ModelViewSet):
             context={'booking': booking}
         )
         serializer.is_valid(raise_exception=True)
-        
-        # Store old start time for reminder handling
-        old_start_time = booking.start_time.isoformat()
-        
+
+        # Store old start time for reminder handling (use helper method)
+        old_start_time_obj = booking.get_start_time()
+        old_start_time = old_start_time_obj.isoformat() if old_start_time_obj else None
+
         # Reschedule booking
         try:
             new_booking = booking.reschedule(
                 new_start_time=serializer.validated_data['start_time'],
                 new_end_time=serializer.validated_data['end_time']
             )
-            
+
             # Handle reminder rescheduling
             from bookings.tasks import handle_booking_reschedule
-            handle_booking_reschedule.delay(
-                new_booking.id,
-                old_start_time,
-                new_booking.start_time.isoformat()
-            )
-            
+            new_start_time_obj = new_booking.get_start_time()
+            new_start_time = new_start_time_obj.isoformat() if new_start_time_obj else None
+
+            if old_start_time and new_start_time:
+                handle_booking_reschedule.delay(
+                    new_booking.id,
+                    old_start_time,
+                    new_start_time
+                )
+
             response_serializer = BookingDetailSerializer(
                 new_booking,
                 context={'request': request}

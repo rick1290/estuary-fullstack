@@ -834,18 +834,10 @@ def handle_refund_for_bookings(order, is_full_refund):
                 booking.payment_status = 'partially_refunded'
                 
             booking.save()
-            
-            # If this is a parent booking, update all child bookings
-            if hasattr(booking, 'child_bookings'):
-                child_bookings = booking.child_bookings.all()
-                for child in child_bookings:
-                    if is_full_refund:
-                        child.status = 'cancelled'
-                        child.payment_status = 'refunded'
-                    else:
-                        child.payment_status = 'partially_refunded'
-                    child.save()
-            
+
+            # Note: All bookings in the order are already being processed in the loop above
+            # No need for separate child_bookings logic (old parent/child pattern removed)
+
         logger.info(f"Updated {bookings.count()} bookings for refunded order {order.id}")
         
     except Exception as e:

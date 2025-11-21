@@ -54,7 +54,7 @@ export default function PractitionerFlowTabs() {
 
     // For development/testing: if all bookings are old (test data), show them anyway
     const hasCurrentBookings = bookings.some(booking => {
-      const timeField = booking.start_time || booking.scheduled_start_time
+      const timeField = booking.service_session?.start_time || booking.scheduled_start_time
       if (!timeField) return false
       const bookingDate = parseISO(timeField)
       return bookingDate >= todayStart
@@ -79,21 +79,21 @@ export default function PractitionerFlowTabs() {
     switch (activeTab) {
       case "today":
         return bookings.filter(booking => {
-          const timeField = booking.start_time || booking.scheduled_start_time
+          const timeField = booking.service_session?.start_time || booking.scheduled_start_time
           if (!timeField) return false
           const bookingDate = parseISO(timeField)
           return isWithinInterval(bookingDate, { start: todayStart, end: todayEnd })
         })
       case "week":
         return bookings.filter(booking => {
-          const timeField = booking.start_time || booking.scheduled_start_time
+          const timeField = booking.service_session?.start_time || booking.scheduled_start_time
           if (!timeField) return false
           const bookingDate = parseISO(timeField)
           return isWithinInterval(bookingDate, { start: weekStart, end: weekEnd })
         })
       case "ahead":
         return bookings.filter(booking => {
-          const timeField = booking.start_time || booking.scheduled_start_time
+          const timeField = booking.service_session?.start_time || booking.scheduled_start_time
           if (!timeField) return false
           const bookingDate = parseISO(timeField)
           return bookingDate > weekEnd
@@ -136,8 +136,8 @@ export default function PractitionerFlowTabs() {
   )
 
   const BookingItem = ({ booking }: { booking: BookingListReadable }) => {
-    const timeField = booking.start_time || booking.scheduled_start_time
-    const locationText = booking.service?.location_type === 'virtual' || booking.location_type === 'virtual' ? 'Virtual' : 'In-Person'
+    const timeField = booking.service_session?.start_time || booking.scheduled_start_time
+    const locationText = booking.service?.location_type === 'virtual' || service.location_type === 'virtual' ? 'Virtual' : 'In-Person'
     
     return (
       <div className="flex items-start justify-between py-3 px-4 hover:bg-sage-50 rounded-lg transition-colors">
@@ -245,7 +245,7 @@ export default function PractitionerFlowTabs() {
                   <div key={booking.id}>
                     <div className="flex items-center gap-2 py-2">
                       <Badge variant="outline" className="text-xs">
-                        {format(parseISO(booking.start_time), "EEE, MMM d")}
+                        {format(parseISO(booking.service_session?.start_time), "EEE, MMM d")}
                       </Badge>
                       <Separator className="flex-1" />
                     </div>
@@ -270,7 +270,7 @@ export default function PractitionerFlowTabs() {
                   <div key={booking.id}>
                     <div className="flex items-center gap-2 py-2">
                       <Badge variant="outline" className="text-xs">
-                        {format(parseISO(booking.start_time), "EEE, MMM d")}
+                        {format(parseISO(booking.service_session?.start_time), "EEE, MMM d")}
                       </Badge>
                       <Separator className="flex-1" />
                     </div>

@@ -192,7 +192,7 @@ export default function ConfirmationPage() {
                   </div>
 
                   {/* Booking Schedule */}
-                  {booking.start_time && (
+                  {booking.service_session?.start_time && (
                     <div>
                       <h3 className="font-semibold text-olive-900 mb-4 flex items-center gap-2">
                         <Calendar className="h-5 w-5 text-terracotta-600" />
@@ -205,15 +205,15 @@ export default function ConfirmationPage() {
                           </h4>
                           <Badge variant="outline" className="text-xs border-sage-300 text-sage-700">
                             <Calendar className="h-3 w-3 mr-1" />
-                            {format(parseISO(booking.start_time), "MMM d, yyyy")}
+                            {format(parseISO(booking.service_session?.start_time), "MMM d, yyyy")}
                           </Badge>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm text-olive-700">
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-sage-600" />
                             <span>
-                              {format(parseISO(booking.start_time), "h:mm a")}
-                              {booking.end_time && ` - ${format(parseISO(booking.end_time), "h:mm a")}`}
+                              {format(parseISO(booking.service_session?.start_time), "h:mm a")}
+                              {booking.service_session?.end_time && ` - ${format(parseISO(booking.service_session?.end_time), "h:mm a")}`}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">

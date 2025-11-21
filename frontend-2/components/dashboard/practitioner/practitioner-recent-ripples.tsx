@@ -64,7 +64,7 @@ export default function PractitionerRecentRipples() {
 
   const getSessionDate = (booking: BookingListReadable) => {
     try {
-      const timeField = booking.start_time || booking.scheduled_start_time
+      const timeField = booking.service_session?.start_time || booking.scheduled_start_time
       if (!timeField) return "Date TBD"
       const date = parseISO(timeField)
       return format(date, "MMM d @ h:mm a")

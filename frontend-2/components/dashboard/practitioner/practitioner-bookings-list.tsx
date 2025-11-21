@@ -40,15 +40,17 @@ const serviceTypeConfig = {
 
 // Check if a session can be joined
 const isSessionJoinable = (booking: any) => {
-  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
-  
+  const sessionStartTime = booking.service_session?.start_time
+  const sessionEndTime = booking.service_session?.end_time
+  if (!sessionStartTime || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+
   const now = new Date()
-  const startTime = parseISO(booking.start_time)
-  const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
-  
+  const startTime = parseISO(sessionStartTime)
+  const endTime = sessionEndTime ? parseISO(sessionEndTime) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+
   // Allow joining 15 minutes before start and until the session ends
   const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
-  
+
   return now >= joinWindowStart && now < endTime
 }
 
@@ -103,10 +105,11 @@ export default function PractitionerBookingsList() {
     // Filter by tab
     if (selectedTab !== "all") {
       filtered = filtered.filter((booking: any) => {
+        const sessionStartTime = booking.service_session?.start_time
         if (selectedTab === "upcoming") {
-          return booking.status === "confirmed" && booking.start_time && isFuture(parseISO(booking.start_time))
+          return booking.status === "confirmed" && sessionStartTime && isFuture(parseISO(sessionStartTime))
         } else if (selectedTab === "past") {
-          return booking.status === "completed" || (booking.start_time && isPast(parseISO(booking.start_time)))
+          return booking.status === "completed" || (sessionStartTime && isPast(parseISO(sessionStartTime)))
         } else if (selectedTab === "canceled") {
           return booking.status === "cancelled" || booking.status === "canceled"
         }
@@ -323,9 +326,9 @@ export default function PractitionerBookingsList() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p>{booking.start_time ? format(parseISO(booking.start_time), "MMM d, yyyy") : "Not scheduled"}</p>
+                            <p>{booking.service_session?.start_time ? format(parseISO(booking.service_session.start_time), "MMM d, yyyy") : "Not scheduled"}</p>
                             <p className="text-sm text-muted-foreground">
-                              {formatTime(booking.start_time, booking.duration_minutes)}
+                              {formatTime(booking.service_session?.start_time, booking.duration_minutes)}
                             </p>
                           </div>
                         </div>

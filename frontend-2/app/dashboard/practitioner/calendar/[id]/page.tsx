@@ -18,6 +18,9 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  Film,
+  PlayCircle,
+  Download,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -656,9 +659,10 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
           </Card>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3">
+            <TabsList className="grid grid-cols-4">
               <TabsTrigger value="details">Clients</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="recordings">Recordings</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
@@ -757,6 +761,109 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 open={resourceViewerOpen}
                 onOpenChange={setResourceViewerOpen}
               />
+            </TabsContent>
+
+            <TabsContent value="recordings" className="space-y-4 mt-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Session Recordings</h2>
+              </div>
+
+              {session.recordings && session.recordings.length > 0 ? (
+                <div className="space-y-3">
+                  {session.recordings.map((recording: any, index: number) => (
+                    <Card
+                      key={recording.recording_id || index}
+                      className="border border-sage-100 hover:shadow-md transition-all hover:border-sage-300"
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Film className="h-4 w-4 text-primary" />
+                              <h4 className="font-medium">
+                                Recording {index + 1}
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {recording.file_format?.toUpperCase() || 'MP4'}
+                              </Badge>
+                              <Badge
+                                variant={recording.status === 'completed' ? 'success' : 'secondary'}
+                                className="text-xs capitalize"
+                              >
+                                {recording.status}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>{recording.duration_formatted || `${Math.floor(recording.duration_seconds / 60)} min`}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>
+                                  {recording.started_at ? format(parseISO(recording.started_at), "MMM d, h:mm a") : 'N/A'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {recording.file_size_bytes && (
+                              <p className="text-xs text-muted-foreground">
+                                Size: {(recording.file_size_bytes / 1024 / 1024).toFixed(1)} MB
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {recording.file_url && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-primary hover:bg-primary/90"
+                                  asChild
+                                >
+                                  <a
+                                    href={recording.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <PlayCircle className="h-4 w-4 mr-1.5" />
+                                    Watch
+                                  </a>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  asChild
+                                >
+                                  <a
+                                    href={recording.download_url || recording.file_url}
+                                    download
+                                    className="flex items-center gap-1.5"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    Download
+                                  </a>
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Film className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-muted-foreground">No recordings available yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Recordings will appear here after the session is recorded
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="notes" className="space-y-4 mt-4">

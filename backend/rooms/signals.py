@@ -38,13 +38,10 @@ def create_room_for_confirmed_booking(sender, instance: Booking, created: bool, 
         logger.info(f"❌ Skipping booking {instance.id}: status is {instance.status}, not 'confirmed'")
         return
 
-    # Skip if room already exists
-    try:
-        if instance.livekit_room:
-            logger.info(f"❌ Skipping booking {instance.id}: room already exists")
-            return
-    except Booking.livekit_room.RelatedObjectDoesNotExist:
-        pass  # Room doesn't exist, continue
+    # Skip if room already exists (via service_session)
+    if instance.room:
+        logger.info(f"❌ Skipping booking {instance.id}: room already exists")
+        return
 
     # Skip if this is a group session (uses ServiceSession rooms)
     if instance.service_session:
@@ -61,8 +58,8 @@ def create_room_for_confirmed_booking(sender, instance: Booking, created: bool, 
         logger.info(f"❌ Skipping booking {instance.id}: location_type='{location_type}' not in ['virtual', 'online', 'hybrid']")
         return
 
-    # Skip package/bundle parent bookings
-    if instance.is_package_purchase or instance.is_bundle_purchase:
+    # Skip package/bundle parent bookings (use property which checks order.order_type)
+    if instance.is_package_booking:
         logger.info(f"❌ Skipping booking {instance.id}: is package/bundle purchase")
         return
 
@@ -137,20 +134,20 @@ def create_room_for_session(sender, instance: ServiceSession, created: bool, **k
 # ========== Booking Updates ==========
 
 @receiver(pre_save, sender=Room)
-def update_room_from_booking_changes(sender, instance: Room, **kwargs):
+def update_room_from_session_changes(sender, instance: Room, **kwargs):
     """
-    Update room when booking time changes.
+    Update room when service_session time changes.
     """
-    if instance.pk and instance.booking:
-        # Check if booking times have changed
+    if instance.pk and instance.service_session:
+        # Check if session times have changed
         try:
             old_room = Room.objects.get(pk=instance.pk)
-            booking = instance.booking
-            if (old_room.scheduled_start != booking.start_time or 
-                old_room.scheduled_end != booking.end_time):
-                instance.scheduled_start = booking.start_time
-                instance.scheduled_end = booking.end_time
-                logger.info(f"Updated room {instance.name} times from booking changes")
+            session = instance.service_session
+            if (old_room.scheduled_start != session.start_time or
+                old_room.scheduled_end != session.end_time):
+                instance.scheduled_start = session.start_time
+                instance.scheduled_end = session.end_time
+                logger.info(f"Updated room {instance.name} times from session changes")
         except Room.DoesNotExist:
             pass
 
@@ -251,15 +248,20 @@ def handle_room_started(room):
     """
     Handle actions when a room becomes active.
     """
-    # Update booking status if applicable
-    if room.booking and room.booking.status == 'confirmed':
-        room.booking.status = 'in_progress'
-        room.booking.actual_start_time = timezone.now()
-        room.booking.save(update_fields=['status', 'actual_start_time'])
-    
+    # Update service session and bookings if applicable
+    if room.service_session:
+        # Update ServiceSession with actual start time
+        room.service_session.actual_start_time = timezone.now()
+        room.service_session.save(update_fields=['actual_start_time'])
+
+        # Update all confirmed bookings in this session to 'in_progress'
+        room.service_session.bookings.filter(status='confirmed').update(
+            status='in_progress'
+        )
+
     # Send notifications to participants
     send_room_started_notifications(room)
-    
+
     logger.info(f"Room {room.id} started")
 
 
@@ -271,23 +273,28 @@ def handle_room_ended(room):
     if room.actual_start and room.actual_end:
         room.total_duration_seconds = int((room.actual_end - room.actual_start).total_seconds())
         room.save(update_fields=['total_duration_seconds'])
-    
-    # Update booking status if applicable
-    if room.booking:
-        room.booking.status = 'completed'
-        room.booking.actual_end_time = timezone.now()
-        room.booking.save(update_fields=['status', 'actual_end_time'])
-    
+
+    # Update service session and bookings if applicable
+    if room.service_session:
+        # Update ServiceSession with actual end time
+        room.service_session.actual_end_time = timezone.now()
+        room.service_session.save(update_fields=['actual_end_time'])
+
+        # Update all in_progress bookings in this session to 'completed'
+        room.service_session.bookings.filter(status='in_progress').update(
+            status='completed'
+        )
+
     # End all active participant sessions
     active_participants = room.participants.filter(left_at__isnull=True)
     for participant in active_participants:
         participant.left_at = timezone.now()
         participant.save(update_fields=['left_at'])
-    
+
     # Stop recording if active
     if room.recording_status in ['active', 'starting']:
         stop_room_recording(room)
-    
+
     logger.info(f"Room {room.id} ended")
 
 

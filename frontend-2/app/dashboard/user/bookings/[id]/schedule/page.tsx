@@ -67,7 +67,7 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
   // Check if booking is schedulable (draft with no start_time)
   const isSchedulable = React.useMemo(() => {
     if (!booking) return false
-    return !booking.start_time && (booking.status === 'draft' || booking.status === 'pending_payment')
+    return !booking.service_session?.start_time && (booking.status === 'draft' || booking.status === 'pending_payment')
   }, [booking])
 
   // Initialize dates

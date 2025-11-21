@@ -22,11 +22,11 @@ import { useRouter } from "next/navigation"
 
 // Check if a session can be joined
 const isSessionJoinable = (booking: any) => {
-  if (!booking.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
   
   const now = new Date()
-  const startTime = parseISO(booking.start_time)
-  const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  const startTime = parseISO(booking.service_session?.start_time)
+  const endTime = booking.service_session?.end_time ? parseISO(booking.service_session?.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
   
   // Allow joining 15 minutes before start and until the session ends
   const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
@@ -59,7 +59,7 @@ export default function PractitionerUpcomingBookings() {
     
     return bookingsResponse.results
       .filter(booking => {
-        const startTime = parseISO(booking.start_time)
+        const startTime = parseISO(booking.service_session?.start_time)
         
         // Include confirmed and in_progress bookings in all tabs except pending
         const validStatuses = ["confirmed", "in_progress"]
@@ -69,7 +69,7 @@ export default function PractitionerUpcomingBookings() {
         } else if (tabValue === "upcoming") {
           // Include in_progress bookings that haven't ended yet
           if (booking.status === "in_progress") {
-            const endTime = booking.end_time ? parseISO(booking.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+            const endTime = booking.service_session?.end_time ? parseISO(booking.service_session?.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
             return endTime > now
           }
           return startTime > now && validStatuses.includes(booking.status)
@@ -79,8 +79,8 @@ export default function PractitionerUpcomingBookings() {
         return true
       })
       .map(booking => {
-        const startTime = parseISO(booking.start_time)
-        const endTime = parseISO(booking.end_time)
+        const startTime = parseISO(booking.service_session?.start_time)
+        const endTime = parseISO(booking.service_session?.end_time)
         
         let dateDisplay = format(startTime, "MMM d, yyyy")
         if (isToday(startTime)) {
@@ -102,8 +102,8 @@ export default function PractitionerUpcomingBookings() {
           status: booking.status,
           livekit_room: booking.livekit_room,
           location_type: booking.service?.location_type,
-          start_time: booking.start_time,
-          end_time: booking.end_time,
+          start_time: booking.service_session?.start_time,
+          end_time: booking.service_session?.end_time,
           duration_minutes: booking.duration_minutes
         }
       })
@@ -189,7 +189,7 @@ export default function PractitionerUpcomingBookings() {
                     </Link>
                   </DropdownMenuItem>
                   {/* Join button for virtual sessions */}
-                  {booking.location_type === "virtual" && booking.livekit_room && (
+                  {service.location_type === "virtual" && booking.livekit_room && (
                     <DropdownMenuItem 
                       onClick={() => {
                         if (isSessionJoinable(booking)) {

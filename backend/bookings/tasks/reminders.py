@@ -6,6 +6,7 @@ from celery import shared_task
 from django.utils import timezone
 from django.conf import settings
 from django.core.cache import cache
+from django.db import models
 
 from bookings.models import Booking
 from services.models import ServiceSession
@@ -49,9 +50,15 @@ def process_booking_reminders():
     ]
     
     # Get all confirmed bookings
+    # NOTE: During migration, we need to handle both cases:
+    # - Bookings with service_session (NEW)
+    # - Bookings with direct start_time (LEGACY)
     bookings = Booking.objects.filter(
-        status='confirmed',
-        start_time__gte=now  # Only future bookings
+        status='confirmed'
+    ).filter(
+        # Get bookings where either service_session or booking has future start_time
+        models.Q(service_session__start_time__gte=now) |  # NEW way
+        models.Q(start_time__gte=now)  # LEGACY way (for bookings without service_session)
     ).select_related(
         'user',
         'service__service_type',
@@ -59,15 +66,20 @@ def process_booking_reminders():
         'service_session',
         'practitioner'
     )
-    
+
     reminders_sent = 0
     errors = 0
-    
+
     for booking in bookings:
         for config in reminder_configs:
             try:
+                # Get start time using helper method (handles both new and legacy)
+                start_time = booking.get_start_time()
+                if not start_time:
+                    continue  # Skip bookings without a start time
+
                 # Check if booking time falls within this reminder window
-                if config['min_time'] <= booking.start_time <= config['max_time']:
+                if config['min_time'] <= start_time <= config['max_time']:
                     # Send client reminder if not already sent
                     client_key = f"client_{config['key_suffix']}_reminder_sent"
                     if not booking.metadata.get(client_key):

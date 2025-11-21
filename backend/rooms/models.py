@@ -191,19 +191,17 @@ class Room(PublicModel):
         related_name='created_rooms',
         help_text="User who created this room"
     )
-    booking = models.OneToOneField(
-        'bookings.Booking',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='livekit_room'
-    )
+    # DEPRECATED: booking FK removed - use service_session instead
+    # Access booking via: room.service_session.bookings.all()
+    # booking = REMOVED - use service_session.bookings instead
+
     service_session = models.OneToOneField(
         'services.ServiceSession',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='livekit_room'
+        related_name='livekit_room',
+        help_text="The session this room is for. Access bookings via service_session.bookings"
     )
     
     # Participant tracking
@@ -222,7 +220,6 @@ class Room(PublicModel):
         indexes = [
             models.Index(fields=['livekit_room_name']),
             models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['booking']),
             models.Index(fields=['service_session']),
             models.Index(fields=['scheduled_start']),
         ]
