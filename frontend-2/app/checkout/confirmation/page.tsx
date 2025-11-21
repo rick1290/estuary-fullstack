@@ -35,8 +35,10 @@ export default function ConfirmationPage() {
 
   const loading = bookingLoading || orderLoading
   const service = booking?.service
-  const practitioner = service?.primary_practitioner || service?.practitioner
-  const confirmationNumber = booking?.booking_reference || booking?.public_uuid?.slice(-8).toUpperCase() || `BK${booking?.id}`
+  // Practitioner comes directly from booking, not service
+  const practitioner = booking?.practitioner
+  // Use full public_uuid as confirmation number
+  const confirmationNumber = booking?.public_uuid || booking?.booking_reference || `BK${booking?.id}`
 
   const copyConfirmation = () => {
     navigator.clipboard.writeText(confirmationNumber)
@@ -112,14 +114,26 @@ export default function ConfirmationPage() {
         <Card className="mb-6 overflow-hidden">
           <CardContent className="p-0">
             {/* Confirmation Number Bar */}
-            <div className="bg-sage-50 px-6 py-4 border-b border-sage-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Confirmation</p>
-                <p className="font-mono font-semibold text-olive-900">{confirmationNumber}</p>
+            <div className="bg-sage-50 px-6 py-4 border-b border-sage-100">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Confirmation Number</p>
+                  <p className="font-mono text-sm font-medium text-olive-900 truncate">{confirmationNumber}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={copyConfirmation} className="h-8 px-3 flex-shrink-0">
+                  {copied ? (
+                    <>
+                      <Check className="h-3 w-3 mr-1 text-sage-600" />
+                      <span className="text-xs">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3 mr-1" />
+                      <span className="text-xs">Copy</span>
+                    </>
+                  )}
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={copyConfirmation} className="h-8 px-2">
-                {copied ? <Check className="h-4 w-4 text-sage-600" /> : <Copy className="h-4 w-4" />}
-              </Button>
             </div>
 
             {/* Service + Practitioner */}
@@ -141,7 +155,7 @@ export default function ConfirmationPage() {
                     {practitioner?.profile_image_url ? (
                       <img
                         src={practitioner.profile_image_url}
-                        alt={practitioner.display_name}
+                        alt={practitioner.name || practitioner.display_name}
                         className="h-6 w-6 rounded-full object-cover"
                       />
                     ) : (
@@ -149,7 +163,7 @@ export default function ConfirmationPage() {
                         <User className="h-3 w-3 text-olive-600" />
                       </div>
                     )}
-                    <span className="text-sm text-olive-600">{practitioner?.display_name}</span>
+                    <span className="text-sm text-olive-600">{practitioner?.name || practitioner?.display_name}</span>
                   </div>
                 </div>
                 <div className="text-right">
