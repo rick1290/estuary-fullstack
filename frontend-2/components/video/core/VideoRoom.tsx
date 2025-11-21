@@ -30,6 +30,14 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { EstuaryLogo } from '@/components/ui/estuary-logo';
+import { RecordingControls, RecordingIndicator } from '@/components/video/features/Recording';
+
+interface RecordingOptions {
+  audioOnly: boolean;
+  outputFormat: 'mp4' | 'webm' | 'hls';
+  includeScreenShare: boolean;
+  notifyParticipants: boolean;
+}
 
 interface VideoRoomProps {
   token: string;
@@ -40,6 +48,10 @@ interface VideoRoomProps {
   sessionDetails?: any;
   onLeaveRoom: () => void;
   onError?: (error: Error) => void;
+  // Recording props
+  isRecording?: boolean;
+  onStartRecording?: (options: RecordingOptions) => Promise<void>;
+  onStopRecording?: () => Promise<void>;
 }
 
 export function VideoRoom({
@@ -50,7 +62,10 @@ export function VideoRoom({
   bookingDetails,
   sessionDetails,
   onLeaveRoom,
-  onError
+  onError,
+  isRecording = false,
+  onStartRecording,
+  onStopRecording
 }: VideoRoomProps) {
   const [showChat, setShowChat] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -145,9 +160,12 @@ export function VideoRoom({
           } as React.CSSProperties}>
             {/* Room Audio - Important for audio to work */}
             <RoomAudioRenderer />
-            
+
             {/* Connection State Notifications */}
             <ConnectionStateToast />
+
+            {/* Recording Indicator */}
+            <RecordingIndicator isRecording={isRecording} />
             
             {/* Header */}
             <div className="bg-estuary-900/80 backdrop-blur-md border-b border-wellness-700/30 px-6 py-4">
@@ -188,6 +206,16 @@ export function VideoRoom({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  {/* Recording Controls - Host only */}
+                  {onStartRecording && onStopRecording && (
+                    <RecordingControls
+                      isHost={isHost}
+                      isRecording={isRecording}
+                      onStartRecording={onStartRecording}
+                      onStopRecording={onStopRecording}
+                    />
+                  )}
+
                   {/* Chat Toggle */}
                   {roomType !== 'individual' && (
                     <Button
@@ -203,7 +231,7 @@ export function VideoRoom({
                       Chat
                     </Button>
                   )}
-                  
+
                   {/* Settings Toggle */}
                   <Button
                     variant={showSettings ? "secondary" : "ghost"}
@@ -217,7 +245,7 @@ export function VideoRoom({
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Button>
-                  
+
                   {/* Fullscreen Toggle */}
                   <Button
                     variant="ghost"
@@ -231,7 +259,7 @@ export function VideoRoom({
                       <Maximize2 className="h-4 w-4" />
                     )}
                   </Button>
-                  
+
                   {/* Leave Button */}
                   <LeaveButton onLeaveRoom={onLeaveRoom} />
                 </div>

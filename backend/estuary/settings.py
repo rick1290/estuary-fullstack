@@ -28,7 +28,7 @@ SECRET_KEY = "django-insecure-rxts$d4^xi5us3dc21bi8o_25if^vd7=idqjnfn(kf+s)behcl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'admin', 'api', 'estuary-backend.onrender.com', '.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'admin', 'api', 'estuary-backend.onrender.com', '.onrender.com', 'haughty-unbrokenly-merrie.ngrok-free.dev']
 
 
 # Application definition
@@ -480,6 +480,9 @@ SIMPLE_JWT = {
 LIVEKIT_API_KEY = os.getenv('LIVEKIT_API_KEY', '')
 LIVEKIT_API_SECRET = os.getenv('LIVEKIT_API_SECRET', '')
 LIVEKIT_HOST = os.getenv('LIVEKIT_HOST', 'https://your-instance.livekit.cloud')
+
+# LiveKit default recording setting
+LIVEKIT_DEFAULT_RECORDING_ENABLED = os.getenv('LIVEKIT_DEFAULT_RECORDING_ENABLED', 'False').lower() == 'true'
 
 # LiveKit room defaults
 LIVEKIT_ROOM_DEFAULTS = {

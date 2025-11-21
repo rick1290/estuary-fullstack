@@ -40,7 +40,7 @@ class RoomService:
             scheduled_start=booking.start_time,
             scheduled_end=booking.end_time,
             max_participants=2,  # Practitioner + Client
-            recording_enabled=self._should_enable_recording(booking.service),
+            recording_enabled=True,  # Enable recording by default for all rooms
             metadata={
                 'booking_id': str(booking.id),
                 'service_id': str(booking.service.id) if booking.service else None,
@@ -86,7 +86,7 @@ class RoomService:
             scheduled_start=service_session.start_time,
             scheduled_end=service_session.end_time,
             max_participants=service_session.max_participants or 100,
-            recording_enabled=self._should_enable_recording(service),
+            recording_enabled=True,  # Enable recording by default for all rooms
             metadata={
                 'service_session_id': str(service_session.id),
                 'service_id': str(service.id),
