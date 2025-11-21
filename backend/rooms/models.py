@@ -257,11 +257,17 @@ class Room(PublicModel):
                 self.scheduled_end = self.service_session.end_time
         
         # Apply template settings if template is set and this is a new room
+        # Only apply if values haven't been explicitly set
         if not self.pk and self.template:
-            self.empty_timeout = self.template.empty_timeout
-            self.max_participants = self.template.max_participants
-            self.recording_enabled = self.template.recording_enabled
-            self.sip_enabled = self.template.sip_enabled
+            if self.empty_timeout == 300:  # Default value
+                self.empty_timeout = self.template.empty_timeout
+            if self.max_participants == 100:  # Default value
+                self.max_participants = self.template.max_participants
+            # Don't override recording_enabled if explicitly set to True
+            if not self.recording_enabled:
+                self.recording_enabled = self.template.recording_enabled
+            if not self.sip_enabled:
+                self.sip_enabled = self.template.sip_enabled
         
         # Generate dial-in PIN if SIP is enabled and no PIN exists
         if self.sip_enabled and not self.dial_in_pin:
