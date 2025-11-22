@@ -95,20 +95,44 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
         return payment_method
 
 
+class OrderServiceSerializer(serializers.Serializer):
+    """Lightweight serializer for service in orders"""
+    id = serializers.IntegerField(read_only=True)
+    public_uuid = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    service_type = serializers.CharField(read_only=True)
+    image_url = serializers.CharField(read_only=True, allow_null=True)
+    duration_minutes = serializers.IntegerField(read_only=True, allow_null=True)
+
+
+class OrderPractitionerSerializer(serializers.Serializer):
+    """Lightweight serializer for practitioner in orders"""
+    id = serializers.IntegerField(read_only=True)
+    public_uuid = serializers.UUIDField(read_only=True)
+    name = serializers.SerializerMethodField()
+    profile_image_url = serializers.CharField(read_only=True, allow_null=True)
+
+    def get_name(self, obj):
+        return obj.display_name if hasattr(obj, 'display_name') else str(obj)
+
+
 class OrderSerializer(serializers.ModelSerializer):
     """Serializer for orders"""
     total_amount = serializers.ReadOnlyField()
     subtotal_amount = serializers.ReadOnlyField()
     is_paid = serializers.ReadOnlyField()
-    
+    service_details = OrderServiceSerializer(source='service', read_only=True)
+    practitioner_details = OrderPractitionerSerializer(source='practitioner', read_only=True)
+
     class Meta:
         model = Order
         fields = [
-            'id', 'public_uuid', 'user', 'payment_method', 
+            'id', 'public_uuid', 'user', 'payment_method',
             'stripe_payment_intent_id', 'stripe_payment_method_id',
             'subtotal_amount_cents', 'tax_amount_cents', 'credits_applied_cents',
             'total_amount_cents', 'subtotal_amount', 'total_amount',
             'status', 'order_type', 'currency', 'service', 'practitioner',
+            'service_details', 'practitioner_details',
             'metadata', 'tax_details', 'is_paid', 'created_at', 'updated_at'
         ]
         read_only_fields = [

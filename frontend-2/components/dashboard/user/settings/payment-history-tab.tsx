@@ -122,26 +122,28 @@ export default function PaymentHistoryTab() {
                 <TableBody>
                   {payments.map((payment) => {
                     const statusCfg = getStatusConfig(payment.status || 'pending')
+                    // Get service name from service_details
+                    const serviceName = (payment as any).service_details?.name
                     return (
                       <TableRow key={payment.id}>
                         <TableCell>
-                          {payment.created_at 
+                          {payment.created_at
                             ? format(new Date(payment.created_at), 'MMM d, yyyy')
                             : '-'
                           }
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{payment.description || 'Service booking'}</p>
-                            {payment.booking && (
-                              <p className="text-sm text-muted-foreground">
-                                Booking #{payment.booking}
+                            <p className="font-medium">{serviceName || 'Service booking'}</p>
+                            {(payment as any).service_details?.service_type && (
+                              <p className="text-sm text-muted-foreground capitalize">
+                                {(payment as any).service_details.service_type}
                               </p>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          ${formatAmount(payment.amount)}
+                          ${formatAmount(payment.total_amount_cents || 0)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusCfg.variant}>
@@ -149,13 +151,9 @@ export default function PaymentHistoryTab() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {payment.order?.public_uuid ? (
+                          {payment.public_uuid ? (
                             <span className="text-sm text-muted-foreground font-mono">
-                              #{payment.order.public_uuid.slice(-8).toUpperCase()}
-                            </span>
-                          ) : payment.public_uuid ? (
-                            <span className="text-sm text-muted-foreground font-mono">
-                              #{payment.public_uuid.slice(-8).toUpperCase()}
+                              #{String(payment.public_uuid).slice(-8).toUpperCase()}
                             </span>
                           ) : (
                             '-'
