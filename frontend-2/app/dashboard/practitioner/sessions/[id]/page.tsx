@@ -707,7 +707,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-4">
-              <TabsTrigger value="details">Clients</TabsTrigger>
+              <TabsTrigger value="details">Bookings</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
               <TabsTrigger value="recordings">Recordings</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -715,7 +715,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Attendees ({attendeeCount})</h2>
+                <h2 className="text-lg font-semibold">Bookings ({attendeeCount})</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -1074,13 +1074,20 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium">Service Type</p>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {session.service?.service_type_code}
+                <p className="text-sm font-medium">Service</p>
+                <p className="text-sm text-muted-foreground">
+                  {session.service_name}
                 </p>
               </div>
 
-              {session.sequence_number && (
+              <div>
+                <p className="text-sm font-medium">Service Type</p>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {session.service_type}
+                </p>
+              </div>
+
+              {session.sequence_number > 0 && (
                 <div>
                   <p className="text-sm font-medium">Session Number</p>
                   <p className="text-sm text-muted-foreground">
@@ -1092,19 +1099,21 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <p className="text-sm font-medium">Duration</p>
                 <p className="text-sm text-muted-foreground">
-                  {session.duration_minutes} minutes
+                  {session.duration} minutes
                 </p>
               </div>
 
-              <div>
-                <p className="text-sm font-medium">Location Type</p>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {session.service?.location_type}
-                </p>
-              </div>
+              {session.practitioner_location && (
+                <div>
+                  <p className="text-sm font-medium">Location</p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {session.practitioner_location}
+                  </p>
+                </div>
+              )}
 
               <Button variant="outline" className="w-full" asChild>
-                <Link href={`/dashboard/practitioner/services/${session.service?.id}`}>
+                <Link href={`/dashboard/practitioner/services/${session.service}`}>
                   View Service Details
                 </Link>
               </Button>
