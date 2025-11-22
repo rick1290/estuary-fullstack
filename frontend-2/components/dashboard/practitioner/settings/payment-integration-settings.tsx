@@ -111,8 +111,9 @@ export function PaymentIntegrationSettings() {
     refreshConnectMutation.mutate({})
   }
 
-  const isConnected = connectStatus?.is_connected && connectStatus?.charges_enabled && connectStatus?.payouts_enabled
+  const isFullyConnected = connectStatus?.is_connected && connectStatus?.charges_enabled && connectStatus?.payouts_enabled
   const hasAccount = connectStatus?.has_stripe_account
+  const needsSetup = hasAccount && (!connectStatus?.charges_enabled || !connectStatus?.payouts_enabled)
   const isLoading = createConnectMutation.isPending || refreshConnectMutation.isPending || disconnectMutation.isPending
 
   if (statusLoading) {
@@ -130,9 +131,14 @@ export function PaymentIntegrationSettings() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Stripe Integration</span>
-          {isConnected && (
+          {isFullyConnected && (
             <Badge variant="success" className="ml-2">
               Connected
+            </Badge>
+          )}
+          {needsSetup && (
+            <Badge variant="warning" className="ml-2 bg-amber-100 text-amber-800">
+              Setup Incomplete
             </Badge>
           )}
         </CardTitle>
@@ -141,7 +147,7 @@ export function PaymentIntegrationSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isConnected ? (
+        {isFullyConnected ? (
           <div className="space-y-4">
             <div className="flex items-start space-x-4 rounded-md border p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -177,17 +183,45 @@ export function PaymentIntegrationSettings() {
                 Payouts enabled: <strong>{connectStatus?.payouts_enabled ? 'Yes' : 'No'}</strong>
               </AlertDescription>
             </Alert>
-            
+          </div>
+        ) : needsSetup ? (
+          <div className="space-y-4">
+            <Alert variant="warning" className="border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">Setup Incomplete</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                Your Stripe account is connected, but additional steps are required before you can receive payments.
+              </AlertDescription>
+            </Alert>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Account Details</AlertTitle>
+              <AlertDescription>
+                Connected account: <strong>{connectStatus?.stripe_account_id}</strong>
+                <br />
+                Charges enabled: <strong>{connectStatus?.charges_enabled ? 'Yes' : 'No'}</strong>
+                <br />
+                Payouts enabled: <strong>{connectStatus?.payouts_enabled ? 'Yes' : 'No'}</strong>
+              </AlertDescription>
+            </Alert>
+
             {connectStatus?.requirements?.currently_due && connectStatus.requirements.currently_due.length > 0 && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Action Required</AlertTitle>
                 <AlertDescription>
-                  Additional information is required to complete your account setup.
-                  Please update your Stripe account.
+                  Stripe needs additional information: {connectStatus.requirements.currently_due.join(', ')}
                 </AlertDescription>
               </Alert>
             )}
+
+            <div className="rounded-md border p-4">
+              <h3 className="mb-2 text-sm font-medium">Complete your setup</h3>
+              <p className="text-sm text-muted-foreground">
+                Click "Complete Setup" below to provide the required information to Stripe.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -224,14 +258,14 @@ export function PaymentIntegrationSettings() {
                 "Disconnect"
               )}
             </Button>
-            <Button onClick={handleUpdate} disabled={isLoading}>
+            <Button onClick={handleUpdate} disabled={isLoading} className={needsSetup ? "bg-amber-600 hover:bg-amber-700" : ""}>
               {refreshConnectMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
+                  {needsSetup ? "Opening Stripe..." : "Updating..."}
                 </>
               ) : (
-                "Update Connection"
+                needsSetup ? "Complete Setup" : "Update Connection"
               )}
             </Button>
           </>
