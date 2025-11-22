@@ -895,7 +895,7 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Only service owners can modify sessions"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'reschedule']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'reschedule', 'mark_completed', 'mark_in_progress', 'create_room']:
             return [permissions.IsAuthenticated(), IsServiceOwner()]
         return super().get_permissions()
 
@@ -1095,6 +1095,113 @@ class ServiceSessionViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': 'Failed to create room. Check if service is virtual/online/hybrid.'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        request=None,
+        responses={200: ServiceSessionSerializer},
+        tags=['Service Sessions']
+    )
+    @action(detail=True, methods=['post'])
+    def mark_completed(self, request, pk=None):
+        """
+        Mark a service session as completed.
+
+        This allows practitioners to manually mark a session as completed
+        (e.g., for in-person sessions or if the LiveKit webhook didn't fire).
+
+        POST /api/v1/service-sessions/{id}/mark_completed/
+        """
+        from django.utils import timezone
+
+        session = self.get_object()
+
+        # Validate session can be marked completed
+        if session.status == 'completed':
+            return Response(
+                {'detail': 'Session is already marked as completed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if session.status == 'canceled':
+            return Response(
+                {'detail': 'Cannot mark a canceled session as completed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if session.status == 'draft':
+            return Response(
+                {'detail': 'Cannot mark a draft session as completed. Schedule it first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark as completed
+        now = timezone.now()
+        session.status = 'completed'
+        session.actual_end_time = now
+        if not session.actual_start_time:
+            # If never started, set start time to scheduled start or now
+            session.actual_start_time = session.start_time or now
+        session.save(update_fields=['status', 'actual_start_time', 'actual_end_time', 'updated_at'])
+
+        # Also end the room if it exists and is still active
+        if hasattr(session, 'livekit_room') and session.livekit_room:
+            room = session.livekit_room
+            if room.status in ['pending', 'active', 'in_use']:
+                room.status = 'ended'
+                room.actual_end = now
+                if room.actual_start:
+                    room.total_duration_seconds = int((now - room.actual_start).total_seconds())
+                room.save(update_fields=['status', 'actual_end', 'total_duration_seconds', 'updated_at'])
+
+        serializer = self.get_serializer(session)
+        return Response({
+            'message': 'Session marked as completed',
+            'session': serializer.data
+        })
+
+    @extend_schema(
+        request=None,
+        responses={200: ServiceSessionSerializer},
+        tags=['Service Sessions']
+    )
+    @action(detail=True, methods=['post'])
+    def mark_in_progress(self, request, pk=None):
+        """
+        Mark a service session as in progress.
+
+        This allows practitioners to manually mark a session as started
+        (e.g., for in-person sessions).
+
+        POST /api/v1/service-sessions/{id}/mark_in_progress/
+        """
+        from django.utils import timezone
+
+        session = self.get_object()
+
+        # Validate session can be marked in progress
+        if session.status == 'in_progress':
+            return Response(
+                {'detail': 'Session is already in progress'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if session.status in ['completed', 'canceled']:
+            return Response(
+                {'detail': f'Cannot start a {session.status} session'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark as in progress
+        now = timezone.now()
+        session.status = 'in_progress'
+        session.actual_start_time = now
+        session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
+
+        serializer = self.get_serializer(session)
+        return Response({
+            'message': 'Session marked as in progress',
+            'session': serializer.data
+        })
 
 
 @extend_schema_view(

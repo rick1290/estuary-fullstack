@@ -101,17 +101,27 @@ class LiveKitWebhookHandler:
     def _handle_room_started(self, event: webhook_pb2.WebhookEvent) -> Dict[str, Any]:
         """Handle room started event."""
         room_info = event.room
-        
+
         try:
             room = Room.objects.get(livekit_room_name=room_info.name)
+            now = timezone.now()
+
             room.status = 'active'
             room.livekit_room_sid = room_info.sid
-            room.actual_start = timezone.now()
+            room.actual_start = now
             room.save(update_fields=['status', 'livekit_room_sid', 'actual_start', 'updated_at'])
-            
-            logger.info(f"Room {room.name} started")
+
+            # Update ServiceSession status to in_progress
+            if room.service_session:
+                room.service_session.status = 'in_progress'
+                room.service_session.actual_start_time = now
+                room.service_session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
+                logger.info(f"Room {room.name} started - ServiceSession {room.service_session.id} marked in_progress")
+            else:
+                logger.info(f"Room {room.name} started (no service_session)")
+
             return {"status": "success", "room_id": str(room.id)}
-            
+
         except Room.DoesNotExist:
             logger.error(f"Room not found for LiveKit room: {room_info.name}")
             return {"status": "error", "message": "Room not found"}
@@ -126,43 +136,30 @@ class LiveKitWebhookHandler:
 
             logger.info(f"[ROOM_FINISHED] Room {room.name} (ID={room.id}) received room_finished webhook")
 
-            # Check if the booking/session is actually over
+            # Check if the session is actually over
             should_actually_end = False
-            booking_end_time = None
 
-            if room.booking:
-                booking_end_time = room.booking.end_time
-                logger.info(f"[ROOM_FINISHED] Booking end_time: {booking_end_time}, Current time: {now}")
-
-                # Only end if booking time has passed + grace period (15 min)
-                grace_period = timedelta(minutes=15)
-                if now > (booking_end_time + grace_period):
-                    should_actually_end = True
-                    logger.info(f"[ROOM_FINISHED] Booking ended + grace period passed, will end room")
-                else:
-                    logger.info(f"[ROOM_FINISHED] Booking still active (within grace period), NOT ending room")
-                    # Just mark as temporarily inactive but allow rejoining
-                    room.status = 'active'  # Keep it active so people can rejoin
-                    room.save(update_fields=['status', 'updated_at'])
-                    return {"status": "success", "message": "Room temporarily empty but booking active"}
-
-            elif room.service_session:
+            if room.service_session:
                 session_end_time = room.service_session.end_time
                 logger.info(f"[ROOM_FINISHED] Session end_time: {session_end_time}, Current time: {now}")
 
                 grace_period = timedelta(minutes=15)
-                if now > (session_end_time + grace_period):
+                if session_end_time and now > (session_end_time + grace_period):
                     should_actually_end = True
                     logger.info(f"[ROOM_FINISHED] Session ended + grace period passed, will end room")
+                elif not session_end_time:
+                    # No end time set - end the room
+                    should_actually_end = True
+                    logger.info(f"[ROOM_FINISHED] No session end_time, ending room")
                 else:
                     logger.info(f"[ROOM_FINISHED] Session still active (within grace period), NOT ending room")
                     room.status = 'active'
                     room.save(update_fields=['status', 'updated_at'])
                     return {"status": "success", "message": "Room temporarily empty but session active"}
             else:
-                # Ad-hoc room with no booking/session - end it
+                # Ad-hoc room with no session - end it
                 should_actually_end = True
-                logger.info(f"[ROOM_FINISHED] No booking/session, ending ad-hoc room")
+                logger.info(f"[ROOM_FINISHED] No service_session, ending ad-hoc room")
 
             if should_actually_end:
                 room.status = 'ended'
@@ -176,12 +173,12 @@ class LiveKitWebhookHandler:
 
                 room.save(update_fields=['status', 'actual_end', 'total_duration_seconds', 'updated_at'])
 
-                # Update booking status if applicable and actually ended
-                if room.booking:
-                    room.booking.status = 'completed'
-                    room.booking.actual_end_time = now
-                    room.booking.save(update_fields=['status', 'actual_end_time'])
-                    logger.info(f"[ROOM_FINISHED] Marked booking {room.booking.id} as completed")
+                # Update ServiceSession status to completed
+                if room.service_session:
+                    room.service_session.status = 'completed'
+                    room.service_session.actual_end_time = now
+                    room.service_session.save(update_fields=['status', 'actual_end_time', 'updated_at'])
+                    logger.info(f"[ROOM_FINISHED] Marked ServiceSession {room.service_session.id} as completed")
 
                 # End all active participant sessions
                 active_participants = room.participants.filter(left_at__isnull=True)

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { calendarListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
-import { format, parseISO, isPast, isFuture } from "date-fns"
+import { format, parseISO } from "date-fns"
 import Link from "next/link"
 
 // Service type configuration (matching bookings list)
@@ -27,23 +27,38 @@ const serviceTypeConfig = {
 }
 
 // Status badge variant mapping
+// ServiceSession statuses: draft, scheduled, in_progress, completed, canceled
+// Booking statuses: draft, pending_payment, confirmed, canceled
 const statusVariants = {
+  // ServiceSession statuses
+  draft: "secondary" as const,
+  scheduled: "success" as const,      // Upcoming session
+  in_progress: "default" as const,    // Currently happening
+  completed: "outline" as const,      // Finished
+  canceled: "destructive" as const,
+  cancelled: "destructive" as const,  // Alias
+  // Booking statuses (for backward compatibility)
   confirmed: "success" as const,
   pending: "secondary" as const,
   pending_payment: "warning" as const,
-  cancelled: "destructive" as const,
-  canceled: "destructive" as const,
-  completed: "outline" as const,
-  in_progress: "default" as const,
 }
 
-// Check if a session can be joined (matching bookings list logic)
-const isSessionJoinable = (booking: any) => {
-  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+// Check if a session can be joined
+// Uses ServiceSession status (scheduled, in_progress) or booking status for backward compatibility
+const isSessionJoinable = (event: any) => {
+  const startTimeStr = event.start_time || event.service_session?.start_time
+  const status = event.status
+
+  // Must have a start time and be in a joinable status
+  if (!startTimeStr) return false
+  if (!['scheduled', 'in_progress', 'confirmed'].includes(status)) return false
 
   const now = new Date()
-  const startTime = parseISO(booking.service_session?.start_time)
-  const endTime = booking.service_session?.end_time ? parseISO(booking.service_session?.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  const startTime = parseISO(startTimeStr)
+  const endTimeStr = event.end_time || event.service_session?.end_time
+  const endTime = endTimeStr
+    ? parseISO(endTimeStr)
+    : new Date(startTime.getTime() + (event.duration_minutes || 60) * 60 * 1000)
 
   // Allow joining 15 minutes before start and until the session ends
   const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
@@ -54,7 +69,7 @@ const isSessionJoinable = (booking: any) => {
 export default function PractitionerCalendarList() {
   const router = useRouter()
   const { user } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<string>("all")
+  const [selectedTab, setSelectedTab] = useState<string>("upcoming")
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -68,8 +83,15 @@ export default function PractitionerCalendarList() {
       params.service_type = serviceTypeFilter
     }
 
-    // Status filter (only apply if not filtered by tab)
-    if (statusFilter !== "all" && !["upcoming", "canceled", "past"].includes(selectedTab)) {
+    // Use backend filters for upcoming/past tabs
+    if (selectedTab === "upcoming") {
+      params.upcoming = true
+    } else if (selectedTab === "past") {
+      params.past = true
+    } else if (selectedTab === "canceled") {
+      params.status = "cancelled"
+    } else if (statusFilter !== "all") {
+      // Status filter only for "all" tab
       params.status = statusFilter
     }
 
@@ -85,9 +107,9 @@ export default function PractitionerCalendarList() {
 
   const events = calendarEvents || []
 
-  // Filter events based on selected tab and search term
+  // Filter events based on search term only (backend handles tab filtering)
   const filteredEvents = events.filter((event: any) => {
-    // Search filter
+    // Search filter (client-side)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       const serviceName = event.service?.name?.toLowerCase() || ''
@@ -108,17 +130,6 @@ export default function PractitionerCalendarList() {
           return false
         }
       }
-    }
-
-    // Tab filter
-    if (selectedTab === "all") return true
-
-    if (selectedTab === "upcoming") {
-      return event.status === "confirmed" && event.start_time && isFuture(parseISO(event.start_time))
-    } else if (selectedTab === "past") {
-      return event.status === "completed" || (event.start_time && isPast(parseISO(event.start_time)))
-    } else if (selectedTab === "canceled") {
-      return event.status === "cancelled" || event.status === "canceled"
     }
 
     return true
@@ -288,11 +299,9 @@ function ScheduleTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Client</TableHead>
             <TableHead>Service</TableHead>
             <TableHead>Date & Time</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Price</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -300,44 +309,55 @@ function ScheduleTable({
           {events.map((scheduleEvent) => {
             const calendarEvent = scheduleEvent.event
             const isServiceSession = scheduleEvent.event_type === 'service_session'
+            const hasRecordings = calendarEvent?.recordings && calendarEvent.recordings.length > 0
+            const isVirtual = calendarEvent?.service?.location_type === 'virtual'
+            const attendeeName = isServiceSession
+              ? calendarEvent?.attendees?.[0]?.full_name
+              : calendarEvent?.client?.full_name
+            const attendeeCount = calendarEvent?.attendee_count || 1
 
-            // Get client email based on event type
-            const clientEmail = isServiceSession
-              ? calendarEvent?.attendees?.[0]?.email // Show first attendee's email for service sessions
-              : calendarEvent?.client?.email
+            const detailsUrl = isServiceSession
+              ? `/dashboard/practitioner/sessions/${scheduleEvent.id}`
+              : `/dashboard/practitioner/bookings/${scheduleEvent.id}`
 
             return (
-              <TableRow key={scheduleEvent.id}>
+              <TableRow
+                key={scheduleEvent.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => router.push(detailsUrl)}
+              >
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {isServiceSession ? (
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          <Users className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={scheduleEvent.clientAvatar || ""} alt={scheduleEvent.clientName || ""} />
-                        <AvatarFallback>
-                          {(scheduleEvent.clientName || "U").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div>
-                      <p className="font-medium">{scheduleEvent.clientName}</p>
-                      {clientEmail && <p className="text-sm text-muted-foreground">{clientEmail}</p>}
+                    <div className="flex items-center gap-2">
+                      {isVirtual ? (
+                        <Video className="h-4 w-4 text-sage-600" />
+                      ) : (
+                        <MapPin className="h-4 w-4 text-terracotta-600" />
+                      )}
+                      {getServiceTypeIcon(scheduleEvent.type)}
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getServiceTypeIcon(scheduleEvent.type)}
                     <div>
-                      <p className="font-medium">{scheduleEvent.title}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {scheduleEvent.type.replace(/_/g, " ")}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{scheduleEvent.title}</p>
+                        {hasRecordings && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                            <Play className="h-2.5 w-2.5 mr-0.5" />
+                            Recording
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 capitalize">
+                          {scheduleEvent.type.replace(/_/g, " ")}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {attendeeName ? (
+                            <>with {attendeeName}</>
+                          ) : attendeeCount > 1 ? (
+                            <>{attendeeCount} attendees</>
+                          ) : null}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -359,13 +379,12 @@ function ScheduleTable({
                     {scheduleEvent.status?.charAt(0).toUpperCase() + scheduleEvent.status?.slice(1)}
                   </Badge>
                 </TableCell>
-                <TableCell>${calendarEvent?.total_amount || "0.00"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     {/* Inline Join Button for virtual sessions */}
                     {scheduleEvent.location === "Virtual" &&
                      calendarEvent?.room?.public_uuid &&
-                     (scheduleEvent.status === "confirmed" || scheduleEvent.status === "in_progress") && (
+                     ["scheduled", "confirmed", "in_progress"].includes(scheduleEvent.status) && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -398,7 +417,7 @@ function ScheduleTable({
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -414,7 +433,7 @@ function ScheduleTable({
                             </Link>
                           )}
                         </DropdownMenuItem>
-                        {scheduleEvent.status === "confirmed" && !isServiceSession && (
+                        {["scheduled", "confirmed"].includes(scheduleEvent.status) && !isServiceSession && (
                           <>
                             <DropdownMenuItem>Reschedule</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>

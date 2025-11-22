@@ -10,13 +10,22 @@ A Booking is now a lightweight reservation that links:
 - **User** (who booked)
 - **ServiceSession** (when/where)
 - **Order** (payment)
-- **Status** (confirmed, attended, completed, etc.)
+- **Status** (draft, pending_payment, confirmed, canceled)
 
 ### ServiceSession = Time Slot
 ServiceSession (from services app) stores ALL time-related data:
 - `start_time`, `end_time`
 - `actual_start_time`, `actual_end_time`
 - `max_participants`, `current_participants`
+- `status` (draft, scheduled, in_progress, completed, canceled)
+
+### RoomParticipant = Attendance Tracking
+RoomParticipant (from rooms app) tracks actual video room participation:
+- `joined_at`, `left_at` - when user joined/left
+- `duration_seconds` - total time in session
+- Created automatically by LiveKit webhook when user joins room
+
+**Note:** SessionParticipant is deprecated. Use RoomParticipant for attendance.
 
 **Key Rule**: Every scheduled booking MUST have a `service_session`.
 
@@ -190,12 +199,56 @@ This works naturally for:
 - **Courses**: N sessions → many bookings per session (enrolled students)
 - **Individual**: 1 session → 1 booking (single client)
 
-## Booking Status Flow
+## Status Architecture
 
+### Two-Layer Status Model
+
+Status tracking is separated into two layers (plus attendance via RoomParticipant):
+
+| Layer | Model | Purpose | Statuses |
+|-------|-------|---------|----------|
+| **Event** | ServiceSession.status | Session lifecycle | draft, scheduled, in_progress, completed, canceled |
+| **Reservation** | Booking.status | Purchase/seat | draft, pending_payment, confirmed, canceled |
+| **Attendance** | RoomParticipant | Did they show up? | (derived from joined_at/left_at) |
+
+### Status Flows
+
+**Booking Status** (purchase lifecycle):
 ```
-draft → pending_payment → confirmed → in_progress → completed
-                                  ↘ canceled
-                                  ↘ no_show
+draft → pending_payment → confirmed
+                      ↘ canceled
+```
+
+**ServiceSession Status** (event lifecycle):
+```
+draft → scheduled → in_progress → completed
+                            ↘ canceled
+```
+
+### How They Work Together
+
+1. **User books** → `Booking(confirmed)` created
+2. **Room starts** → `ServiceSession.status = 'in_progress'`
+3. **User joins room** → `RoomParticipant` created (via LiveKit webhook)
+4. **User leaves room** → `RoomParticipant.left_at` set
+5. **Room ends** → `ServiceSession.status = 'completed'`
+
+### Determining Attendance
+
+```python
+# Get users who booked
+booked_users = Booking.objects.filter(
+    service_session=session,
+    status='confirmed'
+).values_list('user_id', flat=True)
+
+# Get users who joined the room
+attended_users = RoomParticipant.objects.filter(
+    room=session.livekit_room
+).values_list('user_id', flat=True)
+
+# No-shows = booked but didn't join
+no_shows = set(booked_users) - set(attended_users)
 ```
 
 ## Key Differences from Old Architecture
@@ -259,9 +312,29 @@ user.bookings.filter(service__service_type__code='course')
 # Get all sessions for a course enrollment (via order)
 order.bookings.all()  # All session bookings for this course
 
-# Check course completion
-course_bookings = order.bookings.all()
-completed = course_bookings.filter(status='completed').count()
-total = course_bookings.count()
-completion_rate = (completed / total) * 100
+# Check course completion (via SessionParticipant attendance)
+from services.models import SessionParticipant
+course_sessions = ServiceSession.objects.filter(
+    service=course,
+    status='completed'
+)
+attended = SessionParticipant.objects.filter(
+    session__in=course_sessions,
+    user=user,
+    attendance_status='attended'
+).count()
+completion_rate = (attended / course_sessions.count()) * 100
+
+# Get upcoming sessions (new way)
+ServiceSession.objects.filter(
+    service__primary_practitioner=practitioner,
+    status='scheduled',
+    start_time__gte=timezone.now()
+).order_by('start_time')
+
+# Get past sessions
+ServiceSession.objects.filter(
+    service__primary_practitioner=practitioner,
+    status='completed'
+).order_by('-start_time')
 ```

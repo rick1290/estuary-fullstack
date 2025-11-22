@@ -3,7 +3,7 @@
 import { useState, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   ArrowLeft,
   Calendar,
@@ -32,7 +32,11 @@ import { Textarea } from "@/components/ui/textarea"
 import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
 import ResourceCard from "@/components/dashboard/practitioner/calendar/resource-card"
 import ResourceViewerDialog from "@/components/dashboard/practitioner/calendar/resource-viewer-dialog"
-import { serviceSessionsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
+import {
+  serviceSessionsRetrieveOptions,
+  serviceSessionsMarkCompletedCreateMutation,
+  serviceSessionsMarkInProgressCreateMutation,
+} from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 
 // Attendance status badge variant mapping (for when we implement attendance tracking)
@@ -428,9 +432,12 @@ const mockBookings_OLD = {
 // Status icon mapping
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
+    case "draft":
+    case "scheduled":
     case "confirmed":
-    case "in_progress":
       return <Calendar className="h-4 w-4" />
+    case "in_progress":
+      return <PlayCircle className="h-4 w-4" />
     case "completed":
       return <CheckCircle className="h-4 w-4" />
     case "cancelled":
@@ -443,6 +450,7 @@ const StatusIcon = ({ status }: { status: string }) => {
 
 export default function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { id } = use(params)
 
   // Fetch service session data from API
@@ -451,6 +459,22 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       path: { id: parseInt(id) }
     })
   )
+
+  // Mutation for marking session as completed
+  const markCompletedMutation = useMutation({
+    ...serviceSessionsMarkCompletedCreateMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+    },
+  })
+
+  // Mutation for marking session as in progress
+  const markInProgressMutation = useMutation({
+    ...serviceSessionsMarkInProgressCreateMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+    },
+  })
 
   // State for resource management
   const [resources, setResources] = useState<any[]>([])
@@ -539,8 +563,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   // Map status to display variant
   const getStatusVariant = (status: string) => {
     const variants: Record<string, any> = {
+      draft: "secondary",
+      scheduled: "default",
       confirmed: "default",
-      in_progress: "default",
+      in_progress: "warning",
       completed: "success",
       cancelled: "destructive",
       canceled: "destructive",
@@ -933,13 +959,62 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {session.service?.location_type === "virtual" && session.room?.public_uuid && session.status === "confirmed" && (
+              {/* Join/Start virtual session button */}
+              {session.room?.public_uuid && (session.status === "scheduled" || session.status === "in_progress") && (
                 <Button className="w-full bg-sage-600 hover:bg-sage-700" asChild>
                   <Link href={`/room/${session.room.public_uuid}/lobby`}>
                     <Video className="h-4 w-4 mr-2" />
-                    Start Session
+                    {session.status === "in_progress" ? "Join Session" : "Start Session"}
                   </Link>
                 </Button>
+              )}
+
+              {/* Mark as In Progress button - for scheduled sessions */}
+              {session.status === "scheduled" && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => markInProgressMutation.mutate({
+                    path: { id },
+                    body: { service: session.service as number }
+                  })}
+                  disabled={markInProgressMutation.isPending}
+                >
+                  {markInProgressMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <PlayCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Mark In Progress
+                </Button>
+              )}
+
+              {/* Mark as Completed button - for in_progress sessions */}
+              {session.status === "in_progress" && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => markCompletedMutation.mutate({
+                    path: { id },
+                    body: { service: session.service as number }
+                  })}
+                  disabled={markCompletedMutation.isPending}
+                >
+                  {markCompletedMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Mark Completed
+                </Button>
+              )}
+
+              {/* Show completed status */}
+              {session.status === "completed" && (
+                <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Session Completed
+                </div>
               )}
             </CardContent>
           </Card>

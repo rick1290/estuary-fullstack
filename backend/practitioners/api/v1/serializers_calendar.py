@@ -149,3 +149,20 @@ class CalendarEventsQuerySerializer(serializers.Serializer):
         allow_null=True,
         help_text="Filter by booking/session status"
     )
+    # New convenience filters
+    upcoming = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Filter to upcoming events (start_time >= now, status in [confirmed, in_progress], sorted ascending)"
+    )
+    past = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Filter to past events (end_time < now OR status=completed, sorted descending)"
+    )
+    sort = serializers.ChoiceField(
+        choices=['asc', 'desc'],
+        required=False,
+        allow_null=True,
+        help_text="Sort order by start_time (asc=soonest first, desc=most recent first). Defaults based on upcoming/past filter."
+    )
