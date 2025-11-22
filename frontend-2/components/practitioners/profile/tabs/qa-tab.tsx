@@ -1,9 +1,10 @@
 import { Separator } from "@/components/ui/separator"
 
 interface Question {
-  id: string
-  question: string
-  answer: string
+  id: number
+  title: string
+  answer: string | null
+  order: number
 }
 
 interface QATabProps {
@@ -11,20 +12,23 @@ interface QATabProps {
 }
 
 export default function QATab({ questions }: QATabProps) {
+  // Sort by order
+  const sortedQuestions = [...questions].sort((a, b) => a.order - b.order)
+
   return (
     <div className="px-1">
-      {questions && questions.length > 0 ? (
+      {sortedQuestions && sortedQuestions.length > 0 ? (
         <div className="space-y-6">
-          {questions.map((qa, index) => (
+          {sortedQuestions.map((qa, index) => (
             <div key={qa.id}>
-              {index > 0 && <Separator className="my-6" />}
-              <h3 className="font-medium mb-2">{qa.question}</h3>
-              <p className="text-muted-foreground">{qa.answer}</p>
+              {index > 0 && <Separator className="my-4" />}
+              <h3 className="text-sm font-medium mb-1">{qa.title}</h3>
+              <p className="text-sm text-muted-foreground">{qa.answer || "Answer coming soon..."}</p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">No Q&A available.</p>
+        <p className="text-muted-foreground">No Q&A available yet.</p>
       )}
     </div>
   )

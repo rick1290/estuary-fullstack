@@ -169,7 +169,7 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
     total_services = serializers.SerializerMethodField()
     completed_sessions_count = serializers.SerializerMethodField()
     price_range = serializers.SerializerMethodField()
-    
+
     # Related data
     primary_location = PractitionerLocationSerializer(read_only=True)
     specializations = SpecializationSerializer(many=True, read_only=True)
@@ -177,7 +177,8 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
     topics = TopicSerializer(many=True, read_only=True)
     modalities = ModalitySerializer(many=True, read_only=True)
     certifications = CertificationSerializer(many=True, read_only=True)
-    
+    questions = serializers.SerializerMethodField()
+
     class Meta:
         model = Practitioner
         fields = [
@@ -187,7 +188,7 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
             'full_name', 'average_rating', 'total_reviews', 'total_services',
             'completed_sessions_count', 'price_range', 'next_available_date',
             'primary_location', 'specializations', 'styles', 'topics',
-            'modalities', 'certifications'
+            'modalities', 'certifications', 'questions'
         ]
         read_only_fields = fields
     
@@ -205,6 +206,19 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
     
     def get_price_range(self, obj):
         return obj.price_range
+
+    def get_questions(self, obj):
+        """Get practitioner FAQ questions and answers"""
+        questions = obj.questions.all().order_by('order')
+        return [
+            {
+                'id': q.id,
+                'title': q.title,
+                'answer': q.answer,
+                'order': q.order
+            }
+            for q in questions
+        ]
 
 
 class PractitionerPrivateSerializer(PractitionerDetailSerializer):
