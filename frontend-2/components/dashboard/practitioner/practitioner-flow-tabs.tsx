@@ -137,7 +137,7 @@ export default function PractitionerFlowTabs() {
 
   const BookingItem = ({ booking }: { booking: BookingListReadable }) => {
     const timeField = booking.service_session?.start_time || booking.scheduled_start_time
-    const locationText = booking.service?.location_type === 'virtual' || service.location_type === 'virtual' ? 'Virtual' : 'In-Person'
+    const locationText = booking.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person'
     
     return (
       <div className="flex items-start justify-between py-3 px-4 hover:bg-sage-50 rounded-lg transition-colors">
