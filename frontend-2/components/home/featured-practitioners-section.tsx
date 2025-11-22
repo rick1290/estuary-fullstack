@@ -2,8 +2,6 @@
 import Link from "next/link"
 import { ArrowRight, Star, MapPin, Sparkles, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
@@ -104,18 +102,12 @@ export default function FeaturedPractitionersSection() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="flex gap-8 justify-center flex-wrap">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-lg p-8 pb-4 text-center">
-                <Skeleton className="w-24 h-24 mx-auto rounded-full mb-4" />
-                <Skeleton className="h-6 w-3/4 mx-auto mb-2" />
-                <Skeleton className="h-4 w-1/2 mx-auto mb-3" />
-                <Skeleton className="h-4 w-2/3 mx-auto mb-4" />
-                <div className="flex justify-center gap-2 mb-6">
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                </div>
-                <Skeleton className="h-8 w-full rounded" />
+              <div key={i} className="flex flex-col items-center">
+                <Skeleton className="w-36 h-36 rounded-full mb-4" />
+                <Skeleton className="h-5 w-28 mb-2" />
+                <Skeleton className="h-4 w-24" />
               </div>
             ))}
           </div>
@@ -138,17 +130,17 @@ export default function FeaturedPractitionersSection() {
             {canScrollLeft && (
               <button
                 onClick={scrollLeft}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-all duration-200"
+                className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="h-5 w-5 text-olive-700" />
               </button>
             )}
-            
+
             {canScrollRight && (
               <button
                 onClick={scrollRight}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-all duration-200"
+                className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="h-5 w-5 text-olive-700" />
@@ -156,69 +148,83 @@ export default function FeaturedPractitionersSection() {
             )}
 
             {/* Scrollable container */}
-            <div 
+            <div
               ref={scrollContainerRef}
               onScroll={checkScrollButtons}
-              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth"
+              className="flex gap-6 lg:gap-10 overflow-x-auto scrollbar-hide pb-8 pt-4 scroll-smooth px-4"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {featuredPractitioners.map((practitioner, index) => (
                 <div
                   key={practitioner.id}
-                  className="animate-slide-up flex-shrink-0 w-[280px]"
+                  className="animate-slide-up flex-shrink-0"
                   style={{animationDelay: `${index * 0.1}s`}}
                 >
                   <Link
                     href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                    className="group block w-full transform transition-all duration-300 hover:scale-105"
+                    className="group block"
                   >
-                    <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
-                      {/* Avatar section */}
-                      <div className="p-8 pb-4 text-center flex-grow flex flex-col">
-                        <div className="w-24 h-24 mx-auto rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white ring-2 ring-sage-200">
-                          <img 
-                            src={practitioner.image} 
+                    {/* Avatar-centric card */}
+                    <div className="relative flex flex-col items-center">
+                      {/* Avatar container with hover effects */}
+                      <div className="relative">
+                        {/* Decorative ring that appears on hover */}
+                        <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-sage-200/0 via-terracotta-200/0 to-sage-300/0 group-hover:from-sage-200/60 group-hover:via-terracotta-200/40 group-hover:to-sage-300/60 transition-all duration-500 blur-sm" />
+
+                        {/* Main avatar */}
+                        <div className="relative w-36 h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-xl border-4 border-white ring-2 ring-sage-200/50 group-hover:ring-sage-300 group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300">
+                          <img
+                            src={practitioner.image}
                             alt={practitioner.name}
                             className="w-full h-full object-cover"
                           />
+
+                          {/* Overlay on hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-olive-900/80 via-olive-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-4">
+                            <span className="text-white text-sm font-medium px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                              Visit Profile
+                            </span>
+                          </div>
                         </div>
-                        
-                        <h3 className="text-lg font-semibold text-olive-900 mb-1">{practitioner.name}</h3>
-                        <p className="text-olive-600 text-sm mb-3">{practitioner.specialty}</p>
-                        
-                        <div className="flex items-center justify-center gap-1 text-sm text-olive-600 mb-4">
-                          <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
-                          <span className="font-medium">{practitioner.rating}</span>
-                          <span className="text-olive-400">•</span>
+
+                        {/* Rating badge */}
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-lg border border-sage-100">
+                          <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
+                          <span className="text-sm font-semibold text-olive-800">{practitioner.rating}</span>
+                        </div>
+                      </div>
+
+                      {/* Info below avatar */}
+                      <div className="mt-6 text-center">
+                        <h3 className="text-lg font-semibold text-olive-900 group-hover:text-sage-700 transition-colors">
+                          {practitioner.name}
+                        </h3>
+                        <p className="text-olive-600 text-sm mt-0.5">{practitioner.specialty}</p>
+
+                        {/* Location - shows on hover */}
+                        <div className="flex items-center justify-center gap-1 text-sm text-olive-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-5">
+                          <MapPin className="h-3.5 w-3.5" />
                           <span>{practitioner.location}</span>
                         </div>
-                        
-                        <div className="flex flex-wrap justify-center gap-2 mt-auto">
+
+                        {/* Modalities pills */}
+                        <div className="flex flex-wrap justify-center gap-1.5 mt-3 max-w-[200px]">
                           {practitioner.modalities.slice(0, 2).map((modality) => (
-                            <span 
-                              key={modality} 
-                              className="text-xs px-3 py-1.5 bg-sage-100 text-olive-700 rounded-full"
+                            <span
+                              key={modality}
+                              className="text-xs px-2.5 py-1 bg-sage-100/80 text-olive-700 rounded-full group-hover:bg-sage-200/80 transition-colors"
                             >
                               {modality}
                             </span>
                           ))}
                           {practitioner.modalities.length > 2 && (
-                            <span className="text-xs text-olive-600 self-center">+{practitioner.modalities.length - 2}</span>
+                            <span className="text-xs text-olive-500 self-center">
+                              +{practitioner.modalities.length - 2}
+                            </span>
                           )}
                         </div>
                       </div>
-
-                      {/* Bottom section */}
-                      <div className="px-8 pb-8">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400"
-                        >
-                          View Profile
-                        </Button>
-                      </div>
-                    </Card>
+                    </div>
                   </Link>
                 </div>
               ))}
