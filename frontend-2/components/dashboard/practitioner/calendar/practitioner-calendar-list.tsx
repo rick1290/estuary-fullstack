@@ -54,7 +54,7 @@ const isSessionJoinable = (booking: any) => {
 export default function PractitionerCalendarList() {
   const router = useRouter()
   const { user } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<string>("all")
+  const [selectedTab, setSelectedTab] = useState<string>("upcoming")
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -114,9 +114,29 @@ export default function PractitionerCalendarList() {
     if (selectedTab === "all") return true
 
     if (selectedTab === "upcoming") {
-      return event.status === "confirmed" && event.start_time && isFuture(parseISO(event.start_time))
+      // Show confirmed or in_progress events that haven't ended yet
+      const isActiveStatus = event.status === "confirmed" || event.status === "in_progress"
+      if (!isActiveStatus) return false
+
+      // Check if event hasn't ended (use end_time if available, otherwise start_time)
+      const endTime = event.end_time ? parseISO(event.end_time) : null
+      const startTime = event.start_time ? parseISO(event.start_time) : null
+
+      if (endTime) {
+        return isFuture(endTime) || event.status === "in_progress"
+      } else if (startTime) {
+        return isFuture(startTime) || event.status === "in_progress"
+      }
+      return false
     } else if (selectedTab === "past") {
-      return event.status === "completed" || (event.start_time && isPast(parseISO(event.start_time)))
+      // Show completed events OR events with end_time in the past
+      if (event.status === "completed") return true
+
+      const endTime = event.end_time ? parseISO(event.end_time) : null
+      if (endTime && isPast(endTime) && event.status !== "in_progress") {
+        return true
+      }
+      return false
     } else if (selectedTab === "canceled") {
       return event.status === "cancelled" || event.status === "canceled"
     }
