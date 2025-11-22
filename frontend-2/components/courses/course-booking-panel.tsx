@@ -63,7 +63,8 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
                 <span className="font-semibold text-olive-900">
                   {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
                     month: 'short',
-                    day: 'numeric'
+                    day: 'numeric',
+                    year: 'numeric'
                   })}
                 </span>
               </div>
@@ -77,7 +78,8 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
                 <span className="font-semibold text-olive-900">
                   {new Date(course.lastSessionDate).toLocaleDateString('en-US', {
                     month: 'short',
-                    day: 'numeric'
+                    day: 'numeric',
+                    year: 'numeric'
                   })}
                 </span>
               </div>

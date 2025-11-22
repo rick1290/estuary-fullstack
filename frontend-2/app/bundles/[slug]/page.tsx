@@ -206,12 +206,23 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text Content */}
             <div className="space-y-8 animate-slide-up">
-              {/* Bundle Badge */}
-              <div className="inline-flex items-center gap-3 bg-terracotta-100 px-5 py-3 rounded-full">
-                <Package className="h-5 w-5 text-terracotta-600" strokeWidth="1.5" />
-                <span className="text-terracotta-800 font-semibold">
-                  Bundle • Save {savingsPercentage}%
-                </span>
+              {/* Bundle Badge & Modalities */}
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-3 bg-terracotta-100 px-5 py-3 rounded-full">
+                  <Package className="h-5 w-5 text-terracotta-600" strokeWidth="1.5" />
+                  <span className="text-terracotta-800 font-semibold">
+                    Bundle • Save {savingsPercentage}%
+                  </span>
+                </div>
+                {bundle.modalities && bundle.modalities.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {bundle.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
+                        {modality.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -396,12 +407,36 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
               </section>
             )}
 
+            {/* What You'll Learn */}
+            {bundle.what_youll_learn && (
+              <section className="animate-fade-in">
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">What You'll Experience</h2>
+                <div className="prose prose-lg prose-olive max-w-none">
+                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                    {bundle.what_youll_learn}
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {/* Prerequisites */}
+            {bundle.prerequisites && (
+              <section className="animate-fade-in">
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">Prerequisites</h2>
+                <div className="prose prose-lg prose-olive max-w-none">
+                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                    {bundle.prerequisites}
+                  </p>
+                </div>
+              </section>
+            )}
+
             {/* What's Included */}
             {bundle.includes && bundle.includes.length > 0 && (
               <section className="animate-fade-in">
                 <h2 className="text-3xl font-medium text-olive-900 mb-8">What's Included</h2>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {bundle.includes.map((item, index) => (
+                  {bundle.includes.map((item: string, index: number) => (
                     <div key={index} className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-sage-600 mt-0.5 flex-shrink-0" strokeWidth="2" />
                       <span className="text-olive-700 leading-relaxed">{item}</span>
@@ -416,7 +451,7 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
               <section className="animate-fade-in">
                 <h2 className="text-3xl font-medium text-olive-900 mb-10">Key Benefits</h2>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {bundle.benefits.map((benefit) => (
+                  {bundle.benefits.map((benefit: any) => (
                     <Card key={benefit.id} className="border-2 border-sage-200 bg-cream-100/30 hover:bg-cream-100/50 transition-colors">
                       <CardContent className="p-6">
                         <h3 className="text-xl font-medium text-olive-900 mb-2">{benefit.title}</h3>

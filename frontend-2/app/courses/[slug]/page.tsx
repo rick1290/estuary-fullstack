@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
+import { ChevronRight, ChevronDown, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
 import { Button } from "@/components/ui/button"
@@ -157,7 +157,20 @@ This course is perfect for anyone interested in improving their health through b
 
 export default function CourseDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
-  
+  const [expandedSessions, setExpandedSessions] = React.useState<Set<number>>(new Set())
+
+  const toggleSession = (sessionId: number) => {
+    setExpandedSessions(prev => {
+      const next = new Set(prev)
+      if (next.has(sessionId)) {
+        next.delete(sessionId)
+      } else {
+        next.add(sessionId)
+      }
+      return next
+    })
+  }
+
   // Fetch course data from API using slug
   const { data: serviceData, isLoading, error } = useQuery({
     ...publicServicesBySlugRetrieveOptions({ path: { slug } }),
@@ -185,20 +198,16 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
       : serviceData.category
       ? [serviceData.category.name]
       : ['Wellness'],
+    modalities: Array.isArray(serviceData.modalities) ? serviceData.modalities : [],
     image: serviceData.image_url || serviceData.featured_image || '/course-image-1.jpg',
     experienceLevel: serviceData.experience_level || "beginner",
     includes: Array.isArray(serviceData.includes) ? serviceData.includes : [],
+    prerequisites: serviceData.prerequisites || serviceData.requirements || null,
     whatYoullLearn: Array.isArray(serviceData.learning_objectives)
       ? serviceData.learning_objectives
       : Array.isArray(serviceData.what_youll_learn)
       ? serviceData.what_youll_learn
-      : [
-          "Fundamental concepts and principles",
-          "Practical techniques and strategies",
-          "How to apply learnings in daily life",
-          "Advanced methods for continued growth",
-          "Sustainable practices for long-term success",
-        ],
+      : [],
     benefits: Array.isArray(serviceData.benefits)
       ? serviceData.benefits
       : [
@@ -411,12 +420,23 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left: Text Content */}
             <div className="space-y-8 animate-slide-up">
-              {/* Course Label */}
-              <div className="inline-flex items-center gap-2 bg-terracotta-100 px-4 py-2 rounded-full">
-                <div className="w-2 h-2 bg-terracotta-500 rounded-full animate-pulse" />
-                <span className="text-terracotta-800 font-medium">{course.sessionCount}-Session Journey</span>
+              {/* Course Label & Modalities */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 bg-terracotta-100 px-4 py-2 rounded-full">
+                  <div className="w-2 h-2 bg-terracotta-500 rounded-full animate-pulse" />
+                  <span className="text-terracotta-800 font-medium">{course.sessionCount}-Session Journey</span>
+                </div>
+                {course.modalities && course.modalities.length > 0 && (
+                  <>
+                    {course.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
+                        {modality.name}
+                      </Badge>
+                    ))}
+                  </>
+                )}
               </div>
-              
+
               <div>
                 <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-olive-900 mb-6 leading-[1.1]">
                   {course.title}
@@ -560,21 +580,23 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             </section>
 
             {/* What You'll Master */}
-            <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">What You'll Master</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {course.whatYoullLearn.map((item, index) => (
-                  <div key={index} className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-2xl p-6 card-hover">
-                    <div className="flex gap-4">
-                      <div className="flex-shrink-0">
-                        <Check className="h-6 w-6 text-sage-600 rounded-full" strokeWidth="1.5" />
+            {course.whatYoullLearn && course.whatYoullLearn.length > 0 && (
+              <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
+                <h2 className="text-3xl font-bold text-olive-900 mb-10">What You'll Master</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {course.whatYoullLearn.map((item, index) => (
+                    <div key={index} className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-2xl p-6 card-hover">
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0">
+                          <Check className="h-6 w-6 text-sage-600 rounded-full" strokeWidth="1.5" />
+                        </div>
+                        <p className="text-olive-700 leading-relaxed">{item}</p>
                       </div>
-                      <p className="text-olive-700 leading-relaxed">{item}</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* What's Included */}
             {course.includes && course.includes.length > 0 && (
@@ -597,6 +619,16 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </section>
             )}
 
+            {/* Prerequisites */}
+            {course.prerequisites && (
+              <section className="animate-fade-in" style={{animationDelay: '0.35s'}}>
+                <h2 className="text-3xl font-bold text-olive-900 mb-6">Prerequisites</h2>
+                <div className="bg-cream-100 rounded-2xl p-6">
+                  <p className="text-olive-700 leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
+                </div>
+              </section>
+            )}
+
             {/* Your Learning Journey */}
             <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
               <h2 className="text-3xl font-bold text-olive-900 mb-6">Your Learning Journey</h2>
@@ -606,74 +638,76 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                   All times are in <strong>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</strong> (your local timezone)
                 </span>
               </div>
-              <div className="space-y-6">
-                {course.sessions.map((session, index) => (
-                  <Card key={session.id} className="border-2 border-sage-200 hover:border-sage-300 transition-all overflow-hidden group">
-                    <div className="bg-gradient-to-r from-sage-50 to-terracotta-50 p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-4 mb-3">
-                            <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-                              <span className="font-bold text-sage-700">{index + 1}</span>
+              <div className="space-y-3">
+                {course.sessions.map((session, index) => {
+                  const isExpanded = expandedSessions.has(session.id)
+                  const hasLongDescription = session.description && session.description.length > 120
+
+                  return (
+                    <Card key={session.id} className="border border-sage-200 hover:border-sage-300 transition-all overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-sage-700">{index + 1}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-olive-900 mb-1">{session.title}</h3>
+                            {session.description && (
+                              <div className="mb-2">
+                                <p className={`text-sm text-olive-600 ${!isExpanded && hasLongDescription ? 'line-clamp-2' : ''}`}>
+                                  {session.description}
+                                </p>
+                                {hasLongDescription && (
+                                  <button
+                                    onClick={() => toggleSession(session.id)}
+                                    className="text-xs text-sage-600 hover:text-sage-800 font-medium mt-1 flex items-center gap-0.5"
+                                  >
+                                    {isExpanded ? 'Show less' : 'Read more'}
+                                    <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-olive-500">
+                              {session.start_time && (
+                                <>
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" strokeWidth="1.5" />
+                                    <span>
+                                      {new Date(session.start_time).toLocaleDateString('en-US', {
+                                        weekday: 'short',
+                                        month: 'short',
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" strokeWidth="1.5" />
+                                    <span>
+                                      {new Date(session.start_time).toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit'
+                                      })}
+                                      {session.end_time && ` - ${new Date(session.end_time).toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit'
+                                      })}`}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                              {session.duration_minutes && (
+                                <Badge variant="outline" className="text-[10px] font-normal py-0 px-1.5">
+                                  {session.duration_minutes} min
+                                </Badge>
+                              )}
                             </div>
-                            <h3 className="text-xl font-semibold text-olive-900">{session.title}</h3>
                           </div>
-                          <p className="text-olive-700 ml-14">{session.description}</p>
                         </div>
-                        {session.start_time && (
-                          <Badge variant="terracotta" className="ml-4 flex-shrink-0">
-                            {new Date(session.start_time).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardContent className="p-6 bg-cream-50">
-                      <div className="flex flex-wrap gap-4 text-sm text-olive-600 mb-4">
-                        {session.start_time && session.end_time && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" strokeWidth="1.5" />
-                            <span>
-                              {new Date(session.start_time).toLocaleString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit'
-                              })} - {new Date(session.end_time).toLocaleTimeString('en-US', {
-                                hour: 'numeric',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          </div>
-                        )}
-                        {!session.start_time && session.startTime && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" strokeWidth="1.5" />
-                            <span>{session.startTime} - {session.endTime}</span>
-                          </div>
-                        )}
-                        {session.duration_minutes && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-olive-500">({session.duration_minutes} min)</span>
-                          </div>
-                        )}
-                      </div>
-                      {session.agenda && session.agenda.length > 0 && (
-                        <div className="grid gap-2">
-                          {session.agenda.map((item, i) => (
-                            <div key={i} className="flex gap-3">
-                              <div className="w-1.5 h-1.5 rounded-full bg-terracotta-400 mt-2 flex-shrink-0" />
-                              <span className="text-olive-600">{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </section>
 

@@ -103,41 +103,65 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
   return (
     <>
       <Card className="border border-sage-100 bg-white shadow-sm overflow-hidden sticky top-24">
-        {/* Price Header */}
-        <div className="bg-gradient-to-br from-sage-50 to-terracotta-50 p-6 text-center">
-          <p className="text-sm text-olive-600 mb-2">Session Investment</p>
-          <p className="text-3xl font-bold text-olive-900">
-            {practitioner.min_price && practitioner.max_price
-              ? `$${practitioner.min_price} - $${practitioner.max_price}`
-              : "Contact for pricing"}
-          </p>
-          {practitioner.next_available_date && (
-            <div className="mt-3 inline-flex items-center gap-2 text-sm text-olive-700">
-              <Calendar className="h-4 w-4" />
-              Next: {practitioner.next_available_date}
-            </div>
-          )}
-        </div>
-
         <CardContent className="p-6">
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
+              <Calendar className="h-4 w-4 mx-auto mb-1 text-sage-600" />
+              <div className="text-lg font-bold text-olive-900">{practitioner.completed_sessions_count || 0}</div>
+              <div className="text-[10px] text-olive-600">Sessions completed</div>
+            </div>
+            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
+              <Sparkles className="h-4 w-4 mx-auto mb-1 text-sage-600" />
+              <div className="text-lg font-bold text-olive-900">{practitioner.total_services || 0}</div>
+              <div className="text-[10px] text-olive-600">Services</div>
+            </div>
+            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-sage-600" />
+              <div className="text-lg font-bold text-olive-900">
+                {practitioner.price_range?.min
+                  ? `$${practitioner.price_range.min}`
+                  : practitioner.min_price
+                    ? `$${practitioner.min_price}`
+                    : '$85'}
+              </div>
+              <div className="text-[10px] text-olive-600">From</div>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
           {/* Primary Actions */}
           <div className="space-y-3 mb-6">
-            <Button 
-              className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800" 
-              size="lg" 
+            <Button
+              className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+              size="lg"
               onClick={handleBookSessionClick}
             >
               <Sparkles className="mr-2 h-4 w-4" />
               Book a Session
             </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full" 
+
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={handleMessageClick}
             >
               <MessageSquare className="mr-2 h-4 w-4" />
               Send Message
+            </Button>
+
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full",
+                isLiked && "text-rose-600 hover:text-rose-700"
+              )}
+              onClick={handleLikeToggle}
+              disabled={isLoading}
+            >
+              <Heart className={cn("mr-2 h-4 w-4 transition-colors", isLiked && "fill-current")} />
+              {isLiked ? "Saved" : "Save Practitioner"}
             </Button>
           </div>
 
@@ -175,50 +199,8 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
             </Button>
           </div>
 
-          <Separator className="my-6" />
-
-          {/* Quick Info */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-olive-600">Duration</span>
-              <span className="font-medium text-olive-800">30-90 min</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-olive-600">Location</span>
-              <span className="font-medium text-olive-800">
-                {(() => {
-                  // Handle both API structures: primary_location object or locations array
-                  if (practitioner.primary_location?.is_virtual) return "Virtual Available";
-                  if (practitioner.locations && practitioner.locations.some(l => l.is_virtual)) return "Virtual Available";
-                  if (practitioner.primary_location?.is_in_person || 
-                      (practitioner.locations && practitioner.locations.some(l => l.is_in_person))) return "In-Person";
-                  return "Contact for Details";
-                })()}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-olive-600">Response time</span>
-              <span className="font-medium text-olive-800">Within 24h</span>
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "w-full mt-6",
-              isLiked && "text-rose-600 hover:text-rose-700"
-            )}
-            onClick={handleLikeToggle}
-            disabled={isLoading}
-          >
-            <Heart className={cn("mr-2 h-4 w-4 transition-colors", isLiked && "fill-current")} />
-            {isLiked ? "Saved" : "Save Practitioner"}
-          </Button>
-
           {/* Trust Badges */}
-          <div className="mt-6 pt-6 border-t border-sage-100 space-y-2">
+          <div className="pt-6 border-t border-sage-100 space-y-2">
             <div className="flex items-center gap-2 text-xs text-olive-600">
               <Check className="h-3.5 w-3.5 text-sage-600" />
               Free cancellation up to 24h

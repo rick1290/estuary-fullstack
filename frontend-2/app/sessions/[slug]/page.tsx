@@ -24,101 +24,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-// Mock data for a session
-const MOCK_SESSION = {
-  id: 1,
-  title: "Mindfulness Meditation Session",
-  type: "one-on-one",
-  description: "A personalized meditation session focused on mindfulness techniques for stress reduction.",
-  longDescription: `This one-on-one mindfulness meditation session is designed to help you develop greater awareness, focus, and emotional regulation through guided meditation practices.
-
-The session is tailored to your specific needs and experience level, whether you're completely new to meditation or looking to deepen your existing practice. We'll explore various mindfulness techniques that you can incorporate into your daily life to reduce stress and enhance overall wellbeing.
-
-Each session includes personalized guidance, feedback on your technique, and recommendations for continuing your practice between sessions.`,
-  price: 85,
-  duration: 60,
-  location: "Virtual",
-  platform: "Zoom",
-  rating: 4.9,
-  reviewCount: 124,
-  categories: ["Meditation", "Mindfulness"],
-  image: "/session-image-1.jpg",
-  experienceLevel: "all_levels",
-  whatToExpect: [
-    "Initial assessment of your current stress levels and meditation experience",
-    "Guided mindfulness meditation practice tailored to your needs",
-    "Instruction on proper breathing techniques and posture",
-    "Discussion of how to integrate mindfulness into daily activities",
-    "Personalized recommendations for home practice",
-  ],
-  benefits: [
-    {
-      id: 1,
-      title: "Stress Reduction",
-      description: "Learn techniques to reduce stress and anxiety in your daily life.",
-      icon: "spa",
-    },
-    {
-      id: 2,
-      title: "Improved Focus",
-      description: "Develop greater concentration and attention through regular practice.",
-      icon: "center_focus_strong",
-    },
-    {
-      id: 3,
-      title: "Emotional Balance",
-      description: "Cultivate emotional awareness and regulation skills.",
-      icon: "balance",
-    },
-  ],
-  availableSlots: [
-    {
-      id: 101,
-      date: "2023-05-10",
-      startTime: "09:00",
-      endTime: "10:00",
-      available: true,
-    },
-    {
-      id: 102,
-      date: "2023-05-10",
-      startTime: "14:00",
-      endTime: "15:00",
-      available: true,
-    },
-    {
-      id: 103,
-      date: "2023-05-11",
-      startTime: "11:00",
-      endTime: "12:00",
-      available: true,
-    },
-    {
-      id: 104,
-      date: "2023-05-12",
-      startTime: "16:00",
-      endTime: "17:00",
-      available: true,
-    },
-    {
-      id: 105,
-      date: "2023-05-13",
-      startTime: "10:00",
-      endTime: "11:00",
-      available: false,
-    },
-  ],
-  practitioner: {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    title: "Meditation Instructor & Mindfulness Coach",
-    bio: "Dr. Sarah Johnson has over 15 years of experience teaching mindfulness meditation. She holds a Ph.D. in Psychology and is certified in Mindfulness-Based Stress Reduction (MBSR).",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.8,
-    reviewCount: 56,
-  },
-}
-
 export default function SessionDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
   const [isSaveLoading, setIsSaveLoading] = useState(false)
@@ -279,23 +184,34 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text Content */}
             <div className="space-y-8 animate-slide-up">
-              {/* Categories */}
-              <div className="flex flex-wrap gap-2">
-                {service?.category && (
-                  <Badge variant="terracotta" className="text-sm">
-                    {service.category.name}
-                  </Badge>
+              {/* Categories & Modalities */}
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {service?.category && (
+                    <Badge variant="terracotta" className="text-sm">
+                      {service.category.name}
+                    </Badge>
+                  )}
+                  {service?.practitioner_category && (
+                    <Badge variant="sage" className="text-sm">
+                      {service.practitioner_category.name}
+                    </Badge>
+                  )}
+                  {service?.tags?.map((tag: string) => (
+                    <Badge key={tag} variant="outline" className="text-sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                {service?.modalities && service.modalities.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {service.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
+                        {modality.name}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
-                {service?.practitioner_category && (
-                  <Badge variant="sage" className="text-sm">
-                    {service.practitioner_category.name}
-                  </Badge>
-                )}
-                {service?.tags?.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-sm">
-                    {tag}
-                  </Badge>
-                ))}
               </div>
 
               <div>
