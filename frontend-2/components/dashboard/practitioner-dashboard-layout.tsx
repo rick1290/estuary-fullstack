@@ -56,6 +56,7 @@ interface MenuItem {
   text: string
   icon: React.ReactNode
   path: string
+  comingSoon?: boolean
   submenu?: {
     text: string
     icon: React.ReactNode
@@ -141,7 +142,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       ],
     },
     { text: "Profile", icon: <User className="h-4 w-4" />, path: "/dashboard/practitioner/profile" },
-    { text: "Analytics", icon: <BarChart className="h-4 w-4" />, path: "/dashboard/practitioner/analytics" },
+    { text: "Analytics", icon: <BarChart className="h-4 w-4" />, path: "/dashboard/practitioner/analytics", comingSoon: true },
   ]
 
   const isSubmenuActive = (item: MenuItem) => {
@@ -191,6 +192,22 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               ))}
             </div>
           )}
+        </div>
+      )
+    }
+
+    // Handle coming soon items - not clickable
+    if (item.comingSoon) {
+      return (
+        <div
+          key={item.text}
+          className="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
+        >
+          <div className="flex items-center gap-3">
+            {item.icon}
+            {item.text}
+          </div>
+          <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
         </div>
       )
     }
