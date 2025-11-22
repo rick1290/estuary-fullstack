@@ -17,7 +17,7 @@ declare module "next-auth" {
       image?: string | null
     }
   }
-  
+
   interface User extends UserProfileReadable {
     accessToken?: string
     refreshToken?: string
@@ -31,6 +31,7 @@ declare module "next-auth/jwt" {
     refreshToken?: string
     accessTokenExpires?: number
     user?: UserProfileReadable
+    error?: string
   }
 }
 
@@ -40,39 +41,34 @@ const getApiUrl = () => {
   if (process.env.INTERNAL_API_URL) {
     return process.env.INTERNAL_API_URL
   }
-  
+
   // Fallback to NEXT_PUBLIC_API_URL
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
-  
+
   // Default to localhost for local development
   return 'http://localhost:8000'
 }
 
-async function refreshAccessToken(token: any) {
+/**
+ * Refresh the access token using the refresh token.
+ * This is the ONLY place token refresh should happen.
+ */
+async function refreshAccessToken(token: any): Promise<any> {
+  // Don't attempt refresh if we don't have a refresh token
+  if (!token.refreshToken) {
+    console.error("[NextAuth] No refresh token available")
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    }
+  }
+
+  const apiUrl = getApiUrl()
+  console.log("[NextAuth] Refreshing access token...")
+
   try {
-    // Don't attempt refresh if we don't have a refresh token
-    if (!token.refreshToken) {
-      console.error("No refresh token available")
-      return {
-        ...token,
-        error: "RefreshAccessTokenError",
-      }
-    }
-    
-    // Check if we're already refreshing to prevent race conditions
-    if (token.isRefreshing) {
-      console.log("Already refreshing token, skipping...")
-      return token
-    }
-    
-    const apiUrl = getApiUrl()
-    console.log("Attempting to refresh token...")
-    
-    // Mark as refreshing
-    token.isRefreshing = true
-    
     const response = await fetch(`${apiUrl}/api/v1/auth/token/refresh/`, {
       method: 'POST',
       headers: {
@@ -80,12 +76,12 @@ async function refreshAccessToken(token: any) {
       },
       body: JSON.stringify({ refresh: token.refreshToken })
     })
-    
+
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`Token refresh failed with status ${response.status}: ${errorText}`)
-      
-      // If refresh token is invalid (401), we need to log the user out
+      console.error(`[NextAuth] Token refresh failed: ${response.status} - ${errorText}`)
+
+      // If refresh token is invalid/expired (401/403), user needs to re-authenticate
       if (response.status === 401 || response.status === 403) {
         return {
           ...token,
@@ -95,33 +91,34 @@ async function refreshAccessToken(token: any) {
           accessTokenExpires: undefined,
         }
       }
-      
-      throw new Error(`Failed to refresh token: ${response.status}`)
+
+      // For other errors (network, 500, etc.), keep the current token
+      // and let the client retry later
+      console.warn("[NextAuth] Non-auth error during refresh, keeping current token")
+      return token
     }
-    
+
     const data = await response.json()
-    
+
     if (data && data.access) {
-      console.log("Token refreshed successfully")
+      console.log("[NextAuth] Token refreshed successfully")
       return {
         ...token,
         accessToken: data.access,
-        // If refresh token rotates, update it
+        // IMPORTANT: Update refresh token if backend rotates it
         refreshToken: data.refresh || token.refreshToken,
         accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes
         error: undefined, // Clear any previous errors
-        isRefreshing: false,
       }
     }
-    
-    throw new Error("Invalid refresh response format")
+
+    console.error("[NextAuth] Invalid refresh response format")
+    return token
+
   } catch (error) {
-    console.error("RefreshAccessTokenError:", error)
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-      isRefreshing: false,
-    }
+    console.error("[NextAuth] Refresh token error:", error)
+    // On network errors, keep the current token and let client retry
+    return token
   }
 }
 
@@ -137,12 +134,11 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
-        
+
         try {
           const apiUrl = getApiUrl()
-          console.log("NextAuth: Attempting login with API URL:", apiUrl)
-          console.log("NextAuth: Credentials email:", credentials.email)
-          
+          console.log("[NextAuth] Login attempt for:", credentials.email)
+
           const response = await fetch(`${apiUrl}/api/v1/auth/login/`, {
             method: 'POST',
             headers: {
@@ -153,20 +149,20 @@ export const authOptions: NextAuthOptions = {
               password: credentials.password
             })
           })
-          
-          console.log("NextAuth: Response status:", response.status)
-          
+
           if (!response.ok) {
             const errorText = await response.text()
-            console.error("Login failed with status:", response.status, "Error:", errorText)
+            console.error("[NextAuth] Login failed:", response.status, errorText)
             return null
           }
-          
+
           const data = await response.json()
-          
+
           if (data) {
             const { access_token, refresh_token, expires_in, user } = data
-            
+
+            console.log("[NextAuth] Login successful for:", credentials.email)
+
             return {
               ...user,
               id: user?.id?.toString() || "",
@@ -178,10 +174,10 @@ export const authOptions: NextAuthOptions = {
               accessTokenExpires: Date.now() + (expires_in || 30 * 60) * 1000
             } as any
           }
-          
+
           return null
         } catch (error) {
-          console.error("Login error:", error)
+          console.error("[NextAuth] Login error:", error)
           return null
         }
       }
@@ -200,7 +196,7 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, account, trigger }) {
-      // Initial sign in
+      // Initial sign in - store tokens from login response
       if (account && user) {
         if (account.provider === "credentials") {
           return {
@@ -208,18 +204,23 @@ export const authOptions: NextAuthOptions = {
             accessToken: (user as any).accessToken,
             refreshToken: (user as any).refreshToken,
             accessTokenExpires: (user as any).accessTokenExpires,
-            user: user as UserProfileReadable
+            user: user as UserProfileReadable,
+            error: undefined,
           }
         } else if (account.provider === "google") {
-          // TODO: Call Django backend to exchange Google token for Django JWT
-          // For now, we'll need to implement a Django endpoint that accepts Google tokens
-          // and creates/updates a user, returning Django JWT tokens
+          // TODO: Implement Google token exchange with Django backend
         }
       }
-      
-      // Force refresh if explicitly triggered
-      if (trigger === "update" && token.accessToken && !token.error) {
-        console.log("Fetching fresh user data due to update trigger");
+
+      // If there's already an error, don't try to refresh again
+      // Let the client handle it (retry or logout)
+      if (token.error === "RefreshAccessTokenError") {
+        return token
+      }
+
+      // Handle explicit update trigger (e.g., after profile update)
+      if (trigger === "update" && token.accessToken) {
+        console.log("[NextAuth] Update trigger - fetching fresh user data")
         try {
           const apiUrl = getApiUrl()
           const response = await fetch(`${apiUrl}/api/v1/auth/me/`, {
@@ -230,64 +231,66 @@ export const authOptions: NextAuthOptions = {
 
           if (response.ok) {
             const freshUserData = await response.json()
-            console.log("Successfully fetched fresh user data:", freshUserData)
             return {
               ...token,
               user: freshUserData,
             }
-          } else {
-            console.error("Failed to fetch fresh user data:", response.status)
+          } else if (response.status === 401) {
+            // Token might be expired, try to refresh
+            console.log("[NextAuth] Token expired during update, refreshing...")
+            return refreshAccessToken(token)
           }
         } catch (error) {
-          console.error("Error fetching fresh user data:", error)
+          console.error("[NextAuth] Error fetching user data:", error)
         }
       }
-      
-      // Return previous token if the access token has not expired yet
-      // Add a 5 minute buffer to ensure we refresh before actual expiration
-      const fiveMinutes = 5 * 60 * 1000;
-      if (token.accessTokenExpires && Date.now() < ((token.accessTokenExpires as number) - fiveMinutes)) {
-        return token
+
+      // Check if access token needs refresh
+      // Refresh 5 minutes before expiration to avoid edge cases
+      const fiveMinutes = 5 * 60 * 1000
+      const tokenExpires = token.accessTokenExpires as number
+
+      if (tokenExpires && Date.now() >= tokenExpires - fiveMinutes) {
+        console.log("[NextAuth] Token expiring soon, refreshing...")
+        return refreshAccessToken(token)
       }
-      
-      // Access token has expired or is about to expire, try to update it
-      console.log("Token expired or expiring soon, refreshing...");
-      return refreshAccessToken(token)
+
+      // Token is still valid
+      return token
     },
+
     async session({ session, token }) {
-      if (token) {
-        // Check for refresh errors
-        if (token.error === "RefreshAccessTokenError") {
-          // Return an error session that the client can handle
-          return {
-            ...session,
-            error: "RefreshAccessTokenError",
-            accessToken: undefined,
-            refreshToken: undefined,
-            accessTokenExpires: undefined,
-          }
-        }
-        
-        session.accessToken = token.accessToken
-        session.refreshToken = token.refreshToken
-        session.accessTokenExpires = token.accessTokenExpires
-        
-        // Merge user data from token
-        if (token.user) {
-          session.user = {
-            ...session.user,
-            ...token.user,
-            id: (token.user as any).id?.toString() || "",
-            email: (token.user as any).email || session.user?.email || "",
-          } as any
+      // Pass error to session so client can handle it
+      if (token.error) {
+        return {
+          ...session,
+          error: token.error,
+          accessToken: undefined,
+          refreshToken: undefined,
+          accessTokenExpires: undefined,
         }
       }
-      
+
+      // Pass token data to session
+      session.accessToken = token.accessToken
+      session.refreshToken = token.refreshToken
+      session.accessTokenExpires = token.accessTokenExpires
+
+      // Merge user data from token
+      if (token.user) {
+        session.user = {
+          ...session.user,
+          ...token.user,
+          id: (token.user as any).id?.toString() || "",
+          email: (token.user as any).email || session.user?.email || "",
+        } as any
+      }
+
       return session
     }
   },
   pages: {
-    signIn: "/auth/signin", // We'll redirect to the modal instead
+    signIn: "/auth/signin",
     error: "/auth/error",
   },
   session: {
