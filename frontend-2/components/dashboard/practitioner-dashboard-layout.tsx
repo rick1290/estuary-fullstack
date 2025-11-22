@@ -47,6 +47,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { toast } from "sonner"
 
 interface PractitionerDashboardLayoutProps {
   children: React.ReactNode
@@ -260,6 +261,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               className="w-full justify-start gap-3 px-3 py-2 h-auto font-medium"
               onClick={() => {
                 navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.practitioner_slug || user?.practitionerPublicId}`)
+                toast.success("Profile link copied to clipboard!")
               }}
             >
               <Copy className="h-4 w-4" />
@@ -391,6 +393,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                     className="w-full justify-start gap-3 px-3 py-2 h-auto font-medium"
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.practitioner_slug || user?.practitionerPublicId}`)
+                      toast.success("Profile link copied to clipboard!")
                     }}
                   >
                     <Copy className="h-4 w-4" />

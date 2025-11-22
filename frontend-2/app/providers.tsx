@@ -32,14 +32,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AuthModalProviderWrapper>
           {children}
-          <Toaster 
+          <Toaster
             position="top-center"
             toastOptions={{
               style: {
-                background: '#333',
-                color: '#fff',
+                background: '#FAF3E0',
+                color: '#5C5346',
+                border: '1px solid #E8DFD0',
               },
               className: 'sonner-toast',
+              classNames: {
+                success: 'bg-sage-50 border-sage-200 text-sage-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+              },
             }}
           />
         </AuthModalProviderWrapper>
