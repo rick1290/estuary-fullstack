@@ -709,11 +709,12 @@ export default function AuthModal({
                     </div>
                   </div>
 
-                  <div className="mt-6 grid grid-cols-2 gap-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleGoogleAuth} 
+                  <div className="mt-6 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleGoogleAuth}
                       disabled={isLoading}
+                      className="w-full max-w-xs"
                     >
                       <svg
                         className="mr-2 h-4 w-4"
