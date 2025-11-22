@@ -288,11 +288,9 @@ function ScheduleTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Client</TableHead>
             <TableHead>Service</TableHead>
             <TableHead>Date & Time</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Price</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -300,44 +298,55 @@ function ScheduleTable({
           {events.map((scheduleEvent) => {
             const calendarEvent = scheduleEvent.event
             const isServiceSession = scheduleEvent.event_type === 'service_session'
+            const hasRecordings = calendarEvent?.recordings && calendarEvent.recordings.length > 0
+            const isVirtual = calendarEvent?.service?.location_type === 'virtual'
+            const attendeeName = isServiceSession
+              ? calendarEvent?.attendees?.[0]?.full_name
+              : calendarEvent?.client?.full_name
+            const attendeeCount = calendarEvent?.attendee_count || 1
 
-            // Get client email based on event type
-            const clientEmail = isServiceSession
-              ? calendarEvent?.attendees?.[0]?.email // Show first attendee's email for service sessions
-              : calendarEvent?.client?.email
+            const detailsUrl = isServiceSession
+              ? `/dashboard/practitioner/sessions/${scheduleEvent.id}`
+              : `/dashboard/practitioner/bookings/${scheduleEvent.id}`
 
             return (
-              <TableRow key={scheduleEvent.id}>
+              <TableRow
+                key={scheduleEvent.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => router.push(detailsUrl)}
+              >
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {isServiceSession ? (
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          <Users className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={scheduleEvent.clientAvatar || ""} alt={scheduleEvent.clientName || ""} />
-                        <AvatarFallback>
-                          {(scheduleEvent.clientName || "U").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div>
-                      <p className="font-medium">{scheduleEvent.clientName}</p>
-                      {clientEmail && <p className="text-sm text-muted-foreground">{clientEmail}</p>}
+                    <div className="flex items-center gap-2">
+                      {isVirtual ? (
+                        <Video className="h-4 w-4 text-sage-600" />
+                      ) : (
+                        <MapPin className="h-4 w-4 text-terracotta-600" />
+                      )}
+                      {getServiceTypeIcon(scheduleEvent.type)}
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getServiceTypeIcon(scheduleEvent.type)}
                     <div>
-                      <p className="font-medium">{scheduleEvent.title}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {scheduleEvent.type.replace(/_/g, " ")}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{scheduleEvent.title}</p>
+                        {hasRecordings && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                            <Play className="h-2.5 w-2.5 mr-0.5" />
+                            Recording
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 capitalize">
+                          {scheduleEvent.type.replace(/_/g, " ")}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {attendeeName ? (
+                            <>with {attendeeName}</>
+                          ) : attendeeCount > 1 ? (
+                            <>{attendeeCount} attendees</>
+                          ) : null}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -359,7 +368,6 @@ function ScheduleTable({
                     {scheduleEvent.status?.charAt(0).toUpperCase() + scheduleEvent.status?.slice(1)}
                   </Badge>
                 </TableCell>
-                <TableCell>${calendarEvent?.total_amount || "0.00"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     {/* Inline Join Button for virtual sessions */}
@@ -398,7 +406,7 @@ function ScheduleTable({
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

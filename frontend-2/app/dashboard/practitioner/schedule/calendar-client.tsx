@@ -13,7 +13,7 @@ const CALENDAR_TABS = [
 ]
 
 export default function CalendarClient() {
-  const [activeTab, setActiveTab] = useState("calendar")
+  const [activeTab, setActiveTab] = useState("list")
   const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week")
 
   return (
