@@ -106,15 +106,18 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
         <CardContent className="p-6">
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2 mb-6">
-            <div className="text-center p-3 bg-sage-50/50 rounded-lg">
+            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
+              <Calendar className="h-4 w-4 mx-auto mb-1 text-sage-600" />
               <div className="text-lg font-bold text-olive-900">{practitioner.completed_sessions_count || 0}</div>
-              <div className="text-xs text-olive-600">Sessions</div>
+              <div className="text-[10px] text-olive-600">Sessions completed</div>
             </div>
-            <div className="text-center p-3 bg-sage-50/50 rounded-lg">
+            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
+              <Sparkles className="h-4 w-4 mx-auto mb-1 text-sage-600" />
               <div className="text-lg font-bold text-olive-900">{practitioner.total_services || 0}</div>
-              <div className="text-xs text-olive-600">Services</div>
+              <div className="text-[10px] text-olive-600">Services</div>
             </div>
-            <div className="text-center p-3 bg-sage-50/50 rounded-lg">
+            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-sage-600" />
               <div className="text-lg font-bold text-olive-900">
                 {practitioner.price_range?.min
                   ? `$${practitioner.price_range.min}`
@@ -122,7 +125,7 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
                     ? `$${practitioner.min_price}`
                     : '$85'}
               </div>
-              <div className="text-xs text-olive-600">From</div>
+              <div className="text-[10px] text-olive-600">From</div>
             </div>
           </div>
 
