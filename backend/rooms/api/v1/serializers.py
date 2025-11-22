@@ -148,9 +148,14 @@ class RoomRecordingSerializer(serializers.ModelSerializer):
             'id', 'recording_id', 'status', 'started_at', 'ended_at',
             'duration_seconds', 'duration_formatted', 'file_size_bytes',
             'file_format', 'file_url', 'thumbnail_url', 'is_processed',
+            'is_available', 'download_url', 'created_at'
+        ]
+        read_only_fields = [
+            'id', 'recording_id', 'status', 'started_at', 'ended_at',
+            'duration_seconds', 'duration_formatted', 'file_size_bytes',
+            'file_format', 'file_url', 'thumbnail_url', 'is_processed',
             'download_url', 'created_at'
         ]
-        read_only_fields = fields
     
     def get_download_url(self, obj):
         # Generate a signed URL for downloading the recording

@@ -465,6 +465,7 @@ class RoomRecording(BaseModel):
     
     # Access control
     is_public = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=True, help_text="If False, recording is hidden from clients")
     access_expires_at = models.DateTimeField(null=True, blank=True)
     
     # Metadata

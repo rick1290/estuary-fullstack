@@ -3,10 +3,11 @@ Room API URLs.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import RoomViewSet, BookingRoomViewSet
+from .views import RoomViewSet, BookingRoomViewSet, RoomRecordingViewSet
 
 router = DefaultRouter()
 router.register(r'rooms', RoomViewSet, basename='room')
+router.register(r'recordings', RoomRecordingViewSet, basename='recording')
 
 # Booking room endpoints
 booking_room_patterns = [

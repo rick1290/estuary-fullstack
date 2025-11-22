@@ -21,12 +21,15 @@ import {
   Film,
   PlayCircle,
   Download,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
@@ -36,6 +39,7 @@ import {
   serviceSessionsRetrieveOptions,
   serviceSessionsMarkCompletedCreateMutation,
   serviceSessionsMarkInProgressCreateMutation,
+  recordingsPartialUpdateMutation,
 } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 
@@ -454,7 +458,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
 
   // Fetch service session data from API
-  const { data: session, isLoading, error } = useQuery(
+  const { data: session, isLoading, error, refetch } = useQuery(
     serviceSessionsRetrieveOptions({
       path: { id: parseInt(id) }
     })
@@ -464,7 +468,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const markCompletedMutation = useMutation({
     ...serviceSessionsMarkCompletedCreateMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+      refetch()
     },
   })
 
@@ -472,7 +476,20 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const markInProgressMutation = useMutation({
     ...serviceSessionsMarkInProgressCreateMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+      refetch()
+    },
+  })
+
+  // Mutation for updating recording visibility
+  const updateRecordingMutation = useMutation({
+    ...recordingsPartialUpdateMutation(),
+    onSuccess: (data) => {
+      console.log('Recording updated successfully:', data)
+      // Refetch session data to get updated recording status
+      refetch()
+    },
+    onError: (error) => {
+      console.error('Failed to update recording:', error)
     },
   })
 
@@ -690,7 +707,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-4">
-              <TabsTrigger value="details">Clients</TabsTrigger>
+              <TabsTrigger value="details">Bookings</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
               <TabsTrigger value="recordings">Recordings</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -698,7 +715,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Attendees ({attendeeCount})</h2>
+                <h2 className="text-lg font-semibold">Bookings ({attendeeCount})</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -839,6 +856,38 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                                 Size: {(recording.file_size_bytes / 1024 / 1024).toFixed(1)} MB
                               </p>
                             )}
+
+                            {/* Client visibility toggle */}
+                            <div className="flex items-center gap-2 pt-2 border-t mt-2">
+                              <Switch
+                                id={`recording-visibility-${recording.id}`}
+                                checked={recording.is_available !== false}
+                                onCheckedChange={(checked) => {
+                                  console.log('Toggling recording:', recording.id, 'to:', checked, 'full recording:', recording)
+                                  updateRecordingMutation.mutate({
+                                    path: { id: recording.id },
+                                    body: { is_available: checked }
+                                  })
+                                }}
+                                disabled={updateRecordingMutation.isPending}
+                              />
+                              <label
+                                htmlFor={`recording-visibility-${recording.id}`}
+                                className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer"
+                              >
+                                {recording.is_available !== false ? (
+                                  <>
+                                    <Eye className="h-3 w-3" />
+                                    Visible to clients
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff className="h-3 w-3" />
+                                    Hidden from clients
+                                  </>
+                                )}
+                              </label>
+                            </div>
                           </div>
 
                           <div className="flex flex-col gap-2">
@@ -1025,13 +1074,20 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium">Service Type</p>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {session.service?.service_type_code}
+                <p className="text-sm font-medium">Service</p>
+                <p className="text-sm text-muted-foreground">
+                  {session.service_name}
                 </p>
               </div>
 
-              {session.sequence_number && (
+              <div>
+                <p className="text-sm font-medium">Service Type</p>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {session.service_type}
+                </p>
+              </div>
+
+              {session.sequence_number > 0 && (
                 <div>
                   <p className="text-sm font-medium">Session Number</p>
                   <p className="text-sm text-muted-foreground">
@@ -1043,19 +1099,21 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <p className="text-sm font-medium">Duration</p>
                 <p className="text-sm text-muted-foreground">
-                  {session.duration_minutes} minutes
+                  {session.duration} minutes
                 </p>
               </div>
 
-              <div>
-                <p className="text-sm font-medium">Location Type</p>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {session.service?.location_type}
-                </p>
-              </div>
+              {session.practitioner_location && (
+                <div>
+                  <p className="text-sm font-medium">Location</p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {session.practitioner_location}
+                  </p>
+                </div>
+              )}
 
               <Button variant="outline" className="w-full" asChild>
-                <Link href={`/dashboard/practitioner/services/${session.service?.id}`}>
+                <Link href={`/dashboard/practitioner/services/${session.service}`}>
                   View Service Details
                 </Link>
               </Button>

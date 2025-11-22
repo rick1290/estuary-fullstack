@@ -251,6 +251,7 @@ class SessionRecordingSerializer(serializers.Serializer):
     duration_seconds = serializers.IntegerField()
     file_url = serializers.URLField(allow_blank=True)
     file_size_bytes = serializers.IntegerField()
+    is_available = serializers.BooleanField()
 
 
 class ServiceSessionListSerializer(serializers.ModelSerializer):
