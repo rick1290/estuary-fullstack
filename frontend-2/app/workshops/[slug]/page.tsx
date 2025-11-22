@@ -26,433 +26,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-// Mock workshop data - in a real app, this would come from an API or database
-const getWorkshopById = (id: string) => {
-  const workshops = [
-    {
-      id: "1",
-      title: "Mindfulness Meditation Retreat",
-      description: "A weekend retreat to deepen your meditation practice and connect with like-minded individuals.",
-      image: "/serene-meditation-space.png",
-      startTime: "9:00 AM",
-      endTime: "5:00 PM",
-      duration: 480,
-      location: "In-person",
-      venue: "Serenity Retreat Center",
-      address: "123 Peaceful Valley Rd, Boulder, CO",
-      capacity: 20,
-      spotsRemaining: 8,
-      experienceLevel: "all-levels",
-      price: 299,
-      categories: ["Meditation", "Mindfulness", "Wellness"],
-      practitioners: [
-        {
-          id: "p1",
-          name: "Dr. Sarah Johnson",
-          image: "/practitioner-1.jpg",
-          title: "Meditation Instructor & Clinical Psychologist",
-          bio: "Dr. Johnson has over 15 years of experience teaching mindfulness practices.",
-        },
-        {
-          id: "p2",
-          name: "Michael Chen",
-          image: "/practitioner-2.jpg",
-          title: "Yoga Instructor & Wellness Coach",
-          bio: "Michael specializes in integrating movement with mindfulness practices.",
-        },
-      ],
-      agenda: [
-        {
-          day: "Day 1",
-          sessions: [
-            {
-              time: "9:00 AM - 10:30 AM",
-              title: "Opening Circle & Introduction to Mindfulness",
-              description: "Meet the group and learn foundational mindfulness concepts.",
-            },
-            {
-              time: "11:00 AM - 12:30 PM",
-              title: "Breath Awareness Practice",
-              description: "Techniques to develop awareness of the breath as an anchor.",
-            },
-          ],
-        },
-        {
-          day: "Day 2",
-          sessions: [
-            {
-              time: "9:00 AM - 10:30 AM",
-              title: "Body Scan Meditation",
-              description: "Developing awareness of physical sensations throughout the body.",
-            },
-            {
-              time: "11:00 AM - 12:30 PM",
-              title: "Mindful Movement",
-              description: "Gentle yoga and movement practices to integrate mind and body.",
-            },
-          ],
-        },
-      ],
-      benefits: [
-        {
-          id: "1",
-          title: "Reduced Stress",
-          description: "Learn techniques to calm your nervous system and reduce daily stress.",
-        },
-        {
-          id: "2",
-          title: "Improved Focus",
-          description: "Develop skills to enhance concentration and mental clarity.",
-        },
-        {
-          id: "3",
-          title: "Emotional Balance",
-          description: "Cultivate greater emotional resilience and self-awareness.",
-        },
-        {
-          id: "4",
-          title: "Community Connection",
-          description: "Connect with like-minded individuals on a similar journey.",
-        },
-      ],
-      dates: [
-        {
-          id: 1,
-          date: "June 15-17, 2025",
-          startTime: "9:00 AM",
-          endTime: "5:00 PM",
-          spotsRemaining: 8,
-        },
-        {
-          id: 2,
-          date: "July 20-22, 2025",
-          startTime: "9:00 AM",
-          endTime: "5:00 PM",
-          spotsRemaining: 12,
-        },
-        {
-          id: 3,
-          date: "August 10-12, 2025",
-          startTime: "9:00 AM",
-          endTime: "5:00 PM",
-          spotsRemaining: 15,
-        },
-      ],
-    },
-    {
-      id: "2",
-      title: "Sound Healing Journey",
-      description: "Experience the therapeutic power of sound vibrations for deep relaxation and inner harmony.",
-      image: "/mindful-moments.png",
-      startTime: "7:00 PM",
-      endTime: "9:30 PM",
-      duration: 150,
-      location: "In-person",
-      venue: "Harmony Wellness Center",
-      address: "456 Tranquil Lane, Portland, OR",
-      capacity: 30,
-      spotsRemaining: 12,
-      experienceLevel: "beginner-friendly",
-      price: 85,
-      categories: ["Sound Healing", "Relaxation", "Wellness"],
-      practitioners: [
-        {
-          id: "p3",
-          name: "Elena Rodriguez",
-          image: "/practitioner-3.jpg",
-          title: "Sound Therapist & Reiki Master",
-          bio: "Elena has studied sound healing traditions from around the world for over a decade.",
-        },
-      ],
-      agenda: [
-        {
-          day: "Evening Session",
-          sessions: [
-            {
-              time: "7:00 PM - 7:30 PM",
-              title: "Introduction to Sound Healing",
-              description: "Learn about the science and traditions behind sound therapy.",
-            },
-            {
-              time: "7:30 PM - 8:45 PM",
-              title: "Immersive Sound Bath",
-              description: "Experience a full sound journey with singing bowls, gongs, and other instruments.",
-            },
-          ],
-        },
-      ],
-      benefits: [
-        { id: "1", title: "Deep Relaxation", description: "Experience profound states of relaxation and peace." },
-        {
-          id: "2",
-          title: "Stress Release",
-          description: "Allow sound vibrations to release tension held in the body.",
-        },
-        {
-          id: "3",
-          title: "Improved Sleep",
-          description: "Many participants report better sleep quality following sound therapy.",
-        },
-        { id: "4", title: "Emotional Clearing", description: "Sound can help process and release stored emotions." },
-      ],
-      dates: [
-        {
-          id: 1,
-          date: "July 8, 2025",
-          startTime: "7:00 PM",
-          endTime: "9:30 PM",
-          spotsRemaining: 12,
-        },
-        {
-          id: 2,
-          date: "July 22, 2025",
-          startTime: "7:00 PM",
-          endTime: "9:30 PM",
-          spotsRemaining: 18,
-        },
-        {
-          id: 3,
-          date: "August 5, 2025",
-          startTime: "7:00 PM",
-          endTime: "9:30 PM",
-          spotsRemaining: 20,
-        },
-      ],
-    },
-    {
-      id: "3",
-      title: "Conscious Leadership Workshop",
-      description: "Develop authentic leadership skills grounded in mindfulness, emotional intelligence, and purpose.",
-      image: "/confident-leader.png",
-      startTime: "9:00 AM",
-      endTime: "4:00 PM",
-      duration: 420,
-      location: "Hybrid (In-person & Online)",
-      venue: "Innovation Leadership Center",
-      address: "789 Visionary Ave, Austin, TX",
-      capacity: 25,
-      spotsRemaining: 15,
-      experienceLevel: "intermediate",
-      price: 450,
-      categories: ["Leadership", "Professional Development", "Mindfulness"],
-      practitioners: [
-        {
-          id: "p4",
-          name: "James Wilson",
-          image: "/practitioner-4.jpg",
-          title: "Executive Coach & Organizational Psychologist",
-          bio: "James has worked with leaders at Fortune 500 companies to develop mindful leadership practices.",
-        },
-        {
-          id: "p1",
-          name: "Dr. Sarah Johnson",
-          image: "/practitioner-1.jpg",
-          title: "Meditation Instructor & Clinical Psychologist",
-          bio: "Dr. Johnson specializes in mindfulness applications for workplace wellbeing.",
-        },
-      ],
-      agenda: [
-        {
-          day: "Day 1",
-          sessions: [
-            {
-              time: "9:00 AM - 10:30 AM",
-              title: "Foundations of Conscious Leadership",
-              description: "Understanding the principles and research behind mindful leadership.",
-            },
-            {
-              time: "11:00 AM - 12:30 PM",
-              title: "Self-Awareness Practices",
-              description: "Exercises to develop greater awareness of your leadership patterns.",
-            },
-          ],
-        },
-        {
-          day: "Day 2",
-          sessions: [
-            {
-              time: "9:00 AM - 10:30 AM",
-              title: "Mindful Communication",
-              description: "Techniques for more authentic and effective communication.",
-            },
-            {
-              time: "11:00 AM - 12:30 PM",
-              title: "Leading Through Uncertainty",
-              description: "Practices for maintaining presence and clarity during challenging times.",
-            },
-          ],
-        },
-      ],
-      benefits: [
-        {
-          id: "1",
-          title: "Authentic Leadership",
-          description: "Develop a leadership style aligned with your values and strengths.",
-        },
-        {
-          id: "2",
-          title: "Improved Team Dynamics",
-          description: "Learn techniques to foster psychological safety and collaboration.",
-        },
-        {
-          id: "3",
-          title: "Stress Resilience",
-          description: "Build practices to maintain balance during challenging leadership moments.",
-        },
-        {
-          id: "4",
-          title: "Strategic Clarity",
-          description: "Develop the mental clarity needed for effective decision-making.",
-        },
-      ],
-      dates: [
-        {
-          id: 1,
-          date: "August 12-13, 2025",
-          startTime: "9:00 AM",
-          endTime: "4:00 PM",
-          spotsRemaining: 15,
-        },
-        {
-          id: 2,
-          date: "September 9-10, 2025",
-          startTime: "9:00 AM",
-          endTime: "4:00 PM",
-          spotsRemaining: 20,
-        },
-        {
-          id: 3,
-          date: "October 14-15, 2025",
-          startTime: "9:00 AM",
-          endTime: "4:00 PM",
-          spotsRemaining: 25,
-        },
-      ],
-    },
-    // Adding workshop with ID "8"
-    {
-      id: "8",
-      title: "Forest Bathing & Nature Connection",
-      description:
-        "Immerse yourself in the healing practice of forest bathing (shinrin-yoku) and deepen your connection with the natural world.",
-      image: "/serene-forest-meditation.png",
-      startTime: "10:00 AM",
-      endTime: "2:00 PM",
-      duration: 240,
-      location: "In-person",
-      venue: "Wildwood Nature Preserve",
-      address: "567 Forest Path, Asheville, NC",
-      capacity: 15,
-      spotsRemaining: 9,
-      experienceLevel: "all-levels",
-      price: 125,
-      categories: ["Nature", "Mindfulness", "Wellness", "Ecotherapy"],
-      practitioners: [
-        {
-          id: "p5",
-          name: "Maya Thompson",
-          image: "/practitioner-3.jpg",
-          title: "Certified Forest Therapy Guide & Ecotherapist",
-          bio: "Maya has been guiding forest bathing experiences for over 8 years and is passionate about helping people reconnect with nature.",
-        },
-      ],
-      agenda: [
-        {
-          day: "Half-Day Experience",
-          sessions: [
-            {
-              time: "10:00 AM - 10:30 AM",
-              title: "Welcome & Introduction to Forest Bathing",
-              description:
-                "Learn about the Japanese practice of shinrin-yoku and its scientifically proven health benefits.",
-            },
-            {
-              time: "10:30 AM - 12:00 PM",
-              title: "Guided Forest Immersion",
-              description: "A slow, mindful walk through the forest with sensory invitation exercises.",
-            },
-            {
-              time: "12:00 PM - 12:30 PM",
-              title: "Tea Ceremony & Light Snack",
-              description: "Enjoy forest-inspired tea and seasonal snacks in a beautiful setting.",
-            },
-            {
-              time: "12:30 PM - 1:30 PM",
-              title: "Solo Nature Connection Time",
-              description: "Personal time to connect with a special spot in nature.",
-            },
-            {
-              time: "1:30 PM - 2:00 PM",
-              title: "Closing Circle & Integration",
-              description: "Share experiences and discuss ways to bring nature connection into daily life.",
-            },
-          ],
-        },
-      ],
-      benefits: [
-        {
-          id: "1",
-          title: "Stress Reduction",
-          description:
-            "Forest environments have been scientifically proven to lower cortisol levels and blood pressure.",
-        },
-        {
-          id: "2",
-          title: "Immune System Support",
-          description: "Exposure to phytoncides (compounds released by trees) can boost natural killer cell activity.",
-        },
-        {
-          id: "3",
-          title: "Mental Clarity",
-          description: "Nature immersion helps reduce mental fatigue and restore attention.",
-        },
-        {
-          id: "4",
-          title: "Emotional Wellbeing",
-          description: "Connect with nature to enhance mood and reduce anxiety.",
-        },
-        {
-          id: "5",
-          title: "Sensory Awakening",
-          description: "Rediscover the joy of your senses through guided nature connection.",
-        },
-      ],
-      dates: [
-        {
-          id: 1,
-          date: "May 25, 2025",
-          startTime: "10:00 AM",
-          endTime: "2:00 PM",
-          spotsRemaining: 9,
-        },
-        {
-          id: 2,
-          date: "June 22, 2025",
-          startTime: "10:00 AM",
-          endTime: "2:00 PM",
-          spotsRemaining: 12,
-        },
-        {
-          id: 3,
-          date: "July 13, 2025",
-          startTime: "10:00 AM",
-          endTime: "2:00 PM",
-          spotsRemaining: 15,
-        },
-        {
-          id: 4,
-          date: "August 17, 2025",
-          startTime: "10:00 AM",
-          endTime: "2:00 PM",
-          spotsRemaining: 15,
-        },
-      ],
-    },
-  ]
-
-  return workshops.find((workshop) => workshop.id === id)
-}
-
 export default function WorkshopPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
   const { isAuthenticated } = useAuth()
@@ -495,6 +68,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
     firstSessionDate: serviceData.first_session_date,
     lastSessionDate: serviceData.last_session_date,
     categories: serviceData.categories?.map(c => c.name) || serviceData.category ? [serviceData.category.name] : ['Workshop'],
+    modalities: Array.isArray(serviceData.modalities) ? serviceData.modalities : [],
     practitioners: serviceData.instructors || (serviceData.practitioner || serviceData.primary_practitioner) ? [{
       id: (serviceData.practitioner?.public_uuid || serviceData.practitioner?.id || serviceData.primary_practitioner?.public_uuid || serviceData.primary_practitioner?.id),
       slug: (serviceData.practitioner?.slug || serviceData.primary_practitioner?.slug),
@@ -503,29 +77,9 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
       title: (serviceData.practitioner?.title || serviceData.primary_practitioner?.title || 'Workshop Facilitator'),
       bio: (serviceData.practitioner?.bio || serviceData.primary_practitioner?.bio || 'An experienced facilitator dedicated to your transformation.'),
     }] : [],
-    agenda: serviceData.workshop_agenda || serviceData.agenda || [
-      {
-        day: "Workshop Day",
-        sessions: [
-          {
-            time: "9:00 AM - 12:00 PM",
-            title: "Morning Session",
-            description: "Introduction and foundational concepts",
-          },
-          {
-            time: "1:00 PM - 5:00 PM", 
-            title: "Afternoon Session",
-            description: "Practical application and integration",
-          },
-        ],
-      },
-    ],
-    benefits: serviceData.benefits || [
-      { id: "1", title: "Personal Growth", description: "Experience meaningful transformation and insights." },
-      { id: "2", title: "Practical Skills", description: "Learn techniques you can apply immediately." },
-      { id: "3", title: "Community", description: "Connect with like-minded individuals on similar journeys." },
-      { id: "4", title: "Expert Guidance", description: "Benefit from professional facilitation and support." },
-    ],
+    agendaItems: Array.isArray(serviceData.agenda_items) ? serviceData.agenda_items : [],
+    benefits: Array.isArray(serviceData.benefits) ? serviceData.benefits : [],
+    includes: Array.isArray(serviceData.includes) ? serviceData.includes : [],
     dates: upcomingSessions.map((session: any) => ({
       id: session.id,
       date: new Date(session.start_time).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
@@ -638,19 +192,8 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   // Transform the data to match our immersive design needs
   const transformedWorkshop = {
     ...workshop,
-    longDescription: workshop.description + `\n\n` + (workshop.agenda?.length > 1 ? 
-      `This immersive ${workshop.agenda.length}-day experience combines practical learning with deep personal transformation. You'll be guided through carefully crafted sessions designed to build upon each other, creating a comprehensive journey of discovery and growth.` : 
-      `This intensive workshop experience combines practical learning with deep personal transformation. Through guided exercises and interactive discussions, you'll develop skills that will serve you long after the workshop ends.`),
+    longDescription: workshop.description,
     totalHours: Math.floor(workshop.duration / 60),
-    whatYoullLearn: workshop.benefits.map((b: any) => `${b.title}: ${b.description}`),
-    included: [
-      "All workshop materials and handouts",
-      "Guided practice resources",
-      "Light refreshments and snacks",
-      "Certificate of completion",
-      "Post-workshop support resources"
-    ],
-    schedule: workshop.agenda
   }
 
   return (
@@ -702,14 +245,25 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left: Text Content */}
             <div className="space-y-8 animate-slide-up">
-              {/* Workshop Label */}
-              <div className="inline-flex items-center gap-3 bg-sage-100 px-5 py-3 rounded-full">
-                <Sparkles className="h-5 w-5 text-sage-600 animate-pulse" strokeWidth="1.5" />
-                <span className="text-sage-800 font-medium">
-                  {workshop.location === 'In-person' ? 'In-Person Experience' : workshop.location} • Limited Spots
-                </span>
+              {/* Workshop Label & Modalities */}
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-3 bg-sage-100 px-5 py-3 rounded-full">
+                  <Sparkles className="h-5 w-5 text-sage-600 animate-pulse" strokeWidth="1.5" />
+                  <span className="text-sage-800 font-medium">
+                    {workshop.location === 'In-person' ? 'In-Person Experience' : workshop.location} • Limited Spots
+                  </span>
+                </div>
+                {workshop.modalities && workshop.modalities.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {workshop.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
+                        {modality.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-              
+
               <div>
                 <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-olive-900 mb-6 leading-[1.1]">
                   {workshop.title}
@@ -874,72 +428,79 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               </div>
             </section>
 
-            {/* What You'll Master */}
-            <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">What You'll Master</h2>
-              <div className="grid gap-4">
-                {transformedWorkshop.whatYoullLearn.map((item: string, index: number) => (
-                  <div key={index} className="bg-gradient-to-r from-sage-50 to-terracotta-50 rounded-2xl p-6 card-hover">
-                    <div className="flex gap-4">
+            {/* Benefits */}
+            {workshop.benefits && workshop.benefits.length > 0 && (
+              <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
+                <h2 className="text-3xl font-bold text-olive-900 mb-10">What You'll Gain</h2>
+                <div className="grid gap-4">
+                  {workshop.benefits.map((benefit: any, index: number) => (
+                    <div key={benefit.id || index} className="bg-gradient-to-r from-sage-50 to-terracotta-50 rounded-2xl p-6 card-hover">
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
+                            <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-olive-900 mb-1">{benefit.title}</h3>
+                          <p className="text-olive-700 leading-relaxed text-sm">{benefit.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Workshop Agenda */}
+            {workshop.agendaItems && workshop.agendaItems.length > 0 && (
+              <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
+                <h2 className="text-3xl font-bold text-olive-900 mb-10">Workshop Agenda</h2>
+                <Card className="border-2 border-sage-200 overflow-hidden">
+                  <CardContent className="p-6 bg-cream-50">
+                    <div className="space-y-4">
+                      {workshop.agendaItems.map((item: any, index: number) => (
+                        <div key={item.id || index} className="flex gap-4 items-start group">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-sage-700">{index + 1}</span>
+                          </div>
+                          <div className="flex-1 pb-4 border-b border-sage-100 last:border-0 last:pb-0">
+                            <h4 className="text-olive-800 font-medium mb-1">{item.title}</h4>
+                            {item.description && (
+                              <p className="text-olive-600 text-sm">{item.description}</p>
+                            )}
+                            {item.duration_minutes && (
+                              <Badge variant="outline" className="mt-2 text-xs">
+                                {item.duration_minutes} min
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </section>
+            )}
+
+            {/* What's Included */}
+            {workshop.includes && workshop.includes.length > 0 && (
+              <section className="bg-gradient-to-br from-blush-50 to-sage-50 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
+                <h2 className="text-3xl font-bold text-olive-900 mb-10">What's Included</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {workshop.includes.map((item: string, index: number) => (
+                    <div key={index} className="flex gap-4">
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
-                          <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
+                        <div className="w-10 h-10 rounded-xl bg-white shadow-lg flex items-center justify-center">
+                          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400" />
                         </div>
                       </div>
                       <p className="text-olive-700 leading-relaxed">{item}</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Workshop Schedule */}
-            <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">Your Workshop Journey</h2>
-              <div className="space-y-8">
-                {transformedWorkshop.schedule.map((day: any, dayIndex: number) => (
-                  <Card key={dayIndex} className="border-2 border-sage-200 overflow-hidden">
-                    <div className="bg-gradient-to-r from-terracotta-100 to-sage-100 p-6">
-                      <h3 className="text-2xl font-semibold text-olive-900">{day.day}</h3>
-                    </div>
-                    <CardContent className="p-8 bg-cream-50">
-                      <div className="space-y-4">
-                        {day.sessions.map((session: any, index: number) => (
-                          <div key={index} className="flex gap-6 items-start group">
-                            <div className="flex-shrink-0">
-                              <div className="w-24 text-center">
-                                <p className="text-sm font-semibold text-sage-700">{session.time}</p>
-                              </div>
-                            </div>
-                            <div className="flex-1 pb-4 border-b border-sage-100 last:border-0 last:pb-0 group-hover:border-sage-200 transition-colors">
-                              <h4 className="text-olive-800 font-medium mb-1">{session.title}</h4>
-                              <p className="text-olive-600 text-sm">{session.description}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </section>
-
-            {/* What's Included */}
-            <section className="bg-gradient-to-br from-blush-50 to-sage-50 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">Everything You Need</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {transformedWorkshop.included.map((item: string, index: number) => (
-                  <div key={index} className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-lg flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400" />
-                      </div>
-                    </div>
-                    <p className="text-olive-700 leading-relaxed">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Workshop Facilitators */}
             {workshop.practitioners && workshop.practitioners.length > 0 && (

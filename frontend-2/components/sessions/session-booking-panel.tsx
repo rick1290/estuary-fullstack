@@ -162,62 +162,31 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
   return (
     <Card className="w-full border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
-        {/* Service Image - Udemy Style */}
-        <div className="relative w-full aspect-video bg-gradient-to-br from-sage-100 to-terracotta-100 overflow-hidden">
-          {session.image_url ? (
-            <img
-              src={session.image_url}
-              alt={session.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-sage-400 text-center">
-                <Calendar className="h-16 w-16 mx-auto mb-2 opacity-50" />
-                <p className="text-sm opacity-70">Session Preview</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Pricing Section */}
-        <div className="bg-gradient-to-br from-sage-50 to-terracotta-50 p-6">
-          <div className="flex items-baseline justify-between mb-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-medium text-olive-900">${session.price}</span>
-              <span className="text-olive-700">per session</span>
-            </div>
+        {/* Header Section */}
+        <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-8 text-center">
+          <p className="text-sm text-olive-700 mb-2">Book Your Session</p>
+          <div className="flex items-baseline justify-center gap-2">
+            <span className="text-4xl font-bold text-olive-900">${session.price}</span>
+            <span className="text-olive-700">per session</span>
           </div>
-          <p className="text-sm text-olive-600">{session.duration_display || `${session.duration} minutes`}</p>
+          <p className="text-sm text-olive-600 mt-2">{session.duration_display || `${session.duration} minutes`} • 1-on-1</p>
         </div>
 
         <CardContent className="p-6 space-y-6">
           {/* Key Info Points */}
-          <div className="space-y-3 pb-6 border-b border-sage-200">
-            <div className="flex items-center gap-3 text-olive-700">
-              <Clock className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-              <span className="text-sm font-medium">{session.duration_display || `${session.duration} minutes`} duration</span>
-            </div>
+          <div className="flex items-center justify-between text-sm text-olive-700 pb-4 border-b border-sage-200">
             {session.location_type && (
-              <div className="flex items-center gap-3 text-olive-700">
+              <div className="flex items-center gap-2">
                 {session.location_type === 'virtual' ? (
-                  <Video className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                  <Video className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
                 ) : (
-                  <MapPin className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
+                  <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
                 )}
-                <span className="text-sm font-medium capitalize">{session.location_type}</span>
-              </div>
-            )}
-            {session.max_participants === 1 && (
-              <div className="flex items-center gap-3 text-olive-700">
-                <User className="h-5 w-5 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm font-medium">1-on-1 session</span>
+                <span className="font-medium capitalize">{session.location_type}</span>
               </div>
             )}
             {session.experience_level && (
-              <div className="flex items-center gap-3 text-olive-700">
-                <span className="text-sm font-medium capitalize">{session.experience_level.replace('_', ' ')}</span>
-              </div>
+              <span className="font-medium capitalize">{session.experience_level.replace('_', ' ')}</span>
             )}
           </div>
 

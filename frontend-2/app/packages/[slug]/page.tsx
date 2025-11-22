@@ -202,12 +202,23 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text Content */}
             <div className="space-y-8 animate-slide-up">
-              {/* Package Badge */}
-              <div className="inline-flex items-center gap-3 bg-blush-100 px-5 py-3 rounded-full">
-                <Sparkles className="h-5 w-5 text-blush-600 animate-pulse" strokeWidth="1.5" />
-                <span className="text-blush-800 font-semibold">
-                  Complete Package • {totalServices} Services
-                </span>
+              {/* Package Badge & Modalities */}
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-3 bg-blush-100 px-5 py-3 rounded-full">
+                  <Sparkles className="h-5 w-5 text-blush-600 animate-pulse" strokeWidth="1.5" />
+                  <span className="text-blush-800 font-semibold">
+                    Complete Package • {totalServices} Services
+                  </span>
+                </div>
+                {packageData.modalities && packageData.modalities.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {packageData.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
+                        {modality.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -414,7 +425,7 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
               <section className="animate-fade-in">
                 <h2 className="text-3xl font-medium text-olive-900 mb-10">Package Benefits</h2>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {packageData.benefits.map((benefit) => (
+                  {packageData.benefits.map((benefit: any) => (
                     <Card key={benefit.id} className="border-2 border-sage-200 bg-cream-100/30 hover:bg-cream-100/50 transition-colors">
                       <CardContent className="p-6">
                         <h3 className="text-xl font-medium text-olive-900 mb-2">{benefit.title}</h3>
@@ -422,6 +433,33 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {/* What's Included */}
+            {packageData.includes && packageData.includes.length > 0 && (
+              <section className="animate-fade-in">
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">What's Included</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {packageData.includes.map((item: string, index: number) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-sage-600 mt-0.5 flex-shrink-0" strokeWidth={2} />
+                      <span className="text-olive-700 leading-relaxed">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Prerequisites */}
+            {packageData.prerequisites && (
+              <section className="animate-fade-in">
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">Prerequisites</h2>
+                <div className="prose prose-lg prose-olive max-w-none">
+                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                    {packageData.prerequisites}
+                  </p>
                 </div>
               </section>
             )}
