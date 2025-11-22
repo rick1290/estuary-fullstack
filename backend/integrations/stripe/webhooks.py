@@ -916,31 +916,62 @@ def parse_datetime(datetime_str):
 def create_earnings_for_booking(booking, order):
     """
     Create earnings transaction for a booking.
-    
+
     Args:
         booking: Booking object
-        order: Order object
+        order: Order object (used as fallback for amount)
     """
     try:
         if not booking.practitioner:
             logger.info(f"No practitioner for booking {booking.id}, skipping earnings creation")
             return
-        
+
+        # Check if earnings already exist for this booking
+        if EarningsTransaction.objects.filter(booking=booking).exists():
+            logger.info(f"Earnings already exist for booking {booking.id}, skipping")
+            return
+
         # Get commission calculator
         from payments.commission_services import CommissionCalculator
         calculator = CommissionCalculator()
-        
+
         # Get commission rate
         commission_rate = calculator.get_commission_rate(
             practitioner=booking.practitioner,
-            service_type=booking.service.service_type
+            service_type=booking.service.service_type if booking.service else None
         )
-        
+
+        # Get gross amount from booking.credits_allocated (new architecture)
+        # Falls back to order amount divided by bookings if credits_allocated is 0
+        gross_amount_cents = booking.credits_allocated
+        if not gross_amount_cents and order:
+            # Fallback: divide order total by number of bookings
+            booking_count = order.bookings.count() or 1
+            gross_amount_cents = order.total_amount_cents // booking_count
+
+        if not gross_amount_cents:
+            logger.warning(f"No amount for booking {booking.id}, skipping earnings creation")
+            return
+
         # Calculate commission and net amounts
-        gross_amount_cents = booking.price_charged_cents
         commission_amount_cents = int((commission_rate / 100) * gross_amount_cents)
         net_amount_cents = gross_amount_cents - commission_amount_cents
-        
+
+        # Get session time for available_after calculation
+        # Use service_session.start_time (new architecture) or fallback to now + 48hrs
+        session_start_time = None
+        if booking.service_session and booking.service_session.start_time:
+            session_start_time = booking.service_session.start_time
+        else:
+            # Fallback: use booking's accessor method or default to now
+            session_start_time = booking.get_start_time() if hasattr(booking, 'get_start_time') else None
+
+        if session_start_time:
+            available_after = session_start_time + timezone.timedelta(hours=48)
+        else:
+            # Default: 48 hours from now if no session time available
+            available_after = timezone.now() + timezone.timedelta(hours=48)
+
         # Create earnings transaction with 'projected' status
         earnings = EarningsTransaction.objects.create(
             practitioner=booking.practitioner,
@@ -949,13 +980,13 @@ def create_earnings_for_booking(booking, order):
             commission_rate=commission_rate,
             commission_amount_cents=commission_amount_cents,
             net_amount_cents=net_amount_cents,
-            status='projected',  # Will become 'pending' when booking starts
-            available_after=booking.start_time + timezone.timedelta(hours=48),
-            description=f"Earnings from booking for {booking.service.name}"
+            status='projected',  # Will become 'pending' when booking completes
+            available_after=available_after,
+            description=f"Earnings from booking for {booking.service.name if booking.service else 'service'}"
         )
-        
-        logger.info(f"Created earnings transaction {earnings.id} for booking {booking.id}")
-        
+
+        logger.info(f"Created earnings transaction {earnings.public_uuid} for booking {booking.id}")
+
     except Exception as e:
         logger.exception(f"Error creating earnings for booking {booking.id}: {str(e)}")
 

@@ -736,7 +736,11 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         )
         
         # Get earnings by service type (use order amount or service price)
-        by_service_type = bookings.values('service__service_type').annotate(
+        by_service_type = bookings.values(
+            'service__service_type',
+            'service__service_type__name',
+            'service__service_type__code'
+        ).annotate(
             amount=Sum('order__total_amount_cents'),
             count=Count('id')
         ).order_by('-amount')
@@ -785,8 +789,11 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             'by_service_type': [
                 {
                     'service_type': item['service__service_type'],
-                    'amount': item['amount'],
-                    'amount_display': f"${item['amount'] / 100:,.2f}",
+                    'service_type_name': item['service__service_type__name'],
+                    'service_type_code': item['service__service_type__code'],
+                    'service_type_display': item['service__service_type__name'] or item['service__service_type__code'] or 'Unknown',
+                    'amount': item['amount'] or 0,
+                    'amount_display': f"${(item['amount'] or 0) / 100:,.2f}",
                     'count': item['count']
                 }
                 for item in by_service_type

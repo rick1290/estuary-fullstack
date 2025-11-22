@@ -453,7 +453,7 @@ class PayoutViewSet(viewsets.ModelViewSet):
             )
         return PractitionerPayout.objects.none()
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='earnings/balance')
     def earnings_balance(self, request):
         """Get practitioner's earnings balance"""
         if not hasattr(request.user, 'practitioner_profile'):
@@ -468,7 +468,7 @@ class PayoutViewSet(viewsets.ModelViewSet):
         serializer = PractitionerEarningsSerializer(balance)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='earnings/transactions')
     def earnings_transactions(self, request):
         """List earnings transactions"""
         if not hasattr(request.user, 'practitioner_profile'):
@@ -500,7 +500,173 @@ class PayoutViewSet(viewsets.ModelViewSet):
         
         serializer = EarningsTransactionSerializer(transactions, many=True)
         return Response(serializer.data)
-    
+
+    @action(detail=False, methods=['get'], url_path='earnings/purchases')
+    def earnings_purchases(self, request):
+        """
+        List practitioner's earnings grouped by purchase/order.
+        Shows the full picture: Order → Bookings → Earnings
+        """
+        if not hasattr(request.user, 'practitioner_profile'):
+            return Response(
+                {'error': 'Not a practitioner'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        practitioner = request.user.practitioner_profile
+        from collections import defaultdict
+
+        # Get all bookings for this practitioner with related data
+        bookings_qs = Booking.objects.filter(
+            practitioner=practitioner,
+            order__isnull=False
+        ).select_related(
+            'order', 'user', 'service', 'service__service_type', 'service_session'
+        ).prefetch_related(
+            'earnings_transactions'
+        ).order_by('-order__created_at', '-created_at')
+
+        # Filter by status if provided
+        status_filter = request.query_params.get('status')
+
+        # Group bookings by order
+        orders_dict = defaultdict(lambda: {
+            'order': None,
+            'client': None,
+            'service': None,
+            'bookings': [],
+            'summary': {
+                'total_sessions': 0,
+                'completed_sessions': 0,
+                'total_credits_cents': 0,
+                'total_gross_cents': 0,
+                'total_commission_cents': 0,
+                'total_net_cents': 0,
+                'earnings_by_status': defaultdict(int)
+            }
+        })
+
+        for booking in bookings_qs:
+            if not booking.order:
+                continue
+
+            order_id = booking.order.id
+            order_data = orders_dict[order_id]
+
+            # Set order info (once per order)
+            if order_data['order'] is None:
+                order_data['order'] = {
+                    'id': booking.order.id,
+                    'public_uuid': str(booking.order.public_uuid),
+                    'created_at': booking.order.created_at.isoformat(),
+                    'total_amount_cents': booking.order.total_amount_cents,
+                    'total_amount_display': f"${booking.order.total_amount_cents / 100:,.2f}",
+                    'status': booking.order.status,
+                    'order_type': booking.order.order_type,
+                }
+
+            # Set client info (once per order)
+            if order_data['client'] is None and booking.user:
+                order_data['client'] = {
+                    'id': booking.user.id,
+                    'name': booking.user.get_full_name() or booking.user.email,
+                    'email': booking.user.email,
+                    'avatar_url': getattr(booking.user, 'avatar_url', None) or
+                                  (booking.user.profile.avatar_url if hasattr(booking.user, 'profile') and booking.user.profile else None)
+                }
+
+            # Set service info (once per order, from first booking)
+            if order_data['service'] is None and booking.service:
+                order_data['service'] = {
+                    'id': booking.service.id,
+                    'public_uuid': str(booking.service.public_uuid),
+                    'name': booking.service.name,
+                    'service_type': booking.service.service_type.code if booking.service.service_type else None,
+                    'service_type_name': booking.service.service_type.name if booking.service.service_type else None,
+                }
+
+            # Get earnings for this booking
+            earnings_tx = booking.earnings_transactions.first()
+            earnings_data = None
+            if earnings_tx:
+                earnings_data = {
+                    'id': earnings_tx.id,
+                    'public_uuid': str(earnings_tx.public_uuid),
+                    'gross_amount_cents': earnings_tx.gross_amount_cents,
+                    'gross_amount_display': f"${earnings_tx.gross_amount_cents / 100:,.2f}",
+                    'commission_rate': float(earnings_tx.commission_rate),
+                    'commission_amount_cents': earnings_tx.commission_amount_cents,
+                    'commission_amount_display': f"${earnings_tx.commission_amount_cents / 100:,.2f}",
+                    'net_amount_cents': earnings_tx.net_amount_cents,
+                    'net_amount_display': f"${earnings_tx.net_amount_cents / 100:,.2f}",
+                    'status': earnings_tx.status,
+                    'available_after': earnings_tx.available_after.isoformat() if earnings_tx.available_after else None,
+                }
+                # Update summary
+                order_data['summary']['total_gross_cents'] += earnings_tx.gross_amount_cents
+                order_data['summary']['total_commission_cents'] += earnings_tx.commission_amount_cents
+                order_data['summary']['total_net_cents'] += earnings_tx.net_amount_cents
+                order_data['summary']['earnings_by_status'][earnings_tx.status] += earnings_tx.net_amount_cents
+
+            # Build booking data
+            session_data = None
+            if booking.service_session:
+                session_data = {
+                    'id': booking.service_session.id,
+                    'start_time': booking.service_session.start_time.isoformat() if booking.service_session.start_time else None,
+                    'end_time': booking.service_session.end_time.isoformat() if booking.service_session.end_time else None,
+                    'sequence_number': getattr(booking.service_session, 'sequence_number', None),
+                }
+
+            booking_data = {
+                'id': booking.id,
+                'public_uuid': str(booking.public_uuid),
+                'status': booking.status,
+                'payment_status': booking.payment_status,
+                'credits_allocated': booking.credits_allocated,
+                'credits_allocated_display': f"${booking.credits_allocated / 100:,.2f}" if booking.credits_allocated else "$0.00",
+                'service_session': session_data,
+                'earnings': earnings_data,
+                'created_at': booking.created_at.isoformat(),
+            }
+
+            order_data['bookings'].append(booking_data)
+            order_data['summary']['total_sessions'] += 1
+            order_data['summary']['total_credits_cents'] += booking.credits_allocated or 0
+            if booking.status == 'completed':
+                order_data['summary']['completed_sessions'] += 1
+
+        # Convert to list and add display fields to summary
+        result = []
+        for order_id, data in orders_dict.items():
+            # Filter by earnings status if requested
+            if status_filter:
+                has_status = any(
+                    b.get('earnings', {}).get('status') == status_filter
+                    for b in data['bookings'] if b.get('earnings')
+                )
+                if not has_status:
+                    continue
+
+            # Add display fields to summary
+            data['summary']['total_credits_display'] = f"${data['summary']['total_credits_cents'] / 100:,.2f}"
+            data['summary']['total_gross_display'] = f"${data['summary']['total_gross_cents'] / 100:,.2f}"
+            data['summary']['total_commission_display'] = f"${data['summary']['total_commission_cents'] / 100:,.2f}"
+            data['summary']['total_net_display'] = f"${data['summary']['total_net_cents'] / 100:,.2f}"
+            data['summary']['earnings_by_status'] = dict(data['summary']['earnings_by_status'])
+
+            result.append(data)
+
+        # Sort by order created_at descending
+        result.sort(key=lambda x: x['order']['created_at'] if x['order'] else '', reverse=True)
+
+        # Paginate
+        page = self.paginate_queryset(result)
+        if page is not None:
+            return self.get_paginated_response(page)
+
+        return Response(result)
+
     @action(detail=False, methods=['post'])
     def request_payout(self, request):
         """Request a payout using PayoutService"""

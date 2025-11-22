@@ -464,15 +464,15 @@ async def list_earnings_transactions(
     @sync_to_async
     def get_earnings_transactions_queryset():
         return EarningsTransaction.objects.filter(practitioner=practitioner).order_by('-created_at')
-    
+
     queryset = await get_earnings_transactions_queryset()
-    
+
     # Get current balance
     earnings, created = await get_or_create_practitioner_earnings(practitioner)
-    
+
     paginated_result = await paginate_queryset(queryset, pagination, EarningsTransactionResponse)
     paginated_result.current_balance = PractitionerEarningsBalance.model_validate(earnings)
-    
+
     return paginated_result
 
 

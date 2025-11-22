@@ -41,8 +41,8 @@ export default function FinancialOverviewClient() {
   })) || []
 
   const pieData = earningsData?.by_service_type?.map(item => ({
-    name: item.service_type,
-    value: item.amount / 100
+    name: item.service_type_display || item.service_type_name || item.service_type_code || 'Unknown',
+    value: (item.amount || 0) / 100
   })) || []
 
   const COLORS = ['#9CAF88', '#E07A5F', '#7A6F5D', '#F4A261']
@@ -161,12 +161,33 @@ export default function FinancialOverviewClient() {
                 <Skeleton className="h-[300px] w-full" />
               ) : chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${value}`} />
-                    <Line type="monotone" dataKey="earnings" stroke="#9CAF88" strokeWidth={2} />
+                  <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      width={60}
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Earnings']}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="earnings"
+                      stroke="#9CAF88"
+                      strokeWidth={2}
+                      dot={{ fill: '#9CAF88', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, fill: '#9CAF88' }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (

@@ -42,9 +42,7 @@ urlpatterns = [
     path('credits/purchase/', CreditViewSet.as_view({'post': 'purchase'}), name='credit-purchase'),
     path('credits/transfer/', CreditViewSet.as_view({'post': 'transfer'}), name='credit-transfer'),
     
-    # Additional payout endpoints
-    path('payouts/earnings/balance/', PayoutViewSet.as_view({'get': 'earnings_balance'}), name='earnings-balance'),
-    path('payouts/earnings/transactions/', PayoutViewSet.as_view({'get': 'earnings_transactions'}), name='earnings-transactions'),
+    # Additional payout endpoints (request_payout only - others use router with url_path)
     path('payouts/request/', PayoutViewSet.as_view({'post': 'request_payout'}), name='request-payout'),
     
     # Subscription tier listing
