@@ -398,9 +398,9 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                     <MapPin className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">In-Person</p>
-                      {service.location && (
+                      {booking.service?.location && (
                         <p className="text-sm text-muted-foreground">
-                          {service.location.city}, {service.location.state_province}
+                          {booking.service.location.city}, {booking.service.location.state_province}
                         </p>
                       )}
                     </div>
