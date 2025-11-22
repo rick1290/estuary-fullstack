@@ -62,6 +62,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import CompactCategoryManager from "../categories/compact-category-manager"
+import { BundleConfigStep } from "./steps/bundle-config-step"
+import { WizardPackageBuilder, type PackageServiceItem } from "./steps/wizard-package-builder"
 
 // Phase schemas for validation
 const phase1Schema = z.object({
@@ -194,6 +196,18 @@ export function GuidedServiceWizard() {
   const [selectedServiceType, setSelectedServiceType] = useState<string>("")
   const [useTemplate, setUseTemplate] = useState(false)
 
+  // Bundle/Package configuration state
+  const [bundleConfig, setBundleConfig] = useState({
+    sessionServiceId: null as number | null,
+    sessionsIncluded: 5,
+    suggestedPrice: 0,
+    suggestedDiscount: 10
+  })
+  const [packageConfig, setPackageConfig] = useState({
+    selectedServices: [] as PackageServiceItem[],
+    totalValue: 0
+  })
+
   // Fetch data
   const { data: modalities } = useQuery({
     ...modalitiesListOptions({}),
@@ -226,6 +240,18 @@ export function GuidedServiceWizard() {
     mode: "onSubmit", // Only validate on submit, not on change
   })
 
+  // Determine if we need a config step (for bundles/packages)
+  const needsConfigStep = selectedServiceType === 'bundle' || selectedServiceType === 'package'
+
+  // Calculate total phases dynamically
+  const totalPhases = needsConfigStep ? 5 : 4
+
+  // Get the actual phase number accounting for config step
+  const getDisplayPhase = (phase: number) => {
+    if (!needsConfigStep || phase === 1) return phase
+    return phase
+  }
+
   // Apply template when service type changes
   useEffect(() => {
     if (selectedServiceType && useTemplate) {
@@ -237,6 +263,13 @@ export function GuidedServiceWizard() {
       }
     }
   }, [selectedServiceType, useTemplate, form])
+
+  // Handle name suggestion from bundle/package config
+  const handleNameSuggestion = (name: string) => {
+    if (!form.getValues("name")) {
+      form.setValue("name", name)
+    }
+  }
 
   // Create service mutation
   const createMutation = useMutation({
@@ -264,27 +297,63 @@ export function GuidedServiceWizard() {
     },
   })
 
-  // Phase validation - now 4 phases
+  // Phase validation - dynamic based on service type
   const validatePhase = async (phase: number) => {
-    switch (phase) {
-      case 1:
-        return await form.trigger(["serviceType"])
-      case 2:
-        return await form.trigger(["name", "shortDescription"])
-      case 3:
-        return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
-      case 4:
-        return await form.trigger(["description"])
-      default:
-        return true
+    // For bundles/packages, phase 2 is config, so subsequent phases shift
+    if (needsConfigStep) {
+      switch (phase) {
+        case 1:
+          return await form.trigger(["serviceType"])
+        case 2:
+          // Validate bundle or package config
+          if (selectedServiceType === 'bundle') {
+            return bundleConfig.sessionServiceId !== null && bundleConfig.sessionsIncluded >= 2
+          } else if (selectedServiceType === 'package') {
+            return packageConfig.selectedServices.length > 0
+          }
+          return true
+        case 3:
+          return await form.trigger(["name", "shortDescription"])
+        case 4:
+          return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+        case 5:
+          return await form.trigger(["description"])
+        default:
+          return true
+      }
+    } else {
+      // Standard flow for session/workshop/course
+      switch (phase) {
+        case 1:
+          return await form.trigger(["serviceType"])
+        case 2:
+          return await form.trigger(["name", "shortDescription"])
+        case 3:
+          return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+        case 4:
+          return await form.trigger(["description"])
+        default:
+          return true
+      }
     }
   }
 
-  // Navigation - now 4 phases
+  // Navigation - dynamic based on total phases
   const handleNext = async () => {
     const isValid = await validatePhase(currentPhase)
-    if (isValid && currentPhase < 4) {
+    if (isValid && currentPhase < totalPhases) {
       setCurrentPhase(currentPhase + 1)
+    } else if (!isValid && currentPhase === 2 && needsConfigStep) {
+      // Show specific error for config step
+      toast({
+        title: selectedServiceType === 'bundle'
+          ? "Bundle configuration incomplete"
+          : "Package configuration incomplete",
+        description: selectedServiceType === 'bundle'
+          ? "Please select a session service and set the number of sessions."
+          : "Please add at least one service to your package.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -297,42 +366,77 @@ export function GuidedServiceWizard() {
   // Submit handler
   const onSubmit = async (data: WizardFormData) => {
     setIsCreating(true)
-    
+
     const selectedType = SERVICE_TYPES.find(t => t.code === data.serviceType)
     if (!selectedType) {
       setIsCreating(false)
       return
     }
 
-    // Create service with full data
+    // Build child_service_configs for bundles and packages
+    let childServiceConfigs: Array<{
+      child_service_id: number
+      quantity: number
+      discount_percentage?: number
+      order?: number
+    }> | undefined
+
+    let sessionsIncluded: number | undefined
+
+    if (data.serviceType === 'bundle' && bundleConfig.sessionServiceId) {
+      childServiceConfigs = [{
+        child_service_id: bundleConfig.sessionServiceId,
+        quantity: bundleConfig.sessionsIncluded
+      }]
+      sessionsIncluded = bundleConfig.sessionsIncluded
+    } else if (data.serviceType === 'package' && packageConfig.selectedServices.length > 0) {
+      childServiceConfigs = packageConfig.selectedServices.map(s => ({
+        child_service_id: s.serviceId,
+        quantity: s.quantity,
+        discount_percentage: s.discountPercentage,
+        order: s.order
+      }))
+    }
+
+    // Build request body
+    const requestBody = {
+      name: data.name,
+      service_type_id: selectedType.id,
+      price: data.price,
+      short_description: data.shortDescription,
+      description: data.description,
+      duration_minutes: data.duration_minutes,
+      max_participants: data.max_participants,
+      min_participants: 1,
+      location_type: data.location_type,
+      status: 'draft',
+      is_active: false,
+      is_public: false,
+      experience_level: "all_levels",
+      what_youll_learn: "",
+      prerequisites: "",
+      includes: data.includes ? data.includes.split('\n').filter(item => item.trim()).map(item => item.trim()) : [],
+      // Optional fields
+      ...(data.schedule_id && data.schedule_id !== "none" && { schedule: parseInt(data.schedule_id) }),
+      ...(data.modalityId && data.modalityId !== "none" && { modality_ids: [parseInt(data.modalityId)] }),
+      ...(data.practitionerCategoryId && { practitioner_category_id: parseInt(data.practitionerCategoryId) }),
+      // Bundle/Package specific fields
+      ...(childServiceConfigs && { child_service_configs: childServiceConfigs }),
+      ...(sessionsIncluded && { sessions_included: sessionsIncluded }),
+    }
+
+    // Create service - override headers to force JSON content type for nested objects
     await createMutation.mutateAsync({
-      body: {
-        name: data.name,
-        service_type_id: selectedType.id,
-        price: parseFloat(data.price),
-        short_description: data.shortDescription,
-        description: data.description,
-        duration_minutes: data.duration_minutes,
-        max_participants: data.max_participants,
-        min_participants: 1,
-        location_type: data.location_type,
-        status: 'draft',
-        is_active: false,
-        is_public: false,
-        experience_level: "all_levels",
-        what_youll_learn: "",
-        prerequisites: "",
-        includes: data.includes ? data.includes.split('\n').filter(item => item.trim()).map(item => item.trim()) : [],
-        // Optional fields
-        ...(data.schedule_id && data.schedule_id !== "none" && { schedule: parseInt(data.schedule_id) }),
-        ...(data.modalityId && data.modalityId !== "none" && { modality_ids: [parseInt(data.modalityId)] }),
-        ...(data.practitionerCategoryId && { practitioner_category_id: parseInt(data.practitionerCategoryId) }),
-      }
-    })
+      body: requestBody,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      bodySerializer: (body) => JSON.stringify(body),
+    } as any)
   }
 
-  // Progress calculation - now 4 phases
-  const progress = (currentPhase / 4) * 100
+  // Progress calculation - dynamic based on total phases
+  const progress = (currentPhase / totalPhases) * 100
 
   // Get schema for current phase
   const getCurrentSchema = () => {
@@ -358,7 +462,7 @@ export function GuidedServiceWizard() {
           {/* Progress Bar */}
           <div className="mb-6 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="font-medium">Step {currentPhase} of 4</span>
+              <span className="font-medium">Step {currentPhase} of {totalPhases}</span>
               <span className="text-muted-foreground">{Math.round(progress)}% Complete</span>
             </div>
             <Progress value={progress} className="h-2" />
@@ -468,10 +572,43 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 2: Basic Info */}
-            {currentPhase === 2 && (
+            {/* Phase 2: Bundle/Package Config (only for bundle/package types) */}
+            {currentPhase === 2 && needsConfigStep && (
               <motion.div
-                key="phase2"
+                key="phase2-config"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardContent className="pt-6">
+                    {selectedServiceType === 'bundle' ? (
+                      <BundleConfigStep
+                        config={bundleConfig}
+                        onConfigChange={setBundleConfig}
+                        currentPrice={form.watch("price")}
+                        onPriceChange={(price) => form.setValue("price", price)}
+                        onNameSuggestion={handleNameSuggestion}
+                      />
+                    ) : (
+                      <WizardPackageBuilder
+                        config={packageConfig}
+                        onConfigChange={setPackageConfig}
+                        currentPrice={form.watch("price")}
+                        onPriceChange={(price) => form.setValue("price", price)}
+                        onNameSuggestion={handleNameSuggestion}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Phase 2/3: Basic Info (phase 2 for standard, phase 3 for bundle/package) */}
+            {((currentPhase === 2 && !needsConfigStep) || (currentPhase === 3 && needsConfigStep)) && (
+              <motion.div
+                key="phase-basic-info"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -485,23 +622,25 @@ export function GuidedServiceWizard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Template Option */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
-                    >
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={useTemplate}
-                          onChange={(e) => setUseTemplate(e.target.checked)}
-                          className="rounded"
-                        />
-                        Use our recommended template for {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name}s
-                      </label>
-                    </motion.div>
+                    {/* Template Option - hide for bundles/packages since we have config */}
+                    {!needsConfigStep && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
+                      >
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={useTemplate}
+                            onChange={(e) => setUseTemplate(e.target.checked)}
+                            className="rounded"
+                          />
+                          Use our recommended template for {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name}s
+                        </label>
+                      </motion.div>
+                    )}
 
                     {/* Service Name */}
                     <FormField
@@ -559,10 +698,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 3: Delivery Details */}
-            {currentPhase === 3 && (
+            {/* Phase 3/4: Delivery Details (phase 3 for standard, phase 4 for bundle/package) */}
+            {((currentPhase === 3 && !needsConfigStep) || (currentPhase === 4 && needsConfigStep)) && (
               <motion.div
-                key="phase3"
+                key="phase-delivery"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -577,7 +716,7 @@ export function GuidedServiceWizard() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid gap-6 md:grid-cols-2">
-                      {/* Price */}
+                      {/* Price - show as read-only info for bundles/packages since it was set in config */}
                       <FormField
                         control={form.control}
                         name="price"
@@ -585,19 +724,22 @@ export function GuidedServiceWizard() {
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               <DollarSign className="h-4 w-4" />
-                              Price
+                              {needsConfigStep ? `${selectedServiceType === 'bundle' ? 'Bundle' : 'Package'} Price` : 'Price'}
                             </FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="0.00" 
-                                {...field} 
+                                placeholder="0.00"
+                                {...field}
                               />
                             </FormControl>
                             <FormDescription>
-                              You can adjust pricing later
+                              {needsConfigStep
+                                ? "Price was set in the previous step. You can adjust it here if needed."
+                                : "You can adjust pricing later"
+                              }
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -742,7 +884,7 @@ export function GuidedServiceWizard() {
                               <SelectContent>
                                 <SelectItem value="none">No schedule</SelectItem>
                                 {schedules?.results?.map((schedule) => (
-                                  <SelectItem key={schedule.id} value={schedule.id.toString()}>
+                                  <SelectItem key={schedule.id} value={String(schedule.id)}>
                                     {schedule.name}
                                   </SelectItem>
                                 ))}
@@ -769,10 +911,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 4: Polish & Publish */}
-            {currentPhase === 4 && (
+            {/* Phase 4/5: Polish & Publish (phase 4 for standard, phase 5 for bundle/package) */}
+            {((currentPhase === 4 && !needsConfigStep) || (currentPhase === 5 && needsConfigStep)) && (
               <motion.div
-                key="phase4"
+                key="phase-polish"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -810,7 +952,7 @@ export function GuidedServiceWizard() {
                               <SelectContent>
                                 <SelectItem value="none">No modality</SelectItem>
                                 {modalities?.results?.map((modality) => (
-                                  <SelectItem key={modality.id} value={modality.id.toString()}>
+                                  <SelectItem key={modality.id} value={String(modality.id)}>
                                     {modality.name}
                                   </SelectItem>
                                 ))}
@@ -859,7 +1001,7 @@ export function GuidedServiceWizard() {
                               <SelectContent>
                                 <SelectItem value="none">No category</SelectItem>
                                 {practitionerCategories?.results?.map((category) => (
-                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                  <SelectItem key={category.id} value={String(category.id)}>
                                     <div className="flex items-center gap-2">
                                       <div
                                         className="w-3 h-3 rounded-full flex-shrink-0"
@@ -986,7 +1128,7 @@ export function GuidedServiceWizard() {
                 Save Draft
               </Button>
 
-              {currentPhase < 4 ? (
+              {currentPhase < totalPhases ? (
                 <Button
                   type="button"
                   onClick={handleNext}
@@ -996,8 +1138,8 @@ export function GuidedServiceWizard() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isCreating}
                   className="min-w-[120px]"
                 >
@@ -1009,7 +1151,7 @@ export function GuidedServiceWizard() {
                   ) : (
                     <>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Create Service
+                      Create {selectedServiceType === 'bundle' ? 'Bundle' : selectedServiceType === 'package' ? 'Package' : 'Service'}
                     </>
                   )}
                 </Button>
