@@ -262,10 +262,18 @@ export default function AuthModal({
     setIsLoading(true)
 
     try {
+      // Determine callback URL based on role selection (for signup tab)
+      let callbackUrl = redirectUrl || "/"
+
+      if (activeTab === "signup" && signupRole === "practitioner") {
+        // Store role preference for after OAuth completes
+        localStorage.setItem("pendingPractitionerOnboarding", "true")
+        callbackUrl = "/become-practitioner/onboarding"
+      }
+
       // Google OAuth requires a full page redirect
-      // After successful auth, user will be redirected to callbackUrl
       await signIn("google", {
-        callbackUrl: redirectUrl || "/",
+        callbackUrl,
       })
     } catch (err) {
       setError("Google authentication failed. Please try again.")
