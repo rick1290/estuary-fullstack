@@ -21,12 +21,15 @@ import {
   Film,
   PlayCircle,
   Download,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
@@ -36,6 +39,7 @@ import {
   serviceSessionsRetrieveOptions,
   serviceSessionsMarkCompletedCreateMutation,
   serviceSessionsMarkInProgressCreateMutation,
+  recordingsPartialUpdateMutation,
 } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 
@@ -454,7 +458,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
 
   // Fetch service session data from API
-  const { data: session, isLoading, error } = useQuery(
+  const { data: session, isLoading, error, refetch } = useQuery(
     serviceSessionsRetrieveOptions({
       path: { id: parseInt(id) }
     })
@@ -473,6 +477,19 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     ...serviceSessionsMarkInProgressCreateMutation(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+    },
+  })
+
+  // Mutation for updating recording visibility
+  const updateRecordingMutation = useMutation({
+    ...recordingsPartialUpdateMutation(),
+    onSuccess: (data) => {
+      console.log('Recording updated successfully:', data)
+      // Refetch session data to get updated recording status
+      refetch()
+    },
+    onError: (error) => {
+      console.error('Failed to update recording:', error)
     },
   })
 
@@ -839,6 +856,38 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                                 Size: {(recording.file_size_bytes / 1024 / 1024).toFixed(1)} MB
                               </p>
                             )}
+
+                            {/* Client visibility toggle */}
+                            <div className="flex items-center gap-2 pt-2 border-t mt-2">
+                              <Switch
+                                id={`recording-visibility-${recording.id}`}
+                                checked={recording.is_available !== false}
+                                onCheckedChange={(checked) => {
+                                  console.log('Toggling recording:', recording.id, 'to:', checked, 'full recording:', recording)
+                                  updateRecordingMutation.mutate({
+                                    path: { id: recording.id },
+                                    body: { is_available: checked }
+                                  })
+                                }}
+                                disabled={updateRecordingMutation.isPending}
+                              />
+                              <label
+                                htmlFor={`recording-visibility-${recording.id}`}
+                                className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer"
+                              >
+                                {recording.is_available !== false ? (
+                                  <>
+                                    <Eye className="h-3 w-3" />
+                                    Visible to clients
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff className="h-3 w-3" />
+                                    Hidden from clients
+                                  </>
+                                )}
+                              </label>
+                            </div>
                           </div>
 
                           <div className="flex flex-col gap-2">

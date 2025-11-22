@@ -483,6 +483,56 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
+class RoomRecordingViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing room recordings.
+    Practitioners can update visibility settings.
+    """
+    serializer_class = RoomRecordingSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'patch', 'head', 'options']
+
+    def get_queryset(self):
+        """
+        Get recordings accessible to the current user.
+        """
+        user = self.request.user
+
+        if user.is_staff:
+            return RoomRecording.objects.all()
+
+        # Users can see recordings for rooms they created or are practitioners of
+        return RoomRecording.objects.filter(
+            Q(room__created_by=user) |
+            Q(room__service_session__service__primary_practitioner__user=user)
+        ).distinct()
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Update recording settings (e.g., is_available toggle).
+        Only the practitioner/host can update.
+        """
+        recording = self.get_object()
+        user = request.user
+
+        # Check permissions - only host/practitioner can update
+        is_authorized = (
+            user.is_staff or
+            recording.room.created_by == user or
+            (recording.room.service_session and
+             recording.room.service_session.service.primary_practitioner and
+             recording.room.service_session.service.primary_practitioner.user == user)
+        )
+
+        if not is_authorized:
+            return Response(
+                {'error': 'You do not have permission to update this recording.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        return super().partial_update(request, *args, **kwargs)
+
+
 class BookingRoomViewSet(viewsets.ViewSet):
     """
     ViewSet for accessing rooms via booking ID.
