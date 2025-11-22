@@ -149,6 +149,9 @@ export interface Practitioner {
   id: string | number
   public_uuid?: string
   user?: User
+  user_id?: number
+  first_name?: string
+  last_name?: string
   title?: string
   professional_title?: string
   bio?: string

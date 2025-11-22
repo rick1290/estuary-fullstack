@@ -195,6 +195,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            </div>
           </div>
         </div>
       </CardContent>

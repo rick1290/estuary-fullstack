@@ -10,6 +10,7 @@ import CoursesWorkshops from "./profile/courses-workshops"
 import SessionOfferings from "./profile/session-offerings"
 import ClientReviews from "./profile/client-reviews"
 import EstuaryPromise from "./profile/estuary-promise"
+import { SendMessageModal } from "./send-message-modal"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 
@@ -21,6 +22,7 @@ interface PractitionerProfileProps {
 export default function PractitionerProfile({ practitioner, initialLiked = false }: PractitionerProfileProps) {
   const [selectedServiceType, setSelectedServiceType] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(initialLiked)
+  const [messageModalOpen, setMessageModalOpen] = useState(false)
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
 
@@ -77,9 +79,7 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
         description: `Connect with ${practitioner.first_name} ${practitioner.last_name} and start your wellness journey`
       })
     } else {
-      // Handle messaging for authenticated users
-      console.log("Open messaging interface")
-      // This would typically navigate to a messaging page or open a messaging interface
+      setMessageModalOpen(true)
     }
   }, [isAuthenticated, openAuthModal, practitioner])
 
@@ -169,6 +169,13 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
 
       {/* Estuary Promise */}
       <EstuaryPromise />
+
+      {/* Send Message Modal */}
+      <SendMessageModal
+        open={messageModalOpen}
+        onOpenChange={setMessageModalOpen}
+        practitioner={practitioner}
+      />
     </div>
   )
 }

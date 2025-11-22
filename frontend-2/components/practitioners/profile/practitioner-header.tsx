@@ -118,7 +118,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Users className="h-4 w-4 text-sage-600" />
-                    <span className="text-olive-700">{practitioner.completed_sessions} sessions</span>
+                    <span className="text-olive-700">{practitioner.total_services} services</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-4 w-4 text-sage-600" />
