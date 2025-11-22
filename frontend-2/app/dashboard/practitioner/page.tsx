@@ -6,10 +6,11 @@ import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { 
-  CalendarDays, 
-  Droplets, 
-  Waves, 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  CalendarDays,
+  Droplets,
+  Waves,
   Activity,
   Clock,
   Calendar,
@@ -21,9 +22,13 @@ import {
   BarChart3,
   Settings,
   Radio,
-  User
+  User,
+  AlertCircle,
+  CreditCard,
+  ArrowRight
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { useStripeConnectStatus } from "@/hooks/use-stripe-connect-status"
 import PractitionerFlowTabs from "@/components/dashboard/practitioner/practitioner-flow-tabs"
 import PractitionerRecentRipples from "@/components/dashboard/practitioner/practitioner-recent-ripples"
 import PractitionerStats from "@/components/dashboard/practitioner/practitioner-stats"
@@ -31,6 +36,7 @@ import PractitionerStats from "@/components/dashboard/practitioner/practitioner-
 export default function PractitionerDashboardPage() {
   const { user } = useAuth()
   const firstName = user?.firstName || "Practitioner"
+  const { showWarning, needsSetup, noAccount, hasRequirements, isLoading: stripeLoading } = useStripeConnectStatus()
 
   // App shortcuts for quick navigation
   const appShortcuts = [
@@ -106,6 +112,42 @@ export default function PractitionerDashboardPage() {
           Your practice is flowing beautifully. Here's what's rippling through your waters today.
         </p>
       </div>
+
+      {/* Stripe Connect Warning */}
+      {!stripeLoading && showWarning && (
+        <Card className="mb-6 border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <CreditCard className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900">
+                  {noAccount ? "Connect Your Payment Account" : "Complete Your Payment Setup"}
+                </h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  {noAccount
+                    ? "Connect your Stripe account to start receiving payments from clients."
+                    : hasRequirements
+                    ? "Stripe needs additional information to enable payments. Please complete your account setup."
+                    : "Your Stripe account is connected but payments are not yet enabled. Please complete the setup."
+                  }
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  className="mt-3 bg-amber-600 hover:bg-amber-700"
+                >
+                  <Link href="/dashboard/practitioner/settings?tab=payment">
+                    {noAccount ? "Connect Stripe" : "Complete Setup"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Dashboard Grid */}
       <div className="grid gap-6 lg:grid-cols-12">

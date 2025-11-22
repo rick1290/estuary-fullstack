@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { useMessageNotifications } from "@/hooks/use-message-notifications"
+import { useStripeConnectStatus } from "@/hooks/use-stripe-connect-status"
 import {
   Menu,
   Home,
@@ -32,6 +33,7 @@ import {
   Receipt,
   ChevronUp,
   Lightbulb,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -71,6 +73,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
   const { unreadCount } = useMessageNotifications({
     enabled: !!user && user.is_practitioner
   })
+  const { showWarning: showStripeWarning } = useStripeConnectStatus(!!user && user.is_practitioner)
 
   const handleLogout = () => {
     logout()
@@ -267,10 +270,21 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
             </Link>
             <Link
               href="/dashboard/practitioner/settings"
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                showStripeWarning && "text-amber-700"
+              )}
             >
-              <Settings className="h-4 w-4" />
+              <div className="relative">
+                <Settings className="h-4 w-4" />
+                {showStripeWarning && (
+                  <div className="absolute -top-1 -right-1 h-2 w-2 bg-amber-500 rounded-full" />
+                )}
+              </div>
               Settings
+              {showStripeWarning && (
+                <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+              )}
             </Link>
 
             {/* Account Menu Button */}
@@ -387,10 +401,21 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   </Link>
                   <Link
                     href="/dashboard/practitioner/settings"
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                      showStripeWarning && "text-amber-700"
+                    )}
                   >
-                    <Settings className="h-4 w-4" />
+                    <div className="relative">
+                      <Settings className="h-4 w-4" />
+                      {showStripeWarning && (
+                        <div className="absolute -top-1 -right-1 h-2 w-2 bg-amber-500 rounded-full" />
+                      )}
+                    </div>
                     Settings
+                    {showStripeWarning && (
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+                    )}
                   </Link>
 
                   {/* Account Menu Button */}

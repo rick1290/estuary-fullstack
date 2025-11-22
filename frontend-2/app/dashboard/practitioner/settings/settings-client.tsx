@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { PractitionerPageHeader } from "@/components/dashboard/practitioner/practitioner-page-header"
 import { PaymentIntegrationSettings } from "@/components/dashboard/practitioner/settings/payment-integration-settings"
 import { PasswordSettings } from "@/components/dashboard/practitioner/settings/password-settings"
@@ -15,7 +16,16 @@ const SETTINGS_TABS = [
 ]
 
 export default function SettingsClient() {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState("billing")
+
+  // Set initial tab from URL parameter
+  useEffect(() => {
+    if (tabParam && SETTINGS_TABS.some(tab => tab.value === tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   return (
     <>
