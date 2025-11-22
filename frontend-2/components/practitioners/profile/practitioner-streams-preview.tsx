@@ -30,11 +30,11 @@ export default function PractitionerStreamsPreview({
     queryFn: async () => {
       const response = await streamPostsList({
         query: {
-          practitioner: Number(practitionerId),
+          stream__practitioner: Number(practitionerId),
           page_size: 4,
           is_published: true,
           ordering: "-published_at"
-        } as any // Backend supports practitioner filter but types don't include it
+        } as any // Backend supports stream__practitioner filter but types don't include it
       })
       return response.data
     },

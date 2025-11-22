@@ -66,9 +66,9 @@ export default function ContentFeed({
     queryParams.subscribed_only = true
   }
 
-  // Add practitioner filter
+  // Add practitioner filter (stream__practitioner is the Django filter field)
   if (practitionerId) {
-    queryParams.practitioner = Number(practitionerId)
+    queryParams.stream__practitioner = Number(practitionerId)
   }
 
   // Fetch posts from API with infinite scroll
