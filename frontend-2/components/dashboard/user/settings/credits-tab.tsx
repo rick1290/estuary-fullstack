@@ -173,11 +173,6 @@ export default function CreditsTab() {
                           <p className="text-sm font-medium text-olive-900">
                             {transaction.description}
                           </p>
-                          {transaction.service && (
-                            <p className="text-sm text-olive-600 mt-1">
-                              Service: {transaction.service.name}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="text-right">
