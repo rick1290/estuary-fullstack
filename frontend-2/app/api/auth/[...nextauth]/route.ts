@@ -189,7 +189,8 @@ export const authOptions: NextAuthOptions = {
         params: {
           prompt: "consent",
           access_type: "offline",
-          response_type: "code"
+          response_type: "code",
+          scope: "openid email profile"
         }
       }
     })
@@ -208,7 +209,62 @@ export const authOptions: NextAuthOptions = {
             error: undefined,
           }
         } else if (account.provider === "google") {
-          // TODO: Implement Google token exchange with Django backend
+          // Exchange Google ID token for Django JWT tokens
+          console.log("[NextAuth] Google sign in - exchanging token with backend")
+          console.log("[NextAuth] Account keys:", Object.keys(account))
+          console.log("[NextAuth] Has id_token:", !!account.id_token)
+          console.log("[NextAuth] Has access_token:", !!account.access_token)
+
+          // Get the id_token from Google OAuth response
+          const idToken = account.id_token
+          if (!idToken) {
+            console.error("[NextAuth] No id_token received from Google")
+            return {
+              ...token,
+              error: "GoogleAuthError",
+            }
+          }
+
+          try {
+            const apiUrl = getApiUrl()
+            console.log("[NextAuth] Calling backend:", `${apiUrl}/api/v1/auth/google/`)
+            const response = await fetch(`${apiUrl}/api/v1/auth/google/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                id_token: idToken
+              })
+            })
+
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error("[NextAuth] Google token exchange failed:", response.status, errorText)
+              return {
+                ...token,
+                error: "GoogleAuthError",
+              }
+            }
+
+            const data = await response.json()
+            console.log("[NextAuth] Google sign in successful")
+
+            return {
+              ...token,
+              accessToken: data.access_token,
+              refreshToken: data.refresh_token,
+              accessTokenExpires: Date.now() + (data.expires_in || 30 * 60) * 1000,
+              user: data.user,
+              error: undefined,
+            }
+          } catch (error) {
+            console.error("[NextAuth] Google auth error:", error)
+            return {
+              ...token,
+              error: "GoogleAuthError",
+            }
+          }
         }
       }
 
