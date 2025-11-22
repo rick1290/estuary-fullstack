@@ -100,7 +100,8 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
             <div className="bg-gradient-to-br from-sage-50/30 to-terracotta-50/30 p-6 lg:p-8 rounded-b-2xl">
               <EstuaryTab
                 practitionerId={practitioner.id}
-                practitionerName={practitioner.display_name}
+                practitionerName={practitioner.display_name || "Practitioner"}
+                practitionerSlug={practitioner.public_uuid || String(practitioner.id)}
                 practitionerImage={practitioner.profile_image_url}
               />
             </div>

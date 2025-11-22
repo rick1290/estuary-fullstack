@@ -66,6 +66,11 @@ export default function ContentFeed({
     queryParams.subscribed_only = true
   }
 
+  // Add practitioner filter (stream__practitioner is the Django filter field)
+  if (practitionerId) {
+    queryParams.stream__practitioner = Number(practitionerId)
+  }
+
   // Fetch posts from API with infinite scroll
   const {
     data,
@@ -75,7 +80,7 @@ export default function ContentFeed({
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['streamPosts', query, contentType, tags, sort, showSubscribed, user?.id],
+    queryKey: ['streamPosts', query, contentType, practitionerId, tags, sort, showSubscribed, user?.id],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await streamPostsList({
         query: {

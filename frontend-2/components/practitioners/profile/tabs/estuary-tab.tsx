@@ -1,18 +1,26 @@
-import PractitionerFeed from "../../estuary-streams/practitioner-feed"
+"use client"
+
+import PractitionerStreamsPreview from "../practitioner-streams-preview"
 
 interface EstuaryTabProps {
-  practitionerId: string
+  practitionerId: string | number
   practitionerName: string
+  practitionerSlug?: string
   practitionerImage?: string
 }
 
-export default function EstuaryTab({ practitionerId, practitionerName, practitionerImage }: EstuaryTabProps) {
+export default function EstuaryTab({
+  practitionerId,
+  practitionerName,
+  practitionerSlug,
+  practitionerImage
+}: EstuaryTabProps) {
   return (
-    <div>
-      <PractitionerFeed
+    <div className="py-2">
+      <PractitionerStreamsPreview
         practitionerId={practitionerId}
         practitionerName={practitionerName}
-        practitionerImage={practitionerImage}
+        practitionerSlug={practitionerSlug}
       />
     </div>
   )
