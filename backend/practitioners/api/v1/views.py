@@ -735,9 +735,13 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             total_bookings=Count('booking_id', distinct=True)
         )
         
-        # Get earnings by service type
-        by_service_type = bookings.values('service__service_type').annotate(
-            amount=Sum('final_amount_cents'),
+        # Get earnings by service type (use order amount or service price)
+        by_service_type = bookings.values(
+            'service__service_type',
+            'service__service_type__name',
+            'service__service_type__code'
+        ).annotate(
+            amount=Sum('order__total_amount_cents'),
             count=Count('id')
         ).order_by('-amount')
         
@@ -785,8 +789,11 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             'by_service_type': [
                 {
                     'service_type': item['service__service_type'],
-                    'amount': item['amount'],
-                    'amount_display': f"${item['amount'] / 100:,.2f}",
+                    'service_type_name': item['service__service_type__name'],
+                    'service_type_code': item['service__service_type__code'],
+                    'service_type_display': item['service__service_type__name'] or item['service__service_type__code'] or 'Unknown',
+                    'amount': item['amount'] or 0,
+                    'amount_display': f"${(item['amount'] or 0) / 100:,.2f}",
                     'count': item['count']
                 }
                 for item in by_service_type
@@ -863,16 +870,25 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                 booking=booking,
                 practitioner=practitioner
             ).first()
-            
-            # Calculate commission (default to 15% if no earnings transaction)
+
+            # Get the booking amount from earnings, order, or service price
             if earnings_tx:
+                amount_cents = earnings_tx.gross_amount_cents
                 commission_cents = earnings_tx.commission_amount_cents
                 net_amount_cents = earnings_tx.net_amount_cents
             else:
-                # Fallback calculation
-                commission_cents = int(booking.final_amount_cents * 0.15)
-                net_amount_cents = booking.final_amount_cents - commission_cents
-            
+                # Fallback: get from order or service price
+                order = getattr(booking, 'order', None)
+                if order and order.total_amount_cents:
+                    amount_cents = order.total_amount_cents
+                elif booking.service and booking.service.price_cents:
+                    amount_cents = booking.service.price_cents
+                else:
+                    amount_cents = 0
+                # Default 15% commission calculation
+                commission_cents = int(amount_cents * 0.15)
+                net_amount_cents = amount_cents - commission_cents
+
             transaction = {
                 'id': f"TXN-{booking.id}",
                 'booking_id': booking.id,
@@ -889,8 +905,8 @@ class PractitionerViewSet(viewsets.ModelViewSet):
                     'title': booking.service.name,  # Service model uses 'name' not 'title'
                     'type': booking.service.service_type.code  # Use 'code' field for the type identifier
                 },
-                'amount': booking.final_amount_cents,
-                'amount_display': f"${booking.final_amount_cents / 100:,.2f}",
+                'amount': amount_cents,
+                'amount_display': f"${amount_cents / 100:,.2f}" if amount_cents else "$0.00",
                 'commission': commission_cents,
                 'commission_display': f"${commission_cents / 100:,.2f}",
                 'net_amount': net_amount_cents,
@@ -1165,7 +1181,7 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             'service__title', 'service__service_type'
         ).annotate(
             count=Count('id'),
-            revenue=Sum('final_amount_cents')
+            revenue=Sum('order__total_amount_cents')
         ).order_by('-count')[:5]
         
         # Customer retention (repeat customers)
@@ -1182,7 +1198,7 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             date=TruncDate('created_at')
         ).values('date').annotate(
             count=Count('id'),
-            revenue=Sum('final_amount_cents')
+            revenue=Sum('order__total_amount_cents')
         ).order_by('date')
         
         # Peak booking times

@@ -46,13 +46,12 @@ export default function UserStats() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[...Array(5)].map((_, i) => (
-          <Card key={i} className="border-2 border-sage-200">
-            <CardContent className="p-6">
-              <Skeleton className="h-12 w-12 rounded-full mb-3" />
-              <Skeleton className="h-8 w-24 mb-2" />
-              <Skeleton className="h-4 w-16" />
+          <Card key={i} className="border border-sage-200">
+            <CardContent className="p-3">
+              <Skeleton className="h-4 w-16 mb-2" />
+              <Skeleton className="h-6 w-12" />
             </CardContent>
           </Card>
         ))}
@@ -71,73 +70,59 @@ export default function UserStats() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-      <Card className="border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-sage-50 to-white overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-full bg-sage-600/10">
-              <Calendar className="h-5 w-5 text-sage-600" />
-            </div>
-            <h3 className="font-medium text-olive-900">Sessions</h3>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <Card className="border border-sage-200 hover:border-sage-300 transition-all hover:shadow-sm bg-gradient-to-br from-sage-50/50 to-white">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-olive-600">Sessions</span>
+            <Calendar className="h-4 w-4 text-sage-500" />
           </div>
-          <p className="text-3xl font-bold mt-2 text-olive-900">{stats.totalSessions}</p>
-          <p className="text-sm text-olive-600 mt-1">{stats.upcomingSessions} upcoming</p>
+          <p className="text-2xl font-bold text-olive-900">{stats.totalSessions}</p>
+          <p className="text-xs text-muted-foreground">{stats.upcomingSessions} upcoming</p>
         </CardContent>
       </Card>
 
-      <Card className="border-2 border-terracotta-200 hover:border-terracotta-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-terracotta-50 to-white overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-full bg-terracotta-600/10">
-              <Heart className="h-5 w-5 text-terracotta-600" />
-            </div>
-            <h3 className="font-medium text-olive-900">Favorites</h3>
+      <Card className="border border-terracotta-200 hover:border-terracotta-300 transition-all hover:shadow-sm bg-gradient-to-br from-terracotta-50/50 to-white">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-olive-600">Favorites</span>
+            <Heart className="h-4 w-4 text-terracotta-500" />
           </div>
-          <p className="text-3xl font-bold mt-2 text-olive-900">{stats.favoriteServices}</p>
-          <p className="text-sm text-olive-600 mt-1">Saved services</p>
+          <p className="text-2xl font-bold text-olive-900">{stats.favoriteServices}</p>
+          <p className="text-xs text-muted-foreground">Saved</p>
         </CardContent>
       </Card>
 
-      <Card className="border-2 border-blush-200 hover:border-blush-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-blush-50 to-white overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-full bg-blush-600/10">
-              <Star className="h-5 w-5 text-blush-600" />
-            </div>
-            <h3 className="font-medium text-olive-900">Goals</h3>
+      <Card className="border border-blush-200 hover:border-blush-300 transition-all hover:shadow-sm bg-gradient-to-br from-blush-50/50 to-white">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-olive-600">Goals</span>
+            <Star className="h-4 w-4 text-blush-500" />
           </div>
-          <p className="text-3xl font-bold mt-2 text-olive-900">
-            {stats.completedGoals}/{stats.totalGoals}
-          </p>
-          <p className="text-sm text-olive-600 mt-1">Completed goals</p>
+          <p className="text-2xl font-bold text-olive-900">{stats.completedGoals}/{stats.totalGoals}</p>
+          <p className="text-xs text-muted-foreground">Completed</p>
         </CardContent>
       </Card>
 
-      <Card className="border-2 border-olive-200 hover:border-olive-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-olive-50 to-white overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-full bg-olive-600/10">
-              <TrendingUp className="h-5 w-5 text-olive-600" />
-            </div>
-            <h3 className="font-medium text-olive-900">Wellness Score</h3>
+      <Card className="border border-olive-200 hover:border-olive-300 transition-all hover:shadow-sm bg-gradient-to-br from-olive-50/50 to-white">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-olive-600">Wellness</span>
+            <TrendingUp className="h-4 w-4 text-olive-500" />
           </div>
-          <p className="text-3xl font-bold mt-2 text-olive-900">{stats.wellnessScore}</p>
-          <div className="mt-3">
-            <Progress value={stats.wellnessScore} className="h-2" />
-          </div>
+          <p className="text-2xl font-bold text-olive-900">{stats.wellnessScore}</p>
+          <Progress value={stats.wellnessScore} className="h-1.5 mt-1" />
         </CardContent>
       </Card>
-      
-      <Card className="border-2 border-purple-200 hover:border-purple-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-white overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-full bg-purple-600/10">
-              <Wallet className="h-5 w-5 text-purple-600" />
-            </div>
-            <h3 className="font-medium text-olive-900">Credits</h3>
+
+      <Card className="border border-purple-200 hover:border-purple-300 transition-all hover:shadow-sm bg-gradient-to-br from-purple-50/50 to-white">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-olive-600">Credits</span>
+            <Wallet className="h-4 w-4 text-purple-500" />
           </div>
-          <p className="text-3xl font-bold mt-2 text-olive-900">${stats.creditBalance.toFixed(2)}</p>
-          <p className="text-sm text-olive-600 mt-1">Available balance</p>
+          <p className="text-2xl font-bold text-olive-900">${stats.creditBalance.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Balance</p>
         </CardContent>
       </Card>
     </div>

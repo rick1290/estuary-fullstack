@@ -39,9 +39,9 @@ export default function EarningsClient() {
   })) || []
   
   const serviceData = earningsData?.by_service_type?.map(item => ({
-    name: item.service_type_display || item.service_type,
-    value: item.amount / 100,
-    percentage: ((item.amount / 100) / (earningsData?.totals?.gross_amount || 1) * 10000).toFixed(1)
+    name: item.service_type_display || item.service_type_name || item.service_type_code || 'Unknown',
+    value: (item.amount || 0) / 100,
+    percentage: ((item.amount || 0) / (earningsData?.totals?.gross_amount || 1) * 100).toFixed(1)
   })) || []
   
   const COLORS = ['#9CAF88', '#E07A5F', '#7A6F5D', '#F4A261']
@@ -163,13 +163,27 @@ export default function EarningsClient() {
                   <Skeleton className="h-[350px] w-full" />
                 ) : chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => `$${value}`} />
-                      <Line type="monotone" dataKey="net" stroke="#9CAF88" strokeWidth={2} name="Net Earnings" />
-                      <Line type="monotone" dataKey="gross" stroke="#E07A5F" strokeWidth={2} name="Gross Earnings" strokeDasharray="5 5" />
+                    <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="period"
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                      />
+                      <YAxis
+                        width={60}
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                      />
+                      <Line type="monotone" dataKey="net" stroke="#9CAF88" strokeWidth={2} name="Net Earnings" dot={{ fill: '#9CAF88', r: 4 }} />
+                      <Line type="monotone" dataKey="gross" stroke="#E07A5F" strokeWidth={2} name="Gross Earnings" strokeDasharray="5 5" dot={{ fill: '#E07A5F', r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
@@ -266,13 +280,27 @@ export default function EarningsClient() {
                   <Skeleton className="h-[350px] w-full" />
                 ) : chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => `$${value}`} />
-                      <Bar dataKey="net" fill="#9CAF88" name="Net Earnings" />
-                      <Bar dataKey="commission" fill="#E07A5F" name="Commission" />
+                    <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="period"
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                      />
+                      <YAxis
+                        width={60}
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                      />
+                      <Bar dataKey="net" fill="#9CAF88" name="Net Earnings" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="commission" fill="#E07A5F" name="Commission" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -283,7 +311,7 @@ export default function EarningsClient() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="yearly" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
@@ -369,12 +397,26 @@ export default function EarningsClient() {
                   <Skeleton className="h-[350px] w-full" />
                 ) : chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => `$${value}`} />
-                      <Bar dataKey="net" fill="#9CAF88" name="Net Earnings" />
+                    <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="period"
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                      />
+                      <YAxis
+                        width={60}
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                      />
+                      <Bar dataKey="net" fill="#9CAF88" name="Net Earnings" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (

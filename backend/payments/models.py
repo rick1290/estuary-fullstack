@@ -449,10 +449,12 @@ class PractitionerEarnings(BaseModel):
         self.save(update_fields=['pending_balance_cents', 'available_balance_cents'])
 
 
-class EarningsTransaction(BaseModel):
+class EarningsTransaction(PublicModel):
     """
     Model representing practitioner earnings from completed services.
     This replaces PractitionerCreditTransaction for clearer separation.
+
+    Inherits public_uuid from PublicModel for API exposure.
     """
     TRANSACTION_STATUS = (
         ('projected', 'Projected'),  # Future earnings (booked but not yet delivered)
@@ -531,10 +533,11 @@ class EarningsTransaction(BaseModel):
             models.Index(fields=['booking']),
             models.Index(fields=['status', 'available_after']),
             models.Index(fields=['payout']),
+            models.Index(fields=['public_uuid']),
         ]
-        
+
     def __str__(self):
-        return f"Earnings {self.id} - {self.practitioner} - ${self.net_amount}"
+        return f"Earnings {self.public_uuid} - {self.practitioner} - ${self.net_amount}"
     
     @property
     def gross_amount(self):
