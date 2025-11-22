@@ -92,16 +92,24 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
           </div>
 
           {/* Service details */}
-          <div className="p-4 flex-grow flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-            <div className="flex-grow space-y-2">
-              <div className="flex flex-wrap gap-2 mb-2">
+          <div className="p-4 flex-grow flex flex-col gap-4 w-full">
+            {/* Top row: badges and date */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
                 <ServiceTypeBadge type={service.type} />
                 <Badge variant={STATUS_VARIANTS[service.status] || "outline"}>
                   {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
                 </Badge>
               </div>
+              <div className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                Updated {formatDate(service.updatedAt)}
+              </div>
+            </div>
 
-              <h3 className="font-semibold text-lg">{service.name}</h3>
+            {/* Content row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-grow space-y-2">
+                <h3 className="font-semibold text-lg">{service.name}</h3>
 
               <p className="text-sm text-muted-foreground line-clamp-1 hidden sm:block">{service.description}</p>
 
@@ -134,10 +142,6 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
 
             {/* Action buttons */}
             <div className="flex items-center gap-2 self-end sm:self-center">
-              <div className="text-sm text-muted-foreground whitespace-nowrap">
-                Updated {formatDate(service.updatedAt)}
-              </div>
-
               <Button variant="outline" size="icon" asChild>
                 <Link href={`/dashboard/practitioner/services/edit/${service.id}`}>
                   <Edit className="h-4 w-4" />
