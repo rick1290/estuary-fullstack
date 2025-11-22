@@ -2,7 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type { UserProfileReadable } from "@/src/client/types.gen"
 
 // Define user types
@@ -26,7 +26,7 @@ function convertAPIUser(apiUser: UserProfileReadable): User {
   // Determine role based on practitioner profile existence and localStorage preference
   const storedRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null
   const hasPractitionerProfile = !!apiUser.practitioner_id
-  
+
   let role: UserRole = "user"
   if (hasPractitionerProfile) {
     // If user has practitioner profile, use stored preference or default to practitioner
@@ -34,7 +34,7 @@ function convertAPIUser(apiUser: UserProfileReadable): User {
   } else {
     role = "user"
   }
-  
+
   return {
     id: apiUser.id.toString(),
     numericId: apiUser.id,
@@ -55,11 +55,14 @@ export function useAuth() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const retryCountRef = useRef(0)
+  const maxRetries = 1
 
   // Handle logout using useCallback to avoid dependency issues
   const logout = useCallback(async () => {
     try {
       localStorage.removeItem("userRole")
+      retryCountRef.current = 0 // Reset retry count on logout
       await signOut({ redirect: false })
       router.push("/")
     } catch (error) {
@@ -67,53 +70,88 @@ export function useAuth() {
     }
   }, [router])
 
-  // Listen for auth refresh failures
-  useEffect(() => {
-    const handleRefreshFailed = () => {
-      console.error("Auth refresh failed event received, logging out...")
-      logout()
+  // Handle session refresh with retry logic
+  const handleSessionError = useCallback(async () => {
+    // If we haven't exceeded retries, try to refresh once more
+    if (retryCountRef.current < maxRetries) {
+      retryCountRef.current++
+      console.log(`Session error detected, attempting refresh (attempt ${retryCountRef.current}/${maxRetries})...`)
+
+      try {
+        // Force a session refresh
+        const newSession = await update()
+
+        if (newSession && !newSession.error) {
+          console.log("Session refreshed successfully after retry")
+          retryCountRef.current = 0 // Reset on success
+          return true
+        }
+      } catch (error) {
+        console.error("Session refresh retry failed:", error)
+      }
     }
-    
-    window.addEventListener('auth:refresh-failed', handleRefreshFailed)
-    
+
+    // If we've exhausted retries or refresh failed, logout
+    console.error("Session refresh failed after retries, logging out...")
+    await logout()
+    return false
+  }, [update, logout])
+
+  // Listen for 401 errors from API calls
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      console.warn("Received unauthorized event from API")
+      // Don't immediately logout - the session might still be valid
+      // Just trigger a session check
+      update()
+    }
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized)
+
     return () => {
-      window.removeEventListener('auth:refresh-failed', handleRefreshFailed)
+      window.removeEventListener('auth:unauthorized', handleUnauthorized)
     }
-  }, [logout])
-  
-  // Convert session user to our User type
+  }, [update])
+
+  // Convert session user to our User type and handle errors
   useEffect(() => {
-    // Check for session errors first
+    // Check for session errors
     if (session?.error === "RefreshAccessTokenError") {
-      console.error("Session refresh failed, logging out...")
-      setUser(null)
-      // Automatically log out on refresh error
-      logout()
+      // Don't immediately logout - try to handle gracefully
+      handleSessionError()
       return
     }
-    
+
+    // Reset retry count on successful session
+    if (session && !session.error) {
+      retryCountRef.current = 0
+    }
+
     if (session?.user && typeof session.user === 'object' && 'id' in session.user) {
       setUser(convertAPIUser(session.user as UserProfileReadable))
     } else {
       setUser(null)
     }
-  }, [session, logout])
+  }, [session, handleSessionError])
 
   const login = async (email: string, password: string) => {
     setIsLoading(true)
-    
+
     try {
       const result = await signIn("credentials", {
         redirect: false,
         email,
         password,
       })
-      
+
       if (result?.error) {
         throw new Error(result.error === "CredentialsSignin" ? "Invalid email or password" : result.error)
       }
-      
+
       if (result?.ok) {
+        // Reset retry count on successful login
+        retryCountRef.current = 0
+
         // Store role preference based on practitioner profile
         const updatedSession = await update()
         if (updatedSession?.user && 'practitioner_id' in updatedSession.user) {
@@ -122,7 +160,7 @@ export function useAuth() {
         }
         return
       }
-      
+
       throw new Error("Login failed")
     } catch (err: any) {
       throw err

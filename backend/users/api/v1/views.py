@@ -258,6 +258,118 @@ def logout_simple(request):
     }, status=status.HTTP_200_OK)
 
 
+class GoogleAuthView(APIView):
+    """Google OAuth authentication endpoint"""
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        operation_id='auth_google',
+        summary='Google OAuth login',
+        description='Authenticate user with Google ID token. Creates account if user does not exist.',
+        request={'application/json': {'type': 'object', 'properties': {'id_token': {'type': 'string'}}, 'required': ['id_token']}},
+        responses={
+            200: OpenApiResponse(response=TokenResponseSerializer, description='Login successful'),
+            400: OpenApiResponse(description='Invalid token'),
+            401: OpenApiResponse(description='Token verification failed'),
+        },
+        tags=['Authentication']
+    )
+    def post(self, request):
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        import os
+
+        token = request.data.get('id_token')
+        if not token:
+            return Response({
+                "message": "id_token is required",
+                "success": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Verify the token with Google
+            # The token was obtained by the frontend via NextAuth GoogleProvider
+            google_client_id = os.environ.get('GOOGLE_CLIENT_ID')
+
+            if not google_client_id:
+                return Response({
+                    "message": "Google OAuth not configured",
+                    "success": False
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Verify the token
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                google_client_id
+            )
+
+            # Get user info from token
+            email = idinfo.get('email')
+            email_verified = idinfo.get('email_verified', False)
+            first_name = idinfo.get('given_name', '')
+            last_name = idinfo.get('family_name', '')
+
+            if not email:
+                return Response({
+                    "message": "Email not provided by Google",
+                    "success": False
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not email_verified:
+                return Response({
+                    "message": "Google email not verified",
+                    "success": False
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Find or create user
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'account_status': 'active',
+                }
+            )
+
+            # Update name if user exists but name was empty
+            if not created and (not user.first_name or not user.last_name):
+                if first_name and not user.first_name:
+                    user.first_name = first_name
+                if last_name and not user.last_name:
+                    user.last_name = last_name
+                user.save(update_fields=['first_name', 'last_name'])
+
+            # Update last login
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+
+            response_data = {
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+                'token_type': 'bearer',
+                'expires_in': 1800,  # 30 minutes
+                'user': UserProfileSerializer(user).data
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            # Invalid token
+            return Response({
+                "message": f"Invalid Google token: {str(e)}",
+                "success": False
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({
+                "message": f"Authentication failed: {str(e)}",
+                "success": False
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @extend_schema(
     operation_id='user_stats',
     summary='Get user statistics',

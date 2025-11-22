@@ -172,3 +172,10 @@ class MessageResponseSerializer(serializers.Serializer):
     """Generic message response serializer"""
     message = serializers.CharField()
     success = serializers.BooleanField(default=True)
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    """Google OAuth authentication serializer"""
+    id_token = serializers.CharField(
+        help_text="Google ID token from OAuth flow"
+    )

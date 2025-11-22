@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { AuthModalProviderWrapper } from '@/components/auth/auth-modal-provider-wrapper';
 import { Toaster } from 'sonner';
-import '@/lib/token-monitor'; // Import to start token monitoring
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -24,7 +23,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SessionProvider>
+    <SessionProvider
+        // Refresh session every 4 minutes - this is the ONLY refresh mechanism
+        // NextAuth will handle token refresh internally when session is fetched
+        refetchInterval={4 * 60}
+        refetchOnWindowFocus={true}
+      >
       <QueryClientProvider client={queryClient}>
         <AuthModalProviderWrapper>
           {children}

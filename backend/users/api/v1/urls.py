@@ -7,6 +7,7 @@ from .views import (
     LoginView,
     TokenRefreshView,
     LogoutView,
+    GoogleAuthView,
     CurrentUserView,
     ChangePasswordView,
     logout_simple,
@@ -30,6 +31,7 @@ urlpatterns = [
     # Authentication endpoints
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
+    path('google/', GoogleAuthView.as_view(), name='google_auth'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('logout/simple/', logout_simple, name='logout_simple'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

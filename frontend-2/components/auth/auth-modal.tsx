@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { X, Check, Users, Star, Shield, ArrowRight, Eye, EyeOff, Sparkles, Heart } from "lucide-react"
+import { signIn } from "next-auth/react"
 import { useAuth } from "@/hooks/use-auth"
 import { authRegisterCreate } from "@/src/client/sdk.gen"
 import type { UserRegisterRequest } from "@/src/client/types.gen"
@@ -259,14 +260,23 @@ export default function AuthModal({
   const handleGoogleAuth = async () => {
     setError(null)
     setIsLoading(true)
-    setLoginSuccessful(false)
 
     try {
-      // TODO: Implement OAuth with Google
-      setError("Google authentication is not yet implemented. Please use email login.")
+      // Determine callback URL based on role selection (for signup tab)
+      let callbackUrl = redirectUrl || "/"
+
+      if (activeTab === "signup" && signupRole === "practitioner") {
+        // Store role preference for after OAuth completes
+        localStorage.setItem("pendingPractitionerOnboarding", "true")
+        callbackUrl = "/become-practitioner/onboarding"
+      }
+
+      // Google OAuth requires a full page redirect
+      await signIn("google", {
+        callbackUrl,
+      })
     } catch (err) {
       setError("Google authentication failed. Please try again.")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -699,11 +709,12 @@ export default function AuthModal({
                     </div>
                   </div>
 
-                  <div className="mt-6 grid grid-cols-2 gap-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleGoogleAuth} 
+                  <div className="mt-6 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleGoogleAuth}
                       disabled={isLoading}
+                      className="w-full max-w-xs"
                     >
                       <svg
                         className="mr-2 h-4 w-4"
@@ -730,17 +741,6 @@ export default function AuthModal({
                         />
                       </svg>
                       Google
-                    </Button>
-                    <Button variant="outline" disabled={isLoading}>
-                      <svg
-                        className="mr-2 h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                      </svg>
-                      Facebook
                     </Button>
                   </div>
                 </div>
