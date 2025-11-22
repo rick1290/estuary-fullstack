@@ -15,6 +15,7 @@ import { userAddFavorite, userRemoveFavorite } from "@/src/client/sdk.gen"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useUserFavorites } from "@/hooks/use-user-favorites"
+import { SendMessageModal } from "./send-message-modal"
 
 interface PractitionerBookingPanelProps {
   practitioner: Practitioner
@@ -23,6 +24,7 @@ interface PractitionerBookingPanelProps {
 export default function PractitionerBookingPanel({ practitioner }: PractitionerBookingPanelProps) {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [messageModalOpen, setMessageModalOpen] = useState(false)
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -84,7 +86,7 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
   const handleMessageClick = (e: React.MouseEvent) => {
     e.preventDefault()
     if (isAuthenticated) {
-      router.push(`/practitioners/${practitioner.id}/contact`)
+      setMessageModalOpen(true)
     } else {
       openAuthModal({
         redirectUrl: `/practitioners/${practitioner.id}`,
@@ -217,6 +219,11 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
         </CardContent>
       </Card>
 
+      <SendMessageModal
+        open={messageModalOpen}
+        onOpenChange={setMessageModalOpen}
+        practitioner={practitioner}
+      />
     </>
   )
 }
