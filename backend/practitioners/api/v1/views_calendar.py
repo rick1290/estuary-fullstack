@@ -159,6 +159,9 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
             OpenApiParameter('end_date', OpenApiTypes.DATETIME, description='Filter events before this date'),
             OpenApiParameter('service_type', OpenApiTypes.STR, enum=['session', 'workshop', 'course']),
             OpenApiParameter('status', OpenApiTypes.STR, enum=['confirmed', 'in_progress', 'completed', 'cancelled']),
+            OpenApiParameter('upcoming', OpenApiTypes.BOOL, description='Filter to upcoming events (soonest first)'),
+            OpenApiParameter('past', OpenApiTypes.BOOL, description='Filter to past events'),
+            OpenApiParameter('sort', OpenApiTypes.STR, enum=['asc', 'desc'], description='Sort order by start_time'),
         ],
         responses={200: ServiceSessionEventSerializer(many=True)},
         description="Get practitioner's calendar events with aggregated attendees"
@@ -168,6 +171,11 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         Get all calendar events for the authenticated practitioner.
 
         Returns all ServiceSessions with their associated bookings/attendees.
+
+        Convenience filters:
+        - upcoming=true: Events with start_time >= now, status in [confirmed, in_progress], sorted ascending (soonest first)
+        - past=true: Events with end_time < now OR status=completed, sorted descending (most recent first)
+        - sort=asc|desc: Override default sort order
         """
         user = request.user
 
@@ -188,25 +196,52 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         end_date = query_serializer.validated_data.get('end_date')
         service_type_filter = query_serializer.validated_data.get('service_type')
         status_filter = query_serializer.validated_data.get('status')
+        upcoming_filter = query_serializer.validated_data.get('upcoming', False)
+        past_filter = query_serializer.validated_data.get('past', False)
+        sort_order = query_serializer.validated_data.get('sort')
+
+        # Apply convenience filters
+        now = timezone.now()
+
+        if upcoming_filter:
+            # Upcoming: start_time >= now (or in_progress), status in [confirmed, in_progress]
+            if not start_date:
+                start_date = now
+            # Status filter is applied in _get_service_session_events via post-filtering
+
+        if past_filter:
+            # Past: end_time < now OR status=completed
+            if not end_date:
+                end_date = now
 
         # Get all ServiceSession events
         # NOTE: After migration, ALL bookings have service_session (including 1-on-1 sessions)
         # So we only need to query ServiceSessions to get the full calendar
         events = self._get_service_session_events(
-            practitioner, start_date, end_date, service_type_filter, status_filter
+            practitioner, start_date, end_date, service_type_filter, status_filter,
+            upcoming=upcoming_filter, past=past_filter
         )
 
-        # Sort all events by start_time (most recent first)
+        # Determine sort order
+        # Default: upcoming=asc (soonest first), past/all=desc (most recent first)
+        if sort_order:
+            sort_descending = (sort_order == 'desc')
+        elif upcoming_filter:
+            sort_descending = False  # ascending for upcoming (soonest first)
+        else:
+            sort_descending = True  # descending for past/all (most recent first)
+
+        # Sort all events by start_time
         # Handle None start_time for unscheduled sessions (put them at the end)
         from datetime import datetime, timezone as dt_timezone
         events.sort(
             key=lambda x: x['start_time'] if x['start_time'] is not None else datetime.min.replace(tzinfo=dt_timezone.utc),
-            reverse=True
+            reverse=sort_descending
         )
 
         return Response(events)
 
-    def _get_service_session_events(self, practitioner, start_date=None, end_date=None, service_type=None, status_filter=None):
+    def _get_service_session_events(self, practitioner, start_date=None, end_date=None, service_type=None, status_filter=None, upcoming=False, past=False):
         """
         Get ServiceSession events with aggregated attendee information.
 
@@ -214,7 +249,13 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         - Workshops: One ServiceSession with multiple bookings
         - Courses: Multiple ServiceSessions (one per class) with multiple bookings each
         - 1-on-1 Sessions: Individual ServiceSessions with single booking each
+
+        Args:
+            upcoming: If True, only include events that haven't ended yet with active status
+            past: If True, only include events that have ended or are completed
         """
+        now = timezone.now()
+
         # Base query for ServiceSessions belonging to practitioner's services
         queryset = ServiceSession.objects.filter(
             service__primary_practitioner=practitioner
@@ -234,7 +275,10 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
         if start_date:
             queryset = queryset.filter(start_time__gte=start_date)
         if end_date:
-            queryset = queryset.filter(start_time__lte=end_date)
+            # For past filter, use end_time if available, otherwise start_time
+            queryset = queryset.filter(
+                Q(end_time__lte=end_date) | Q(end_time__isnull=True, start_time__lte=end_date)
+            )
 
         # Filter by service type
         if service_type:
@@ -285,6 +329,27 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
                     event_status = 'confirmed'  # Mixed status
             else:
                 event_status = 'confirmed'
+
+            # Apply upcoming/past filter based on event_status
+            if upcoming:
+                # For upcoming: only include confirmed or in_progress events
+                # Also check that the event hasn't ended yet
+                if event_status not in ['confirmed', 'in_progress']:
+                    continue
+                # Check if event has ended (use end_time if available)
+                end_time = session.end_time or session.start_time
+                if end_time and end_time < now and event_status != 'in_progress':
+                    continue
+
+            if past:
+                # For past: include completed events OR events that have ended
+                end_time = session.end_time or session.start_time
+                is_ended = end_time and end_time < now
+                if event_status != 'completed' and not is_ended:
+                    continue
+                # Exclude in_progress (they're still active)
+                if event_status == 'in_progress':
+                    continue
 
             # Get recordings if room exists
             recordings = []

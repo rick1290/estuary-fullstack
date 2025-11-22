@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { calendarListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
-import { format, parseISO, isPast, isFuture } from "date-fns"
+import { format, parseISO } from "date-fns"
 import Link from "next/link"
 
 // Service type configuration (matching bookings list)
@@ -68,8 +68,15 @@ export default function PractitionerCalendarList() {
       params.service_type = serviceTypeFilter
     }
 
-    // Status filter (only apply if not filtered by tab)
-    if (statusFilter !== "all" && !["upcoming", "canceled", "past"].includes(selectedTab)) {
+    // Use backend filters for upcoming/past tabs
+    if (selectedTab === "upcoming") {
+      params.upcoming = true
+    } else if (selectedTab === "past") {
+      params.past = true
+    } else if (selectedTab === "canceled") {
+      params.status = "cancelled"
+    } else if (statusFilter !== "all") {
+      // Status filter only for "all" tab
       params.status = statusFilter
     }
 
@@ -85,9 +92,9 @@ export default function PractitionerCalendarList() {
 
   const events = calendarEvents || []
 
-  // Filter events based on selected tab and search term
+  // Filter events based on search term only (backend handles tab filtering)
   const filteredEvents = events.filter((event: any) => {
-    // Search filter
+    // Search filter (client-side)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       const serviceName = event.service?.name?.toLowerCase() || ''
@@ -108,37 +115,6 @@ export default function PractitionerCalendarList() {
           return false
         }
       }
-    }
-
-    // Tab filter
-    if (selectedTab === "all") return true
-
-    if (selectedTab === "upcoming") {
-      // Show confirmed or in_progress events that haven't ended yet
-      const isActiveStatus = event.status === "confirmed" || event.status === "in_progress"
-      if (!isActiveStatus) return false
-
-      // Check if event hasn't ended (use end_time if available, otherwise start_time)
-      const endTime = event.end_time ? parseISO(event.end_time) : null
-      const startTime = event.start_time ? parseISO(event.start_time) : null
-
-      if (endTime) {
-        return isFuture(endTime) || event.status === "in_progress"
-      } else if (startTime) {
-        return isFuture(startTime) || event.status === "in_progress"
-      }
-      return false
-    } else if (selectedTab === "past") {
-      // Show completed events OR events with end_time in the past
-      if (event.status === "completed") return true
-
-      const endTime = event.end_time ? parseISO(event.end_time) : null
-      if (endTime && isPast(endTime) && event.status !== "in_progress") {
-        return true
-      }
-      return false
-    } else if (selectedTab === "canceled") {
-      return event.status === "cancelled" || event.status === "canceled"
     }
 
     return true
