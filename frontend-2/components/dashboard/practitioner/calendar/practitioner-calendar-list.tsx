@@ -27,23 +27,38 @@ const serviceTypeConfig = {
 }
 
 // Status badge variant mapping
+// ServiceSession statuses: draft, scheduled, in_progress, completed, canceled
+// Booking statuses: draft, pending_payment, confirmed, canceled
 const statusVariants = {
+  // ServiceSession statuses
+  draft: "secondary" as const,
+  scheduled: "success" as const,      // Upcoming session
+  in_progress: "default" as const,    // Currently happening
+  completed: "outline" as const,      // Finished
+  canceled: "destructive" as const,
+  cancelled: "destructive" as const,  // Alias
+  // Booking statuses (for backward compatibility)
   confirmed: "success" as const,
   pending: "secondary" as const,
   pending_payment: "warning" as const,
-  cancelled: "destructive" as const,
-  canceled: "destructive" as const,
-  completed: "outline" as const,
-  in_progress: "default" as const,
 }
 
-// Check if a session can be joined (matching bookings list logic)
-const isSessionJoinable = (booking: any) => {
-  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+// Check if a session can be joined
+// Uses ServiceSession status (scheduled, in_progress) or booking status for backward compatibility
+const isSessionJoinable = (event: any) => {
+  const startTimeStr = event.start_time || event.service_session?.start_time
+  const status = event.status
+
+  // Must have a start time and be in a joinable status
+  if (!startTimeStr) return false
+  if (!['scheduled', 'in_progress', 'confirmed'].includes(status)) return false
 
   const now = new Date()
-  const startTime = parseISO(booking.service_session?.start_time)
-  const endTime = booking.service_session?.end_time ? parseISO(booking.service_session?.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
+  const startTime = parseISO(startTimeStr)
+  const endTimeStr = event.end_time || event.service_session?.end_time
+  const endTime = endTimeStr
+    ? parseISO(endTimeStr)
+    : new Date(startTime.getTime() + (event.duration_minutes || 60) * 60 * 1000)
 
   // Allow joining 15 minutes before start and until the session ends
   const joinWindowStart = new Date(startTime.getTime() - 15 * 60 * 1000)
@@ -369,7 +384,7 @@ function ScheduleTable({
                     {/* Inline Join Button for virtual sessions */}
                     {scheduleEvent.location === "Virtual" &&
                      calendarEvent?.room?.public_uuid &&
-                     (scheduleEvent.status === "confirmed" || scheduleEvent.status === "in_progress") && (
+                     ["scheduled", "confirmed", "in_progress"].includes(scheduleEvent.status) && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -418,7 +433,7 @@ function ScheduleTable({
                             </Link>
                           )}
                         </DropdownMenuItem>
-                        {scheduleEvent.status === "confirmed" && !isServiceSession && (
+                        {["scheduled", "confirmed"].includes(scheduleEvent.status) && !isServiceSession && (
                           <>
                             <DropdownMenuItem>Reschedule</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>

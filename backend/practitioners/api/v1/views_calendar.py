@@ -104,19 +104,14 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
                 'public_uuid': booking.public_uuid,
             })
 
-        # Determine overall status
-        statuses = [b.status for b in service_session.bookings.all()]
-        if 'in_progress' in statuses:
-            event_status = 'in_progress'
-        elif all(s == 'completed' for s in statuses):
-            event_status = 'completed'
-        elif 'cancelled' in statuses or 'canceled' in statuses:
-            if all(s in ['cancelled', 'canceled'] for s in statuses):
-                event_status = 'cancelled'
-            else:
-                event_status = 'confirmed'
-        else:
-            event_status = 'confirmed'
+        # Use ServiceSession.status directly (new architecture)
+        event_status = service_session.status or 'scheduled'
+
+        # For backward compatibility: if all bookings canceled, mark as canceled
+        if event_status == 'scheduled':
+            all_bookings = list(service_session.bookings.all())
+            if all_bookings and all(b.status == 'canceled' for b in all_bookings):
+                event_status = 'canceled'
 
         # Get recordings if room exists
         recordings = []
@@ -312,29 +307,25 @@ class PractitionerCalendarViewSet(viewsets.ViewSet):
                     'public_uuid': booking.public_uuid,
                 })
 
-            # Determine overall status
-            # If any booking is in_progress, session is in_progress
-            # If all completed, session is completed
-            # Otherwise, confirmed
-            statuses = [b.status for b in bookings]
-            if 'in_progress' in statuses:
-                event_status = 'in_progress'
-            elif all(s == 'completed' for s in statuses):
-                event_status = 'completed'
-            elif 'cancelled' in statuses or 'canceled' in statuses:
-                # Check if all cancelled
-                if all(s in ['cancelled', 'canceled'] for s in statuses):
-                    event_status = 'cancelled'
+            # Use ServiceSession.status directly (new architecture)
+            # Status lifecycle: draft → scheduled → in_progress → completed (or canceled)
+            event_status = session.status
+
+            # For backward compatibility, map old booking-derived statuses
+            # If session has no explicit status set, fall back to 'scheduled'
+            if not event_status or event_status == 'scheduled':
+                # Check if any bookings are canceled
+                canceled_statuses = [b.status for b in bookings if b.status == 'canceled']
+                if len(canceled_statuses) == len(bookings) and bookings:
+                    event_status = 'canceled'
                 else:
-                    event_status = 'confirmed'  # Mixed status
-            else:
-                event_status = 'confirmed'
+                    event_status = 'scheduled'
 
             # Apply upcoming/past filter based on event_status
             if upcoming:
-                # For upcoming: only include confirmed or in_progress events
+                # For upcoming: only include scheduled or in_progress events
                 # Also check that the event hasn't ended yet
-                if event_status not in ['confirmed', 'in_progress']:
+                if event_status not in ['scheduled', 'in_progress']:
                     continue
                 # Check if event has ended (use end_time if available)
                 end_time = session.end_time or session.start_time

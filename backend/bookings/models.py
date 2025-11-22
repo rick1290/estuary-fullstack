@@ -4,15 +4,14 @@ from django.core.exceptions import ValidationError
 from utils.models import BaseModel, PublicModel
 from decimal import Decimal
 
-# Booking status choices - Clear progression
+# Booking status choices - Purchase/reservation lifecycle only
+# NOTE: Session lifecycle (in_progress, completed) is tracked on ServiceSession
+# NOTE: Attendance (attended, no_show) is tracked on SessionParticipant
 BOOKING_STATUS_CHOICES = [
-    ('draft', 'Draft'),  # Initial creation, not yet submitted
+    ('draft', 'Draft'),              # Initial creation, not yet submitted
     ('pending_payment', 'Pending Payment'),  # Awaiting payment
-    ('confirmed', 'Confirmed'),  # Payment received, booking confirmed
-    ('in_progress', 'In Progress'),  # Service currently happening
-    ('completed', 'Completed'),  # Service finished successfully
-    ('canceled', 'Canceled'),  # Booking was canceled
-    ('no_show', 'No Show'),  # Client didn't attend
+    ('confirmed', 'Confirmed'),      # Payment received, seat reserved
+    ('canceled', 'Canceled'),        # Booking was canceled
 ]
 
 # Payment status choices - Separate from booking status
@@ -275,7 +274,11 @@ class Booking(PublicModel):
     @property
     def can_be_canceled(self):
         """Check if booking can still be canceled."""
-        if self.status in ['completed', 'canceled', 'no_show']:
+        if self.status == 'canceled':
+            return False
+
+        # Check if session has already started/completed
+        if self.service_session and self.service_session.status in ['in_progress', 'completed', 'canceled']:
             return False
 
         start = self.get_start_time()
@@ -304,7 +307,7 @@ class Booking(PublicModel):
     @property
     def can_be_rescheduled(self):
         """Check if booking can be rescheduled."""
-        return self.can_be_canceled and self.status not in ['rescheduled']
+        return self.can_be_canceled
 
     @property
     def is_past(self):
@@ -323,19 +326,17 @@ class Booking(PublicModel):
     def can_transition_to(self, new_status):
         """Check if transition to new status is valid."""
         # Define valid transitions
+        # NOTE: in_progress/completed/no_show moved to ServiceSession/SessionParticipant
         valid_transitions = {
-            'draft': ['pending_payment', 'canceled'],
+            'draft': ['pending_payment', 'confirmed', 'canceled'],
             'pending_payment': ['confirmed', 'canceled'],
-            'confirmed': ['in_progress', 'canceled', 'no_show'],
-            'in_progress': ['completed', 'no_show'],
-            'completed': [],  # Terminal state
+            'confirmed': ['canceled'],  # Can only cancel once confirmed
             'canceled': [],  # Terminal state
-            'no_show': [],  # Terminal state
         }
-        
+
         current_transitions = valid_transitions.get(self.status, [])
         return new_status in current_transitions
-    
+
     def transition_to(self, new_status, **kwargs):
         """Transition to a new status with validation."""
         if not self.can_transition_to(new_status):
@@ -350,35 +351,18 @@ class Booking(PublicModel):
         # Handle status-specific updates
         if new_status == 'confirmed':
             self.confirmed_at = kwargs.get('confirmed_at', timezone.now())
-        elif new_status == 'in_progress':
-            # Track actual start time on ServiceSession
-            if self.service_session and not self.service_session.actual_start_time:
-                self.service_session.actual_start_time = kwargs.get('started_at', timezone.now())
-                self.service_session.save(update_fields=['actual_start_time'])
-        elif new_status == 'completed':
-            self.completed_at = kwargs.get('completed_at', timezone.now())
-            # Track actual end time on ServiceSession
-            if self.service_session and not self.service_session.actual_end_time:
-                self.service_session.actual_end_time = self.completed_at
-                self.service_session.save(update_fields=['actual_end_time'])
         elif new_status == 'canceled':
             self.canceled_at = kwargs.get('canceled_at', timezone.now())
             self.canceled_by = kwargs.get('canceled_by', 'system')
             self.cancellation_reason = kwargs.get('reason')
-        elif new_status == 'no_show':
-            self.no_show_at = kwargs.get('no_show_at', timezone.now())
 
         self.save()
         return old_status
     
     # Booking actions
-    def mark_completed(self, completion_time=None):
-        """Mark booking as completed."""
-        self.transition_to('completed', completed_at=completion_time)
-
-    def mark_no_show(self):
-        """Mark booking as no-show."""
-        self.transition_to('no_show')
+    # NOTE: mark_completed and mark_no_show moved to SessionParticipant
+    # Session lifecycle is tracked on ServiceSession.status
+    # Attendance is tracked on SessionParticipant.attendance_status
     
     def calculate_refund_amount(self):
         """
@@ -432,7 +416,8 @@ class Booking(PublicModel):
         # Cancel related bookings if this is part of a package/bundle order
         if self.order and self.order.bookings.count() > 1:
             for booking in self.order.bookings.exclude(
-                status__in=['canceled', 'completed'],
+                status='canceled'
+            ).exclude(
                 public_uuid=self.public_uuid
             ):
                 booking.cancel(

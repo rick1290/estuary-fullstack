@@ -612,9 +612,6 @@ def create_booking_for_order(order, metadata):
                 order=order
             )
             
-            # Add user as a participant to the service session
-            add_participant_to_session(order.user, service_session)
-            
             # Update order metadata with booking ID
             update_order_metadata_with_booking(order, booking)
             
@@ -707,12 +704,9 @@ def create_booking_for_order(order, metadata):
             
             # Get all service sessions for this course
             service_sessions = ServiceSession.objects.filter(service=service)
-            
-            # Add user as a participant to all service sessions
+
+            # Create a child booking for each session
             for session in service_sessions:
-                add_participant_to_session(order.user, session)
-                
-                # Create a child booking for each session
                 Booking.objects.create(
                     user=order.user,
                     service=service,
@@ -779,36 +773,10 @@ def update_order_metadata_with_booking(order, booking):
     except Exception as e:
         logger.exception(f"Error updating order metadata with booking: {str(e)}")
 
-def add_participant_to_session(user, service_session):
-    """
-    Add a user as a participant to a service session.
-    
-    Args:
-        user: User object
-        service_session: ServiceSession object
-    """
-    try:
-        from apps.services.models import SessionParticipant
-        
-        # Check if user is already a participant
-        existing = SessionParticipant.objects.filter(
-            user=user,
-            service_session=service_session
-        ).exists()
-        
-        if not existing:
-            # Create a new participant record
-            SessionParticipant.objects.create(
-                user=user,
-                service_session=service_session,
-                status='confirmed',
-                attended=False  # Will be updated after the session
-            )
-            
-        logger.info(f"Added user {user.id} as participant to session {service_session.id}")
-        
-    except Exception as e:
-        logger.exception(f"Error adding participant to session: {str(e)}")
+## REMOVED: add_participant_to_session
+# SessionParticipant is deprecated - attendance is tracked via RoomParticipant
+# When user joins video room, RoomParticipant is created by LiveKit webhook
+# No-shows can be derived by comparing Booking users vs RoomParticipant users
 
 def handle_refund_for_bookings(order, is_full_refund):
     """

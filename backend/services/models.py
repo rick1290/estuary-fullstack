@@ -736,6 +736,15 @@ class ServiceSession(models.Model):
         ('unlisted', 'Unlisted'),    # Can access with link, not in listings
     ]
 
+    # Session status choices - tracks the lifecycle of the scheduled event
+    SESSION_STATUS_CHOICES = [
+        ('draft', 'Draft'),           # Unscheduled (no start_time yet)
+        ('scheduled', 'Scheduled'),   # Has start_time, waiting to happen
+        ('in_progress', 'In Progress'), # Room started, session is active
+        ('completed', 'Completed'),   # Session ended normally
+        ('canceled', 'Canceled'),     # Session was canceled
+    ]
+
     id = models.BigAutoField(primary_key=True)
     service = models.ForeignKey(Service, models.CASCADE, related_name='sessions')
 
@@ -787,7 +796,8 @@ class ServiceSession(models.Model):
     # Access room via: service_session.livekit_room
     # room = REMOVED - use livekit_room instead
     price_cents = models.IntegerField(blank=True, null=True, help_text="Price override in cents")
-    status = models.CharField(max_length=20, default='scheduled')
+    status = models.CharField(max_length=20, choices=SESSION_STATUS_CHOICES, default='scheduled',
+                             help_text="Lifecycle status of the session (draft/scheduled/in_progress/completed/canceled)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     agenda = models.TextField(blank=True, null=True)
@@ -968,22 +978,68 @@ class ServiceSession(models.Model):
 
 class SessionParticipant(models.Model):
     """
-    Model representing a participant in a service session.
+    DEPRECATED: This model is no longer used for attendance tracking.
+
+    Attendance is now tracked via RoomParticipant (rooms app):
+    - RoomParticipant is created when user joins video room (LiveKit webhook)
+    - RoomParticipant tracks joined_at, left_at, duration_seconds
+    - No-shows = Booking users without corresponding RoomParticipant
+
+    This model is kept for backward compatibility but should not be used for new code.
+    Consider removing in a future migration.
     """
+    # Attendance status choices
+    ATTENDANCE_STATUS_CHOICES = [
+        ('registered', 'Registered'),   # Has a seat, session hasn't happened
+        ('checked_in', 'Checked In'),   # Joined the room/session
+        ('attended', 'Attended'),       # Completed the session
+        ('no_show', 'No Show'),         # Didn't attend
+        ('partial', 'Partial'),         # Left early or joined late
+    ]
+
     id = models.BigAutoField(primary_key=True)
     session = models.ForeignKey(ServiceSession, models.CASCADE, related_name='participants')
-    user = models.ForeignKey('users.User', models.CASCADE)
-    booking = models.ForeignKey('bookings.Booking', models.CASCADE)
-    attendance_status = models.CharField(max_length=20, default='registered')
-    check_in_time = models.DateTimeField(null=True, blank=True)
-    check_out_time = models.DateTimeField(null=True, blank=True)
-    
+    user = models.ForeignKey('users.User', models.CASCADE, related_name='session_participations')
+    booking = models.ForeignKey('bookings.Booking', models.CASCADE, related_name='session_participations')
+    attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default='registered',
+                                        help_text="Tracks whether the user attended the session")
+    check_in_time = models.DateTimeField(null=True, blank=True, help_text="When user joined the session")
+    check_out_time = models.DateTimeField(null=True, blank=True, help_text="When user left the session")
+
+    # Duration tracking (populated from RoomParticipant data)
+    duration_seconds = models.PositiveIntegerField(default=0, help_text="Total time in session (seconds)")
+
     class Meta:
         db_table = 'session_participants'
         unique_together = (('session', 'user'),)
-    
+        indexes = [
+            models.Index(fields=['session', 'attendance_status']),
+            models.Index(fields=['user', 'attendance_status']),
+        ]
+
     def __str__(self):
         return f"{self.user} in {self.session}"
+
+    def mark_checked_in(self, check_in_time=None):
+        """Mark participant as checked in (joined the session)."""
+        from django.utils import timezone
+        self.attendance_status = 'checked_in'
+        self.check_in_time = check_in_time or timezone.now()
+        self.save(update_fields=['attendance_status', 'check_in_time'])
+
+    def mark_attended(self, check_out_time=None, duration_seconds=None):
+        """Mark participant as having attended the full session."""
+        from django.utils import timezone
+        self.attendance_status = 'attended'
+        self.check_out_time = check_out_time or timezone.now()
+        if duration_seconds:
+            self.duration_seconds = duration_seconds
+        self.save(update_fields=['attendance_status', 'check_out_time', 'duration_seconds'])
+
+    def mark_no_show(self):
+        """Mark participant as no-show."""
+        self.attendance_status = 'no_show'
+        self.save(update_fields=['attendance_status'])
 
 
 
