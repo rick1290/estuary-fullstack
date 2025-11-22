@@ -468,7 +468,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const markCompletedMutation = useMutation({
     ...serviceSessionsMarkCompletedCreateMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+      refetch()
     },
   })
 
@@ -476,7 +476,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const markInProgressMutation = useMutation({
     ...serviceSessionsMarkInProgressCreateMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['serviceSessionsRetrieve'] })
+      refetch()
     },
   })
 
