@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { bookingsCheckAvailabilityCreate } from "@/src/client"
@@ -317,9 +317,13 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             Reserve Your Transformation
           </Button>
 
-          <p className="text-sm text-center text-olive-600 mt-4">
-            ✓ Instant confirmation • ✓ Secure checkout
-          </p>
+          <div className="text-center text-olive-600 mt-4 space-y-1">
+            <p className="text-sm">✓ Instant confirmation • ✓ Secure checkout</p>
+            <p className="text-xs flex items-center justify-center gap-1">
+              <Globe className="h-3 w-3" />
+              Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}
+            </p>
+          </div>
         </CardContent>
       </Card>
   )
