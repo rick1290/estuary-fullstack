@@ -734,11 +734,12 @@ async def check_availability(
     ).all()
     
     if conflicts:
+        # Note: start_time and end_time are now on ServiceSession, use accessor methods
         conflict_info = [
             {
                 "booking_id": str(booking.id),
-                "start_time": booking.start_time.isoformat(),
-                "end_time": booking.end_time.isoformat() if booking.end_time else None,
+                "start_time": booking.get_start_time().isoformat() if booking.get_start_time() else None,
+                "end_time": booking.get_end_time().isoformat() if booking.get_end_time() else None,
                 "service_name": booking.service.name if booking.service else None
             }
             for booking in conflicts

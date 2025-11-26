@@ -157,15 +157,17 @@ class CreditService:
         
         Args:
             booking: Booking to calculate refund for
-            
+
         Returns:
             Amount to refund in cents
         """
-        if not booking.start_time:
+        # Note: start_time is now on ServiceSession, use accessor method
+        booking_start_time = booking.get_start_time()
+        if not booking_start_time:
             # No scheduled time, full refund
             return booking.price_charged_cents
-        
-        time_until_booking = booking.start_time - timezone.now()
+
+        time_until_booking = booking_start_time - timezone.now()
         hours_until = time_until_booking.total_seconds() / 3600
         
         if hours_until >= 24:

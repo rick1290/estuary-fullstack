@@ -360,15 +360,16 @@ def filter_booked_slots(
         # Get date range from slots
         start_date = min(slot['date'] for slot in slots)
         end_date = max(slot['date'] for slot in slots)
-        
+
         # Get bookings for this practitioner in this date range
+        # Note: start_time is now on ServiceSession, query via service_session
         bookings = Booking.objects.filter(
             practitioner=practitioner,
-            start_time__date__gte=start_date,
-            start_time__date__lte=end_date,
+            service_session__start_time__date__gte=start_date,
+            service_session__start_time__date__lte=end_date,
             status__in=['confirmed', 'pending']
-        )
-        
+        ).select_related('service_session', 'service')
+
         # Create booking time ranges (with buffer)
         booking_ranges = []
         for booking in bookings:
@@ -376,24 +377,20 @@ def filter_booked_slots(
             buffer_minutes = getattr(booking, 'buffer_time', 0) or 0
             buffer_before = timedelta(minutes=buffer_minutes)
             buffer_after = timedelta(minutes=buffer_minutes)
-            
-            # Get booking start and end times
-            booking_start = booking.start_time
+
+            # Get booking start and end times from service_session (via accessor)
+            booking_start = booking.get_start_time()
             if booking_start is None:
                 continue
-                
-            # Calculate booking end time
-            booking_end = getattr(booking, 'end_time', None)
+
+            # Get booking end time from service_session (via accessor)
+            booking_end = booking.get_end_time()
             if booking_end is None:
-                # Try to get duration from booking or service
-                booking_duration = getattr(booking, 'duration', None)
-                if booking_duration is None:
-                    # Try to get duration from booking.service
-                    if hasattr(booking, 'service') and booking.service:
-                        booking_duration = getattr(booking.service, 'duration', 60)
-                    else:
-                        booking_duration = 60  # Default to 1 hour
-                
+                # Fallback: calculate from duration
+                booking_duration = 60  # Default to 1 hour
+                if hasattr(booking, 'service') and booking.service:
+                    booking_duration = getattr(booking.service, 'duration_minutes', 60) or 60
+
                 booking_end = booking_start + timedelta(minutes=booking_duration)
             
             # Apply buffer

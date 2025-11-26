@@ -19,7 +19,27 @@ class ClientNotificationService(BaseNotificationService):
     """
     Handle all client-related notifications.
     """
-    
+
+    def _get_booking_location(self, booking) -> str:
+        """
+        Get location display string for a booking.
+        Location now lives on ServiceSession, not Booking.
+        """
+        # Check service_session for location (new architecture)
+        if booking.service_session:
+            if booking.service_session.practitioner_location:
+                return booking.service_session.practitioner_location.name
+            # Check service level location as fallback
+            if booking.service and booking.service.practitioner_location:
+                return booking.service.practitioner_location.name
+
+        # For virtual sessions, check for room
+        room = getattr(booking, 'room', None) or getattr(booking, 'livekit_room', None)
+        if room:
+            return 'Virtual'
+
+        return 'TBD'
+
     # Email templates and subjects (using Resend)
     TEMPLATES = {
         'welcome': {
@@ -178,7 +198,7 @@ class ClientNotificationService(BaseNotificationService):
             'booking_date': dt_formatted['date'],
             'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
+            'location': self._get_booking_location(booking),
             'total_amount': f"${(booking.credits_allocated or 0) / 100:.2f}",
             'credits_used': f"${(booking.order.credits_used_cents or 0) / 100:.2f}" if booking.order and booking.order.credits_used_cents else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
@@ -376,7 +396,7 @@ class ClientNotificationService(BaseNotificationService):
             'booking_date': dt_formatted['date'],
             'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
+            'location': self._get_booking_location(booking),
             'hours_until': hours_before,
             'time_until': f"{hours_before} hours" if hours_before > 1 else "30 minutes",
             'time_until_human': self._format_time_until(time_until),
@@ -527,7 +547,7 @@ class ClientNotificationService(BaseNotificationService):
             'session_date': session.start_time.strftime('%A, %B %d, %Y'),
             'session_time': session.start_time.strftime('%I:%M %p'),
             'duration_minutes': session.duration or service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.livekit_room else 'TBD'),
+            'location': self._get_booking_location(booking),
             'hours_until': hours_before,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'session_url': f"{settings.FRONTEND_URL}/dashboard/user/sessions/{session.id}",

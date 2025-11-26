@@ -40,12 +40,15 @@ def mark_completed_bookings():
             end_time_used = None
             
             # Determine if booking should be completed based on service type
+            # Note: end_time is now on ServiceSession, use accessor method
+            booking_end_time = booking.get_end_time()
+
             if booking.service.service_type_code == 'session':
-                # For sessions, use the booking's end_time
-                if booking.end_time < now:
+                # For sessions, use the service_session's end_time
+                if booking_end_time and booking_end_time < now:
                     should_complete = True
-                    end_time_used = booking.end_time
-                    
+                    end_time_used = booking_end_time
+
             elif booking.service.service_type_code == 'workshop':
                 # For workshops, check the service session's end_time
                 if booking.service_session and booking.service_session.end_time < now:

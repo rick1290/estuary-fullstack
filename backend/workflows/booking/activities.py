@@ -38,10 +38,14 @@ async def validate_booking(booking_id: str) -> Optional[Dict[str, Any]]:
             logger.warning(f"Booking {booking_id} is not confirmed. Status: {booking.status}")
             return None
         
+        # Note: start_time and end_time are now on ServiceSession, use accessor methods
+        start_time = booking.get_start_time()
+        end_time = booking.get_end_time()
+
         return {
             'id': str(booking.id),
-            'start_time': booking.start_time.isoformat(),
-            'end_time': booking.end_time.isoformat(),
+            'start_time': start_time.isoformat() if start_time else None,
+            'end_time': end_time.isoformat() if end_time else None,
             'duration_minutes': booking.duration_minutes,
             'service_name': booking.service.name,
             'service_type': booking.service.service_type.code,
@@ -50,8 +54,8 @@ async def validate_booking(booking_id: str) -> Optional[Dict[str, Any]]:
             'client_phone': booking.user.phone_number,
             'practitioner_name': booking.practitioner.user.full_name,
             'practitioner_email': booking.practitioner.user.email,
-            'location_type': booking.location_type,
-            'price_cents': booking.total_price_cents,
+            'location_type': booking.service.location_type if booking.service else None,
+            'price_cents': booking.credits_allocated,
         }
     except Booking.DoesNotExist:
         logger.error(f"Booking {booking_id} not found")
@@ -79,11 +83,11 @@ async def send_booking_confirmation(booking_id: str) -> bool:
                 'booking': booking,
                 'client_name': booking.user.first_name,
                 'service_name': booking.service.name,
-                'start_time': booking.start_time,
+                'start_time': booking.get_start_time(),
                 'practitioner_name': booking.practitioner.display_name,
             }
         )
-        
+
         # Send to practitioner
         await send_email(
             to_email=booking.practitioner.user.email,
@@ -93,7 +97,7 @@ async def send_booking_confirmation(booking_id: str) -> bool:
                 'practitioner_name': booking.practitioner.user.first_name,
                 'client_name': booking.user.full_name,
                 'service_name': booking.service.name,
-                'start_time': booking.start_time,
+                'start_time': booking.get_start_time(),
             }
         )
         
@@ -125,7 +129,7 @@ async def send_booking_reminder(booking_id: str) -> bool:
         context = {
             'booking': booking,
             'service_name': booking.service.name,
-            'start_time': booking.start_time,
+            'start_time': booking.get_start_time(),
             'practitioner_name': booking.practitioner.display_name,
         }
         
