@@ -253,15 +253,9 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             </Select>
           </div>
 
-            <div className="flex items-center justify-between mb-3">
-              <Label className="text-sm font-medium text-olive-900">
-                Select Your Time
-              </Label>
-              <div className="flex items-center gap-1 text-xs text-olive-600">
-                <Globe className="h-3 w-3" />
-                <span>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</span>
-              </div>
-            </div>
+            <Label className="text-sm font-medium text-olive-900 mb-3 block">
+              Select Your Time
+            </Label>
 
             {isLoadingSlots ? (
               <div className="grid grid-cols-3 gap-2 mb-4">
@@ -323,9 +317,13 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             Reserve Your Transformation
           </Button>
 
-          <p className="text-sm text-center text-olive-600 mt-4">
-            ✓ Instant confirmation • ✓ Secure checkout
-          </p>
+          <div className="text-center text-olive-600 mt-4 space-y-1">
+            <p className="text-sm">✓ Instant confirmation • ✓ Secure checkout</p>
+            <p className="text-xs flex items-center justify-center gap-1">
+              <Globe className="h-3 w-3" />
+              Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}
+            </p>
+          </div>
         </CardContent>
       </Card>
   )
