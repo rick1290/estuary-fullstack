@@ -168,10 +168,11 @@ class ReviewDetailSerializer(ReviewListSerializer):
         """Get basic booking info"""
         if not obj.booking:
             return None
+        # Note: start_time and end_time are now on ServiceSession, use accessor methods
         return {
             'public_uuid': obj.booking.public_uuid,
-            'start_time': obj.booking.start_time,
-            'end_time': obj.booking.end_time
+            'start_time': obj.booking.get_start_time(),
+            'end_time': obj.booking.get_end_time()
         }
     
     def get_user_vote(self, obj):

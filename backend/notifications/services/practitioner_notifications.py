@@ -20,7 +20,27 @@ class PractitionerNotificationService(BaseNotificationService):
     """
     Handle all practitioner-related notifications.
     """
-    
+
+    def _get_booking_location(self, booking) -> str:
+        """
+        Get location display string for a booking.
+        Location now lives on ServiceSession, not Booking.
+        """
+        # Check service_session for location (new architecture)
+        if booking.service_session:
+            if booking.service_session.practitioner_location:
+                return booking.service_session.practitioner_location.name
+            # Check service level location as fallback
+            if booking.service and booking.service.practitioner_location:
+                return booking.service.practitioner_location.name
+
+        # For virtual sessions, check for room
+        room = getattr(booking, 'room', None) or getattr(booking, 'livekit_room', None)
+        if room:
+            return 'Virtual'
+
+        return 'TBD'
+
     # Email templates and subjects (using Resend)
     TEMPLATES = {
         'welcome': {
@@ -196,7 +216,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'booking_date': dt_formatted['date'],
             'booking_time': dt_formatted['time_with_tz'],
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
+            'location': self._get_booking_location(booking),
             'gross_amount': f"${gross_amount:.2f}",
             'commission_amount': f"${commission_amount:.2f}",
             'net_earnings': f"${net_earnings:.2f}",
@@ -569,7 +589,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'booking_date': booking_start.strftime('%A, %B %d, %Y'),
             'booking_time': booking_start.strftime('%I:%M %p'),
             'duration_minutes': service.duration_minutes,
-            'location': booking.location.name if booking.location else ('Virtual' if booking.room else 'TBD'),
+            'location': self._get_booking_location(booking),
             'hours_until': hours_before,
             'time_until_human': self._format_time_until(time_until),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",

@@ -49,16 +49,11 @@ def process_booking_reminders():
         }
     ]
     
-    # Get all confirmed bookings
-    # NOTE: During migration, we need to handle both cases:
-    # - Bookings with service_session (NEW)
-    # - Bookings with direct start_time (LEGACY)
+    # Get all confirmed bookings with future start times
+    # start_time now lives on ServiceSession, not Booking
     bookings = Booking.objects.filter(
-        status='confirmed'
-    ).filter(
-        # Get bookings where either service_session or booking has future start_time
-        models.Q(service_session__start_time__gte=now) |  # NEW way
-        models.Q(start_time__gte=now)  # LEGACY way (for bookings without service_session)
+        status='confirmed',
+        service_session__start_time__gte=now
     ).select_related(
         'user',
         'service__service_type',

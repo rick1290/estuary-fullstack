@@ -92,8 +92,10 @@ class EarningsService:
         )
 
         # Determine available_after based on booking end time
-        if booking.end_time:
-            available_after = booking.end_time + timedelta(hours=48)
+        # Note: end_time is now on ServiceSession, use accessor method
+        booking_end_time = booking.get_end_time()
+        if booking_end_time:
+            available_after = booking_end_time + timedelta(hours=48)
         else:
             # Fallback if no end time (shouldn't happen for real bookings)
             available_after = timezone.now() + timedelta(hours=48)

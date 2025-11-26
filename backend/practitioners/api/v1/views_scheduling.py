@@ -319,29 +319,33 @@ class AdvancedAvailabilityViewSet(viewsets.ViewSet):
         )
         
         # Total booked hours
+        # Note: start_time is now on ServiceSession, query via service_session
         bookings = Booking.objects.filter(
             practitioner=practitioner,
-            start_time__date__gte=start_date,
-            start_time__date__lte=end_date,
+            service_session__start_time__date__gte=start_date,
+            service_session__start_time__date__lte=end_date,
             status__in=['confirmed', 'completed']
-        )
-        
+        ).select_related('service_session')
+
         total_booked_minutes = sum(
-            (booking.end_time - booking.start_time).total_seconds() / 60
+            (booking.get_end_time() - booking.get_start_time()).total_seconds() / 60
             for booking in bookings
+            if booking.get_start_time() and booking.get_end_time()
         )
-        
+
         # Calculate utilization rate
         utilization_rate = (
             (total_booked_minutes / total_available_minutes * 100)
             if total_available_minutes > 0 else 0
         )
-        
+
         # Peak hours analysis
         peak_hours = {}
         for booking in bookings:
-            hour = booking.start_time.hour
-            peak_hours[hour] = peak_hours.get(hour, 0) + 1
+            start_time = booking.get_start_time()
+            if start_time:
+                hour = start_time.hour
+                peak_hours[hour] = peak_hours.get(hour, 0) + 1
         
         # Sort peak hours
         sorted_peak_hours = sorted(

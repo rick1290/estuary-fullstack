@@ -290,7 +290,9 @@ async def create_review(
         )
     
     # Check if booking is recent (within 90 days)
-    if booking.end_time < datetime.now() - timedelta(days=90):
+    # Note: end_time is now on ServiceSession, use accessor method
+    booking_end_time = booking.get_end_time()
+    if booking_end_time and booking_end_time < datetime.now() - timedelta(days=90):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Review period has expired (90 days)",
