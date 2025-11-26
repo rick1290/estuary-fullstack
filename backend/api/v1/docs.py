@@ -8,6 +8,8 @@ from rest_framework import status
 from django.urls import reverse
 from django.conf import settings
 
+from utils.timezone_utils import get_timezone_choices
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -300,4 +302,31 @@ def api_error_codes(request):
             '500': 'Internal Server Error - Server error',
             '503': 'Service Unavailable - Temporary outage'
         }
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def timezone_list(request):
+    """
+    List available timezones for selection.
+
+    Query Parameters:
+    - include_all: If 'true', returns all ~400 common timezones.
+                   Default returns curated list of ~75 most common ones.
+
+    Returns a list of timezone objects with:
+    - value: IANA timezone identifier (e.g., 'America/New_York')
+    - label: Friendly name with offset (e.g., 'New York (UTC-05:00)')
+    - full_label: Full name with offset (e.g., 'America/New_York (UTC-05:00)')
+    - region: Geographic region (e.g., 'America', 'Europe', 'Asia')
+    - offset_str: UTC offset string (e.g., 'UTC-05:00')
+    - offset_minutes: Total offset in minutes from UTC
+    """
+    include_all = request.query_params.get('include_all', '').lower() == 'true'
+    timezones = get_timezone_choices(include_all=include_all)
+
+    return Response({
+        'count': len(timezones),
+        'timezones': timezones
     })

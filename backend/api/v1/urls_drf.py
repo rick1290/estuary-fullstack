@@ -143,7 +143,7 @@ router.register(r'ai-images', GeneratedImageViewSet, basename='ai-images')
 
 # Import documentation views
 from api.v1.docs import (
-    health_check, api_info, api_resources, api_examples, api_error_codes
+    health_check, api_info, api_resources, api_examples, api_error_codes, timezone_list
 )
 
 # URL patterns
@@ -159,6 +159,9 @@ urlpatterns = [
     path('resources/', api_resources, name='api-resources'),
     path('examples/', api_examples, name='api-examples'),
     path('errors/', api_error_codes, name='api-error-codes'),
+
+    # Utility endpoints
+    path('timezones/', timezone_list, name='timezone-list'),
     
     # Include all router URLs (all viewsets registered above)
     path('', include(router.urls)),

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import type { ScheduleReadable, ScheduleWritable, ScheduleTimeSlotWritable } from "@/src/client/types.gen"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Copy, Plus, Trash2, AlertCircle, Loader2, ChevronDown } from "lucide-react"
+import { Copy, Plus, Trash2, AlertCircle, Loader2, ChevronDown, Globe } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,8 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import {
   schedulesAddTimeSlotCreateMutation,
-  schedulesRemoveTimeSlotDestroyMutation
+  schedulesRemoveTimeSlotDestroyMutation,
+  timezonesRetrieveOptions
 } from "@/src/client/@tanstack/react-query.gen"
 
 interface ScheduleFormProps {
@@ -42,16 +43,15 @@ const DAYS_OF_WEEK = [
   { value: 6, label: "Sunday" },
 ]
 
-const TIMEZONE_OPTIONS = [
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Phoenix",
-  "America/Anchorage",
-  "Pacific/Honolulu",
-  "UTC",
-]
+// Timezone type from API
+interface TimezoneOption {
+  value: string
+  label: string
+  full_label: string
+  region: string
+  offset_str: string
+  offset_minutes: number
+}
 
 // Generate time options (15-minute intervals)
 const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
@@ -189,6 +189,21 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { toast } = useToast()
   const queryClient = useQueryClient()
+
+  // Fetch timezones from API
+  const { data: timezonesData, isLoading: timezonesLoading } = useQuery({
+    ...timezonesRetrieveOptions(),
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  })
+  const timezones: TimezoneOption[] = (timezonesData as any)?.timezones || []
+
+  // Group timezones by region for better UX
+  const groupedTimezones = timezones.reduce((acc, tz) => {
+    const region = tz.region || 'Other'
+    if (!acc[region]) acc[region] = []
+    acc[region].push(tz)
+    return acc
+  }, {} as Record<string, TimezoneOption[]>)
 
   // Track active days for UI
   const [activeDays, setActiveDays] = useState<Record<number, boolean>>({
@@ -460,16 +475,32 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
           </div>
 
           <div>
-            <Label htmlFor="timezone">Timezone</Label>
-            <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger id="timezone">
-                <SelectValue />
+            <Label htmlFor="timezone" className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              Timezone
+            </Label>
+            <Select value={timezone} onValueChange={setTimezone} disabled={timezonesLoading}>
+              <SelectTrigger id="timezone" className="mt-1.5">
+                {timezonesLoading ? (
+                  <span className="text-muted-foreground">Loading timezones...</span>
+                ) : (
+                  <SelectValue placeholder="Select timezone" />
+                )}
               </SelectTrigger>
-              <SelectContent>
-                {TIMEZONE_OPTIONS.map((tz) => (
-                  <SelectItem key={tz} value={tz}>
-                    {tz}
-                  </SelectItem>
+              <SelectContent className="max-h-[300px]">
+                {Object.entries(groupedTimezones).map(([region, tzList]) => (
+                  <div key={region}>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                      {region}
+                    </div>
+                    {tzList.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        <span className="flex items-center justify-between gap-2 w-full">
+                          <span>{tz.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </div>
                 ))}
               </SelectContent>
             </Select>
