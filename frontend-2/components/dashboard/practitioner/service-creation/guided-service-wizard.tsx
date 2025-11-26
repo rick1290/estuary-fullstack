@@ -64,6 +64,8 @@ import {
 import CompactCategoryManager from "../categories/compact-category-manager"
 import { BundleConfigStep } from "./steps/bundle-config-step"
 import { WizardPackageBuilder, type PackageServiceItem } from "./steps/wizard-package-builder"
+import { PackageStepSessions, type PackageSessionItem } from "./steps/package-step-sessions"
+import { PackageStepPricing } from "./steps/package-step-pricing"
 
 // Phase schemas for validation
 const phase1Schema = z.object({
@@ -208,6 +210,11 @@ export function GuidedServiceWizard() {
     totalValue: 0
   })
 
+  // New package builder state (improved flow)
+  const [packageSessions, setPackageSessions] = useState<PackageSessionItem[]>([])
+  const [packageDiscount, setPackageDiscount] = useState(15) // Default to recommended 15%
+  const [packageFinalPrice, setPackageFinalPrice] = useState(0)
+
   // Fetch data
   const { data: modalities } = useQuery({
     ...modalitiesListOptions({}),
@@ -240,10 +247,15 @@ export function GuidedServiceWizard() {
     mode: "onSubmit", // Only validate on submit, not on change
   })
 
-  // Determine if we need a config step (for bundles/packages)
+  // Determine if we need config steps (for bundles/packages)
   const needsConfigStep = selectedServiceType === 'bundle' || selectedServiceType === 'package'
+  const isPackage = selectedServiceType === 'package'
+  const isBundle = selectedServiceType === 'bundle'
 
   // Calculate total phases dynamically
+  // Package: 1 (type) + 2 (sessions) + 3 (pricing) + 4 (basic info) + 5 (polish) = 5 phases
+  // Bundle: 1 (type) + 2 (config) + 3 (basic info) + 4 (delivery) + 5 (polish) = 5 phases
+  // Others: 1 (type) + 2 (basic info) + 3 (delivery) + 4 (polish) = 4 phases
   const totalPhases = needsConfigStep ? 5 : 4
 
   // Get the actual phase number accounting for config step
@@ -270,6 +282,18 @@ export function GuidedServiceWizard() {
       form.setValue("name", name)
     }
   }
+
+  // Auto-generate package name suggestion when sessions change
+  useEffect(() => {
+    if (isPackage && packageSessions.length > 0 && !form.getValues("name")) {
+      if (packageSessions.length === 1) {
+        const sessionName = packageSessions[0].service?.name || "Session"
+        form.setValue("name", `${sessionName} Package`)
+      } else {
+        form.setValue("name", `${packageSessions.length}-Session Wellness Package`)
+      }
+    }
+  }, [packageSessions.length, isPackage]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Create service mutation
   const createMutation = useMutation({
@@ -299,19 +323,36 @@ export function GuidedServiceWizard() {
 
   // Phase validation - dynamic based on service type
   const validatePhase = async (phase: number) => {
-    // For bundles/packages, phase 2 is config, so subsequent phases shift
-    if (needsConfigStep) {
+    // For packages: 1 (type) + 2 (sessions) + 3 (pricing) + 4 (basic info) + 5 (polish)
+    // Note: Packages SKIP the delivery details phase - price/duration/participants are calculated
+    if (isPackage) {
       switch (phase) {
         case 1:
           return await form.trigger(["serviceType"])
         case 2:
-          // Validate bundle or package config
-          if (selectedServiceType === 'bundle') {
-            return bundleConfig.sessionServiceId !== null && bundleConfig.sessionsIncluded >= 2
-          } else if (selectedServiceType === 'package') {
-            return packageConfig.selectedServices.length > 0
-          }
+          // Validate package sessions selection
+          return packageSessions.length > 0
+        case 3:
+          // Validate pricing (discount is always valid since it has a default)
+          return packageFinalPrice > 0
+        case 4:
+          // Basic info for packages
+          return await form.trigger(["name", "shortDescription"])
+        case 5:
+          // Polish & Publish - only description needed (no price/duration/participants)
+          return await form.trigger(["description"])
+        default:
           return true
+      }
+    }
+    // For bundles: 1 (type) + 2 (config) + 3 (basic info) + 4 (delivery) + 5 (polish)
+    else if (isBundle) {
+      switch (phase) {
+        case 1:
+          return await form.trigger(["serviceType"])
+        case 2:
+          // Validate bundle config
+          return bundleConfig.sessionServiceId !== null && bundleConfig.sessionsIncluded >= 2
         case 3:
           return await form.trigger(["name", "shortDescription"])
         case 4:
@@ -343,17 +384,27 @@ export function GuidedServiceWizard() {
     const isValid = await validatePhase(currentPhase)
     if (isValid && currentPhase < totalPhases) {
       setCurrentPhase(currentPhase + 1)
-    } else if (!isValid && currentPhase === 2 && needsConfigStep) {
-      // Show specific error for config step
-      toast({
-        title: selectedServiceType === 'bundle'
-          ? "Bundle configuration incomplete"
-          : "Package configuration incomplete",
-        description: selectedServiceType === 'bundle'
-          ? "Please select a session service and set the number of sessions."
-          : "Please add at least one service to your package.",
-        variant: "destructive"
-      })
+    } else if (!isValid) {
+      // Show specific error messages based on service type and phase
+      if (isPackage && currentPhase === 2) {
+        toast({
+          title: "No sessions selected",
+          description: "Please select at least one session to include in your package.",
+          variant: "destructive"
+        })
+      } else if (isPackage && currentPhase === 3) {
+        toast({
+          title: "Pricing incomplete",
+          description: "Please set a discount for your package.",
+          variant: "destructive"
+        })
+      } else if (isBundle && currentPhase === 2) {
+        toast({
+          title: "Bundle configuration incomplete",
+          description: "Please select a session service and set the number of sessions.",
+          variant: "destructive"
+        })
+      }
     }
   }
 
@@ -389,24 +440,39 @@ export function GuidedServiceWizard() {
         quantity: bundleConfig.sessionsIncluded
       }]
       sessionsIncluded = bundleConfig.sessionsIncluded
-    } else if (data.serviceType === 'package' && packageConfig.selectedServices.length > 0) {
-      childServiceConfigs = packageConfig.selectedServices.map(s => ({
+    } else if (data.serviceType === 'package' && packageSessions.length > 0) {
+      // Use new package builder state
+      childServiceConfigs = packageSessions.map(s => ({
         child_service_id: s.serviceId,
-        quantity: s.quantity,
-        discount_percentage: s.discountPercentage,
+        quantity: 1, // Each session in package has quantity 1
+        discount_percentage: 0, // Discount is applied at package level
         order: s.order
       }))
+    }
+
+    // Calculate package-specific values
+    let finalPrice = data.price
+    let finalDuration = data.duration_minutes
+    let finalMaxParticipants = data.max_participants
+
+    if (data.serviceType === 'package' && packageSessions.length > 0) {
+      // Use the calculated final price from discount slider
+      finalPrice = packageFinalPrice.toFixed(2)
+      // Calculate total duration from all sessions
+      finalDuration = packageSessions.reduce((sum, s) => sum + (s.service?.duration_minutes || 0), 0)
+      // Packages are always for 1 participant
+      finalMaxParticipants = 1
     }
 
     // Build request body
     const requestBody = {
       name: data.name,
       service_type_id: selectedType.id,
-      price: data.price,
+      price: finalPrice,
       short_description: data.shortDescription,
       description: data.description,
-      duration_minutes: data.duration_minutes,
-      max_participants: data.max_participants,
+      duration_minutes: finalDuration,
+      max_participants: finalMaxParticipants,
       min_participants: 1,
       location_type: data.location_type,
       status: 'draft',
@@ -431,7 +497,7 @@ export function GuidedServiceWizard() {
       headers: {
         'Content-Type': 'application/json',
       },
-      bodySerializer: (body) => JSON.stringify(body),
+      bodySerializer: (body: typeof requestBody) => JSON.stringify(body),
     } as any)
   }
 
@@ -572,10 +638,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 2: Bundle/Package Config (only for bundle/package types) */}
-            {currentPhase === 2 && needsConfigStep && (
+            {/* Phase 2: Bundle Config (only for bundle type) */}
+            {currentPhase === 2 && isBundle && (
               <motion.div
-                key="phase2-config"
+                key="phase2-bundle-config"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -583,30 +649,67 @@ export function GuidedServiceWizard() {
               >
                 <Card>
                   <CardContent className="pt-6">
-                    {selectedServiceType === 'bundle' ? (
-                      <BundleConfigStep
-                        config={bundleConfig}
-                        onConfigChange={setBundleConfig}
-                        currentPrice={form.watch("price")}
-                        onPriceChange={(price) => form.setValue("price", price)}
-                        onNameSuggestion={handleNameSuggestion}
-                      />
-                    ) : (
-                      <WizardPackageBuilder
-                        config={packageConfig}
-                        onConfigChange={setPackageConfig}
-                        currentPrice={form.watch("price")}
-                        onPriceChange={(price) => form.setValue("price", price)}
-                        onNameSuggestion={handleNameSuggestion}
-                      />
-                    )}
+                    <BundleConfigStep
+                      config={bundleConfig}
+                      onConfigChange={setBundleConfig}
+                      currentPrice={form.watch("price")}
+                      onPriceChange={(price) => form.setValue("price", price)}
+                      onNameSuggestion={handleNameSuggestion}
+                    />
                   </CardContent>
                 </Card>
               </motion.div>
             )}
 
-            {/* Phase 2/3: Basic Info (phase 2 for standard, phase 3 for bundle/package) */}
-            {((currentPhase === 2 && !needsConfigStep) || (currentPhase === 3 && needsConfigStep)) && (
+            {/* Phase 2: Package Session Selection (only for package type) */}
+            {currentPhase === 2 && isPackage && (
+              <motion.div
+                key="phase2-package-sessions"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardContent className="pt-6">
+                    <PackageStepSessions
+                      selectedSessions={packageSessions}
+                      onSessionsChange={setPackageSessions}
+                    />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Phase 3: Package Pricing (only for package type) */}
+            {currentPhase === 3 && isPackage && (
+              <motion.div
+                key="phase3-package-pricing"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardContent className="pt-6">
+                    <PackageStepPricing
+                      selectedSessions={packageSessions}
+                      discountPercentage={packageDiscount}
+                      onDiscountChange={setPackageDiscount}
+                      finalPrice={packageFinalPrice}
+                      onFinalPriceChange={setPackageFinalPrice}
+                    />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Basic Info Phase:
+                - Standard (session/workshop/course): Phase 2
+                - Bundle: Phase 3 (after config)
+                - Package: Phase 4 (after sessions + pricing)
+            */}
+            {((currentPhase === 2 && !needsConfigStep) || (currentPhase === 3 && isBundle) || (currentPhase === 4 && isPackage)) && (
               <motion.div
                 key="phase-basic-info"
                 initial={{ opacity: 0, x: 20 }}
@@ -698,8 +801,12 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 3/4: Delivery Details (phase 3 for standard, phase 4 for bundle/package) */}
-            {((currentPhase === 3 && !needsConfigStep) || (currentPhase === 4 && needsConfigStep)) && (
+            {/* Delivery Details Phase:
+                - Standard (session/workshop/course): Phase 3
+                - Bundle: Phase 4 (after basic info)
+                - Package: SKIP (price/duration/participants are calculated)
+            */}
+            {((currentPhase === 3 && !needsConfigStep) || (currentPhase === 4 && isBundle)) && (
               <motion.div
                 key="phase-delivery"
                 initial={{ opacity: 0, x: 20 }}
@@ -1087,11 +1194,32 @@ export function GuidedServiceWizard() {
                         <p className="text-sm text-muted-foreground">
                           {form.watch("shortDescription") || "Your service description will appear here"}
                         </p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="font-medium">${form.watch("price") || "0"}</span>
-                          <span>{form.watch("duration_minutes") || 60} minutes</span>
-                          <Badge variant="secondary">{form.watch("location_type") || "virtual"}</Badge>
-                        </div>
+                        {isPackage && packageSessions.length > 0 ? (
+                          // Package-specific preview
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="font-medium text-primary">${packageFinalPrice.toFixed(2)}</span>
+                              <span className="text-muted-foreground line-through">
+                                ${packageSessions.reduce((sum, s) => sum + parseFloat(s.service?.price || "0"), 0).toFixed(2)}
+                              </span>
+                              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                {packageDiscount}% off
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{packageSessions.length} sessions</span>
+                              <span>•</span>
+                              <span>{packageSessions.reduce((sum, s) => sum + (s.service?.duration_minutes || 0), 0)} min total</span>
+                            </div>
+                          </div>
+                        ) : (
+                          // Standard preview for other service types
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="font-medium">${form.watch("price") || "0"}</span>
+                            <span>{form.watch("duration_minutes") || 60} minutes</span>
+                            <Badge variant="secondary">{form.watch("location_type") || "virtual"}</Badge>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

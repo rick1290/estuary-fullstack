@@ -355,27 +355,34 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
               <section className="animate-fade-in">
                 <h2 className="text-3xl font-medium text-olive-900 mb-8">Services Included in This Package</h2>
                 <div className="space-y-4">
-                  {childServices.map((relationship) => (
-                    <Card key={relationship.id} className="border-2 border-sage-200 hover:border-sage-300 transition-all">
+                  {childServices.map((relationship, index) => (
+                    <Card key={relationship.id} className="border-2 border-sage-200 hover:border-sage-300 hover:shadow-md transition-all">
                       <CardContent className="p-6">
                         <div className="flex gap-6">
                           <div className="flex-shrink-0">
                             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sage-100 to-blush-100 flex items-center justify-center">
-                              <Check className="h-8 w-8 text-sage-600" strokeWidth={2} />
+                              <span className="text-2xl font-bold text-sage-700">{index + 1}</span>
                             </div>
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                              <div className="min-w-0">
                                 <h3 className="text-xl font-semibold text-olive-900 mb-1">
                                   {relationship.quantity > 1 && `${relationship.quantity}x `}
                                   {relationship.child_service.name}
                                 </h3>
-                                <Badge variant="outline" className="text-xs">
-                                  {relationship.child_service.service_type_display}
-                                </Badge>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="outline" className="text-xs">
+                                    {relationship.child_service.service_type}
+                                  </Badge>
+                                  {relationship.child_service.duration_minutes && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {relationship.child_service.duration_minutes} min
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-right">
+                              <div className="text-right flex-shrink-0">
                                 <p className="text-lg font-semibold text-sage-700">
                                   ${relationship.child_service.price}
                                 </p>
@@ -384,8 +391,11 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                                 )}
                               </div>
                             </div>
-                            {relationship.description_override && (
-                              <p className="text-olive-600 mt-2">{relationship.description_override}</p>
+                            {/* Show short description or description override */}
+                            {(relationship.description_override || relationship.child_service.short_description) && (
+                              <p className="text-olive-600 text-sm leading-relaxed">
+                                {relationship.description_override || relationship.child_service.short_description}
+                              </p>
                             )}
                           </div>
                         </div>

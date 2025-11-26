@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Slider } from "@/components/ui/slider"
 import {
   Layers,
   DollarSign,
@@ -16,7 +17,8 @@ import {
   Sparkles,
   Calculator,
   TrendingDown,
-  Info
+  Info,
+  Percent
 } from "lucide-react"
 import { servicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
@@ -300,68 +302,63 @@ export function BundleConfigStep({
 
       {/* Pricing Calculator */}
       {pricing && selectedService && config.sessionsIncluded >= 2 && (
-        <Card className="border-primary/50">
+        <Card className="border-2 border-primary/30">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Calculator className="h-4 w-4" />
+              <Calculator className="h-4 w-4 text-primary" />
               Pricing Calculator
             </CardTitle>
             <CardDescription>
-              Review pricing and apply discount suggestions
+              Set your discount using the slider below
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Pricing Breakdown */}
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Regular price per session</span>
-                <span>${pricing.pricePerSession.toFixed(2)}</span>
+          <CardContent className="space-y-6">
+            {/* Regular Price Display */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="text-sm text-muted-foreground">Regular Price ({config.sessionsIncluded} × ${pricing.pricePerSession.toFixed(2)})</p>
+                <p className="text-2xl font-semibold">${pricing.regularTotal.toFixed(2)}</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  × {config.sessionsIncluded} sessions
-                </span>
-                <span className="line-through text-muted-foreground">
-                  ${pricing.regularTotal.toFixed(2)}
-                </span>
-              </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Bundle Price</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={currentPrice || pricing.suggestedPrice.toFixed(2)}
-                      onChange={(e) => onPriceChange?.(e.target.value)}
-                      className="w-28 text-right font-semibold"
-                    />
-                  </div>
-                </div>
-              </div>
+              <DollarSign className="h-8 w-8 text-muted-foreground/50" />
             </div>
 
-            {/* Savings Display */}
-            {pricing.actualSavings > 0 && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                <Sparkles className="h-5 w-5 text-green-600 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                    Customers save ${pricing.actualSavings.toFixed(2)} ({pricing.actualDiscountPercent.toFixed(0)}% off)
-                  </p>
+            {/* Discount Slider */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Discount Percentage
+                </Label>
+                <Badge variant="secondary" className="text-lg px-3 py-1">
+                  <TrendingDown className="h-4 w-4 mr-1" />
+                  {pricing.actualDiscountPercent.toFixed(0)}% off
+                </Badge>
+              </div>
+
+              <div className="pt-2 pb-1">
+                <Slider
+                  min={0}
+                  max={50}
+                  step={5}
+                  value={[Math.round(pricing.actualDiscountPercent)]}
+                  onValueChange={(value) => {
+                    const newPrice = pricing.regularTotal * (1 - value[0] / 100)
+                    onPriceChange?.(newPrice.toFixed(2))
+                  }}
+                  className="cursor-pointer"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>0%</span>
+                  <span>10%</span>
+                  <span>20%</span>
+                  <span>30%</span>
+                  <span>40%</span>
+                  <span>50%</span>
                 </div>
               </div>
-            )}
 
-            {/* Discount Tier Suggestions */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <TrendingDown className="h-4 w-4" />
-                Suggested Discount Tiers
-              </Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {/* Quick Select Discount Buttons */}
+              <div className="flex flex-wrap gap-2">
                 {DISCOUNT_TIERS.filter(tier => config.sessionsIncluded >= tier.minSessions).map((tier) => {
                   const tierPrice = pricing.regularTotal * (1 - tier.suggestedDiscount / 100)
                   const isSelected = Math.abs(parseFloat(currentPrice || "0") - tierPrice) < 0.01
@@ -371,20 +368,74 @@ export function BundleConfigStep({
                       type="button"
                       onClick={() => applyTierDiscount(tier.suggestedDiscount)}
                       className={cn(
-                        "p-3 rounded-lg border text-left transition-all",
+                        "px-3 py-2 text-sm rounded-lg border transition-all",
                         isSelected
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
+                          ? "border-primary bg-primary/10 text-primary font-medium"
+                          : "border-border hover:border-primary/50 hover:bg-muted"
                       )}
                     >
+                      <div className="font-medium">{tier.suggestedDiscount}%</div>
                       <div className="text-xs text-muted-foreground">{tier.label}</div>
-                      <div className="font-semibold">{tier.suggestedDiscount}% off</div>
-                      <div className="text-sm text-muted-foreground">
-                        ${tierPrice.toFixed(2)}
-                      </div>
                     </button>
                   )
                 })}
+              </div>
+            </div>
+
+            {/* Savings & Final Price */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Customer Savings */}
+              <div className={cn(
+                "p-4 rounded-lg border-2 transition-colors",
+                pricing.actualSavings > 0 ? "border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900" : "border-border bg-muted/30"
+              )}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className={cn("h-4 w-4", pricing.actualSavings > 0 ? "text-green-600" : "text-muted-foreground")} />
+                  <p className="text-sm text-muted-foreground">Customer Saves</p>
+                </div>
+                <p className={cn(
+                  "text-2xl font-bold",
+                  pricing.actualSavings > 0 ? "text-green-600" : "text-muted-foreground"
+                )}>
+                  ${pricing.actualSavings.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Final Bundle Price */}
+              <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  <p className="text-sm text-muted-foreground">Bundle Price</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  ${pricing.actualPrice.toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            {/* Visual Price Comparison Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Price comparison</span>
+                <span className={cn(
+                  "font-medium",
+                  pricing.actualDiscountPercent >= 15 ? "text-green-600" :
+                  pricing.actualDiscountPercent >= 10 ? "text-green-500" :
+                  pricing.actualDiscountPercent > 0 ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {pricing.actualDiscountPercent.toFixed(0)}% savings
+                </span>
+              </div>
+              <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                <div className="absolute inset-0 bg-muted-foreground/20" />
+                <div
+                  className="absolute inset-y-0 left-0 bg-primary transition-all duration-300"
+                  style={{ width: `${100 - pricing.actualDiscountPercent}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span className="line-through">${pricing.regularTotal.toFixed(2)}</span>
+                <span className="font-medium text-foreground">${pricing.actualPrice.toFixed(2)}</span>
               </div>
             </div>
           </CardContent>
