@@ -236,13 +236,12 @@ def get_practitioner_availability(
         # Filter out slots that overlap with existing bookings
         filtered_slots = filter_booked_slots(available_slots, practitioner, service_duration)
         
-        # Apply hours buffer (don't show slots within buffer_hours from now)
-        if buffer_hours > 0:
-            buffer_datetime = timezone.now() + timedelta(hours=buffer_hours)
-            filtered_slots = [
-                slot for slot in filtered_slots 
-                if slot['start_datetime'] > buffer_datetime
-            ]
+        # Always filter out past slots, plus apply hours buffer if set
+        buffer_datetime = timezone.now() + timedelta(hours=buffer_hours)
+        filtered_slots = [
+            slot for slot in filtered_slots
+            if slot['start_datetime'] > buffer_datetime
+        ]
         
         # Sort by start time
         filtered_slots.sort(key=lambda x: x['start_datetime'])
