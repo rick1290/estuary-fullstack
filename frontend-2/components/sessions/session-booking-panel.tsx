@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { bookingsCheckAvailabilityCreate } from "@/src/client"
@@ -253,9 +253,15 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             </Select>
           </div>
 
-            <Label className="text-sm font-medium text-olive-900 mb-3 block">
-              Select Your Time
-            </Label>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-sm font-medium text-olive-900">
+                Select Your Time
+              </Label>
+              <div className="flex items-center gap-1 text-xs text-olive-600">
+                <Globe className="h-3 w-3" />
+                <span>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</span>
+              </div>
+            </div>
 
             {isLoadingSlots ? (
               <div className="grid grid-cols-3 gap-2 mb-4">
