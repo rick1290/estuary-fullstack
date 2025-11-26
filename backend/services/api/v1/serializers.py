@@ -145,9 +145,12 @@ class ServiceRelationshipSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.child_service.id,
                 'name': obj.child_service.name,
+                'slug': obj.child_service.slug,
                 'price': obj.child_service.price,
                 'duration_minutes': obj.child_service.duration_minutes,
-                'service_type': obj.child_service.service_type.code if obj.child_service.service_type else None
+                'service_type': obj.child_service.service_type.code if obj.child_service.service_type else None,
+                'short_description': obj.child_service.short_description,
+                'description': obj.child_service.description,
             }
         return None
 
