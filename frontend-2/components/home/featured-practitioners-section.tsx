@@ -178,13 +178,6 @@ export default function FeaturedPractitionersSection() {
                             alt={practitioner.name}
                             className="w-full h-full object-cover"
                           />
-
-                          {/* Overlay on hover */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-olive-900/80 via-olive-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-4">
-                            <span className="text-white text-sm font-medium px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
-                              Visit Profile
-                            </span>
-                          </div>
                         </div>
 
                         {/* Rating badge */}
