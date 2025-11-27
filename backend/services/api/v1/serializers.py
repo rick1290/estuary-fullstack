@@ -98,11 +98,12 @@ class SimplePractitionerSerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(read_only=True)
     slug = serializers.CharField(read_only=True)
     profile_image_url = serializers.URLField(read_only=True)
+    professional_title = serializers.CharField(read_only=True)
     bio = serializers.CharField(read_only=True)
 
     class Meta:
         model = Practitioner
-        fields = ['id', 'display_name', 'slug', 'profile_image_url', 'bio']
+        fields = ['id', 'display_name', 'slug', 'profile_image_url', 'professional_title', 'bio']
 
 
 class SimpleScheduleSerializer(serializers.ModelSerializer):
