@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles, AlertCircle } from "lucide-react"
 import WorkshopBookingPanel from "@/components/workshops/workshop-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
+import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -504,50 +505,11 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
 
             {/* Workshop Facilitators */}
             {workshop.practitioners && workshop.practitioners.length > 0 && (
-              <section className="animate-fade-in" style={{animationDelay: '0.8s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">
-                  Meet Your Expert {workshop.practitioners.length > 1 ? 'Facilitators' : 'Facilitator'}
-                </h2>
-                <div className="grid gap-6">
-                  {workshop.practitioners.map((practitioner: any) => (
-                    <Card key={practitioner.id} className="border-2 border-sage-200 overflow-hidden group hover:border-sage-300 transition-all">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row">
-                          <div className="md:w-64 h-64 bg-gradient-to-br from-terracotta-50 via-sage-50 to-terracotta-50 flex items-center justify-center p-6">
-                            {practitioner.image ? (
-                              <div className="w-44 h-44 rounded-3xl bg-white shadow-2xl overflow-hidden ring-4 ring-white/50">
-                                <img
-                                  src={practitioner.image}
-                                  alt={practitioner.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-sage-300 to-terracotta-300 shadow-2xl flex items-center justify-center ring-4 ring-white/50">
-                                <span className="text-5xl font-bold text-white">
-                                  {practitioner.name.split(' ').map((n: string) => n[0]).join('')}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 p-8">
-                            <h3 className="text-2xl font-semibold text-olive-900 mb-2 group-hover:text-sage-700 transition-colors">{practitioner.name}</h3>
-                            <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
-                            <p className="text-olive-600 leading-relaxed mb-6">{practitioner.bio}</p>
-                            <Link
-                              href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                              className="inline-flex items-center gap-2 text-sage-600 hover:text-sage-800 font-medium text-sm px-4 py-2 rounded-lg hover:bg-sage-50 transition-all"
-                            >
-                              View Full Profile
-                              <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </section>
+              <PractitionerSpotlight
+                practitioners={workshop.practitioners}
+                role="facilitator"
+                animationDelay="0.8s"
+              />
             )}
 
             {/* Success Stories */}

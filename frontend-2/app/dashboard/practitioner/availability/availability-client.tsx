@@ -363,7 +363,11 @@ export default function AvailabilityClient() {
               </Card>
             ) : (
               schedules.map((schedule) => (
-                <Card key={schedule.id} className="overflow-hidden">
+                <Card
+                  key={schedule.id}
+                  className="overflow-hidden cursor-pointer hover:border-sage-300 hover:shadow-md transition-all"
+                  onClick={() => handleEditSchedule(schedule)}
+                >
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between p-6">
                       <div className="flex flex-col">
@@ -390,7 +394,7 @@ export default function AvailabilityClient() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Switch
                           checked={schedule.is_active}
                           onCheckedChange={() => handleToggleScheduleActive(schedule)}
@@ -408,7 +412,7 @@ export default function AvailabilityClient() {
                               Edit
                             </DropdownMenuItem>
                             {!schedule.is_default && (
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleSetDefaultSchedule(schedule.id)}
                                 disabled={setDefaultMutation.isPending}
                               >

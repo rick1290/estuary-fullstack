@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Clock, Calendar, Check, Heart, Share2, Package, TrendingDown, AlertCircle, Sparkles } from "lucide-react"
 import BundleBookingPanel from "@/components/bundles/bundle-booking-panel"
+import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -465,35 +466,10 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
 
             {/* Practitioner Spotlight */}
             {bundle.primary_practitioner && (
-              <section className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-3xl p-10 -mx-4 animate-fade-in">
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">Meet Your Guide</h2>
-                <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="flex-shrink-0">
-                    {bundle.primary_practitioner.profile_image_url ? (
-                      <img
-                        src={bundle.primary_practitioner.profile_image_url}
-                        alt={bundle.primary_practitioner.display_name}
-                        className="w-32 h-32 rounded-full object-cover shadow-xl"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
-                        <span className="text-4xl font-medium text-olive-800">
-                          {bundle.primary_practitioner.display_name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-medium text-olive-900 mb-2">{bundle.primary_practitioner.display_name}</h3>
-                    <Link
-                      href={`/practitioners/${bundle.primary_practitioner.slug}`}
-                      className="text-sage-600 hover:text-sage-700 underline text-sm"
-                    >
-                      View Full Profile
-                    </Link>
-                  </div>
-                </div>
-              </section>
+              <PractitionerSpotlight
+                practitioners={[bundle.primary_practitioner]}
+                role="guide"
+              />
             )}
           </div>
 

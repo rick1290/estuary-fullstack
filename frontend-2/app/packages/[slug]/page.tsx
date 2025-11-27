@@ -1,9 +1,11 @@
 "use client"
 import React, { useState, useCallback } from "react"
+import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight, Check, Heart, Share2, Package, TrendingDown, AlertCircle, Sparkles, Calendar } from "lucide-react"
+import { ChevronRight, ChevronDown, Check, Heart, Share2, Package, TrendingDown, AlertCircle, Sparkles, Calendar } from "lucide-react"
 import PackageBookingPanel from "@/components/packages/package-booking-panel"
+import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,6 +25,101 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+
+// Character limit for description before truncation
+const MAX_DESCRIPTION_LENGTH = 150
+
+interface ExpandableServiceCardProps {
+  relationship: {
+    id: number
+    quantity: number
+    description_override?: string
+    child_service: {
+      id: number
+      name: string
+      price: string
+      service_type: string
+      duration_minutes?: number
+      short_description?: string
+    }
+  }
+  index: number
+}
+
+function ExpandableServiceCard({ relationship, index }: ExpandableServiceCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const description = relationship.description_override || relationship.child_service.short_description || ""
+  const shouldTruncate = description.length > MAX_DESCRIPTION_LENGTH
+  const displayDescription = !isExpanded && shouldTruncate
+    ? description.slice(0, MAX_DESCRIPTION_LENGTH).trim() + "..."
+    : description
+
+  return (
+    <Card className="border-2 border-sage-200 hover:border-sage-300 hover:shadow-md transition-all h-full">
+      <CardContent className="p-6 flex flex-col h-full">
+        <div className="flex gap-6 flex-1">
+          <div className="flex-shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sage-100 to-blush-100 flex items-center justify-center">
+              <span className="text-2xl font-bold text-sage-700">{index + 1}</span>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col">
+            <div className="mb-3">
+              <h3 className="text-xl font-semibold text-olive-900 mb-1">
+                {relationship.quantity > 1 && `${relationship.quantity}x `}
+                {relationship.child_service.name}
+              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className="text-xs">
+                  {relationship.child_service.service_type}
+                </Badge>
+                {relationship.child_service.duration_minutes && (
+                  <Badge variant="outline" className="text-xs">
+                    {relationship.child_service.duration_minutes} min
+                  </Badge>
+                )}
+              </div>
+            </div>
+            {/* Show short description or description override - with expand/collapse */}
+            <div className="flex-1">
+              {description ? (
+                <div className={cn(!isExpanded && "min-h-[4.5rem]")}>
+                  <p className={cn(
+                    "text-olive-600 text-sm leading-relaxed",
+                    !isExpanded && shouldTruncate && "line-clamp-3"
+                  )}>
+                    {displayDescription}
+                  </p>
+                </div>
+              ) : (
+                <div className="min-h-[4.5rem]" />
+              )}
+            </div>
+            {shouldTruncate && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-sm font-medium text-sage-600 hover:text-sage-700 flex items-center gap-1 transition-colors self-start"
+              >
+                {isExpanded ? (
+                  <>
+                    Show less
+                    <ChevronDown className="h-4 w-4 rotate-180 transition-transform" />
+                  </>
+                ) : (
+                  <>
+                    Read more
+                    <ChevronDown className="h-4 w-4 transition-transform" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function PackageDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
@@ -356,51 +453,11 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                 <h2 className="text-3xl font-medium text-olive-900 mb-8">Services Included in This Package</h2>
                 <div className="space-y-4">
                   {childServices.map((relationship, index) => (
-                    <Card key={relationship.id} className="border-2 border-sage-200 hover:border-sage-300 hover:shadow-md transition-all">
-                      <CardContent className="p-6">
-                        <div className="flex gap-6">
-                          <div className="flex-shrink-0">
-                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sage-100 to-blush-100 flex items-center justify-center">
-                              <span className="text-2xl font-bold text-sage-700">{index + 1}</span>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4 mb-3">
-                              <div className="min-w-0">
-                                <h3 className="text-xl font-semibold text-olive-900 mb-1">
-                                  {relationship.quantity > 1 && `${relationship.quantity}x `}
-                                  {relationship.child_service.name}
-                                </h3>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <Badge variant="outline" className="text-xs">
-                                    {relationship.child_service.service_type}
-                                  </Badge>
-                                  {relationship.child_service.duration_minutes && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {relationship.child_service.duration_minutes} min
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className="text-lg font-semibold text-sage-700">
-                                  ${relationship.child_service.price}
-                                </p>
-                                {relationship.quantity > 1 && (
-                                  <p className="text-xs text-olive-600">per service</p>
-                                )}
-                              </div>
-                            </div>
-                            {/* Show short description or description override */}
-                            {(relationship.description_override || relationship.child_service.short_description) && (
-                              <p className="text-olive-600 text-sm leading-relaxed">
-                                {relationship.description_override || relationship.child_service.short_description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <ExpandableServiceCard
+                      key={relationship.id}
+                      relationship={relationship}
+                      index={index}
+                    />
                   ))}
                 </div>
               </section>
@@ -524,35 +581,10 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
 
             {/* Practitioner Spotlight */}
             {packageData.primary_practitioner && (
-              <section className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-3xl p-10 -mx-4 animate-fade-in">
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">Meet Your Guide</h2>
-                <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="flex-shrink-0">
-                    {packageData.primary_practitioner.profile_image_url ? (
-                      <img
-                        src={packageData.primary_practitioner.profile_image_url}
-                        alt={packageData.primary_practitioner.display_name}
-                        className="w-32 h-32 rounded-full object-cover shadow-xl"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
-                        <span className="text-4xl font-medium text-olive-800">
-                          {packageData.primary_practitioner.display_name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-medium text-olive-900 mb-2">{packageData.primary_practitioner.display_name}</h3>
-                    <Link
-                      href={`/practitioners/${packageData.primary_practitioner.slug}`}
-                      className="text-sage-600 hover:text-sage-700 underline text-sm"
-                    >
-                      View Full Profile
-                    </Link>
-                  </div>
-                </div>
-              </section>
+              <PractitionerSpotlight
+                practitioners={[packageData.primary_practitioner]}
+                role="guide"
+              />
             )}
           </div>
 

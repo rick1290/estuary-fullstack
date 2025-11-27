@@ -233,7 +233,7 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
       setTimezone(schedule.timezone)
       setIsDefault(schedule.is_default)
       setIsActive(schedule.is_active)
-      
+
       // Convert readonly time slots to writable format
       const writableSlots: ScheduleTimeSlotWritable[] = (schedule.time_slots || []).map(slot => ({
         day: slot.day,
@@ -243,12 +243,25 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
       }))
       setTimeSlots(writableSlots)
 
-      // Update active days
-      const days = (schedule.time_slots || []).reduce((acc, slot) => {
-        acc[slot.day] = true
-        return acc
-      }, {} as Record<number, boolean>)
-      setActiveDays({ ...activeDays, ...days })
+      // Update active days - start fresh with all false, then set days with slots to true
+      const newActiveDays: Record<number, boolean> = {
+        0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false,
+      }
+      ;(schedule.time_slots || []).forEach(slot => {
+        newActiveDays[slot.day] = true
+      })
+      setActiveDays(newActiveDays)
+    } else {
+      // Reset form when creating new schedule
+      setName("")
+      setDescription("")
+      setTimezone("America/New_York")
+      setIsDefault(false)
+      setIsActive(true)
+      setTimeSlots([])
+      setActiveDays({
+        0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false,
+      })
     }
   }, [schedule])
 

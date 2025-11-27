@@ -303,7 +303,7 @@ class StreamViewSet(viewsets.ModelViewSet):
             payment_profile, created = UserPaymentProfile.objects.get_or_create(
                 user=request.user
             )
-            
+
             if not payment_profile.stripe_customer_id:
                 # Create Stripe customer
                 customer = stripe.Customer.create(
@@ -313,25 +313,43 @@ class StreamViewSet(viewsets.ModelViewSet):
                 )
                 payment_profile.stripe_customer_id = customer.id
                 payment_profile.save()
-            
-            # Create Stripe subscription
-            stripe_subscription = stripe.Subscription.create(
-                customer=payment_profile.stripe_customer_id,
-                items=[{'price': price_id}],
-                payment_behavior='default_incomplete',
-                payment_settings={
+
+            # Get practitioner's Stripe Connect account
+            practitioner_payment_profile = UserPaymentProfile.objects.filter(
+                user=stream.practitioner.user
+            ).first()
+
+            practitioner_stripe_account = None
+            if practitioner_payment_profile:
+                practitioner_stripe_account = practitioner_payment_profile.stripe_account_id
+
+            # Build subscription params
+            subscription_params = {
+                'customer': payment_profile.stripe_customer_id,
+                'items': [{'price': price_id}],
+                'payment_behavior': 'default_incomplete',
+                'payment_settings': {
                     'payment_method_types': ['card'],
                     'save_default_payment_method': 'on_subscription'
                 },
-                expand=['latest_invoice.payment_intent'],
-                metadata={
+                'expand': ['latest_invoice.payment_intent'],
+                'metadata': {
                     'type': 'stream',
                     'stream_id': str(stream.id),
                     'user_id': str(request.user.id),
                     'tier': tier
-                },
-                application_fee_percent=15  # Platform takes 15%
-            )
+                }
+            }
+
+            # Only add application_fee_percent if practitioner has Stripe Connect
+            if practitioner_stripe_account:
+                subscription_params['application_fee_percent'] = 15  # Platform takes 15%
+                subscription_params['transfer_data'] = {
+                    'destination': practitioner_stripe_account
+                }
+
+            # Create Stripe subscription
+            stripe_subscription = stripe.Subscription.create(**subscription_params)
             
             # Create local subscription record
             subscription = StreamSubscription.objects.create(

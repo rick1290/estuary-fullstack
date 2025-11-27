@@ -3,6 +3,7 @@ import React from "react"
 import { ChevronRight, ChevronDown, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
+import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -727,60 +728,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </div>
             </section>
 
-            {/* Course Instructors - Enhanced */}
+            {/* Course Instructors */}
             {course.practitioners && course.practitioners.length > 0 && (
-              <section className="animate-fade-in" style={{animationDelay: '0.8s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">
-                  {course.practitioners.length > 1 ? "Meet Your Instructors" : "Meet Your Instructor"}
-                </h2>
-                <div className="grid gap-6">
-                  {course.practitioners.map((practitioner) => (
-                    <Card key={practitioner.id} className="border-2 border-sage-200 overflow-hidden group hover:border-sage-300 transition-all">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row">
-                          <div className="md:w-48 h-48 bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
-                            {practitioner.image ? (
-                              <div className="w-36 h-36 rounded-2xl bg-white shadow-xl overflow-hidden">
-                                <img
-                                  src={practitioner.image}
-                                  alt={practitioner.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-36 h-36 rounded-2xl bg-white shadow-xl flex items-center justify-center">
-                                <span className="text-4xl font-bold text-olive-800">
-                                  {practitioner.name.split(' ').map(n => n[0]).join('')}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 p-8">
-                            <h3 className="text-2xl font-semibold text-olive-900 mb-2">{practitioner.name}</h3>
-                            <p className="text-lg text-sage-700 mb-4">{practitioner.title}</p>
-                            <p className="text-olive-600 leading-relaxed mb-4">{practitioner.bio}</p>
-                            <div className="flex items-center gap-2 mb-4">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
-                                ))}
-                              </div>
-                              <span className="text-sm text-olive-600">{practitioner.rating} ({practitioner.reviewCount} reviews)</span>
-                            </div>
-                            <Link
-                              href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                              className="text-sage-600 hover:text-sage-800 font-medium text-sm inline-flex items-center gap-1 transition-colors"
-                            >
-                              View Profile
-                              <ChevronRight className="h-4 w-4" />
-                            </Link>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </section>
+              <PractitionerSpotlight
+                practitioners={course.practitioners}
+                role="instructor"
+                animationDelay="0.8s"
+              />
             )}
 
             {/* Testimonial Section */}
