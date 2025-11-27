@@ -201,17 +201,19 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                 </div>
 
                 <div className="space-y-2">
-                  {/* Session Types */}
-                  <div className="flex items-center gap-2 text-sm text-olive-600">
-                    <Video className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
-                    <span>
-                      {hasVirtual && hasInPerson 
-                        ? "Virtual & In-Person" 
-                        : hasVirtual 
-                        ? "Virtual Only" 
-                        : "In-Person Only"}
-                    </span>
-                  </div>
+                  {/* Session Types - only show if location data is available */}
+                  {(hasVirtual || hasInPerson) && (
+                    <div className="flex items-center gap-2 text-sm text-olive-600">
+                      <Video className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
+                      <span>
+                        {hasVirtual && hasInPerson
+                          ? "Virtual & In-Person"
+                          : hasVirtual
+                          ? "Virtual Only"
+                          : "In-Person Only"}
+                      </span>
+                    </div>
+                  )}
                   
                   {/* Price Range */}
                   {practitioner.price_range && (practitioner.price_range.min || practitioner.price_range.max) && (

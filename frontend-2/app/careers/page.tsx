@@ -35,38 +35,12 @@ export default function CareersPage() {
     },
   ]
 
-  const openPositions = [
-    {
-      title: "Senior Full Stack Engineer",
-      department: "Engineering",
-      location: "Remote (US)",
-      type: "Full-time",
-    },
-    {
-      title: "Practitioner Success Manager",
-      department: "Practitioner Success",
-      location: "New York, NY",
-      type: "Full-time",
-    },
-    {
-      title: "Content Marketing Specialist",
-      department: "Marketing",
-      location: "Remote (US)",
-      type: "Full-time",
-    },
-    {
-      title: "UX/UI Designer",
-      department: "Product",
-      location: "Remote (US)",
-      type: "Full-time",
-    },
-    {
-      title: "Community Manager",
-      department: "Marketing",
-      location: "Remote (US)",
-      type: "Part-time",
-    },
-  ]
+  const openPositions: Array<{
+    title: string
+    department: string
+    location: string
+    type: string
+  }> = []
 
   return (
     <div className="container max-w-5xl py-12">
@@ -148,31 +122,38 @@ export default function CareersPage() {
 
         <section>
           <h2 className="text-2xl font-semibold mb-6">Open Positions</h2>
-          <div className="space-y-4">
-            {openPositions.map((position, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <CardTitle>{position.title}</CardTitle>
-                  <CardDescription>{position.department}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
-                      {position.location}
-                    </span>
-                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
-                      {position.type}
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    View Position <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          {openPositions.length > 0 ? (
+            <div className="space-y-4">
+              {openPositions.map((position, index) => (
+                <Card key={index}>
+                  <CardHeader>
+                    <CardTitle>{position.title}</CardTitle>
+                    <CardDescription>{position.department}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
+                        {position.location}
+                      </span>
+                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                        {position.type}
+                      </span>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full">
+                      View Position <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-sage-50/50 rounded-xl border border-sage-100">
+              <p className="text-lg text-olive-700 mb-2">No open positions at this time</p>
+              <p className="text-muted-foreground">Check back soon or submit a general application below.</p>
+            </div>
+          )}
         </section>
 
         <section className="bg-[rgba(245,240,235,0.7)] p-8 rounded-xl text-center">

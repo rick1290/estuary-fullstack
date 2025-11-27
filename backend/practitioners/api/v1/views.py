@@ -2040,8 +2040,11 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
         """Get the current Stripe Connect status for the practitioner"""
         try:
             practitioner = request.user.practitioner_profile
-            payment_profile = request.user.payment_profile
-            
+
+            # Get or create payment profile for the user
+            from users.models import UserPaymentProfile
+            payment_profile, _ = UserPaymentProfile.objects.get_or_create(user=request.user)
+
             # Check if Stripe account exists
             has_stripe_account = bool(payment_profile.stripe_account_id)
             
@@ -2092,8 +2095,11 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
         """Create a Stripe Connect account link for onboarding"""
         try:
             practitioner = request.user.practitioner_profile
-            payment_profile = request.user.payment_profile
-            
+
+            # Get or create payment profile for the user
+            from users.models import UserPaymentProfile
+            payment_profile, _ = UserPaymentProfile.objects.get_or_create(user=request.user)
+
             from integrations.stripe.client import StripeClient
             import stripe
             from django.conf import settings
@@ -2150,8 +2156,11 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
         """Create a new account link to continue onboarding or update account"""
         try:
             practitioner = request.user.practitioner_profile
-            payment_profile = request.user.payment_profile
-            
+
+            # Get or create payment profile for the user
+            from users.models import UserPaymentProfile
+            payment_profile, _ = UserPaymentProfile.objects.get_or_create(user=request.user)
+
             if not payment_profile.stripe_account_id:
                 return Response(
                     {"detail": "No Stripe account found. Please create one first."},
@@ -2194,8 +2203,11 @@ class PractitionerApplicationViewSet(viewsets.ViewSet):
         """Disconnect the Stripe Connect account"""
         try:
             practitioner = request.user.practitioner_profile
-            payment_profile = request.user.payment_profile
-            
+
+            # Get or create payment profile for the user
+            from users.models import UserPaymentProfile
+            payment_profile, _ = UserPaymentProfile.objects.get_or_create(user=request.user)
+
             if not payment_profile.stripe_account_id:
                 return Response(
                     {"detail": "No Stripe account to disconnect"},

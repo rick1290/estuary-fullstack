@@ -177,6 +177,7 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
     topics = TopicSerializer(many=True, read_only=True)
     modalities = ModalitySerializer(many=True, read_only=True)
     certifications = CertificationSerializer(many=True, read_only=True)
+    educations = EducationSerializer(many=True, read_only=True)
     questions = serializers.SerializerMethodField()
 
     class Meta:
@@ -188,7 +189,7 @@ class PractitionerDetailSerializer(serializers.ModelSerializer):
             'full_name', 'average_rating', 'total_reviews', 'total_services',
             'completed_sessions_count', 'price_range', 'next_available_date',
             'primary_location', 'specializations', 'styles', 'topics',
-            'modalities', 'certifications', 'questions'
+            'modalities', 'certifications', 'educations', 'questions'
         ]
         read_only_fields = fields
     

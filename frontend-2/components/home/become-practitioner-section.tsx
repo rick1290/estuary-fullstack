@@ -96,20 +96,20 @@ export default function BecomePractitionerSection() {
                   priority
                 />
 
-                {/* Stats overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-                  <div className="grid grid-cols-3 gap-4 text-white">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold drop-shadow-lg">500+</p>
-                      <p className="text-sm drop-shadow-md">Practitioners</p>
+                {/* Stats overlay with white card backgrounds */}
+                <div className="absolute bottom-6 left-6 right-6">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg">
+                      <p className="text-2xl font-bold text-olive-900">500+</p>
+                      <p className="text-xs text-olive-600">Practitioners</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold drop-shadow-lg">10k+</p>
-                      <p className="text-sm drop-shadow-md">Sessions</p>
+                    <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg">
+                      <p className="text-2xl font-bold text-olive-900">10k+</p>
+                      <p className="text-xs text-olive-600">Sessions</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold drop-shadow-lg">4.9</p>
-                      <p className="text-sm drop-shadow-md">Avg Rating</p>
+                    <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 text-center shadow-lg">
+                      <p className="text-2xl font-bold text-olive-900">4.9</p>
+                      <p className="text-xs text-olive-600">Avg Rating</p>
                     </div>
                   </div>
                 </div>

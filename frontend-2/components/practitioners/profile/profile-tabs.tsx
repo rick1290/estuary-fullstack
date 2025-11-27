@@ -70,16 +70,13 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
                   practitioner_status={practitioner.practitioner_status}
                 />
               </div>
-              {((practitioner.educations && practitioner.educations.length > 0) || 
-                (practitioner.certifications && practitioner.certifications.length > 0)) && (
-                <div>
-                  <h3 className="text-lg font-semibold text-olive-900 mb-4">Education & Certifications</h3>
-                  <CredentialsTab 
-                    educations={practitioner.educations || []} 
-                    certifications={practitioner.certifications || []} 
-                  />
-                </div>
-              )}
+              <div>
+                <h3 className="text-lg font-semibold text-olive-900 mb-4">Education & Certifications</h3>
+                <CredentialsTab
+                  educations={practitioner.educations || []}
+                  certifications={practitioner.certifications || []}
+                />
+              </div>
             </div>
           </TabsContent>
 
