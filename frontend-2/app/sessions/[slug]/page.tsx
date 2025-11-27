@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import SessionBookingPanel from "@/components/sessions/session-booking-panel"
+import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -407,35 +408,11 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
             {/* Practitioner Spotlight */}
             {service?.primary_practitioner && (
-              <section className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">Meet Your Guide</h2>
-                <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="flex-shrink-0">
-                    {service.primary_practitioner.profile_image_url ? (
-                      <img
-                        src={service.primary_practitioner.profile_image_url}
-                        alt={service.primary_practitioner.display_name}
-                        className="w-32 h-32 rounded-2xl object-cover shadow-xl"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-xl">
-                        <span className="text-4xl font-medium text-olive-800">
-                          {service.primary_practitioner.display_name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-medium text-olive-900 mb-2">{service.primary_practitioner.display_name}</h3>
-                    <Link
-                      href={`/practitioners/${service.primary_practitioner.slug}`}
-                      className="text-sage-600 hover:text-sage-700 underline text-sm"
-                    >
-                      View Full Profile
-                    </Link>
-                  </div>
-                </div>
-              </section>
+              <PractitionerSpotlight
+                practitioners={[service.primary_practitioner]}
+                role="guide"
+                animationDelay="0.6s"
+              />
             )}
 
             {/* Session Details Card */}

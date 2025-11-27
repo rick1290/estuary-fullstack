@@ -4,9 +4,17 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Clock, MapPin } from "lucide-react"
+import { Clock, MapPin, User, Package, ShoppingBag } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
+
+// Get fallback icon based on service type
+function getServiceIcon(serviceType: string) {
+  const type = serviceType?.toLowerCase()
+  if (type === "bundle") return Package
+  if (type === "package") return ShoppingBag
+  return User // Default for sessions
+}
 
 interface Session {
   id: string | number
@@ -55,7 +63,7 @@ export default function SessionOfferings({
   }
 
   return (
-    <div className="mb-10">
+    <div className="mt-10 mb-10">
       <h2 className="text-2xl font-bold mb-4">Sessions, Bundles & Packages</h2>
 
       {/* Category Filters */}
@@ -88,47 +96,71 @@ export default function SessionOfferings({
           .filter(
             (session) => !selectedServiceType || (session.category && session.category.id === selectedServiceType),
           )
-          .map((session) => (
-            <Card key={session.id} className="overflow-hidden transition-all hover:shadow-md">
-              <CardContent className="p-0">
-                <div className="flex flex-col sm:flex-row items-center justify-between p-4 h-full">
-                  <div className="w-full sm:w-2/3 mb-4 sm:mb-0">
-                    <h3 className="font-semibold text-lg mb-2">{session.name}</h3>
+          .map((session) => {
+            const serviceType = session.service_type_code || session.service_type?.name || "session"
+            const ServiceIcon = getServiceIcon(serviceType)
+            const config = getServiceTypeConfig(serviceType)
 
-                    {/* Replace category badge with service type badge */}
-                    <Badge
-                      className="mb-3 capitalize"
-                      variant={getServiceTypeConfig(session.service_type_code || session.service_type?.name).variant}
-                    >
-                      {session.service_type_display || session.service_type_code || session.service_type?.name}
-                    </Badge>
+            return (
+              <Card key={session.id} className="overflow-hidden transition-all hover:shadow-md">
+                <CardContent className="p-0">
+                  <div className="flex items-center gap-4 p-4">
+                    {/* Service Image/Icon */}
+                    <div className="flex-shrink-0">
+                      {session.image_url ? (
+                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-sage-100">
+                          <img
+                            src={session.image_url}
+                            alt={session.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sage-100 to-blush-100 flex items-center justify-center">
+                          <ServiceIcon className="h-7 w-7 text-sage-600" strokeWidth={1.5} />
+                        </div>
+                      )}
+                    </div>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" />
-                        <span>{session.duration_minutes || session.duration} minutes</span>
-                      </div>
+                    {/* Service Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg mb-1 truncate">{session.name}</h3>
 
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4" />
-                        <span>{session.location_type.charAt(0).toUpperCase() + session.location_type.slice(1)}</span>
+                      <Badge
+                        className="mb-2 capitalize"
+                        variant={config.variant}
+                      >
+                        {session.service_type_display || serviceType}
+                      </Badge>
+
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4" />
+                          <span>{session.duration_minutes || session.duration} minutes</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-4 w-4" />
+                          <span>{session.location_type.charAt(0).toUpperCase() + session.location_type.slice(1)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
-                    <p className="font-semibold text-primary">{session.price ? `$${session.price}` : "Free"}</p>
+                    {/* Price & CTA */}
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <p className="font-semibold text-primary text-lg">{session.price ? `$${session.price}` : "Free"}</p>
 
-                    <Button asChild variant="outline">
-                      <Link href={getServiceDetailUrl(session)}>
-                        {getServiceCtaText(session.service_type_code || session.service_type?.name)}
-                      </Link>
-                    </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={getServiceDetailUrl(session)}>
+                          {getServiceCtaText(serviceType)}
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
       </div>
     </div>
   )
