@@ -73,7 +73,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           {/* Avatar */}
           <div className="flex-shrink-0">
             <div className="relative">
-              <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100">
+              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-lg">
                 {practitioner.profile_image_url ? (
                   <img
                     src={practitioner.profile_image_url}
@@ -82,7 +82,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-3xl font-bold text-olive-800">
+                    <span className="text-4xl lg:text-5xl font-bold text-olive-800">
                       {practitioner.display_name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>

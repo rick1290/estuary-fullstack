@@ -1,8 +1,8 @@
 "use client"
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight, Clock, Calendar, Check, Heart, Share2, Package, TrendingDown, AlertCircle, Sparkles } from "lucide-react"
+import { ChevronRight, Clock, Calendar, Check, Heart, Share2, Package, TrendingDown, AlertCircle, Sparkles, ExternalLink } from "lucide-react"
 import BundleBookingPanel from "@/components/bundles/bundle-booking-panel"
 import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import {
 export default function BundleDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
   const router = useRouter()
+  const bookingPanelRef = useRef<HTMLDivElement>(null)
   const [isSaveLoading, setIsSaveLoading] = useState(false)
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -84,6 +85,11 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
       setIsSaveLoading(false)
     }
   }, [serviceData, isFavorited, isAuthenticated, openAuthModal, refetchFavorites])
+
+  // Scroll to booking panel
+  const scrollToBooking = useCallback(() => {
+    bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   // Handle purchase
   const handlePurchase = useCallback(() => {
@@ -272,7 +278,7 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
 
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="shadow-lg" onClick={handlePurchase}>
+                <Button size="lg" className="shadow-lg" onClick={scrollToBooking}>
                   Purchase Bundle - ${bundle.price}
                 </Button>
                 <Button
@@ -396,6 +402,109 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
               </div>
             </section>
 
+            {/* Included Services */}
+            {bundle.child_relationships && bundle.child_relationships.length > 0 && (
+              <section className="animate-fade-in">
+                <h2 className="text-3xl font-medium text-olive-900 mb-8">What's Included in This Bundle</h2>
+                <div className="space-y-4">
+                  {bundle.child_relationships.map((relationship: any) => {
+                    const childService = relationship.child_service
+                    if (!childService) return null
+
+                    return (
+                      <Card key={relationship.id} className="border-2 border-sage-200 hover:border-sage-300 transition-colors overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="flex flex-col md:flex-row">
+                            {/* Service Image */}
+                            {childService.image_url && (
+                              <div className="md:w-48 h-32 md:h-auto flex-shrink-0">
+                                <img
+                                  src={childService.image_url}
+                                  alt={childService.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+
+                            {/* Service Info */}
+                            <div className="flex-1 p-6">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="sage" className="text-xs">
+                                      {childService.service_type === 'session' ? 'Session' : childService.service_type}
+                                    </Badge>
+                                    {relationship.quantity > 1 && (
+                                      <Badge variant="terracotta" className="text-xs">
+                                        ×{relationship.quantity} included
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <h3 className="text-xl font-semibold text-olive-900 mb-2">
+                                    {childService.name}
+                                  </h3>
+                                  {childService.short_description && (
+                                    <p className="text-olive-700 text-sm leading-relaxed line-clamp-2 mb-3">
+                                      {childService.short_description}
+                                    </p>
+                                  )}
+                                  <div className="flex flex-wrap items-center gap-4 text-sm text-olive-600">
+                                    {childService.duration_minutes && (
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                                        <span>{childService.duration_minutes} min per session</span>
+                                      </div>
+                                    )}
+                                    {childService.price && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-olive-500">Individual price:</span>
+                                        <span className="font-medium text-olive-700">${childService.price}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* View Service Link */}
+                                <Link
+                                  href={`/sessions/${childService.slug}`}
+                                  className="flex-shrink-0"
+                                >
+                                  <Button variant="ghost" size="sm" className="text-sage-600 hover:text-sage-800">
+                                    <span className="hidden sm:inline mr-1">View</span>
+                                    <ExternalLink className="h-4 w-4" strokeWidth="1.5" />
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+
+                {/* Total Value Summary */}
+                <Card className="mt-6 bg-gradient-to-r from-sage-50 to-terracotta-50 border-2 border-sage-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-olive-700 mb-1">Total Value of Services</p>
+                        <p className="text-2xl font-bold text-olive-900">${originalPrice}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-olive-700 mb-1">Your Bundle Price</p>
+                        <p className="text-2xl font-bold text-terracotta-600">${bundle.price}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-sage-200 flex items-center justify-center gap-2 text-sage-700">
+                      <TrendingDown className="h-5 w-5" />
+                      <span className="font-semibold">You save ${savingsAmount} ({savingsPercentage}% off)</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </section>
+            )}
+
             {/* About */}
             {bundle.description && (
               <section className="animate-fade-in">
@@ -474,7 +583,7 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-8">
+          <div className="space-y-8" ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
               {bundle && (
                 <BundleBookingPanel bundle={{

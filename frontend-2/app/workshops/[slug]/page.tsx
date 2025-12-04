@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useRef } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, Sparkles, AlertCircle } from "lucide-react"
@@ -29,6 +29,7 @@ import {
 
 export default function WorkshopPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
+  const bookingPanelRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
@@ -136,6 +137,11 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   }
 
   const isProcessing = isAddingFavorite || isRemovingFavorite
+
+  // Scroll to booking panel
+  const scrollToBooking = useCallback(() => {
+    bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   // Loading state
   if (isLoading) {
@@ -320,7 +326,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* CTA Section */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="shadow-xl hover:shadow-2xl px-8">
+                  <Button size="lg" className="shadow-xl hover:shadow-2xl px-8" onClick={scrollToBooking}>
                     Reserve Your Spot - ${workshop.price}
                   </Button>
                   <Button 
@@ -542,7 +548,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
           </div>
 
           {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-8">
+          <div className="space-y-8" ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
               <WorkshopBookingPanel workshop={transformedWorkshop} serviceData={serviceData} />
               

@@ -8,6 +8,14 @@ import { Clock, MapPin, User, Package, ShoppingBag } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
+// Format price to remove unnecessary decimals (e.g., "5.00" -> "5", "5.50" -> "5.50")
+function formatPrice(price: string | number): string {
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price
+  if (isNaN(numPrice)) return '0'
+  // If it's a whole number, don't show decimals
+  return numPrice % 1 === 0 ? numPrice.toFixed(0) : numPrice.toFixed(2)
+}
+
 // Get fallback icon based on service type
 function getServiceIcon(serviceType: string) {
   const type = serviceType?.toLowerCase()
@@ -148,7 +156,7 @@ export default function SessionOfferings({
 
                     {/* Price & CTA */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <p className="font-semibold text-primary text-lg">{session.price ? `$${session.price}` : "Free"}</p>
+                      <p className="font-semibold text-primary text-lg">{session.price ? `$${formatPrice(session.price)}` : "Free"}</p>
 
                       <Button asChild variant="outline" size="sm">
                         <Link href={getServiceDetailUrl(session)}>
