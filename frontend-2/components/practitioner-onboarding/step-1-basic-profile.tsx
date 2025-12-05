@@ -26,6 +26,7 @@ interface Step1BasicProfileProps {
   onBack: () => void
   practitionerId: string | null
   setPractitionerId: (id: string) => void
+  onSessionUpdate?: () => Promise<any>
 }
 
 const EXAMPLE_BIOS = [
@@ -39,7 +40,8 @@ export default function Step1BasicProfile({
   onComplete,
   onBack,
   practitionerId,
-  setPractitionerId
+  setPractitionerId,
+  onSessionUpdate
 }: Step1BasicProfileProps) {
   const [formData, setFormData] = useState<Step1Data>({
     display_name: initialData?.display_name || "",
@@ -156,7 +158,19 @@ export default function Step1BasicProfile({
       }
 
       if (data) {
-        setPractitionerId(data.id)
+        // Ensure ID is stored as string for consistency
+        setPractitionerId(String(data.id))
+
+        // Refresh the NextAuth session to include the new practitioner data
+        // This ensures subsequent API calls have access to the practitioner info
+        if (onSessionUpdate) {
+          try {
+            await onSessionUpdate()
+          } catch (err) {
+            console.error('Failed to update session:', err)
+            // Don't block progression if session update fails
+          }
+        }
 
         // Upload profile image if one was selected
         if (imageFile && data.public_uuid) {

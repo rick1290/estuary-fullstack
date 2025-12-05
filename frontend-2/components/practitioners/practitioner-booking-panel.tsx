@@ -122,9 +122,9 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
               <Clock className="h-4 w-4 mx-auto mb-1 text-sage-600" />
               <div className="text-lg font-bold text-olive-900">
                 {practitioner.price_range?.min
-                  ? `$${practitioner.price_range.min}`
+                  ? `$${(practitioner.price_range.min / 100).toFixed(0)}`
                   : practitioner.min_price
-                    ? `$${practitioner.min_price}`
+                    ? `$${(practitioner.min_price / 100).toFixed(0)}`
                     : '$85'}
               </div>
               <div className="text-[10px] text-olive-600">From</div>

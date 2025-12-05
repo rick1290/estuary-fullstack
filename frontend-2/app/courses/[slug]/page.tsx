@@ -1,5 +1,5 @@
 "use client"
-import React from "react"
+import React, { useRef, useCallback } from "react"
 import { ChevronRight, ChevronDown, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
 import ServicePractitioner from "@/components/shared/service-practitioner"
@@ -158,6 +158,7 @@ This course is perfect for anyone interested in improving their health through b
 
 export default function CourseDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
+  const bookingPanelRef = useRef<HTMLDivElement>(null)
   const [expandedSessions, setExpandedSessions] = React.useState<Set<number>>(new Set())
 
   const toggleSession = (sessionId: number) => {
@@ -320,6 +321,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
   const isProcessing = isAddingFavorite || isRemovingFavorite
 
+  // Scroll to booking panel
+  const scrollToBooking = useCallback(() => {
+    bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
   // Loading state
   if (isLoading) {
     return (
@@ -478,7 +484,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* CTA Section */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="shadow-xl hover:shadow-2xl px-8">
+                  <Button size="lg" className="shadow-xl hover:shadow-2xl px-8" onClick={scrollToBooking}>
                     Enroll Now - ${course.price}
                   </Button>
                   <Button 
@@ -763,7 +769,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-8">
+          <div className="space-y-8" ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
               <CourseBookingPanel course={course} />
               

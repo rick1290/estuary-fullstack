@@ -129,13 +129,14 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
   const coursesAndWorkshops = [...(getServicesByType("course") || []), ...(getServicesByType("workshop") || [])]
   const oneOnOneSessions = getServicesByTypes(["session", "bundle", "package"]) || []
 
-  // Get unique service categories from API data
+  // Get unique practitioner categories from API data
+  // Using practitioner_category (practitioner's own custom categorization) instead of global category
   const serviceCategories = (() => {
     if (servicesData?.results && servicesData.results.length > 0) {
       const categories = new Map()
       servicesData.results.forEach(service => {
-        if (service.category) {
-          categories.set(service.category.id, service.category)
+        if (service.practitioner_category) {
+          categories.set(service.practitioner_category.id, service.practitioner_category)
         }
       })
       return Array.from(categories.values())

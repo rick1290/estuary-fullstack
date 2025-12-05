@@ -37,18 +37,12 @@ const ONBOARDING_STEPS: Step[] = [
   },
   {
     number: 5,
-    title: "Verification",
-    description: "Background check (optional)",
-    estimatedTime: "Skip ok"
-  },
-  {
-    number: 6,
     title: "Questions",
     description: "Common client questions",
     estimatedTime: "Skip ok"
   },
   {
-    number: 7,
+    number: 6,
     title: "Payment Setup",
     description: "Connect for payouts",
     estimatedTime: "5 min"

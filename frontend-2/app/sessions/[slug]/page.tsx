@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
@@ -28,6 +28,7 @@ import {
 export default function SessionDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
   const [isSaveLoading, setIsSaveLoading] = useState(false)
+  const bookingPanelRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
@@ -86,6 +87,11 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       setIsSaveLoading(false)
     }
   }, [serviceData, isFavorited, isAuthenticated, openAuthModal, refetchFavorites])
+
+  // Scroll to booking panel
+  const scrollToBooking = useCallback(() => {
+    bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   // Loading state
   if (isLoading) {
@@ -259,7 +265,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="shadow-lg">
+                <Button size="lg" className="shadow-lg" onClick={scrollToBooking}>
                   Book Your Session
                 </Button>
                 <Button 
@@ -473,7 +479,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
           </div>
 
           {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-8">
+          <div className="space-y-8" ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
               {service && (
                 <SessionBookingPanel session={{
