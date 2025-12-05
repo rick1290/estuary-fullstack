@@ -95,6 +95,11 @@ export default function Step2Specializations({
     setError(null)
 
     try {
+      // Ensure we have a practitioner ID
+      if (!practitionerId) {
+        throw new Error('Practitioner profile not found. Please go back and complete step 1.')
+      }
+
       // Convert string IDs to numbers for the API
       const specialization_ids = formData.specialization_ids.map(id => parseInt(id))
       const style_ids = formData.style_ids?.map(id => parseInt(id)) || []

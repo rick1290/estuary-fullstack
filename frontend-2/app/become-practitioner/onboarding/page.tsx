@@ -8,14 +8,13 @@ import ProgressStepper from "@/components/practitioner-onboarding/progress-stepp
 import { useAuth } from "@/hooks/use-auth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Loader2 } from "lucide-react"
-import { practitionerApplicationsCompleteOnboardingCreate } from "@/src/client/sdk.gen"
+import { practitionerApplicationsCompleteOnboardingCreate, practitionersMyProfileRetrieve } from "@/src/client/sdk.gen"
 
 // Step components
 import Step1BasicProfile from "@/components/practitioner-onboarding/step-1-basic-profile"
 import Step2Specializations from "@/components/practitioner-onboarding/step-2-specializations"
 import Step3SchedulingPreferences from "@/components/practitioner-onboarding/step-3-scheduling-preferences"
 import Step4Credentials from "@/components/practitioner-onboarding/step-4-credentials"
-import Step4Verification from "@/components/practitioner-onboarding/step-4-verification"
 import Step6CommonQuestions from "@/components/practitioner-onboarding/step-6-common-questions"
 import Step5PaymentSetup from "@/components/practitioner-onboarding/step-5-payment-setup"
 
@@ -40,9 +39,6 @@ interface OnboardingData {
     certifications: any[]
     educations: any[]
   }
-  verification?: {
-    background_check_consent: boolean
-  }
   commonQuestions?: {
     questions: any[]
   }
@@ -62,26 +58,40 @@ export default function PractitionerOnboardingPage() {
   const [error, setError] = useState<string | null>(null)
   const [practitionerId, setPractitionerId] = useState<string | null>(null)
 
-  // Check if user is authenticated
+  // Check if user is authenticated and fetch existing practitioner profile
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      // Give auth state a moment to settle after signup/login
-      await new Promise(resolve => setTimeout(resolve, 800))
-
-      if (!isAuthenticated) {
-        // Not authenticated after waiting - redirect to landing page
-        router.push('/become-practitioner')
-        return
-      }
-
-      // User is authenticated - let them proceed
-      // They'll create their practitioner profile in Step 1
-      setIsLoading(false)
+    // Wait for auth state to be determined (not just initial undefined state)
+    // isAuthenticated will be false initially while loading, then true/false once determined
+    if (isAuthenticated === undefined) {
+      return // Still loading auth state
     }
 
-    // Only run this check once on mount
-    checkAuthStatus()
-  }, [])
+    if (isAuthenticated) {
+      // User is authenticated - check if they have an existing practitioner profile
+      const fetchExistingProfile = async () => {
+        try {
+          const { data } = await practitionersMyProfileRetrieve()
+          if (data?.id) {
+            // User already has a practitioner profile, store the ID
+            setPractitionerId(String(data.id))
+          }
+        } catch (err) {
+          // No existing profile - that's fine, they'll create one in step 1
+          console.log('No existing practitioner profile found')
+        }
+        setIsLoading(false)
+      }
+      fetchExistingProfile()
+    } else {
+      // Give a bit more time for auth to settle after fresh signup
+      const timer = setTimeout(() => {
+        if (!isAuthenticated) {
+          router.push('/become-practitioner')
+        }
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [isAuthenticated, router])
 
   // Load saved progress from localStorage
   useEffect(() => {
@@ -92,6 +102,9 @@ export default function PractitionerOnboardingPage() {
         setOnboardingData(data.formData || {})
         setCurrentStep(data.currentStep || 1)
         setCompletedSteps(data.completedSteps || [])
+        if (data.practitionerId) {
+          setPractitionerId(data.practitionerId)
+        }
       } catch (err) {
         console.error('Error loading saved progress:', err)
       }
@@ -104,10 +117,11 @@ export default function PractitionerOnboardingPage() {
       currentStep,
       completedSteps,
       formData: onboardingData,
+      practitionerId,
       lastSaved: new Date().toISOString()
     }
     localStorage.setItem('practitioner_onboarding', JSON.stringify(dataToSave))
-  }, [currentStep, completedSteps, onboardingData])
+  }, [currentStep, completedSteps, onboardingData, practitionerId])
 
   const handleStepComplete = async (stepNumber: number, data: any) => {
     // Update onboarding data
@@ -122,7 +136,7 @@ export default function PractitionerOnboardingPage() {
     }
 
     // Move to next step
-    if (stepNumber < 7) {
+    if (stepNumber < 6) {
       setCurrentStep(stepNumber + 1)
     } else {
       // All steps complete - mark onboarding as complete via dedicated endpoint
@@ -208,6 +222,7 @@ export default function PractitionerOnboardingPage() {
                 onBack={handleStepBack}
                 practitionerId={practitionerId}
                 setPractitionerId={setPractitionerId}
+                onSessionUpdate={updateSession}
               />
             )}
 
@@ -239,27 +254,18 @@ export default function PractitionerOnboardingPage() {
             )}
 
             {currentStep === 5 && (
-              <Step4Verification
-                initialData={onboardingData.verification}
-                onComplete={(data) => handleStepComplete(5, { verification: data })}
+              <Step6CommonQuestions
+                initialData={onboardingData.commonQuestions}
+                onComplete={(data) => handleStepComplete(5, { commonQuestions: data })}
                 onBack={handleStepBack}
                 practitionerId={practitionerId}
               />
             )}
 
             {currentStep === 6 && (
-              <Step6CommonQuestions
-                initialData={onboardingData.commonQuestions}
-                onComplete={(data) => handleStepComplete(6, { commonQuestions: data })}
-                onBack={handleStepBack}
-                practitionerId={practitionerId}
-              />
-            )}
-
-            {currentStep === 7 && (
               <Step5PaymentSetup
                 initialData={onboardingData.paymentSetup}
-                onComplete={(data) => handleStepComplete(7, { paymentSetup: data })}
+                onComplete={(data) => handleStepComplete(6, { paymentSetup: data })}
                 onBack={handleStepBack}
                 practitionerId={practitionerId}
               />

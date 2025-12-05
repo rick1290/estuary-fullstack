@@ -92,14 +92,15 @@ export default function AuthModal({
   }, [open])
 
   // Handle redirection after successful login
+  // Skip this effect for practitioners - they have a dedicated redirect to onboarding
   useEffect(() => {
-    if (loginSuccessful && redirectUrl) {
+    if (loginSuccessful && redirectUrl && signupRole !== 'practitioner') {
       const redirectTimer = setTimeout(() => {
         window.location.href = redirectUrl
       }, 500)
       return () => clearTimeout(redirectTimer)
     }
-  }, [loginSuccessful, redirectUrl])
+  }, [loginSuccessful, redirectUrl, signupRole])
 
   const getActionText = () => {
     switch (serviceType) {

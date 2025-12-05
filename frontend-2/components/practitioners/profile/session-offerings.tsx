@@ -46,6 +46,10 @@ interface Session {
     id: string
     name: string
   }
+  practitioner_category?: {
+    id: string
+    name: string
+  }
 }
 
 interface Category {
@@ -102,7 +106,7 @@ export default function SessionOfferings({
       <div className="space-y-4">
         {sessions
           .filter(
-            (session) => !selectedServiceType || (session.category && session.category.id === selectedServiceType),
+            (session) => !selectedServiceType || (session.practitioner_category && session.practitioner_category.id === selectedServiceType),
           )
           .map((session) => {
             const serviceType = session.service_type_code || session.service_type?.name || "session"
