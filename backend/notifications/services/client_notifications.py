@@ -200,7 +200,7 @@ class ClientNotificationService(BaseNotificationService):
             'duration_minutes': service.duration_minutes,
             'location': self._get_booking_location(booking),
             'total_amount': f"${(booking.credits_allocated or 0) / 100:.2f}",
-            'credits_used': f"${(booking.order.credits_used_cents or 0) / 100:.2f}" if booking.order and booking.order.credits_used_cents else None,
+            'credits_used': f"${(booking.order.credits_applied_cents or 0) / 100:.2f}" if booking.order and booking.order.credits_applied_cents else None,
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/user/bookings/{booking.id}",
             'add_to_calendar_url': self._generate_calendar_url(booking),
             'cancellation_policy_url': f"{settings.FRONTEND_URL}/policies/cancellation",
