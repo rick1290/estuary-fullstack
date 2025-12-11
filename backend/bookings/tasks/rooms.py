@@ -37,8 +37,9 @@ def create_missing_booking_rooms():
     # Find bookings needing rooms
     cutoff_date = timezone.now() - timedelta(days=7)
 
-    # Subquery to check if room exists
-    room_exists = Room.objects.filter(booking_id=OuterRef('pk'))
+    # Subquery to check if room exists via RoomBookingRelation
+    from rooms.models import RoomBookingRelation
+    room_exists = RoomBookingRelation.objects.filter(booking_id=OuterRef('pk'))
 
     bookings = Booking.objects.annotate(
         has_room=Exists(room_exists)
