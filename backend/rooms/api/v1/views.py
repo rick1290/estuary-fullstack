@@ -321,7 +321,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
             'participant_identity': identity,
             'expires_at': token_expiry,
             'permissions': {},
-            'join_url': room.get_join_url(participant_name)
+            'join_url': room.get_join_url(participant_name),
+            'public_uuid': str(room.public_uuid),
+            'recording_status': room.recording_status,  # Include current recording state
         }
         
         response_serializer = RoomTokenResponseSerializer(response_data)

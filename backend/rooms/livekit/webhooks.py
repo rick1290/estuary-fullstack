@@ -248,19 +248,26 @@ class LiveKitWebhookHandler:
 
             # Mark ServiceSession as in_progress when the HOST (practitioner) joins
             # This is when the session truly starts - not when the room is created
-            if room.service_session and room.service_session.status == 'scheduled':
-                # Check if this user is the practitioner (host)
-                is_host = False
-                service = room.service_session.service
-                if service and service.primary_practitioner:
-                    is_host = (user_id == service.primary_practitioner.user_id)
+            if room.service_session:
+                session = room.service_session
+                service = session.service
+                practitioner = service.primary_practitioner if service else None
+                practitioner_user_id = practitioner.user_id if practitioner else None
 
-                if is_host:
-                    now = timezone.now()
-                    room.service_session.status = 'in_progress'
-                    room.service_session.actual_start_time = now
-                    room.service_session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
-                    logger.info(f"[PARTICIPANT_JOINED] Host joined - ServiceSession {room.service_session.id} marked in_progress")
+                logger.info(f"[PARTICIPANT_JOINED] Session check: session_status={session.status}, user_id={user_id}, practitioner_user_id={practitioner_user_id}")
+
+                if session.status == 'scheduled':
+                    # Check if this user is the practitioner (host)
+                    is_host = (user_id == practitioner_user_id) if practitioner_user_id else False
+
+                    if is_host:
+                        now = timezone.now()
+                        session.status = 'in_progress'
+                        session.actual_start_time = now
+                        session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
+                        logger.info(f"[PARTICIPANT_JOINED] Host joined - ServiceSession {session.id} marked in_progress")
+                    else:
+                        logger.info(f"[PARTICIPANT_JOINED] Non-host participant joined, session stays scheduled")
 
             logger.info(f"Participant {participant_info.identity} joined room {room.name}")
             return {"status": "success", "participant_id": str(participant.id)}
@@ -312,9 +319,14 @@ class LiveKitWebhookHandler:
     
     def _handle_track_published(self, event: webhook_pb2.WebhookEvent) -> Dict[str, Any]:
         """Handle track published event."""
-        track_info = event.track
-        participant_info = event.participant
-        room_info = event.room
+        try:
+            track_info = event.track
+            participant_info = event.participant
+            room_info = event.room
+        except AttributeError as e:
+            # Some LiveKit SDK versions have issues with track event attributes
+            logger.warning(f"Could not access track event attributes: {e}")
+            return {"status": "success", "message": "Track event ignored due to SDK compatibility"}
 
         try:
             room = Room.objects.get(livekit_room_name=room_info.name)
@@ -324,9 +336,14 @@ class LiveKitWebhookHandler:
             )
 
             # Update participant analytics based on track type
-            # Use track_info.type value directly (1=AUDIO, 2=VIDEO) or check string representation
-            track_type = getattr(track_info, 'type', None)
-            track_source = getattr(track_info, 'source', None)
+            # Access type/source safely - different SDK versions expose these differently
+            track_type = None
+            track_source = None
+            try:
+                track_type = track_info.type if hasattr(track_info, 'type') else None
+                track_source = track_info.source if hasattr(track_info, 'source') else None
+            except Exception:
+                pass  # Ignore if we can't get track type/source
 
             # TrackType enum: AUDIO=1, VIDEO=2
             # TrackSource enum: CAMERA=1, MICROPHONE=2, SCREEN_SHARE=3, SCREEN_SHARE_AUDIO=4

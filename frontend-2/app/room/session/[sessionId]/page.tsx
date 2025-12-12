@@ -27,17 +27,21 @@ export default function SessionRoomPage() {
     enabled: !!sessionId
   });
 
-  // Initialize recording state from session room data
+  // Initialize recording state from room token response (fresh on every join/rejoin)
   useEffect(() => {
-    if (sessionDetails?.room?.recording_status) {
-      const isActive = ['starting', 'active'].includes(sessionDetails.room.recording_status);
+    // Prefer roomInfo.recording_status (from token response) as it's always fresh
+    // Fall back to sessionDetails for initial render
+    const recordingStatus = (roomInfo as { recording_status?: string })?.recording_status ?? sessionDetails?.room?.recording_status;
+    if (recordingStatus) {
+      const isActive = ['starting', 'active'].includes(recordingStatus);
       setIsRecording(isActive);
-      console.log('Initialized recording state from session:', {
-        recording_status: sessionDetails.room.recording_status,
+      console.log('Initialized recording state:', {
+        recording_status: recordingStatus,
+        source: (roomInfo as { recording_status?: string })?.recording_status ? 'roomInfo' : 'sessionDetails',
         isRecording: isActive
       });
     }
-  }, [sessionDetails?.room?.recording_status]);
+  }, [(roomInfo as { recording_status?: string })?.recording_status, sessionDetails?.room?.recording_status]);
 
   // Recording mutations
   const startRecordingMutation = useMutation(roomsStartRecordingCreateMutation());

@@ -26,19 +26,23 @@ export default function RoomPage() {
     enabled: !!roomId && isAuthenticated
   });
 
-  // Initialize recording state from API response
+  const { token, loading: tokenLoading, error: tokenError, roomInfo } = useRoomToken({ roomId });
+
+  // Initialize recording state from room token response (fresh on every join/rejoin)
   useEffect(() => {
-    if (accessData?.room?.recording_status) {
-      const isActive = ['starting', 'active'].includes(accessData.room.recording_status);
+    // Prefer roomInfo.recording_status (from token response) as it's always fresh
+    // Fall back to accessData for initial render
+    const recordingStatus = (roomInfo as { recording_status?: string })?.recording_status ?? accessData?.room?.recording_status;
+    if (recordingStatus) {
+      const isActive = ['starting', 'active'].includes(recordingStatus);
       setIsRecording(isActive);
-      console.log('Initialized recording state from API:', {
-        recording_status: accessData.room.recording_status,
+      console.log('Initialized recording state:', {
+        recording_status: recordingStatus,
+        source: (roomInfo as { recording_status?: string })?.recording_status ? 'roomInfo' : 'accessData',
         isRecording: isActive
       });
     }
-  }, [accessData?.room?.recording_status]);
-  
-  const { token, loading: tokenLoading, error: tokenError, roomInfo } = useRoomToken({ roomId });
+  }, [(roomInfo as { recording_status?: string })?.recording_status, accessData?.room?.recording_status]);
   
   // Fetch booking details if we have a booking ID
   const bookingId = accessData?.booking?.id;

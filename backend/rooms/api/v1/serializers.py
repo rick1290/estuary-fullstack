@@ -114,6 +114,8 @@ class RoomTokenResponseSerializer(serializers.Serializer):
     expires_at = serializers.DateTimeField()
     permissions = serializers.DictField()
     join_url = serializers.URLField()
+    public_uuid = serializers.UUIDField()
+    recording_status = serializers.CharField(allow_null=True, required=False)
 
 
 class RoomParticipantSerializer(serializers.ModelSerializer):
