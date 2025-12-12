@@ -291,19 +291,22 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Calculate expiry time
         token_expiry = timezone.now() + timezone.timedelta(hours=4)
-        
-        # Create RoomToken record
-        room_token = RoomToken.objects.create(
-            room=room,
-            participant=participant,
-            user=user,
+
+        # Create RoomToken record - use get_or_create to handle race conditions
+        # where multiple requests generate the same token simultaneously
+        room_token, token_created = RoomToken.objects.get_or_create(
             token=token_info['token'],
-            identity=identity,
-            role=role,
-            permissions={},  # Can be expanded later
-            expires_at=token_expiry,
-            ip_address=request.META.get('REMOTE_ADDR'),
-            user_agent=request.META.get('HTTP_USER_AGENT', '')
+            defaults={
+                'room': room,
+                'participant': participant,
+                'user': user,
+                'identity': identity,
+                'role': role,
+                'permissions': {},  # Can be expanded later
+                'expires_at': token_expiry,
+                'ip_address': request.META.get('REMOTE_ADDR'),
+                'user_agent': request.META.get('HTTP_USER_AGENT', '')
+            }
         )
         
         # Update room status if needed
@@ -318,7 +321,9 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
             'participant_identity': identity,
             'expires_at': token_expiry,
             'permissions': {},
-            'join_url': room.get_join_url(participant_name)
+            'join_url': room.get_join_url(participant_name),
+            'public_uuid': str(room.public_uuid),
+            'recording_status': room.recording_status,  # Include current recording state
         }
         
         response_serializer = RoomTokenResponseSerializer(response_data)

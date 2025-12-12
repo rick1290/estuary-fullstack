@@ -111,14 +111,10 @@ class LiveKitWebhookHandler:
             room.actual_start = now
             room.save(update_fields=['status', 'livekit_room_sid', 'actual_start', 'updated_at'])
 
-            # Update ServiceSession status to in_progress
-            if room.service_session:
-                room.service_session.status = 'in_progress'
-                room.service_session.actual_start_time = now
-                room.service_session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
-                logger.info(f"Room {room.name} started - ServiceSession {room.service_session.id} marked in_progress")
-            else:
-                logger.info(f"Room {room.name} started (no service_session)")
+            # NOTE: Don't mark ServiceSession as in_progress here!
+            # room_started just means the room exists in LiveKit, not that anyone joined.
+            # ServiceSession is marked in_progress in _handle_participant_joined when host joins.
+            logger.info(f"Room {room.name} started (room exists in LiveKit)")
 
             return {"status": "success", "room_id": str(room.id)}
 
@@ -250,6 +246,29 @@ class LiveKitWebhookHandler:
             room.save(update_fields=['current_participants', 'peak_participants', 'status', 'updated_at'])
             logger.info(f"[PARTICIPANT_JOINED] Updated room: current_participants={room.current_participants}, status={room.status}")
 
+            # Mark ServiceSession as in_progress when the HOST (practitioner) joins
+            # This is when the session truly starts - not when the room is created
+            if room.service_session:
+                session = room.service_session
+                service = session.service
+                practitioner = service.primary_practitioner if service else None
+                practitioner_user_id = practitioner.user_id if practitioner else None
+
+                logger.info(f"[PARTICIPANT_JOINED] Session check: session_status={session.status}, user_id={user_id}, practitioner_user_id={practitioner_user_id}")
+
+                if session.status == 'scheduled':
+                    # Check if this user is the practitioner (host)
+                    is_host = (user_id == practitioner_user_id) if practitioner_user_id else False
+
+                    if is_host:
+                        now = timezone.now()
+                        session.status = 'in_progress'
+                        session.actual_start_time = now
+                        session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
+                        logger.info(f"[PARTICIPANT_JOINED] Host joined - ServiceSession {session.id} marked in_progress")
+                    else:
+                        logger.info(f"[PARTICIPANT_JOINED] Non-host participant joined, session stays scheduled")
+
             logger.info(f"Participant {participant_info.identity} joined room {room.name}")
             return {"status": "success", "participant_id": str(participant.id)}
 
@@ -300,31 +319,47 @@ class LiveKitWebhookHandler:
     
     def _handle_track_published(self, event: webhook_pb2.WebhookEvent) -> Dict[str, Any]:
         """Handle track published event."""
-        track_info = event.track
-        participant_info = event.participant
-        room_info = event.room
-        
+        try:
+            track_info = event.track
+            participant_info = event.participant
+            room_info = event.room
+        except AttributeError as e:
+            # Some LiveKit SDK versions have issues with track event attributes
+            logger.warning(f"Could not access track event attributes: {e}")
+            return {"status": "success", "message": "Track event ignored due to SDK compatibility"}
+
         try:
             room = Room.objects.get(livekit_room_name=room_info.name)
             participant = RoomParticipant.objects.get(
                 room=room,
                 identity=participant_info.identity
             )
-            
+
             # Update participant analytics based on track type
-            if track_info.type == webhook_pb2.TrackType.VIDEO:
-                if track_info.source == webhook_pb2.TrackSource.SCREEN_SHARE:
+            # Access type/source safely - different SDK versions expose these differently
+            track_type = None
+            track_source = None
+            try:
+                track_type = track_info.type if hasattr(track_info, 'type') else None
+                track_source = track_info.source if hasattr(track_info, 'source') else None
+            except Exception:
+                pass  # Ignore if we can't get track type/source
+
+            # TrackType enum: AUDIO=1, VIDEO=2
+            # TrackSource enum: CAMERA=1, MICROPHONE=2, SCREEN_SHARE=3, SCREEN_SHARE_AUDIO=4
+            if track_type == 2:  # VIDEO
+                if track_source == 3:  # SCREEN_SHARE
                     participant.screen_share_duration = 0  # Start tracking
                 else:
                     participant.video_enabled_duration = 0  # Start tracking
-            elif track_info.type == webhook_pb2.TrackType.AUDIO:
+            elif track_type == 1:  # AUDIO
                 participant.audio_enabled_duration = 0  # Start tracking
-            
+
             participant.save()
-            
-            logger.info(f"Track {track_info.type} published by {participant_info.identity}")
+
+            logger.info(f"Track type={track_type} published by {participant_info.identity}")
             return {"status": "success"}
-            
+
         except (Room.DoesNotExist, RoomParticipant.DoesNotExist) as e:
             logger.error(f"Error handling track published: {e}")
             return {"status": "error", "message": str(e)}
