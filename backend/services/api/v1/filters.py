@@ -27,6 +27,10 @@ class ServiceFilter(django_filters.FilterSet):
     # Practitioner filters
     practitioner = django_filters.NumberFilter(field_name='primary_practitioner__id')
     practitioner_slug = django_filters.CharFilter(field_name='primary_practitioner__slug')
+
+    # Practitioner category filters
+    practitioner_category_id = django_filters.NumberFilter(field_name='practitioner_category__id')
+    uncategorized = django_filters.BooleanFilter(method='filter_uncategorized')
     
     # Price range filters (in dollars, converted to cents)
     min_price = django_filters.NumberFilter(method='filter_min_price')
@@ -93,7 +97,7 @@ class ServiceFilter(django_filters.FilterSet):
         model = Service
         fields = [
             'category', 'category_id', 'modality', 'modality_id', 'service_type', 'service_type_id', 'exclude_types',
-            'practitioner', 'practitioner_slug', 'min_price', 'max_price',
+            'practitioner', 'practitioner_slug', 'practitioner_category_id', 'uncategorized', 'min_price', 'max_price',
             'min_duration', 'max_duration', 'min_participants', 'max_participants',
             'location_type', 'experience_level', 'age', 'is_featured',
             'is_active', 'is_public', 'status', 'is_bundle', 'is_package',
@@ -209,3 +213,9 @@ class ServiceFilter(django_filters.FilterSet):
             Q(primary_practitioner__display_name__icontains=value) |
             Q(category__name__icontains=value)
         )
+
+    def filter_uncategorized(self, queryset, name, value):
+        """Filter services without a practitioner category"""
+        if value:
+            return queryset.filter(practitioner_category__isnull=True)
+        return queryset.filter(practitioner_category__isnull=False)

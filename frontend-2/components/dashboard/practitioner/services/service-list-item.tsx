@@ -100,6 +100,22 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
                 <Badge variant={STATUS_VARIANTS[service.status] || "outline"}>
                   {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
                 </Badge>
+                {service.practitioner_category && (
+                  <Badge
+                    variant="outline"
+                    className="gap-1.5"
+                    style={{
+                      borderColor: service.practitioner_category.color || "#9CAF88",
+                      color: service.practitioner_category.color || "#9CAF88",
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: service.practitioner_category.color || "#9CAF88" }}
+                    />
+                    {service.practitioner_category.name}
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
                 Updated {formatDate(service.updatedAt)}

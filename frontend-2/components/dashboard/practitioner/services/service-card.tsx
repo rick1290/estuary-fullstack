@@ -100,6 +100,26 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
       <CardContent className="flex-grow p-4">
         <h3 className="font-semibold text-lg line-clamp-1 mb-1">{service.name}</h3>
 
+        {/* Category badge */}
+        {service.practitioner_category && (
+          <div className="mb-2">
+            <Badge
+              variant="outline"
+              className="gap-1.5 text-xs"
+              style={{
+                borderColor: service.practitioner_category.color || "#9CAF88",
+                color: service.practitioner_category.color || "#9CAF88",
+              }}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: service.practitioner_category.color || "#9CAF88" }}
+              />
+              {service.practitioner_category.name}
+            </Badge>
+          </div>
+        )}
+
         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{service.description}</p>
 
         {/* Service details */}
