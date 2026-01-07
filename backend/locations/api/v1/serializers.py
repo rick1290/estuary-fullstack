@@ -84,6 +84,8 @@ class AddressSerializer(serializers.Serializer):
 class PractitionerLocationSerializer(serializers.ModelSerializer):
     """Serializer for practitioner locations."""
     address = AddressSerializer(write_only=True, required=False)
+
+    # Read-only display fields
     city_name = serializers.CharField(source='city.name', read_only=True)
     state_name = serializers.CharField(source='state.name', read_only=True)
     state_code = serializers.CharField(source='state.code', read_only=True)
@@ -91,7 +93,14 @@ class PractitionerLocationSerializer(serializers.ModelSerializer):
     country_code = serializers.CharField(source='country.code', read_only=True)
     full_address = serializers.SerializerMethodField()
     location_types = serializers.SerializerMethodField()
-    
+
+    # Write-only fields for name-based location resolution (Google Places)
+    input_city_name = serializers.CharField(write_only=True, required=False)
+    input_state_name = serializers.CharField(write_only=True, required=False)
+    input_state_code = serializers.CharField(write_only=True, required=False, max_length=10)
+    input_country_name = serializers.CharField(write_only=True, required=False)
+    input_country_code = serializers.CharField(write_only=True, required=False, max_length=2)
+
     class Meta:
         model = PractitionerLocation
         fields = [
@@ -100,9 +109,18 @@ class PractitionerLocationSerializer(serializers.ModelSerializer):
             'city_name', 'state_name', 'state_code', 'country_name', 'country_code',
             'latitude', 'longitude', 'is_primary', 'is_virtual', 'is_in_person',
             'service_radius_miles', 'full_address', 'location_types',
-            'address', 'created_at', 'updated_at'
+            'address', 'created_at', 'updated_at',
+            # Write-only fields for name-based input
+            'input_city_name', 'input_state_name', 'input_state_code',
+            'input_country_name', 'input_country_code',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'practitioner']
+        extra_kwargs = {
+            # Make ID-based fields optional since we support name-based input
+            'city': {'required': False},
+            'state': {'required': False},
+            'country': {'required': False},
+        }
         
     def get_full_address(self, obj):
         """Return formatted full address."""
@@ -130,7 +148,16 @@ class PractitionerLocationSerializer(serializers.ModelSerializer):
         if 'address' in attrs:
             address_data = attrs.pop('address')
             attrs.update(address_data)
-        
+
+        # Handle name-based location resolution (from Google Places)
+        attrs = self._resolve_location_from_names(attrs)
+
+        # Ensure we have city, state, country after resolution
+        if not attrs.get('city') or not attrs.get('state') or not attrs.get('country'):
+            raise serializers.ValidationError(
+                "City, state, and country are required. Provide either IDs or name-based fields."
+            )
+
         # Geocode if coordinates not provided
         if not attrs.get('latitude') or not attrs.get('longitude'):
             try:
@@ -144,7 +171,7 @@ class PractitionerLocationSerializer(serializers.ModelSerializer):
                     attrs.get('country').name if attrs.get('country') else ''
                 ]
                 address_string = ', '.join(filter(None, address_parts))
-                
+
                 # Geocode the address
                 if hasattr(settings, 'GOOGLE_MAPS_API_KEY'):
                     client = GoogleMapsClient()
@@ -154,13 +181,70 @@ class PractitionerLocationSerializer(serializers.ModelSerializer):
                         attrs['longitude'] = geocode_result['lng']
             except Exception as e:
                 logger.warning(f"Geocoding failed: {e}")
-        
+
         # Ensure at least one service type is selected
         if not attrs.get('is_virtual', True) and not attrs.get('is_in_person', True):
             raise serializers.ValidationError(
                 "Location must offer either virtual or in-person services."
             )
-        
+
+        return attrs
+
+    def _resolve_location_from_names(self, attrs):
+        """
+        Resolve city, state, country from name-based input fields.
+        Uses get_or_create to auto-create location entities.
+        """
+        from django.utils.text import slugify
+
+        input_country_code = attrs.pop('input_country_code', None)
+        input_country_name = attrs.pop('input_country_name', None)
+        input_state_code = attrs.pop('input_state_code', None)
+        input_state_name = attrs.pop('input_state_name', None)
+        input_city_name = attrs.pop('input_city_name', None)
+
+        # If no name-based input, return as-is (ID-based flow)
+        if not any([input_country_code, input_state_code, input_city_name]):
+            return attrs
+
+        # Resolve Country
+        country = attrs.get('country')
+        if not country and input_country_code:
+            country, _ = Country.objects.get_or_create(
+                code=input_country_code.upper(),
+                defaults={
+                    'name': input_country_name or input_country_code.upper(),
+                    'code_3': '',  # Can be empty for auto-created
+                    'slug': slugify(input_country_name or input_country_code),
+                }
+            )
+            attrs['country'] = country
+
+        # Resolve State
+        state = attrs.get('state')
+        if not state and input_state_code and country:
+            state, _ = State.objects.get_or_create(
+                country=country,
+                code=input_state_code.upper(),
+                defaults={
+                    'name': input_state_name or input_state_code.upper(),
+                    'slug': slugify(input_state_name or input_state_code),
+                }
+            )
+            attrs['state'] = state
+
+        # Resolve City
+        city = attrs.get('city')
+        if not city and input_city_name and state:
+            city, _ = City.objects.get_or_create(
+                state=state,
+                slug=slugify(input_city_name),
+                defaults={
+                    'name': input_city_name,
+                }
+            )
+            attrs['city'] = city
+
         return attrs
     
     def create(self, validated_data):
