@@ -241,7 +241,13 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 {service?.location_type && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                    <span className="font-medium">{service.location_type === 'virtual' ? 'Virtual' : service.location_type}</span>
+                    <span className="font-medium">
+                      {service.location_type === 'virtual'
+                        ? 'Virtual'
+                        : service.practitioner_location?.city_name && service.practitioner_location?.country_name
+                          ? `${service.practitioner_location.city_name}, ${service.practitioner_location.country_name}`
+                          : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
+                    </span>
                   </div>
                 )}
                 {service?.max_participants === 1 && (
@@ -451,7 +457,13 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                           <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                           <span className="text-olive-700">Location</span>
                         </div>
-                        <span className="font-medium text-olive-900 capitalize">{service.location_type}</span>
+                        <span className="font-medium text-olive-900">
+                          {service.location_type === 'virtual'
+                            ? 'Virtual'
+                            : service.practitioner_location?.city_name && service.practitioner_location?.country_name
+                              ? `${service.practitioner_location.city_name}, ${service.practitioner_location.country_name}`
+                              : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
+                        </span>
                       </div>
                     )}
                     {service?.experience_level && (

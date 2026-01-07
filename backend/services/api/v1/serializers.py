@@ -18,6 +18,7 @@ from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
 from users.models import User
 from common.models import Modality
+from locations.api.v1.serializers import PractitionerLocationSerializer
 
 
 class ModalitySerializer(serializers.ModelSerializer):
@@ -672,6 +673,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
     practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
     cancellation_policy = serializers.SerializerMethodField()
     image_url = serializers.CharField(read_only=True)
+    practitioner_location = PractitionerLocationSerializer(read_only=True)
     includes = serializers.ListField(
         child=serializers.CharField(),
         required=False,
