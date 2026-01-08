@@ -119,10 +119,13 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
     return `https://i.pravatar.cc/200?img=${imageNumbers[index]}`
   }
 
+  const profileUrl = `/practitioners/${practitioner.slug || practitioner.public_uuid || practitioner.id}`
+
   return (
-    <Card className="overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] rounded-2xl group">
-      <CardContent className="p-0">
-        <div className="flex">
+    <Link href={profileUrl} className="block">
+      <Card className="overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] rounded-2xl group cursor-pointer">
+        <CardContent className="p-0">
+          <div className="flex">
           {/* Left: Profile Image */}
           <div className="relative w-48 h-48 flex-shrink-0 bg-gradient-to-br from-sage-100 to-terracotta-100 rounded-l-2xl overflow-hidden">
             <img
@@ -262,15 +265,14 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
               
               {/* View Profile Button */}
               <div className="flex justify-end">
-                <Link href={`/practitioners/${practitioner.slug || practitioner.public_uuid || practitioner.id}`}>
-                  <Button className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl px-6 shadow-lg">
-                    View Profile
-                  </Button>
-                </Link>
+                <Button className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl px-6 shadow-lg">
+                  View Profile
+                </Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+    </Link>
   )
 }

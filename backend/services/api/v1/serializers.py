@@ -18,6 +18,7 @@ from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
 from users.models import User
 from common.models import Modality
+from locations.api.v1.serializers import PractitionerLocationSerializer
 
 
 class ModalitySerializer(serializers.ModelSerializer):
@@ -600,6 +601,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
     """Serializer for service listing"""
     price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     category = ServiceCategorySerializer(read_only=True)
+    practitioner_category = PractitionerServiceCategorySerializer(read_only=True)
     modalities = ModalitySerializer(many=True, read_only=True)
     primary_practitioner = SimplePractitionerSerializer(read_only=True)
     service_type_display = serializers.CharField(source='service_type.name', read_only=True)
@@ -620,7 +622,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'public_uuid', 'name', 'slug', 'short_description', 'price_cents',
             'price', 'duration_minutes', 'duration_display', 'service_type',
-            'service_type_display', 'service_type_code', 'category', 'modalities',
+            'service_type_display', 'service_type_code', 'category', 'practitioner_category', 'modalities',
             'primary_practitioner', 'max_participants', 'experience_level',
             'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
@@ -672,6 +674,7 @@ class ServiceDetailSerializer(ServiceListSerializer):
     practitioner_relationships = ServicePractitionerSerializer(many=True, read_only=True)
     cancellation_policy = serializers.SerializerMethodField()
     image_url = serializers.CharField(read_only=True)
+    practitioner_location = PractitionerLocationSerializer(read_only=True)
     includes = serializers.ListField(
         child=serializers.CharField(),
         required=False,

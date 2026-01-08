@@ -262,3 +262,8 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Google Places Autocomplete - ensure dropdown appears above dialogs */
+.pac-container {
+  z-index: 10000 !important;
+}

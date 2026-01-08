@@ -9,16 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Search, SlidersHorizontal, X, LayoutGrid, List } from "lucide-react"
+import { Plus, Search, SlidersHorizontal, X, LayoutGrid, List, Settings2 } from "lucide-react"
 import ServiceCard from "./service-card"
 import ServiceListItem from "./service-list-item"
-import { servicesListOptions, servicesPartialUpdateMutation, servicesDestroyMutation } from "@/src/client/@tanstack/react-query.gen"
+import { servicesListOptions, servicesPartialUpdateMutation, servicesDestroyMutation, practitionerCategoriesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import type { ServiceListReadable } from "@/src/client/types.gen"
 import EmptyState from "./empty-state"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useAuth } from "@/hooks/use-auth"
 import { PractitionerPageHeader } from "../practitioner-page-header"
+import { ManageCategoriesDialog } from "./manage-categories-dialog"
 
 // Service types for filtering
 const SERVICE_TYPE_TABS = [
@@ -55,13 +56,13 @@ type ViewMode = "grid" | "list"
 // Convert API service to display format
 const convertServiceForDisplay = (service: ServiceListReadable): any => {
   const priceValue = service.price ? parseFloat(service.price.replace(/[^0-9.-]+/g,"")) : (service.price_cents / 100)
-  
+
   // Map service type codes to our expected types
   let serviceType = service.service_type_code || 'session'
   if (serviceType === 'in-person_session' || serviceType === 'online_session') {
     serviceType = 'session'
   }
-  
+
   return {
     id: service.id?.toString() || '',
     name: service.name,
@@ -81,6 +82,11 @@ const convertServiceForDisplay = (service: ServiceListReadable): any => {
       name: service.category.name,
       slug: service.category.slug || '',
       description: service.category.description || ''
+    } : null,
+    practitioner_category: service.practitioner_category ? {
+      id: service.practitioner_category.id,
+      name: service.practitioner_category.name,
+      color: service.practitioner_category.color,
     } : null,
     is_active: service.is_active || false,
     is_featured: service.is_featured || false,
@@ -104,17 +110,29 @@ export default function PractitionerServicesManagerV2() {
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("all")
+  const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(!isMobile)
   const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [currentPage, setCurrentPage] = useState(1)
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false)
   const pageSize = 20
+
+  // Fetch practitioner categories
+  const { data: categoriesData } = useQuery({
+    ...practitionerCategoriesListOptions(),
+    enabled: !!user,
+  })
+
+  const categories = categoriesData?.data?.results || categoriesData?.results || []
 
   // Build query parameters based on filters
   const queryParams = {
     ...(user?.practitionerId && { practitioner: user.practitionerId }), // Filter by current practitioner
     ...(activeTab !== "all" && { service_type: activeTab }),
     ...(selectedStatus !== "all" && { status: selectedStatus }),
+    ...(selectedCategory === "uncategorized" && { uncategorized: true }),
+    ...(selectedCategory !== "all" && selectedCategory !== "uncategorized" && { practitioner_category_id: parseInt(selectedCategory) }),
     ...(searchQuery && { search: searchQuery }),
     page_size: pageSize,
     page: currentPage,
@@ -258,6 +276,50 @@ export default function PractitionerServicesManagerV2() {
               </SelectContent>
             </Select>
 
+            {/* Category filter */}
+            <Select
+              value={selectedCategory}
+              onValueChange={(value) => {
+                if (value === "manage") {
+                  setManageCategoriesOpen(true)
+                } else {
+                  setSelectedCategory(value)
+                  setCurrentPage(1)
+                }
+              }}
+            >
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                {categories.length > 0 && (
+                  <>
+                    <Separator className="my-1" />
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id?.toString() || ""}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: cat.color || "#9CAF88" }}
+                          />
+                          {cat.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                <Separator className="my-1" />
+                <SelectItem value="manage">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Settings2 className="h-4 w-4" />
+                    Manage Categories...
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[160px] h-9">
                 <SelectValue placeholder="Sort by" />
@@ -304,7 +366,7 @@ export default function PractitionerServicesManagerV2() {
           </p>
 
           {/* Active filters */}
-          {(activeTab !== "all" || selectedStatus !== "all" || searchQuery) && (
+          {(activeTab !== "all" || selectedStatus !== "all" || selectedCategory !== "all" || searchQuery) && (
             <div className="flex flex-wrap gap-2">
               {activeTab !== "all" && (
                 <Badge variant="secondary" className="flex items-center gap-1">
@@ -318,6 +380,16 @@ export default function PractitionerServicesManagerV2() {
                 <Badge variant="secondary" className="flex items-center gap-1">
                   {STATUS_OPTIONS.find((s) => s.value === selectedStatus)?.label}
                   <button onClick={() => setSelectedStatus("all")} className="ml-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedCategory !== "all" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  {selectedCategory === "uncategorized"
+                    ? "Uncategorized"
+                    : categories.find((c) => c.id?.toString() === selectedCategory)?.name || "Category"}
+                  <button onClick={() => setSelectedCategory("all")} className="ml-1">
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
@@ -366,10 +438,11 @@ export default function PractitionerServicesManagerV2() {
         ) : (
           <EmptyState
             selectedType={activeTab}
-            hasFilters={searchQuery !== "" || selectedStatus !== "all" || activeTab !== "all"}
+            hasFilters={searchQuery !== "" || selectedStatus !== "all" || selectedCategory !== "all" || activeTab !== "all"}
             onClearFilters={() => {
               setSearchQuery("")
               setSelectedStatus("all")
+              setSelectedCategory("all")
               setActiveTab("all")
             }}
           />
@@ -427,6 +500,12 @@ export default function PractitionerServicesManagerV2() {
           </div>
         )}
       </div>
+
+      {/* Manage Categories Dialog */}
+      <ManageCategoriesDialog
+        open={manageCategoriesOpen}
+        onOpenChange={setManageCategoriesOpen}
+      />
     </>
   )
 }
