@@ -69,21 +69,51 @@ def update_room_analytics(room_id):
     Update analytics for a room after it ends.
     """
     from rooms.services import RoomService
-    
+
     try:
         room = Room.objects.get(id=room_id)
-        
+
         # Use RoomService to calculate and update analytics
         room_service = RoomService()
         analytics = room_service.calculate_room_analytics(room)
-        
+
         # Update room metadata with analytics
         room.metadata.update({
             'analytics': analytics
         })
         room.save(update_fields=['metadata'])
-        
+
         logger.info(f"Updated analytics for room {room.id}")
-        
+
     except Room.DoesNotExist:
         logger.error(f"Room {room_id} not found for analytics update")
+
+
+@shared_task
+def stop_recording_if_empty(room_id: int):
+    """
+    Stop recording if the room is still empty after 60 seconds.
+    This is triggered when all participants leave a room with active recording.
+    """
+    from rooms.services.recording_service import RecordingService
+
+    try:
+        room = Room.objects.get(id=room_id)
+
+        # Check if room is still empty and has active recording
+        if room.current_participants == 0 and room.recording_status in ['starting', 'active']:
+            recording_service = RecordingService()
+            recording = recording_service.stop_recording(room=room)
+
+            if recording:
+                logger.info(f"Auto-stopped recording for empty room {room.id} after 60s timeout")
+            else:
+                logger.info(f"No active recording to stop for room {room.id}")
+        else:
+            logger.info(
+                f"Room {room.id} is no longer empty or recording already stopped. "
+                f"participants={room.current_participants}, recording_status={room.recording_status}"
+            )
+
+    except Room.DoesNotExist:
+        logger.error(f"Room {room_id} not found for recording auto-stop")

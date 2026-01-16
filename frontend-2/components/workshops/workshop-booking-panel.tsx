@@ -189,13 +189,21 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
             className="w-full py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             onClick={handleRegisterClick}
             size="lg"
-            disabled={!selectedSessionId || upcomingSessions.length === 0}
+            disabled={!selectedSessionId || upcomingSessions.length === 0 || serviceData?.has_ended}
           >
-            {upcomingSessions.length === 0 ? "No Upcoming Sessions" : "Begin Your Transformation"}
+            {serviceData?.has_ended
+              ? "Workshop Ended"
+              : upcomingSessions.length === 0
+                ? "No Upcoming Sessions"
+                : "Begin Your Transformation"
+            }
           </Button>
 
           <p className="text-sm text-center text-olive-600 mt-4">
-            ✓ Full refund 48hrs before • ✓ Materials included
+            {serviceData?.has_ended
+              ? 'This workshop has already completed'
+              : '✓ Full refund 48hrs before • ✓ Materials included'
+            }
           </p>
         </CardContent>
       </Card>

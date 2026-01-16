@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Loader2, MessageSquare, Settings, X, Users,
   PhoneOff, Maximize2, Minimize2, Clock,
-  Mic, MicOff, Video, VideoOff
+  Mic, MicOff, Video, VideoOff, Power
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EstuaryLogo } from '@/components/ui/estuary-logo';
@@ -47,6 +47,7 @@ interface VideoRoomProps {
   bookingDetails?: any;
   sessionDetails?: any;
   onLeaveRoom: () => void;
+  onEndSession?: () => Promise<void>;
   onError?: (error: Error) => void;
   // Recording props
   isRecording?: boolean;
@@ -62,6 +63,7 @@ export function VideoRoom({
   bookingDetails,
   sessionDetails,
   onLeaveRoom,
+  onEndSession,
   onError,
   isRecording = false,
   onStartRecording,
@@ -291,6 +293,11 @@ export function VideoRoom({
 
                 {/* Leave Button */}
                 <LeaveButton onLeaveRoom={onLeaveRoom} />
+
+                {/* End Session Button - Host Only */}
+                {isHost && onEndSession && (
+                  <EndSessionButton onEndSession={onEndSession} />
+                )}
               </div>
             </div>
           </div>
@@ -790,6 +797,78 @@ function LeaveButton({ onLeaveRoom }: { onLeaveRoom: () => void }) {
           Leave
         </>
       )}
+    </Button>
+  );
+}
+
+// End Session button component - Host only
+function EndSessionButton({ onEndSession }: { onEndSession: () => Promise<void> }) {
+  const room = useRoomContext();
+  const connectionState = useConnectionState();
+  const [isEnding, setIsEnding] = React.useState(false);
+  const [showConfirm, setShowConfirm] = React.useState(false);
+
+  const handleEndSession = async () => {
+    if (isEnding) return;
+
+    setIsEnding(true);
+
+    try {
+      // Call the end session API
+      await onEndSession();
+
+      // Disconnect from the room
+      if (connectionState === ConnectionState.Connected) {
+        await room.disconnect(true);
+      }
+    } catch (error) {
+      console.error('Error ending session:', error);
+      setIsEnding(false);
+      setShowConfirm(false);
+    }
+  };
+
+  if (showConfirm) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-olive-700">End for everyone?</span>
+        <Button
+          variant="destructive"
+          onClick={handleEndSession}
+          disabled={isEnding}
+          size="sm"
+          className="bg-red-700 hover:bg-red-800"
+        >
+          {isEnding ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Ending...
+            </>
+          ) : (
+            'Yes, End'
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => setShowConfirm(false)}
+          size="sm"
+          className="text-olive-600 hover:text-olive-800"
+        >
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => setShowConfirm(true)}
+      size="sm"
+      className="border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+    >
+      <Power className="h-4 w-4 mr-2" />
+      End Session
     </Button>
   );
 }

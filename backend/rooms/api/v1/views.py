@@ -445,7 +445,92 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                 {'error': 'Failed to stop recording. Please try again.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
+
+    @action(detail=True, methods=['post'])
+    def end_session(self, request, public_uuid=None):
+        """
+        End the session for everyone (host only).
+        This will:
+        1. Stop any active recording
+        2. Disconnect all participants from LiveKit
+        3. Mark the ServiceSession as completed
+        4. Mark the Room as ended
+        """
+        room = self.get_object()
+        user = request.user
+
+        # Check permissions - only host can end session
+        is_host = False
+        if room.service_session and room.service_session.service.primary_practitioner:
+            is_host = room.service_session.service.primary_practitioner.user == user
+        elif room.created_by == user:
+            is_host = True
+
+        if not is_host:
+            return Response(
+                {'error': 'Only the host can end the session.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if room.status == 'ended':
+            return Response(
+                {'error': 'Session has already ended.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            now = timezone.now()
+
+            # 1. Stop any active recording
+            if room.recording_status in ['starting', 'active']:
+                try:
+                    recording_service = RecordingService()
+                    recording_service.stop_recording(room=room)
+                    logger.info(f"Stopped recording for room {room.id}")
+                except Exception as e:
+                    logger.warning(f"Failed to stop recording during end_session: {e}")
+
+            # 2. Delete the LiveKit room (kicks all participants)
+            try:
+                import asyncio
+                livekit_client = LiveKitClient()
+                asyncio.run(livekit_client.delete_room(room.livekit_room_name))
+                logger.info(f"Deleted LiveKit room {room.livekit_room_name}")
+            except Exception as e:
+                logger.warning(f"Failed to delete LiveKit room: {e}")
+
+            # 3. Update Room status
+            room.status = 'ended'
+            room.actual_end = now
+            if room.actual_start:
+                room.total_duration_seconds = int((now - room.actual_start).total_seconds())
+            room.save(update_fields=['status', 'actual_end', 'total_duration_seconds', 'updated_at'])
+
+            # 4. Mark ServiceSession as completed
+            if room.service_session:
+                room.service_session.status = 'completed'
+                room.service_session.actual_end_time = now
+                room.service_session.save(update_fields=['status', 'actual_end_time', 'updated_at'])
+                logger.info(f"Marked ServiceSession {room.service_session.id} as completed")
+
+            # 5. Mark all active participants as left
+            active_participants = room.participants.filter(left_at__isnull=True)
+            active_participants.update(left_at=now)
+
+            return Response({
+                'status': 'success',
+                'message': 'Session ended successfully.',
+                'room_status': room.status,
+                'session_status': room.service_session.status if room.service_session else None
+            })
+
+        except Exception as e:
+            logger.error(f"Failed to end session for room {room.id}: {str(e)}")
+            return Response(
+                {'error': 'Failed to end session. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     @action(detail=True, methods=['get'])
     def participants(self, request, public_uuid=None):
         """

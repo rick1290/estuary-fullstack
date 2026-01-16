@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation, bookingsRetrieveOptions } from '@/src/client/@tanstack/react-query.gen';
+import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation, roomsEndSessionCreateMutation, bookingsRetrieveOptions } from '@/src/client/@tanstack/react-query.gen';
 import { VideoRoom } from '@/components/video/core/VideoRoom';
 import { useRoomToken } from '@/components/video/hooks';
 import { useAuth } from '@/hooks/use-auth';
@@ -54,6 +54,9 @@ export default function RoomPage() {
   // Recording mutations
   const startRecordingMutation = useMutation(roomsStartRecordingCreateMutation());
   const stopRecordingMutation = useMutation(roomsStopRecordingCreateMutation());
+
+  // End session mutation
+  const endSessionMutation = useMutation(roomsEndSessionCreateMutation());
 
   const handleLeaveRoom = () => {
     // Clean up and redirect
@@ -118,6 +121,21 @@ export default function RoomPage() {
       setIsRecording(false);
     } catch (error) {
       console.error('Failed to stop recording:', error);
+      throw error;
+    }
+  };
+
+  const handleEndSession = async () => {
+    if (!roomId || accessData?.role !== 'host') return;
+
+    try {
+      await endSessionMutation.mutateAsync({
+        path: { public_uuid: roomId }
+      });
+      // The VideoRoom component will handle disconnection and redirect
+      console.log('Session ended successfully');
+    } catch (error) {
+      console.error('Failed to end session:', error);
       throw error;
     }
   };
@@ -238,6 +256,8 @@ export default function RoomPage() {
       isRecording={isRecording}
       onStartRecording={handleStartRecording}
       onStopRecording={handleStopRecording}
+      // End session props (host only)
+      onEndSession={accessData?.role === 'host' ? handleEndSession : undefined}
     />
   );
 }

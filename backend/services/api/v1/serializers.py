@@ -616,6 +616,8 @@ class ServiceListSerializer(serializers.ModelSerializer):
     first_session_date = serializers.DateTimeField(read_only=True)
     last_session_date = serializers.DateTimeField(read_only=True)
     next_session_date = serializers.DateTimeField(read_only=True)
+    is_purchasable = serializers.BooleanField(read_only=True)
+    has_ended = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Service
@@ -627,6 +629,7 @@ class ServiceListSerializer(serializers.ModelSerializer):
             'location_type', 'schedule', 'is_active', 'is_featured', 'is_public', 'status',
             'average_rating', 'total_reviews', 'total_bookings',
             'primary_image', 'image_url', 'first_session_date', 'last_session_date', 'next_session_date',
+            'is_purchasable', 'has_ended',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'public_uuid', 'slug', 'created_at', 'updated_at']

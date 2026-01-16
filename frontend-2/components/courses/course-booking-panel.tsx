@@ -114,16 +114,20 @@ export default function CourseBookingPanel({ course, serviceData }: CourseBookin
 
           <Separator className="bg-sage-200 mb-6" />
 
-          <Button 
-            className="w-full py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all" 
+          <Button
+            className="w-full py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             onClick={handleEnrollClick}
             size="lg"
+            disabled={serviceData?.has_ended || serviceData?.is_purchasable === false}
           >
-            Start Your Journey
+            {serviceData?.has_ended ? 'Course Ended' : 'Start Your Journey'}
           </Button>
 
           <p className="text-sm text-center text-olive-600 mt-4">
-            ✓ Instant access • ✓ 30-day guarantee
+            {serviceData?.has_ended
+              ? 'This course has already completed'
+              : '✓ Instant access • ✓ 30-day guarantee'
+            }
           </p>
         </CardContent>
       </Card>

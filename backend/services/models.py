@@ -579,14 +579,46 @@ class Service(PublicModel):
         """Check if service is currently available for purchase."""
         if not self.is_active:
             return False
-            
+
         if self.available_from and timezone.now() < self.available_from:
             return False
-            
+
         if self.available_until and timezone.now() > self.available_until:
             return False
-            
+
         return True
+
+    @property
+    def is_purchasable(self):
+        """
+        Check if service can be purchased right now.
+        For courses/workshops: must have at least one future session.
+        For sessions: always purchasable if active.
+        """
+        if not self.is_active or self.status != 'published':
+            return False
+
+        # Check available_from/until windows
+        if self.available_from and timezone.now() < self.available_from:
+            return False
+        if self.available_until and timezone.now() > self.available_until:
+            return False
+
+        # For courses and workshops, check if there are future sessions
+        if self.is_course or (self.service_type and self.service_type.code == 'workshop'):
+            # Must have at least one upcoming session to be purchasable
+            return self.next_session_date is not None
+
+        return True
+
+    @property
+    def has_ended(self):
+        """Check if a course/workshop has ended (all sessions in the past)."""
+        if self.is_course or (self.service_type and self.service_type.code == 'workshop'):
+            last_date = self.last_session_date
+            if last_date and last_date < timezone.now():
+                return True
+        return False
     
     def save(self, *args, **kwargs):
         """Override save to auto-generate slug if not provided."""
