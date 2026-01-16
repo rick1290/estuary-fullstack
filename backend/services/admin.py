@@ -50,7 +50,7 @@ class ServiceAdmin(admin.ModelAdmin):
             'fields': ('max_participants', 'min_participants', 'age_min', 'age_max')
         }),
         ('Location & Delivery', {
-            'fields': ('location_type', 'address')
+            'fields': ('location_type', 'practitioner_location')
         }),
         ('Content & Learning', {
             'fields': ('what_youll_learn', 'prerequisites', 'includes')
@@ -76,7 +76,7 @@ class ServiceAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'primary_practitioner__user', 'service_type', 'category', 'address'
+            'primary_practitioner__user', 'service_type', 'category', 'practitioner_location'
         )
     
     def get_price_display(self, obj):
@@ -84,5 +84,62 @@ class ServiceAdmin(admin.ModelAdmin):
         return f"${obj.price:.2f}"
     get_price_display.short_description = 'Price'
     get_price_display.admin_order_field = 'price_cents'
+
+
+@admin.register(ServiceSession)
+class ServiceSessionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'service', 'session_type', 'start_time', 'end_time', 'status',
+                   'current_participants', 'max_participants', 'visibility']
+    list_filter = ['session_type', 'status', 'visibility', 'start_time']
+    search_fields = ['service__name', 'title', 'description']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'reschedule_count',
+                      'original_start_time', 'original_end_time', 'last_rescheduled_at']
+    raw_id_fields = ['service', 'practitioner_location', 'rescheduled_by']
+    date_hierarchy = 'start_time'
+    ordering = ['-start_time']
+
+    fieldsets = (
+        ('Session Info', {
+            'fields': ('service', 'title', 'description', 'id')
+        }),
+        ('Type & Visibility', {
+            'fields': ('session_type', 'visibility', 'status')
+        }),
+        ('Scheduling', {
+            'fields': ('start_time', 'end_time', 'duration', 'sequence_number')
+        }),
+        ('Actual Times', {
+            'fields': ('actual_start_time', 'actual_end_time'),
+            'classes': ('collapse',)
+        }),
+        ('Participants', {
+            'fields': ('max_participants', 'current_participants')
+        }),
+        ('Location', {
+            'fields': ('practitioner_location',)
+        }),
+        ('Content', {
+            'fields': ('agenda', 'what_youll_learn'),
+            'classes': ('collapse',)
+        }),
+        ('Pricing Override', {
+            'fields': ('price_cents',),
+            'classes': ('collapse',)
+        }),
+        ('Reschedule History', {
+            'fields': ('reschedule_count', 'original_start_time', 'original_end_time',
+                      'last_rescheduled_at', 'rescheduled_by'),
+            'classes': ('collapse',)
+        }),
+        ('System Info', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'service', 'service__primary_practitioner', 'practitioner_location'
+        )
 
 
