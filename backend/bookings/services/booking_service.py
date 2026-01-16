@@ -342,8 +342,9 @@ class BookingService:
     @transaction.atomic
     def mark_booking_completed(self, booking: Booking) -> Booking:
         """
-        Mark a booking as completed, update earnings, and send review request.
-        UPDATED: Handles package/bundle completion tracking.
+        Mark a booking's session as completed, update earnings, and send review request.
+        UPDATED: Session lifecycle (in_progress, completed) is tracked on ServiceSession,
+        not on Booking. Booking status remains 'confirmed' throughout.
 
         Args:
             booking: Booking to complete
@@ -351,14 +352,20 @@ class BookingService:
         Returns:
             Updated booking
         """
-        if booking.status == 'completed':
-            logger.warning(f"Booking {booking.id} already completed")
+        # Check if already completed via ServiceSession status
+        if booking.service_session and booking.service_session.status == 'completed':
+            logger.warning(f"Booking {booking.id} session already completed")
             return booking
 
-        booking.status = 'completed'
-        booking.actual_end_time = timezone.now()
+        # Update ServiceSession status (not Booking status)
+        if booking.service_session:
+            booking.service_session.actual_end_time = timezone.now()
+            booking.service_session.status = 'completed'
+            booking.service_session.save(update_fields=['actual_end_time', 'status'])
+
+        # Update booking completion timestamp (status stays 'confirmed')
         booking.completed_at = timezone.now()
-        booking.save()
+        booking.save(update_fields=['completed_at'])
 
         # Update earnings transaction status from 'projected' to 'pending'
         try:
@@ -407,24 +414,29 @@ class BookingService:
         return booking
     
     @transaction.atomic
-    def cancel_booking(self, booking: Booking, cancelled_by: str = 'client', reason: str = '') -> Booking:
+    def cancel_booking(self, booking: Booking, canceled_by: str = 'client', reason: str = '') -> Booking:
         """
         Cancel a booking.
-        
+
         Args:
             booking: Booking to cancel
-            cancelled_by: Who cancelled ('client', 'practitioner', 'system')
+            canceled_by: Who canceled ('client', 'practitioner', 'system')
             reason: Cancellation reason
-            
+
         Returns:
             Updated booking
         """
-        if booking.status in ['cancelled', 'completed']:
-            raise ValueError(f"Cannot cancel booking with status {booking.status}")
-        
-        booking.status = 'cancelled'
-        booking.cancelled_at = timezone.now()
-        booking.cancelled_by = cancelled_by
+        # Check if already canceled (use American spelling)
+        if booking.status == 'canceled':
+            raise ValueError("Booking is already canceled")
+
+        # Check if session is already completed
+        if booking.service_session and booking.service_session.status == 'completed':
+            raise ValueError("Cannot cancel a completed session")
+
+        booking.status = 'canceled'
+        booking.canceled_at = timezone.now()
+        booking.canceled_by = canceled_by
         booking.cancellation_reason = reason
         booking.save()
         

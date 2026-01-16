@@ -24,10 +24,13 @@ def mark_completed_bookings():
     - Package/Bundle children: Create earnings when session completed
     """
     now = timezone.now()
-    
-    # Get all bookings that are in 'confirmed' or 'in_progress' status
+
+    # Get all bookings that are confirmed and have a service_session that's not completed
+    # Note: in_progress/completed status is now tracked on ServiceSession, not Booking
     active_bookings = Booking.objects.filter(
-        Q(status='confirmed') | Q(status='in_progress')
+        status='confirmed'
+    ).exclude(
+        service_session__status='completed'  # Exclude already completed sessions
     ).select_related('service', 'service_session').prefetch_related('service__sessions')
     
     completed_count = 0

@@ -310,6 +310,16 @@ class LiveKitWebhookHandler:
 
             room.save(update_fields=['current_participants', 'total_participants', 'status', 'updated_at'])
 
+            # If room is now empty and has active recording, schedule auto-stop in 60 seconds
+            if room.current_participants == 0 and room.recording_status in ['starting', 'active']:
+                from rooms.tasks import stop_recording_if_empty
+                # Schedule the task to run in 60 seconds
+                stop_recording_if_empty.apply_async(
+                    args=[room.id],
+                    countdown=60  # 60 seconds delay
+                )
+                logger.info(f"Scheduled recording auto-stop for empty room {room.id} in 60 seconds")
+
             logger.info(f"Participant {participant_info.identity} left room {room.name}")
             return {"status": "success", "participant_id": str(participant.id)}
 

@@ -244,8 +244,12 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                     <span className="font-medium">
                       {service.location_type === 'virtual'
                         ? 'Virtual'
-                        : service.practitioner_location?.city_name && service.practitioner_location?.country_name
-                          ? `${service.practitioner_location.city_name}, ${service.practitioner_location.country_name}`
+                        : service.practitioner_location
+                          ? [
+                              service.practitioner_location.city_name,
+                              service.practitioner_location.state_code || service.practitioner_location.state_name,
+                              service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
+                            ].filter(Boolean).join(', ')
                           : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
                     </span>
                   </div>
@@ -460,8 +464,12 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                         <span className="font-medium text-olive-900">
                           {service.location_type === 'virtual'
                             ? 'Virtual'
-                            : service.practitioner_location?.city_name && service.practitioner_location?.country_name
-                              ? `${service.practitioner_location.city_name}, ${service.practitioner_location.country_name}`
+                            : service.practitioner_location
+                              ? [
+                                  service.practitioner_location.city_name,
+                                  service.practitioner_location.state_code || service.practitioner_location.state_name,
+                                  service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
+                                ].filter(Boolean).join(', ')
                               : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
                         </span>
                       </div>

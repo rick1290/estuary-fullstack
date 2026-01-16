@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation, bookingsRetrieveOptions } from '@/src/client/@tanstack/react-query.gen';
+import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation, roomsEndSessionCreateMutation, bookingsRetrieveOptions } from '@/src/client/@tanstack/react-query.gen';
 import { VideoRoom } from '@/components/video/core/VideoRoom';
 import { useRoomToken } from '@/components/video/hooks';
 import { useAuth } from '@/hooks/use-auth';
@@ -54,6 +54,9 @@ export default function RoomPage() {
   // Recording mutations
   const startRecordingMutation = useMutation(roomsStartRecordingCreateMutation());
   const stopRecordingMutation = useMutation(roomsStopRecordingCreateMutation());
+
+  // End session mutation
+  const endSessionMutation = useMutation(roomsEndSessionCreateMutation());
 
   const handleLeaveRoom = () => {
     // Clean up and redirect
@@ -122,6 +125,21 @@ export default function RoomPage() {
     }
   };
 
+  const handleEndSession = async () => {
+    if (!roomId || accessData?.role !== 'host') return;
+
+    try {
+      await endSessionMutation.mutateAsync({
+        path: { public_uuid: roomId }
+      });
+      // The VideoRoom component will handle disconnection and redirect
+      console.log('Session ended successfully');
+    } catch (error) {
+      console.error('Failed to end session:', error);
+      throw error;
+    }
+  };
+
   // Determine room type
   const getRoomType = () => {
     return accessData?.room?.room_type || 'individual';
@@ -130,12 +148,12 @@ export default function RoomPage() {
   // Loading state
   if (tokenLoading || loadingAccess || (bookingId && !bookingData)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <Card className="bg-gray-800 border-gray-700">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50">
+        <Card className="border-sage-200 shadow-xl">
           <CardContent className="p-8">
             <div className="flex flex-col items-center">
-              <Loader2 className="h-8 w-8 animate-spin text-white mb-4" />
-              <p className="text-gray-300">Connecting to room...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-sage-600 mb-4" />
+              <p className="text-olive-600">Connecting to room...</p>
             </div>
           </CardContent>
         </Card>
@@ -146,19 +164,18 @@ export default function RoomPage() {
   // Error state
   if (tokenError || accessError || !token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-        <Card className="max-w-md w-full bg-gray-800 border-gray-700">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50 p-4">
+        <Card className="max-w-md w-full border-sage-200 shadow-xl">
           <CardContent className="p-6">
-            <Alert variant="destructive" className="bg-red-900/20 border-red-800">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-red-200">
+            <Alert variant="destructive" className="border-terracotta-200 bg-terracotta-50">
+              <AlertCircle className="h-4 w-4 text-terracotta-600" />
+              <AlertDescription className="text-terracotta-800">
                 {tokenError?.message || accessError?.message || 'Failed to join room'}
               </AlertDescription>
             </Alert>
             <Button
               onClick={() => router.push(`/room/${roomId}/lobby`)}
-              className="w-full mt-4"
-              variant="secondary"
+              className="w-full mt-4 bg-sage-600 hover:bg-sage-700"
             >
               Return to Lobby
             </Button>
@@ -171,19 +188,18 @@ export default function RoomPage() {
   // Permission check
   if (!accessData?.can_join) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-        <Card className="max-w-md w-full bg-gray-800 border-gray-700">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50 p-4">
+        <Card className="max-w-md w-full border-sage-200 shadow-xl">
           <CardContent className="p-6">
-            <Alert variant="destructive" className="bg-red-900/20 border-red-800">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-red-200">
+            <Alert variant="destructive" className="border-terracotta-200 bg-terracotta-50">
+              <AlertCircle className="h-4 w-4 text-terracotta-600" />
+              <AlertDescription className="text-terracotta-800">
                 {accessData?.reason || 'You do not have permission to join this room'}
               </AlertDescription>
             </Alert>
             <Button
               onClick={() => router.push('/dashboard/user')}
-              className="w-full mt-4"
-              variant="secondary"
+              className="w-full mt-4 bg-sage-600 hover:bg-sage-700"
             >
               Return to Dashboard
             </Button>
@@ -240,6 +256,8 @@ export default function RoomPage() {
       isRecording={isRecording}
       onStartRecording={handleStartRecording}
       onStopRecording={handleStopRecording}
+      // End session props (host only)
+      onEndSession={accessData?.role === 'host' ? handleEndSession : undefined}
     />
   );
 }
