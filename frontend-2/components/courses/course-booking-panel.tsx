@@ -11,9 +11,10 @@ import { useAuthModal } from "@/components/auth/auth-provider"
 
 interface CourseBookingPanelProps {
   course: any
+  serviceData?: any
 }
 
-export default function CourseBookingPanel({ course }: CourseBookingPanelProps) {
+export default function CourseBookingPanel({ course, serviceData }: CourseBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -86,10 +87,28 @@ export default function CourseBookingPanel({ course }: CourseBookingPanelProps) 
             )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
                 <span className="text-olive-700">Format</span>
               </div>
               <span className="font-semibold text-olive-900">{course.location}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
+                <span className="text-olive-700">Location</span>
+              </div>
+              <span className="font-semibold text-olive-900 text-right">
+                {serviceData?.location_type === 'virtual'
+                  ? 'Virtual'
+                  : serviceData?.practitioner_location
+                    ? [
+                        serviceData.practitioner_location.city_name,
+                        serviceData.practitioner_location.state_code || serviceData.practitioner_location.state_name,
+                        serviceData.practitioner_location.country_code !== 'US' && serviceData.practitioner_location.country_name
+                      ].filter(Boolean).join(', ')
+                    : course.location
+                }
+              </span>
             </div>
           </div>
 

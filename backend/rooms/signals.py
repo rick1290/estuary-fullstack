@@ -251,17 +251,16 @@ def create_livekit_room(room):
 def handle_room_started(room):
     """
     Handle actions when a room becomes active.
-    """
-    # Update service session and bookings if applicable
-    if room.service_session:
-        # Update ServiceSession with actual start time
-        room.service_session.actual_start_time = timezone.now()
-        room.service_session.save(update_fields=['actual_start_time'])
 
-        # Update all confirmed bookings in this session to 'in_progress'
-        room.service_session.bookings.filter(status='confirmed').update(
-            status='in_progress'
-        )
+    Note: Session lifecycle (in_progress, completed) is tracked on ServiceSession,
+    not on Booking. Booking status remains 'confirmed' throughout the session.
+    """
+    # Update service session if applicable
+    if room.service_session:
+        # Update ServiceSession with actual start time and status
+        room.service_session.actual_start_time = timezone.now()
+        room.service_session.status = 'in_progress'
+        room.service_session.save(update_fields=['actual_start_time', 'status'])
 
     # Send notifications to participants
     send_room_started_notifications(room)
@@ -272,22 +271,21 @@ def handle_room_started(room):
 def handle_room_ended(room):
     """
     Handle actions when a room ends.
+
+    Note: Session lifecycle (in_progress, completed) is tracked on ServiceSession,
+    not on Booking. Booking status remains 'confirmed' throughout the session.
     """
     # Calculate duration
     if room.actual_start and room.actual_end:
         room.total_duration_seconds = int((room.actual_end - room.actual_start).total_seconds())
         room.save(update_fields=['total_duration_seconds'])
 
-    # Update service session and bookings if applicable
+    # Update service session if applicable
     if room.service_session:
-        # Update ServiceSession with actual end time
+        # Update ServiceSession with actual end time and status
         room.service_session.actual_end_time = timezone.now()
-        room.service_session.save(update_fields=['actual_end_time'])
-
-        # Update all in_progress bookings in this session to 'completed'
-        room.service_session.bookings.filter(status='in_progress').update(
-            status='completed'
-        )
+        room.service_session.status = 'completed'
+        room.service_session.save(update_fields=['actual_end_time', 'status'])
 
     # End all active participant sessions
     active_participants = room.participants.filter(left_at__isnull=True)

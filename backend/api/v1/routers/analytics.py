@@ -479,33 +479,35 @@ def get_realtime_metrics_data():
         last_login__gte=now - timedelta(minutes=15)
     ).count()
     
-    # Active practitioners (have bookings now)
+    # Active practitioners (have sessions in progress now)
+    # Note: Session lifecycle tracked on ServiceSession, not Booking
     active_practitioners = Booking.objects.filter(
-        start_time__lte=now,
-        end_time__gte=now,
-        status='in_progress'
+        service_session__start_time__lte=now,
+        service_session__end_time__gte=now,
+        service_session__status='in_progress'
     ).values('practitioner').distinct().count()
-    
-    # Bookings metrics
+
+    # Bookings metrics - sessions currently in progress
     bookings_in_progress = Booking.objects.filter(
-        start_time__lte=now,
-        end_time__gte=now,
-        status='in_progress'
+        service_session__start_time__lte=now,
+        service_session__end_time__gte=now,
+        service_session__status='in_progress'
     ).count()
-    
+
     bookings_today = Booking.objects.filter(
-        start_time__date=today_start.date()
+        service_session__start_time__date=today_start.date()
     ).count()
-    
+
     bookings_last_hour = Booking.objects.filter(
         created_at__gte=hour_ago
     ).count()
-    
-    # Revenue today
+
+    # Revenue today - completed sessions
+    # Note: total_amount moved to Order, use credits_allocated as proxy
     revenue_today = Booking.objects.filter(
-        start_time__date=today_start.date(),
-        status='completed'
-    ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+        service_session__start_time__date=today_start.date(),
+        service_session__status='completed'
+    ).aggregate(total=Sum('credits_allocated'))['total'] or Decimal('0')
     
     # Searches last hour
     searches_last_hour = SearchLog.objects.filter(

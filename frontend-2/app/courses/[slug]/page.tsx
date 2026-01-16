@@ -771,7 +771,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
           {/* Right Column - Sticky Booking Panel */}
           <div className="space-y-8" ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
-              <CourseBookingPanel course={course} />
+              <CourseBookingPanel course={course} serviceData={serviceData} />
               
               {/* Trust Indicators */}
               <div className="mt-6 space-y-3">
