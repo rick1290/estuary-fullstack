@@ -348,11 +348,13 @@ export default function AvailabilityClient() {
             ) : schedules.length === 0 ? (
               <Card className="border-2 border-dashed">
                 <CardContent className="pt-6">
-                  <div className="text-center py-12">
-                    <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No schedules yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create your first availability schedule to start accepting bookings
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="bg-blush-100 rounded-full p-3 mb-4">
+                      <Clock className="h-6 w-6 text-blush-500" />
+                    </div>
+                    <h3 className="text-lg font-medium text-olive-900 mb-2">No schedules yet</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                      Schedules define when clients can book time with you. Create your first availability schedule to start accepting bookings.
                     </p>
                     <Button onClick={handleCreateSchedule}>
                       <PlusCircle className="mr-2 h-4 w-4" />

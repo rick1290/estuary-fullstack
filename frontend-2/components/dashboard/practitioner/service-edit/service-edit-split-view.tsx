@@ -20,8 +20,8 @@ import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { 
-  CheckCircle2, 
-  AlertCircle, 
+  CheckCircle2,
+  AlertCircle,
   Circle,
   Save,
   Eye,
@@ -32,7 +32,9 @@ import {
   HelpCircle,
   Sparkles,
   Menu,
-  X
+  X,
+  Rocket,
+  ArrowRight
 } from "lucide-react"
 import {
   Tooltip,
@@ -496,6 +498,34 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
     })
   }
 
+  // Publish service (draft -> active)
+  const handlePublish = async () => {
+    // Save any pending changes first, then set status to active
+    const updates: any = {}
+    unsavedChanges.forEach(sectionId => {
+      const sectionUpdates = { ...sectionData[sectionId] }
+      if (sectionId === 'schedule-selection' && sectionUpdates.scheduleId) {
+        sectionUpdates.schedule = parseInt(sectionUpdates.scheduleId)
+        delete sectionUpdates.scheduleId
+      }
+      if (sectionId === 'location' && sectionUpdates.practitioner_location_id) {
+        sectionUpdates.practitioner_location = parseInt(sectionUpdates.practitioner_location_id)
+        delete sectionUpdates.practitioner_location_id
+      }
+      Object.assign(updates, sectionUpdates)
+    })
+
+    updates.status = 'active'
+    updates.is_active = true
+    updates.is_public = true
+
+    await updateMutation.mutateAsync({
+      path: { id: parseInt(serviceId) },
+      body: updates,
+    })
+    setUnsavedChanges(new Set())
+  }
+
   // Scroll to section
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId)
@@ -852,6 +882,75 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                 )}
               </div>
             </div>
+
+            {/* Publish Banner - only shown for draft services */}
+            {service.status === 'draft' && (
+              <Card className={cn(
+                "mb-8 border-2",
+                progressPercentage === 100
+                  ? "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50"
+                  : "border-sage-200 bg-gradient-to-r from-sage-50 to-cream-50"
+              )}>
+                <CardContent className="py-5">
+                  {progressPercentage === 100 ? (
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100">
+                          <Rocket className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-green-900">Ready to go live!</h3>
+                          <p className="text-sm text-green-700">
+                            All required sections are complete. Publish to make this service visible and bookable.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handlePublish}
+                        disabled={updateMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 shrink-0"
+                        size="lg"
+                      >
+                        {updateMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Rocket className="h-4 w-4 mr-2" />
+                        )}
+                        Publish Service
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-100">
+                          <AlertCircle className="h-5 w-5 text-sage-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-olive-900">Almost there!</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Complete {totalSections - completedSections} more required {totalSections - completedSections === 1 ? 'section' : 'sections'} to publish this service.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => {
+                          const firstIncomplete = visibleSections.find(
+                            s => s.required && sectionStatus[s.id] !== "complete"
+                          )
+                          if (firstIncomplete) scrollToSection(firstIncomplete.id)
+                        }}
+                      >
+                        Continue Setup
+                        <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Sections */}
             <div className="space-y-8">
