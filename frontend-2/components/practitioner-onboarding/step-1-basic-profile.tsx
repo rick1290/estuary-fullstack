@@ -105,9 +105,9 @@ export default function Step1BasicProfile({
       return
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, profile_image_url: "Image must be less than 5MB" }))
+    // Validate file size (max 10MB, matching backend MAX_IMAGE_SIZE)
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, profile_image_url: "Image must be less than 10MB" }))
       return
     }
 
@@ -391,7 +391,7 @@ export default function Step1BasicProfile({
               )}
               <div className="flex-1">
                 <p className="text-sm text-olive-700 mb-1">Professional headshot recommended</p>
-                <p className="text-xs text-olive-500 mb-2">JPG, PNG or GIF. Max 5MB.</p>
+                <p className="text-xs text-olive-500 mb-2">JPG, PNG or GIF. Max 10MB.</p>
                 {errors.profile_image_url && (
                   <p className="text-sm text-terracotta-600">{errors.profile_image_url}</p>
                 )}

@@ -48,6 +48,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
+import SetupBanner from "@/components/dashboard/practitioner/setup-banner"
 
 interface PractitionerDashboardLayoutProps {
   children: React.ReactNode
@@ -578,6 +579,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-6 relative z-0 overflow-x-hidden">
+          <SetupBanner />
           {children}
         </main>
       </div>

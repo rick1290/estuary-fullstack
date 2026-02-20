@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, FilterX } from "lucide-react"
+import { Plus, FilterX, Sparkles } from "lucide-react"
 
 interface EmptyStateProps {
   selectedType: string
@@ -47,12 +47,12 @@ export default function EmptyState({ selectedType, hasFilters, onClearFilters }:
         </>
       ) : (
         <>
-          <div className="bg-muted rounded-full p-3 mb-4">
-            <Plus className="h-6 w-6 text-muted-foreground" />
+          <div className="bg-sage-100 rounded-full p-3 mb-4">
+            <Sparkles className="h-6 w-6 text-sage-600" />
           </div>
-          <h3 className="text-lg font-medium mb-2">No services yet</h3>
+          <h3 className="text-lg font-medium text-olive-900 mb-2">No services yet</h3>
           <p className="text-muted-foreground mb-6 max-w-md">
-            You haven't created any {getServiceTypeLabel()} yet. Get started by creating your first service.
+            Services are how clients find and book with you. Create a session, workshop, or course to start building your practice.
           </p>
           <Button asChild>
             <Link href="/dashboard/practitioner/services/new">

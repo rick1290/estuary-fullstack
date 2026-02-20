@@ -32,6 +32,7 @@ import { useStripeConnectStatus } from "@/hooks/use-stripe-connect-status"
 import PractitionerFlowTabs from "@/components/dashboard/practitioner/practitioner-flow-tabs"
 import PractitionerRecentRipples from "@/components/dashboard/practitioner/practitioner-recent-ripples"
 import PractitionerStats from "@/components/dashboard/practitioner/practitioner-stats"
+import SetupChecklist from "@/components/dashboard/practitioner/setup-checklist"
 
 export default function PractitionerDashboardPage() {
   const { user } = useAuth()
@@ -112,6 +113,9 @@ export default function PractitionerDashboardPage() {
           Your practice is flowing beautifully. Here's what's rippling through your waters today.
         </p>
       </div>
+
+      {/* Setup Checklist */}
+      <SetupChecklist />
 
       {/* Stripe Connect Warning */}
       {!stripeLoading && showWarning && (

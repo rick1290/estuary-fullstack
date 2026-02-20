@@ -126,6 +126,13 @@ export default function Step4Credentials({
         <CardDescription className="text-olive-600">
           Build trust by adding your professional credentials and education
         </CardDescription>
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
+        >
+          Skip this step →
+        </button>
       </CardHeader>
 
       <CardContent>

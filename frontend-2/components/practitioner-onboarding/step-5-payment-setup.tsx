@@ -69,6 +69,13 @@ export default function Step5PaymentSetup({
         <CardDescription className="text-olive-600">
           Connect your bank account to receive payouts
         </CardDescription>
+        <button
+          type="button"
+          onClick={handleSkipForNow}
+          className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
+        >
+          Skip this step →
+        </button>
       </CardHeader>
 
       <CardContent className="space-y-6">

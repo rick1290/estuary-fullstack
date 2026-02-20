@@ -13,13 +13,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, MoreVertical, User, Loader2, Search, Filter, Users, SpadeIcon as Spa, BookOpen, Video, Play } from "lucide-react"
+import { Calendar, Clock, MoreVertical, User, Loader2, Search, Filter, Users, SpadeIcon as Spa, BookOpen, Video, Play, CalendarCheck, Sparkles } from "lucide-react"
 import { format, parseISO, startOfWeek, endOfWeek, isAfter, isPast, isFuture } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
+import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 
 // Status badge variant mapping
 const statusVariants = {
@@ -271,14 +272,26 @@ export default function PractitionerBookingsList() {
         {/* Table Content */}
         <TabsContent value={selectedTab} className="mt-4">
           {filteredBookings.length === 0 ? (
-            <div className="rounded-md border p-8 text-center">
-              <p className="text-muted-foreground">
-                {selectedTab === "upcoming" && "No upcoming bookings"}
-                {selectedTab === "past" && "No past bookings"}
-                {selectedTab === "canceled" && "No canceled bookings"}
-                {selectedTab === "all" && "No bookings found"}
-              </p>
-            </div>
+            bookings.length === 0 && selectedTab === "all" ? (
+              <DashboardEmptyState
+                icon={CalendarCheck}
+                title="No bookings yet"
+                description="Once you create services and set your availability, clients will be able to book with you. Start by creating your first service."
+                cta={{ label: "Create a Service", href: "/dashboard/practitioner/services/create" }}
+                secondaryCta={{ label: "Set Availability", href: "/dashboard/practitioner/availability" }}
+                iconColorClass="text-terracotta-600"
+                iconBgClass="bg-terracotta-100"
+              />
+            ) : (
+              <div className="rounded-md border p-8 text-center">
+                <p className="text-muted-foreground">
+                  {selectedTab === "upcoming" && "No upcoming bookings"}
+                  {selectedTab === "past" && "No past bookings"}
+                  {selectedTab === "canceled" && "No canceled bookings"}
+                  {selectedTab === "all" && "No bookings match your filters"}
+                </p>
+              </div>
+            )
           ) : (
             <div className="rounded-md border">
               <Table>

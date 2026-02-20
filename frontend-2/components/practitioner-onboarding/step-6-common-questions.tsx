@@ -110,6 +110,13 @@ export default function Step6CommonQuestions({
         <CardDescription className="text-olive-600">
           Add questions and answers that clients often ask to help them feel more prepared
         </CardDescription>
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
+        >
+          Skip this step →
+        </button>
       </CardHeader>
 
       <CardContent>
