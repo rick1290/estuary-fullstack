@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useQuery } from "@tanstack/react-query"
-import { modalitiesListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { modalitiesListOptions, publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { motion } from "framer-motion"
 
 const stagger = {
@@ -30,8 +30,26 @@ export default function HeroSection() {
     ...modalitiesListOptions({}),
   })
 
-  // Get featured modalities (first 8)
+  // Fetch a handful of practitioners for the facepile
+  const { data: practitionersData } = useQuery({
+    ...publicPractitionersListOptions({
+      query: {
+        is_featured: true,
+        limit: 6,
+        ordering: '-average_rating'
+      }
+    }),
+    staleTime: 1000 * 60 * 10,
+  })
+
   const featuredModalities = (modalitiesData?.results || []).slice(0, 8)
+
+  const facePractitioners = (() => {
+    const raw = Array.isArray(practitionersData?.data?.results) ? practitionersData.data.results :
+                Array.isArray(practitionersData?.results) ? practitionersData.results :
+                Array.isArray(practitionersData) ? practitionersData : []
+    return raw.slice(0, 6)
+  })()
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -77,11 +95,37 @@ export default function HeroSection() {
           {/* Subtext */}
           <motion.p
             variants={itemFade}
-            className="text-lg font-light leading-relaxed text-olive-600 mb-10"
+            className="text-lg font-light leading-relaxed text-olive-600 mb-8"
           >
             Connect with expert practitioners, join transformative workshops,
             and discover your path — all in one place.
           </motion.p>
+
+          {/* Facepile */}
+          {facePractitioners.length > 0 && (
+            <motion.div
+              variants={itemFade}
+              className="flex items-center justify-center gap-3 mb-10"
+            >
+              <div className="flex -space-x-3">
+                {facePractitioners.map((p: any, i: number) => (
+                  <img
+                    key={p.public_uuid || p.id || i}
+                    src={p.profile_image_url || `https://i.pravatar.cc/80?img=${i + 10}`}
+                    alt={p.display_name || p.full_name || "Practitioner"}
+                    className="w-9 h-9 rounded-full border-2 border-cream-50 object-cover"
+                  />
+                ))}
+              </div>
+              <p className="text-sm font-light text-olive-500">
+                Join{" "}
+                <span className="font-medium text-olive-700">
+                  {facePractitioners.length > 0 ? `${facePractitioners.length * 10}+` : ""}
+                </span>{" "}
+                practitioners &amp; growing
+              </p>
+            </motion.div>
+          )}
 
           {/* Search bar */}
           <motion.div
