@@ -41,7 +41,7 @@ export default function UserDashboardNav() {
     )?.path || "/dashboard/user"
 
   return (
-    <div className="sticky top-0 z-30 w-full border-b border-sage-200 bg-white/90 backdrop-blur-lg shadow-sm">
+    <div className="sticky top-0 z-30 w-full border-b border-sage-200/60 bg-cream-50/95 backdrop-blur-sm">
       <div className="container px-4">
         <div className="flex h-14 items-center justify-between">
           <Tabs value={activeTab} className="w-full">

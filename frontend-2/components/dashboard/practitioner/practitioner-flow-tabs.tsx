@@ -138,41 +138,36 @@ export default function PractitionerFlowTabs() {
   const BookingItem = ({ booking }: { booking: BookingListReadable }) => {
     const timeField = booking.service_session?.start_time || booking.scheduled_start_time
     const locationText = booking.service?.location_type === 'virtual' ? 'Virtual' : 'In-Person'
-    
+    const clientName = booking.user?.full_name || booking.user?.email || "Client"
+    const clientInitial = clientName.charAt(0).toUpperCase()
+
     return (
-      <div className="flex items-start justify-between py-3 px-4 hover:bg-sage-50 rounded-lg transition-colors">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-sage-100 rounded-lg">
-            {getServiceIcon(booking.service?.service_type_code)}
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium text-sm">{getServiceLabel(booking)}</p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {timeField ? format(parseISO(timeField), "h:mm a") : 'Time TBD'}
-              </span>
-              {locationText === 'Virtual' ? (
-                <span className="flex items-center gap-1">
-                  <Video className="h-3 w-3" />
-                  Virtual
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  In-Person
-                </span>
-              )}
-            </div>
+      <div className="flex items-center gap-3 py-3 px-4 border-b border-sage-200/40 last:border-b-0 hover:bg-cream-50 transition-colors">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-medium text-olive-700">{clientInitial}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-olive-900">{getServiceLabel(booking)}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[11px] font-light text-olive-500 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {timeField ? format(parseISO(timeField), "h:mm a") : 'Time TBD'}
+            </span>
+            <span className={`text-[10px] font-medium uppercase tracking-wide px-2 py-0.5 rounded-full ${
+              locationText === 'Virtual'
+                ? 'bg-sage-100 text-sage-700'
+                : 'bg-terracotta-100 text-terracotta-700'
+            }`}>
+              {locationText}
+            </span>
           </div>
         </div>
-        <Button 
-          size="sm" 
-          variant="outline"
+        <button
           onClick={() => handleJoinSession(booking)}
+          className="text-xs font-normal text-olive-700 bg-cream-50 border border-sage-200/60 px-3.5 py-1.5 rounded-full whitespace-nowrap hover:bg-terracotta-50 hover:border-terracotta-300 hover:text-terracotta-700 transition-colors flex-shrink-0"
         >
           View Details
-        </Button>
+        </button>
       </div>
     )
   }
@@ -194,26 +189,23 @@ export default function PractitionerFlowTabs() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 bg-sage-100 p-1 rounded-lg mb-4">
-        <TabsTrigger 
-          value="today" 
-          className="data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2"
+      <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0 mb-4">
+        <TabsTrigger
+          value="today"
+          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
         >
-          <Sunrise className="h-4 w-4" />
           Today's Flow
         </TabsTrigger>
-        <TabsTrigger 
-          value="week" 
-          className="data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2"
+        <TabsTrigger
+          value="week"
+          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
         >
-          <Calendar className="h-4 w-4" />
-          This Week's Current
+          This Week
         </TabsTrigger>
-        <TabsTrigger 
-          value="ahead" 
-          className="data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2"
+        <TabsTrigger
+          value="ahead"
+          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
         >
-          <CalendarRange className="h-4 w-4" />
           Looking Downstream
         </TabsTrigger>
       </TabsList>

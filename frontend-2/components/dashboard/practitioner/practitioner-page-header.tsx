@@ -41,7 +41,7 @@ export function PractitionerPageHeader({
   children
 }: PractitionerPageHeaderProps) {
   return (
-    <div className={cn("bg-muted/30", className)}>
+    <div className={cn("bg-cream-50/50", className)}>
       <div className="px-6">
         {/* Back link if provided */}
         {backLink && (
@@ -58,7 +58,7 @@ export function PractitionerPageHeader({
         {/* Title row with action - compact spacing */}
         <div className={cn("flex items-center justify-between gap-4 py-4", backLink && "pt-2")}>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            <h1 className="font-serif text-2xl font-light text-olive-900">{title}</h1>
             {helpLink && (
               <Link
                 href={helpLink}

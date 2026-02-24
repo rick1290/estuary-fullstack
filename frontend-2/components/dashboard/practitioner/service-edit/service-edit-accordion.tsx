@@ -598,7 +598,7 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
           {/* Main Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight">{service.name}</h1>
+              <h1 className="font-serif text-2xl font-light text-olive-900">{service.name}</h1>
               <div className="flex items-center gap-2">
                 <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
                   {service.status}

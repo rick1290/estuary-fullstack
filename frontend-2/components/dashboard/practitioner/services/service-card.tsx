@@ -71,7 +71,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
   const typeConfig = getServiceTypeConfig(service.type)
 
   return (
-    <Card className="overflow-hidden flex flex-col h-full">
+    <Card className="overflow-hidden flex flex-col h-full border border-sage-200/60 bg-white">
       {/* Service image */}
       <div className="relative aspect-video">
         {service.image_url || service.coverImage ? (
@@ -98,7 +98,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
 
       {/* Card content */}
       <CardContent className="flex-grow p-4">
-        <h3 className="font-semibold text-lg line-clamp-1 mb-1">{service.name}</h3>
+        <h3 className="font-medium text-lg line-clamp-1 mb-1 text-olive-900">{service.name}</h3>
 
         {/* Category badge */}
         {service.practitioner_category && (

@@ -65,7 +65,7 @@ export default function UserUpcomingBookings() {
         <h2 className="text-2xl font-medium mb-6 text-olive-900">Upcoming Bookings</h2>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-2 border-sage-200">
+            <Card key={i} className="border border-sage-200/60">
               <CardContent className="p-6">
                 <div className="flex gap-4">
                   <Skeleton className="h-24 w-24 rounded-lg" />
@@ -106,11 +106,11 @@ export default function UserUpcomingBookings() {
       <h2 className="text-2xl font-medium mb-6 text-olive-900">Upcoming Bookings</h2>
 
       {bookings.length === 0 ? (
-        <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+        <Card className="border border-sage-200/60 bg-white">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-sage-300 mb-4" />
             <p className="text-olive-600 mb-4">You have no upcoming bookings</p>
-            <Button asChild className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800">
+            <Button asChild className="bg-olive-800 hover:bg-olive-700 text-white rounded-full">
               <Link href="/marketplace">Explore Services</Link>
             </Button>
           </CardContent>
@@ -123,7 +123,7 @@ export default function UserUpcomingBookings() {
             const practitioner = booking.practitioner
 
             return (
-              <Card key={booking.id} className="border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
+              <Card key={booking.id} className="border border-sage-200/60 bg-white hover:border-sage-300/60 transition-colors">
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {/* Practitioner Image */}

@@ -209,17 +209,17 @@ export default function PractitionerBookingsList() {
       {/* Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <TabsList className="bg-sage-100 p-1 rounded-lg">
-            <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0">
+            <TabsTrigger value="all" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">
               All
             </TabsTrigger>
-            <TabsTrigger value="upcoming" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="upcoming" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">
               Upcoming
             </TabsTrigger>
-            <TabsTrigger value="past" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="past" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">
               Past
             </TabsTrigger>
-            <TabsTrigger value="canceled" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="canceled" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">
               Canceled
             </TabsTrigger>
           </TabsList>

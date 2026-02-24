@@ -1,29 +1,19 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   CalendarDays,
-  Droplets,
-  Waves,
-  Activity,
   Clock,
   Calendar,
   CalendarCheck,
   Users,
-  Sparkles,
   MessageSquare,
   DollarSign,
-  BarChart3,
-  Settings,
   Radio,
   User,
-  AlertCircle,
   CreditCard,
   ArrowRight
 } from "lucide-react"
@@ -58,7 +48,7 @@ export default function PractitionerDashboardPage() {
     {
       title: "Services",
       description: "Your offerings",
-      icon: Sparkles,
+      icon: CalendarDays,
       href: "/dashboard/practitioner/services",
       color: "bg-olive-100 hover:bg-olive-200 text-olive-700"
     },
@@ -106,12 +96,17 @@ export default function PractitionerDashboardPage() {
     >
       {/* Welcome Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-olive-900 mb-2">
-          👋 Welcome back, {firstName}
+        <h1 className="font-serif text-3xl font-light text-olive-900 mb-2">
+          Welcome back, <em className="italic text-terracotta-600">{firstName}</em>
         </h1>
-        <p className="text-lg text-muted-foreground">
+        <p className="text-base font-light text-olive-600">
           Your practice is flowing beautifully. Here's what's rippling through your waters today.
         </p>
+      </div>
+
+      {/* Pulse Bar */}
+      <div className="mb-6">
+        <PractitionerStats />
       </div>
 
       {/* Setup Checklist */}
@@ -157,70 +152,67 @@ export default function PractitionerDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left Column - Flow Tabs */}
         <div className="lg:col-span-7">
-          <Card className="border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-lg bg-white/80 backdrop-blur-sm h-full">
+          <Card className="border border-sage-200/60 bg-white h-full flex flex-col">
             <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <Waves className="h-5 w-5 text-sage-600" />
-                <CardTitle>Your Flow</CardTitle>
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-xs font-medium tracking-widest uppercase text-sage-600">Schedule</span>
+                  <CardTitle className="font-serif text-xl font-light text-olive-900">Your <em className="italic text-terracotta-600">Flow</em></CardTitle>
+                  <CardDescription className="text-sm font-light text-olive-600">Navigate your practice's rhythm</CardDescription>
+                </div>
+                <Link href="/dashboard/practitioner/schedule" className="text-xs font-normal text-olive-500 border-b border-sage-200/60 pb-px hover:text-terracotta-600 hover:border-terracotta-400 transition-colors whitespace-nowrap">
+                  Full schedule &rarr;
+                </Link>
               </div>
-              <CardDescription>Navigate your practice's rhythm</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <PractitionerFlowTabs />
             </CardContent>
+            <div className="px-6 py-3 border-t border-sage-200/40 bg-cream-50/50">
+              <Link href="/dashboard/practitioner/availability" className="text-xs font-light text-olive-500 hover:text-terracotta-600 transition-colors">
+                + Add availability block
+              </Link>
+            </div>
           </Card>
         </div>
 
         {/* Right Column - Recent Ripples */}
         <div className="lg:col-span-5">
-          <Card className="border-2 border-terracotta-200 hover:border-terracotta-300 transition-all hover:shadow-lg bg-white/80 backdrop-blur-sm h-full">
+          <Card className="border border-sage-200/60 bg-white h-full flex flex-col">
             <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <Droplets className="h-5 w-5 text-terracotta-600" />
-                <CardTitle>Recent Ripples</CardTitle>
-              </div>
-              <CardDescription>New energy entering your practice</CardDescription>
+              <span className="text-xs font-medium tracking-widest uppercase text-sage-600">New Energy</span>
+              <CardTitle className="font-serif text-xl font-light text-olive-900">Recent <em className="italic text-terracotta-600">Ripples</em></CardTitle>
+              <CardDescription className="text-sm font-light text-olive-600">Who just booked or subscribed?</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <PractitionerRecentRipples />
             </CardContent>
+            <div className="px-6 py-3 border-t border-sage-200/40 bg-cream-50/50">
+              <Link href="/dashboard/practitioner/bookings" className="text-xs font-light text-olive-500 hover:text-terracotta-600 transition-colors">
+                View all activity &rarr;
+              </Link>
+            </div>
           </Card>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="mt-6">
-        <Card className="border-2 border-olive-200 hover:border-olive-300 transition-all hover:shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-olive-600" />
-              <CardTitle>Your Practice Pulse</CardTitle>
-            </div>
-            <CardDescription>How your energy is flowing this month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PractitionerStats />
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Apps Section - Quick Navigation */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-olive-900 mb-4">Quick Navigation</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <span className="text-xs font-medium tracking-widest uppercase text-olive-500 mb-4 block">Quick Navigation</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {appShortcuts.map((app) => {
             const Icon = app.icon
             return (
               <Link key={app.href} href={app.href}>
-                <Card className={`${app.color} border-0 hover:shadow-md transition-all cursor-pointer h-full`}>
+                <Card className="border border-sage-200/60 bg-white hover:bg-sage-50 hover:border-sage-300/60 transition-colors cursor-pointer h-full">
                   <CardContent className="p-4">
                     <div className="flex flex-col items-center text-center gap-2">
-                      <div className="p-3 rounded-lg bg-white/50">
-                        <Icon className="h-6 w-6" />
+                      <div className="w-9 h-9 rounded-xl bg-cream-100 flex items-center justify-center">
+                        <Icon className="h-4 w-4 text-olive-700" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{app.title}</p>
-                        <p className="text-xs opacity-80">{app.description}</p>
+                        <p className="font-medium text-xs text-olive-900">{app.title}</p>
+                        <p className="text-[10px] font-light text-olive-500">{app.description}</p>
                       </div>
                     </div>
                   </CardContent>
