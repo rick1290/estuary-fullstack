@@ -13,6 +13,7 @@ import {
   Sparkles,
   CreditCard,
   MessageCircle,
+  ArrowRight,
   Minus,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
@@ -127,31 +128,31 @@ const comparisonFeatures = [
 function ComparisonCell({ value, type }: { value: string; type: string }) {
   if (type === "yes-good") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-emerald-600 font-medium text-sm">
-        <Check className="h-4 w-4" />
+      <span className="inline-flex items-center justify-center gap-1 text-emerald-600 font-medium text-xs md:text-sm">
+        <Check className="h-3.5 w-3.5 md:h-4 md:w-4" />
         {value}
       </span>
     )
   }
   if (type === "no" || type === "no-bad") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-red-500 font-medium text-sm">
-        <X className="h-4 w-4" />
+      <span className="inline-flex items-center justify-center gap-1 text-red-500 font-medium text-xs md:text-sm">
+        <X className="h-3.5 w-3.5 md:h-4 md:w-4" />
         {value}
       </span>
     )
   }
   if (type === "yes-bad") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-red-500 font-medium text-sm">
-        <Check className="h-4 w-4" />
+      <span className="inline-flex items-center justify-center gap-1 text-red-500 font-medium text-xs md:text-sm">
+        <Check className="h-3.5 w-3.5 md:h-4 md:w-4" />
         {value}
       </span>
     )
   }
   // neutral
   return (
-    <span className="inline-flex items-center gap-1.5 text-olive-500 font-medium text-sm">
+    <span className="inline-flex items-center justify-center gap-1 text-olive-500 font-medium text-xs md:text-sm">
       {value}
     </span>
   )
@@ -466,27 +467,33 @@ export default function BecomePractitionerPage() {
             variants={itemFade}
             className="bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-sage-200/60 shadow-sm"
           >
-            {/* Desktop table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
+            {/* Swipe hint on mobile */}
+            <div className="md:hidden flex items-center justify-end gap-1.5 px-4 pt-3 pb-0 text-olive-400">
+              <span className="text-[11px] tracking-wide">Swipe to compare</span>
+              <ArrowRight className="h-3 w-3" />
+            </div>
+
+            {/* Scrollable table for all sizes — sticky first two columns on mobile */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b border-sage-200">
-                    <th className="text-left py-5 px-6 text-sm font-medium text-olive-500">
+                    <th className="text-left py-4 md:py-5 px-4 md:px-6 text-xs md:text-sm font-medium text-olive-500 sticky left-0 bg-white z-10 min-w-[140px]">
                       Feature
                     </th>
-                    <th className="text-left py-5 px-5 text-sm font-semibold text-olive-900">
+                    <th className="text-center py-4 md:py-5 px-3 md:px-5 text-xs md:text-sm font-semibold text-olive-900 sticky left-[140px] bg-sage-50/60 z-10 min-w-[90px] border-x border-sage-100">
                       Estuary
                     </th>
-                    <th className="text-left py-5 px-5 text-sm font-medium text-olive-500">
+                    <th className="text-center py-4 md:py-5 px-3 md:px-5 text-xs md:text-sm font-medium text-olive-500 min-w-[90px]">
                       Acuity
                     </th>
-                    <th className="text-left py-5 px-5 text-sm font-medium text-olive-500">
+                    <th className="text-center py-4 md:py-5 px-3 md:px-5 text-xs md:text-sm font-medium text-olive-500 min-w-[90px]">
                       Heallist
                     </th>
-                    <th className="text-left py-5 px-5 text-sm font-medium text-olive-500">
+                    <th className="text-center py-4 md:py-5 px-3 md:px-5 text-xs md:text-sm font-medium text-olive-500 min-w-[90px]">
                       Flowdara
                     </th>
-                    <th className="text-left py-5 px-5 text-sm font-medium text-olive-500">
+                    <th className="text-center py-4 md:py-5 px-3 md:px-5 text-xs md:text-sm font-medium text-olive-500 min-w-[90px]">
                       Kajabi
                     </th>
                   </tr>
@@ -497,61 +504,28 @@ export default function BecomePractitionerPage() {
                       key={i}
                       className="border-b border-sage-100 last:border-0 even:bg-sage-50/30"
                     >
-                      <td className="py-4 px-6 text-sm text-olive-700 font-light">
+                      <td className="py-3.5 md:py-4 px-4 md:px-6 text-xs md:text-sm text-olive-700 font-light sticky left-0 bg-white z-10 even:[&]:bg-sage-50/30">
                         {row.feature}
                       </td>
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 md:py-4 px-3 md:px-5 text-center sticky left-[140px] bg-sage-50/60 z-10 border-x border-sage-100">
                         <ComparisonCell {...row.estuary} />
                       </td>
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 md:py-4 px-3 md:px-5 text-center">
                         <ComparisonCell {...row.acuity} />
                       </td>
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 md:py-4 px-3 md:px-5 text-center">
                         <ComparisonCell {...row.heallist} />
                       </td>
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 md:py-4 px-3 md:px-5 text-center">
                         <ComparisonCell {...row.flowdara} />
                       </td>
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 md:py-4 px-3 md:px-5 text-center">
                         <ComparisonCell {...row.kajabi} />
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-
-            {/* Mobile comparison cards */}
-            <div className="md:hidden divide-y divide-sage-100">
-              {comparisonFeatures.map((row, i) => (
-                <div key={i} className="px-5 py-4">
-                  <p className="text-sm text-olive-800 font-medium mb-3">
-                    {row.feature}
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-olive-400">Estuary</span>
-                      <ComparisonCell {...row.estuary} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-olive-400">Acuity</span>
-                      <ComparisonCell {...row.acuity} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-olive-400">Heallist</span>
-                      <ComparisonCell {...row.heallist} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-olive-400">Flowdara</span>
-                      <ComparisonCell {...row.flowdara} />
-                    </div>
-                    <div className="flex items-center justify-between col-span-2 sm:col-span-1">
-                      <span className="text-olive-400">Kajabi</span>
-                      <ComparisonCell {...row.kajabi} />
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </motion.div>
         </motion.div>
