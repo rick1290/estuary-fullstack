@@ -14,7 +14,6 @@ import {
   CreditCard,
   MessageCircle,
   ArrowRight,
-  Minus,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
@@ -812,23 +811,6 @@ export default function BecomePractitionerPage() {
             embodied. It unfolds slowly and deeply &mdash; and your tools should
             honor that.
           </motion.p>
-
-          <motion.div variants={stagger} className="space-y-2.5 mb-7">
-            {[
-              "Not a marketplace that wants a cut of your visibility",
-              "Not a directory sending you clients you didn\u2019t ask for",
-              "Not a SaaS subscription waiting to hike your rate",
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                variants={itemFade}
-                className="flex items-center gap-3 text-sm text-olive-600"
-              >
-                <Minus className="h-4 w-4 text-sage-300 flex-shrink-0" />
-                {item}
-              </motion.div>
-            ))}
-          </motion.div>
 
           <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600">
             It&apos;s infrastructure that gets out of your way &mdash; so you can do
