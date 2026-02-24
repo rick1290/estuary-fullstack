@@ -37,9 +37,9 @@ const itemFade = {
 const comparisonFeatures = [
   {
     feature: "Subscription Required",
-    estuary: { value: "No", type: "no" as const },
+    estuary: { value: "No", type: "no-good" as const },
     acuity: { value: "Yes", type: "yes-bad" as const },
-    heallist: { value: "Optional", type: "neutral" as const },
+    heallist: { value: "Optional", type: "no-bad" as const },
     flowdara: { value: "Yes", type: "yes-bad" as const },
     kajabi: { value: "Yes", type: "yes-bad" as const },
   },
@@ -48,7 +48,7 @@ const comparisonFeatures = [
     estuary: { value: "Yes", type: "yes-good" as const },
     acuity: { value: "No", type: "no-bad" as const },
     heallist: { value: "Yes", type: "yes-good" as const },
-    flowdara: { value: "Partial", type: "neutral" as const },
+    flowdara: { value: "Partial", type: "no-bad" as const },
     kajabi: { value: "No", type: "no-bad" as const },
   },
   {
@@ -63,7 +63,7 @@ const comparisonFeatures = [
     feature: "Built-In Video",
     estuary: { value: "Yes", type: "yes-good" as const },
     acuity: { value: "No", type: "no-bad" as const },
-    heallist: { value: "Yes (limited)", type: "neutral" as const },
+    heallist: { value: "Limited", type: "no-bad" as const },
     flowdara: { value: "No", type: "no-bad" as const },
     kajabi: { value: "No", type: "no-bad" as const },
   },
@@ -78,10 +78,10 @@ const comparisonFeatures = [
   {
     feature: "Workshops & Group Events",
     estuary: { value: "Yes", type: "yes-good" as const },
-    acuity: { value: "Limited", type: "neutral" as const },
-    heallist: { value: "Limited", type: "neutral" as const },
-    flowdara: { value: "Limited", type: "neutral" as const },
-    kajabi: { value: "Add-on", type: "neutral" as const },
+    acuity: { value: "Limited", type: "no-bad" as const },
+    heallist: { value: "Limited", type: "no-bad" as const },
+    flowdara: { value: "Limited", type: "no-bad" as const },
+    kajabi: { value: "Add-on", type: "no-bad" as const },
   },
   {
     feature: "Online Course Hosting",
@@ -111,9 +111,9 @@ const comparisonFeatures = [
     feature: "Hybrid (Online + In-Person)",
     estuary: { value: "Yes", type: "yes-good" as const },
     acuity: { value: "Yes", type: "yes-good" as const },
-    heallist: { value: "Limited", type: "neutral" as const },
-    flowdara: { value: "Limited", type: "neutral" as const },
-    kajabi: { value: "Limited", type: "neutral" as const },
+    heallist: { value: "Limited", type: "no-bad" as const },
+    flowdara: { value: "Limited", type: "no-bad" as const },
+    kajabi: { value: "Limited", type: "no-bad" as const },
   },
   {
     feature: "Reduced Fees as You Grow",
@@ -126,6 +126,14 @@ const comparisonFeatures = [
 ]
 
 function ComparisonCell({ value, type }: { value: string; type: string }) {
+  if (type === "no-good") {
+    return (
+      <span className="inline-flex items-center justify-center gap-1 text-emerald-600 font-medium text-xs md:text-sm">
+        <X className="h-3.5 w-3.5 md:h-4 md:w-4" />
+        {value}
+      </span>
+    )
+  }
   if (type === "yes-good") {
     return (
       <span className="inline-flex items-center justify-center gap-1 text-emerald-600 font-medium text-xs md:text-sm">
