@@ -1,123 +1,125 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Play, Users, MessageCircle, Sparkles } from "lucide-react"
+import { ArrowRight, Play, Users, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { motion } from "framer-motion"
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+}
+
+const itemFade = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+}
 
 export default function StreamsTeaserSection() {
   return (
-    <section className="py-20 bg-gradient-to-b from-white via-blush-50/30 to-sage-50/30 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 texture-grain opacity-10" />
-      <div className="absolute top-20 -left-40 w-[600px] h-[600px] bg-blush-200/30 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 -right-40 w-[500px] h-[500px] bg-sage-200/30 rounded-full blur-3xl" />
-
-      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="py-20 bg-cream-50">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="animate-fade-in">
-              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-6 shadow-sm">
-                <Sparkles className="h-4 w-4 text-blush-600" strokeWidth="1.5" />
-                <span className="text-sm text-olive-700 font-medium">Coming Soon</span>
-              </div>
-              
-              <h2 className="text-4xl font-bold tracking-tight text-olive-900 mb-6">
-                Join Our 
-                <span className="text-gradient bg-gradient-to-r from-blush-600 to-sage-600 bg-clip-text text-transparent"> Living Streams</span>
-              </h2>
-              
-              <p className="text-olive-700 text-lg mb-8 leading-relaxed">
-                Connect with practitioners and fellow seekers in our vibrant online community. Experience live sessions, share insights, and deepen your journey through meaningful conversations and exclusive content.
-              </p>
-              
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              variants={stagger}
+            >
+              <motion.span
+                variants={itemFade}
+                className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+              >
+                Streams
+              </motion.span>
+
+              <motion.h2
+                variants={itemFade}
+                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900 mb-5"
+              >
+                Explore{" "}
+                <em className="italic text-terracotta-600">Living Streams</em>
+              </motion.h2>
+
+              <motion.p
+                variants={itemFade}
+                className="text-base font-light leading-relaxed text-olive-600 mb-8"
+              >
+                Discover articles, videos, and audio from practitioners in our
+                community. A living library of wellness wisdom — free to browse,
+                with premium content for those who want to go deeper.
+              </motion.p>
+
               {/* Feature list */}
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blush-100 flex items-center justify-center">
-                    <Play className="h-5 w-5 text-blush-700" strokeWidth="1.5" />
+              <motion.div variants={itemFade} className="space-y-4 mb-8">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-sage-50 flex items-center justify-center flex-shrink-0">
+                    <Play className="h-5 w-5 text-sage-700" strokeWidth="1.5" />
                   </div>
                   <div>
-                    <p className="font-medium text-olive-900">Live Sessions</p>
-                    <p className="text-sm text-olive-600">Join practitioners for real-time guidance</p>
+                    <p className="text-[15px] font-medium text-olive-900">Articles, Videos & Audio</p>
+                    <p className="text-[13px] text-olive-500 font-light">Explore practitioner-created content across formats</p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-sage-100 flex items-center justify-center">
+
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-sage-50 flex items-center justify-center flex-shrink-0">
                     <Users className="h-5 w-5 text-sage-700" strokeWidth="1.5" />
                   </div>
                   <div>
-                    <p className="font-medium text-olive-900">Community Connection</p>
-                    <p className="text-sm text-olive-600">Share your journey with like-minded souls</p>
+                    <p className="text-[15px] font-medium text-olive-900">Community Connection</p>
+                    <p className="text-[13px] text-olive-500 font-light">Share your journey with like-minded seekers</p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-terracotta-100 flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 text-terracotta-700" strokeWidth="1.5" />
+
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-sage-50 flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="h-5 w-5 text-sage-700" strokeWidth="1.5" />
                   </div>
                   <div>
-                    <p className="font-medium text-olive-900">Exclusive Content</p>
-                    <p className="text-sm text-olive-600">Access special workshops and teachings</p>
+                    <p className="text-[15px] font-medium text-olive-900">Free & Premium Content</p>
+                    <p className="text-[13px] text-olive-500 font-light">Access open content or unlock deeper teachings</p>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-4">
-                <Button 
-                  className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg" 
-                  size="lg"
+              </motion.div>
+
+              <motion.div variants={itemFade}>
+                <Button
                   asChild
+                  size="lg"
+                  className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8"
                 >
                   <Link href="/streams">
-                    Explore Streams
+                    Browse Streams
                     <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" className="border-sage-300 text-sage-700 hover:bg-sage-50">
-                  Learn More
-                </Button>
-              </div>
-            </div>
-            
+              </motion.div>
+            </motion.div>
+
             {/* Right Visual */}
-            <div className="relative animate-slide-up" style={{animationDelay: '0.2s'}}>
-              <Card className="overflow-hidden border-0 shadow-2xl">
-                <div className="relative h-[400px]">
-                  {/* Stream preview image */}
-                  <Image
-                    src="/living-streams-preview.png"
-                    alt="Living Streams Preview"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-
-                  {/* Live indicator */}
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-rose-500 text-white px-3 py-1.5 rounded-full">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                    <span className="text-sm font-medium">LIVE</span>
-                  </div>
-
-                  {/* Viewer count */}
-                  <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-olive-700" strokeWidth="1.5" />
-                      <span className="text-sm font-medium text-olive-800">1,247 watching</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-              
-              {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 bg-white rounded-2xl shadow-xl p-4 animate-float">
-                <p className="text-xs text-olive-600 mb-1">Next Stream</p>
-                <p className="font-semibold text-olive-900">Mindful Morning</p>
-                <p className="text-sm text-sage-700">Tomorrow, 8am</p>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="rounded-2xl overflow-hidden border border-sage-200/60 shadow-lg">
+                <Image
+                  src="/living-streams-preview.png"
+                  alt="Living Streams content preview"
+                  width={600}
+                  height={400}
+                  className="w-full h-auto object-cover"
+                />
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

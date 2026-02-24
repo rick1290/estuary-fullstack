@@ -1,12 +1,26 @@
 "use client"
 import Link from "next/link"
-import { ArrowRight, Star, MapPin, Sparkles, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowRight, Star, MapPin, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
 import { publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useRef, useState, useEffect } from "react"
+import { motion } from "framer-motion"
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+}
+
+const itemFade = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+}
 
 export default function FeaturedPractitionersSection() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -76,23 +90,36 @@ export default function FeaturedPractitionersSection() {
   }, [featuredPractitioners])
 
   return (
-    <section className="py-20 bg-gradient-to-b from-white via-sage-50/30 to-cream-50 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 texture-grain opacity-10" />
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-sage-200/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-terracotta-200/20 rounded-full blur-3xl" />
-
-      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="py-20 bg-cream-50">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-12">
-          <div className="animate-fade-in">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="h-5 w-5 text-terracotta-600" strokeWidth="1.5" />
-              <p className="text-sm text-olive-600 font-medium uppercase tracking-wide">Meet Your Guides</p>
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-olive-900">Featured Practitioners</h2>
-            <p className="text-olive-600 text-lg mt-2">Expert guides ready to support your transformation</p>
-          </div>
-          <Button variant="ghost" asChild className="text-sage-700 hover:text-sage-800 hover:bg-sage-100 animate-fade-in">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={stagger}
+          >
+            <motion.span
+              variants={itemFade}
+              className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            >
+              Meet Your Guides
+            </motion.span>
+            <motion.h2
+              variants={itemFade}
+              className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
+            >
+              Featured{" "}
+              <em className="italic text-terracotta-600">Practitioners</em>
+            </motion.h2>
+            <motion.p
+              variants={itemFade}
+              className="text-base font-light text-olive-600 mt-2"
+            >
+              Expert guides ready to support your transformation
+            </motion.p>
+          </motion.div>
+          <Button variant="ghost" asChild className="text-sage-700 hover:text-sage-800 hover:bg-sage-100">
             <Link href="/marketplace/practitioners" className="flex items-center">
               Explore All Guides
               <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
@@ -130,7 +157,7 @@ export default function FeaturedPractitionersSection() {
             {canScrollLeft && (
               <button
                 onClick={scrollLeft}
-                className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+                className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-md hover:bg-white hover:scale-105 transition-all duration-200"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="h-5 w-5 text-olive-700" />
@@ -140,7 +167,7 @@ export default function FeaturedPractitionersSection() {
             {canScrollRight && (
               <button
                 onClick={scrollRight}
-                className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+                className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-md hover:bg-white hover:scale-105 transition-all duration-200"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="h-5 w-5 text-olive-700" />
@@ -155,10 +182,13 @@ export default function FeaturedPractitionersSection() {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {featuredPractitioners.map((practitioner, index) => (
-                <div
+                <motion.div
                   key={practitioner.id}
-                  className="animate-slide-up flex-shrink-0"
-                  style={{animationDelay: `${index * 0.1}s`}}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.08 }}
+                  className="flex-shrink-0"
                 >
                   <Link
                     href={`/practitioners/${practitioner.slug || practitioner.id}`}
@@ -166,13 +196,9 @@ export default function FeaturedPractitionersSection() {
                   >
                     {/* Avatar-centric card */}
                     <div className="relative flex flex-col items-center">
-                      {/* Avatar container with hover effects */}
+                      {/* Main avatar */}
                       <div className="relative">
-                        {/* Decorative ring that appears on hover */}
-                        <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-sage-200/0 via-terracotta-200/0 to-sage-300/0 group-hover:from-sage-200/60 group-hover:via-terracotta-200/40 group-hover:to-sage-300/60 transition-all duration-500 blur-sm" />
-
-                        {/* Main avatar */}
-                        <div className="relative w-36 h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-xl border-4 border-white ring-2 ring-sage-200/50 group-hover:ring-sage-300 group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300">
+                        <div className="relative w-36 h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-md border-4 border-white group-hover:shadow-lg group-hover:scale-[1.02] transition-all duration-300">
                           <img
                             src={practitioner.image}
                             alt={practitioner.name}
@@ -181,23 +207,23 @@ export default function FeaturedPractitionersSection() {
                         </div>
 
                         {/* Rating badge */}
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-lg border border-sage-100">
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-sm border border-sage-200/60">
                           <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
-                          <span className="text-sm font-semibold text-olive-800">{practitioner.rating}</span>
+                          <span className="text-sm font-medium text-olive-800">{practitioner.rating}</span>
                         </div>
                       </div>
 
                       {/* Info below avatar */}
                       <div className="mt-6 text-center">
-                        <h3 className="text-lg font-semibold text-olive-900 group-hover:text-sage-700 transition-colors">
+                        <h3 className="text-[15px] font-medium text-olive-900 group-hover:text-sage-700 transition-colors">
                           {practitioner.name}
                         </h3>
-                        <p className="text-olive-600 text-sm mt-0.5">{practitioner.specialty}</p>
+                        <p className="text-olive-500 text-sm font-light mt-0.5">{practitioner.specialty}</p>
 
                         {/* Location - shows on hover */}
-                        <div className="flex items-center justify-center gap-1 text-sm text-olive-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-5">
+                        <div className="flex items-center justify-center gap-1 text-sm text-olive-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-5">
                           <MapPin className="h-3.5 w-3.5" />
-                          <span>{practitioner.location}</span>
+                          <span className="font-light">{practitioner.location}</span>
                         </div>
 
                         {/* Modalities pills */}
@@ -205,13 +231,13 @@ export default function FeaturedPractitionersSection() {
                           {practitioner.modalities.slice(0, 2).map((modality) => (
                             <span
                               key={modality}
-                              className="text-xs px-2.5 py-1 bg-sage-100/80 text-olive-700 rounded-full group-hover:bg-sage-200/80 transition-colors"
+                              className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light"
                             >
                               {modality}
                             </span>
                           ))}
                           {practitioner.modalities.length > 2 && (
-                            <span className="text-xs text-olive-500 self-center">
+                            <span className="text-xs text-olive-400 self-center">
                               +{practitioner.modalities.length - 2}
                             </span>
                           )}
@@ -219,7 +245,7 @@ export default function FeaturedPractitionersSection() {
                       </div>
                     </div>
                   </Link>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
