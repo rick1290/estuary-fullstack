@@ -804,16 +804,24 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800 mb-6"
+            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800 mb-8"
           >
             Healing is{" "}
             <em className="italic text-terracotta-600">relational</em>. It&apos;s
-            embodied. It unfolds slowly and deeply &mdash; and your tools should
+            embodied. It unfolds slowly and deeply, and your tools should
             honor that.
           </motion.p>
 
+          <motion.div variants={itemFade} className="rounded-2xl overflow-hidden shadow-lg mb-8">
+            <img
+              src="/benefit-3-community.png"
+              alt="Practitioner leading a healing circle"
+              className="w-full h-56 sm:h-72 object-cover"
+            />
+          </motion.div>
+
           <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600">
-            It&apos;s infrastructure that gets out of your way &mdash; so you can do
+            It&apos;s infrastructure that gets out of your way so you can do
             the work you came here to do.
           </motion.p>
         </motion.div>
