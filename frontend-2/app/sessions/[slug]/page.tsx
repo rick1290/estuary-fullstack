@@ -97,7 +97,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative min-h-[70vh] bg-gradient-to-b from-sage-50 via-cream-100 to-cream-50">
+        <section className="relative min-h-[70vh] bg-cream-50">
           <div className="relative container max-w-7xl py-12">
             <Skeleton className="h-6 w-96 mb-12" />
             <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -144,14 +144,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Immersive Hero Section */}
-      <section className="relative min-h-[70vh] bg-gradient-to-b from-sage-50 via-cream-100 to-cream-50 overflow-hidden">
-        {/* Background texture */}
-        <div className="absolute inset-0 texture-grain opacity-5" />
-        
-        {/* Decorative blob shapes */}
-        <div className="absolute top-20 -right-40 w-96 h-96 bg-terracotta-200/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-40 w-96 h-96 bg-sage-200/20 rounded-full blur-3xl" />
-        
+      <section className="relative min-h-[70vh] bg-cream-50 overflow-hidden">
         {/* Content */}
         <div className="relative container max-w-7xl py-12">
           {/* Breadcrumb */}
@@ -222,7 +215,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               </div>
 
               <div>
-                <h1 className="text-5xl lg:text-6xl font-medium text-olive-900 mb-6 leading-tight">
+                <h1 className="font-serif text-4xl lg:text-5xl font-light text-olive-900 mb-6 leading-tight">
                   {service?.name || 'Session'}
                 </h1>
                 <p className="text-xl text-olive-700 leading-relaxed">
@@ -275,7 +268,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="shadow-lg" onClick={scrollToBooking}>
+                <Button size="lg" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full shadow-sm" onClick={scrollToBooking}>
                   Book Your Session
                 </Button>
                 <Button 
@@ -298,7 +291,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-2xl">
+              <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-lg border border-sage-200/60">
                 {service?.image_url ? (
                   <img
                     src={service.image_url}
