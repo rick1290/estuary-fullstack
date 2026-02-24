@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, MapPin, Star, Users, Check, Heart, MessageCircle, Share2, Sparkles } from "lucide-react"
+import { Clock, MapPin, Star, Users, Check, Heart, MessageCircle, Share2 } from "lucide-react"
 import type { Practitioner } from "@/types/practitioner"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
@@ -100,7 +100,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           <div className="flex-1">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-olive-900 mb-1">
+                <h1 className="font-serif text-2xl lg:text-3xl font-light text-olive-900 mb-1">
                   {practitioner.display_name}
                 </h1>
                 <p className="text-lg text-olive-700 mb-3">{practitioner.title}</p>
@@ -194,7 +194,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
 
         {/* Quote - If exists */}
         {practitioner.quote && (
-          <div className="mt-6 p-4 bg-gradient-to-r from-sage-50/50 to-terracotta-50/50 rounded-xl border border-sage-100">
+          <div className="mt-6 p-4 bg-cream-100/60 rounded-xl border border-sage-200/60">
             <p className="text-olive-700 italic">"{practitioner.quote}"</p>
           </div>
         )}
@@ -212,7 +212,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           </Button>
           {practitioner.is_verified && (
             <Badge variant="sage" className="px-3 py-2">
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              <Check className="h-3.5 w-3.5 mr-1.5" />
               Verified Expert
             </Badge>
           )}

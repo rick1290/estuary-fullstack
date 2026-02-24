@@ -147,7 +147,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative min-h-[85vh] bg-gradient-to-b from-sage-50 via-terracotta-50 to-cream-50">
+        <section className="relative min-h-[85vh] bg-cream-50">
           <div className="relative container max-w-7xl py-12">
             <Skeleton className="h-6 w-96 mb-12" />
             <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -206,13 +206,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Immersive Hero Section */}
-      <section className="relative min-h-[85vh] bg-gradient-to-b from-sage-50 via-terracotta-50 to-cream-50 overflow-hidden">
-        {/* Background elements */}
-        <div className="absolute inset-0 texture-grain opacity-25" />
-        <div className="absolute top-20 -left-40 w-[500px] h-[500px] bg-blush-200/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 -right-60 w-[700px] h-[700px] bg-sage-200/30 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-terracotta-100/20 rounded-full blur-3xl" />
-        
+      <section className="relative min-h-[85vh] bg-cream-50 overflow-hidden">
         {/* Content */}
         <div className="relative container max-w-7xl py-12">
           {/* Breadcrumb */}
@@ -254,12 +248,9 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             <div className="space-y-8 animate-slide-up">
               {/* Workshop Label & Modalities */}
               <div className="space-y-3">
-                <div className="inline-flex items-center gap-3 bg-sage-100 px-5 py-3 rounded-full">
-                  <Sparkles className="h-5 w-5 text-sage-600 animate-pulse" strokeWidth="1.5" />
-                  <span className="text-sage-800 font-medium">
-                    {workshop.location === 'In-person' ? 'In-Person Experience' : workshop.location} • Limited Spots
-                  </span>
-                </div>
+                <span className="inline-block text-xs font-medium tracking-widest uppercase text-sage-600">
+                  {workshop.location === 'In-person' ? 'In-Person Experience' : workshop.location} • Limited Spots
+                </span>
                 {workshop.modalities && workshop.modalities.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {workshop.modalities.map((modality: { id: number; name: string; slug: string }) => (
@@ -272,7 +263,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               </div>
 
               <div>
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-olive-900 mb-6 leading-[1.1]">
+                <h1 className="font-serif text-4xl lg:text-5xl xl:text-6xl font-light text-olive-900 mb-6 leading-[1.1]">
                   {workshop.title}
                 </h1>
                 <p className="text-xl lg:text-2xl text-olive-700 leading-relaxed font-light">
@@ -326,7 +317,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* CTA Section */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="shadow-xl hover:shadow-2xl px-8" onClick={scrollToBooking}>
+                  <Button size="lg" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full shadow-sm px-8" onClick={scrollToBooking}>
                     Reserve Your Spot - ${workshop.price}
                   </Button>
                   <Button 
@@ -355,7 +346,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-blush-100 shadow-2xl">
+              <div className="relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-blush-100 shadow-lg border border-sage-200/60">
                 {workshop.image ? (
                   <img
                     src={workshop.image}
@@ -572,8 +563,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {workshop.spotsRemaining > 0 && (
                 <Card className="mt-6 border-2 border-terracotta-200 bg-terracotta-50">
                   <CardContent className="p-6 text-center">
-                    <Sparkles className="h-8 w-8 text-terracotta-600 mx-auto mb-3" strokeWidth="1.5" />
-                    <h3 className="font-semibold text-olive-900 mb-2">Limited Availability</h3>
+                    <h3 className="font-medium text-olive-900 mb-2">Limited Availability</h3>
                     <p className="text-sm text-olive-700">
                       Only <span className="font-bold text-terracotta-600">{workshop.spotsRemaining} {workshop.spotsRemaining === 1 ? 'spot' : 'spots'} left</span> for the next session
                     </p>

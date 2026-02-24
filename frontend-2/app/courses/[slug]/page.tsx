@@ -330,7 +330,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative min-h-[80vh] bg-gradient-to-b from-terracotta-50 via-sage-50 to-cream-50">
+        <section className="relative min-h-[80vh] bg-cream-50">
           <div className="relative container max-w-7xl py-12">
             <Skeleton className="h-6 w-96 mb-12" />
             <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -382,12 +382,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Immersive Hero Section */}
-      <section className="relative min-h-[80vh] bg-gradient-to-b from-terracotta-50 via-sage-50 to-cream-50 overflow-hidden">
-        {/* Background elements */}
-        <div className="absolute inset-0 texture-grain opacity-20" />
-        <div className="absolute top-40 -right-60 w-[600px] h-[600px] bg-sage-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-60 w-[600px] h-[600px] bg-terracotta-200/30 rounded-full blur-3xl" />
-        
+      <section className="relative min-h-[80vh] bg-cream-50 overflow-hidden">
         {/* Content */}
         <div className="relative container max-w-7xl py-12">
           {/* Breadcrumb */}
@@ -429,10 +424,9 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             <div className="space-y-8 animate-slide-up">
               {/* Course Label & Modalities */}
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 bg-terracotta-100 px-4 py-2 rounded-full">
-                  <div className="w-2 h-2 bg-terracotta-500 rounded-full animate-pulse" />
-                  <span className="text-terracotta-800 font-medium">{course.sessionCount}-Session Journey</span>
-                </div>
+                <span className="inline-block text-xs font-medium tracking-widest uppercase text-terracotta-600">
+                  {course.sessionCount}-Session Journey
+                </span>
                 {course.modalities && course.modalities.length > 0 && (
                   <>
                     {course.modalities.map((modality: { id: number; name: string; slug: string }) => (
@@ -445,7 +439,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </div>
 
               <div>
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-olive-900 mb-6 leading-[1.1]">
+                <h1 className="font-serif text-4xl lg:text-5xl xl:text-6xl font-light text-olive-900 mb-6 leading-[1.1]">
                   {course.title}
                 </h1>
                 <p className="text-xl lg:text-2xl text-olive-700 leading-relaxed font-light">
@@ -484,7 +478,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* CTA Section */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="shadow-xl hover:shadow-2xl px-8" onClick={scrollToBooking}>
+                  <Button size="lg" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full shadow-sm px-8" onClick={scrollToBooking}>
                     Enroll Now - ${course.price}
                   </Button>
                   <Button 
@@ -513,7 +507,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100 shadow-2xl">
+              <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100 shadow-lg border border-sage-200/60">
                 {course.image ? (
                   <img
                     src={course.image}
