@@ -46,7 +46,7 @@ export function PayoutDetails({ payout }: PayoutDetailsProps) {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <p className="text-3xl font-bold">{formatCurrency(payout.amount)}</p>
+              <p className="font-serif text-3xl font-light text-olive-900">{formatCurrency(payout.amount)}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

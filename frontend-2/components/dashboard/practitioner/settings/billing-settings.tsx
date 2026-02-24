@@ -368,7 +368,7 @@ export function BillingSettings() {
                 <CardTitle>{tier.name}</CardTitle>
                 <CardDescription>{tier.description}</CardDescription>
                 <div className="mt-2">
-                  <span className="text-3xl font-bold">{formatPrice(price)}</span>
+                  <span className="font-serif text-3xl font-light text-olive-900">{formatPrice(price)}</span>
                   <span className="text-muted-foreground">/{billingPeriod === "monthly" ? "month" : "year"}</span>
                 </div>
                 {savings > 0 && (

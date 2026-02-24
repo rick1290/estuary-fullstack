@@ -346,7 +346,7 @@ export default function AvailabilityClient() {
                 </Card>
               ))
             ) : schedules.length === 0 ? (
-              <Card className="border-2 border-dashed">
+              <Card className="border border-dashed border-sage-200/60">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                     <div className="bg-blush-100 rounded-full p-3 mb-4">

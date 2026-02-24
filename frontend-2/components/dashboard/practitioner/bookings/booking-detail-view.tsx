@@ -253,7 +253,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{booking.service?.name || booking.title || "Booking"}</h1>
+            <h1 className="font-serif text-2xl font-light text-olive-900">{booking.service?.name || booking.title || "Booking"}</h1>
             <p className="text-muted-foreground">Booking #{booking.public_uuid?.slice(-8) || booking.id}</p>
           </div>
         </div>
@@ -576,7 +576,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total Paid</span>
-                <span className="font-bold text-lg">${booking.final_amount || "0.00"}</span>
+                <span className="font-serif text-lg font-light text-olive-900">${booking.final_amount || "0.00"}</span>
               </div>
               <Badge variant={booking.payment_status === "paid" ? "success" : "warning"}>
                 {booking.payment_status_display || booking.payment_status}

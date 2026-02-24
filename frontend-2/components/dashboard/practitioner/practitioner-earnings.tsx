@@ -57,7 +57,7 @@ export default function PractitionerEarnings() {
           <CardContent className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Total Earnings ({timeRange})</p>
-              <p className="text-3xl font-bold">$1,240</p>
+              <p className="font-serif text-3xl font-light text-olive-900">$1,240</p>
               <p className="text-sm text-green-600">+8% from last {timeRange.slice(0, -2)}</p>
             </div>
           </CardContent>
@@ -67,7 +67,7 @@ export default function PractitionerEarnings() {
           <CardContent className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Sessions ({timeRange})</p>
-              <p className="text-3xl font-bold">24</p>
+              <p className="font-serif text-3xl font-light text-olive-900">24</p>
               <p className="text-sm text-green-600">+12% from last {timeRange.slice(0, -2)}</p>
             </div>
           </CardContent>
@@ -77,7 +77,7 @@ export default function PractitionerEarnings() {
           <CardContent className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Average Session Value</p>
-              <p className="text-3xl font-bold">$51.67</p>
+              <p className="font-serif text-3xl font-light text-olive-900">$51.67</p>
               <p className="text-sm text-red-600">-4% from last {timeRange.slice(0, -2)}</p>
             </div>
           </CardContent>
@@ -85,8 +85,8 @@ export default function PractitionerEarnings() {
       </div>
 
       <div className="rounded-md border">
-        <div className="p-4 bg-muted/50">
-          <h3 className="text-sm font-medium">Recent Transactions</h3>
+        <div className="p-4 bg-cream-50/50">
+          <h3 className="text-sm font-medium text-olive-900">Recent Transactions</h3>
         </div>
         <Table>
           <TableHeader>

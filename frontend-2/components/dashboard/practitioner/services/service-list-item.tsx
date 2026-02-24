@@ -72,7 +72,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
   const typeConfig = getServiceTypeConfig(service.type)
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border border-sage-200/60 bg-white">
       <CardContent className="p-0">
         <div className="flex flex-col sm:flex-row">
           {/* Service image (only visible on larger screens) */}
@@ -125,7 +125,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus }: S
             {/* Content row */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex-grow space-y-2">
-                <h3 className="font-semibold text-lg">{service.name}</h3>
+                <h3 className="font-medium text-lg text-olive-900">{service.name}</h3>
 
               <p className="text-sm text-muted-foreground line-clamp-1 hidden sm:block">{service.description}</p>
 

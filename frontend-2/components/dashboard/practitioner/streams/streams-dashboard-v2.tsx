@@ -402,7 +402,7 @@ export default function StreamsDashboardV2() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{practitionerStream?.subscriber_count || 0}</div>
+              <div className="font-serif text-2xl font-light text-olive-900">{practitionerStream?.subscriber_count || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Free: {practitionerStream?.free_subscriber_count || 0} | Paid: {practitionerStream?.paid_subscriber_count || 0}
               </p>
@@ -415,7 +415,7 @@ export default function StreamsDashboardV2() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${analyticsData?.revenue?.monthly || 0}</div>
+              <div className="font-serif text-2xl font-light text-olive-900">${analyticsData?.revenue?.monthly || 0}</div>
               <p className="text-xs text-muted-foreground">Total: ${((practitionerStream?.total_revenue_cents || 0) / 100).toFixed(2)}</p>
             </CardContent>
           </Card>
@@ -426,7 +426,7 @@ export default function StreamsDashboardV2() {
               <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analyticsData?.total_views || 0}</div>
+              <div className="font-serif text-2xl font-light text-olive-900">{analyticsData?.total_views || 0}</div>
               <p className="text-xs text-muted-foreground">
                 {practitionerStream?.post_count || 0} total posts
               </p>
@@ -439,7 +439,7 @@ export default function StreamsDashboardV2() {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{posts.filter((p) => p.status === "published").length}</div>
+              <div className="font-serif text-2xl font-light text-olive-900">{posts.filter((p) => p.status === "published").length}</div>
               <p className="text-xs text-muted-foreground">
                 Drafts: {posts.filter((p) => p.status === "draft").length}
               </p>

@@ -102,7 +102,7 @@ export default function PractitionerReferrals() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalReferrals}</div>
+            <div className="font-serif text-2xl font-light text-olive-900">{totalReferrals}</div>
             <p className="text-xs text-muted-foreground">
               {activeReferrals} active, {pendingReferrals} pending
             </p>
@@ -115,7 +115,7 @@ export default function PractitionerReferrals() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="font-serif text-2xl font-light text-olive-900">
               {totalReferrals > 0 ? Math.round((activeReferrals / totalReferrals) * 100) : 0}%
             </div>
             <Progress 
@@ -131,7 +131,7 @@ export default function PractitionerReferrals() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalEarnings.toFixed(2)}</div>
+            <div className="font-serif text-2xl font-light text-olive-900">${totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               From referral rewards
             </p>
@@ -144,7 +144,7 @@ export default function PractitionerReferrals() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${pendingEarnings.toFixed(2)}</div>
+            <div className="font-serif text-2xl font-light text-olive-900">${pendingEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               Awaiting eligibility
             </p>
@@ -153,7 +153,7 @@ export default function PractitionerReferrals() {
       </div>
 
       {/* Referral Program Info */}
-      <Card className="border-sage-200 bg-gradient-to-br from-sage-50 to-white">
+      <Card className="border-sage-200/60 bg-cream-50/60">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-sage-600" />
@@ -343,11 +343,11 @@ export default function PractitionerReferrals() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-sm">Lifetime Earnings</Label>
-                  <p className="text-2xl font-bold">${totalEarnings.toFixed(2)}</p>
+                  <p className="font-serif text-2xl font-light text-olive-900">${totalEarnings.toFixed(2)}</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm">Available for Payout</Label>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="font-serif text-2xl font-light text-green-600">
                     ${(totalEarnings - pendingEarnings).toFixed(2)}
                   </p>
                 </div>
