@@ -47,7 +47,7 @@ export default function SetupChecklist() {
 
   if (isLoading) {
     return (
-      <Card className="mb-6 border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+      <Card className="mb-6 border border-sage-200/60 bg-white">
         <CardHeader className="pb-3">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-2 w-full mt-3" />
@@ -80,7 +80,7 @@ export default function SetupChecklist() {
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="mb-6 border-2 border-sage-200 bg-gradient-to-r from-sage-50 to-cream-50">
+          <Card className="mb-6 border border-sage-200/60 bg-cream-100/60">
             <CardContent className="py-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -116,10 +116,10 @@ export default function SetupChecklist() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="mb-6 border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+      <Card className="mb-6 border border-sage-200/60 bg-white">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg text-olive-900">
+            <CardTitle className="font-serif text-lg font-light text-olive-900">
               Get your practice flowing
             </CardTitle>
             <Badge variant="secondary" className="bg-sage-100 text-sage-700">

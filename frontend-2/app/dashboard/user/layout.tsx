@@ -7,12 +7,9 @@ export default function UserDashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream-50 to-cream-100 relative">
-      {/* Subtle background texture */}
-      <div className="absolute inset-0 texture-grain opacity-20" />
-
+    <div className="min-h-screen bg-cream-50">
       <UserDashboardNav />
-      <main className="relative z-10 pt-8 pb-8">
+      <main className="pt-8 pb-8">
         {children}
       </main>
     </div>

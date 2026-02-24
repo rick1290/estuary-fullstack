@@ -230,19 +230,17 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-cream-50 to-cream-100 relative">
-      {/* Subtle background texture */}
-      <div className="absolute inset-0 texture-grain opacity-20" />
+    <div className="flex min-h-screen bg-cream-50">
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-sage-200 bg-white/90 backdrop-blur-lg shadow-lg transition-transform md:flex rounded-r-2xl",
+          "fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-sage-200/60 bg-cream-50 transition-transform md:flex",
           !sidebarOpen && "md:-translate-x-full",
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-sage-200 px-4">
-          <Link href="/" className="flex items-center font-bold text-xl tracking-widest text-olive-900">
-            ESTUARY
+        <div className="flex h-16 items-center justify-between border-b border-sage-200/60 px-4">
+          <Link href="/" className="flex items-center font-serif text-xl font-semibold tracking-wide text-olive-900">
+            Estuary
           </Link>
         </div>
         <ScrollArea className="flex-1 py-2 flex flex-col h-[calc(100vh-4rem)]">
@@ -280,8 +278,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 pathname === "/dashboard/practitioner/feature-requests"
-                  ? "bg-gradient-to-r from-sage-100 to-terracotta-50 text-sage-800 shadow-sm"
-                  : "hover:bg-gradient-to-r hover:from-sage-50 hover:to-terracotta-25 hover:text-sage-700"
+                  ? "bg-terracotta-50 text-terracotta-700"
+                  : "hover:bg-sage-50 hover:text-sage-700"
               )}
             >
               <Lightbulb className="h-4 w-4 text-terracotta-500" />
@@ -321,8 +319,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
 
             {/* Account Menu Dropdown */}
             {accountMenuOpen && (
-              <div className="mt-1 rounded-md border bg-background shadow-sm">
-                <div className="p-3 border-b">
+              <div className="mt-1 rounded-md border border-sage-200/60 bg-white">
+                <div className="p-3 border-b border-sage-200/60">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/placeholder-user.jpg" alt={user?.firstName || "User"} />
@@ -370,7 +368,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <SheetHeader className="h-16 border-b px-4">
-            <SheetTitle className="flex items-center justify-start text-left">Estuary</SheetTitle>
+            <SheetTitle className="flex items-center justify-start text-left font-serif font-light">Estuary</SheetTitle>
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-4rem)]">
             <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -380,7 +378,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                 </div>
               </div>
 
-              <div className="mt-auto px-3 py-4 border-t">
+              <div className="mt-auto px-3 py-4 border-t border-sage-200/60">
                 <nav className="space-y-1">
                   <Link
                     href={`/practitioners/${user?.practitioner_slug || user?.practitionerPublicId}`}
@@ -412,8 +410,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       pathname === "/dashboard/practitioner/feature-requests"
-                        ? "bg-gradient-to-r from-sage-100 to-terracotta-50 text-sage-800 shadow-sm"
-                        : "hover:bg-gradient-to-r hover:from-sage-50 hover:to-terracotta-25 hover:text-sage-700"
+                        ? "bg-terracotta-50 text-terracotta-700"
+                        : "hover:bg-sage-50 hover:text-sage-700"
                     )}
                   >
                     <Lightbulb className="h-4 w-4 text-terracotta-500" />
@@ -500,7 +498,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       {/* Main Content */}
       <div className={cn("flex-1 transition-all", sidebarOpen ? "md:ml-64" : "md:ml-0")}>
         {/* Top Navigation */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sage-200 bg-white/90 backdrop-blur-lg shadow-sm px-4 md:px-6 relative">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sage-200/60 bg-cream-50/95 backdrop-blur-sm px-4 md:px-6 relative">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex">
               <Menu className="h-5 w-5" />

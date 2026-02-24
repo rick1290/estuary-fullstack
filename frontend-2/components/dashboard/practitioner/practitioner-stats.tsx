@@ -38,7 +38,7 @@ export default function PractitionerStats() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, index) => (
-          <Card key={index} className="border-2 border-olive-200">
+          <Card key={index} className="border border-sage-200/60">
             <CardContent className="p-6">
               <Skeleton className="h-8 w-24 mb-2" />
               <Skeleton className="h-4 w-32" />
@@ -96,11 +96,11 @@ export default function PractitionerStats() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat) => (
-        <Card key={stat.title} className="border-2 border-olive-200 hover:border-olive-300 transition-all hover:shadow-lg hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
+        <Card key={stat.title} className="border border-sage-200/60 bg-white">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <p className="text-2xl font-bold text-olive-900">{stat.value}</p>
+                <p className="font-serif text-2xl font-light text-olive-900">{stat.value}</p>
                 <p className="text-sm font-medium text-olive-700">{stat.title}</p>
                 <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
               </div>
