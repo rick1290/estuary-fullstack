@@ -9,7 +9,20 @@ import { useQuery } from "@tanstack/react-query"
 import { publicServicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import ServiceCard from "@/components/ui/service-card"
 import { getServiceDetailUrl } from "@/lib/service-utils"
+import { motion } from "framer-motion"
 
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+}
+
+const itemFade = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+}
 
 export default function UpcomingWorkshopsSection() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -28,13 +41,13 @@ export default function UpcomingWorkshopsSection() {
   })
 
   // Extract services array and handle both paginated and direct responses
-  const services = Array.isArray(servicesData) ? servicesData : 
+  const services = Array.isArray(servicesData) ? servicesData :
                   (servicesData?.results && Array.isArray(servicesData.results)) ? servicesData.results : []
 
   // Transform API data to component format
   const upcomingWorkshops = services.map(service => ({
-    id: service.id, // Keep for key prop
-    slug: service.slug, // Add slug for URL routing
+    id: service.id,
+    slug: service.slug,
     title: service.name || service.title || 'Workshop',
     type: 'workshops' as const,
     practitioner: {
@@ -67,23 +80,41 @@ export default function UpcomingWorkshopsSection() {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-b from-cream-50 to-sage-50/30 relative overflow-hidden">
-      {/* Decorative Elements */}
-      <div className="absolute w-[400px] h-[400px] rounded-full bg-terracotta-200/30 blur-3xl top-[-100px] left-[-100px] z-0" />
-      <div className="absolute w-[300px] h-[300px] rounded-full bg-sage-200/40 blur-3xl bottom-[50px] right-[10%] z-0" />
-
-      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="py-16 bg-cream-50">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-10">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-olive-900">Upcoming Transformations</h2>
-            <p className="text-olive-600 text-lg mt-2">Join our community for these transformative experiences</p>
-          </div>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={stagger}
+          >
+            <motion.span
+              variants={itemFade}
+              className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            >
+              Upcoming
+            </motion.span>
+            <motion.h2
+              variants={itemFade}
+              className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
+            >
+              Upcoming{" "}
+              <em className="italic text-terracotta-600">Workshops</em>
+            </motion.h2>
+            <motion.p
+              variants={itemFade}
+              className="text-base font-light text-olive-600 mt-2"
+            >
+              Join our community for these transformative experiences
+            </motion.p>
+          </motion.div>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="icon"
               onClick={scrollLeft}
-              className="rounded-full border-sage-300 hover:bg-sage-100"
+              className="rounded-full border-sage-200/60 hover:bg-sage-50"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
             </Button>
@@ -91,7 +122,7 @@ export default function UpcomingWorkshopsSection() {
               variant="outline"
               size="icon"
               onClick={scrollRight}
-              className="rounded-full border-sage-300 hover:bg-sage-100"
+              className="rounded-full border-sage-200/60 hover:bg-sage-50"
             >
               <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
             </Button>
@@ -109,7 +140,7 @@ export default function UpcomingWorkshopsSection() {
           <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex-shrink-0 w-[350px]">
-                <div className="h-[520px] bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+                <div className="h-[520px] bg-white rounded-2xl shadow-sm border border-sage-200/60 overflow-hidden flex flex-col">
                   <Skeleton className="w-full h-48 flex-shrink-0" />
                   <div className="p-6 flex-1 flex flex-col">
                     <Skeleton className="h-6 w-3/4 mb-2" />
@@ -157,8 +188,8 @@ export default function UpcomingWorkshopsSection() {
                 ))
               ) : (
                 <div className="w-full text-center py-12">
-                  <p className="text-olive-600 text-lg">No upcoming workshops available at the moment.</p>
-                  <Button asChild className="mt-4">
+                  <p className="text-olive-600 text-base font-light">No upcoming workshops available at the moment.</p>
+                  <Button asChild className="mt-4 bg-olive-800 hover:bg-olive-700 rounded-full">
                     <Link href="/marketplace/workshops">Browse All Workshops</Link>
                   </Button>
                 </div>
