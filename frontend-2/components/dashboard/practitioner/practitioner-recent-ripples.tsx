@@ -91,62 +91,42 @@ export default function PractitionerRecentRipples() {
     </div>
   )
 
-  const RippleItem = ({ booking }: { booking: BookingListReadable }) => (
-    <div className="group py-4 px-4 hover:bg-terracotta-50 rounded-lg transition-colors">
-      <div className="flex items-start gap-3">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={booking.user?.avatar_url || ""} alt={booking.user?.full_name || ""} />
-          <AvatarFallback className="bg-terracotta-100 text-terracotta-700">
-            {(booking.user?.full_name || booking.user?.email || "U").charAt(0).toUpperCase()}
+  const RippleItem = ({ booking }: { booking: BookingListReadable }) => {
+    const clientName = booking.user?.full_name || booking.user?.email || "Someone"
+    const clientInitial = clientName.charAt(0).toUpperCase()
+    const activityLabel = getActivityLabel(booking)
+    const timeAgo = formatDistanceToNow(parseISO(booking.created_at), { addSuffix: true })
+
+    return (
+      <div
+        className="flex items-center gap-3 py-3 px-4 border-b border-sage-200/40 last:border-b-0 hover:bg-cream-50 transition-colors cursor-pointer"
+        onClick={() => handleViewBooking(booking.id)}
+      >
+        <Avatar className="h-9 w-9 flex-shrink-0">
+          <AvatarImage src={booking.user?.avatar_url || ""} alt={clientName} />
+          <AvatarFallback className="bg-gradient-to-br from-terracotta-200 to-sage-200 text-olive-700 text-sm font-medium">
+            {clientInitial}
           </AvatarFallback>
         </Avatar>
-        
-        <div className="flex-1 space-y-1">
-          <p className="text-sm">
-            <span className="font-medium">{booking.user?.full_name || booking.user?.email || "Someone"}</span>
-            {" "}
-            <span className="text-muted-foreground">{getActivityLabel(booking)}</span>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-olive-900">{clientName}</p>
+          <p className="text-[12px] font-light text-olive-500">
+            {activityLabel.split(/(session|Workshop|Course|Stream)/i).map((part, i) =>
+              /session|workshop|course|stream/i.test(part) ? (
+                <em key={i} className="italic text-terracotta-600">{part}</em>
+              ) : (
+                <span key={i}>{part}</span>
+              )
+            )}
           </p>
-          
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {getSessionDate(booking)}
-            </span>
-            <span>•</span>
-            <span className="italic">
-              {formatDistanceToNow(parseISO(booking.created_at), { addSuffix: true })}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 text-xs"
-              onClick={() => handleViewBooking(booking.id)}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View Booking
-            </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 text-xs"
-              onClick={() => handleMessageClient(booking)}
-            >
-              <MessageSquare className="h-3 w-3 mr-1" />
-              Message
-            </Button>
-          </div>
         </div>
-        
-        <div className="p-2 bg-terracotta-100 rounded-lg">
-          {getActivityIcon(booking.service?.service_type_code)}
-        </div>
+
+        <span className="text-[11px] font-light text-olive-400 flex-shrink-0 whitespace-nowrap">{timeAgo}</span>
+        <span className="text-olive-300 text-sm flex-shrink-0">&rsaquo;</span>
       </div>
-    </div>
-  )
+    )
+  }
 
   if (isLoading) {
     return (
@@ -169,9 +149,8 @@ export default function PractitionerRecentRipples() {
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm text-muted-foreground mb-3">Who just booked or subscribed?</p>
-      <ScrollArea className="h-[400px] pr-4">
+    <div>
+      <ScrollArea className="h-[400px]">
         {recentBookings.length > 0 ? (
           <div className="space-y-1">
             {recentBookings.map(booking => (

@@ -35,7 +35,7 @@ export default function SetupBanner() {
   const progressPercent = (completedCount / totalCount) * 100
 
   return (
-    <div className="mb-4 flex items-center gap-4 rounded-lg border border-sage-200 bg-white/80 backdrop-blur-sm px-4 py-2.5">
+    <div className="mb-4 flex items-center gap-4 rounded-lg border border-sage-200/60 bg-white px-4 py-2.5">
       <div className="flex items-center gap-2 text-sm text-olive-700 shrink-0">
         <CheckCircle2 className="h-4 w-4 text-sage-500" />
         <span className="font-medium">Setup: {completedCount}/{totalCount}</span>

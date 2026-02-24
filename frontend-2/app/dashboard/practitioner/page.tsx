@@ -1,12 +1,9 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import PractitionerDashboardPageLayout from "@/components/dashboard/practitioner-dashboard-page-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   CalendarDays,
   Clock,
@@ -15,11 +12,8 @@ import {
   Users,
   MessageSquare,
   DollarSign,
-  BarChart3,
-  Settings,
   Radio,
   User,
-  AlertCircle,
   CreditCard,
   ArrowRight
 } from "lucide-react"
@@ -110,6 +104,11 @@ export default function PractitionerDashboardPage() {
         </p>
       </div>
 
+      {/* Pulse Bar */}
+      <div className="mb-6">
+        <PractitionerStats />
+      </div>
+
       {/* Setup Checklist */}
       <SetupChecklist />
 
@@ -153,45 +152,48 @@ export default function PractitionerDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left Column - Flow Tabs */}
         <div className="lg:col-span-7">
-          <Card className="border border-sage-200/60 bg-white h-full">
+          <Card className="border border-sage-200/60 bg-white h-full flex flex-col">
             <CardHeader className="pb-4">
-              <span className="text-xs font-medium tracking-widest uppercase text-sage-600">Schedule</span>
-              <CardTitle className="font-serif text-xl font-light text-olive-900">Your <em className="italic text-terracotta-600">Flow</em></CardTitle>
-              <CardDescription className="text-sm font-light text-olive-600">Navigate your practice's rhythm</CardDescription>
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-xs font-medium tracking-widest uppercase text-sage-600">Schedule</span>
+                  <CardTitle className="font-serif text-xl font-light text-olive-900">Your <em className="italic text-terracotta-600">Flow</em></CardTitle>
+                  <CardDescription className="text-sm font-light text-olive-600">Navigate your practice's rhythm</CardDescription>
+                </div>
+                <Link href="/dashboard/practitioner/schedule" className="text-xs font-normal text-olive-500 border-b border-sage-200/60 pb-px hover:text-terracotta-600 hover:border-terracotta-400 transition-colors whitespace-nowrap">
+                  Full schedule &rarr;
+                </Link>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <PractitionerFlowTabs />
             </CardContent>
+            <div className="px-6 py-3 border-t border-sage-200/40 bg-cream-50/50">
+              <Link href="/dashboard/practitioner/availability" className="text-xs font-light text-olive-500 hover:text-terracotta-600 transition-colors">
+                + Add availability block
+              </Link>
+            </div>
           </Card>
         </div>
 
         {/* Right Column - Recent Ripples */}
         <div className="lg:col-span-5">
-          <Card className="border border-sage-200/60 bg-white h-full">
+          <Card className="border border-sage-200/60 bg-white h-full flex flex-col">
             <CardHeader className="pb-4">
               <span className="text-xs font-medium tracking-widest uppercase text-sage-600">New Energy</span>
               <CardTitle className="font-serif text-xl font-light text-olive-900">Recent <em className="italic text-terracotta-600">Ripples</em></CardTitle>
               <CardDescription className="text-sm font-light text-olive-600">Who just booked or subscribed?</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <PractitionerRecentRipples />
             </CardContent>
+            <div className="px-6 py-3 border-t border-sage-200/40 bg-cream-50/50">
+              <Link href="/dashboard/practitioner/bookings" className="text-xs font-light text-olive-500 hover:text-terracotta-600 transition-colors">
+                View all activity &rarr;
+              </Link>
+            </div>
           </Card>
         </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="mt-6">
-        <Card className="border border-sage-200/60 bg-white">
-          <CardHeader className="pb-4">
-            <span className="text-xs font-medium tracking-widest uppercase text-sage-600">Your Pulse</span>
-            <CardTitle className="font-serif text-xl font-light text-olive-900">Practice <em className="italic text-terracotta-600">Pulse</em></CardTitle>
-            <CardDescription className="text-sm font-light text-olive-600">How your energy is flowing this month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PractitionerStats />
-          </CardContent>
-        </Card>
       </div>
 
       {/* Apps Section - Quick Navigation */}
