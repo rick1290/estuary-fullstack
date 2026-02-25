@@ -103,7 +103,7 @@ export default function UserUpcomingBookings() {
 
   return (
     <div>
-      <h2 className="text-2xl font-medium mb-6 text-olive-900">Upcoming Bookings</h2>
+      <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Upcoming Bookings</h2>
 
       {bookings.length === 0 ? (
         <Card className="border border-sage-200/60 bg-white">
@@ -141,7 +141,7 @@ export default function UserUpcomingBookings() {
                             </AvatarFallback>
                           </Avatar>
                           {/* Service type badge */}
-                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-gray-200">
+                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-sage-200">
                             {service?.service_type === "Workshop" ? (
                               <Users className="h-4 w-4 text-sage-600" />
                             ) : service?.service_type === "Course" ? (

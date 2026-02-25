@@ -128,7 +128,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Stream not found</h2>
+          <h2 className="font-serif text-2xl font-light text-olive-900 mb-2">Stream not found</h2>
           <p className="text-muted-foreground mb-4">This stream may have been removed or doesn't exist.</p>
           <Button onClick={() => router.push('/streams')}>
             Back to Streams
@@ -145,11 +145,11 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-b from-cream-50 to-white">
+      <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <div className="relative">
         <div 
-          className="h-64 bg-gradient-to-br from-sage-200 to-terracotta-200"
+          className="h-64 bg-sage-100"
           style={{
             backgroundImage: stream.cover_image_url ? `url(${stream.cover_image_url})` : undefined,
             backgroundSize: 'cover',
@@ -174,11 +174,11 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <Card className="shadow-xl">
+            <Card className="border border-sage-200/60 bg-white">
               <CardHeader>
                 <div className="flex items-start gap-4">
                   <div
-                    className="h-20 w-20 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-sage-400 transition-all"
+                    className="h-20 w-20 rounded-full bg-sage-100 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-sage-300 transition-all"
                     onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
                   >
                     {stream.practitioner_image ? (
@@ -194,7 +194,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                     )}
                   </div>
                   <div className="flex-1">
-                    <h1 className="text-2xl font-bold mb-1">{stream.title}</h1>
+                    <h1 className="font-serif text-2xl font-light text-olive-900 mb-1">{stream.title}</h1>
                     <p
                       className="text-muted-foreground mb-2 cursor-pointer hover:text-sage-700 transition-colors"
                       onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
@@ -286,9 +286,9 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
           {/* Sidebar - Subscription */}
           <div className="lg:col-span-1">
             <div className="sticky top-6 space-y-4">
-              <Card className="shadow-xl">
+              <Card className="border border-sage-200/60 bg-white">
                 <CardHeader>
-                  <CardTitle className="text-lg">Subscribe to {stream.title}</CardTitle>
+                  <CardTitle className="font-serif text-lg font-light text-olive-900">Subscribe to {stream.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {!stream.user_subscription ? (
@@ -299,26 +299,26 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                       <div className="space-y-3">
                         <button
                           onClick={() => handleSubscribe("entry")}
-                          className="w-full p-3 rounded-lg border-2 border-gray-200 hover:border-sage-400 transition-colors text-left"
+                          className="w-full p-3 rounded-lg border border-sage-200/60 hover:border-sage-300 transition-colors text-left"
                         >
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-medium">Entry Tier</h4>
                               <p className="text-xs text-muted-foreground">Access to exclusive content</p>
                             </div>
-                            <span className="font-semibold">${((stream.entry_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
+                            <span className="font-medium">${((stream.entry_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
                           </div>
                         </button>
                         <button
                           onClick={() => handleSubscribe("premium")}
-                          className="w-full p-3 rounded-lg border-2 border-gray-200 hover:border-sage-400 transition-colors text-left"
+                          className="w-full p-3 rounded-lg border border-sage-200/60 hover:border-sage-300 transition-colors text-left"
                         >
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-medium">Premium Tier</h4>
                               <p className="text-xs text-muted-foreground">All content + exclusive perks</p>
                             </div>
-                            <span className="font-semibold">${((stream.premium_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
+                            <span className="font-medium">${((stream.premium_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
                           </div>
                         </button>
                       </div>

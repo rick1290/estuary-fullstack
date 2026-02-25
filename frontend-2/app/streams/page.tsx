@@ -39,14 +39,14 @@ export default function StreamsPage({
       rightSidebar={
         <div className="space-y-6">
           <div>
-            <h2 className="mb-4 text-xl font-semibold text-olive-900">Featured Practitioners</h2>
+            <h2 className="mb-4 font-serif text-xl font-light text-olive-900">Featured Practitioners</h2>
             <FeaturedPractitioners />
           </div>
         </div>
       }
     >
       <div className="w-full">
-        <h2 className="mb-4 text-xl font-semibold text-olive-900">
+        <h2 className="mb-4 font-serif text-xl font-light text-olive-900">
           {query
             ? `Search Results for "${query}"`
             : contentType

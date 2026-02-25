@@ -145,7 +145,7 @@ export default function ContentFeed({
   if (isError) {
     return (
       <div className="py-8 text-center">
-        <h3 className="mb-2 text-lg font-semibold text-muted-foreground">Error loading content</h3>
+        <h3 className="mb-2 font-serif text-lg font-light text-muted-foreground">Error loading content</h3>
         <p className="text-muted-foreground">Please try again later</p>
       </div>
     )
@@ -154,7 +154,7 @@ export default function ContentFeed({
   if (posts.length === 0) {
     return (
       <div className="py-8 text-center">
-        <h3 className="mb-2 text-lg font-semibold text-muted-foreground">
+        <h3 className="mb-2 font-serif text-lg font-light text-muted-foreground">
           {showSubscribed ? "No posts from practitioners you follow" : "No content found"}
         </h3>
         <p className="text-muted-foreground">
