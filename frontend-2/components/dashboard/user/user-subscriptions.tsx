@@ -51,14 +51,14 @@ function SubscriptionCard({ subscription, onUnsubscribe, onChangeTier }: Subscri
   }
 
   const tierColors = {
-    free: "bg-gray-100 text-gray-700",
+    free: "bg-sage-50 text-olive-700",
     entry: "bg-sage-100 text-sage-700",
     premium: "bg-terracotta-100 text-terracotta-700",
   }
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="aspect-video relative bg-gradient-to-br from-sage-100 to-terracotta-100">
+    <Card className="overflow-hidden hover:shadow-sm transition-shadow border border-sage-200/60">
+      <div className="aspect-video relative bg-sage-100">
         {subscription.stream.coverImage ? (
           <Image
             src={subscription.stream.coverImage}
@@ -79,7 +79,7 @@ function SubscriptionCard({ subscription, onUnsubscribe, onChangeTier }: Subscri
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg">{subscription.stream.title}</CardTitle>
+            <CardTitle className="font-serif text-lg font-light text-olive-900">{subscription.stream.title}</CardTitle>
             <CardDescription className="mt-1">
               by {subscription.stream.practitioner.displayName}
             </CardDescription>
@@ -252,21 +252,21 @@ export default function UserSubscriptions() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+            <CardTitle className="font-serif text-sm font-medium text-olive-900">Active Subscriptions</CardTitle>
             <Crown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeSubscriptions.length}</div>
+            <div className="font-serif text-2xl font-light text-olive-900">{activeSubscriptions.length}</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Spend</CardTitle>
+            <CardTitle className="font-serif text-sm font-medium text-olive-900">Monthly Spend</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="font-serif text-2xl font-light text-olive-900">
               ${activeSubscriptions
                 .filter(sub => sub.tier !== "free")
                 .reduce((total, sub) => total + (sub.priceCents / 100), 0)
@@ -277,11 +277,11 @@ export default function UserSubscriptions() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+            <CardTitle className="font-serif text-sm font-medium text-olive-900">Expiring Soon</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{expiringSoon.length}</div>
+            <div className="font-serif text-2xl font-light text-olive-900">{expiringSoon.length}</div>
           </CardContent>
         </Card>
       </div>

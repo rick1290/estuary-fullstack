@@ -39,7 +39,7 @@ export default function RecordingViewerPage() {
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
               <Film className="h-12 w-12 text-muted-foreground mx-auto" />
-              <h2 className="text-xl font-semibold">Recording Not Found</h2>
+              <h2 className="font-serif text-xl font-light text-olive-900">Recording Not Found</h2>
               <p className="text-muted-foreground">
                 This recording may have been deleted or is not yet available.
               </p>
@@ -57,7 +57,7 @@ export default function RecordingViewerPage() {
   const practitioner = booking?.service?.practitioner;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage-50 via-white to-cream-50">
+    <div className="min-h-screen bg-cream-50">
       <div className="container max-w-6xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="mb-6">
@@ -74,7 +74,7 @@ export default function RecordingViewerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Video Player */}
           <div className="lg:col-span-2 space-y-4">
-            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm overflow-hidden">
+            <Card className="border border-sage-200/60 bg-white overflow-hidden">
               <CardContent className="p-0">
                 {recording.file_url ? (
                   <div className="relative bg-black" style={{ paddingTop: "56.25%" }}>
@@ -101,12 +101,12 @@ export default function RecordingViewerPage() {
             </Card>
 
             {/* Video Info */}
-            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+            <Card className="border border-sage-200/60 bg-white">
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-xl">
+                      <CardTitle className="font-serif text-xl font-light text-olive-900">
                         {booking?.service?.name || 'Session Recording'}
                       </CardTitle>
                       <Badge variant="outline" className="text-xs">
@@ -177,9 +177,9 @@ export default function RecordingViewerPage() {
           {/* Sidebar - Booking & Practitioner Info */}
           <div className="space-y-6">
             {/* Booking Details */}
-            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+            <Card className="border border-sage-200/60 bg-white">
               <CardHeader>
-                <CardTitle className="text-sm">Session Details</CardTitle>
+                <CardTitle className="font-serif text-sm font-light text-olive-900">Session Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
@@ -211,9 +211,9 @@ export default function RecordingViewerPage() {
 
             {/* Practitioner Info */}
             {practitioner && (
-              <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+              <Card className="border border-sage-200/60 bg-white">
                 <CardHeader>
-                  <CardTitle className="text-sm">Practitioner</CardTitle>
+                  <CardTitle className="font-serif text-sm font-light text-olive-900">Practitioner</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-start gap-3">
@@ -254,7 +254,7 @@ export default function RecordingViewerPage() {
             )}
 
             {/* Recording Note */}
-            <Card className="border-2 border-sage-200 bg-sage-50/50">
+            <Card className="border border-sage-200/60 bg-sage-50/50">
               <CardContent className="pt-4">
                 <p className="text-xs text-muted-foreground">
                   This recording is private and only accessible to you and your practitioner.
@@ -271,18 +271,18 @@ export default function RecordingViewerPage() {
 
 function RecordingViewerSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage-50 via-white to-cream-50">
+    <div className="min-h-screen bg-cream-50">
       <div className="container max-w-6xl mx-auto px-4 py-8">
         <Skeleton className="h-10 w-40 mb-6" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <Card className="border-2 border-sage-200">
+            <Card className="border border-sage-200/60">
               <CardContent className="p-0">
                 <Skeleton className="w-full h-96" />
               </CardContent>
             </Card>
-            <Card className="border-2 border-sage-200">
+            <Card className="border border-sage-200/60">
               <CardContent className="pt-6">
                 <Skeleton className="h-6 w-3/4 mb-4" />
                 <Skeleton className="h-4 w-full mb-2" />
@@ -292,7 +292,7 @@ function RecordingViewerSkeleton() {
           </div>
 
           <div className="space-y-6">
-            <Card className="border-2 border-sage-200">
+            <Card className="border border-sage-200/60">
               <CardContent className="pt-6">
                 <Skeleton className="h-4 w-24 mb-4" />
                 <Skeleton className="h-4 w-full mb-2" />

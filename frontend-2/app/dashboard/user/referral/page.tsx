@@ -31,9 +31,9 @@ export default function ReferralPage() {
 
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-2">
-          <Card className="mb-8 border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+          <Card className="mb-8 border border-sage-200/60 bg-white">
             <CardHeader>
-              <CardTitle>Share Your Referral Code</CardTitle>
+              <CardTitle className="font-serif text-xl font-light text-olive-900">Share Your Referral Code</CardTitle>
               <CardDescription>
                 Learning together is better! Earn rewards by referring friends to Estuary. After they purchase $20 in
                 services, you'll get $10 and they'll get $5!
@@ -112,9 +112,9 @@ export default function ReferralPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+          <Card className="border border-sage-200/60 bg-white">
             <CardHeader>
-              <CardTitle>How It Works</CardTitle>
+              <CardTitle className="font-serif text-xl font-light text-olive-900">How It Works</CardTitle>
               <CardDescription>Bring friends along and earn rewards in three simple steps</CardDescription>
             </CardHeader>
             <CardContent>
@@ -184,16 +184,16 @@ export default function ReferralPage() {
         </div>
 
         <div>
-          <Card className="mb-8 border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+          <Card className="mb-8 border border-sage-200/60 bg-white">
             <CardHeader>
-              <CardTitle>Your Rewards</CardTitle>
+              <CardTitle className="font-serif text-xl font-light text-olive-900">Your Rewards</CardTitle>
               <CardDescription>Track your referral rewards</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="bg-muted p-4 rounded-md text-center">
                   <p className="text-sm text-muted-foreground">Total Rewards Earned</p>
-                  <p className="text-3xl font-bold">$0</p>
+                  <p className="font-serif text-3xl font-light text-olive-900">$0</p>
                 </div>
 
                 <div className="space-y-2">
@@ -219,9 +219,9 @@ export default function ReferralPage() {
             </CardFooter>
           </Card>
 
-          <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+          <Card className="border border-sage-200/60 bg-white">
             <CardHeader>
-              <CardTitle>Terms and Conditions</CardTitle>
+              <CardTitle className="font-serif text-xl font-light text-olive-900">Terms and Conditions</CardTitle>
             </CardHeader>
             <CardContent className="max-h-80 overflow-y-auto text-sm">
               <ul className="list-disc pl-5 space-y-2">

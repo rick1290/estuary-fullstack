@@ -225,16 +225,16 @@ export default function StreamsFilters({
       {/* Action Buttons */}
       <div className="space-y-2">
         <Button 
-          variant="default" 
-          onClick={applyFilters} 
-          className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl"
+          variant="default"
+          onClick={applyFilters}
+          className="w-full bg-olive-800 hover:bg-olive-700 rounded-full"
         >
           Apply Filters
         </Button>
         <Button 
           variant="outline" 
           onClick={resetFilters}
-          className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 rounded-xl"
+          className="w-full border-sage-200/60 text-olive-600 hover:bg-sage-50 rounded-full"
         >
           Reset All
         </Button>

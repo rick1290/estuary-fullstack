@@ -237,11 +237,11 @@ export default function ContentCard({ post }: ContentCardProps) {
 
   return (
     <>
-      <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm rounded-2xl">
+      <Card className="relative overflow-hidden border border-sage-200/60 hover:shadow-sm transition-all duration-300 bg-white rounded-2xl">
       {/* Card header with practitioner info */}
       <div className="flex items-center p-5">
         <Avatar
-          className="h-10 w-10 cursor-pointer ring-2 ring-sage-200 shadow-lg"
+          className="h-10 w-10 cursor-pointer ring-2 ring-sage-200/60"
           onClick={handlePractitionerClick}
         >
           <AvatarImage
@@ -249,7 +249,7 @@ export default function ContentCard({ post }: ContentCardProps) {
             alt={post.practitionerName}
             className="object-cover"
           />
-          <AvatarFallback className="bg-gradient-to-br from-sage-200 to-terracotta-200 text-olive-800 text-sm font-medium">
+          <AvatarFallback className="bg-sage-100 text-olive-800 text-sm font-medium">
             {post.practitionerName.split(' ').map(n => n[0]).join('')}
           </AvatarFallback>
         </Avatar>
@@ -264,12 +264,12 @@ export default function ContentCard({ post }: ContentCardProps) {
         </div>
         <div className="flex items-center gap-2">
           {post.userSubscriptionTier && post.userSubscriptionTier !== "free" && (
-            <Badge className="bg-gradient-to-r from-sage-200 to-sage-300 text-olive-800 border-0 rounded-full">
+            <Badge className="bg-sage-100 text-olive-800 border-0 rounded-full">
               Subscribed ({post.userSubscriptionTier})
             </Badge>
           )}
           {post.isPremium && (
-            <Badge className="bg-gradient-to-r from-terracotta-200 to-blush-200 text-olive-800 border-0 rounded-full">
+            <Badge className="bg-terracotta-100 text-olive-800 border-0 rounded-full">
               <Lock className="h-3 w-3 mr-1" strokeWidth="1.5" />
               {post.tierLevel || "Premium"}
             </Badge>
@@ -339,7 +339,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                     <h3 className="text-lg font-medium text-white mb-2">{post.tierLevel} Content</h3>
                     <p className="text-sm text-white/80 mb-4">Subscribe to watch this video</p>
                     <Button
-                      className="bg-white text-gray-900 hover:bg-gray-100"
+                      className="bg-white text-olive-900 hover:bg-cream-50"
                       onClick={() => {
                         if (!isAuthenticated) {
                           openAuthModal({
@@ -367,8 +367,8 @@ export default function ContentCard({ post }: ContentCardProps) {
                     unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400">No thumbnail</span>
+                  <div className="w-full h-full bg-sage-100 flex items-center justify-center">
+                    <span className="text-olive-400">No thumbnail</span>
                   </div>
                 )}
                 {(!post.isPremium || post.hasAccess) && (
@@ -477,7 +477,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                       />
                       {validMediaUrls.length > 4 && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
-                          <span className="text-white font-semibold text-lg">
+                          <span className="text-white font-medium text-lg">
                             +{validMediaUrls.length - 4} more
                           </span>
                         </div>
@@ -490,7 +490,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 {post.isPremium && !post.hasAccess && (
                   <div className="absolute inset-0 flex items-center justify-center rounded-xl">
                     <Button 
-                      className="bg-white/90 backdrop-blur-sm text-gray-900 hover:bg-white shadow-lg"
+                      className="bg-white text-olive-900 hover:bg-cream-50 shadow-sm"
                       onClick={() => {
                         if (!isAuthenticated) {
                           openAuthModal({

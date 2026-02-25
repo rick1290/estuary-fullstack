@@ -57,11 +57,11 @@ export default function FeaturedPractitioners() {
       {streams.map((stream: any) => (
         <Card
           key={stream.id}
-          className="cursor-pointer rounded-2xl border-0 bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:translate-y-[-4px] hover:shadow-xl"
+          className="cursor-pointer rounded-2xl border border-sage-200/60 bg-white transition-all hover:shadow-sm"
           onClick={() => handlePractitionerClick(stream)}
         >
           <div
-            className="h-[80px] bg-gradient-to-br from-sage-200 to-terracotta-200 rounded-t-2xl"
+            className="h-[80px] bg-sage-100 rounded-t-2xl"
             style={{
               backgroundImage: stream.cover_image_url ? `url(${stream.cover_image_url})` : undefined,
               backgroundSize: "cover",
@@ -69,7 +69,7 @@ export default function FeaturedPractitioners() {
             }}
           />
           <div className="flex flex-col items-center -mt-5">
-            <div className="h-16 w-16 border-4 border-white rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center shadow-lg overflow-hidden">
+            <div className="h-16 w-16 border-4 border-white rounded-full bg-sage-100 flex items-center justify-center overflow-hidden">
               {stream.practitioner_image ? (
                 <img
                   src={stream.practitioner_image}
@@ -83,7 +83,7 @@ export default function FeaturedPractitioners() {
               )}
             </div>
             <CardContent className="text-center pt-1 px-3">
-              <h3 className="mb-1 font-semibold text-sm text-olive-900">{stream.title}</h3>
+              <h3 className="mb-1 font-medium text-sm text-olive-900">{stream.title}</h3>
               <p className="mb-1 text-xs text-olive-600">{stream.practitioner_name}</p>
               <div className="mb-2 flex flex-wrap justify-center gap-1">
                 {(stream.tags || []).slice(0, 2).map((tag: string) => (

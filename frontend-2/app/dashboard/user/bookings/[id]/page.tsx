@@ -259,11 +259,11 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main booking details */}
           <div className="md:col-span-2 space-y-6">
-            <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+            <Card className="border border-sage-200/60 bg-white">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-2xl">
+                    <CardTitle className="font-serif text-2xl font-light text-olive-900">
                       {service?.name || "Service"}
                     </CardTitle>
                     <CardDescription className="text-base mt-1">
@@ -489,7 +489,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
             {booking.status === "confirmed" && (
               <Card className="border-sage-100">
                 <CardHeader>
-                  <CardTitle className="text-lg">Booking Policies</CardTitle>
+                  <CardTitle className="font-serif text-lg font-light text-olive-900">Booking Policies</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground space-y-2">
                   <p>
@@ -506,7 +506,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
             )}
 
             {booking.status === "completed" && (
-              <Card className="border-amber-100 bg-gradient-to-br from-amber-50 to-terracotta-50/30">
+              <Card className="border border-amber-200/60 bg-amber-50/50">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -541,11 +541,11 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
             {/* Session Recordings */}
             {booking.recordings && booking.recordings.length > 0 && (
-              <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+              <Card className="border border-sage-200/60 bg-white">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Film className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Session Recordings</CardTitle>
+                    <CardTitle className="font-serif text-lg font-light text-olive-900">Session Recordings</CardTitle>
                   </div>
                   <CardDescription>
                     {booking.recordings.length} {booking.recordings.length === 1 ? 'recording' : 'recordings'} available
@@ -555,7 +555,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                   {booking.recordings.map((recording: any, index: number) => (
                     <div
                       key={recording.recording_id || index}
-                      className="border border-sage-100 rounded-lg p-4 hover:shadow-md transition-all hover:border-sage-300 group"
+                      className="border border-sage-100 rounded-lg p-4 hover:shadow-sm transition-all hover:border-sage-300 group"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-2">
@@ -628,9 +628,9 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
           {/* Practitioner info */}
           <div className="space-y-6">
             {practitioner && (
-              <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+              <Card className="border border-sage-200/60 bg-white">
                 <CardHeader>
-                  <CardTitle className="text-lg">Your Practitioner</CardTitle>
+                  <CardTitle className="font-serif text-lg font-light text-olive-900">Your Practitioner</CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
@@ -646,7 +646,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                     </Avatar>
 
                     <div>
-                      <h3 className="font-semibold text-lg">{practitioner.name}</h3>
+                      <h3 className="font-medium text-lg text-olive-900">{practitioner.name}</h3>
                       <p className="text-sm text-muted-foreground">
                         {practitioner.bio || "Wellness Practitioner"}
                       </p>
@@ -686,7 +686,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
             {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Need Help?</CardTitle>
+                <CardTitle className="font-serif text-lg font-light text-olive-900">Need Help?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button variant="link" className="p-0 h-auto justify-start text-sm">

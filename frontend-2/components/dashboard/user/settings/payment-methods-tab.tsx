@@ -33,10 +33,10 @@ const brandColors: Record<string, string> = {
   'mastercard': 'text-orange-600',
   'amex': 'text-blue-500',
   'discover': 'text-orange-500',
-  'diners': 'text-gray-600',
+  'diners': 'text-olive-600',
   'jcb': 'text-red-600',
   'unionpay': 'text-red-500',
-  'unknown': 'text-gray-600'
+  'unknown': 'text-olive-600'
 }
 
 export default function PaymentMethodsTab() {
@@ -111,7 +111,7 @@ export default function PaymentMethodsTab() {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-medium">Payment Methods</h2>
+          <h2 className="font-serif text-2xl font-light text-olive-900">Payment Methods</h2>
           <Skeleton className="h-10 w-40" />
         </div>
         <div className="space-y-4">
@@ -126,7 +126,7 @@ export default function PaymentMethodsTab() {
   if (error) {
     return (
       <div>
-        <h2 className="text-2xl font-medium mb-6">Payment Methods</h2>
+        <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Payment Methods</h2>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -143,7 +143,7 @@ export default function PaymentMethodsTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-medium">Payment Methods</h2>
+        <h2 className="font-serif text-2xl font-light text-olive-900">Payment Methods</h2>
         <Button onClick={handleAddCard} className="flex items-center gap-1">
           <Plus className="h-4 w-4" />
           Add Payment Method
@@ -192,7 +192,7 @@ export default function PaymentMethodsTab() {
                       <div className="flex items-center">
                         <CreditCard className={cn(
                           "mr-4 h-5 w-5",
-                          brandColors[method.brand] || "text-gray-600"
+                          brandColors[method.brand] || "text-olive-600"
                         )} />
                         <div>
                           <p className="font-medium">

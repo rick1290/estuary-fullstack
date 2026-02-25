@@ -31,7 +31,7 @@ export default function UserDashboardFavorites() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="font-serif text-lg font-light text-olive-900 flex items-center gap-2">
             <Heart className="h-5 w-5" />
             My Favorites
           </CardTitle>
@@ -55,14 +55,14 @@ export default function UserDashboardFavorites() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="font-serif text-lg font-light text-olive-900 flex items-center gap-2">
             <Heart className="h-5 w-5" />
             My Favorites
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <Heart className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <Heart className="h-12 w-12 text-sage-300 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground mb-4">
               You haven't saved any practitioners or services yet
             </p>
@@ -76,10 +76,10 @@ export default function UserDashboardFavorites() {
   }
 
   return (
-    <Card>
+    <Card className="border border-sage-200/60 bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <Heart className="h-5 w-5" />
+        <CardTitle className="font-serif text-lg font-light text-olive-900 flex items-center gap-2">
+          <Heart className="h-4 w-4 text-terracotta-500" />
           My Favorites
         </CardTitle>
         <Button variant="ghost" size="sm" asChild>
@@ -99,7 +99,7 @@ export default function UserDashboardFavorites() {
                 <Link
                   key={practitioner.id}
                   href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-cream-50/50 hover:bg-sage-50 transition-colors"
                 >
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={practitioner.profile_image_url} />
@@ -121,7 +121,7 @@ export default function UserDashboardFavorites() {
                       </div>
                       {practitioner.primary_location && (
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-gray-400" />
+                          <MapPin className="h-3 w-3 text-olive-400" />
                           <span className="text-xs text-muted-foreground">
                             {practitioner.primary_location.city}
                           </span>
@@ -159,7 +159,7 @@ export default function UserDashboardFavorites() {
                   <Link
                     key={service.id}
                     href={href}
-                    className="block p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                    className="block p-3 rounded-lg bg-cream-50/50 hover:bg-sage-50 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -175,7 +175,7 @@ export default function UserDashboardFavorites() {
                           </Badge>
                           {service.duration_minutes && (
                             <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3 text-gray-400" />
+                              <Clock className="h-3 w-3 text-olive-400" />
                               <span className="text-xs text-muted-foreground">
                                 {service.duration_minutes} min
                               </span>
@@ -184,7 +184,7 @@ export default function UserDashboardFavorites() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold">
+                        <p className="text-sm font-medium text-olive-900">
                           ${service.price_cents ? Math.floor(service.price_cents / 100) : service.price || 0}
                         </p>
                       </div>
