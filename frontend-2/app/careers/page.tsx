@@ -1,3 +1,4 @@
+import { createMetadata } from "@/lib/seo"
 import Image from "next/image"
 import {
   Breadcrumb,
@@ -10,6 +11,13 @@ import { ChevronRight, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+
+export const metadata = createMetadata({
+  title: "Careers",
+  description:
+    "Join the Estuary team and help transform the wellness industry. See open positions and learn about our culture.",
+  path: "/careers",
+})
 
 export default function CareersPage() {
   const departments = [
