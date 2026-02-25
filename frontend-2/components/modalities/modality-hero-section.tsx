@@ -50,23 +50,6 @@ export default function ModalityHeroSection({ content }: ModalityHeroSectionProp
           {content.heroDescription}
         </motion.p>
 
-        {/* Benefits grid */}
-        <motion.div
-          variants={stagger}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10"
-        >
-          {content.benefits.map((benefit) => (
-            <motion.div
-              key={benefit.title}
-              variants={itemFade}
-              className="bg-white rounded-2xl border border-sage-200/60 p-5"
-            >
-              <h3 className="font-medium text-olive-900 mb-1 text-sm">{benefit.title}</h3>
-              <p className="text-sm font-light text-olive-600 leading-relaxed">{benefit.description}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-
         <motion.div variants={itemFade} className="flex flex-wrap justify-center gap-3">
           <Button
             className="bg-olive-800 hover:bg-olive-700 text-cream-50 rounded-full px-8 py-5"

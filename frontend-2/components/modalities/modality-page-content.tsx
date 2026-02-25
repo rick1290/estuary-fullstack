@@ -13,6 +13,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import ModalityHeroSection from "./modality-hero-section"
+import ModalityStatsBar from "./modality-stats-bar"
+import ModalityAboutSection from "./modality-about-section"
 import ModalityServicesSection from "./modality-services-section"
 import ModalityPractitionersSection from "./modality-practitioners-section"
 import ModalityFaqSection from "./modality-faq-section"
@@ -74,6 +76,20 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
       </div>
 
       <ModalityHeroSection content={content} />
+
+      <ModalityStatsBar
+        practitionerCount={modality?.practitioner_count ?? 0}
+        serviceCount={modality?.service_count ?? 0}
+        modalityName={modalityName}
+      />
+
+      <div className="h-px bg-sage-200/60 mx-6" />
+
+      <ModalityAboutSection
+        modalityName={modalityName}
+        longDescription={content.longDescription}
+        benefits={content.benefits}
+      />
 
       <div className="h-px bg-sage-200/60 mx-6" />
 
