@@ -62,7 +62,7 @@ export default function UserUpcomingBookings() {
   if (isLoading) {
     return (
       <div>
-        <h2 className="text-2xl font-medium mb-6 text-olive-900">Upcoming Bookings</h2>
+        <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Upcoming Bookings</h2>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border border-sage-200/60">
@@ -91,8 +91,8 @@ export default function UserUpcomingBookings() {
   if (error) {
     return (
       <div>
-        <h2 className="text-2xl font-medium mb-6 text-olive-900">Upcoming Bookings</h2>
-        <Card className="border-2 border-red-200 bg-red-50">
+        <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Upcoming Bookings</h2>
+        <Card className="border border-red-200 bg-red-50">
           <CardContent className="p-6">
             <p className="text-red-800">Failed to load bookings. Please try again later.</p>
           </CardContent>
@@ -136,7 +136,7 @@ export default function UserUpcomingBookings() {
                               alt={practitioner.name}
                               className="object-cover"
                             />
-                            <AvatarFallback className="rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 text-2xl">
+                            <AvatarFallback className="rounded-lg bg-sage-100 text-2xl">
                               {practitioner.name?.charAt(0) || "P"}
                             </AvatarFallback>
                           </Avatar>
@@ -152,7 +152,7 @@ export default function UserUpcomingBookings() {
                           </div>
                         </div>
                       ) : (
-                        <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                        <div className="h-24 w-24 rounded-lg bg-sage-100 flex items-center justify-center">
                           {service?.service_type === "Workshop" ? (
                             <Users className="h-10 w-10 text-sage-600" />
                           ) : service?.service_type === "Course" ? (

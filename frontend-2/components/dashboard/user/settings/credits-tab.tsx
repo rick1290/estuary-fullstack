@@ -56,7 +56,7 @@ export default function CreditsTab() {
       case 'transfer':
         return <ShoppingBag className="h-4 w-4 text-purple-600" />
       default:
-        return <Wallet className="h-4 w-4 text-gray-600" />
+        return <Wallet className="h-4 w-4 text-olive-600" />
     }
   }
 
@@ -119,12 +119,12 @@ export default function CreditsTab() {
       {/* Current Balance */}
       <div>
         <h3 className="text-lg font-medium mb-4">Credit Balance</h3>
-        <Card className="border-2 border-sage-200 bg-gradient-to-br from-sage-50 to-white">
+        <Card className="border border-sage-200/60 bg-cream-50/60">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-olive-600 mb-1">Available Credits</p>
-                <p className="text-3xl font-bold text-olive-900">
+                <p className="font-serif text-3xl font-light text-olive-900">
                   ${balance?.balance?.toFixed(2) || '0.00'}
                 </p>
                 {balance?.last_transaction_date && (
@@ -146,7 +146,7 @@ export default function CreditsTab() {
         <h3 className="text-lg font-medium mb-4">Transaction History</h3>
         
         {transactionsList.length === 0 ? (
-          <Card className="border-2 border-sage-200">
+          <Card className="border border-sage-200/60">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Wallet className="h-12 w-12 text-sage-300 mb-4" />
               <p className="text-olive-600">No credit transactions yet</p>
@@ -176,7 +176,7 @@ export default function CreditsTab() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-lg font-bold ${
+                        <p className={`font-serif text-lg font-light ${
                           transaction.amount_cents >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {formatAmount(transaction.amount_cents)}

@@ -124,7 +124,7 @@ export function ReviewBookingDialog({ open, onOpenChange, booking, onSuccess }: 
                       "w-8 h-8 transition-colors",
                       star <= displayRating
                         ? "fill-yellow-400 text-yellow-400"
-                        : "fill-transparent text-gray-300"
+                        : "fill-transparent text-sage-300"
                     )}
                   />
                 </button>

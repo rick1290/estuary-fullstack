@@ -249,7 +249,7 @@ export default function UserBookingsList() {
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-olive-400 h-4 w-4" />
           <Input
             placeholder="Search bookings..."
             value={searchQuery}
@@ -259,7 +259,7 @@ export default function UserBookingsList() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-olive-400 hover:text-olive-600"
             >
               <X className="h-4 w-4" />
             </button>
@@ -314,12 +314,12 @@ export default function UserBookingsList() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as BookingStatus)}>
-        <TabsList className="grid w-full grid-cols-5 max-w-[600px]">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="unscheduled">Unscheduled</TabsTrigger>
-          <TabsTrigger value="past">Past</TabsTrigger>
-          <TabsTrigger value="canceled">Canceled</TabsTrigger>
+        <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0">
+          <TabsTrigger value="all" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">All</TabsTrigger>
+          <TabsTrigger value="upcoming" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">Upcoming</TabsTrigger>
+          <TabsTrigger value="unscheduled" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">Unscheduled</TabsTrigger>
+          <TabsTrigger value="past" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">Past</TabsTrigger>
+          <TabsTrigger value="canceled" className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800">Canceled</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -333,7 +333,7 @@ export default function UserBookingsList() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="text-center space-y-3">
-              <CalendarPlus className="h-12 w-12 text-gray-300 mx-auto" />
+              <CalendarPlus className="h-12 w-12 text-sage-300 mx-auto" />
               <h3 className="text-lg font-medium">No bookings found</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
                 {activeTab === "upcoming"
@@ -365,7 +365,7 @@ export default function UserBookingsList() {
             return (
               <Card
                 key={booking.id}
-                className={`relative overflow-hidden hover:shadow-md transition-all cursor-pointer ${
+                className={`relative overflow-hidden hover:shadow-sm transition-all cursor-pointer border border-sage-200/60 ${
                   isSessionStartingSoon(booking) && booking.location_type === "virtual"
                     ? "ring-2 ring-sage-500 ring-opacity-50"
                     : ""
@@ -376,7 +376,7 @@ export default function UserBookingsList() {
                 <div className="absolute top-4 right-4 z-10 flex gap-2">
                   {getStatusBadge(booking)}
                   {isSessionStartingSoon(booking) && booking.location_type === "virtual" && (
-                    <Badge variant="default" className="bg-sage-600 animate-pulse [animation-duration:2s]">
+                    <Badge variant="default" className="bg-sage-600">
                       Starting soon
                     </Badge>
                   )}
@@ -394,12 +394,12 @@ export default function UserBookingsList() {
                               alt={practitioner.name}
                               className="object-cover"
                             />
-                            <AvatarFallback className="rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 text-2xl">
+                            <AvatarFallback className="rounded-lg bg-sage-100 text-2xl">
                               {practitioner.name?.charAt(0) || "P"}
                             </AvatarFallback>
                           </Avatar>
                           {/* Service type badge */}
-                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-gray-200">
+                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-sage-200">
                             {service?.service_type === "workshop" ? (
                               <Users className="h-4 w-4 text-sage-600" />
                             ) : service?.service_type === "course" ? (
@@ -410,7 +410,7 @@ export default function UserBookingsList() {
                           </div>
                         </div>
                       ) : (
-                        <div className="h-24 w-24 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center">
+                        <div className="h-24 w-24 rounded-lg bg-sage-100 flex items-center justify-center">
                           {service?.service_type === "workshop" ? (
                             <Users className="h-10 w-10 text-sage-600" />
                           ) : service?.service_type === "course" ? (
@@ -425,17 +425,17 @@ export default function UserBookingsList() {
                     {/* Booking Details */}
                     <div className="flex-1 min-w-0 pr-20">
                       <div className="mb-2">
-                        <h3 className="font-medium text-lg text-gray-900 line-clamp-1">
+                        <h3 className="font-medium text-lg text-olive-900 line-clamp-1">
                           {service?.name || "Service"}
                         </h3>
                         {practitioner && (
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-olive-600 mt-1">
                             with {practitioner.name}
                           </p>
                         )}
                       </div>
 
-                      <div className="space-y-1 text-sm text-gray-600">
+                      <div className="space-y-1 text-sm text-olive-600">
                         {isUnscheduled ? (
                           <>
                             <div className="flex items-center">

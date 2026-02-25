@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Star, ImageIcon, Sparkles } from "lucide-react"
+import { Clock, Star, ImageIcon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { Skeleton } from "@/components/ui/skeleton"
 import { userRecommendationsOptions } from "@/src/client/@tanstack/react-query.gen"
@@ -35,7 +35,7 @@ export default function UserRecommendations() {
   if (isLoading) {
     return (
       <div>
-        <h2 className="text-xl font-semibold mb-4">Recommended For You</h2>
+        <h2 className="font-serif text-xl font-light text-olive-900 mb-4">Recommended For You</h2>
         <div className="space-y-4">
           <Skeleton className="h-10 w-48" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -54,10 +54,9 @@ export default function UserRecommendations() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-xl font-semibold">Recommended For You</h2>
+        <h2 className="font-serif text-xl font-light text-olive-900">Recommended For You</h2>
         {recommendationReason === 'personalized' && userModalities.length > 0 && (
           <Badge variant="secondary" className="text-xs">
-            <Sparkles className="h-3 w-3 mr-1" />
             Based on your interests
           </Badge>
         )}
@@ -109,7 +108,7 @@ export default function UserRecommendations() {
                     )}
                   </div>
                   <CardContent className="p-3">
-                    <h3 className="font-semibold text-sm line-clamp-1">{service.name}</h3>
+                    <h3 className="font-medium text-sm text-olive-900 line-clamp-1">{service.name}</h3>
                     {service.practitioner && (
                       <p className="text-xs text-muted-foreground mb-2">
                         by {service.practitioner.display_name}
@@ -132,7 +131,7 @@ export default function UserRecommendations() {
                     </div>
                   </CardContent>
                   <CardFooter className="p-3 pt-0 flex items-center justify-between">
-                    <p className="font-semibold text-primary text-sm">
+                    <p className="font-medium text-primary text-sm">
                       ${(service.price_cents / 100).toFixed(0)}
                     </p>
                     <Button size="sm" asChild>
@@ -172,7 +171,7 @@ export default function UserRecommendations() {
                     )}
                   </div>
                   <CardContent className="p-3">
-                    <h3 className="font-semibold text-sm">{practitioner.display_name}</h3>
+                    <h3 className="font-medium text-sm text-olive-900">{practitioner.display_name}</h3>
                     {practitioner.professional_title && (
                       <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
                         {practitioner.professional_title}

@@ -36,7 +36,7 @@ export default function UserStreamSubscriptions() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Stream Subscriptions</CardTitle>
+          <CardTitle className="font-serif text-lg font-light text-olive-900">My Stream Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center py-8">
@@ -53,7 +53,7 @@ export default function UserStreamSubscriptions() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Stream Subscriptions</CardTitle>
+          <CardTitle className="font-serif text-lg font-light text-olive-900">My Stream Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -72,7 +72,7 @@ export default function UserStreamSubscriptions() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>My Stream Subscriptions</CardTitle>
+          <CardTitle className="font-serif text-lg font-light text-olive-900">My Stream Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
         <div className="space-y-4">
@@ -85,7 +85,7 @@ export default function UserStreamSubscriptions() {
                 className="flex items-center gap-4 flex-1 cursor-pointer"
                 onClick={() => router.push(`/streams/${subscription.stream?.public_uuid}`)}
               >
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center overflow-hidden">
+                <div className="h-12 w-12 rounded-full bg-sage-100 flex items-center justify-center overflow-hidden">
                   {subscription.stream?.practitioner?.profile_image_url ? (
                     <img 
                       src={subscription.stream.practitioner.profile_image_url} 

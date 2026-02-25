@@ -269,14 +269,14 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
             {/* Date Selection */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl">Select New Date & Time</CardTitle>
+                <CardTitle className="font-serif text-xl font-light text-olive-900">Select New Date & Time</CardTitle>
                 <CardDescription>Choose an available slot for your session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Date Picker Carousel */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Available Dates</h3>
+                    <h3 className="font-medium text-olive-900">Available Dates</h3>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -313,7 +313,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
                         `}
                       >
                         <div className="text-sm font-medium">{date.day}</div>
-                        <div className="text-lg font-semibold mt-1">{date.date}</div>
+                        <div className="text-lg font-medium mt-1">{date.date}</div>
                       </button>
                     ))}
                   </div>
@@ -408,7 +408,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
             {selectedDate && selectedTime && (
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader>
-                  <h3 className="font-semibold">New Appointment</h3>
+                  <h3 className="font-medium text-olive-900">New Appointment</h3>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -426,7 +426,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
             {/* Practitioner Info */}
             <Card>
               <CardHeader>
-                <h3 className="font-semibold">Practitioner</h3>
+                <h3 className="font-medium text-olive-900">Practitioner</h3>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4 mb-4">
@@ -440,7 +440,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">
+                    <p className="font-medium text-olive-900">
                       {booking.service?.primary_practitioner?.display_name || booking.practitioner?.display_name || 'N/A'}
                     </p>
                     <p className="text-sm text-muted-foreground">

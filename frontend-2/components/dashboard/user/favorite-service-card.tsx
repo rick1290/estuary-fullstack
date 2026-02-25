@@ -85,7 +85,7 @@ export default function FavoriteServiceCard({ service, index, onRemove }: Favori
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full h-8 w-8 hover:bg-white shadow-md z-10"
+        className="absolute top-4 right-4 bg-white rounded-full h-8 w-8 hover:bg-white shadow-sm z-10"
         onClick={handleRemove}
         disabled={isRemoving}
       >

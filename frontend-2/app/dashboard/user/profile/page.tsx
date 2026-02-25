@@ -81,7 +81,7 @@ export default function UserProfilePage() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all",
                         activeTab === tab.id
-                          ? "bg-white text-olive-900 shadow-sm border-2 border-sage-200"
+                          ? "bg-white text-olive-900 shadow-sm border border-sage-200/60"
                           : "text-olive-600 hover:text-olive-900 hover:bg-white/50",
                         tab.danger && activeTab !== tab.id && "text-terracotta-600 hover:text-terracotta-700"
                       )}
@@ -96,7 +96,7 @@ export default function UserProfilePage() {
 
         {/* Content area */}
         <div className="lg:col-span-3">
-          <Card className="border-2 border-sage-200 bg-white/80 backdrop-blur-sm">
+          <Card className="border border-sage-200/60 bg-white">
             <CardContent className="p-6 sm:p-8">
               {renderTabContent()}
             </CardContent>

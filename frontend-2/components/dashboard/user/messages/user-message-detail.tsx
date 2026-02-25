@@ -530,7 +530,7 @@ export default function UserMessageDetail() {
                 {practitioner?.first_name?.charAt(0) || 'P'}
               </AvatarFallback>
             </Avatar>
-            <h3 className="text-xl font-semibold">
+            <h3 className="font-serif text-xl font-light text-olive-900">
               {practitioner ? `${practitioner.first_name || ''} ${practitioner.last_name || ''}`.trim() : 'Unknown Practitioner'}
             </h3>
             <p className="text-sm text-muted-foreground">Practitioner</p>

@@ -146,13 +146,13 @@ export default function AccountTab() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-medium text-gray-900">Account Settings</h2>
-        <p className="mt-1 text-sm text-gray-600">Update your personal information and preferences</p>
+        <h2 className="font-serif text-2xl font-light text-olive-900">Account Settings</h2>
+        <p className="mt-1 text-sm text-olive-600">Update your personal information and preferences</p>
       </div>
 
       {/* Profile Image Section */}
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-4">Profile Photo</h3>
+        <h3 className="text-sm font-medium text-olive-900 mb-4">Profile Photo</h3>
         <div className="flex items-center gap-6">
           <Avatar className="h-24 w-24 ring-4 ring-gray-100">
             <AvatarImage src={profileImage || undefined} alt="Profile" />
@@ -173,7 +173,7 @@ export default function AccountTab() {
                 />
               </label>
             </Button>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-olive-500">
               JPG or PNG. Max size 2MB.
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function AccountTab() {
 
       {/* Personal Information */}
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-4">Personal Information</h3>
+        <h3 className="text-sm font-medium text-olive-900 mb-4">Personal Information</h3>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="firstName" className="text-sm font-normal">First name</Label>
@@ -207,8 +207,8 @@ export default function AccountTab() {
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="phoneNumber" className="text-sm font-normal">Phone number</Label>
             <div className="flex">
-              <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
-                <span className="text-sm text-gray-600">+1</span>
+              <div className="flex items-center px-3 bg-cream-50 border border-r-0 rounded-l-md">
+                <span className="text-sm text-olive-600">+1</span>
               </div>
               <Input
                 id="phoneNumber"
@@ -226,7 +226,7 @@ export default function AccountTab() {
 
       {/* Location */}
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-medium text-olive-900 mb-4 flex items-center gap-2">
           <MapPin className="h-4 w-4" />
           Location
         </h3>
@@ -258,11 +258,11 @@ export default function AccountTab() {
 
       {/* Wellness Interests */}
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+        <h3 className="text-sm font-medium text-olive-900 mb-2 flex items-center gap-2">
           <Heart className="h-4 w-4" />
           Wellness Interests
         </h3>
-        <p className="text-sm text-gray-600 mb-4">Select up to 6 types of services you're interested in</p>
+        <p className="text-sm text-olive-600 mb-4">Select up to 6 types of services you're interested in</p>
         
         <div className="flex flex-wrap gap-2">
           {modalitiesData?.results?.map((modality) => {
@@ -286,7 +286,7 @@ export default function AccountTab() {
         </div>
         
         {selectedModalities.length > 0 && (
-          <p className="text-sm text-gray-600 mt-3">
+          <p className="text-sm text-olive-600 mt-3">
             {selectedModalities.length} of 6 interests selected
           </p>
         )}
@@ -299,7 +299,7 @@ export default function AccountTab() {
 
       {/* Bio */}
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-4">About You</h3>
+        <h3 className="text-sm font-medium text-olive-900 mb-4">About You</h3>
         <div className="space-y-2">
           <Label htmlFor="bio" className="text-sm font-normal">Bio</Label>
           <Textarea
@@ -310,7 +310,7 @@ export default function AccountTab() {
             placeholder="Tell us a bit about yourself..."
             maxLength={500}
           />
-          <p className="text-xs text-gray-500 text-right">{bio.length}/500 characters</p>
+          <p className="text-xs text-olive-500 text-right">{bio.length}/500 characters</p>
         </div>
       </div>
 
