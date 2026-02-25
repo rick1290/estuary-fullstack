@@ -4,9 +4,8 @@ import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { ArrowRight } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
+import ClientPractitionerCard from "@/components/practitioners/client-practitioner-card"
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -62,7 +61,7 @@ export default function ModalityPractitionersSection({ slug, modalityName }: Mod
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl border border-sage-200/60 h-48 animate-pulse" />
+              <div key={i} className="bg-white rounded-2xl shadow-sm h-[420px] animate-pulse" />
             ))}
           </div>
         ) : practitioners.length > 0 ? (
@@ -70,49 +69,11 @@ export default function ModalityPractitionersSection({ slug, modalityName }: Mod
             <motion.div variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {practitioners.map((practitioner: any) => (
                 <motion.div key={practitioner.id || practitioner.public_uuid} variants={itemFade}>
-                  <Link
-                    href={`/practitioners/${practitioner.slug}`}
-                    className="block bg-white rounded-2xl border border-sage-200/60 p-6 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-14 w-14 flex-shrink-0">
-                        <AvatarImage
-                          src={practitioner.profile_image_url}
-                          alt={practitioner.display_name || practitioner.full_name}
-                        />
-                        <AvatarFallback className="bg-sage-100 text-olive-700">
-                          {(practitioner.display_name || practitioner.full_name || "P").charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-olive-900 truncate">
-                          {practitioner.display_name || practitioner.full_name}
-                        </h3>
-                        {practitioner.title && (
-                          <p className="text-sm text-olive-500 font-light truncate">
-                            {practitioner.title}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {practitioner.specializations?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-4">
-                        {practitioner.specializations.slice(0, 3).map((spec: any, i: number) => (
-                          <Badge
-                            key={i}
-                            variant="outline"
-                            className="text-xs font-light text-olive-600 border-sage-200/60"
-                          >
-                            {typeof spec === "string" ? spec : spec.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </Link>
+                  <ClientPractitionerCard practitioner={practitioner} />
                 </motion.div>
               ))}
             </motion.div>
-            <motion.div variants={itemFade} className="text-center mt-8">
+            <motion.div variants={itemFade} className="text-center mt-10">
               <Link
                 href={`/marketplace/practitioners?modality=${slug}`}
                 className="inline-flex items-center gap-2 text-sm font-medium text-olive-700 hover:text-terracotta-600 transition-colors"

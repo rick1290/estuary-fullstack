@@ -65,8 +65,22 @@ class ModalitySerializer(serializers.ModelSerializer):
     """Serializer for modalities"""
     class Meta:
         model = Modality
-        fields = ['id', 'name', 'description']
-        read_only_fields = ['id']
+        fields = ['id', 'name', 'slug', 'description', 'icon', 'category',
+                  'is_active', 'is_featured', 'order']
+        read_only_fields = ['id', 'slug']
+
+
+class ModalityDetailSerializer(serializers.ModelSerializer):
+    """Serializer for modalities with practitioner/service counts"""
+    practitioner_count = serializers.IntegerField(read_only=True, default=0)
+    service_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Modality
+        fields = ['id', 'name', 'slug', 'description', 'icon', 'category',
+                  'is_active', 'is_featured', 'order',
+                  'practitioner_count', 'service_count']
+        read_only_fields = ['id', 'slug']
 
 
 class PractitionerLocationSerializer(serializers.ModelSerializer):
