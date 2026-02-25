@@ -92,39 +92,41 @@ export default function FeaturedPractitionersSection() {
   return (
     <section className="py-20 bg-cream-50">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-12">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            variants={stagger}
-          >
-            <motion.span
-              variants={itemFade}
-              className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+        <div className="mb-12">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              variants={stagger}
             >
-              Meet Your Guides
-            </motion.span>
-            <motion.h2
-              variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
-            >
-              Featured{" "}
-              <em className="italic text-terracotta-600">Practitioners</em>
-            </motion.h2>
-            <motion.p
-              variants={itemFade}
-              className="text-base font-light text-olive-600 mt-2"
-            >
-              Expert guides ready to support your transformation
-            </motion.p>
-          </motion.div>
-          <Button variant="ghost" asChild className="text-sage-700 hover:text-sage-800 hover:bg-sage-100">
-            <Link href="/marketplace/practitioners" className="flex items-center">
-              Explore All Guides
-              <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
-            </Link>
-          </Button>
+              <motion.span
+                variants={itemFade}
+                className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+              >
+                Meet Your Guides
+              </motion.span>
+              <motion.h2
+                variants={itemFade}
+                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
+              >
+                Featured{" "}
+                <em className="italic text-terracotta-600">Practitioners</em>
+              </motion.h2>
+              <motion.p
+                variants={itemFade}
+                className="text-base font-light text-olive-600 mt-2"
+              >
+                Expert guides ready to support your transformation
+              </motion.p>
+            </motion.div>
+            <Button variant="ghost" size="sm" asChild className="self-start sm:self-auto text-sage-700 hover:text-sage-800 hover:bg-sage-100 flex-shrink-0">
+              <Link href="/marketplace/practitioners" className="flex items-center">
+                Explore All Guides
+                <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Loading State */}
