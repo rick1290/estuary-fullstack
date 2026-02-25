@@ -82,65 +82,67 @@ export default function UpcomingWorkshopsSection() {
   return (
     <section className="py-16 bg-cream-50">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-10">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            variants={stagger}
-          >
-            <motion.span
-              variants={itemFade}
-              className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+        <div className="mb-10">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              variants={stagger}
             >
-              Upcoming
-            </motion.span>
-            <motion.h2
-              variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
-            >
-              Upcoming{" "}
-              <em className="italic text-terracotta-600">Workshops</em>
-            </motion.h2>
-            <motion.p
-              variants={itemFade}
-              className="text-base font-light text-olive-600 mt-2"
-            >
-              Join our community for these transformative experiences
-            </motion.p>
-          </motion.div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={scrollLeft}
-              className="rounded-full border-sage-200/60 hover:bg-sage-50"
-            >
-              <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={scrollRight}
-              className="rounded-full border-sage-200/60 hover:bg-sage-50"
-            >
-              <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
-            </Button>
-            <Link href="/marketplace/workshops" className="ml-4">
-              <Button variant="ghost" className="text-sage-700 hover:text-sage-800 hover:bg-sage-100">
-                View All Workshops
-                <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
+              <motion.span
+                variants={itemFade}
+                className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+              >
+                Upcoming
+              </motion.span>
+              <motion.h2
+                variants={itemFade}
+                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
+              >
+                Upcoming{" "}
+                <em className="italic text-terracotta-600">Workshops</em>
+              </motion.h2>
+              <motion.p
+                variants={itemFade}
+                className="text-base font-light text-olive-600 mt-2"
+              >
+                Join our community for these transformative experiences
+              </motion.p>
+            </motion.div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={scrollLeft}
+                className="hidden sm:inline-flex rounded-full border-sage-200/60 hover:bg-sage-50"
+              >
+                <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
               </Button>
-            </Link>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={scrollRight}
+                className="hidden sm:inline-flex rounded-full border-sage-200/60 hover:bg-sage-50"
+              >
+                <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
+              </Button>
+              <Link href="/marketplace/workshops">
+                <Button variant="ghost" size="sm" className="text-sage-700 hover:text-sage-800 hover:bg-sage-100">
+                  View All Workshops
+                  <ArrowRight className="ml-2 h-4 w-4" strokeWidth="1.5" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4">
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-[350px]">
-                <div className="h-[520px] bg-white rounded-2xl shadow-sm border border-sage-200/60 overflow-hidden flex flex-col">
+              <div key={i} className="flex-shrink-0 w-[280px] sm:w-[350px]">
+                <div className="bg-white rounded-2xl shadow-sm border border-sage-200/60 overflow-hidden flex flex-col">
                   <Skeleton className="w-full h-48 flex-shrink-0" />
                   <div className="p-6 flex-1 flex flex-col">
                     <Skeleton className="h-6 w-3/4 mb-2" />
@@ -173,12 +175,12 @@ export default function UpcomingWorkshopsSection() {
           <div className="relative">
             <div
               ref={scrollContainerRef}
-              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
+              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory sm:snap-none -mx-4 px-4 sm:mx-0 sm:px-0"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {upcomingWorkshops.length > 0 ? (
                 upcomingWorkshops.map((workshop, index) => (
-                  <div key={workshop.id} className="flex-shrink-0 w-[350px] h-[520px]">
+                  <div key={workshop.id} className="flex-shrink-0 w-[280px] sm:w-[350px] snap-start">
                     <ServiceCard
                       {...workshop}
                       href={getServiceDetailUrl({ id: workshop.id, slug: workshop.slug, service_type_code: 'workshop' })}
