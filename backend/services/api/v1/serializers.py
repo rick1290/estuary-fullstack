@@ -25,7 +25,8 @@ class ModalitySerializer(serializers.ModelSerializer):
     """Serializer for modalities"""
     class Meta:
         model = Modality
-        fields = ['id', 'name', 'slug', 'description', 'icon', 'is_featured']
+        fields = ['id', 'name', 'slug', 'description', 'icon', 'category',
+                  'is_active', 'is_featured', 'order']
         read_only_fields = ['id', 'slug']
 
 

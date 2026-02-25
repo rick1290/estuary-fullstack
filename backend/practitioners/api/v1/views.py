@@ -33,7 +33,7 @@ from .serializers import (
     AvailabilityQuerySerializer, PractitionerSearchSerializer,
     VerificationDocumentSerializer, CertificationSerializer,
     EducationSerializer, SpecializationSerializer, StyleSerializer,
-    TopicSerializer, ModalitySerializer, PractitionerClientSerializer,
+    TopicSerializer, ModalitySerializer, ModalityDetailSerializer, PractitionerClientSerializer,
     FeatureRequestSerializer
 )
 from .permissions import IsPractitionerOwner, IsPractitionerOrReadOnly
@@ -2265,17 +2265,43 @@ class TopicViewSet(viewsets.ReadOnlyModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(tags=['Common']),
-    retrieve=extend_schema(tags=['Common'])
+    retrieve=extend_schema(tags=['Common']),
+    by_slug=extend_schema(tags=['Common'], description='Get a modality by its slug'),
 )
 class ModalityViewSet(viewsets.ReadOnlyModelViewSet):
-    """ViewSet for viewing modalities"""
-    serializer_class = ModalitySerializer
+    """ViewSet for viewing modalities with practitioner/service counts"""
+    serializer_class = ModalityDetailSerializer
     permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = {'is_active': ['exact'], 'is_featured': ['exact'], 'category': ['exact']}
+    ordering_fields = ['order', 'name']
+    ordering = ['order', 'name']
 
     def get_queryset(self):
-        """Get all modalities"""
         from common.models import Modality
-        return Modality.objects.all().order_by('name')
+        return Modality.objects.annotate(
+            practitioner_count=Count(
+                'practitioners',
+                filter=Q(practitioners__is_verified=True, practitioners__practitioner_status='active'),
+                distinct=True
+            ),
+            service_count=Count(
+                'services',
+                filter=Q(services__is_active=True, services__is_public=True),
+                distinct=True
+            ),
+        ).order_by('order', 'name')
+
+    @action(detail=False, methods=['get'], url_path='by-slug/(?P<slug>[-\\w]+)')
+    def by_slug(self, request, slug=None):
+        """Get modality by slug"""
+        from common.models import Modality
+        try:
+            modality = self.get_queryset().get(slug=slug)
+            serializer = self.get_serializer(modality)
+            return Response(serializer.data)
+        except Modality.DoesNotExist:
+            return Response({"detail": "Modality not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @extend_schema_view(

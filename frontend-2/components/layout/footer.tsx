@@ -12,6 +12,7 @@ export default function Footer() {
       { name: "Sessions", href: "/marketplace/sessions" },
       { name: "Workshops", href: "/marketplace/workshops" },
       { name: "Courses", href: "/marketplace/courses" },
+      { name: "Modalities", href: "/modalities" },
     ],
     company: [
       { name: "About", href: "/about" },

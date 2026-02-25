@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Rss,
   Layers,
+  Compass,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -112,6 +113,7 @@ export default function Navbar() {
             { label: "Courses", href: "/marketplace/courses", icon: <GraduationCap className="h-4 w-4" /> },
             { label: "Workshops", href: "/marketplace/workshops", icon: <Users className="h-4 w-4" /> },
             { label: "Sessions", href: "/marketplace/sessions", icon: <User className="h-4 w-4" /> },
+            { label: "Modalities", href: "/modalities", icon: <Compass className="h-4 w-4" /> },
           ],
         },
         { label: "Practitioners", href: "/marketplace/practitioners", icon: <User className="h-4 w-4" /> },
@@ -129,6 +131,7 @@ export default function Navbar() {
             { label: "Courses", href: "/marketplace/courses", icon: <GraduationCap className="h-4 w-4" /> },
             { label: "Workshops", href: "/marketplace/workshops", icon: <Users className="h-4 w-4" /> },
             { label: "Sessions", href: "/marketplace/sessions", icon: <User className="h-4 w-4" /> },
+            { label: "Modalities", href: "/modalities", icon: <Compass className="h-4 w-4" /> },
           ],
         },
         { label: "Practitioners", href: "/marketplace/practitioners", icon: <User className="h-4 w-4" /> },

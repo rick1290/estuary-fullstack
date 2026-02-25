@@ -180,7 +180,7 @@ export default function HeroSection() {
                   className="text-olive-700 bg-white hover:bg-sage-50 border-sage-200/60 px-4 py-2 text-sm font-light transition-colors cursor-pointer"
                   asChild
                 >
-                  <Link href={`/marketplace?modality=${modality.id}`}>
+                  <Link href={`/modalities/${modality.slug}`}>
                     {modality.name}
                   </Link>
                 </Badge>

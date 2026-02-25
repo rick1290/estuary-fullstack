@@ -7,7 +7,7 @@
 1. **User Favorite Services**
    - ✅ `userFavoriteServicesOptions()` - List user's favorite services
    - ✅ `userAddFavoriteService()` - Add service to favorites
-   - ✅ `userRemoveFavoriteService()` - Remove service from favorites
+   - ✅ `userRemoveFavoriteService()` - Remove service from favoridtes
 
 2. **User Bookings**
    - ✅ `bookingsListOptions()` - List bookings with filters

@@ -1,12 +1,13 @@
-import type { Metadata } from "next"
+import { createMetadata } from "@/lib/seo"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
 import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
 import ServiceListings from "@/components/marketplace/service-listings"
 
-export const metadata: Metadata = {
-  title: "Courses | Estuary Marketplace",
-  description: "Browse and discover transformative courses for your personal growth journey",
-}
+export const metadata = createMetadata({
+  title: "Courses",
+  description: "Browse and discover transformative courses for your personal growth journey.",
+  path: "/marketplace/courses",
+})
 
 interface CoursesPageProps {
   searchParams: Promise<{ q?: string }>

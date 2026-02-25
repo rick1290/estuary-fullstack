@@ -41,8 +41,9 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
       })()
 
   // Determine location type
-  const hasVirtual = practitioner.locations.some((loc) => loc.is_virtual)
-  const hasInPerson = practitioner.locations.some((loc) => loc.is_in_person)
+  const locations = practitioner.locations ?? []
+  const hasVirtual = locations.some((loc) => loc.is_virtual)
+  const hasInPerson = locations.some((loc) => loc.is_in_person)
   let locationType = "Unknown"
 
   if (hasVirtual && hasInPerson) {
@@ -54,7 +55,7 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
   }
 
   // Get primary location
-  const primaryLocation = practitioner.locations.find((loc) => loc.is_primary)
+  const primaryLocation = locations.find((loc) => loc.is_primary)
 
   const handleLikeToggle = useCallback(
     async (e: React.MouseEvent) => {
@@ -179,18 +180,20 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
           </div>
 
           {/* Specializations */}
-          <div className="flex flex-wrap gap-1.5">
-            {practitioner.specializations.slice(0, 3).map((specialization) => (
-              <span key={specialization.id} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full">
-                {specialization.content}
-              </span>
-            ))}
-            {practitioner.specializations.length > 3 && (
-              <span className="text-xs px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
-                +{practitioner.specializations.length - 3}
-              </span>
-            )}
-          </div>
+          {(practitioner.specializations?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {practitioner.specializations!.slice(0, 3).map((specialization) => (
+                <span key={specialization.id} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full">
+                  {specialization.content}
+                </span>
+              ))}
+              {practitioner.specializations!.length > 3 && (
+                <span className="text-xs px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
+                  +{practitioner.specializations!.length - 3}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Location and Experience */}
           <div className="space-y-2 text-sm text-gray-600">
@@ -215,10 +218,12 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
           </p>
 
           {/* Modalities */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Globe className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="line-clamp-1">{practitioner.modalities.map((m) => m.name).join(", ")}</span>
-          </div>
+          {(practitioner.modalities?.length ?? 0) > 0 && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="line-clamp-1">{practitioner.modalities!.map((m) => m.name).join(", ")}</span>
+            </div>
+          )}
         </div>
       </CardContent>
 
