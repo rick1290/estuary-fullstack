@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useCallback, useRef } from "react"
 import Link from "next/link"
-import { ChevronRight, Clock, MapPin, User, Star, Heart, Calendar, Check, AlertCircle } from "lucide-react"
+import { ChevronRight, Clock, MapPin, User, Star, Heart, Check, AlertCircle } from "lucide-react"
 import SessionBookingPanel from "@/components/sessions/session-booking-panel"
 import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
@@ -94,31 +94,32 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative bg-cream-50">
-          <div className="relative container max-w-7xl py-10 lg:py-16">
-            <Skeleton className="h-5 w-64 mb-6" />
-            <div className="grid lg:grid-cols-2 gap-10 items-center">
-              <div className="space-y-5">
-                <div className="flex gap-2">
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                </div>
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <div className="flex gap-4">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-                <div className="flex gap-3">
-                  <Skeleton className="h-10 w-36 rounded-full" />
-                  <Skeleton className="h-8 w-16" />
-                </div>
+        <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+          <Skeleton className="h-5 w-64 mb-6" />
+          <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
+            <div>
+              <div className="flex gap-2 mb-4">
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
+              <Skeleton className="h-10 w-3/4 mb-3" />
+              <Skeleton className="h-4 w-48 mb-4" />
+              <Skeleton className="h-5 w-full mb-5" />
+              <div className="flex gap-4 mb-6">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="flex gap-3">
+                <Skeleton className="h-10 w-40 rounded-full" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+            </div>
+            <div>
+              <Skeleton className="h-[600px] rounded-2xl" />
             </div>
           </div>
-        </section>
+        </div>
       </div>
     )
   }
@@ -138,42 +139,41 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   }
 
   return (
-    <div className="min-h-screen bg-cream-50">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-cream-100/50 to-cream-50 overflow-hidden">
-        {/* Content */}
-        <div className="relative container max-w-7xl py-10 lg:py-16">
-          {/* Breadcrumb */}
-          <Breadcrumb className="mb-6">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
-                  <Link href="/">Home</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
-                  <Link href="/marketplace/sessions">Sessions</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <span className="text-sm text-olive-900">{service?.name || 'Session'}</span>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          
-          {/* Hero Content */}
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            {/* Left: Text Content */}
-            <div className="space-y-5 animate-slide-up">
-              {/* Categories & Modalities */}
-              <div className="flex flex-wrap items-center gap-2">
+    <div className="min-h-screen bg-cream-50 pb-20 lg:pb-0">
+      <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+        {/* Breadcrumb */}
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+                <Link href="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+                <Link href="/marketplace/sessions">Sessions</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <span className="text-sm text-olive-900">{service?.name || 'Session'}</span>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {/* Two-column layout — content left, booking right */}
+        <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
+          {/* Left Column */}
+          <div>
+            {/* Hero Zone */}
+            <div className="mb-8 lg:mb-10">
+              {/* Pills */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 {service?.category && (
                   <span className="text-xs px-2.5 py-1 bg-terracotta-50 text-terracotta-600 rounded-full font-light">
                     {service.category.name}
@@ -200,17 +200,20 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 )}
               </div>
 
-              <div>
-                <h1 className="font-serif text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
-                  {service?.name || 'Session'}
-                </h1>
-                <p className="text-base font-light text-olive-600 leading-relaxed">
+              {/* Title */}
+              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
+                {service?.name || 'Session'}
+              </h1>
+
+              {/* Description */}
+              {(service?.short_description || service?.description) && (
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed mb-5">
                   {service?.short_description || service?.description || ''}
                 </p>
-              </div>
+              )}
 
-              {/* Meta info + Rating — compact inline row */}
-              <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500">
+              {/* Meta row */}
+              <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500 mb-6">
                 {service?.duration_minutes && (
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
@@ -248,9 +251,9 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 )}
               </div>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-6" onClick={scrollToBooking}>
+              {/* CTA row */}
+              <div className="flex flex-wrap items-center gap-3">
+                <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8" onClick={scrollToBooking}>
                   Book Your Session
                 </Button>
                 <Button
@@ -271,216 +274,185 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               </div>
             </div>
 
-            {/* Right: Visual Element */}
-            <div className="relative animate-scale-in">
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 border border-sage-200/60">
-                {service?.image_url ? (
-                  <img
-                    src={service.image_url}
-                    alt={service.name}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Calendar className="h-20 w-20 text-sage-300" strokeWidth="1" />
-                  </div>
-                )}
+            {/* Divider */}
+            <div className="border-t border-sage-200/40 mb-10 lg:mb-12" />
 
-                {/* Floating price badge */}
-                {service?.price && (
-                  <div className="absolute top-5 right-5 bg-cream-50/95 rounded-xl px-4 py-3 shadow-sm border border-sage-200/60">
-                    <p className="text-[10px] font-light uppercase tracking-wide text-olive-400 mb-0.5">From</p>
-                    <p className="text-2xl font-semibold text-olive-900">${service.price}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            {/* Content Sections */}
+            <div className="space-y-10 lg:space-y-12">
+              {/* Overview */}
+              {service?.description && (
+                <section>
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">About This Session</h2>
+                  <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                    {service.description}
+                  </p>
+                </section>
+              )}
 
-      {/* Section Divider */}
-      <div className="container max-w-7xl">
-        <div className="border-t border-sage-200/40" />
-      </div>
-
-      {/* Main Content */}
-      <div className="container max-w-7xl py-12 lg:py-16">
-        <div className="grid gap-10 lg:grid-cols-[1fr_340px]">
-          {/* Main Content - Left Side */}
-          <div className="space-y-12">
-            {/* Overview */}
-            {service?.description && (
-              <section>
-                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">About This Session</h2>
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
-                  {service.description}
-                </p>
-              </section>
-            )}
-
-            {/* Session Details — quick-reference at a glance */}
-            <section className="pb-12 border-b border-sage-200/40">
-              <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session Details</h2>
-              <div className="bg-white rounded-2xl border border-sage-200/60 divide-y divide-sage-200/60">
-                {service?.duration_minutes && (
-                  <div className="flex justify-between items-center px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                      <span className="text-sm font-light text-olive-500">Duration</span>
-                    </div>
-                    <span className="text-sm font-medium text-olive-900">{service.duration_display}</span>
-                  </div>
-                )}
-                {service?.max_participants === 1 && (
-                  <div className="flex justify-between items-center px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                      <span className="text-sm font-light text-olive-500">Format</span>
-                    </div>
-                    <span className="text-sm font-medium text-olive-900">One-on-one</span>
-                  </div>
-                )}
-                {service?.location_type && (
-                  <div className="flex justify-between items-center px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                      <span className="text-sm font-light text-olive-500">Location</span>
-                    </div>
-                    <span className="text-sm font-medium text-olive-900">
-                      {service.location_type === 'virtual'
-                        ? 'Virtual'
-                        : service.practitioner_location
-                          ? [
-                              service.practitioner_location.city_name,
-                              service.practitioner_location.state_code || service.practitioner_location.state_name,
-                              service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
-                            ].filter(Boolean).join(', ')
-                          : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
-                    </span>
-                  </div>
-                )}
-                {service?.experience_level && (
-                  <div className="flex justify-between items-center px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <Star className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                      <span className="text-sm font-light text-olive-500">Experience Level</span>
-                    </div>
-                    <span className="text-sm font-medium text-olive-900 capitalize">{service.experience_level.replace('_', ' ')}</span>
-                  </div>
-                )}
-                {service?.age_min && service?.age_max && (
-                  <div className="flex justify-between items-center px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                      <span className="text-sm font-light text-olive-500">Age Range</span>
-                    </div>
-                    <span className="text-sm font-medium text-olive-900">{service.age_min} - {service.age_max} years</span>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* What You'll Learn */}
-            {service?.what_youll_learn && (
-              <section>
-                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Learn</h2>
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
-                  {service.what_youll_learn}
-                </p>
-              </section>
-            )}
-
-            {/* Key Benefits */}
-            {service?.benefits && service.benefits.length > 0 && (
-              <section>
-                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {service.benefits.map((benefit, index) => (
-                    <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                      <div className="w-8 h-8 rounded-lg bg-sage-50 flex items-center justify-center mb-3">
-                        <span className="text-xs font-medium text-sage-700">{String(index + 1).padStart(2, '0')}</span>
+              {/* Session Details */}
+              <section className="pb-12 border-b border-sage-200/40">
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session Details</h2>
+                <div className="bg-white rounded-2xl border border-sage-200/60 divide-y divide-sage-200/60">
+                  {service?.duration_minutes && (
+                    <div className="flex justify-between items-center px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <Clock className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                        <span className="text-sm font-light text-olive-500">Duration</span>
                       </div>
-                      <h3 className="text-[15px] font-medium text-olive-900 mb-1.5">{benefit.title}</h3>
-                      <p className="text-[13px] font-light text-olive-500 leading-relaxed">{benefit.description}</p>
+                      <span className="text-sm font-medium text-olive-900">{service.duration_display}</span>
                     </div>
-                  ))}
+                  )}
+                  {service?.max_participants === 1 && (
+                    <div className="flex justify-between items-center px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                        <span className="text-sm font-light text-olive-500">Format</span>
+                      </div>
+                      <span className="text-sm font-medium text-olive-900">One-on-one</span>
+                    </div>
+                  )}
+                  {service?.location_type && (
+                    <div className="flex justify-between items-center px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <MapPin className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                        <span className="text-sm font-light text-olive-500">Location</span>
+                      </div>
+                      <span className="text-sm font-medium text-olive-900">
+                        {service.location_type === 'virtual'
+                          ? 'Virtual'
+                          : service.practitioner_location
+                            ? [
+                                service.practitioner_location.city_name,
+                                service.practitioner_location.state_code || service.practitioner_location.state_name,
+                                service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
+                              ].filter(Boolean).join(', ')
+                            : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
+                      </span>
+                    </div>
+                  )}
+                  {service?.experience_level && (
+                    <div className="flex justify-between items-center px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <Star className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                        <span className="text-sm font-light text-olive-500">Experience Level</span>
+                      </div>
+                      <span className="text-sm font-medium text-olive-900 capitalize">{service.experience_level.replace('_', ' ')}</span>
+                    </div>
+                  )}
+                  {service?.age_min && service?.age_max && (
+                    <div className="flex justify-between items-center px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                        <span className="text-sm font-light text-olive-500">Age Range</span>
+                      </div>
+                      <span className="text-sm font-medium text-olive-900">{service.age_min} - {service.age_max} years</span>
+                    </div>
+                  )}
                 </div>
               </section>
-            )}
 
-            {/* What's Included */}
-            {service?.includes && service.includes.length > 0 && (
-              <section>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
-                <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {service.includes.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2.5">
-                        <div className="w-5 h-5 rounded-full bg-sage-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Check className="h-3 w-3 text-sage-600" strokeWidth="2.5" />
+              {/* What You'll Learn */}
+              {service?.what_youll_learn && (
+                <section>
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Learn</h2>
+                  <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                    {service.what_youll_learn}
+                  </p>
+                </section>
+              )}
+
+              {/* Key Benefits */}
+              {service?.benefits && service.benefits.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {service.benefits.map((benefit, index) => (
+                      <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        <div className="w-8 h-8 rounded-lg bg-sage-50 flex items-center justify-center mb-3">
+                          <span className="text-xs font-medium text-sage-700">{String(index + 1).padStart(2, '0')}</span>
                         </div>
-                        <span className="text-sm font-light text-olive-600 leading-relaxed">{item}</span>
+                        <h3 className="text-[15px] font-medium text-olive-900 mb-1.5">{benefit.title}</h3>
+                        <p className="text-[13px] font-light text-olive-500 leading-relaxed">{benefit.description}</p>
                       </div>
                     ))}
                   </div>
+                </section>
+              )}
+
+              {/* What's Included */}
+              {service?.includes && service.includes.length > 0 && (
+                <section>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
+                  <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {service.includes.map((item, index) => (
+                        <div key={index} className="flex items-start gap-2.5">
+                          <div className="w-5 h-5 rounded-full bg-sage-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Check className="h-3 w-3 text-sage-600" strokeWidth="2.5" />
+                          </div>
+                          <span className="text-sm font-light text-olive-600 leading-relaxed">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Prerequisites */}
+              {service?.prerequisites && (
+                <section>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Prerequisites</h2>
+                  <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                    {service.prerequisites}
+                  </p>
+                </section>
+              )}
+
+              {/* Requirements */}
+              {service?.requirements && (
+                <section>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Requirements</h2>
+                  <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                    {service.requirements}
+                  </p>
+                </section>
+              )}
+
+              {/* Practitioner Spotlight */}
+              {service?.primary_practitioner && (
+                <section className="pt-12 border-t border-sage-200/40">
+                  <PractitionerSpotlight
+                    practitioners={[service.primary_practitioner]}
+                    role="guide"
+                    animationDelay="0s"
+                  />
+                </section>
+              )}
+
+              {/* Closing CTA */}
+              <section className="pt-12 border-t border-sage-200/40">
+                <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-6 py-8 sm:px-8 sm:py-10 text-center">
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
+                    Start your <em className="italic text-terracotta-600">transformation</em> today
+                  </h2>
+                  <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
+                    Book your session and take the first step toward the change you've been seeking.
+                  </p>
+                  <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8" onClick={scrollToBooking}>
+                    Book Your Session
+                  </Button>
                 </div>
               </section>
-            )}
-
-            {/* Prerequisites */}
-            {service?.prerequisites && (
-              <section>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Prerequisites</h2>
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
-                  {service.prerequisites}
-                </p>
-              </section>
-            )}
-
-            {/* Requirements */}
-            {service?.requirements && (
-              <section>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Requirements</h2>
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
-                  {service.requirements}
-                </p>
-              </section>
-            )}
-
-            {/* Practitioner Spotlight — closing section */}
-            {service?.primary_practitioner && (
-              <section className="pt-12 border-t border-sage-200/40">
-                <PractitionerSpotlight
-                  practitioners={[service.primary_practitioner]}
-                  role="guide"
-                  animationDelay="0s"
-                />
-              </section>
-            )}
-
-            {/* Closing CTA */}
-            <section className="pt-12 border-t border-sage-200/40">
-              <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-8 py-10 text-center">
-                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
-                  Start your <em className="italic text-terracotta-600">transformation</em> today
-                </h2>
-                <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
-                  Book your session and take the first step toward the change you've been seeking.
-                </p>
-                <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8" onClick={scrollToBooking}>
-                  Book Your Session
-                </Button>
-              </div>
-            </section>
+            </div>
           </div>
 
-          {/* Right Column - Sticky Booking Panel */}
+          {/* Right Column — Booking panel starts at top, sticks on scroll */}
           <div ref={bookingPanelRef}>
+            {/* Booking panel — sticks on scroll */}
             <div className="lg:sticky lg:top-24 space-y-5">
               {service && (
                 <SessionBookingPanel session={{
@@ -489,7 +461,8 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                   name: service.name,
                   price: service.price,
                   duration_display: service.duration_display,
-                  primary_practitioner: service.primary_practitioner
+                  primary_practitioner: service.primary_practitioner,
+                  image_url: service.image_url
                 }} />
               )}
 
@@ -510,6 +483,22 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile sticky booking bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-sm border-t border-sage-200/60 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+        <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
+          <div>
+            <p className="text-[11px] font-light text-olive-500">From</p>
+            <p className="text-lg font-semibold text-olive-900">${service?.price || '—'}</p>
+          </div>
+          <Button
+            className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-6 text-sm font-medium"
+            onClick={scrollToBooking}
+          >
+            Book Session
+          </Button>
         </div>
       </div>
     </div>

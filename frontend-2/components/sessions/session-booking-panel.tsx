@@ -153,16 +153,66 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   // Display only first 6 time slots unless "show more" is clicked
   const displayedTimeSlots = showAllTimes ? timeSlots : timeSlots.slice(0, 6)
 
+  const practitioner = session.primary_practitioner
+  const imageUrl = session.image_url
+  const practitionerName = practitioner?.display_name || practitioner?.name
+  const practitionerImage = practitioner?.profile_image_url
+  const practitionerInitials = practitionerName
+    ? practitionerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)
+    : ''
+
   return (
     <div className="w-full bg-white rounded-2xl border border-sage-200/60 overflow-hidden">
-        {/* Header Section */}
-        <div className="bg-cream-50 px-6 py-5 text-center border-b border-sage-200/60">
-          <p className="text-[10px] font-light tracking-wide uppercase text-olive-400 mb-1">Session Investment</p>
-          <div className="flex items-baseline justify-center gap-1.5">
-            <span className="text-2xl font-semibold text-olive-900">${session.price}</span>
-            <span className="text-xs font-light text-olive-500">per session</span>
+        {/* Image header with overlaid price + practitioner */}
+        <div className="relative">
+          {/* Background image or gradient */}
+          <div className="aspect-[4/3] w-full">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={session.name || 'Session'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50" />
+            )}
           </div>
-          <p className="text-[11px] font-light text-olive-400 mt-1">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
+
+          {/* Gradient overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+          {/* Overlaid content */}
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
+            {/* Practitioner */}
+            {practitioner && (
+              <div className="flex items-center gap-2.5 mb-3">
+                {practitionerImage ? (
+                  <img
+                    src={practitionerImage}
+                    alt={practitionerName}
+                    className="w-9 h-9 rounded-full object-cover border-2 border-white/70"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/70">
+                    <span className="text-[10px] font-serif text-white">{practitionerInitials}</span>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-white leading-tight">{practitionerName}</p>
+                  {practitioner.professional_title && (
+                    <p className="text-[11px] font-light text-white/75">{practitioner.professional_title}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Price */}
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-semibold text-white">${session.price}</span>
+              <span className="text-xs font-light text-white/70">per session</span>
+            </div>
+            <p className="text-[11px] font-light text-white/60 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
+          </div>
         </div>
 
         <div className="p-5 space-y-5">
