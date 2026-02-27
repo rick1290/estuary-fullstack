@@ -19,7 +19,8 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
 
   return (
     <MarketplaceLayout
-      title="Sessions & Bundles"
+      title={<>Sessions & <em className="italic text-terracotta-600">Bundles</em></>}
+      eyebrow="Personal Sessions"
       description="Connect with practitioners for one-on-one sessions, bundles, and packages"
       initialSearchQuery={query}
       sidebar={<MarketplaceFiltersWrapper />}

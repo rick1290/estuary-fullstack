@@ -1,14 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { CheckCircle, MapPin, Globe, GraduationCap, Star, Heart, Clock, DollarSign, Video } from "lucide-react"
+import { CheckCircle, MapPin, Star, Heart, Clock, DollarSign } from "lucide-react"
 import type { Practitioner } from "@/types/practitioner"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
@@ -26,9 +23,9 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const { favoritePractitionerIds, refetch: refetchFavorites } = useUserFavorites()
-  
+
   // Determine if practitioner is liked based on auth state
-  const isLiked = isAuthenticated 
+  const isLiked = isAuthenticated
     ? favoritePractitionerIds.has(practitioner.id)
     : (() => {
         try {
@@ -40,12 +37,8 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
         }
       })()
 
-  // Handle location data - API might return primary_location object or locations array
+  // Get primary location for meta display
   const locations = practitioner.locations || (practitioner.primary_location ? [practitioner.primary_location] : [])
-  const hasVirtual = locations.some((loc) => loc.is_virtual)
-  const hasInPerson = locations.some((loc) => loc.is_in_person)
-  
-  // Get primary location
   const primaryLocation = practitioner.primary_location || locations.find((loc) => loc.is_primary) || locations[0]
 
   const handleLikeToggle = useCallback(
@@ -63,7 +56,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
         } catch (error) {
           console.error("Error saving like to localStorage:", error)
         }
-        
+
         openAuthModal({
           defaultTab: "login",
           title: "Sign in to Save Practitioners",
@@ -91,13 +84,13 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
           })
           toast.success("Practitioner removed from favorites")
         }
-        
+
         // Update localStorage for consistency
         const savedLikes = JSON.parse(localStorage.getItem("likedPractitioners") || "{}")
         const practitionerId = practitioner.public_uuid || practitioner.id
         savedLikes[practitionerId] = !isLiked
         localStorage.setItem("likedPractitioners", JSON.stringify(savedLikes))
-        
+
         // Refetch favorites to update the UI
         await refetchFavorites()
       } catch (error) {
@@ -110,166 +103,166 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
     [practitioner.public_uuid, practitioner.id, isLiked, isAuthenticated, openAuthModal, refetchFavorites],
   )
 
-  // Dummy avatar images for different practitioners
-  const getDummyAvatar = (practitionerId: string | number) => {
-    // Use consistent pravatar.cc images based on practitioner ID
-    const imageNumbers = [47, 33, 44, 12, 32, 52, 48, 68, 91, 15]
-    const idString = String(practitionerId)
-    const index = idString.charCodeAt(0) % imageNumbers.length
-    return `https://i.pravatar.cc/200?img=${imageNumbers[index]}`
+  const displayName = practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .filter(Boolean)
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
   }
+
+  // Rotate gradient backgrounds so each practitioner looks distinct
+  const gradientPairs = [
+    "from-sage-200 to-terracotta-100",
+    "from-terracotta-200 to-cream-200",
+    "from-olive-200 to-sage-100",
+    "from-cream-300 to-terracotta-200",
+    "from-sage-100 to-olive-200",
+    "from-terracotta-100 to-sage-200",
+  ]
+  const nameHash = displayName.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  const avatarGradient = gradientPairs[nameHash % gradientPairs.length]
 
   const profileUrl = `/practitioners/${practitioner.slug || practitioner.public_uuid || practitioner.id}`
 
+  // Location display string
+  const locationDisplay = primaryLocation?.city_name
+    ? `${primaryLocation.city_name}, ${primaryLocation.state_abbreviation}`
+    : "Location not specified"
+
+  // Price range display string
+  const priceDisplay = practitioner.price_range && (practitioner.price_range.min || practitioner.price_range.max)
+    ? practitioner.price_range.min && practitioner.price_range.max
+      ? `$${practitioner.price_range.min} – $${practitioner.price_range.max}`
+      : practitioner.price_range.min
+        ? `From $${practitioner.price_range.min}`
+        : `Up to $${practitioner.price_range.max}`
+    : null
+
   return (
     <Link href={profileUrl} className="block">
-      <Card className="overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] rounded-2xl group cursor-pointer">
-        <CardContent className="p-0">
-          <div className="flex">
-          {/* Left: Profile Image */}
-          <div className="relative w-48 h-48 flex-shrink-0 bg-gradient-to-br from-sage-100 to-terracotta-100 rounded-l-2xl overflow-hidden">
-            <img
-              src={practitioner.profile_image_url || getDummyAvatar(practitioner.id)}
-              alt={practitioner.display_name}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
+      <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl group cursor-pointer relative">
+        {/* Featured accent bar */}
+        {practitioner.is_featured && (
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-terracotta-400 to-sage-400 rounded-t-xl" />
+        )}
+        <CardContent className="p-5">
+          <div className="flex gap-4">
+            {/* Left: Avatar */}
+            <div className="relative flex-shrink-0">
+              <div className={`w-24 h-24 max-sm:w-18 max-sm:h-18 rounded-2xl overflow-hidden bg-gradient-to-br ${avatarGradient}`}>
+                {practitioner.profile_image_url ? (
+                  <img
+                    src={practitioner.profile_image_url}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-2xl max-sm:text-lg font-serif font-light text-olive-700/30">
+                      {getInitials(displayName)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {/* Verified overlay badge */}
+              {practitioner.is_verified && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
+                  <CheckCircle className="h-4 w-4 text-sage-600 fill-sage-100" strokeWidth="1.5" />
+                </div>
+              )}
+            </div>
 
             {/* Right: Content */}
-            <div className="flex-1 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  {/* Name and Title */}
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-semibold text-olive-900 group-hover:text-sage-700 transition-colors">
-                      {practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'}
-                    </h3>
-                    {practitioner.is_verified && (
-                      <Badge className="gap-1 bg-sage-100 text-olive-700 hover:bg-sage-200 rounded-full">
-                        <CheckCircle className="h-3 w-3" strokeWidth="1.5" />
-                        Verified
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-olive-600 mt-1">{practitioner.professional_title || practitioner.title}</p>
-                  
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
-                      <span className="ml-1 font-medium text-sm text-olive-800">{practitioner.average_rating || practitioner.average_rating_float || 4.5}</span>
-                    </div>
-                    <span className="text-sm text-olive-500">({practitioner.total_reviews || 0} reviews)</span>
-                  </div>
-                </div>
-
-                {/* Like Button */}
+            <div className="flex-1 min-w-0">
+              {/* Row 1: Name + Heart */}
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors truncate">
+                  {displayName}
+                </h3>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full h-8 w-8 hover:bg-sage-50"
+                  className="rounded-full h-7 w-7 ml-auto flex-shrink-0 hover:bg-sage-50"
                   onClick={handleLikeToggle}
                   disabled={isLoading}
                   aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
                 >
-                  <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-olive-400 hover:text-rose-500"}`} strokeWidth="1.5" />
+                  <Heart className={`h-3.5 w-3.5 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-olive-400 hover:text-rose-500"}`} strokeWidth="1.5" />
                 </Button>
               </div>
 
-              {/* Bio */}
-              {(practitioner.bio_short || practitioner.bio) && (
-                <p className="text-olive-600 mb-4 line-clamp-2 leading-relaxed">
-                  {practitioner.bio_short || (practitioner.bio && practitioner.bio.length > 150 ? practitioner.bio.substring(0, 150) + "..." : practitioner.bio)}
-                </p>
-              )}
+              {/* Row 2: Professional Title */}
+              <p className="text-[13px] font-light text-olive-500 mt-0.5">
+                {practitioner.professional_title || practitioner.title}
+              </p>
 
-              {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="space-y-2">
-                  {/* Location */}
-                  <div className="flex items-center gap-2 text-sm text-olive-600">
-                    <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
-                    <span>
-                      {primaryLocation 
-                        ? `${primaryLocation.city_name}, ${primaryLocation.state_abbreviation}`
-                        : "Location not specified"}
-                    </span>
-                  </div>
-                  
-                  {/* Experience */}
-                  <div className="flex items-center gap-2 text-sm text-olive-600">
-                    <GraduationCap className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
-                    <span>{practitioner.years_of_experience} years experience</span>
-                  </div>
-                </div>
+              {/* Row 3: Meta items — individual flex-wrap spans with icons */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                {/* Rating */}
+                <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                  <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
+                  <span className="font-medium text-olive-800">{practitioner.average_rating || practitioner.average_rating_float || "–"}</span>
+                  <span className="text-olive-400">({practitioner.total_reviews || 0} reviews)</span>
+                </span>
 
-                <div className="space-y-2">
-                  {/* Session Types - only show if location data is available */}
-                  {(hasVirtual || hasInPerson) && (
-                    <div className="flex items-center gap-2 text-sm text-olive-600">
-                      <Video className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
-                      <span>
-                        {hasVirtual && hasInPerson
-                          ? "Virtual & In-Person"
-                          : hasVirtual
-                          ? "Virtual Only"
-                          : "In-Person Only"}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Price Range */}
-                  {practitioner.price_range && (practitioner.price_range.min || practitioner.price_range.max) && (
-                    <div className="flex items-center gap-2 text-sm text-olive-600">
-                      <DollarSign className="h-3.5 w-3.5 flex-shrink-0 text-sage-600" strokeWidth="1.5" />
-                      <span>
-                        {practitioner.price_range.min && practitioner.price_range.max
-                          ? `$${practitioner.price_range.min} - $${practitioner.price_range.max}`
-                          : practitioner.price_range.min
-                          ? `From $${practitioner.price_range.min}`
-                          : `Up to $${practitioner.price_range.max}`}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                {/* Location */}
+                <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                  <MapPin className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                  {locationDisplay}
+                </span>
 
-              {/* Specializations */}
-              {practitioner.specializations && practitioner.specializations.length > 0 && (
-                <div className="flex items-start gap-2 mb-4">
-                  <span className="text-sm text-olive-500 mt-0.5">Specializes in:</span>
-                  <div className="flex flex-wrap gap-1.5 flex-1">
-                    {practitioner.specializations.slice(0, 4).map((specialization) => (
-                      <span key={specialization.id} className="text-xs px-2.5 py-1 bg-sage-100 text-olive-700 rounded-full">
-                        {specialization.content}
-                      </span>
-                    ))}
-                    {practitioner.specializations.length > 4 && (
-                      <span className="text-xs px-2.5 py-1 bg-sage-100 text-olive-500 rounded-full">
-                        +{practitioner.specializations.length - 4} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+                {/* Price Range */}
+                {priceDisplay && (
+                  <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                    <DollarSign className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                    <span className="font-medium text-olive-800">{priceDisplay}</span>
+                  </span>
+                )}
 
-              {/* Modalities */}
-              {practitioner.modalities && practitioner.modalities.length > 0 && (
-                <div className="flex items-start gap-2 mb-6">
-                  <span className="text-sm text-olive-500 mt-0.5">Approaches:</span>
-                  <p className="text-sm text-olive-600 flex-1 line-clamp-1">
-                    {practitioner.modalities.map((m) => m.name).join(", ")}
-                  </p>
-                </div>
-              )}
-              
-              {/* View Profile Button */}
-              <div className="flex justify-end">
-                <Button className="bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 rounded-xl px-6 shadow-lg">
-                  View Profile
-                </Button>
+                {/* Experience */}
+                {practitioner.years_of_experience && (
+                  <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                    <Clock className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                    {practitioner.years_of_experience} years experience
+                  </span>
+                )}
               </div>
             </div>
+          </div>
+
+          {/* Specialty tags + View Profile link */}
+          <div className="flex items-center justify-between gap-3 mt-3">
+            {practitioner.specializations && practitioner.specializations.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+                {practitioner.specializations.slice(0, 4).map((specialization) => (
+                  <span
+                    key={specialization.id}
+                    className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-600 rounded-full"
+                  >
+                    {specialization.content}
+                  </span>
+                ))}
+                {practitioner.specializations.length > 4 && (
+                  <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-400 rounded-full">
+                    +{practitioner.specializations.length - 4}
+                  </span>
+                )}
+              </div>
+            ) : (practitioner.bio_short || practitioner.bio) ? (
+              <p className="text-xs italic font-light text-olive-400 line-clamp-1 flex-1 min-w-0">
+                {practitioner.bio_short || practitioner.bio}
+              </p>
+            ) : (
+              <div className="flex-1" />
+            )}
+            <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-4 py-1.5 text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap">
+              View Profile
+            </span>
           </div>
         </CardContent>
       </Card>
