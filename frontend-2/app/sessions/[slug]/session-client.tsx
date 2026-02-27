@@ -7,6 +7,7 @@ import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { useQuery } from "@tanstack/react-query"
 import { publicServicesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
@@ -25,6 +26,7 @@ import {
 export default function SessionDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = React.use(params)
   const [isSaveLoading, setIsSaveLoading] = useState(false)
+  const [mobileBookingOpen, setMobileBookingOpen] = useState(false)
   const bookingPanelRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -276,11 +278,8 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 )}
               </div>
 
-              {/* CTA row */}
-              <div className="flex flex-wrap items-center gap-3">
-                <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8" onClick={scrollToBooking}>
-                  Book Your Session
-                </Button>
+              {/* Save button */}
+              <div className="flex items-center">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -512,7 +511,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       </div>
 
       {/* Mobile sticky booking bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-sm border-t border-sage-200/60 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-sm border-t border-sage-200/60 px-4 py-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
           <div>
             <p className="text-[11px] font-light text-olive-500">From</p>
@@ -520,12 +519,34 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
           </div>
           <Button
             className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-6 text-sm font-medium"
-            onClick={scrollToBooking}
+            onClick={() => setMobileBookingOpen(true)}
           >
             Book Session
           </Button>
         </div>
       </div>
+
+      {/* Mobile booking drawer */}
+      <Drawer open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="font-serif text-lg font-light text-olive-900">Book Your Session</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+            {service && (
+              <SessionBookingPanel session={{
+                id: service.id,
+                public_uuid: service.public_uuid,
+                name: service.name,
+                price: service.price,
+                duration_display: service.duration_display,
+                primary_practitioner: service.primary_practitioner,
+                image_url: service.image_url
+              }} compact />
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   )
 }
