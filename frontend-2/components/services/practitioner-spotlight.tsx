@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { ChevronRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type PractitionerRole = "guide" | "facilitator" | "instructor" | "practitioner"
@@ -35,9 +34,25 @@ interface PractitionerSpotlightProps {
 
 const roleHeadings: Record<PractitionerRole, { singular: string; plural: string }> = {
   guide: { singular: "Meet Your Guide", plural: "Meet Your Guides" },
-  facilitator: { singular: "Meet Your Expert Facilitator", plural: "Meet Your Expert Facilitators" },
+  facilitator: { singular: "Meet Your Facilitator", plural: "Meet Your Facilitators" },
   instructor: { singular: "Meet Your Instructor", plural: "Meet Your Instructors" },
   practitioner: { singular: "Meet Your Practitioner", plural: "Meet Your Practitioners" },
+}
+
+// Deterministic gradient based on name
+const avatarGradients = [
+  "from-sage-200 to-terracotta-100",
+  "from-terracotta-100 to-sage-200",
+  "from-cream-200 to-sage-200",
+  "from-sage-100 to-cream-200",
+]
+
+function getAvatarGradient(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return avatarGradients[Math.abs(hash) % avatarGradients.length]
 }
 
 export default function PractitionerSpotlight({
@@ -54,12 +69,9 @@ export default function PractitionerSpotlight({
     : roleHeadings[role].singular)
 
   return (
-    <section
-      className={cn("animate-fade-in", className)}
-      style={{ animationDelay }}
-    >
-      <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">{headingText}</h2>
-      <div className="grid gap-6">
+    <section className={cn(className)}>
+      <h2 className="font-serif text-xl font-light text-olive-900 mb-5">{headingText}</h2>
+      <div className="grid gap-4">
         {practitioners.map((practitioner) => (
           <PractitionerCard key={practitioner.id} practitioner={practitioner} />
         ))}
@@ -77,6 +89,7 @@ function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
   const image = practitioner.profile_image_url || practitioner.image
   const bio = practitioner.short_bio || practitioner.bio
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2)
+  const gradient = getAvatarGradient(name)
   const profileUrl = practitioner.slug
     ? `/practitioners/${practitioner.slug}`
     : `/practitioners/${practitioner.id}`
@@ -90,64 +103,49 @@ function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
   }, [bio])
 
   return (
-    <Card className="border border-sage-200 overflow-hidden group hover:border-sage-300 hover:shadow-md transition-all">
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row">
-          {/* Image Section */}
-          <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-50 via-sage-50 to-terracotta-50 flex items-center justify-center p-6">
-            {image ? (
-              <div className="w-36 h-36 rounded-3xl bg-white shadow-md overflow-hidden ring-2 ring-white/50">
-                <img
-                  src={image}
-                  alt={name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-36 h-36 rounded-3xl bg-gradient-to-br from-sage-300 to-terracotta-300 shadow-md flex items-center justify-center ring-2 ring-white/50">
-                <span className="text-5xl font-bold text-white">
-                  {initials}
-                </span>
-              </div>
-            )}
-          </div>
+    <Link href={profileUrl} className="group block">
+      <div className="flex items-start gap-5 bg-white rounded-xl border border-sage-200/60 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          {image ? (
+            <div className="w-20 h-20 rounded-2xl overflow-hidden">
+              <img
+                src={image}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+              <span className="text-xl font-serif font-light text-olive-700/40">
+                {initials}
+              </span>
+            </div>
+          )}
+        </div>
 
-          {/* Content Section */}
-          <div className="flex-1 p-8 flex flex-col">
-            <h3 className="text-2xl font-medium text-olive-900 mb-2 group-hover:text-sage-700 transition-colors">
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors">
               {name}
             </h3>
-
-            {title && (
-              <p className="text-lg font-light text-sage-700 mb-4">{title}</p>
-            )}
-
-            {bio && (
-              <div className="mb-6 flex-1">
-                <p ref={bioRef} className="text-olive-600 font-light leading-relaxed line-clamp-3">
-                  {bio}
-                </p>
-                {isTruncated && (
-                  <Link
-                    href={profileUrl}
-                    className="text-sage-600 hover:text-sage-800 font-medium text-sm mt-2 inline-block"
-                  >
-                    Read more
-                  </Link>
-                )}
-              </div>
-            )}
-
-            <Link
-              href={profileUrl}
-              className="inline-flex items-center gap-2 text-sage-600 hover:text-sage-800 font-medium text-sm px-4 py-2 rounded-lg hover:bg-sage-50 transition-all self-start mt-auto"
-            >
-              View Full Profile
-              <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <span className="flex-shrink-0 bg-olive-900 text-cream-50 rounded-full px-4 py-1.5 text-[12px] font-medium group-hover:bg-olive-800 transition-colors whitespace-nowrap">
+              View Profile
+            </span>
           </div>
+
+          {title && (
+            <p className="text-[13px] font-light text-olive-500 mt-0.5">{title}</p>
+          )}
+
+          {bio && (
+            <p ref={bioRef} className="text-[15px] font-light text-olive-600 leading-relaxed line-clamp-2 mt-2.5">
+              {bio}
+            </p>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </Link>
   )
 }

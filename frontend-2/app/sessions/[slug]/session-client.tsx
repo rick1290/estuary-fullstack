@@ -1,13 +1,10 @@
 "use client"
 import React, { useState, useCallback, useRef } from "react"
 import Link from "next/link"
-import Image from "next/image"
-import { ChevronRight, Clock, MapPin, User, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
+import { ChevronRight, Clock, MapPin, User, Star, Heart, Calendar, Check, AlertCircle } from "lucide-react"
 import SessionBookingPanel from "@/components/sessions/session-booking-panel"
 import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from "@tanstack/react-query"
@@ -99,27 +96,26 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       <div className="min-h-screen bg-cream-50">
         <section className="relative bg-cream-50">
           <div className="relative container max-w-7xl py-10 lg:py-16">
-            <Skeleton className="h-6 w-96 mb-12" />
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
+            <Skeleton className="h-5 w-64 mb-6" />
+            <div className="grid lg:grid-cols-2 gap-10 items-center">
+              <div className="space-y-5">
                 <div className="flex gap-2">
-                  <Skeleton className="h-6 w-20" />
-                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
                 </div>
+                <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <div className="flex gap-6">
-                  <Skeleton className="h-6 w-24" />
-                  <Skeleton className="h-6 w-20" />
-                  <Skeleton className="h-6 w-28" />
-                </div>
-                <Skeleton className="h-6 w-40" />
                 <div className="flex gap-4">
-                  <Skeleton className="h-12 w-32" />
-                  <Skeleton className="h-12 w-36" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <div className="flex gap-3">
+                  <Skeleton className="h-10 w-36 rounded-full" />
+                  <Skeleton className="h-8 w-16" />
                 </div>
               </div>
-              <Skeleton className="h-[500px] rounded-3xl" />
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
             </div>
           </div>
         </section>
@@ -143,98 +139,88 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="min-h-screen bg-cream-50">
-      {/* Immersive Hero Section */}
-      <section className="relative bg-cream-50 overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-b from-cream-100/50 to-cream-50 overflow-hidden">
         {/* Content */}
         <div className="relative container max-w-7xl py-10 lg:py-16">
           {/* Breadcrumb */}
-          <Breadcrumb className="mb-8 animate-fade-in">
+          <Breadcrumb className="mb-6">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
                   <Link href="/">Home</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
-                  <Link href="/marketplace">Find Your Guide</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
                   <Link href="/marketplace/sessions">Sessions</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <span className="text-olive-900 font-medium">{service?.name || 'Session'}</span>
+                <span className="text-sm text-olive-900">{service?.name || 'Session'}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
           
           {/* Hero Content */}
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 items-center">
             {/* Left: Text Content */}
-            <div className="space-y-8 animate-slide-up">
+            <div className="space-y-5 animate-slide-up">
               {/* Categories & Modalities */}
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  {service?.category && (
-                    <Badge variant="terracotta" className="text-sm">
-                      {service.category.name}
-                    </Badge>
-                  )}
-                  {service?.practitioner_category && (
-                    <Badge variant="sage" className="text-sm">
-                      {service.practitioner_category.name}
-                    </Badge>
-                  )}
-                  {service?.tags?.map((tag: string) => (
-                    <Badge key={tag} variant="outline" className="text-sm">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {service?.category && (
+                  <span className="text-xs px-2.5 py-1 bg-terracotta-50 text-terracotta-600 rounded-full font-light">
+                    {service.category.name}
+                  </span>
+                )}
+                {service?.practitioner_category && (
+                  <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
+                    {service.practitioner_category.name}
+                  </span>
+                )}
+                {service?.tags?.map((tag: string) => (
+                  <span key={tag} className="text-xs px-2.5 py-1 bg-cream-100 text-olive-500 rounded-full font-light">
+                    {tag}
+                  </span>
+                ))}
                 {service?.modalities && service.modalities.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <>
                     {service.modalities.map((modality: { id: number; name: string; slug: string }) => (
-                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
+                      <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
                         {modality.name}
-                      </Badge>
+                      </span>
                     ))}
-                  </div>
+                  </>
                 )}
               </div>
 
               <div>
-                <h1 className="font-serif text-3xl lg:text-4xl font-light text-olive-900 mb-4 leading-[1.15]">
+                <h1 className="font-serif text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
                   {service?.name || 'Session'}
                 </h1>
-                <p className="text-lg font-light text-olive-600 leading-relaxed">
+                <p className="text-base font-light text-olive-600 leading-relaxed">
                   {service?.short_description || service?.description || ''}
                 </p>
               </div>
 
-              {/* Meta info */}
-              <div className="flex flex-wrap items-center gap-6 text-olive-700">
+              {/* Meta info + Rating — compact inline row */}
+              <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500">
                 {service?.duration_minutes && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                    <span className="font-medium">{service.duration_display}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                    <span>{service.duration_display}</span>
                   </div>
                 )}
                 {service?.location_type && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                    <span className="font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                    <span>
                       {service.location_type === 'virtual'
                         ? 'Virtual'
                         : service.practitioner_location
@@ -248,50 +234,46 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                   </div>
                 )}
                 {service?.max_participants === 1 && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                    <span className="font-medium">1-on-1 Session</span>
+                  <div className="flex items-center gap-1.5">
+                    <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                    <span>1-on-1</span>
+                  </div>
+                )}
+                {service && service.total_reviews > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
+                    <span className="font-medium text-olive-800">{service.average_rating?.toFixed(1)}</span>
+                    <span className="text-olive-400">({service.total_reviews})</span>
                   </div>
                 )}
               </div>
 
-              {/* Rating */}
-              {service && service.total_reviews > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
-                    <span className="text-2xl font-medium text-olive-900">{service.average_rating?.toFixed(1)}</span>
-                  </div>
-                  <span className="text-olive-600">({service.total_reviews} {service.total_reviews === 1 ? 'review' : 'reviews'})</span>
-                </div>
-              )}
-              
               {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full shadow-sm" onClick={scrollToBooking}>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-6" onClick={scrollToBooking}>
                   Book Your Session
                 </Button>
-                <Button 
-                  size="lg" 
-                  variant="ghost" 
-                  className="group"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="group text-olive-500 hover:text-olive-700"
                   onClick={handleSaveForLater}
                   disabled={isSaveLoading}
                 >
-                  <Heart 
-                    className={`h-5 w-5 mr-2 transition-colors ${
+                  <Heart
+                    className={`h-4 w-4 mr-1.5 transition-colors ${
                       isFavorited ? 'fill-rose-500 text-rose-500' : 'group-hover:text-rose-500'
-                    }`} 
-                    strokeWidth="1.5" 
+                    }`}
+                    strokeWidth="1.5"
                   />
-                  {isFavorited ? 'Saved' : 'Save for Later'}
+                  {isFavorited ? 'Saved' : 'Save'}
                 </Button>
               </div>
             </div>
-            
+
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-md border border-sage-200">
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 border border-sage-200/60">
                 {service?.image_url ? (
                   <img
                     src={service.image_url}
@@ -300,15 +282,15 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Calendar className="h-32 w-32 text-sage-300" strokeWidth="1" />
+                    <Calendar className="h-20 w-20 text-sage-300" strokeWidth="1" />
                   </div>
                 )}
 
-                {/* Floating elements */}
+                {/* Floating price badge */}
                 {service?.price && (
-                  <div className="absolute top-6 right-6 bg-cream-50 rounded-2xl p-4 shadow-md border border-sage-200">
-                    <p className="text-sm text-olive-700 mb-1">Starting from</p>
-                    <p className="text-3xl font-medium text-olive-900">${service.price}</p>
+                  <div className="absolute top-5 right-5 bg-cream-50/95 rounded-xl px-4 py-3 shadow-sm border border-sage-200/60">
+                    <p className="text-[10px] font-light uppercase tracking-wide text-olive-400 mb-0.5">From</p>
+                    <p className="text-2xl font-semibold text-olive-900">${service.price}</p>
                   </div>
                 )}
               </div>
@@ -317,60 +299,114 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
         </div>
       </section>
 
-      {/* Main Content */}
-      <div className="container max-w-7xl py-16">
-        {/* Quick Share Actions - Floating */}
-        <div className="fixed right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 opacity-0 lg:opacity-100 transition-opacity">
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full bg-cream-50 shadow-sm hover:shadow-md border border-sage-200"
-          >
-            <Share2 className="h-4 w-4" strokeWidth="1.5" />
-          </Button>
-        </div>
+      {/* Section Divider */}
+      <div className="container max-w-7xl">
+        <div className="border-t border-sage-200/40" />
+      </div>
 
-        <div className="grid gap-12 lg:grid-cols-[1fr_360px]">
+      {/* Main Content */}
+      <div className="container max-w-7xl py-12 lg:py-16">
+        <div className="grid gap-10 lg:grid-cols-[1fr_340px]">
           {/* Main Content - Left Side */}
-          <div className="space-y-16">
-            {/* Immersive Overview Section */}
+          <div className="space-y-12">
+            {/* Overview */}
             {service?.description && (
-              <section className="animate-fade-in">
-                <div className="relative">
-                  <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">About This Session</h2>
-                  <div className="prose prose-lg prose-olive max-w-none">
-                    <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
-                      {service.description}
-                    </p>
-                  </div>
-                </div>
+              <section>
+                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">About This Session</h2>
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                  {service.description}
+                </p>
               </section>
             )}
 
+            {/* Session Details — quick-reference at a glance */}
+            <section className="pb-12 border-b border-sage-200/40">
+              <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session Details</h2>
+              <div className="bg-white rounded-2xl border border-sage-200/60 divide-y divide-sage-200/60">
+                {service?.duration_minutes && (
+                  <div className="flex justify-between items-center px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <Clock className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                      <span className="text-sm font-light text-olive-500">Duration</span>
+                    </div>
+                    <span className="text-sm font-medium text-olive-900">{service.duration_display}</span>
+                  </div>
+                )}
+                {service?.max_participants === 1 && (
+                  <div className="flex justify-between items-center px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                      <span className="text-sm font-light text-olive-500">Format</span>
+                    </div>
+                    <span className="text-sm font-medium text-olive-900">One-on-one</span>
+                  </div>
+                )}
+                {service?.location_type && (
+                  <div className="flex justify-between items-center px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                      <span className="text-sm font-light text-olive-500">Location</span>
+                    </div>
+                    <span className="text-sm font-medium text-olive-900">
+                      {service.location_type === 'virtual'
+                        ? 'Virtual'
+                        : service.practitioner_location
+                          ? [
+                              service.practitioner_location.city_name,
+                              service.practitioner_location.state_code || service.practitioner_location.state_name,
+                              service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
+                            ].filter(Boolean).join(', ')
+                          : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
+                    </span>
+                  </div>
+                )}
+                {service?.experience_level && (
+                  <div className="flex justify-between items-center px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <Star className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                      <span className="text-sm font-light text-olive-500">Experience Level</span>
+                    </div>
+                    <span className="text-sm font-medium text-olive-900 capitalize">{service.experience_level.replace('_', ' ')}</span>
+                  </div>
+                )}
+                {service?.age_min && service?.age_max && (
+                  <div className="flex justify-between items-center px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                      <span className="text-sm font-light text-olive-500">Age Range</span>
+                    </div>
+                    <span className="text-sm font-medium text-olive-900">{service.age_min} - {service.age_max} years</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
             {/* What You'll Learn */}
             {service?.what_youll_learn && (
-              <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What You'll Learn</h2>
-                <div className="prose prose-lg prose-olive max-w-none">
-                  <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
-                    {service.what_youll_learn}
-                  </p>
-                </div>
+              <section>
+                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Learn</h2>
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                  {service.what_youll_learn}
+                </p>
               </section>
             )}
 
             {/* Key Benefits */}
             {service?.benefits && service.benefits.length > 0 && (
-              <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Key Benefits</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {service.benefits.map((benefit) => (
-                    <Card key={benefit.id} className="border border-sage-200 bg-cream-50 hover:bg-cream-100/50 transition-colors">
-                      <CardContent className="p-6">
-                        <h3 className="text-xl font-medium text-olive-900 mb-2">{benefit.title}</h3>
-                        <p className="text-olive-700 font-light leading-relaxed">{benefit.description}</p>
-                      </CardContent>
-                    </Card>
+              <section>
+                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {service.benefits.map((benefit, index) => (
+                    <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                      <div className="w-8 h-8 rounded-lg bg-sage-50 flex items-center justify-center mb-3">
+                        <span className="text-xs font-medium text-sage-700">{String(index + 1).padStart(2, '0')}</span>
+                      </div>
+                      <h3 className="text-[15px] font-medium text-olive-900 mb-1.5">{benefit.title}</h3>
+                      <p className="text-[13px] font-light text-olive-500 leading-relaxed">{benefit.description}</p>
+                    </div>
                   ))}
                 </div>
               </section>
@@ -378,122 +414,74 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
             {/* What's Included */}
             {service?.includes && service.includes.length > 0 && (
-              <section className="animate-fade-in" style={{animationDelay: '0.35s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">What's Included</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {service.includes.map((item, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-sage-600 mt-0.5 flex-shrink-0" strokeWidth="2" />
-                      <span className="text-olive-700 font-light leading-relaxed">{item}</span>
-                    </div>
-                  ))}
+              <section>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
+                <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {service.includes.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2.5">
+                        <div className="w-5 h-5 rounded-full bg-sage-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="h-3 w-3 text-sage-600" strokeWidth="2.5" />
+                        </div>
+                        <span className="text-sm font-light text-olive-600 leading-relaxed">{item}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </section>
             )}
 
             {/* Prerequisites */}
             {service?.prerequisites && (
-              <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Prerequisites</h2>
-                <div className="prose prose-lg prose-olive max-w-none">
-                  <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
-                    {service.prerequisites}
-                  </p>
-                </div>
+              <section>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Prerequisites</h2>
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                  {service.prerequisites}
+                </p>
               </section>
             )}
 
             {/* Requirements */}
             {service?.requirements && (
-              <section className="animate-fade-in" style={{animationDelay: '0.45s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Requirements</h2>
-                <div className="prose prose-lg prose-olive max-w-none">
-                  <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
-                    {service.requirements}
-                  </p>
-                </div>
+              <section>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Requirements</h2>
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
+                  {service.requirements}
+                </p>
               </section>
             )}
 
-            {/* Practitioner Spotlight */}
+            {/* Practitioner Spotlight — closing section */}
             {service?.primary_practitioner && (
-              <PractitionerSpotlight
-                practitioners={[service.primary_practitioner]}
-                role="guide"
-                animationDelay="0.6s"
-              />
+              <section className="pt-12 border-t border-sage-200/40">
+                <PractitionerSpotlight
+                  practitioners={[service.primary_practitioner]}
+                  role="guide"
+                  animationDelay="0s"
+                />
+              </section>
             )}
 
-            {/* Session Details Card */}
-            <section className="animate-fade-in" style={{animationDelay: '0.8s'}}>
-              <Card className="border border-sage-200 bg-cream-50 overflow-hidden">
-                <CardContent className="p-8">
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-6">Session Details</h2>
-                  <div className="grid gap-5">
-                    {service?.duration_minutes && (
-                      <div className="flex justify-between items-center py-4 border-b border-sage-200">
-                        <div className="flex items-center gap-3">
-                          <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                          <span className="text-olive-700">Duration</span>
-                        </div>
-                        <span className="font-medium text-olive-900">{service.duration_display}</span>
-                      </div>
-                    )}
-                    {service?.max_participants === 1 && (
-                      <div className="flex justify-between items-center py-4 border-b border-sage-200">
-                        <div className="flex items-center gap-3">
-                          <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                          <span className="text-olive-700">Format</span>
-                        </div>
-                        <span className="font-medium text-olive-900">One-on-one</span>
-                      </div>
-                    )}
-                    {service?.location_type && (
-                      <div className="flex justify-between items-center py-4 border-b border-sage-200">
-                        <div className="flex items-center gap-3">
-                          <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                          <span className="text-olive-700">Location</span>
-                        </div>
-                        <span className="font-medium text-olive-900">
-                          {service.location_type === 'virtual'
-                            ? 'Virtual'
-                            : service.practitioner_location
-                              ? [
-                                  service.practitioner_location.city_name,
-                                  service.practitioner_location.state_code || service.practitioner_location.state_name,
-                                  service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
-                                ].filter(Boolean).join(', ')
-                              : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
-                        </span>
-                      </div>
-                    )}
-                    {service?.experience_level && (
-                      <div className="flex justify-between items-center py-4">
-                        <div className="flex items-center gap-3">
-                          <Star className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                          <span className="text-olive-700">Experience Level</span>
-                        </div>
-                        <span className="font-medium text-olive-900 capitalize">{service.experience_level.replace('_', ' ')}</span>
-                      </div>
-                    )}
-                    {service?.age_min && service?.age_max && (
-                      <div className="flex justify-between items-center py-4 border-t border-sage-200">
-                        <div className="flex items-center gap-3">
-                          <User className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                          <span className="text-olive-700">Age Range</span>
-                        </div>
-                        <span className="font-medium text-olive-900">{service.age_min} - {service.age_max} years</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Closing CTA */}
+            <section className="pt-12 border-t border-sage-200/40">
+              <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-8 py-10 text-center">
+                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
+                  Start your <em className="italic text-terracotta-600">transformation</em> today
+                </h2>
+                <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
+                  Book your session and take the first step toward the change you've been seeking.
+                </p>
+                <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8" onClick={scrollToBooking}>
+                  Book Your Session
+                </Button>
+              </div>
             </section>
           </div>
 
           {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-8" ref={bookingPanelRef}>
-            <div className="lg:sticky lg:top-24">
+          <div ref={bookingPanelRef}>
+            <div className="lg:sticky lg:top-24 space-y-5">
               {service && (
                 <SessionBookingPanel session={{
                   id: service.id,
@@ -504,20 +492,20 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                   primary_practitioner: service.primary_practitioner
                 }} />
               )}
-              
+
               {/* Trust Indicators */}
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center gap-3 text-olive-600">
-                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
-                  <span className="text-sm">Free cancellation up to 24 hours before</span>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 text-olive-500">
+                  <Check className="h-3.5 w-3.5 text-sage-500" strokeWidth="2" />
+                  <span className="text-xs font-light">Free cancellation up to 24 hours before</span>
                 </div>
-                <div className="flex items-center gap-3 text-olive-600">
-                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
-                  <span className="text-sm">100% secure checkout</span>
+                <div className="flex items-center gap-2 text-olive-500">
+                  <Check className="h-3.5 w-3.5 text-sage-500" strokeWidth="2" />
+                  <span className="text-xs font-light">100% secure checkout</span>
                 </div>
-                <div className="flex items-center gap-3 text-olive-600">
-                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
-                  <span className="text-sm">Satisfaction guaranteed</span>
+                <div className="flex items-center gap-2 text-olive-500">
+                  <Check className="h-3.5 w-3.5 text-sage-500" strokeWidth="2" />
+                  <span className="text-xs font-light">Satisfaction guaranteed</span>
                 </div>
               </div>
             </div>
