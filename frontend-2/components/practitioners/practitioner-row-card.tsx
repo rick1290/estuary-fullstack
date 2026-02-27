@@ -232,37 +232,37 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                   </span>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Specialty tags + View Profile link */}
-          <div className="flex items-center justify-between gap-3 mt-3">
-            {practitioner.specializations && practitioner.specializations.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-                {practitioner.specializations.slice(0, 4).map((specialization) => (
-                  <span
-                    key={specialization.id}
-                    className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-600 rounded-full"
-                  >
-                    {specialization.content}
-                  </span>
-                ))}
-                {practitioner.specializations.length > 4 && (
-                  <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-400 rounded-full">
-                    +{practitioner.specializations.length - 4}
-                  </span>
+              {/* Specialty tags + View Profile */}
+              <div className="flex items-center justify-between gap-3 mt-2.5">
+                {practitioner.specializations && practitioner.specializations.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+                    {practitioner.specializations.slice(0, 4).map((specialization) => (
+                      <span
+                        key={specialization.id}
+                        className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-600 rounded-full"
+                      >
+                        {specialization.content}
+                      </span>
+                    ))}
+                    {practitioner.specializations.length > 4 && (
+                      <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-400 rounded-full">
+                        +{practitioner.specializations.length - 4}
+                      </span>
+                    )}
+                  </div>
+                ) : (practitioner.bio_short || practitioner.bio) ? (
+                  <p className="text-xs italic font-light text-olive-400 line-clamp-1 flex-1 min-w-0">
+                    {practitioner.bio_short || practitioner.bio}
+                  </p>
+                ) : (
+                  <div className="flex-1" />
                 )}
+                <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-4 py-1.5 text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap">
+                  View Profile
+                </span>
               </div>
-            ) : (practitioner.bio_short || practitioner.bio) ? (
-              <p className="text-xs italic font-light text-olive-400 line-clamp-1 flex-1 min-w-0">
-                {practitioner.bio_short || practitioner.bio}
-              </p>
-            ) : (
-              <div className="flex-1" />
-            )}
-            <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-4 py-1.5 text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap">
-              View Profile
-            </span>
+            </div>
           </div>
         </CardContent>
       </Card>
