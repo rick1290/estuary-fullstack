@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Clock, MapPin, Calendar, Star, Sparkles, Users, Globe } from "lucide-react"
 
 interface ServiceCardProps {
@@ -105,167 +104,163 @@ export default function ServiceCard({
     }
   }
 
+  const initials = practitioner.name.split(' ').map(n => n[0]).filter(Boolean).join('')
+
   return (
-    <Link href={href} className="group block h-full animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
-      <Card className="h-full w-full flex flex-col border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
-        {/* Card Header with Gradient */}
-        <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-6 pb-12 relative flex-shrink-0">
-          {/* Rating Badge or Savings Badge */}
-          {savingsPercentage && savingsPercentage > 0 ? (
-            <div className="absolute top-4 right-4 bg-terracotta-500 text-white px-2.5 py-1 rounded-full shadow-sm">
-              <span className="text-sm font-semibold">Save {savingsPercentage}%</span>
-            </div>
-          ) : rating ? (
-            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
-              <div className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
-                <span className="text-sm font-medium text-olive-800">{rating}</span>
-              </div>
-            </div>
-          ) : null}
-
-          <Badge variant={getBadgeVariant()} className="mb-3">
-            <Sparkles className="h-3 w-3 mr-1" strokeWidth="1.5" />
-            {getServiceTypeLabel()}
-          </Badge>
-
-          <h3 className="font-semibold text-xl text-olive-900 mb-2 line-clamp-2 pr-12">{title}</h3>
-
-          <p className="text-olive-700 text-sm line-clamp-2">{description}</p>
-        </div>
-
-        <CardContent className="relative flex flex-col flex-1 p-6 bg-cream-50 -mt-8 rounded-t-[2.5rem] z-10">
-          {/* Practitioner Info */}
-          <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center flex-shrink-0">
+    <Link href={href} className="group block animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
+      <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer">
+        <CardContent className="p-5">
+          {/* Top: Avatar + Header */}
+          <div className="flex gap-4">
+            {/* Left: Practitioner Avatar */}
+            <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100">
               {practitioner.image ? (
                 <img
                   src={practitioner.image}
                   alt={practitioner.name}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-sm font-medium text-olive-800">
-                  {practitioner.name.split(' ').map(n => n[0]).join('')}
-                </span>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xl font-serif font-light text-olive-700/30">
+                    {initials}
+                  </span>
+                </div>
               )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-olive-900 truncate">{practitioner.name}</p>
-              <p className="text-sm text-olive-600 truncate">{location}</p>
+
+            {/* Right: Title area */}
+            <div className="flex-1 min-w-0">
+              {/* Service type badge + rating */}
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant={getBadgeVariant()} className="text-[10px]">
+                  <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
+                  {getServiceTypeLabel()}
+                </Badge>
+                {savingsPercentage && savingsPercentage > 0 ? (
+                  <span className="text-[10px] font-medium text-terracotta-600 bg-terracotta-50 px-2 py-0.5 rounded-full">
+                    Save {savingsPercentage}%
+                  </span>
+                ) : rating ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                    <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
+                    <span className="font-medium text-olive-800">{rating}</span>
+                  </span>
+                ) : null}
+              </div>
+
+              {/* Title */}
+              <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors line-clamp-1">
+                {title}
+              </h3>
+
+              {/* Practitioner */}
+              <p className="text-[13px] font-light text-olive-500 mt-0.5 truncate">
+                by {practitioner.name} · {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? "Online" : location}
+              </p>
             </div>
           </div>
 
-          <div className="space-y-2 mb-4 flex-shrink-0">
-            {/* Date for workshops - fallback to old date field */}
-            {type === "workshops" && date && !nextSessionDate && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm">{date}</span>
-              </div>
-            )}
+          {/* Description */}
+          {description && (
+            <p className="text-xs text-olive-600 mt-3 line-clamp-2 leading-relaxed">{description}</p>
+          )}
 
-            {/* Next session date for workshops */}
-            {type === "workshops" && nextSessionDate && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm">
-                  Next: {new Date(nextSessionDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
+          {/* Meta items row */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
+            {/* Date for workshops */}
+            {type === "workshops" && (nextSessionDate || date) && (
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Calendar className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                {nextSessionDate
+                  ? `Next: ${new Date(nextSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  : date}
+              </span>
             )}
 
             {/* Start date for courses */}
             {type === "courses" && firstSessionDate && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm">
-                  Starts {new Date(firstSessionDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Calendar className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                Starts {new Date(firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
             )}
 
             {/* Duration */}
             {duration && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Clock className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm">
-                  {typeof duration === "number" ? `${duration} minutes` : duration}
-                </span>
-              </div>
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Clock className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                {typeof duration === "number" ? `${duration} min` : duration}
+              </span>
             )}
 
-            {/* Session count for packages/courses */}
+            {/* Session count */}
             {sessionCount && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm">{sessionCount} sessions</span>
-              </div>
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Calendar className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                {sessionCount} sessions
+              </span>
             )}
 
             {/* Sessions included for bundles */}
             {sessionsIncluded && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Calendar className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm font-semibold">{sessionsIncluded} sessions included</span>
-              </div>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-olive-600">
+                <Calendar className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                {sessionsIncluded} sessions included
+              </span>
             )}
 
-            {/* Location with format indicator */}
-            <div className="flex items-center gap-2 text-olive-700">
+            {/* Location */}
+            <span className="inline-flex items-center gap-1 text-xs text-olive-500">
               {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? (
                 <>
-                  <Globe className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                  <span className="text-sm font-medium text-sage-700">Online</span>
+                  <Globe className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                  Online
                 </>
               ) : (
                 <>
-                  <MapPin className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                  <span className="text-sm truncate">{location}</span>
+                  <MapPin className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                  {location}
                 </>
               )}
-            </div>
+            </span>
 
             {/* Capacity/Reviews */}
             {(capacity || reviewCount) && (
-              <div className="flex items-center gap-2 text-olive-700">
-                <Users className="h-4 w-4 text-sage-600 flex-shrink-0" strokeWidth="1.5" />
-                <span className="text-sm">
-                  {capacity ? `${capacity} spots` : `${reviewCount} reviews`}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Categories */}
-          <div className="flex flex-wrap gap-1.5 mb-4 flex-shrink-0">
-            {categories.slice(0, 3).map((category) => (
-              <span key={category} className="text-xs px-2.5 py-1 bg-sage-100 text-olive-700 rounded-full font-medium">
-                {category}
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Users className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                {capacity ? `${capacity} spots` : `${reviewCount} reviews`}
               </span>
-            ))}
-            {categories.length > 3 && (
-              <span className="text-xs text-olive-600">+{categories.length - 3}</span>
             )}
           </div>
 
-          <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-100 flex-shrink-0">
-            <div>
-              <p className="text-xs text-olive-600 mb-0.5">Investment</p>
-              <p className="text-2xl font-bold text-olive-900">
-                {typeof price === "number" ? `$${price}` : price}
-              </p>
+          {/* Category tags */}
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {categories.slice(0, 3).map((category) => (
+                <span key={category} className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-600 rounded-full">
+                  {category}
+                </span>
+              ))}
+              {categories.length > 3 && (
+                <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-400 rounded-full">
+                  +{categories.length - 3}
+                </span>
+              )}
             </div>
+          )}
 
-            <Button size="sm" className="shadow-md hover:shadow-lg group-hover:translate-x-0.5 transition-all flex-shrink-0">
+          {/* Footer: Price + CTA on same line */}
+          <div className="flex items-center justify-between gap-4 mt-3 pt-3 border-t border-sage-100">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-semibold text-olive-900">
+                {typeof price === "number" ? `$${price}` : price}
+              </span>
+              <span className="text-[11px] text-olive-400 font-light">investment</span>
+            </div>
+            <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-5 py-2 text-[13px] font-medium flex-shrink-0 transition-colors">
               {getCtaText()}
-            </Button>
+            </span>
           </div>
         </CardContent>
       </Card>

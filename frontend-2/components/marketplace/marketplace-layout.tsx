@@ -13,8 +13,9 @@ import type { PatternType } from "@/components/ui/background-pattern"
 
 interface MarketplaceLayoutProps {
   children: ReactNode
-  title: string
+  title: ReactNode
   description?: string
+  eyebrow?: string
   searchPlaceholder?: string
   initialSearchQuery?: string
   sidebar?: ReactNode
@@ -25,6 +26,7 @@ export default function MarketplaceLayout({
   children,
   title,
   description,
+  eyebrow = "Wellness Services",
   searchPlaceholder = "Search for services, practitioners, or keywords...",
   initialSearchQuery = "",
   sidebar,
@@ -71,7 +73,7 @@ export default function MarketplaceLayout({
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <span className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4">
-              Wellness Services
+              {eyebrow}
             </span>
             <h1 className="font-serif text-4xl md:text-5xl font-light tracking-tight text-olive-900 mb-4">
               {title}

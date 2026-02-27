@@ -74,17 +74,17 @@ export default function ModalityServicesSection({ slug, modalityName }: Modality
                   <motion.div key={service.id} variants={itemFade}>
                     <ServiceCard
                       id={service.id}
-                      title={service.title || "Untitled Service"}
+                      title={service.name || service.title || "Untitled Service"}
                       type={cardType as any}
-                      description={service.description || ""}
+                      description={service.short_description || service.description || ""}
                       price={service.price || 0}
-                      duration={service.duration}
+                      duration={service.duration_minutes || service.duration}
                       location={service.location_type || "virtual"}
-                      categories={(service.categories || []).map((c: any) => c.name || c)}
+                      categories={(service.categories || service.modalities || []).map((c: any) => c.name || c)}
                       practitioner={{
-                        id: service.practitioner?.id || 0,
-                        name: service.practitioner?.display_name || service.practitioner?.full_name || "Practitioner",
-                        image: service.practitioner?.profile_image_url,
+                        id: service.primary_practitioner?.id || service.practitioner?.id || 0,
+                        name: service.primary_practitioner?.display_name || service.practitioner?.display_name || service.practitioner?.full_name || "Practitioner",
+                        image: service.primary_practitioner?.profile_image_url || service.practitioner?.profile_image_url,
                       }}
                       href={`/${prefix}/${service.slug}`}
                       index={index}

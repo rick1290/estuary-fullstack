@@ -74,7 +74,7 @@ export default function PractitionerListings({
         <div className="flex flex-col gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl shadow-sm border p-6 flex gap-6">
-              <Skeleton className="w-24 h-24 rounded-full" />
+              <Skeleton className="w-24 h-24 rounded-full flex-shrink-0" />
               <div className="flex-1">
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2 mb-4" />
