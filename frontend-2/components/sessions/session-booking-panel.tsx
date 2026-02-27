@@ -178,40 +178,15 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             )}
           </div>
 
-          {/* Gradient overlay for readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-          {/* Overlaid content */}
-          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
-            {/* Practitioner */}
-            {practitioner && (
-              <div className="flex items-center gap-2.5 mb-3">
-                {practitionerImage ? (
-                  <img
-                    src={practitionerImage}
-                    alt={practitionerName}
-                    className="w-9 h-9 rounded-full object-cover border-2 border-white/70"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/70">
-                    <span className="text-[10px] font-serif text-white">{practitionerInitials}</span>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-white leading-tight">{practitionerName}</p>
-                  {practitioner.professional_title && (
-                    <p className="text-[11px] font-light text-white/75">{practitioner.professional_title}</p>
-                  )}
-                </div>
+          {/* Price badge overlaid on image */}
+          <div className="absolute bottom-4 left-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-sm">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-semibold text-olive-900">${session.price}</span>
+                <span className="text-[11px] font-light text-olive-500">per session</span>
               </div>
-            )}
-
-            {/* Price */}
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-semibold text-white">${session.price}</span>
-              <span className="text-xs font-light text-white/70">per session</span>
+              <p className="text-[10px] font-light text-olive-400 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
             </div>
-            <p className="text-[11px] font-light text-white/60 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
           </div>
         </div>
 

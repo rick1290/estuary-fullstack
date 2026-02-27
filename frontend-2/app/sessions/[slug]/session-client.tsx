@@ -205,6 +205,31 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 {service?.name || 'Session'}
               </h1>
 
+              {/* Practitioner line */}
+              {service?.primary_practitioner && (
+                <Link
+                  href={service.primary_practitioner.slug ? `/practitioners/${service.primary_practitioner.slug}` : `/practitioners/${service.primary_practitioner.id}`}
+                  className="inline-flex items-center gap-2.5 mb-4 group"
+                >
+                  {service.primary_practitioner.profile_image_url ? (
+                    <img
+                      src={service.primary_practitioner.profile_image_url}
+                      alt={service.primary_practitioner.display_name || service.primary_practitioner.name}
+                      className="w-8 h-8 rounded-full object-cover border border-sage-200/60"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-100 flex items-center justify-center">
+                      <span className="text-[10px] font-serif font-light text-olive-700/50">
+                        {(service.primary_practitioner.display_name || service.primary_practitioner.name || 'P').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm font-light text-olive-600 group-hover:text-sage-700 transition-colors">
+                    with {service.primary_practitioner.display_name || service.primary_practitioner.name}
+                  </span>
+                </Link>
+              )}
+
               {/* Description */}
               {(service?.short_description || service?.description) && (
                 <p className="text-[15px] font-light text-olive-600 leading-relaxed mb-5">
