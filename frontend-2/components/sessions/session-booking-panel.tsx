@@ -13,9 +13,11 @@ import { format, addDays, startOfDay } from "date-fns"
 
 interface SessionBookingPanelProps {
   session: any
+  /** When true, hides the image header — used inside the mobile drawer */
+  compact?: boolean
 }
 
-export default function SessionBookingPanel({ session }: SessionBookingPanelProps) {
+export default function SessionBookingPanel({ session, compact = false }: SessionBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -162,33 +164,34 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
     : ''
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-sage-200/60 overflow-hidden">
-        {/* Image header with overlaid price + practitioner */}
-        <div className="relative">
-          {/* Background image or gradient */}
-          <div className="aspect-[4/3] w-full">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={session.name || 'Session'}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50" />
-            )}
-          </div>
+    <div className={`w-full bg-white overflow-hidden ${compact ? '' : 'rounded-2xl border border-sage-200/60'}`}>
+        {/* Image header with overlaid price */}
+        {!compact && (
+          <div className="relative">
+            <div className="aspect-[4/3] w-full">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={session.name || 'Session'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50" />
+              )}
+            </div>
 
-          {/* Price badge overlaid on image */}
-          <div className="absolute bottom-4 left-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-sm">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-semibold text-olive-900">${session.price}</span>
-                <span className="text-[11px] font-light text-olive-500">per session</span>
+            {/* Price badge overlaid on image */}
+            <div className="absolute bottom-4 left-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-sm">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl font-semibold text-olive-900">${session.price}</span>
+                  <span className="text-[11px] font-light text-olive-500">per session</span>
+                </div>
+                <p className="text-[10px] font-light text-olive-400 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
               </div>
-              <p className="text-[10px] font-light text-olive-400 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="p-5 space-y-5">
           {/* Key Info Points */}
