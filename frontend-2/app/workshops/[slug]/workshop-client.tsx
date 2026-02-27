@@ -147,8 +147,8 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative min-h-[85vh] bg-cream-50">
-          <div className="relative container max-w-7xl py-12">
+        <section className="relative bg-cream-50">
+          <div className="relative container max-w-7xl py-10 lg:py-16">
             <Skeleton className="h-6 w-96 mb-12" />
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="space-y-8">
@@ -206,11 +206,11 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Immersive Hero Section */}
-      <section className="relative min-h-[85vh] bg-cream-50 overflow-hidden">
+      <section className="relative bg-cream-50 overflow-hidden">
         {/* Content */}
-        <div className="relative container max-w-7xl py-12">
+        <div className="relative container max-w-7xl py-10 lg:py-16">
           {/* Breadcrumb */}
-          <Breadcrumb className="mb-12 animate-fade-in">
+          <Breadcrumb className="mb-8 animate-fade-in">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -263,10 +263,10 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               </div>
 
               <div>
-                <h1 className="font-serif text-4xl lg:text-5xl xl:text-6xl font-light text-olive-900 mb-6 leading-[1.1]">
+                <h1 className="font-serif text-3xl lg:text-4xl xl:text-5xl font-light text-olive-900 mb-4 leading-[1.15]">
                   {workshop.title}
                 </h1>
-                <p className="text-xl lg:text-2xl text-olive-700 leading-relaxed font-light">
+                <p className="text-lg text-olive-600 leading-relaxed font-light">
                   {workshop.description}
                 </p>
               </div>
@@ -274,18 +274,18 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* Workshop Stats */}
               <div className="flex flex-wrap items-center gap-6 lg:gap-10">
                 <div className="text-center lg:text-left">
-                  <p className="text-4xl font-bold text-olive-900">{transformedWorkshop.totalHours}</p>
-                  <p className="text-olive-600">Hours of Learning</p>
+                  <p className="text-3xl font-semibold text-olive-900">{transformedWorkshop.totalHours}</p>
+                  <p className="text-sm font-light text-olive-600">Hours of Learning</p>
                 </div>
-                <div className="w-px h-12 bg-sage-300 hidden lg:block" />
+                <div className="w-px h-12 bg-sage-200/60 hidden lg:block" />
                 <div className="text-center lg:text-left">
-                  <p className="text-4xl font-bold text-terracotta-600">{workshop.spotsRemaining}</p>
-                  <p className="text-olive-600">Spots Remaining</p>
+                  <p className="text-3xl font-semibold text-terracotta-600">{workshop.spotsRemaining}</p>
+                  <p className="text-sm font-light text-olive-600">Spots Remaining</p>
                 </div>
-                <div className="w-px h-12 bg-sage-300 hidden lg:block" />
+                <div className="w-px h-12 bg-sage-200/60 hidden lg:block" />
                 <div className="text-center lg:text-left">
-                  <p className="text-4xl font-bold text-olive-900">{workshop.capacity}</p>
-                  <p className="text-olive-600">Max Participants</p>
+                  <p className="text-3xl font-semibold text-olive-900">{workshop.capacity}</p>
+                  <p className="text-sm font-light text-olive-600">Max Participants</p>
                 </div>
               </div>
               
@@ -346,7 +346,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-blush-100 shadow-lg border border-sage-200/60">
+              <div className="relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-blush-100 shadow-md border border-sage-200">
                 {workshop.image ? (
                   <img
                     src={workshop.image}
@@ -365,16 +365,16 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                 )}
                 
                 {/* Floating elements */}
-                <div className="absolute top-6 right-6 bg-terracotta-500 text-white px-4 py-2 rounded-full font-medium shadow-lg">
+                <div className="absolute top-6 right-6 bg-terracotta-500 text-white px-4 py-2 rounded-full font-medium shadow-md">
                   Only {workshop.spotsRemaining} spots left!
                 </div>
                 
                 {/* Floating facilitator preview */}
-                <div className="absolute bottom-6 left-6 right-6 bg-cream-50/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
-                  <p className="text-sm text-olive-600 mb-3">Your Lead Facilitator</p>
+                <div className="absolute bottom-6 left-6 right-6 bg-cream-50 rounded-2xl p-6 shadow-md border border-sage-200">
+                  <p className="text-xs font-light text-olive-500 mb-3">Your Lead Facilitator</p>
                   <div className="flex items-center gap-4">
                     {workshop.practitioners[0].image ? (
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md">
                         <img
                           src={workshop.practitioners[0].image}
                           alt={workshop.practitioners[0].name}
@@ -383,14 +383,14 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                       </div>
                     ) : (
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-white">
+                        <span className="text-2xl font-semibold text-white">
                           {workshop.practitioners[0].name.split(' ').map((n: string) => n[0]).join('')}
                         </span>
                       </div>
                     )}
                     <div className="flex-1">
-                      <p className="font-semibold text-olive-900">{workshop.practitioners[0].name}</p>
-                      <p className="text-sm text-olive-600">{workshop.practitioners[0].title}</p>
+                      <p className="font-medium text-olive-900">{workshop.practitioners[0].name}</p>
+                      <p className="text-sm font-light text-olive-500">{workshop.practitioners[0].title}</p>
                     </div>
                   </div>
                 </div>
@@ -401,13 +401,13 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
       </section>
 
       {/* Main Content */}
-      <div className="container max-w-7xl py-20">
+      <div className="container max-w-7xl py-16">
         {/* Quick Actions - Floating */}
         <div className="fixed right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 opacity-0 lg:opacity-100 transition-opacity">
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-cream-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
+            className="rounded-full bg-cream-50 shadow-sm hover:shadow-md border border-sage-200"
           >
             <Share2 className="h-4 w-4" strokeWidth="1.5" />
           </Button>
@@ -415,12 +415,12 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
 
         <div className="grid gap-16 lg:grid-cols-3">
           {/* Main Content - Left Side */}
-          <div className="lg:col-span-2 space-y-20">
+          <div className="lg:col-span-2 space-y-16">
             {/* Workshop Overview - Immersive */}
             <section className="animate-fade-in">
-              <h2 className="text-3xl font-bold text-olive-900 mb-8">Your Transformation Awaits</h2>
+              <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Your Transformation Awaits</h2>
               <div className="prose prose-lg prose-olive max-w-none">
-                <p className="text-lg text-olive-700 leading-relaxed whitespace-pre-line">
+                <p className="text-lg font-light text-olive-700 leading-relaxed whitespace-pre-line">
                   {transformedWorkshop.longDescription}
                 </p>
               </div>
@@ -429,19 +429,19 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             {/* Benefits */}
             {workshop.benefits && workshop.benefits.length > 0 && (
               <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">What You'll Gain</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What You'll Gain</h2>
                 <div className="grid gap-4">
                   {workshop.benefits.map((benefit: any, index: number) => (
-                    <div key={benefit.id || index} className="bg-gradient-to-r from-sage-50 to-terracotta-50 rounded-2xl p-6 card-hover">
+                    <div key={benefit.id || index} className="bg-cream-50 border border-sage-200 rounded-xl p-6 hover:shadow-sm transition-all">
                       <div className="flex gap-4">
                         <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">
                             <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
                           </div>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-olive-900 mb-1">{benefit.title}</h3>
-                          <p className="text-olive-700 leading-relaxed text-sm">{benefit.description}</p>
+                          <h3 className="font-medium text-olive-900 mb-1">{benefit.title}</h3>
+                          <p className="text-olive-700 font-light leading-relaxed text-sm">{benefit.description}</p>
                         </div>
                       </div>
                     </div>
@@ -453,14 +453,14 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             {/* Workshop Agenda */}
             {workshop.agendaItems && workshop.agendaItems.length > 0 && (
               <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">Workshop Agenda</h2>
-                <Card className="border-2 border-sage-200 overflow-hidden">
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Workshop Agenda</h2>
+                <Card className="border border-sage-200 overflow-hidden">
                   <CardContent className="p-6 bg-cream-50">
                     <div className="space-y-4">
                       {workshop.agendaItems.map((item: any, index: number) => (
                         <div key={item.id || index} className="flex gap-4 items-start group">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-sage-700">{index + 1}</span>
+                            <span className="text-sm font-medium text-sage-700">{index + 1}</span>
                           </div>
                           <div className="flex-1 pb-4 border-b border-sage-100 last:border-0 last:pb-0">
                             <h4 className="text-olive-800 font-medium mb-1">{item.title}</h4>
@@ -483,17 +483,17 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
 
             {/* What's Included */}
             {workshop.includes && workshop.includes.length > 0 && (
-              <section className="bg-gradient-to-br from-blush-50 to-sage-50 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">What's Included</h2>
+              <section className="bg-cream-50 border border-sage-200 rounded-xl p-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What's Included</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {workshop.includes.map((item: string, index: number) => (
                     <div key={index} className="flex gap-4">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-xl bg-white shadow-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
                           <div className="w-3 h-3 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400" />
                         </div>
                       </div>
-                      <p className="text-olive-700 leading-relaxed">{item}</p>
+                      <p className="text-olive-700 font-light leading-relaxed">{item}</p>
                     </div>
                   ))}
                 </div>
@@ -511,16 +511,16 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
 
             {/* Success Stories */}
             <section className="animate-fade-in" style={{animationDelay: '1s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">Transformative Experiences</h2>
+              <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Transformative Experiences</h2>
               <div className="grid gap-6">
-                <Card className="border-2 border-sage-100 bg-cream-100">
+                <Card className="border border-sage-200 bg-cream-50">
                   <CardContent className="p-8">
                     <div className="flex gap-1 mb-4">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
                       ))}
                     </div>
-                    <blockquote className="text-xl text-olive-700 italic mb-6">
+                    <blockquote className="text-lg font-light text-olive-700 italic mb-6 leading-relaxed">
                       "This workshop completely shifted my perspective. The combination of expert guidance and supportive community created the perfect environment for growth."
                     </blockquote>
                     <div className="flex items-center gap-4">
@@ -528,7 +528,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                         <span className="text-white font-bold">MR</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-olive-900">Maria Rodriguez</p>
+                        <p className="font-medium text-olive-900">Maria Rodriguez</p>
                         <p className="text-sm text-olive-600">Workshop Participant • Verified Review</p>
                       </div>
                     </div>
@@ -561,7 +561,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               
               {/* Urgency Card */}
               {workshop.spotsRemaining > 0 && (
-                <Card className="mt-6 border-2 border-terracotta-200 bg-terracotta-50">
+                <Card className="mt-6 border border-terracotta-200 bg-terracotta-50">
                   <CardContent className="p-6 text-center">
                     <h3 className="font-medium text-olive-900 mb-2">Limited Availability</h3>
                     <p className="text-sm text-olive-700">

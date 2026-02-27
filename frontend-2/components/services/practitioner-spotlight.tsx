@@ -58,7 +58,7 @@ export default function PractitionerSpotlight({
       className={cn("animate-fade-in", className)}
       style={{ animationDelay }}
     >
-      <h2 className="text-3xl font-bold text-olive-900 mb-10">{headingText}</h2>
+      <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">{headingText}</h2>
       <div className="grid gap-6">
         {practitioners.map((practitioner) => (
           <PractitionerCard key={practitioner.id} practitioner={practitioner} />
@@ -90,13 +90,13 @@ function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
   }, [bio])
 
   return (
-    <Card className="border-2 border-sage-200 overflow-hidden group hover:border-sage-300 hover:shadow-lg transition-all">
+    <Card className="border border-sage-200 overflow-hidden group hover:border-sage-300 hover:shadow-md transition-all">
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
           {/* Image Section */}
-          <div className="md:w-64 h-64 bg-gradient-to-br from-terracotta-50 via-sage-50 to-terracotta-50 flex items-center justify-center p-6">
+          <div className="md:w-56 h-56 bg-gradient-to-br from-terracotta-50 via-sage-50 to-terracotta-50 flex items-center justify-center p-6">
             {image ? (
-              <div className="w-44 h-44 rounded-3xl bg-white shadow-2xl overflow-hidden ring-4 ring-white/50">
+              <div className="w-36 h-36 rounded-3xl bg-white shadow-md overflow-hidden ring-2 ring-white/50">
                 <img
                   src={image}
                   alt={name}
@@ -104,7 +104,7 @@ function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
                 />
               </div>
             ) : (
-              <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-sage-300 to-terracotta-300 shadow-2xl flex items-center justify-center ring-4 ring-white/50">
+              <div className="w-36 h-36 rounded-3xl bg-gradient-to-br from-sage-300 to-terracotta-300 shadow-md flex items-center justify-center ring-2 ring-white/50">
                 <span className="text-5xl font-bold text-white">
                   {initials}
                 </span>
@@ -114,17 +114,17 @@ function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
 
           {/* Content Section */}
           <div className="flex-1 p-8 flex flex-col">
-            <h3 className="text-2xl font-semibold text-olive-900 mb-2 group-hover:text-sage-700 transition-colors">
+            <h3 className="text-2xl font-medium text-olive-900 mb-2 group-hover:text-sage-700 transition-colors">
               {name}
             </h3>
 
             {title && (
-              <p className="text-lg text-sage-700 mb-4">{title}</p>
+              <p className="text-lg font-light text-sage-700 mb-4">{title}</p>
             )}
 
             {bio && (
               <div className="mb-6 flex-1">
-                <p ref={bioRef} className="text-olive-600 leading-relaxed line-clamp-3">
+                <p ref={bioRef} className="text-olive-600 font-light leading-relaxed line-clamp-3">
                   {bio}
                 </p>
                 {isTruncated && (

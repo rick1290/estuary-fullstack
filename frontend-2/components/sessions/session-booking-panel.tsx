@@ -161,15 +161,15 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   const displayedTimeSlots = showAllTimes ? timeSlots : timeSlots.slice(0, 6)
 
   return (
-    <Card className="w-full border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
+    <Card className="w-full border border-sage-200 bg-cream-50 shadow-md overflow-hidden">
         {/* Header Section */}
-        <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-8 text-center">
-          <p className="text-sm text-olive-700 mb-2">Book Your Session</p>
+        <div className="bg-cream-100 p-8 text-center">
+          <p className="text-xs font-light tracking-wide uppercase text-olive-500 mb-2">Session Investment</p>
           <div className="flex items-baseline justify-center gap-2">
-            <span className="text-4xl font-bold text-olive-900">${session.price}</span>
-            <span className="text-olive-700">per session</span>
+            <span className="text-3xl font-semibold text-olive-900">${session.price}</span>
+            <span className="text-sm font-light text-olive-600">per session</span>
           </div>
-          <p className="text-sm text-olive-600 mt-2">{session.duration_display || `${session.duration} minutes`} • 1-on-1</p>
+          <p className="text-xs font-light text-olive-500 mt-2">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
         </div>
 
         <CardContent className="p-6 space-y-6">
@@ -210,7 +210,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                     <div
                       key={date.date}
                       onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border-2 transition-all ${
+                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border transition-all ${
                         selectedDate === `${date.day}, ${date.date}`
                           ? "border-sage-600 bg-sage-600 text-white shadow-md"
                           : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
@@ -309,7 +309,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
 
           <Button 
-            className="w-full py-6 text-lg font-medium shadow-lg hover:shadow-xl transition-all" 
+            className="w-full py-6 text-lg font-medium shadow-sm hover:shadow-md transition-all" 
             onClick={handleBookNow} 
             disabled={!selectedTime || !selectedDate}
             size="lg"

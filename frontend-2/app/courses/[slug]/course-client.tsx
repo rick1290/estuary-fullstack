@@ -330,8 +330,8 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative min-h-[80vh] bg-cream-50">
-          <div className="relative container max-w-7xl py-12">
+        <section className="relative bg-cream-50">
+          <div className="relative container max-w-7xl py-10 lg:py-16">
             <Skeleton className="h-6 w-96 mb-12" />
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="space-y-8">
@@ -382,11 +382,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Immersive Hero Section */}
-      <section className="relative min-h-[80vh] bg-cream-50 overflow-hidden">
+      <section className="relative bg-cream-50 overflow-hidden">
         {/* Content */}
-        <div className="relative container max-w-7xl py-12">
+        <div className="relative container max-w-7xl py-10 lg:py-16">
           {/* Breadcrumb */}
-          <Breadcrumb className="mb-12 animate-fade-in">
+          <Breadcrumb className="mb-8 animate-fade-in">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -439,10 +439,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </div>
 
               <div>
-                <h1 className="font-serif text-4xl lg:text-5xl xl:text-6xl font-light text-olive-900 mb-6 leading-[1.1]">
+                <h1 className="font-serif text-3xl lg:text-4xl xl:text-5xl font-light text-olive-900 mb-4 leading-[1.15]">
                   {course.title}
                 </h1>
-                <p className="text-xl lg:text-2xl text-olive-700 leading-relaxed font-light">
+                <p className="text-lg text-olive-600 leading-relaxed font-light">
                   {course.description}
                 </p>
               </div>
@@ -452,26 +452,26 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                 {course.firstSessionDate && (
                   <>
                     <div>
-                      <p className="text-3xl font-bold text-olive-900">
+                      <p className="text-3xl font-semibold text-olive-900">
                         {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric'
                         })}
                       </p>
-                      <p className="text-olive-600">Starts</p>
+                      <p className="text-sm font-light text-olive-600">Starts</p>
                     </div>
-                    <div className="w-px h-12 bg-sage-300" />
+                    <div className="w-px h-12 bg-sage-200/60" />
                   </>
                 )}
                 <div>
-                  <p className="text-3xl font-bold text-olive-900">{course.sessionCount}</p>
-                  <p className="text-olive-600">Live Sessions</p>
+                  <p className="text-3xl font-semibold text-olive-900">{course.sessionCount}</p>
+                  <p className="text-sm font-light text-olive-600">Live Sessions</p>
                 </div>
-                <div className="w-px h-12 bg-sage-300" />
+                <div className="w-px h-12 bg-sage-200/60" />
                 <div className="flex items-center gap-2">
-                  <Star className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
-                  <p className="text-3xl font-bold text-olive-900">{course.rating}</p>
-                  <p className="text-olive-600">({course.reviewCount} reviews)</p>
+                  <Star className="h-5 w-5 text-terracotta-500 fill-terracotta-500" />
+                  <p className="text-3xl font-semibold text-olive-900">{course.rating}</p>
+                  <p className="text-sm font-light text-olive-600">({course.reviewCount} reviews)</p>
                 </div>
               </div>
               
@@ -507,7 +507,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100 shadow-lg border border-sage-200/60">
+              <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100 shadow-md border border-sage-200">
                 {course.image ? (
                   <img
                     src={course.image}
@@ -524,11 +524,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                 )}
                 
                 {/* Floating instructor preview */}
-                <div className="absolute bottom-6 left-6 right-6 bg-cream-50/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
-                  <p className="text-sm text-olive-600 mb-2">Your Instructor</p>
+                <div className="absolute bottom-6 left-6 right-6 bg-cream-50 rounded-2xl p-6 shadow-md border border-sage-200">
+                  <p className="text-xs font-light text-olive-500 mb-2">Your Instructor</p>
                   <div className="flex items-center gap-4">
                     {course.practitioners[0].image ? (
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md">
                         <img
                           src={course.practitioners[0].image}
                           alt={course.practitioners[0].name}
@@ -537,14 +537,14 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                       </div>
                     ) : (
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-white">
+                        <span className="text-2xl font-semibold text-white">
                           {course.practitioners[0].name.charAt(0)}
                         </span>
                       </div>
                     )}
                     <div>
-                      <p className="font-semibold text-olive-900">{course.practitioners[0].name}</p>
-                      <p className="text-sm text-olive-600">{course.practitioners[0].title}</p>
+                      <p className="font-medium text-olive-900">{course.practitioners[0].name}</p>
+                      <p className="text-sm font-light text-olive-500">{course.practitioners[0].title}</p>
                     </div>
                   </div>
                 </div>
@@ -555,13 +555,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Main Content */}
-      <div className="container max-w-7xl py-20">
+      <div className="container max-w-7xl py-16">
         {/* Quick Actions - Floating */}
         <div className="fixed right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 opacity-0 lg:opacity-100 transition-opacity">
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-cream-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
+            className="rounded-full bg-cream-50 shadow-sm hover:shadow-md border border-sage-200"
           >
             <Share2 className="h-4 w-4" strokeWidth="1.5" />
           </Button>
@@ -569,12 +569,12 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
         <div className="grid gap-16 lg:grid-cols-3">
           {/* Main Content - Left Side */}
-          <div className="lg:col-span-2 space-y-20">
+          <div className="lg:col-span-2 space-y-16">
             {/* Course Overview - Immersive */}
             <section className="animate-fade-in">
-              <h2 className="text-3xl font-bold text-olive-900 mb-8">Begin Your Transformation</h2>
+              <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Begin Your Transformation</h2>
               <div className="prose prose-lg prose-olive max-w-none">
-                <p className="text-lg text-olive-700 leading-relaxed whitespace-pre-line break-words">
+                <p className="text-lg font-light text-olive-700 leading-relaxed whitespace-pre-line break-words">
                   {course.longDescription}
                 </p>
               </div>
@@ -583,15 +583,15 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             {/* What You'll Master */}
             {course.whatYoullLearn && course.whatYoullLearn.length > 0 && (
               <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">What You'll Master</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What You'll Master</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {course.whatYoullLearn.map((item, index) => (
-                    <div key={index} className="bg-gradient-to-br from-sage-50 to-cream-100 rounded-2xl p-6 card-hover">
+                    <div key={index} className="bg-cream-50 border border-sage-200 rounded-xl p-6 hover:shadow-sm transition-all">
                       <div className="flex gap-4">
                         <div className="flex-shrink-0">
                           <Check className="h-6 w-6 text-sage-600 rounded-full" strokeWidth="1.5" />
                         </div>
-                        <p className="text-olive-700 leading-relaxed">{item}</p>
+                        <p className="text-olive-700 font-light leading-relaxed">{item}</p>
                       </div>
                     </div>
                   ))}
@@ -602,13 +602,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             {/* What's Included */}
             {course.includes && course.includes.length > 0 && (
               <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-10">What's Included</h2>
-                <div className="bg-gradient-to-br from-terracotta-50 to-sage-50 rounded-3xl p-8">
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What's Included</h2>
+                <div className="bg-cream-50 border border-sage-200 rounded-xl p-8">
                   <div className="grid gap-4">
                     {course.includes.map((item, index) => (
                       <div key={index} className="flex gap-4 items-start">
                         <div className="flex-shrink-0 mt-1">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400 flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-sage-500 flex items-center justify-center">
                             <Check className="h-4 w-4 text-white" strokeWidth="2" />
                           </div>
                         </div>
@@ -623,16 +623,16 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             {/* Prerequisites */}
             {course.prerequisites && (
               <section className="animate-fade-in" style={{animationDelay: '0.35s'}}>
-                <h2 className="text-3xl font-bold text-olive-900 mb-6">Prerequisites</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Prerequisites</h2>
                 <div className="bg-cream-100 rounded-2xl p-6">
-                  <p className="text-olive-700 leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
+                  <p className="text-olive-700 font-light leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
                 </div>
               </section>
             )}
 
             {/* Your Learning Journey */}
             <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-6">Your Learning Journey</h2>
+              <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Your Learning Journey</h2>
               <div className="flex items-center gap-2 text-sm text-olive-600 bg-sage-50/50 rounded-lg p-3 mb-6">
                 <Clock className="h-4 w-4" />
                 <span>
@@ -649,10 +649,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-sage-700">{index + 1}</span>
+                            <span className="text-sm font-medium text-sage-700">{index + 1}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-semibold text-olive-900 mb-1">{session.title}</h3>
+                            <h3 className="text-base font-medium text-olive-900 mb-1">{session.title}</h3>
                             {session.description && (
                               <div className="mb-2">
                                 <p className={`text-sm text-olive-600 ${!isExpanded && hasLongDescription ? 'line-clamp-2' : ''}`}>
@@ -713,16 +713,16 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             </section>
 
             {/* Immersive Benefits Section */}
-            <section className="bg-gradient-to-br from-terracotta-50 to-sage-50 rounded-3xl p-10 -mx-4 animate-fade-in" style={{animationDelay: '0.6s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">Transform Your Life</h2>
+            <section className="bg-cream-50 border border-sage-200 rounded-xl p-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
+              <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Transform Your Life</h2>
               <div className="grid md:grid-cols-2 gap-8">
                 {course.benefits.map((benefit) => (
                   <div key={benefit.id} className="space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white shadow-lg flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-olive-900">{benefit.title}</h3>
-                    <p className="text-olive-600 leading-relaxed">{benefit.description}</p>
+                    <h3 className="text-xl font-medium text-olive-900">{benefit.title}</h3>
+                    <p className="text-olive-600 font-light leading-relaxed">{benefit.description}</p>
                   </div>
                 ))}
               </div>
@@ -739,14 +739,14 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
             {/* Testimonial Section */}
             <section className="animate-fade-in" style={{animationDelay: '1s'}}>
-              <h2 className="text-3xl font-bold text-olive-900 mb-10">Success Stories</h2>
-              <div className="bg-cream-100 rounded-3xl p-8">
+              <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Success Stories</h2>
+              <div className="bg-cream-50 border border-sage-200 rounded-xl p-8">
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
                   ))}
                 </div>
-                <blockquote className="text-xl text-olive-700 italic mb-6">
+                <blockquote className="text-lg font-light text-olive-700 italic mb-6 leading-relaxed">
                   "This course completely changed my approach to nutrition. The personalized guidance and community support made all the difference in achieving my health goals."
                 </blockquote>
                 <div className="flex items-center gap-4">
@@ -754,7 +754,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                     <span className="text-white font-bold">SM</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-olive-900">Sarah Martinez</p>
+                    <p className="font-medium text-olive-900">Sarah Martinez</p>
                     <p className="text-sm text-olive-600">Course Graduate • Verified Review</p>
                   </div>
                 </div>
@@ -784,9 +784,9 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </div>
               
               {/* Quick Stats */}
-              <Card className="mt-6 border-2 border-sage-100 bg-sage-50/50">
+              <Card className="mt-6 border border-sage-200 bg-sage-50/50">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-olive-900 mb-4">Course at a Glance</h3>
+                  <h3 className="font-medium text-olive-900 mb-4">Course at a Glance</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-olive-600">Students Enrolled</span>

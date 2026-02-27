@@ -97,8 +97,8 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative min-h-[70vh] bg-cream-50">
-          <div className="relative container max-w-7xl py-12">
+        <section className="relative bg-cream-50">
+          <div className="relative container max-w-7xl py-10 lg:py-16">
             <Skeleton className="h-6 w-96 mb-12" />
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
@@ -144,11 +144,11 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Immersive Hero Section */}
-      <section className="relative min-h-[70vh] bg-cream-50 overflow-hidden">
+      <section className="relative bg-cream-50 overflow-hidden">
         {/* Content */}
-        <div className="relative container max-w-7xl py-12">
+        <div className="relative container max-w-7xl py-10 lg:py-16">
           {/* Breadcrumb */}
-          <Breadcrumb className="mb-12 animate-fade-in">
+          <Breadcrumb className="mb-8 animate-fade-in">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -215,10 +215,10 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               </div>
 
               <div>
-                <h1 className="font-serif text-4xl lg:text-5xl font-light text-olive-900 mb-6 leading-tight">
+                <h1 className="font-serif text-3xl lg:text-4xl font-light text-olive-900 mb-4 leading-[1.15]">
                   {service?.name || 'Session'}
                 </h1>
-                <p className="text-xl text-olive-700 leading-relaxed">
+                <p className="text-lg font-light text-olive-600 leading-relaxed">
                   {service?.short_description || service?.description || ''}
                 </p>
               </div>
@@ -291,7 +291,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             
             {/* Right: Visual Element */}
             <div className="relative animate-scale-in">
-              <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-lg border border-sage-200/60">
+              <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-md border border-sage-200">
                 {service?.image_url ? (
                   <img
                     src={service.image_url}
@@ -306,7 +306,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
                 {/* Floating elements */}
                 {service?.price && (
-                  <div className="absolute top-6 right-6 bg-cream-50/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+                  <div className="absolute top-6 right-6 bg-cream-50 rounded-2xl p-4 shadow-md border border-sage-200">
                     <p className="text-sm text-olive-700 mb-1">Starting from</p>
                     <p className="text-3xl font-medium text-olive-900">${service.price}</p>
                   </div>
@@ -318,13 +318,13 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       </section>
 
       {/* Main Content */}
-      <div className="container max-w-7xl py-20">
+      <div className="container max-w-7xl py-16">
         {/* Quick Share Actions - Floating */}
         <div className="fixed right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 opacity-0 lg:opacity-100 transition-opacity">
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-cream-50/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
+            className="rounded-full bg-cream-50 shadow-sm hover:shadow-md border border-sage-200"
           >
             <Share2 className="h-4 w-4" strokeWidth="1.5" />
           </Button>
@@ -332,14 +332,14 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
         <div className="grid gap-12 lg:grid-cols-[1fr_360px]">
           {/* Main Content - Left Side */}
-          <div className="space-y-20">
+          <div className="space-y-16">
             {/* Immersive Overview Section */}
             {service?.description && (
               <section className="animate-fade-in">
                 <div className="relative">
-                  <h2 className="text-3xl font-medium text-olive-900 mb-8">About This Session</h2>
+                  <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">About This Session</h2>
                   <div className="prose prose-lg prose-olive max-w-none">
-                    <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                    <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
                       {service.description}
                     </p>
                   </div>
@@ -350,9 +350,9 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             {/* What You'll Learn */}
             {service?.what_youll_learn && (
               <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-                <h2 className="text-3xl font-medium text-olive-900 mb-10">What You'll Learn</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What You'll Learn</h2>
                 <div className="prose prose-lg prose-olive max-w-none">
-                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                  <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
                     {service.what_youll_learn}
                   </p>
                 </div>
@@ -362,13 +362,13 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             {/* Key Benefits */}
             {service?.benefits && service.benefits.length > 0 && (
               <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
-                <h2 className="text-3xl font-medium text-olive-900 mb-10">Key Benefits</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Key Benefits</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {service.benefits.map((benefit) => (
-                    <Card key={benefit.id} className="border-2 border-sage-200 bg-cream-100/30 hover:bg-cream-100/50 transition-colors">
+                    <Card key={benefit.id} className="border border-sage-200 bg-cream-50 hover:bg-cream-100/50 transition-colors">
                       <CardContent className="p-6">
                         <h3 className="text-xl font-medium text-olive-900 mb-2">{benefit.title}</h3>
-                        <p className="text-olive-700 leading-relaxed">{benefit.description}</p>
+                        <p className="text-olive-700 font-light leading-relaxed">{benefit.description}</p>
                       </CardContent>
                     </Card>
                   ))}
@@ -379,12 +379,12 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             {/* What's Included */}
             {service?.includes && service.includes.length > 0 && (
               <section className="animate-fade-in" style={{animationDelay: '0.35s'}}>
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">What's Included</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">What's Included</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   {service.includes.map((item, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-sage-600 mt-0.5 flex-shrink-0" strokeWidth="2" />
-                      <span className="text-olive-700 leading-relaxed">{item}</span>
+                      <span className="text-olive-700 font-light leading-relaxed">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -394,9 +394,9 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             {/* Prerequisites */}
             {service?.prerequisites && (
               <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">Prerequisites</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Prerequisites</h2>
                 <div className="prose prose-lg prose-olive max-w-none">
-                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                  <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
                     {service.prerequisites}
                   </p>
                 </div>
@@ -406,9 +406,9 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             {/* Requirements */}
             {service?.requirements && (
               <section className="animate-fade-in" style={{animationDelay: '0.45s'}}>
-                <h2 className="text-3xl font-medium text-olive-900 mb-8">Requirements</h2>
+                <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Requirements</h2>
                 <div className="prose prose-lg prose-olive max-w-none">
-                  <p className="text-olive-700 leading-relaxed text-lg whitespace-pre-line">
+                  <p className="text-olive-700 font-light leading-relaxed text-lg whitespace-pre-line">
                     {service.requirements}
                   </p>
                 </div>
@@ -426,9 +426,9 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
             {/* Session Details Card */}
             <section className="animate-fade-in" style={{animationDelay: '0.8s'}}>
-              <Card className="border-2 border-sage-200 bg-cream-100/50 overflow-hidden">
+              <Card className="border border-sage-200 bg-cream-50 overflow-hidden">
                 <CardContent className="p-8">
-                  <h2 className="text-2xl font-medium text-olive-900 mb-6">Session Details</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-6">Session Details</h2>
                   <div className="grid gap-5">
                     {service?.duration_minutes && (
                       <div className="flex justify-between items-center py-4 border-b border-sage-200">
