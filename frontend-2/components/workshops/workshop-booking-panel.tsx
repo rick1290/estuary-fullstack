@@ -89,14 +89,14 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
   }
 
   return (
-    <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
-        <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-8 text-center">
-          <p className="text-sm text-olive-700 mb-2">Experience Transformation</p>
+    <Card className="border border-sage-200 bg-cream-50 shadow-md overflow-hidden">
+        <div className="bg-cream-100 p-8 text-center">
+          <p className="text-xs font-light tracking-wide uppercase text-olive-500 mb-2">Workshop Investment</p>
           <div className="flex items-baseline justify-center gap-2">
-            <span className="text-4xl font-bold text-olive-900">${workshop.price}</span>
-            <span className="text-olive-700">per person</span>
+            <span className="text-3xl font-semibold text-olive-900">${workshop.price}</span>
+            <span className="text-sm font-light text-olive-600">per person</span>
           </div>
-          <p className="text-sm text-olive-600 mt-2">{Math.floor(workshop.duration / 60)} hours immersive experience</p>
+          <p className="text-xs font-light text-olive-500 mt-2">{Math.floor(workshop.duration / 60)} hours experience</p>
         </div>
 
       <CardContent className="p-8">
@@ -105,25 +105,25 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Duration</span>
+                <span className="text-olive-600 font-light">Duration</span>
               </div>
-              <span className="font-semibold text-olive-900">
+              <span className="font-medium text-olive-900">
                 {Math.floor(workshop.duration / 60)} hours
               </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Format</span>
+                <span className="text-olive-600 font-light">Format</span>
               </div>
-              <span className="font-semibold text-olive-900">{workshop.location}</span>
+              <span className="font-medium text-olive-900">{workshop.location}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Location</span>
+                <span className="text-olive-600 font-light">Location</span>
               </div>
-              <span className="font-semibold text-olive-900 text-right">
+              <span className="font-medium text-olive-900 text-right">
                 {serviceData?.location_type === 'virtual'
                   ? 'Virtual'
                   : serviceData?.practitioner_location
@@ -143,7 +143,7 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
           {/* Session Selection */}
           {upcomingSessions.length > 0 ? (
             <div className="mb-6">
-              <label className="text-sm font-semibold text-olive-800 mb-3 block">
+              <label className="text-sm font-medium text-olive-800 mb-3 block">
                 Select Your Workshop Date
               </label>
               <Select value={selectedSessionId} onValueChange={handleSessionChange}>
@@ -186,7 +186,7 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
             )}
 
           <Button
-            className="w-full py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+            className="w-full py-6 text-lg font-medium shadow-sm hover:shadow-md transition-all"
             onClick={handleRegisterClick}
             size="lg"
             disabled={!selectedSessionId || upcomingSessions.length === 0 || serviceData?.has_ended}

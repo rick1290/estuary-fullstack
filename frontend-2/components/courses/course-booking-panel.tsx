@@ -36,14 +36,14 @@ export default function CourseBookingPanel({ course, serviceData }: CourseBookin
   }
 
   return (
-    <Card className="border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
-        <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-8 text-center">
-          <p className="text-sm text-olive-700 mb-2">Transform Your Knowledge</p>
+    <Card className="border border-sage-200 bg-cream-50 shadow-md overflow-hidden">
+        <div className="bg-cream-100 p-8 text-center">
+          <p className="text-xs font-light tracking-wide uppercase text-olive-500 mb-2">Course Investment</p>
           <div className="flex items-baseline justify-center gap-2">
-            <span className="text-4xl font-bold text-olive-900">${course.price}</span>
-            <span className="text-olive-700">complete course</span>
+            <span className="text-3xl font-semibold text-olive-900">${course.price}</span>
+            <span className="text-sm font-light text-olive-600">complete course</span>
           </div>
-          <p className="text-sm text-olive-600 mt-2">{course.sessionCount} transformative sessions</p>
+          <p className="text-xs font-light text-olive-500 mt-2">{course.sessionCount} sessions included</p>
         </div>
         <CardContent className="p-8">
           {/* Course Quick Info */}
@@ -51,17 +51,17 @@ export default function CourseBookingPanel({ course, serviceData }: CourseBookin
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Live Sessions</span>
+                <span className="text-olive-600 font-light">Live Sessions</span>
               </div>
-              <span className="font-semibold text-olive-900">{course.sessionCount}</span>
+              <span className="font-medium text-olive-900">{course.sessionCount}</span>
             </div>
             {course.firstSessionDate && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-olive-700">Starts</span>
+                  <span className="text-olive-600 font-light">Starts</span>
                 </div>
-                <span className="font-semibold text-olive-900">
+                <span className="font-medium text-olive-900">
                   {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -74,9 +74,9 @@ export default function CourseBookingPanel({ course, serviceData }: CourseBookin
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-olive-700">Ends</span>
+                  <span className="text-olive-600 font-light">Ends</span>
                 </div>
-                <span className="font-semibold text-olive-900">
+                <span className="font-medium text-olive-900">
                   {new Date(course.lastSessionDate).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -88,16 +88,16 @@ export default function CourseBookingPanel({ course, serviceData }: CourseBookin
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Format</span>
+                <span className="text-olive-600 font-light">Format</span>
               </div>
-              <span className="font-semibold text-olive-900">{course.location}</span>
+              <span className="font-medium text-olive-900">{course.location}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-                <span className="text-olive-700">Location</span>
+                <span className="text-olive-600 font-light">Location</span>
               </div>
-              <span className="font-semibold text-olive-900 text-right">
+              <span className="font-medium text-olive-900 text-right">
                 {serviceData?.location_type === 'virtual'
                   ? 'Virtual'
                   : serviceData?.practitioner_location
@@ -115,7 +115,7 @@ export default function CourseBookingPanel({ course, serviceData }: CourseBookin
           <Separator className="bg-sage-200 mb-6" />
 
           <Button
-            className="w-full py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+            className="w-full py-6 text-lg font-medium shadow-sm hover:shadow-md transition-all"
             onClick={handleEnrollClick}
             size="lg"
             disabled={serviceData?.has_ended || serviceData?.is_purchasable === false}

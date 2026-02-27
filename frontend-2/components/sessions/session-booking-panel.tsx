@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe } from "lucide-react"
@@ -49,11 +47,6 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
   // Fetch availability when date changes
   const fetchAvailability = async (dateObj: Date) => {
-    console.log('Session data:', session)
-    console.log('Checking:', {
-      practitioner_id: session?.primary_practitioner?.id,
-      service_id: session?.id
-    })
     if (!session?.primary_practitioner?.id || !session?.id) return
     
     setIsLoadingSlots(true)
@@ -160,39 +153,64 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
   // Display only first 6 time slots unless "show more" is clicked
   const displayedTimeSlots = showAllTimes ? timeSlots : timeSlots.slice(0, 6)
 
+  const practitioner = session.primary_practitioner
+  const imageUrl = session.image_url
+  const practitionerName = practitioner?.display_name || practitioner?.name
+  const practitionerImage = practitioner?.profile_image_url
+  const practitionerInitials = practitionerName
+    ? practitionerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)
+    : ''
+
   return (
-    <Card className="w-full border-2 border-sage-200 bg-cream-50 shadow-xl overflow-hidden">
-        {/* Header Section */}
-        <div className="bg-gradient-to-br from-sage-100 to-terracotta-100 p-8 text-center">
-          <p className="text-sm text-olive-700 mb-2">Book Your Session</p>
-          <div className="flex items-baseline justify-center gap-2">
-            <span className="text-4xl font-bold text-olive-900">${session.price}</span>
-            <span className="text-olive-700">per session</span>
+    <div className="w-full bg-white rounded-2xl border border-sage-200/60 overflow-hidden">
+        {/* Image header with overlaid price + practitioner */}
+        <div className="relative">
+          {/* Background image or gradient */}
+          <div className="aspect-[4/3] w-full">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={session.name || 'Session'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50" />
+            )}
           </div>
-          <p className="text-sm text-olive-600 mt-2">{session.duration_display || `${session.duration} minutes`} • 1-on-1</p>
+
+          {/* Price badge overlaid on image */}
+          <div className="absolute bottom-4 left-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-sm">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-semibold text-olive-900">${session.price}</span>
+                <span className="text-[11px] font-light text-olive-500">per session</span>
+              </div>
+              <p className="text-[10px] font-light text-olive-400 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
+            </div>
+          </div>
         </div>
 
-        <CardContent className="p-6 space-y-6">
+        <div className="p-5 space-y-5">
           {/* Key Info Points */}
-          <div className="flex items-center justify-between text-sm text-olive-700 pb-4 border-b border-sage-200">
+          <div className="flex items-center justify-between text-xs text-olive-500 pb-4 border-b border-sage-200/60">
             {session.location_type && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {session.location_type === 'virtual' ? (
-                  <Video className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                  <Video className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
                 ) : (
-                  <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
+                  <MapPin className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
                 )}
-                <span className="font-medium capitalize">{session.location_type}</span>
+                <span className="font-medium text-olive-700 capitalize">{session.location_type}</span>
               </div>
             )}
             {session.experience_level && (
-              <span className="font-medium capitalize">{session.experience_level.replace('_', ' ')}</span>
+              <span className="font-medium text-olive-700 capitalize">{session.experience_level.replace('_', ' ')}</span>
             )}
           </div>
 
           {/* Date selector - desktop version */}
           <div>
-            <label className="text-sm font-medium text-olive-900 mb-3 block">Choose Your Date</label>
+            <label className="text-sm font-medium text-olive-800 mb-2.5 block">Choose Your Date</label>
             <div className="hidden sm:block">
               <div className="flex items-center gap-1">
                 <Button
@@ -210,9 +228,9 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                     <div
                       key={date.date}
                       onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border-2 transition-all ${
+                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border transition-all ${
                         selectedDate === `${date.day}, ${date.date}`
-                          ? "border-sage-600 bg-sage-600 text-white shadow-md"
+                          ? "border-sage-600 bg-sage-600 text-white shadow-sm"
                           : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
                       }`}
                     >
@@ -236,7 +254,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
 
           {/* Date selector - mobile dropdown */}
           <div className="block sm:hidden mb-4">
-            <Label htmlFor="date-select" className="mb-2 block">
+            <Label htmlFor="date-select" className="text-sm font-medium text-olive-800 mb-2 block">
               Select a date
             </Label>
             <Select value={selectedDate || ""} onValueChange={handleDateSelect}>
@@ -253,7 +271,7 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
             </Select>
           </div>
 
-            <Label className="text-sm font-medium text-olive-900 mb-3 block">
+            <Label className="text-sm font-medium text-olive-800 mb-2.5 block">
               Select Your Time
             </Label>
 
@@ -274,10 +292,10 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
                     <button
                       key={time}
                       onClick={() => handleTimeSelect(time)}
-                      className={`p-2 rounded-lg border-2 text-center text-xs font-medium transition-all ${
+                      className={`p-2 rounded-lg border text-center text-xs font-medium transition-all ${
                         selectedTime === time
-                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-md"
-                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
+                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-sm"
+                          : "border-sage-200/80 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
                       }`}
                     >
                       {time}
@@ -301,30 +319,28 @@ export default function SessionBookingPanel({ session }: SessionBookingPanelProp
           {!isLoadingSlots && timeSlots.length > 6 && (
             <button
               onClick={toggleShowAllTimes}
-              className="text-xs text-primary hover:underline text-center w-full mb-4"
+              className="text-xs text-sage-600 hover:text-sage-700 hover:underline text-center w-full mb-4 font-light"
             >
               {showAllTimes ? `Show fewer times (${timeSlots.length} total)` : `Show all ${timeSlots.length} times`}
             </button>
           )}
 
-
-          <Button 
-            className="w-full py-6 text-lg font-medium shadow-lg hover:shadow-xl transition-all" 
-            onClick={handleBookNow} 
+          <Button
+            className="w-full py-5 text-sm font-medium bg-olive-800 hover:bg-olive-700 text-white shadow-sm hover:shadow-md transition-all rounded-full"
+            onClick={handleBookNow}
             disabled={!selectedTime || !selectedDate}
-            size="lg"
           >
-            Reserve Your Transformation
+            Reserve Your Session
           </Button>
 
-          <div className="text-center text-olive-600 mt-4 space-y-1">
-            <p className="text-sm">✓ Instant confirmation • ✓ Secure checkout</p>
-            <p className="text-xs flex items-center justify-center gap-1">
+          <div className="text-center text-olive-500 mt-3 space-y-1">
+            <p className="text-xs font-light">Instant confirmation · Secure checkout</p>
+            <p className="text-[11px] font-light flex items-center justify-center gap-1">
               <Globe className="h-3 w-3" />
               Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
   )
 }
