@@ -14,12 +14,12 @@ export default function AboutTab({ bio }: AboutTabProps) {
   return (
     <div className="px-1">
       <div className="mb-4">
-        <p className={`text-base ${bioExpanded ? "" : "line-clamp-5"}`}>{bio}</p>
+        <p className={`text-[15px] font-light text-olive-600 leading-relaxed ${bioExpanded ? "" : "line-clamp-5"}`}>{bio}</p>
 
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 flex items-center gap-1"
+          className="mt-2 flex items-center gap-1 text-olive-500 hover:text-olive-700"
           onClick={() => setBioExpanded(!bioExpanded)}
         >
           {bioExpanded ? (

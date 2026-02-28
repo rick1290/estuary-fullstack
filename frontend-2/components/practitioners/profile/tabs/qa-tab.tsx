@@ -21,14 +21,14 @@ export default function QATab({ questions }: QATabProps) {
         <div className="space-y-6">
           {sortedQuestions.map((qa, index) => (
             <div key={qa.id}>
-              {index > 0 && <Separator className="my-4" />}
-              <h3 className="text-sm font-medium mb-1">{qa.title}</h3>
-              <p className="text-sm text-muted-foreground">{qa.answer || "Answer coming soon..."}</p>
+              {index > 0 && <Separator className="my-4 bg-sage-200/40" />}
+              <h3 className="text-[15px] font-light text-olive-900 mb-1">{qa.title}</h3>
+              <p className="text-[15px] font-light text-olive-600 leading-relaxed">{qa.answer || "Answer coming soon..."}</p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">No Q&A available yet.</p>
+        <p className="font-light text-olive-600">No Q&A available yet.</p>
       )}
     </div>
   )

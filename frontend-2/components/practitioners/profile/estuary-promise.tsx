@@ -1,81 +1,75 @@
-import { Check, Calendar, Shield, HeartHandshake, LineChart, Sparkles } from "lucide-react"
+import { Check, Calendar, Shield, HeartHandshake, Sparkles } from "lucide-react"
+
+const promises = [
+  {
+    icon: Check,
+    title: "Personalized Journey",
+    description: "Every session crafted to honor your unique needs, goals, and healing journey",
+    accent: "bg-sage-100 text-sage-700",
+  },
+  {
+    icon: Calendar,
+    title: "Flexible Wellness",
+    description: "Schedule sessions that flow with your life's rhythm and commitments",
+    accent: "bg-terracotta-50 text-terracotta-600",
+  },
+  {
+    icon: Shield,
+    title: "Sacred Space",
+    description: "A nurturing environment where transformation happens with compassion",
+    accent: "bg-cream-200 text-olive-700",
+  },
+  {
+    icon: Sparkles,
+    title: "Ongoing Growth",
+    description: "Continuous support and guidance as you evolve on your wellness path",
+    accent: "bg-sage-50 text-sage-600",
+  },
+]
 
 export default function EstuaryPromise() {
   return (
-    <div className="mt-16 mb-8 animate-fade-in" style={{animationDelay: '1s'}}>
-      <div className="bg-gradient-to-br from-sage-50 via-cream-50 to-terracotta-50 rounded-3xl p-12 relative overflow-hidden">
-        {/* Background elements */}
-        <div className="absolute inset-0 texture-grain opacity-20" />
-        <div className="absolute -top-20 -right-20 w-60 h-60 bg-sage-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-terracotta-200/30 rounded-full blur-3xl" />
-        
-        <div className="relative">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
-              <Sparkles className="h-4 w-4 text-terracotta-600" strokeWidth="1.5" />
-              <span className="text-sm text-olive-700 font-medium">Our Commitment to You</span>
-            </div>
-            <h2 className="text-3xl font-bold text-olive-900 mb-3">The Estuary Promise</h2>
-            <p className="text-olive-700 max-w-2xl mx-auto text-lg font-light">
-              We're dedicated to creating transformative wellness experiences that honor your unique journey
-            </p>
-          </div>
+    <div className="mt-16 mb-8">
+      <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-6 py-10 sm:px-10 sm:py-14">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Our Commitment to You</p>
+          <h2 className="font-serif text-xl sm:text-2xl font-light text-olive-900 mb-3">
+            The Estuary <em className="italic text-terracotta-600">Promise</em>
+          </h2>
+          <p className="text-[15px] font-light text-olive-600 leading-relaxed max-w-lg mx-auto">
+            We're dedicated to creating transformative wellness experiences that honor your unique journey
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
-            <div className="flex flex-col items-center text-center group">
-              <div className="bg-white shadow-lg p-4 rounded-2xl mb-4 group-hover:shadow-xl transition-all">
-                <div className="w-12 h-12 bg-gradient-to-br from-sage-400 to-sage-500 rounded-xl flex items-center justify-center">
-                  <Check className="h-6 w-6 text-white" strokeWidth="2" />
+        {/* Promise grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          {promises.map((item) => {
+            const Icon = item.icon
+            return (
+              <div
+                key={item.title}
+                className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-5 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${item.accent} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="h-5 w-5" strokeWidth="1.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-medium text-olive-900 mb-1">{item.title}</h3>
+                    <p className="text-[13px] font-light text-olive-500 leading-relaxed">{item.description}</p>
+                  </div>
                 </div>
               </div>
-              <h3 className="font-semibold text-olive-900 mb-2">Personalized Journey</h3>
-              <p className="text-sm text-olive-600 leading-relaxed">
-                Every session crafted to honor your unique needs, goals, and healing journey
-              </p>
-            </div>
+            )
+          })}
+        </div>
 
-            <div className="flex flex-col items-center text-center group">
-              <div className="bg-white shadow-lg p-4 rounded-2xl mb-4 group-hover:shadow-xl transition-all">
-                <div className="w-12 h-12 bg-gradient-to-br from-terracotta-400 to-terracotta-500 rounded-xl flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-white" strokeWidth="1.5" />
-                </div>
-              </div>
-              <h3 className="font-semibold text-olive-900 mb-2">Flexible Wellness</h3>
-              <p className="text-sm text-olive-600 leading-relaxed">
-                Schedule sessions that flow with your life's rhythm and commitments
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center group">
-              <div className="bg-white shadow-lg p-4 rounded-2xl mb-4 group-hover:shadow-xl transition-all">
-                <div className="w-12 h-12 bg-gradient-to-br from-blush-400 to-blush-500 rounded-xl flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-white" strokeWidth="1.5" />
-                </div>
-              </div>
-              <h3 className="font-semibold text-olive-900 mb-2">Sacred Space</h3>
-              <p className="text-sm text-olive-600 leading-relaxed">
-                A nurturing environment where transformation happens with compassion
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center group">
-              <div className="bg-white shadow-lg p-4 rounded-2xl mb-4 group-hover:shadow-xl transition-all">
-                <div className="w-12 h-12 bg-gradient-to-br from-olive-500 to-olive-600 rounded-xl flex items-center justify-center">
-                  <LineChart className="h-6 w-6 text-white" strokeWidth="1.5" />
-                </div>
-              </div>
-              <h3 className="font-semibold text-olive-900 mb-2">Ongoing Growth</h3>
-              <p className="text-sm text-olive-600 leading-relaxed">
-                Continuous support and guidance as you evolve on your wellness path
-              </p>
-            </div>
-          </div>
-
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center justify-center gap-3 bg-white shadow-lg px-6 py-3 rounded-full">
-              <HeartHandshake className="h-5 w-5 text-sage-600" strokeWidth="1.5" />
-              <span className="text-olive-800 font-medium">Trusted by thousands on their wellness journey</span>
-            </div>
+        {/* Trust line */}
+        <div className="text-center mt-8">
+          <div className="inline-flex items-center gap-2 text-olive-600">
+            <HeartHandshake className="h-4 w-4 text-terracotta-500" strokeWidth="1.5" />
+            <span className="text-xs font-light">Trusted by thousands on their wellness journey</span>
           </div>
         </div>
       </div>

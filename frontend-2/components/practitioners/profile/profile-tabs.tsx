@@ -31,7 +31,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
     <div className="mt-6">
       <Tabs defaultValue="about" value={activeTab} onValueChange={setActiveTab}>
         {/* Simple Tab Navigation */}
-        <TabsList className="w-full h-auto p-1 bg-sage-50/50 border border-sage-100 rounded-xl mb-6">
+        <TabsList className="w-full h-auto p-1 bg-sage-50/50 border border-sage-200/60 rounded-xl mb-6">
           <div className="flex flex-wrap justify-start gap-1">
             {tabItems.map((item) => {
               const Icon = item.icon
@@ -54,15 +54,15 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
         </TabsList>
 
         {/* Tab Contents */}
-        <div className="bg-white rounded-2xl shadow-sm border border-sage-100">
-          <TabsContent value="about" className="p-6 lg:p-8 m-0">
+        <div className="bg-white rounded-2xl border border-sage-200/60">
+          <TabsContent value="about" className="p-5 m-0">
             <AboutTab bio={practitioner.bio} />
           </TabsContent>
 
-          <TabsContent value="experience" className="p-6 lg:p-8 m-0">
+          <TabsContent value="experience" className="p-5 m-0">
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-olive-900 mb-4">Professional Background</h3>
+                <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Professional Background</h3>
                 <ExperienceTab
                   years_of_experience={practitioner.years_of_experience}
                   completed_sessions={practitioner.completed_sessions}
@@ -71,7 +71,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
                 />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-olive-900 mb-4">Education & Certifications</h3>
+                <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Education & Certifications</h3>
                 <CredentialsTab
                   educations={practitioner.educations || []}
                   certifications={practitioner.certifications || []}
@@ -80,7 +80,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="specialties" className="p-6 lg:p-8 m-0">
+          <TabsContent value="specialties" className="p-5 m-0">
             <SpecialtiesTab
               specializations={practitioner.specializations || []}
               styles={practitioner.styles || []}
@@ -89,12 +89,12 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
             />
           </TabsContent>
 
-          <TabsContent value="qa" className="p-6 lg:p-8 m-0">
+          <TabsContent value="qa" className="p-5 m-0">
             <QATab questions={practitioner.questions || []} />
           </TabsContent>
 
           <TabsContent value="estuary" className="p-0 m-0">
-            <div className="bg-gradient-to-br from-sage-50/30 to-terracotta-50/30 p-6 lg:p-8 rounded-b-2xl">
+            <div className="p-5 rounded-b-2xl">
               <EstuaryTab
                 practitionerId={practitioner.id}
                 practitionerName={practitioner.display_name || "Practitioner"}

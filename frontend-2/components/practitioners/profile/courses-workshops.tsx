@@ -2,12 +2,10 @@
 
 import { useRef } from "react"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Clock, MapPin, ChevronLeft, ChevronRight, Calendar, Sparkles } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 interface Service {
@@ -56,13 +54,13 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
   }
 
   return (
-    <div className="mt-12 mb-12 animate-fade-in" style={{animationDelay: '0.4s'}}>
+    <div className="mt-12 mb-12">
       {/* Section title with enhanced spacing */}
       <div className="flex justify-between items-center mb-8">
-        <div className="relative">
-          <div className="absolute -left-12 top-1/2 -translate-y-1/2 w-8 h-[2px] bg-gradient-to-r from-transparent to-sage-300 hidden lg:block" />
-          <h2 className="text-2xl font-bold text-olive-900 mb-2">Upcoming Transformations</h2>
-          <p className="text-olive-600">Group experiences and learning journeys</p>
+        <div>
+          <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Explore</p>
+          <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Upcoming Transformations</h2>
+          <p className="text-[15px] font-light text-olive-600 leading-relaxed">Group experiences and learning journeys</p>
         </div>
 
         {!isMobile && (
@@ -83,48 +81,44 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {coursesAndWorkshops.map((item, index) => (
-          <Card 
-            key={item.id} 
-            className="min-w-[320px] max-w-[320px] flex flex-col border-2 border-sage-200 hover:border-sage-300 transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden animate-slide-up"
-            style={{animationDelay: `${index * 0.1}s`}}
+          <Card
+            key={item.id}
+            className="min-w-[320px] max-w-[320px] flex flex-col border border-sage-200/60 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
           >
-            {/* Card Header with Gradient */}
-            <div className="bg-gradient-to-br from-terracotta-100 to-sage-100 p-6 pb-8">
-              <Badge
-                variant={(item.service_type_code || item.service_type?.name) === "course" ? "terracotta" : "sage"}
-                className="mb-3"
-              >
-                <Sparkles className="h-3 w-3 mr-1" strokeWidth="1.5" />
+            {/* Card Header */}
+            <div className="bg-sage-50 p-5 pb-6">
+              <span className="text-xs px-2.5 py-1 bg-white text-olive-600 rounded-full font-light inline-flex items-center gap-1 mb-3">
+                <Sparkles className="h-3 w-3" strokeWidth="1.5" />
                 {item.service_type_display || item.service_type_code || item.service_type?.name}
-              </Badge>
+              </span>
 
-              <h3 className="font-semibold text-xl text-olive-900 mb-2 line-clamp-2">{item.name}</h3>
-              
-              <p className="text-olive-700 line-clamp-2">{item.description}</p>
+              <h3 className="text-base font-medium text-olive-900 mb-2 line-clamp-2">{item.name}</h3>
+
+              <p className="text-[15px] font-light text-olive-600 leading-relaxed line-clamp-2">{item.description}</p>
             </div>
 
-            <CardContent className="flex flex-col h-full p-6 bg-cream-50 -mt-4 rounded-t-[2rem]">
+            <CardContent className="flex flex-col h-full p-5">
               <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-olive-700">
-                  <Calendar className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-sm">Next session starting soon</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-olive-700">
-                  <Clock className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-sm">{item.duration_minutes || item.duration} minutes</span>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  <span className="text-xs font-light text-olive-600">Next session starting soon</span>
                 </div>
 
-                <div className="flex items-center gap-2 text-olive-700">
-                  <MapPin className="h-4 w-4 text-sage-600" strokeWidth="1.5" />
-                  <span className="text-sm">{item.location_type.charAt(0).toUpperCase() + item.location_type.slice(1)}</span>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  <span className="text-xs font-light text-olive-600">{item.duration_minutes || item.duration} minutes</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  <span className="text-xs font-light text-olive-600">{item.location_type.charAt(0).toUpperCase() + item.location_type.slice(1)}</span>
                 </div>
               </div>
 
-              <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-100">
-                <p className="text-2xl font-bold text-olive-900">{item.price ? `$${item.price}` : "Free"}</p>
+              <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-200/40">
+                <p className="text-lg font-semibold text-olive-900">{item.price ? `$${item.price}` : "Free"}</p>
 
-                <Button asChild size="sm" className="shadow-md hover:shadow-lg">
+                <Button asChild size="sm" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full">
                   <Link href={getServiceDetailUrl(item)}>
                     {getServiceCtaText(item.service_type_code || item.service_type?.name)}
                   </Link>

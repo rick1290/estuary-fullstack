@@ -21,44 +21,44 @@ export default function CredentialsTab({ educations, certifications }: Credentia
   return (
     <div className="px-1 space-y-8">
       <div>
-        <h3 className="text-lg font-medium text-primary mb-4">Education</h3>
+        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Education</h3>
         {educations.length > 0 ? (
           <ul className="space-y-4">
             {educations.map((education) => (
               <li key={education.id} className="flex items-start gap-3">
                 <div className="mt-0.5">
-                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <GraduationCap className="h-3.5 w-3.5 text-sage-500" />
                 </div>
                 <div>
-                  <p className="font-medium">{education.degree}</p>
-                  <p className="text-sm text-muted-foreground">{education.educational_institute}</p>
+                  <p className="font-light text-olive-900">{education.degree}</p>
+                  <p className="text-sm font-light text-olive-600">{education.educational_institute}</p>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground">No education history listed.</p>
+          <p className="font-light text-olive-600">No education history listed.</p>
         )}
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-primary mb-4">Certifications</h3>
+        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Certifications</h3>
         {certifications.length > 0 ? (
           <ul className="space-y-4">
             {certifications.map((certification) => (
               <li key={certification.id} className="flex items-start gap-3">
                 <div className="mt-0.5">
-                  <Award className="h-5 w-5 text-primary" />
+                  <Award className="h-3.5 w-3.5 text-sage-500" />
                 </div>
                 <div>
-                  <p className="font-medium">{certification.certificate}</p>
-                  <p className="text-sm text-muted-foreground">{certification.institution}</p>
+                  <p className="font-light text-olive-900">{certification.certificate}</p>
+                  <p className="text-sm font-light text-olive-600">{certification.institution}</p>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground">No certifications listed.</p>
+          <p className="font-light text-olive-600">No certifications listed.</p>
         )}
       </div>
     </div>

@@ -1,12 +1,9 @@
 "use client"
-import React, { useRef, useCallback } from "react"
-import { ChevronRight, ChevronDown, Clock, MapPin, Users, Star, Heart, Share2, Calendar, Check, AlertCircle } from "lucide-react"
+import React, { useRef, useState } from "react"
+import { ChevronRight, ChevronDown, Clock, Star, Heart, Calendar, Check, AlertCircle } from "lucide-react"
 import CourseBookingPanel from "@/components/courses/course-booking-panel"
-import ServicePractitioner from "@/components/shared/service-practitioner"
 import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -25,6 +22,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import Link from "next/link"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 
 // Mock data for a course
 const MOCK_COURSE = {
@@ -160,6 +158,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   const { slug } = React.use(params)
   const bookingPanelRef = useRef<HTMLDivElement>(null)
   const [expandedSessions, setExpandedSessions] = React.useState<Set<number>>(new Set())
+  const [mobileBookingOpen, setMobileBookingOpen] = useState(false)
 
   const toggleSession = (sessionId: number) => {
     setExpandedSessions(prev => {
@@ -273,11 +272,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
   const { favoriteServiceIds, refetch: refetchFavorites } = useUserFavoriteServices()
-  
+
   // Get the service ID for API calls
   const serviceId = serviceData?.id
   const isSaved = serviceId ? favoriteServiceIds.has(serviceId.toString()) : false
-  
+
   // Mutations for save/unsave
   const { mutate: addFavorite, isPending: isAddingFavorite } = useMutation({
     mutationFn: () => userAddFavoriteService({ body: { service_id: serviceId } }),
@@ -321,46 +320,39 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
   const isProcessing = isAddingFavorite || isRemovingFavorite
 
-  // Scroll to booking panel
-  const scrollToBooking = useCallback(() => {
-    bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
-
   // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <section className="relative bg-cream-50">
-          <div className="relative container max-w-7xl py-10 lg:py-16">
-            <Skeleton className="h-6 w-96 mb-12" />
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <div className="flex gap-8">
-                  <div className="space-y-2">
-                    <Skeleton className="h-8 w-16" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-8 w-12" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <Skeleton className="h-12 w-40" />
-                  <Skeleton className="h-12 w-32" />
-                </div>
+        <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+          <Skeleton className="h-5 w-72 mb-6" />
+          <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
+            <div className="space-y-6">
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
               </div>
-              <Skeleton className="aspect-[4/5] rounded-3xl" />
+              <Skeleton className="h-10 w-3/4" />
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-16 w-full" />
+              <div className="flex gap-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <Skeleton className="h-9 w-28" />
+              <Skeleton className="h-px w-full" />
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-[400px] w-full rounded-xl" />
             </div>
           </div>
-        </section>
+        </div>
       </div>
     )
   }
@@ -380,436 +372,382 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
   }
 
   return (
-    <div className="min-h-screen bg-cream-50">
-      {/* Immersive Hero Section */}
-      <section className="relative bg-cream-50 overflow-hidden">
-        {/* Content */}
-        <div className="relative container max-w-7xl py-10 lg:py-16">
-          {/* Breadcrumb */}
-          <Breadcrumb className="mb-8 animate-fade-in">
+    <div className="min-h-screen bg-cream-50 pb-20 lg:pb-0">
+      <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+        {/* Breadcrumb + Save */}
+        <div className="flex items-center justify-between mb-6">
+          <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
                   <Link href="/">Home</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
                   <Link href="/marketplace">Explore Wellness</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
                   <Link href="/marketplace/courses">Courses</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <span className="text-olive-900 font-medium">{course.title}</span>
+                <span className="text-sm text-olive-900">{course.title}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          
-          {/* Hero Content */}
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left: Text Content */}
-            <div className="space-y-8 animate-slide-up">
-              {/* Course Label & Modalities */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-block text-xs font-medium tracking-widest uppercase text-terracotta-600">
-                  {course.sessionCount}-Session Journey
-                </span>
-                {course.modalities && course.modalities.length > 0 && (
-                  <>
-                    {course.modalities.map((modality: { id: number; name: string; slug: string }) => (
-                      <Badge key={modality.id} variant="sage" className="px-3 py-1">
-                        {modality.name}
-                      </Badge>
-                    ))}
-                  </>
-                )}
-              </div>
 
-              <div>
-                <h1 className="font-serif text-3xl lg:text-4xl xl:text-5xl font-light text-olive-900 mb-4 leading-[1.15]">
-                  {course.title}
-                </h1>
-                <p className="text-lg text-olive-600 leading-relaxed font-light">
-                  {course.description}
-                </p>
-              </div>
-              
-              {/* Course Stats */}
-              <div className="flex flex-wrap items-center gap-8">
-                {course.firstSessionDate && (
-                  <>
-                    <div>
-                      <p className="text-3xl font-semibold text-olive-900">
-                        {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </p>
-                      <p className="text-sm font-light text-olive-600">Starts</p>
-                    </div>
-                    <div className="w-px h-12 bg-sage-200/60" />
-                  </>
-                )}
-                <div>
-                  <p className="text-3xl font-semibold text-olive-900">{course.sessionCount}</p>
-                  <p className="text-sm font-light text-olive-600">Live Sessions</p>
-                </div>
-                <div className="w-px h-12 bg-sage-200/60" />
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-terracotta-500 fill-terracotta-500" />
-                  <p className="text-3xl font-semibold text-olive-900">{course.rating}</p>
-                  <p className="text-sm font-light text-olive-600">({course.reviewCount} reviews)</p>
-                </div>
-              </div>
-              
-              {/* CTA Section */}
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full shadow-sm px-8" onClick={scrollToBooking}>
-                    Enroll Now - ${course.price}
-                  </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="group"
-                    onClick={handleSaveToggle}
-                    disabled={isProcessing}
-                  >
-                    <Heart 
-                      className={`h-5 w-5 mr-2 transition-colors ${
-                        isSaved 
-                          ? 'text-rose-500 fill-rose-500' 
-                          : 'group-hover:text-rose-500'
-                      }`} 
-                      strokeWidth="1.5" 
-                    />
-                    {isSaved ? 'Saved' : 'Save Course'}
-                  </Button>
-                </div>
-                <p className="text-sm text-olive-600">
-                  ✓ Lifetime access • ✓ Certificate included • ✓ 30-day guarantee
-                </p>
-              </div>
-            </div>
-            
-            {/* Right: Visual Element */}
-            <div className="relative animate-scale-in">
-              <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100 shadow-md border border-sage-200">
-                {course.image ? (
-                  <img
-                    src={course.image}
-                    alt={course.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center space-y-4">
-                      <Calendar className="h-24 w-24 text-sage-400 mx-auto" strokeWidth="1" />
-                      <p className="text-sage-600 font-medium">Transform Your Life</p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Floating instructor preview */}
-                <div className="absolute bottom-6 left-6 right-6 bg-cream-50 rounded-2xl p-6 shadow-md border border-sage-200">
-                  <p className="text-xs font-light text-olive-500 mb-2">Your Instructor</p>
-                  <div className="flex items-center gap-4">
-                    {course.practitioners[0].image ? (
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md">
-                        <img
-                          src={course.practitioners[0].image}
-                          alt={course.practitioners[0].name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
-                        <span className="text-2xl font-semibold text-white">
-                          {course.practitioners[0].name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-olive-900">{course.practitioners[0].name}</p>
-                      <p className="text-sm font-light text-olive-500">{course.practitioners[0].title}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <div className="container max-w-7xl py-16">
-        {/* Quick Actions - Floating */}
-        <div className="fixed right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 opacity-0 lg:opacity-100 transition-opacity">
           <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full bg-cream-50 shadow-sm hover:shadow-md border border-sage-200"
+            variant="ghost"
+            size="sm"
+            className="group text-olive-500 hover:text-olive-700 flex-shrink-0"
+            onClick={handleSaveToggle}
+            disabled={isProcessing}
           >
-            <Share2 className="h-4 w-4" strokeWidth="1.5" />
+            <Heart
+              className={`h-4 w-4 mr-1.5 transition-colors ${
+                isSaved ? 'fill-rose-500 text-rose-500' : 'group-hover:text-rose-500'
+              }`}
+              strokeWidth="1.5"
+            />
+            {isSaved ? 'Saved' : 'Save'}
           </Button>
         </div>
 
-        <div className="grid gap-16 lg:grid-cols-3">
-          {/* Main Content - Left Side */}
-          <div className="lg:col-span-2 space-y-16">
-            {/* Course Overview - Immersive */}
-            <section className="animate-fade-in">
-              <h2 className="font-serif text-2xl font-light text-olive-900 mb-8">Begin Your Transformation</h2>
-              <div className="prose prose-lg prose-olive max-w-none">
-                <p className="text-lg font-light text-olive-700 leading-relaxed whitespace-pre-line break-words">
-                  {course.longDescription}
-                </p>
-              </div>
-            </section>
-
-            {/* What You'll Master */}
-            {course.whatYoullLearn && course.whatYoullLearn.length > 0 && (
-              <section className="animate-fade-in" style={{animationDelay: '0.2s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What You'll Master</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {course.whatYoullLearn.map((item, index) => (
-                    <div key={index} className="bg-cream-50 border border-sage-200 rounded-xl p-6 hover:shadow-sm transition-all">
-                      <div className="flex gap-4">
-                        <div className="flex-shrink-0">
-                          <Check className="h-6 w-6 text-sage-600 rounded-full" strokeWidth="1.5" />
-                        </div>
-                        <p className="text-olive-700 font-light leading-relaxed">{item}</p>
-                      </div>
-                    </div>
+        {/* Two-column grid */}
+        <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
+          {/* Left Column - Content */}
+          <div>
+            {/* Hero content */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="inline-block text-xs font-medium tracking-widest uppercase text-terracotta-600">
+                {course.sessionCount}-Session Journey
+              </span>
+              {course.modalities && course.modalities.length > 0 && (
+                <>
+                  {course.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                    <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
+                      {modality.name}
+                    </span>
                   ))}
-                </div>
-              </section>
+                </>
+              )}
+            </div>
+
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
+              {course.title}
+            </h1>
+
+            {/* Practitioner line */}
+            {course.practitioners && course.practitioners.length > 0 && (
+              <Link
+                href={course.practitioners[0].slug ? `/practitioners/${course.practitioners[0].slug}` : `/practitioners/${course.practitioners[0].id}`}
+                className="inline-flex items-center gap-2.5 mb-4 group"
+              >
+                {course.practitioners[0].image ? (
+                  <img src={course.practitioners[0].image} alt={course.practitioners[0].name} className="w-8 h-8 rounded-full object-cover border border-sage-200/60" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-100 flex items-center justify-center">
+                    <span className="text-[10px] font-serif font-light text-olive-700/50">
+                      {course.practitioners[0].name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                    </span>
+                  </div>
+                )}
+                <span className="text-sm font-light text-olive-600 group-hover:text-sage-700 transition-colors">
+                  with {course.practitioners[0].name}
+                </span>
+              </Link>
             )}
 
-            {/* What's Included */}
-            {course.includes && course.includes.length > 0 && (
-              <section className="animate-fade-in" style={{animationDelay: '0.3s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">What's Included</h2>
-                <div className="bg-cream-50 border border-sage-200 rounded-xl p-8">
-                  <div className="grid gap-4">
-                    {course.includes.map((item, index) => (
-                      <div key={index} className="flex gap-4 items-start">
-                        <div className="flex-shrink-0 mt-1">
-                          <div className="w-6 h-6 rounded-full bg-sage-500 flex items-center justify-center">
-                            <Check className="h-4 w-4 text-white" strokeWidth="2" />
+            <p className="text-[15px] text-olive-600 leading-relaxed font-light mb-5">
+              {course.description}
+            </p>
+
+            {/* Meta row */}
+            <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500 mb-6">
+              {course.firstSessionDate && (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" strokeWidth="1.5" />
+                    <span>
+                      Starts {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  <span className="text-olive-300">·</span>
+                </>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" strokeWidth="1.5" />
+                <span>{course.sessionCount} Live Sessions</span>
+              </div>
+              {course.reviewCount > 0 && (
+                <>
+                  <span className="text-olive-300">·</span>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
+                    <span>{course.rating} ({course.reviewCount})</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-sage-200/40 mb-10 lg:mb-12" />
+
+            {/* Content sections */}
+            <div className="space-y-10 lg:space-y-12">
+              {/* Course Overview */}
+              <section>
+                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Begin Your Transformation</h2>
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line break-words">
+                  {course.longDescription}
+                </p>
+              </section>
+
+              {/* What You'll Master */}
+              {course.whatYoullLearn && course.whatYoullLearn.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Master</h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {course.whatYoullLearn.map((item, index) => (
+                      <div key={index} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-sm transition-all">
+                        <div className="flex gap-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-sage-50 flex items-center justify-center">
+                              <span className="text-xs font-medium text-sage-700">{String(index + 1).padStart(2, '0')}</span>
+                            </div>
                           </div>
+                          <p className="text-[15px] font-light text-olive-600 leading-relaxed">{item}</p>
                         </div>
-                        <p className="text-olive-700 leading-relaxed flex-1">{item}</p>
                       </div>
                     ))}
                   </div>
-                </div>
-              </section>
-            )}
+                </section>
+              )}
 
-            {/* Prerequisites */}
-            {course.prerequisites && (
-              <section className="animate-fade-in" style={{animationDelay: '0.35s'}}>
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Prerequisites</h2>
-                <div className="bg-cream-100 rounded-2xl p-6">
-                  <p className="text-olive-700 font-light leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
-                </div>
-              </section>
-            )}
-
-            {/* Your Learning Journey */}
-            <section className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Your Learning Journey</h2>
-              <div className="flex items-center gap-2 text-sm text-olive-600 bg-sage-50/50 rounded-lg p-3 mb-6">
-                <Clock className="h-4 w-4" />
-                <span>
-                  All times are in <strong>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</strong> (your local timezone)
-                </span>
-              </div>
-              <div className="space-y-3">
-                {course.sessions.map((session, index) => {
-                  const isExpanded = expandedSessions.has(session.id)
-                  const hasLongDescription = session.description && session.description.length > 120
-
-                  return (
-                    <Card key={session.id} className="border border-sage-200 hover:border-sage-300 transition-all overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-medium text-sage-700">{index + 1}</span>
+              {/* What's Included */}
+              {course.includes && course.includes.length > 0 && (
+                <section>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
+                  <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {course.includes.map((item, index) => (
+                        <div key={index} className="flex items-start gap-2.5">
+                          <div className="w-5 h-5 rounded-full bg-sage-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Check className="h-3 w-3 text-sage-600" strokeWidth="2.5" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-medium text-olive-900 mb-1">{session.title}</h3>
-                            {session.description && (
-                              <div className="mb-2">
-                                <p className={`text-sm text-olive-600 ${!isExpanded && hasLongDescription ? 'line-clamp-2' : ''}`}>
-                                  {session.description}
-                                </p>
-                                {hasLongDescription && (
-                                  <button
-                                    onClick={() => toggleSession(session.id)}
-                                    className="text-xs text-sage-600 hover:text-sage-800 font-medium mt-1 flex items-center gap-0.5"
-                                  >
-                                    {isExpanded ? 'Show less' : 'Read more'}
-                                    <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                  </button>
+                          <span className="text-sm font-light text-olive-600 leading-relaxed">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Prerequisites */}
+              {course.prerequisites && (
+                <section>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Prerequisites</h2>
+                  <div className="bg-cream-100 rounded-xl p-6">
+                    <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
+                  </div>
+                </section>
+              )}
+
+              {/* Your Learning Journey */}
+              <section>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Learning Journey</h2>
+                <div className="flex items-center gap-2 text-sm text-olive-600 bg-sage-50/50 rounded-lg p-3 mb-6">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    All times are in <strong>{Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}</strong> (your local timezone)
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {course.sessions.map((session, index) => {
+                    const isExpanded = expandedSessions.has(session.id)
+                    const hasLongDescription = session.description && session.description.length > 120
+
+                    return (
+                      <Card key={session.id} className="border border-sage-200 hover:border-sage-300 transition-all overflow-hidden">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-100 to-terracotta-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-medium text-sage-700">{index + 1}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base font-medium text-olive-900 mb-1">{session.title}</h3>
+                              {session.description && (
+                                <div className="mb-2">
+                                  <p className={`text-sm text-olive-600 ${!isExpanded && hasLongDescription ? 'line-clamp-2' : ''}`}>
+                                    {session.description}
+                                  </p>
+                                  {hasLongDescription && (
+                                    <button
+                                      onClick={() => toggleSession(session.id)}
+                                      className="text-xs text-sage-600 hover:text-sage-800 font-medium mt-1 flex items-center gap-0.5"
+                                    >
+                                      {isExpanded ? 'Show less' : 'Read more'}
+                                      <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-olive-500">
+                                {session.start_time && (
+                                  <>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" strokeWidth="1.5" />
+                                      <span>
+                                        {new Date(session.start_time).toLocaleDateString('en-US', {
+                                          weekday: 'short',
+                                          month: 'short',
+                                          day: 'numeric'
+                                        })}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" strokeWidth="1.5" />
+                                      <span>
+                                        {new Date(session.start_time).toLocaleTimeString('en-US', {
+                                          hour: 'numeric',
+                                          minute: '2-digit'
+                                        })}
+                                        {session.end_time && ` - ${new Date(session.end_time).toLocaleTimeString('en-US', {
+                                          hour: 'numeric',
+                                          minute: '2-digit'
+                                        })}`}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                                {session.duration_minutes && (
+                                  <span className="text-[10px] px-1.5 py-0.5 border border-sage-200 rounded text-olive-500 font-light">
+                                    {session.duration_minutes} min
+                                  </span>
                                 )}
                               </div>
-                            )}
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-olive-500">
-                              {session.start_time && (
-                                <>
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" strokeWidth="1.5" />
-                                    <span>
-                                      {new Date(session.start_time).toLocaleDateString('en-US', {
-                                        weekday: 'short',
-                                        month: 'short',
-                                        day: 'numeric'
-                                      })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" strokeWidth="1.5" />
-                                    <span>
-                                      {new Date(session.start_time).toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit'
-                                      })}
-                                      {session.end_time && ` - ${new Date(session.end_time).toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit'
-                                      })}`}
-                                    </span>
-                                  </div>
-                                </>
-                              )}
-                              {session.duration_minutes && (
-                                <Badge variant="outline" className="text-[10px] font-normal py-0 px-1.5">
-                                  {session.duration_minutes} min
-                                </Badge>
-                              )}
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </section>
+
+              {/* Benefits Section */}
+              {course.benefits && course.benefits.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {course.benefits.map((benefit, index) => (
+                      <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        <div className="w-8 h-8 rounded-lg bg-sage-50 flex items-center justify-center mb-3">
+                          <span className="text-xs font-medium text-sage-700">{String(index + 1).padStart(2, '0')}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            </section>
-
-            {/* Immersive Benefits Section */}
-            <section className="bg-cream-50 border border-sage-200 rounded-xl p-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
-              <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Transform Your Life</h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                {course.benefits.map((benefit) => (
-                  <div key={benefit.id} className="space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sage-400 to-terracotta-400" />
-                    </div>
-                    <h3 className="text-xl font-medium text-olive-900">{benefit.title}</h3>
-                    <p className="text-olive-600 font-light leading-relaxed">{benefit.description}</p>
+                        <h3 className="text-[15px] font-medium text-olive-900 mb-1.5">{benefit.title}</h3>
+                        <p className="text-[13px] font-light text-olive-500 leading-relaxed">{benefit.description}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
+                </section>
+              )}
 
-            {/* Course Instructors */}
-            {course.practitioners && course.practitioners.length > 0 && (
-              <PractitionerSpotlight
-                practitioners={course.practitioners}
-                role="instructor"
-                animationDelay="0.8s"
-              />
-            )}
+              {/* Course Instructors */}
+              {course.practitioners && course.practitioners.length > 0 && (
+                <section className="pt-12 border-t border-sage-200/40">
+                  <PractitionerSpotlight
+                    practitioners={course.practitioners}
+                    role="instructor"
+                  />
+                </section>
+              )}
 
-            {/* Testimonial Section */}
-            <section className="animate-fade-in" style={{animationDelay: '1s'}}>
-              <h2 className="font-serif text-2xl font-light text-olive-900 mb-10">Success Stories</h2>
-              <div className="bg-cream-50 border border-sage-200 rounded-xl p-8">
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-6 w-6 text-terracotta-500 fill-terracotta-500" />
-                  ))}
+              {/* Closing CTA */}
+              <section className="pt-12 border-t border-sage-200/40">
+                <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-6 py-8 sm:px-8 sm:py-10 text-center">
+                  <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
+                    Start your <em className="italic text-terracotta-600">learning journey</em> today
+                  </h2>
+                  <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
+                    Enroll now and join a community of learners committed to growth and transformation.
+                  </p>
+                  <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-8" onClick={() => setMobileBookingOpen(true)}>
+                    Enroll Now
+                  </Button>
                 </div>
-                <blockquote className="text-lg font-light text-olive-700 italic mb-6 leading-relaxed">
-                  "This course completely changed my approach to nutrition. The personalized guidance and community support made all the difference in achieving my health goals."
-                </blockquote>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-sage-300 to-terracotta-300 flex items-center justify-center">
-                    <span className="text-white font-bold">SM</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-olive-900">Sarah Martinez</p>
-                    <p className="text-sm text-olive-600">Course Graduate • Verified Review</p>
-                  </div>
-                </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
 
-          {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-8" ref={bookingPanelRef}>
+          {/* Right Column - Booking Panel */}
+          <div ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
               <CourseBookingPanel course={course} serviceData={serviceData} />
-              
+
               {/* Trust Indicators */}
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center gap-3 text-olive-600">
-                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
-                  <span className="text-sm">Lifetime access to all materials</span>
+              <div className="mt-6 space-y-2">
+                <div className="flex items-center gap-2 text-olive-500">
+                  <Check className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  <span className="text-xs font-light">Lifetime access to all materials</span>
                 </div>
-                <div className="flex items-center gap-3 text-olive-600">
-                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
-                  <span className="text-sm">Certificate of completion included</span>
+                <div className="flex items-center gap-2 text-olive-500">
+                  <Check className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  <span className="text-xs font-light">Certificate of completion included</span>
                 </div>
-                <div className="flex items-center gap-3 text-olive-600">
-                  <Check className="h-5 w-5 text-sage-600 rounded-full" strokeWidth="1.5" />
-                  <span className="text-sm">30-day money-back guarantee</span>
+                <div className="flex items-center gap-2 text-olive-500">
+                  <Check className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  <span className="text-xs font-light">30-day money-back guarantee</span>
                 </div>
               </div>
-              
-              {/* Quick Stats */}
-              <Card className="mt-6 border border-sage-200 bg-sage-50/50">
-                <CardContent className="p-6">
-                  <h3 className="font-medium text-olive-900 mb-4">Course at a Glance</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-olive-600">Students Enrolled</span>
-                      <span className="font-medium text-olive-900">247</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-olive-600">Completion Rate</span>
-                      <span className="font-medium text-olive-900">92%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-olive-600">Average Rating</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
-                        <span className="font-medium text-olive-900">{course.rating}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Mobile sticky booking bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-sm border-t border-sage-200/60 px-4 py-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+        <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
+          <div>
+            <p className="text-[11px] font-light text-olive-500">From</p>
+            <p className="text-lg font-semibold text-olive-900">${course.price}</p>
+          </div>
+          <Button className="bg-olive-800 hover:bg-olive-700 text-white rounded-full px-6 text-sm font-medium" onClick={() => setMobileBookingOpen(true)}>
+            Enroll Now
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile booking drawer */}
+      <Drawer open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="font-serif text-lg font-light text-olive-900">Enroll in Course</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+            <CourseBookingPanel course={course} serviceData={serviceData} compact />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   )
 }

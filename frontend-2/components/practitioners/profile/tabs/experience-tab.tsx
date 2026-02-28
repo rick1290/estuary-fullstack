@@ -18,31 +18,31 @@ export default function ExperienceTab({
       <ul className="space-y-5">
         <li className="flex items-start gap-3">
           <div className="mt-0.5">
-            <Clock className="h-5 w-5 text-primary" />
+            <Clock className="h-3.5 w-3.5 text-sage-500" />
           </div>
           <div>
-            <p className="font-medium">Years of Experience</p>
-            <p className="text-sm text-muted-foreground">{years_of_experience} years</p>
+            <p className="font-light text-olive-900">Years of Experience</p>
+            <p className="text-sm font-light text-olive-600">{years_of_experience} years</p>
           </div>
         </li>
 
         <li className="flex items-start gap-3">
           <div className="mt-0.5">
-            <User className="h-5 w-5 text-primary" />
+            <User className="h-3.5 w-3.5 text-sage-500" />
           </div>
           <div>
-            <p className="font-medium">Sessions Completed</p>
-            <p className="text-sm text-muted-foreground">{completed_sessions}</p>
+            <p className="font-light text-olive-900">Sessions Completed</p>
+            <p className="text-sm font-light text-olive-600">{completed_sessions}</p>
           </div>
         </li>
 
         <li className="flex items-start gap-3">
           <div className="mt-0.5">
-            <CheckCircle className="h-5 w-5 text-primary" />
+            <CheckCircle className="h-3.5 w-3.5 text-sage-500" />
           </div>
           <div>
-            <p className="font-medium">Verification Status</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="font-light text-olive-900">Verification Status</p>
+            <p className="text-sm font-light text-olive-600">
               {is_verified ? "Verified Practitioner" : "Verification Pending"}
             </p>
           </div>
@@ -50,11 +50,11 @@ export default function ExperienceTab({
 
         <li className="flex items-start gap-3">
           <div className="mt-0.5">
-            <Leaf className="h-5 w-5 text-primary" />
+            <Leaf className="h-3.5 w-3.5 text-sage-500" />
           </div>
           <div>
-            <p className="font-medium">Practitioner Status</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="font-light text-olive-900">Practitioner Status</p>
+            <p className="text-sm font-light text-olive-600">
               {practitioner_status ? practitioner_status.charAt(0).toUpperCase() + practitioner_status.slice(1) : 'Not specified'}
             </p>
           </div>
