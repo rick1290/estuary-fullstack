@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
@@ -211,34 +210,36 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
             )}
           </div>
 
-          {/* Date selector - desktop version */}
+          {/* Date selector */}
           <div>
-            <label className="text-sm font-medium text-olive-800 mb-2.5 block">Choose Your Date</label>
-            <div className="hidden sm:block">
-              <div className="flex items-center gap-1">
+            <label className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-3 block">Choose Your Date</label>
+
+            {/* Desktop: arrows + visible chips */}
+            <div className="hidden sm:block mb-5">
+              <div className="flex items-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handlePrevDates}
                   disabled={visibleDates.length === 0 || (visibleDates[0]?.day === allDates[0].day && visibleDates[0]?.date === allDates[0].date)}
-                  className="text-sage-600 hover:bg-sage-100 flex-shrink-0 h-8 w-8"
+                  className="text-olive-400 hover:text-olive-600 hover:bg-sage-50 flex-shrink-0 h-7 w-7 rounded-lg border border-sage-200/60"
                 >
-                  <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
+                  <ChevronLeft className="h-3.5 w-3.5" strokeWidth="1.5" />
                 </Button>
 
-                <div className="flex gap-1 justify-center flex-1 overflow-hidden">
+                <div className="flex gap-1.5 justify-center flex-1 overflow-hidden">
                   {visibleDates.map((date) => (
                     <div
                       key={date.date}
                       onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                      className={`px-3 py-2 rounded-lg cursor-pointer text-center min-w-[70px] border transition-all ${
+                      className={`flex-1 py-2 rounded-lg cursor-pointer text-center border-[1.5px] transition-all ${
                         selectedDate === `${date.day}, ${date.date}`
-                          ? "border-sage-600 bg-sage-600 text-white shadow-sm"
-                          : "border-sage-200 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
+                          ? "border-olive-900 bg-olive-900 text-white"
+                          : "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
                       }`}
                     >
-                      <p className={`font-medium text-xs ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : ''}`}>{date.day}</p>
-                      <p className={`text-xs mt-1 ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : ''}`}>{date.date}</p>
+                      <p className={`text-[10px] font-medium uppercase tracking-wide leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white/60' : 'text-olive-400'}`}>{date.day}</p>
+                      <p className={`text-sm font-medium mt-1 leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : 'text-olive-800'}`}>{date.date.split(' ')[1]}</p>
                     </div>
                   ))}
                 </div>
@@ -248,45 +249,48 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
                   size="sm"
                   onClick={handleNextDates}
                   disabled={visibleDates.length === 0 || (visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day && visibleDates[visibleDates.length - 1]?.date === allDates[allDates.length - 1].date)}
-                  className="text-sage-600 hover:bg-sage-100 flex-shrink-0 h-8 w-8"
+                  className="text-olive-400 hover:text-olive-600 hover:bg-sage-50 flex-shrink-0 h-7 w-7 rounded-lg border border-sage-200/60"
                 >
-                  <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
+                  <ChevronRight className="h-3.5 w-3.5" strokeWidth="1.5" />
                 </Button>
               </div>
             </div>
 
-          {/* Date selector - mobile dropdown */}
-          <div className="block sm:hidden mb-4">
-            <Label htmlFor="date-select" className="text-sm font-medium text-olive-800 mb-2 block">
-              Select a date
-            </Label>
-            <Select value={selectedDate || ""} onValueChange={handleDateSelect}>
-              <SelectTrigger id="date-select">
-                <SelectValue placeholder="Select a date" />
-              </SelectTrigger>
-              <SelectContent>
-                {allDates.map((date) => (
-                  <SelectItem key={date.date} value={`${date.day}, ${date.date}`}>
-                    {date.day}, {date.date}
-                  </SelectItem>
+            {/* Mobile: horizontal scrollable chips */}
+            <div className="sm:hidden mb-5">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+                {allDates.slice(0, 14).map((date) => (
+                  <div
+                    key={date.date}
+                    onClick={() => {
+                      handleDateSelect(`${date.day}, ${date.date}`)
+                    }}
+                    className={`flex-shrink-0 w-[52px] py-2 rounded-lg cursor-pointer text-center border-[1.5px] transition-all ${
+                      selectedDate === `${date.day}, ${date.date}`
+                        ? "border-olive-900 bg-olive-900 text-white"
+                        : "border-sage-200 bg-white text-olive-700"
+                    }`}
+                  >
+                    <p className={`text-[9px] font-medium uppercase tracking-wide leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white/60' : 'text-olive-400'}`}>{date.day}</p>
+                    <p className={`text-sm font-medium mt-1 leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : 'text-olive-800'}`}>{date.date.split(' ')[1]}</p>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+              </div>
+            </div>
 
-            <Label className="text-sm font-medium text-olive-800 mb-2.5 block">
+            <Label className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-3 block">
               Select Your Time
             </Label>
 
             {isLoadingSlots ? (
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-3 gap-2.5 mb-4">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="h-10 bg-sage-100 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : timeSlots.length > 0 ? (
               <>
-                <div className={`grid grid-cols-3 gap-2 mb-4 ${
+                <div className={`grid grid-cols-3 gap-2.5 mb-4 ${
                   showAllTimes && timeSlots.length > 9 
                     ? 'max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sage-300 scrollbar-track-sage-50' 
                     : ''
@@ -295,10 +299,10 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
                     <button
                       key={time}
                       onClick={() => handleTimeSelect(time)}
-                      className={`p-2 rounded-lg border text-center text-xs font-medium transition-all ${
+                      className={`py-2 rounded-lg border-[1.5px] text-center text-xs font-medium transition-all ${
                         selectedTime === time
-                          ? "border-sage-600 bg-sage-600 text-cream-50 shadow-sm"
-                          : "border-sage-200/80 hover:border-sage-300 bg-white hover:bg-sage-50 text-olive-700"
+                          ? "border-olive-900 bg-olive-900 text-white"
+                          : "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
                       }`}
                     >
                       {time}
