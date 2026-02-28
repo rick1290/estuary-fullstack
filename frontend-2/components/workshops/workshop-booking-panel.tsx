@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -31,9 +30,10 @@ interface ServiceSession {
 interface WorkshopBookingPanelProps {
   workshop: any
   serviceData?: any // The raw service data from API which includes sessions
+  compact?: boolean
 }
 
-export default function WorkshopBookingPanel({ workshop, serviceData }: WorkshopBookingPanelProps) {
+export default function WorkshopBookingPanel({ workshop, serviceData, compact }: WorkshopBookingPanelProps) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -89,17 +89,29 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
   }
 
   return (
-    <Card className="border border-sage-200 bg-cream-50 shadow-md overflow-hidden">
-        <div className="bg-cream-100 p-8 text-center">
-          <p className="text-xs font-light tracking-wide uppercase text-olive-500 mb-2">Workshop Investment</p>
-          <div className="flex items-baseline justify-center gap-2">
-            <span className="text-3xl font-semibold text-olive-900">${workshop.price}</span>
-            <span className="text-sm font-light text-olive-600">per person</span>
+    <div className={`w-full bg-white overflow-hidden ${compact ? '' : 'rounded-2xl border border-sage-200/60'}`}>
+        {!compact && (
+          <div className="relative">
+            <div className="aspect-[4/3] w-full">
+              {workshop.image ? (
+                <img src={workshop.image} alt={workshop.title || 'Workshop'} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50" />
+              )}
+            </div>
+            <div className="absolute bottom-4 left-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-sm">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl font-semibold text-olive-900">${workshop.price}</span>
+                  <span className="text-[11px] font-light text-olive-500">per person</span>
+                </div>
+                <p className="text-[10px] font-light text-olive-400 mt-0.5">{Math.floor(workshop.duration / 60)} hours experience</p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs font-light text-olive-500 mt-2">{Math.floor(workshop.duration / 60)} hours experience</p>
-        </div>
+        )}
 
-      <CardContent className="p-8">
+      <div className="p-8">
         {/* Workshop Quick Info */}
         <div className="space-y-4 mb-6">
             <div className="flex items-center justify-between">
@@ -186,9 +198,8 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
             )}
 
           <Button
-            className="w-full py-6 text-lg font-medium shadow-sm hover:shadow-md transition-all"
+            className="bg-olive-800 hover:bg-olive-700 text-white rounded-full py-5 text-sm font-medium w-full"
             onClick={handleRegisterClick}
-            size="lg"
             disabled={!selectedSessionId || upcomingSessions.length === 0 || serviceData?.has_ended}
           >
             {serviceData?.has_ended
@@ -205,7 +216,7 @@ export default function WorkshopBookingPanel({ workshop, serviceData }: Workshop
               : '✓ Full refund 48hrs before • ✓ Materials included'
             }
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
 }

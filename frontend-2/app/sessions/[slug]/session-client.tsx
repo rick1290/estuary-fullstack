@@ -143,30 +143,48 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
   return (
     <div className="min-h-screen bg-cream-50 pb-20 lg:pb-0">
       <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
-        {/* Breadcrumb */}
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
-                <Link href="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
-                <Link href="/marketplace/sessions">Sessions</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <span className="text-sm text-olive-900">{service?.name || 'Session'}</span>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        {/* Breadcrumb + Save */}
+        <div className="flex items-center justify-between mb-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+                  <Link href="/marketplace/sessions">Sessions</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <span className="text-sm text-olive-900">{service?.name || 'Session'}</span>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="group text-olive-500 hover:text-olive-700 flex-shrink-0"
+            onClick={handleSaveForLater}
+            disabled={isSaveLoading}
+          >
+            <Heart
+              className={`h-4 w-4 mr-1.5 transition-colors ${
+                isFavorited ? 'fill-rose-500 text-rose-500' : 'group-hover:text-rose-500'
+              }`}
+              strokeWidth="1.5"
+            />
+            {isFavorited ? 'Saved' : 'Save'}
+          </Button>
+        </div>
 
         {/* Two-column layout — content left, booking right */}
         <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
@@ -278,24 +296,6 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 )}
               </div>
 
-              {/* Save button */}
-              <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="group text-olive-500 hover:text-olive-700"
-                  onClick={handleSaveForLater}
-                  disabled={isSaveLoading}
-                >
-                  <Heart
-                    className={`h-4 w-4 mr-1.5 transition-colors ${
-                      isFavorited ? 'fill-rose-500 text-rose-500' : 'group-hover:text-rose-500'
-                    }`}
-                    strokeWidth="1.5"
-                  />
-                  {isFavorited ? 'Saved' : 'Save'}
-                </Button>
-              </div>
             </div>
 
             {/* Divider */}
