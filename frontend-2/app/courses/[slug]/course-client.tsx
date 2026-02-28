@@ -470,7 +470,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </Link>
             )}
 
-            <p className="text-[15px] text-olive-600 leading-relaxed font-light mb-5">
+            <p className="text-base text-olive-600 leading-relaxed font-light mb-5">
               {course.description}
             </p>
 

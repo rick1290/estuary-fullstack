@@ -252,7 +252,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
               {/* Description */}
               {(service?.short_description || service?.description) && (
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed mb-5">
+                <p className="text-base font-light text-olive-600 leading-relaxed mb-5">
                   {service?.short_description || service?.description || ''}
                 </p>
               )}

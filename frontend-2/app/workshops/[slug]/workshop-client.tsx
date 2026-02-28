@@ -285,7 +285,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             )}
 
             {/* Description */}
-            <p className="text-[15px] text-olive-600 leading-relaxed font-light mb-5">
+            <p className="text-base text-olive-600 leading-relaxed font-light mb-5">
               {workshop.description}
             </p>
 
