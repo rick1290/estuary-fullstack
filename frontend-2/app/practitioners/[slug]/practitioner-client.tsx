@@ -30,13 +30,9 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <div className="bg-gradient-to-b from-sage-50/50 to-cream-50 pb-8">
-          <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
-            <Skeleton className="h-6 w-96 mb-6" />
-          </div>
-        </div>
-        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pb-12">
-          <div className="grid lg:grid-cols-[1fr,340px] gap-6 lg:gap-8">
+        <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+          <Skeleton className="h-6 w-96 mb-6" />
+          <div className="grid lg:grid-cols-[1fr,340px] gap-8 lg:gap-10">
             <div className="w-full min-w-0">
               <ProfileSkeleton />
             </div>
@@ -69,39 +65,34 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="min-h-screen bg-cream-50">
-      {/* Simple gradient header background */}
-      <div className="bg-gradient-to-b from-sage-50/50 to-cream-50 pb-8">
-        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
-          {/* Breadcrumb */}
-          <Breadcrumb className="mb-6">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-600 hover:text-olive-800 text-sm">
-                  <Link href="/">Home</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-3.5 w-3.5 text-olive-400" strokeWidth="1.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild className="text-olive-600 hover:text-olive-800 text-sm">
-                  <Link href="/marketplace/practitioners">Practitioners</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-3.5 w-3.5 text-olive-400" strokeWidth="1.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <span className="text-olive-800 font-medium text-sm">{practitioner.display_name || `${practitioner.user.first_name} ${practitioner.user.last_name}`.trim() || 'Practitioner'}</span>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </div>
+      <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+        {/* Breadcrumb */}
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+                <Link href="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+                <Link href="/marketplace/practitioners">Practitioners</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <span className="text-sm text-olive-900">{practitioner.display_name || `${practitioner.user.first_name} ${practitioner.user.last_name}`.trim() || 'Practitioner'}</span>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-      {/* Main Content Area */}
-      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="grid lg:grid-cols-[1fr,340px] gap-6 lg:gap-8">
+        {/* Main Content Area */}
+        <div className="grid lg:grid-cols-[1fr,340px] gap-8 lg:gap-10">
           {/* Left Column - Main Content */}
           <div className="w-full min-w-0">
             <Suspense fallback={<ProfileSkeleton />}>

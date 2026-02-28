@@ -3,10 +3,9 @@
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Clock, MapPin, Globe, Calendar, MessageSquare, Heart, Sparkles, Rss, Bell } from "lucide-react"
+import { Check, Clock, MapPin, Globe, Calendar, MessageSquare, Heart, Rss, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import type { Practitioner } from "@/types/practitioner"
 import { useAuth } from "@/hooks/use-auth"
@@ -104,30 +103,30 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
 
   return (
     <>
-      <Card className="border border-sage-100 bg-white shadow-sm overflow-hidden sticky top-24">
+      <Card className="border border-sage-200/60 bg-white rounded-2xl overflow-hidden sticky top-24">
         <CardContent className="p-6">
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2 mb-6">
-            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
-              <Calendar className="h-4 w-4 mx-auto mb-1 text-sage-600" />
-              <div className="text-lg font-bold text-olive-900">{practitioner.completed_sessions_count || 0}</div>
-              <div className="text-[10px] text-olive-600">Sessions completed</div>
+            <div className="text-center p-3 bg-sage-50 rounded-xl border border-sage-200/60">
+              <Calendar className="h-4 w-4 mx-auto mb-1 text-sage-500" />
+              <div className="text-lg font-semibold text-olive-900">{practitioner.completed_sessions_count || 0}</div>
+              <div className="text-xs font-light text-olive-600">Sessions completed</div>
             </div>
-            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
-              <Sparkles className="h-4 w-4 mx-auto mb-1 text-sage-600" />
-              <div className="text-lg font-bold text-olive-900">{practitioner.total_services || 0}</div>
-              <div className="text-[10px] text-olive-600">Services</div>
+            <div className="text-center p-3 bg-sage-50 rounded-xl border border-sage-200/60">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-sage-500" />
+              <div className="text-lg font-semibold text-olive-900">{practitioner.total_services || 0}</div>
+              <div className="text-xs font-light text-olive-600">Services</div>
             </div>
-            <div className="text-center p-3 bg-gradient-to-br from-sage-50 to-sage-100/50 rounded-lg border border-sage-100">
-              <Clock className="h-4 w-4 mx-auto mb-1 text-sage-600" />
-              <div className="text-lg font-bold text-olive-900">
+            <div className="text-center p-3 bg-sage-50 rounded-xl border border-sage-200/60">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-sage-500" />
+              <div className="text-lg font-semibold text-olive-900">
                 {practitioner.price_range?.min
                   ? `$${(practitioner.price_range.min / 100).toFixed(0)}`
                   : practitioner.min_price
                     ? `$${(practitioner.min_price / 100).toFixed(0)}`
-                    : '$85'}
+                    : '—'}
               </div>
-              <div className="text-[10px] text-olive-600">From</div>
+              <div className="text-xs font-light text-olive-600">From</div>
             </div>
           </div>
 
@@ -136,11 +135,10 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
           {/* Primary Actions */}
           <div className="space-y-3 mb-6">
             <Button
-              className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+              className="w-full bg-olive-800 hover:bg-olive-700 text-white rounded-full"
               size="lg"
               onClick={handleBookSessionClick}
             >
-              <Sparkles className="mr-2 h-4 w-4" />
               Book a Session
             </Button>
 
@@ -174,9 +172,9 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Rss className="h-4 w-4 text-sage-600" />
-                <span className="text-sm font-medium text-olive-800">Estuary Streams</span>
+                <span className="text-sm font-light text-olive-800">Estuary Streams</span>
               </div>
-              <Badge variant="sage" className="text-xs">Free</Badge>
+              <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">Free</span>
             </div>
             <p className="text-xs text-olive-600 mb-3">
               Get updates, insights, and exclusive content from {practitioner.display_name.split(' ')[0]}
@@ -202,17 +200,17 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
           </div>
 
           {/* Trust Badges */}
-          <div className="pt-6 border-t border-sage-100 space-y-2">
-            <div className="flex items-center gap-2 text-xs text-olive-600">
-              <Check className="h-3.5 w-3.5 text-sage-600" />
+          <div className="pt-6 border-t border-sage-200/40 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-light text-olive-600">
+              <Check className="h-3.5 w-3.5 text-sage-500" />
               Free cancellation up to 24h
             </div>
-            <div className="flex items-center gap-2 text-xs text-olive-600">
-              <Check className="h-3.5 w-3.5 text-sage-600" />
+            <div className="flex items-center gap-2 text-xs font-light text-olive-600">
+              <Check className="h-3.5 w-3.5 text-sage-500" />
               Secure payment
             </div>
-            <div className="flex items-center gap-2 text-xs text-olive-600">
-              <Check className="h-3.5 w-3.5 text-sage-600" />
+            <div className="flex items-center gap-2 text-xs font-light text-olive-600">
+              <Check className="h-3.5 w-3.5 text-sage-500" />
               100% satisfaction guarantee
             </div>
           </div>

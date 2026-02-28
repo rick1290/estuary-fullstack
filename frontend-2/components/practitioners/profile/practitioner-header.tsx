@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, MapPin, Star, Users, Check, Heart, MessageCircle, Share2 } from "lucide-react"
 import type { Practitioner } from "@/types/practitioner"
@@ -66,14 +65,14 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
     }
   }, [practitioner.id, isLiked, isAuthenticated, openAuthModal, refetchFavorites])
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-sage-100 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-sage-200/60 overflow-hidden">
       {/* Compact Header Section */}
-      <div className="p-6 lg:p-8">
+      <div className="p-5">
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
             <div className="relative">
-              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-sage-100 to-terracotta-100 shadow-lg">
+              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-sage-100">
                 {practitioner.profile_image_url ? (
                   <img
                     src={practitioner.profile_image_url}
@@ -89,7 +88,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 )}
               </div>
               {practitioner.is_verified && (
-                <div className="absolute -bottom-2 -right-2 bg-sage-600 text-white rounded-full p-1.5 shadow-md">
+                <div className="absolute -bottom-2 -right-2 bg-sage-600 text-white rounded-full p-1.5">
                   <Check className="h-4 w-4" strokeWidth="2.5" />
                 </div>
               )}
@@ -100,28 +99,28 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           <div className="flex-1">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="font-serif text-2xl lg:text-3xl font-light text-olive-900 mb-1">
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
                   {practitioner.display_name}
                 </h1>
-                <p className="text-lg text-olive-700 mb-3">{practitioner.title}</p>
+                <p className="text-[15px] font-light text-olive-600 leading-relaxed mb-3">{practitioner.title}</p>
                 
                 {/* Key Stats - Horizontal */}
-                <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-4 text-xs font-light">
                   <div className="flex items-center gap-1.5">
-                    <Star className="h-4 w-4 text-terracotta-500 fill-terracotta-500" />
-                    <span className="font-semibold text-olive-900">{practitioner.average_rating_float}</span>
+                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
+                    <span className="font-medium text-olive-900">{practitioner.average_rating_float}</span>
                     <span className="text-olive-600">({practitioner.total_reviews} reviews)</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-sage-600" />
+                    <Clock className="h-3.5 w-3.5 text-sage-500" />
                     <span className="text-olive-700">{practitioner.years_of_experience}+ years</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Users className="h-4 w-4 text-sage-600" />
+                    <Users className="h-3.5 w-3.5 text-sage-500" />
                     <span className="text-olive-700">{practitioner.total_services} services</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-sage-600" />
+                    <MapPin className="h-3.5 w-3.5 text-sage-500" />
                     <span className="text-olive-700">
                       {(() => {
                         // Handle both API structures: primary_location object or locations array
@@ -140,7 +139,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:bg-sage-50"
+                  className="rounded-full text-olive-500 hover:text-olive-700 hover:bg-sage-50"
                   onClick={() => {
                     navigator.share({
                       title: practitioner.display_name,
@@ -157,12 +156,12 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:bg-rose-50"
+                  className="rounded-full text-olive-500 hover:text-olive-700 hover:bg-sage-50"
                   onClick={handleLikeToggle}
                   disabled={isLoading}
                   aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
                 >
-                  <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "hover:text-rose-500"}`} />
+                  <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
                 </Button>
               </div>
             </div>
@@ -171,21 +170,19 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
             <div className="mt-4">
               <div className="flex flex-wrap gap-1.5">
                 {practitioner.specializations.slice(0, 4).map((spec) => (
-                  <Badge
+                  <span
                     key={spec.id}
-                    variant="secondary"
-                    className="bg-sage-50 text-olive-700 border-sage-200 text-xs"
+                    className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light"
                   >
                     {spec.content}
-                  </Badge>
+                  </span>
                 ))}
                 {practitioner.specializations.length > 4 && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-sage-50/50 text-olive-600 border-sage-200 text-xs"
+                  <span
+                    className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light"
                   >
                     +{practitioner.specializations.length - 4} more
-                  </Badge>
+                  </span>
                 )}
               </div>
             </div>
@@ -194,27 +191,27 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
 
         {/* Quote - If exists */}
         {practitioner.quote && (
-          <div className="mt-6 p-4 bg-cream-100/60 rounded-xl border border-sage-200/60">
-            <p className="text-olive-700 italic">"{practitioner.quote}"</p>
+          <div className="mt-6 p-4 bg-cream-100/60 rounded-2xl border border-sage-200/60">
+            <p className="text-olive-700 font-light italic">"{practitioner.quote}"</p>
           </div>
         )}
 
         {/* Primary Actions - Message Button */}
         <div className="mt-6 flex gap-3">
-          <Button 
+          <Button
             variant="outline"
             size="default"
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none rounded-full"
             onClick={onMessageClick}
           >
             <MessageCircle className="h-4 w-4 mr-2" />
             Send Message
           </Button>
           {practitioner.is_verified && (
-            <Badge variant="sage" className="px-3 py-2">
+            <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light inline-flex items-center">
               <Check className="h-3.5 w-3.5 mr-1.5" />
               Verified Expert
-            </Badge>
+            </span>
           )}
         </div>
       </div>

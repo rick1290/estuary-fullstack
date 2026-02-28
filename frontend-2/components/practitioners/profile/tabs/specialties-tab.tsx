@@ -1,5 +1,3 @@
-import { Badge } from "@/components/ui/badge"
-
 interface Item {
   id: string
   content: string
@@ -21,50 +19,50 @@ export default function SpecialtiesTab({ specializations, styles, topics, modali
   return (
     <div className="px-1 space-y-6">
       <div>
-        <h3 className="text-base font-medium mb-3">Specializations</h3>
+        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Specializations</h3>
         <div className="flex flex-wrap gap-2">
           {specializations.map((specialization) => (
-            <Badge key={specialization.id} variant="default">
+            <span key={specialization.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
               {specialization.content}
-            </Badge>
+            </span>
           ))}
-          {specializations.length === 0 && <p className="text-sm text-muted-foreground">No specializations listed.</p>}
+          {specializations.length === 0 && <p className="text-sm font-light text-olive-600">No specializations listed.</p>}
         </div>
       </div>
 
       <div>
-        <h3 className="text-base font-medium mb-3">Styles</h3>
+        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Styles</h3>
         <div className="flex flex-wrap gap-2">
           {styles.map((style) => (
-            <Badge key={style.id} variant="outline">
+            <span key={style.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
               {style.content}
-            </Badge>
+            </span>
           ))}
-          {styles.length === 0 && <p className="text-sm text-muted-foreground">No styles listed.</p>}
+          {styles.length === 0 && <p className="text-sm font-light text-olive-600">No styles listed.</p>}
         </div>
       </div>
 
       <div>
-        <h3 className="text-base font-medium mb-3">Topics</h3>
+        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Topics</h3>
         <div className="flex flex-wrap gap-2">
           {topics.map((topic) => (
-            <Badge key={topic.id} variant="secondary">
+            <span key={topic.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
               {topic.content}
-            </Badge>
+            </span>
           ))}
-          {topics.length === 0 && <p className="text-sm text-muted-foreground">No topics listed.</p>}
+          {topics.length === 0 && <p className="text-sm font-light text-olive-600">No topics listed.</p>}
         </div>
       </div>
 
       <div>
-        <h3 className="text-base font-medium mb-3">Modalities</h3>
+        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Modalities</h3>
         <div className="flex flex-wrap gap-2">
           {modalities.map((modality) => (
-            <Badge key={modality.id} variant="outline">
+            <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
               {modality.name}
-            </Badge>
+            </span>
           ))}
-          {modalities.length === 0 && <p className="text-sm text-muted-foreground">No modalities listed.</p>}
+          {modalities.length === 0 && <p className="text-sm font-light text-olive-600">No modalities listed.</p>}
         </div>
       </div>
     </div>

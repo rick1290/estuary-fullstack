@@ -107,13 +107,13 @@ export default function PractitionerStreamsPreview({
 
   if (posts.length === 0) {
     return (
-      <Card className="border-sage-200 bg-gradient-to-br from-sage-50/50 to-cream-50">
+      <Card className="border border-sage-200/60 bg-white rounded-2xl">
         <CardContent className="py-12 text-center">
           <div className="mx-auto w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center mb-4">
-            <FileText className="h-6 w-6 text-sage-600" />
+            <FileText className="h-6 w-6 text-sage-500" />
           </div>
-          <h3 className="text-lg font-semibold text-olive-800 mb-2">No Streams Yet</h3>
-          <p className="text-olive-600 max-w-sm mx-auto">
+          <h3 className="font-serif text-xl font-light text-olive-900 mb-5">No Streams Yet</h3>
+          <p className="text-[15px] font-light text-olive-600 leading-relaxed max-w-sm mx-auto">
             {practitionerName.split(' ')[0]} hasn't published any stream content yet.
             Check back soon for updates, insights, and exclusive content.
           </p>
@@ -128,9 +128,9 @@ export default function PractitionerStreamsPreview({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Rss className="h-5 w-5 text-sage-600" />
-          <h2 className="text-xl font-semibold text-olive-900">Estuary Streams</h2>
+          <h2 className="font-serif text-xl font-light text-olive-900">Estuary Streams</h2>
           {totalCount > 0 && (
-            <span className="text-sm text-olive-600">({totalCount} posts)</span>
+            <span className="text-xs font-light text-olive-600">({totalCount} posts)</span>
           )}
         </div>
         {hasMore && (
@@ -144,7 +144,7 @@ export default function PractitionerStreamsPreview({
       </div>
 
       {/* Description */}
-      <p className="text-olive-600">
+      <p className="text-[15px] font-light text-olive-600 leading-relaxed">
         Follow {practitionerName.split(' ')[0]}'s journey with regular updates, insights, and exclusive content.
       </p>
 
@@ -158,7 +158,7 @@ export default function PractitionerStreamsPreview({
       {/* View All Button */}
       {hasMore && (
         <div className="text-center pt-2">
-          <Button variant="outline" asChild className="border-sage-300 text-sage-700 hover:bg-sage-50">
+          <Button variant="ghost" asChild className="text-olive-500 hover:text-olive-700 text-sm">
             <Link href={viewAllUrl}>
               View All {totalCount} Posts from {practitionerName.split(' ')[0]}
               <ArrowRight className="ml-2 h-4 w-4" />

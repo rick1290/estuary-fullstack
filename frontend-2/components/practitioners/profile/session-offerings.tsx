@@ -1,11 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Clock, MapPin, User, Package, ShoppingBag } from "lucide-react"
-import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 // Format price to remove unnecessary decimals (e.g., "5.00" -> "5", "5.50" -> "5.50")
@@ -76,28 +74,35 @@ export default function SessionOfferings({
 
   return (
     <div className="mt-10 mb-10">
-      <h2 className="text-2xl font-bold mb-4">Sessions, Bundles & Packages</h2>
+      <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Offerings</p>
+      <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Sessions, Bundles & Packages</h2>
 
       {/* Category Filters */}
       {categories && categories.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
-          <Badge
-            variant={selectedServiceType === null ? "default" : "outline"}
-            className="cursor-pointer px-3 py-1 text-sm"
+          <button
+            className={`text-xs px-2.5 py-1 rounded-full font-light cursor-pointer transition-all ${
+              selectedServiceType === null
+                ? "bg-olive-800 text-white"
+                : "bg-sage-50 text-olive-600 border border-sage-200/60"
+            }`}
             onClick={() => handleServiceTypeChange(null)}
           >
             All Categories
-          </Badge>
+          </button>
 
           {categories.map((category) => (
-            <Badge
+            <button
               key={category.id}
-              variant={selectedServiceType === category.id ? "default" : "outline"}
-              className="cursor-pointer px-3 py-1 text-sm"
+              className={`text-xs px-2.5 py-1 rounded-full font-light cursor-pointer transition-all ${
+                selectedServiceType === category.id
+                  ? "bg-olive-800 text-white"
+                  : "bg-sage-50 text-olive-600 border border-sage-200/60"
+              }`}
               onClick={() => handleServiceTypeChange(category.id)}
             >
               {category.name}
-            </Badge>
+            </button>
           ))}
         </div>
       )}
@@ -111,12 +116,11 @@ export default function SessionOfferings({
           .map((session) => {
             const serviceType = session.service_type_code || session.service_type?.name || "session"
             const ServiceIcon = getServiceIcon(serviceType)
-            const config = getServiceTypeConfig(serviceType)
 
             return (
-              <Card key={session.id} className="overflow-hidden transition-all hover:shadow-md">
+              <Card key={session.id} className="overflow-hidden transition-all border border-sage-200/60">
                 <CardContent className="p-0">
-                  <div className="flex items-center gap-4 p-4">
+                  <div className="flex items-center gap-4 p-5">
                     {/* Service Image/Icon */}
                     <div className="flex-shrink-0">
                       {session.image_url ? (
@@ -128,7 +132,7 @@ export default function SessionOfferings({
                           />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sage-100 to-blush-100 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-xl bg-sage-50 flex items-center justify-center">
                           <ServiceIcon className="h-7 w-7 text-sage-600" strokeWidth={1.5} />
                         </div>
                       )}
@@ -136,23 +140,20 @@ export default function SessionOfferings({
 
                     {/* Service Details */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg mb-1 truncate">{session.name}</h3>
+                      <h3 className="text-base font-medium text-olive-900 mb-1 truncate">{session.name}</h3>
 
-                      <Badge
-                        className="mb-2 capitalize"
-                        variant={config.variant}
-                      >
+                      <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light capitalize inline-block mb-2">
                         {session.service_type_display || serviceType}
-                      </Badge>
+                      </span>
 
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap gap-4 text-xs font-light text-olive-600">
                         <div className="flex items-center gap-1.5">
-                          <Clock className="h-4 w-4" />
+                          <Clock className="h-3.5 w-3.5 text-sage-500" />
                           <span>{session.duration_minutes || session.duration} minutes</span>
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="h-3.5 w-3.5 text-sage-500" />
                           <span>{session.location_type.charAt(0).toUpperCase() + session.location_type.slice(1)}</span>
                         </div>
                       </div>
@@ -160,9 +161,9 @@ export default function SessionOfferings({
 
                     {/* Price & CTA */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <p className="font-semibold text-primary text-lg">{session.price ? `$${formatPrice(session.price)}` : "Free"}</p>
+                      <p className="text-base font-semibold text-olive-900">{session.price ? `$${formatPrice(session.price)}` : "Free"}</p>
 
-                      <Button asChild variant="outline" size="sm">
+                      <Button asChild size="sm" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full text-sm">
                         <Link href={getServiceDetailUrl(session)}>
                           {getServiceCtaText(serviceType)}
                         </Link>

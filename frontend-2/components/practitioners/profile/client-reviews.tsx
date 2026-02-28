@@ -20,13 +20,14 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
   const testimonials: Review[] = []
   return (
     <div className="mb-10">
-      <h2 className="text-2xl font-bold mb-4">Client Reviews</h2>
+      <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Feedback</p>
+      <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Client Reviews</h2>
 
       {/* Overall Rating Summary */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <div className="bg-primary text-primary-foreground p-4 rounded-lg flex items-center">
-          <span className="text-3xl font-bold mr-2">{Number(practitioner.average_rating || practitioner.average_rating_float || 0).toFixed(1)}</span>
-          <span className="text-sm">out of 5</span>
+        <div className="bg-sage-50 text-olive-900 border border-sage-200/60 p-4 rounded-lg flex items-center">
+          <span className="text-2xl font-light mr-2">{Number(practitioner.average_rating || practitioner.average_rating_float || 0).toFixed(1)}</span>
+          <span className="text-xs font-light text-olive-600">out of 5</span>
         </div>
 
         <div>
@@ -36,13 +37,13 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
               .map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-5 w-5 ${
-                    i < Math.round(Number(practitioner.average_rating || practitioner.average_rating_float || 0)) ? "text-amber-500" : "text-muted-foreground/30"
+                  className={`h-3.5 w-3.5 ${
+                    i < Math.round(Number(practitioner.average_rating || practitioner.average_rating_float || 0)) ? "text-amber-500" : "text-olive-600/30"
                   }`}
                   fill={i < Math.round(Number(practitioner.average_rating || practitioner.average_rating_float || 0)) ? "currentColor" : "none"}
                 />
               ))}
-            <span className="ml-2 text-sm text-muted-foreground">Based on {practitioner.total_reviews || 0} reviews</span>
+            <span className="ml-2 text-xs font-light text-olive-600">Based on {practitioner.total_reviews || 0} reviews</span>
           </div>
         </div>
       </div>
@@ -51,8 +52,8 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
       {testimonials.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {testimonials.map((review) => (
-          <Card key={review.id} className="h-full transition-all hover:shadow-md">
-            <CardContent className="p-4 flex flex-col h-full">
+          <Card key={review.id} className="h-full transition-all border border-sage-200/60">
+            <CardContent className="p-5 flex flex-col h-full">
               {/* Rating Stars */}
               <div className="flex mb-3">
                 {Array(5)
@@ -60,19 +61,19 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
                   .map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${i < review.rating ? "text-amber-500" : "text-muted-foreground/30"}`}
+                      className={`h-3.5 w-3.5 ${i < review.rating ? "text-amber-500" : "text-olive-600/30"}`}
                       fill={i < review.rating ? "currentColor" : "none"}
                     />
                   ))}
               </div>
 
               {/* Review Content */}
-              <p className="italic mb-4 flex-grow">"{review.content}"</p>
+              <p className="text-[15px] font-light text-olive-600 leading-relaxed italic mb-4 flex-grow">"{review.content}"</p>
 
               {/* Author & Date */}
               <div className="flex justify-between items-center text-sm mt-2">
-                <span className="font-medium">{review.author}</span>
-                <span className="text-muted-foreground">
+                <span className="font-light text-olive-900">{review.author}</span>
+                <span className="text-olive-500 font-light">
                   {new Date(review.date).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "short",
@@ -85,15 +86,15 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
         ))}
         </div>
       ) : (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">No reviews yet. Be the first to share your experience!</p>
+        <Card className="p-8 text-center border border-sage-200/60">
+          <p className="text-olive-600 font-light">No reviews yet. Be the first to share your experience!</p>
         </Card>
       )}
 
       {/* View More Button */}
       {practitioner.total_reviews > testimonials.length && (
         <div className="flex justify-center mt-6">
-          <Button variant="outline" className="flex items-center gap-1">
+          <Button variant="ghost" className="flex items-center gap-1 text-olive-500 hover:text-olive-700">
             <span>View More Reviews</span>
             <ChevronDown className="h-4 w-4" />
           </Button>

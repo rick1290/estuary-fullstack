@@ -145,7 +145,7 @@ export default function PractitionerProfile({ practitioner, initialLiked = false
   })()
 
   return (
-    <div>
+    <div className="space-y-10 lg:space-y-12">
       {/* Practitioner Header */}
       <PractitionerHeader practitioner={practitioner} onMessageClick={handleMessageClick} />
 
