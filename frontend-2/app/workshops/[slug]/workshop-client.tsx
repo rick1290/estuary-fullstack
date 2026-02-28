@@ -284,45 +284,41 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               </Link>
             )}
 
-            {/* Description */}
-            <p className="text-[15px] text-olive-600 leading-relaxed font-light mb-5">
+            {/* Description lede */}
+            <p className="text-base sm:text-lg font-light text-olive-700 leading-[1.8] mb-6 pl-5 border-l-[3px] border-terracotta-400">
               {workshop.description}
             </p>
 
-            {/* Meta row */}
-            <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500 mb-6">
-              <div className="flex items-center gap-1.5">
+            {/* Meta pills */}
+            <div className="flex flex-wrap items-center gap-2.5 mb-6">
+              <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                 <Clock className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                <span>{transformedWorkshop.totalHours} hours</span>
-              </div>
-              <div className="flex items-center gap-1.5">
+                {transformedWorkshop.totalHours} hours
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                 <Users className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                <span>{workshop.spotsRemaining} of {workshop.capacity} spots left</span>
-              </div>
+                {workshop.spotsRemaining} of {workshop.capacity} spots left
+              </span>
               {workshop.nextSessionDate && (
-                <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                   <Calendar className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                  <span>
-                    {new Date(workshop.nextSessionDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </span>
-                </div>
+                  {new Date(workshop.nextSessionDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </span>
               )}
               {workshop.nextSessionDate && upcomingSessions.length > 0 && (
-                <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                   <Clock className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                  <span>
-                    {new Date(upcomingSessions[0].start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(upcomingSessions[0].end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                  </span>
-                </div>
+                  {new Date(upcomingSessions[0].start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(upcomingSessions[0].end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                </span>
               )}
-              <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                 <MapPin className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                <span>{workshop.location}</span>
-              </div>
+                {workshop.location}
+              </span>
             </div>
 
             {/* Divider */}
@@ -333,7 +329,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* Workshop Overview */}
               <section>
                 <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Transformation Awaits</h2>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Transformation <em className="italic text-terracotta-600">Awaits</em></h2>
                 <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                   {transformedWorkshop.longDescription}
                 </p>
@@ -343,7 +339,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {workshop.benefits && workshop.benefits.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {workshop.benefits.map((benefit: any, index: number) => (
                       <div key={benefit.id || index} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
@@ -362,7 +358,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {workshop.agendaItems && workshop.agendaItems.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Schedule</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Workshop Agenda</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Workshop <em className="italic text-terracotta-600">Agenda</em></h2>
                   <div className="border border-sage-200 rounded-xl overflow-hidden">
                     <div className="p-6 bg-cream-50">
                       <div className="space-y-4">
@@ -393,7 +389,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* What's Included */}
               {workshop.includes && workshop.includes.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
                   <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
                     <div className="grid md:grid-cols-2 gap-3">
                       {workshop.includes.map((item: string, index: number) => (

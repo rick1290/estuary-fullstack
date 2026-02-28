@@ -470,38 +470,31 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </Link>
             )}
 
-            <p className="text-[15px] text-olive-600 leading-relaxed font-light mb-5">
+            <p className="text-base sm:text-lg font-light text-olive-700 leading-[1.8] mb-6 pl-5 border-l-[3px] border-terracotta-400">
               {course.description}
             </p>
 
-            {/* Meta row */}
-            <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500 mb-6">
+            {/* Meta pills */}
+            <div className="flex flex-wrap items-center gap-2.5 mb-6">
               {course.firstSessionDate && (
-                <>
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" strokeWidth="1.5" />
-                    <span>
-                      Starts {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </span>
-                  </div>
-                  <span className="text-olive-300">·</span>
-                </>
+                <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                  Starts {new Date(course.firstSessionDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
               )}
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" strokeWidth="1.5" />
-                <span>{course.sessionCount} Live Sessions</span>
-              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
+                <Clock className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                {course.sessionCount} Live Sessions
+              </span>
               {course.reviewCount > 0 && (
-                <>
-                  <span className="text-olive-300">·</span>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
-                    <span>{course.rating} ({course.reviewCount})</span>
-                  </div>
-                </>
+                <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
+                  <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
+                  <span className="font-medium text-olive-800">{course.rating}</span>
+                  <span className="text-olive-400">({course.reviewCount})</span>
+                </span>
               )}
             </div>
 
@@ -513,7 +506,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* Course Overview */}
               <section>
                 <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Begin Your Transformation</h2>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Begin Your <em className="italic text-terracotta-600">Transformation</em></h2>
                 <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line break-words">
                   {course.longDescription}
                 </p>
@@ -523,7 +516,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {course.whatYoullLearn && course.whatYoullLearn.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Master</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Master</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {course.whatYoullLearn.map((item, index) => (
                       <div key={index} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-sm transition-all">
@@ -544,7 +537,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* What's Included */}
               {course.includes && course.includes.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
                   <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
                     <div className="grid md:grid-cols-2 gap-3">
                       {course.includes.map((item, index) => (
@@ -563,7 +556,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* Prerequisites */}
               {course.prerequisites && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Prerequisites</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5"><em className="italic text-terracotta-600">Prerequisites</em></h2>
                   <div className="bg-cream-100 rounded-xl p-6">
                     <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
                   </div>
@@ -572,7 +565,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
               {/* Your Learning Journey */}
               <section>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Learning Journey</h2>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Learning <em className="italic text-terracotta-600">Journey</em></h2>
                 <div className="flex items-center gap-2 text-sm text-olive-600 bg-sage-50/50 rounded-lg p-3 mb-6">
                   <Clock className="h-4 w-4" />
                   <span>
@@ -656,7 +649,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {course.benefits && course.benefits.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {course.benefits.map((benefit, index) => (
                       <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">

@@ -250,49 +250,47 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 </Link>
               )}
 
-              {/* Description */}
+              {/* Description lede */}
               {(service?.short_description || service?.description) && (
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed mb-5">
+                <p className="text-base sm:text-lg font-light text-olive-700 leading-[1.8] mb-6 pl-5 border-l-[3px] border-terracotta-400">
                   {service?.short_description || service?.description || ''}
                 </p>
               )}
 
-              {/* Meta row */}
-              <div className="flex flex-wrap items-center gap-4 text-sm font-light text-olive-500 mb-6">
+              {/* Meta pills */}
+              <div className="flex flex-wrap items-center gap-2.5 mb-6">
                 {service?.duration_minutes && (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                    <span>{service.duration_display}</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
+                    <Clock className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                    {service.duration_display}
+                  </span>
                 )}
                 {service?.location_type && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                    <span>
-                      {service.location_type === 'virtual'
-                        ? 'Virtual'
-                        : service.practitioner_location
-                          ? [
-                              service.practitioner_location.city_name,
-                              service.practitioner_location.state_code || service.practitioner_location.state_name,
-                              service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
-                            ].filter(Boolean).join(', ')
-                          : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                    {service.location_type === 'virtual'
+                      ? 'Virtual'
+                      : service.practitioner_location
+                        ? [
+                            service.practitioner_location.city_name,
+                            service.practitioner_location.state_code || service.practitioner_location.state_name,
+                            service.practitioner_location.country_code !== 'US' && service.practitioner_location.country_name
+                          ].filter(Boolean).join(', ')
+                        : service.location_type === 'hybrid' ? 'Hybrid' : 'In Person'}
+                  </span>
                 )}
                 {service?.max_participants === 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <User className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
-                    <span>1-on-1</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
+                    <User className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
+                    1-on-1
+                  </span>
                 )}
                 {service && service.total_reviews > 0 && (
-                  <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                     <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
                     <span className="font-medium text-olive-800">{service.average_rating?.toFixed(1)}</span>
                     <span className="text-olive-400">({service.total_reviews})</span>
-                  </div>
+                  </span>
                 )}
               </div>
 
@@ -307,7 +305,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {service?.description && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">About This Session</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">About This <em className="italic text-terracotta-600">Session</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.description}
                   </p>
@@ -316,7 +314,8 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
 
               {/* Session Details */}
               <section className="pb-12 border-b border-sage-200/40">
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session Details</h2>
+                <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Logistics</p>
+                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session <em className="italic text-terracotta-600">Details</em></h2>
                 <div className="bg-white rounded-2xl border border-sage-200/60 divide-y divide-sage-200/60">
                   {service?.duration_minutes && (
                     <div className="flex justify-between items-center px-5 py-3.5">
@@ -380,7 +379,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {service?.what_youll_learn && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Learn</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Learn</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.what_youll_learn}
                   </p>
@@ -391,7 +390,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {service?.benefits && service.benefits.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll Gain</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {service.benefits.map((benefit, index) => (
                       <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
@@ -409,7 +408,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* What's Included */}
               {service?.includes && service.includes.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's Included</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
                   <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
                     <div className="grid md:grid-cols-2 gap-3">
                       {service.includes.map((item, index) => (
@@ -428,7 +427,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* Prerequisites */}
               {service?.prerequisites && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Prerequisites</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5"><em className="italic text-terracotta-600">Prerequisites</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.prerequisites}
                   </p>
@@ -438,7 +437,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* Requirements */}
               {service?.requirements && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Requirements</h2>
+                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5"><em className="italic text-terracotta-600">Requirements</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.requirements}
                   </p>
