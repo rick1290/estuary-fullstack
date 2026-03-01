@@ -565,7 +565,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
           className={cn(
             "w-full text-left px-2 rounded-lg transition-all duration-200 group relative flex-shrink-0",
             isCompact ? "py-1.5" : "py-2",
-            isActive ? "bg-primary/10 shadow-sm" : "hover:bg-muted/60"
+            isActive ? "bg-sage-100 shadow-sm" : "hover:bg-cream-50/50"
           )}
         >
           <div className="flex items-center gap-2">
@@ -583,7 +583,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
                 <h4 className={cn(
                   "font-medium leading-tight transition-colors truncate",
                   isCompact ? "text-xs" : "text-sm",
-                  isActive ? "text-primary" : "text-foreground"
+                  isActive ? "text-sage-800" : "text-foreground"
                 )}>
                   {section.title}
                 </h4>
@@ -595,8 +595,8 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
           </div>
           {isActive && (
             <>
-              <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-primary rounded-r" />
-              <div className="absolute inset-0 ring-1 ring-primary/20 rounded-lg" />
+              <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-sage-600 rounded-r" />
+              <div className="absolute inset-0 ring-1 ring-sage-200 rounded-lg" />
             </>
           )}
         </button>
@@ -609,10 +609,10 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
           <div key={group.id}>
             {groupIndex > 0 && <div className="h-px bg-border/50 mb-3" />}
             <div className="px-2 mb-1.5">
-              <h5 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <h5 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}
               </h5>
-              <p className="text-[10px] text-muted-foreground/70">{group.description}</p>
+              <p className="text-xs text-muted-foreground/70">{group.description}</p>
             </div>
             <div className={cn(isCompact ? "space-y-0.5" : "space-y-1")}>
               {group.sections.map(renderSection)}
@@ -650,7 +650,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
         </div>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:flex w-72 bg-muted/30 border-r">
+        <div className="hidden lg:flex w-72 bg-cream-50/50 border-r">
           <div className="flex flex-col w-full h-full">
             {/* Sidebar Header - Progress + Save */}
             <div className="flex-shrink-0 bg-background border-b p-4">
@@ -659,7 +659,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex items-center gap-1.5">
                       <Progress value={progressPercentage} className="h-1.5 w-20" />
-                      <span className="text-xs font-medium text-primary">{Math.round(progressPercentage)}%</span>
+                      <span className="text-xs font-medium text-sage-700">{Math.round(progressPercentage)}%</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-0.5">
@@ -847,18 +847,18 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
                       >
                         <Card className={cn(
                           "transition-all duration-300",
-                          isActive ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md"
+                          isActive ? "ring-2 ring-sage-300/50 shadow-lg" : "hover:shadow-md"
                         )}>
                           <CardHeader className={cn(
                             "transition-colors duration-300",
-                            isActive && "bg-primary/5"
+                            isActive && "bg-sage-50/50"
                           )}>
                             <div className="flex items-start justify-between">
                               <div>
                                 <CardTitle className="flex items-center gap-2">
                                   <span className={cn(
                                     "transition-colors duration-300",
-                                    isActive && "text-primary"
+                                    isActive && "text-sage-800"
                                   )}>
                                     {section.title}
                                   </span>

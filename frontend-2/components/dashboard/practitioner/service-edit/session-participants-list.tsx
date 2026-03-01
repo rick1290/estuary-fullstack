@@ -167,7 +167,7 @@ export function SessionParticipantsList({
               <div>
                 <Badge
                   variant={BOOKING_STATUS_VARIANTS[booking.status] || "outline"}
-                  className="text-[10px] px-1.5 py-0 h-5 capitalize"
+                  className="text-xs px-1.5 py-0 h-5 capitalize"
                 >
                   {booking.status_display || booking.status}
                 </Badge>
@@ -238,7 +238,7 @@ export function SessionParticipantsList({
               <div className="flex items-center gap-2">
                 <Badge
                   variant={BOOKING_STATUS_VARIANTS[booking.status] || "outline"}
-                  className="text-[10px] capitalize"
+                  className="text-xs capitalize"
                 >
                   {booking.status_display || booking.status}
                 </Badge>

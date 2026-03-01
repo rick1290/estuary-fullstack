@@ -21,7 +21,7 @@
     --secondary-foreground: 100 14% 21%; /* Deep olive text */
 
     --muted: 42 20% 94%; /* Light cream for muted elements */
-    --muted-foreground: 100 10% 40%; /* Muted olive text */
+    --muted-foreground: 80 26% 38%; /* Olive-600 — branded muted text */
 
     --accent: 15 35% 84%; /* Blush accent */
     --accent-foreground: 100 14% 21%; /* Deep olive text */
@@ -29,7 +29,7 @@
     --destructive: 0 70% 60%; /* Warm red for destructive actions */
     --destructive-foreground: 0 0% 98%; /* White text on destructive */
 
-    --border: 42 20% 88%; /* Warm gray borders */
+    --border: 80 14% 84%; /* Sage-tinted border — aligns with sage-200 */
     --input: 42 20% 96%; /* Very light cream input backgrounds */
     --ring: 92 20% 45%; /* Sage green focus rings */
 

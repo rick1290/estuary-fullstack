@@ -99,7 +99,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
         <div className="absolute top-3 left-3 right-3 flex justify-between">
           <div className="flex items-center gap-1.5">
             {service.is_featured && (
-              <span className="bg-terracotta-500 text-cream-50 text-[10px] tracking-widest uppercase rounded-full px-2.5 py-0.5 font-medium">
+              <span className="bg-terracotta-500 text-cream-50 text-xs tracking-widest uppercase rounded-full px-2.5 py-0.5 font-medium">
                 Featured
               </span>
             )}
@@ -113,7 +113,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
 
       {/* Card content */}
       <CardContent className="flex-grow p-4">
-        <h3 className="font-medium text-lg line-clamp-1 mb-1 text-olive-900">{service.name}</h3>
+        <h3 className="font-serif font-light text-lg line-clamp-1 mb-1 text-olive-900">{service.name}</h3>
 
         {/* Category badge */}
         {service.practitioner_category && (

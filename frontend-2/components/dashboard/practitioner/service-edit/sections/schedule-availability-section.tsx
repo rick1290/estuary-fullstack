@@ -349,13 +349,13 @@ export function ScheduleAvailabilitySection({
 
       {/* Availability Notice */}
       {(!localData.availabilityBlocks || localData.availabilityBlocks.length === 0) && (
-        <div className="flex items-start gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
-          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+        <div className="flex items-start gap-2 p-4 bg-blush-50 dark:bg-blush-50/20 rounded-lg">
+          <AlertCircle className="h-5 w-5 text-terracotta-600 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-amber-900 dark:text-amber-100">
+            <p className="font-medium text-terracotta-900 dark:text-blush-100">
               No availability set
             </p>
-            <p className="text-amber-800 dark:text-amber-200 mt-1">
+            <p className="text-terracotta-800 dark:text-blush-200 mt-1">
               Add availability blocks to allow customers to book this service
             </p>
           </div>

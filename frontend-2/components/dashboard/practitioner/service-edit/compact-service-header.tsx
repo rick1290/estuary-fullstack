@@ -100,17 +100,17 @@ export function CompactServiceHeader({
         <div className="flex items-center gap-1.5 shrink-0">
           <Badge
             variant={STATUS_VARIANTS[status] || "outline"}
-            className="text-[10px] px-1.5 py-0 h-5"
+            className="text-xs px-1.5 py-0 h-5"
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
           {typeDisplay && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+            <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
               {typeDisplay}
             </Badge>
           )}
           {service?.is_featured && (
-            <Badge className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0 h-5">
+            <Badge className="bg-blush-100 text-terracotta-800 text-xs px-1.5 py-0 h-5">
               Featured
             </Badge>
           )}

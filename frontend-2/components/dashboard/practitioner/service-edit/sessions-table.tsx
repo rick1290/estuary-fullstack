@@ -153,7 +153,7 @@ export function SessionsTable({
                   <div className="text-sm">
                     {session.start_time ? (
                       <span className={cn(
-                        sessionIsPast && sessionStatus === 'scheduled' && "text-amber-600"
+                        sessionIsPast && sessionStatus === 'scheduled' && "text-terracotta-600"
                       )}>
                         {format(new Date(session.start_time), "EEE, MMM d, yyyy")}
                         <span className="text-muted-foreground ml-1.5">
@@ -179,7 +179,7 @@ export function SessionsTable({
                       <span className="text-muted-foreground">&mdash;</span>
                     )}
                     {sessionIsPast && sessionStatus === 'scheduled' && (
-                      <span className="text-amber-600 text-xs ml-2 inline-flex items-center gap-1">
+                      <span className="text-terracotta-600 text-xs ml-2 inline-flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         Past due
                       </span>
@@ -190,7 +190,7 @@ export function SessionsTable({
                   <div>
                     <Badge
                       variant={statusConfig.variant}
-                      className={cn("text-[10px] px-1.5 py-0 h-5", statusConfig.className)}
+                      className={cn("text-xs px-1.5 py-0 h-5", statusConfig.className)}
                     >
                       {statusConfig.label}
                     </Badge>
@@ -265,7 +265,7 @@ export function SessionsTable({
                   <div className="text-sm">
                     {session.start_time ? (
                       <span className={cn(
-                        sessionIsPast && sessionStatus === 'scheduled' && "text-amber-600"
+                        sessionIsPast && sessionStatus === 'scheduled' && "text-terracotta-600"
                       )}>
                         {format(new Date(session.start_time), "MMM d, yyyy")}
                         <span className="text-muted-foreground ml-1.5">
@@ -282,7 +282,7 @@ export function SessionsTable({
                   <div>
                     <Badge
                       variant={statusConfig.variant}
-                      className={cn("text-[10px] px-1.5 py-0 h-5", statusConfig.className)}
+                      className={cn("text-xs px-1.5 py-0 h-5", statusConfig.className)}
                     >
                       {statusConfig.label}
                     </Badge>
@@ -304,7 +304,7 @@ export function SessionsTable({
                   {/* Waitlist */}
                   <div className="text-sm">
                     {waitlistCount > 0 ? (
-                      <span className="text-amber-600">{waitlistCount}</span>
+                      <span className="text-terracotta-600">{waitlistCount}</span>
                     ) : (
                       <span className="text-muted-foreground">&mdash;</span>
                     )}
@@ -369,13 +369,13 @@ export function SessionsTable({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {!isIndividual && (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {isCourse ? `Module ${index + 1}` : `Session ${index + 1}`}
                       </Badge>
                     )}
                     <Badge
                       variant={statusConfig.variant}
-                      className={cn("text-[10px]", statusConfig.className)}
+                      className={cn("text-xs", statusConfig.className)}
                     >
                       {statusConfig.label}
                     </Badge>
@@ -420,7 +420,7 @@ export function SessionsTable({
                 {session.start_time && (
                   <p className={cn(
                     "text-xs text-muted-foreground",
-                    sessionIsPast && sessionStatus === 'scheduled' && "text-amber-600"
+                    sessionIsPast && sessionStatus === 'scheduled' && "text-terracotta-600"
                   )}>
                     {format(new Date(session.start_time), "MMM d, yyyy 'at' h:mm a")}
                     {session.end_time && ` - ${format(new Date(session.end_time), "h:mm a")}`}
@@ -435,12 +435,12 @@ export function SessionsTable({
                     }
                   </span>
                   {!isIndividual && waitlistCount > 0 && (
-                    <span className="text-amber-600">+{waitlistCount} waitlisted</span>
+                    <span className="text-terracotta-600">+{waitlistCount} waitlisted</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
                   {sessionIsPast && sessionStatus === 'scheduled' ? (
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <p className="text-xs text-terracotta-600 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
                       Session date has passed
                     </p>
@@ -453,7 +453,7 @@ export function SessionsTable({
               {isRescheduling && (
                 <div className="px-4 pb-4" data-no-navigate>
                   <div className="p-3 rounded-lg bg-muted/50 space-y-3">
-                    <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-terracotta-700 bg-blush-50 rounded-lg px-3 py-2">
                       <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                       <span>Rescheduling will notify {bookingCount} enrolled participant{bookingCount !== 1 ? 's' : ''}.</span>
                     </div>

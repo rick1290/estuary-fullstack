@@ -227,33 +227,33 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Bookings */}
-          <Card className="p-4">
+          <Card className="p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Users className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-medium uppercase tracking-wider">
+              <span className="text-xs font-medium uppercase tracking-wider">
                 {isSession ? 'Bookings' : 'Enrolled'}
               </span>
             </div>
             <p className="font-serif text-2xl text-olive-900">{totalBookings}</p>
             {waitlistCount > 0 && (
-              <p className="text-[11px] text-amber-600 mt-0.5">
+              <p className="text-xs text-terracotta-600 mt-0.5">
                 +{waitlistCount} waitlisted
               </p>
             )}
           </Card>
 
           {/* Rating */}
-          <Card className="p-4">
+          <Card className="p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Star className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-medium uppercase tracking-wider">Rating</span>
+              <span className="text-xs font-medium uppercase tracking-wider">Rating</span>
             </div>
             {avgRating > 0 ? (
               <>
                 <p className="font-serif text-2xl text-olive-900">{avgRating.toFixed(1)}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {totalReviews} review{totalReviews !== 1 ? 's' : ''}
                 </p>
               </>
@@ -263,30 +263,30 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
           </Card>
 
           {/* Revenue estimate */}
-          <Card className="p-4">
+          <Card className="p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <DollarSign className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-medium uppercase tracking-wider">Est. Revenue</span>
+              <span className="text-xs font-medium uppercase tracking-wider">Est. Revenue</span>
             </div>
             <p className="font-serif text-2xl text-olive-900">
               ${(totalBookings * price).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               ${price} x {totalBookings} booking{totalBookings !== 1 ? 's' : ''}
             </p>
           </Card>
 
           {/* Capacity / Duration / Sold */}
           {hasScheduledSessions ? (
-            <Card className="p-4">
+            <Card className="p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <TrendingUp className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Capacity</span>
+                <span className="text-xs font-medium uppercase tracking-wider">Capacity</span>
               </div>
               {totalCapacity > 0 ? (
                 <>
                   <p className="font-serif text-2xl text-olive-900">{capacityPercent}%</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {totalBooked}/{totalCapacity} spots filled
                   </p>
                 </>
@@ -295,28 +295,28 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
               )}
             </Card>
           ) : (isBundle || isPackage) ? (
-            <Card className="p-4">
+            <Card className="p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Package className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Sold</span>
+                <span className="text-xs font-medium uppercase tracking-wider">Sold</span>
               </div>
               <p className="font-serif text-2xl text-olive-900">{totalBookings}</p>
               {isBundle && service.sessions_included && (
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {service.sessions_included} sessions included
                 </p>
               )}
             </Card>
           ) : (
-            <Card className="p-4">
+            <Card className="p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Clock className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Duration</span>
+                <span className="text-xs font-medium uppercase tracking-wider">Duration</span>
               </div>
               <p className="font-serif text-2xl text-olive-900">
                 {service.duration_minutes || '—'}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">minutes per session</p>
+              <p className="text-xs text-muted-foreground mt-0.5">minutes per session</p>
             </Card>
           )}
         </div>

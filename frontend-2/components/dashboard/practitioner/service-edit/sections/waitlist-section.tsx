@@ -47,21 +47,21 @@ export function WaitlistSection({ service }: WaitlistSectionProps) {
   return (
     <div className="space-y-4">
       {/* Waitlist summary */}
-      <Card className="p-4 bg-amber-50/50 border-amber-200">
+      <Card className="p-4 bg-blush-50/50 border-blush-200">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
-            <Clock className="h-5 w-5 text-amber-600" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100">
+            <Clock className="h-5 w-5 text-terracotta-600" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h4 className="font-semibold text-amber-900">
+              <h4 className="font-semibold text-terracotta-900">
                 {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} waiting
               </h4>
-              <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs">
+              <Badge variant="secondary" className="bg-blush-100 text-terracotta-800 text-xs">
                 Waitlist Active
               </Badge>
             </div>
-            <p className="text-sm text-amber-700 mt-0.5">
+            <p className="text-sm text-terracotta-700 mt-0.5">
               {service.service_type_code === 'workshop'
                 ? "These customers will be notified if a spot opens up or if you add additional dates."
                 : "These customers are waiting to enroll. Consider increasing capacity or adding another cohort."}

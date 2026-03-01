@@ -132,10 +132,10 @@ export function StatusVisibilitySection({
       )}
 
       {service.is_purchasable === false && localData.status === 'active' && (
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-900">Not Bookable</AlertTitle>
-          <AlertDescription className="text-amber-700">
+        <Alert className="border-blush-200 bg-blush-50">
+          <AlertCircle className="h-4 w-4 text-terracotta-600" />
+          <AlertTitle className="text-terracotta-900">Not Bookable</AlertTitle>
+          <AlertDescription className="text-terracotta-700">
             This service is visible to customers but cannot be booked. This usually means it&apos;s missing scheduled dates or required configuration. Check the Sessions &amp; Schedule section.
           </AlertDescription>
         </Alert>
@@ -198,11 +198,11 @@ export function StatusVisibilitySection({
         </div>
 
         {/* Featured Service */}
-        <div className="border rounded-lg p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+        <div className="border rounded-lg p-4 bg-gradient-to-r from-blush-50 to-terracotta-50 border-blush-200">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label htmlFor="featured" className="text-base font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-600" />
+                <Sparkles className="h-4 w-4 text-terracotta-500" />
                 Featured Service
               </Label>
               <p className="text-sm text-muted-foreground">
@@ -217,7 +217,7 @@ export function StatusVisibilitySection({
             />
           </div>
           {(localData.status === 'draft' || localData.status === 'archived') && (
-            <p className="text-xs text-amber-700 mt-2">
+            <p className="text-xs text-terracotta-700 mt-2">
               Service must be active or inactive to be featured
             </p>
           )}
@@ -244,7 +244,7 @@ export function StatusVisibilitySection({
             </div>
             {localData.is_featured && (
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-amber-500" />
+                <div className="h-2 w-2 rounded-full bg-terracotta-500" />
                 <span>Featured in search results</span>
               </div>
             )}

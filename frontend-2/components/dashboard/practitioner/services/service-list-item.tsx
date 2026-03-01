@@ -124,7 +124,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
                   </Badge>
                 )}
                 {service.is_featured && (
-                  <span className="bg-terracotta-500 text-cream-50 text-[10px] tracking-widest uppercase rounded-full px-2.5 py-0.5 font-medium leading-5">
+                  <span className="bg-terracotta-500 text-cream-50 text-xs tracking-widest uppercase rounded-full px-2.5 py-0.5 font-medium leading-5">
                     Featured
                   </span>
                 )}
@@ -137,7 +137,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
             {/* Content row */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex-grow space-y-2">
-                <h3 className="font-medium text-lg text-olive-900">{service.name}</h3>
+                <h3 className="font-serif font-light text-lg text-olive-900">{service.name}</h3>
 
                 <p className="text-sm text-muted-foreground line-clamp-1 hidden sm:block">{service.description}</p>
 

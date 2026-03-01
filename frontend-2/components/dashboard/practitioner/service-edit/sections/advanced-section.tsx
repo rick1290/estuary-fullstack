@@ -332,13 +332,13 @@ export function AdvancedSection({
 
       {/* Warning for Status Changes */}
       {localData.status === 'archived' && (
-        <div className="flex items-start gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
-          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+        <div className="flex items-start gap-2 p-4 bg-blush-50 dark:bg-blush-50/20 rounded-lg">
+          <AlertCircle className="h-5 w-5 text-terracotta-600 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-amber-900 dark:text-amber-100">
+            <p className="font-medium text-terracotta-900 dark:text-blush-100">
               Archiving this service
             </p>
-            <p className="text-amber-800 dark:text-amber-200 mt-1">
+            <p className="text-terracotta-800 dark:text-blush-200 mt-1">
               Archived services cannot be booked and won't appear in listings. 
               Existing bookings will remain valid.
             </p>
