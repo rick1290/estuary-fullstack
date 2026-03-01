@@ -29,6 +29,7 @@ import {
   XCircle,
   Users,
 } from "lucide-react"
+import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 
 // Booking status variants
 const BOOKING_STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -85,15 +86,11 @@ export function SessionParticipantsList({
 
   if (!bookings || bookings.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <Users className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-          <p className="text-sm font-medium text-muted-foreground">No participants yet</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Participants will appear here once they book this session.
-          </p>
-        </CardContent>
-      </Card>
+      <DashboardEmptyState
+        icon={Users}
+        title="No participants yet"
+        description="Participants will appear here once they book this session."
+      />
     )
   }
 
@@ -151,7 +148,7 @@ export function SessionParticipantsList({
               <div className="flex items-center gap-2.5 min-w-0">
                 <Avatar className="h-7 w-7 shrink-0">
                   <AvatarImage src={booking.user_avatar_url || ""} alt={booking.user_name} />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="bg-sage-100 text-sage-700 text-xs">
                     {(booking.user_name || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -226,7 +223,7 @@ export function SessionParticipantsList({
               <div className="flex items-center gap-2.5 min-w-0">
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={booking.user_avatar_url || ""} alt={booking.user_name} />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="bg-sage-100 text-sage-700 text-xs">
                     {(booking.user_name || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

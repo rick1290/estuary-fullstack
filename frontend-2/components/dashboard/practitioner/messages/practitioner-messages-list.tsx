@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Search, X, Filter, MessageSquarePlus, Users, Heart, BookOpen } from "lucide-react"
+import { Search, X, Filter, MessageSquarePlus, Users, Heart, BookOpen, MessageSquare } from "lucide-react"
+import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
   conversationsListOptions,
@@ -149,9 +150,12 @@ export default function PractitionerMessagesList() {
               </div>
             ))
           ) : filteredConversations.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <p className="text-muted-foreground text-sm">No conversations found</p>
-            </div>
+            <DashboardEmptyState
+              icon={MessageSquare}
+              title="No conversations yet"
+              description="Messages from clients will appear here once they reach out or you start a conversation."
+              variant="inline"
+            />
           ) : (
             filteredConversations.map((conversation) => {
               const otherUser = conversation.other_user

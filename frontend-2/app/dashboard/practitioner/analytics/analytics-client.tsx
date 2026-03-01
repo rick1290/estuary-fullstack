@@ -156,8 +156,8 @@ export default function AnalyticsClient() {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex items-center text-sm">
-              <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-500 font-medium">12.5%</span>
+              <ArrowUp className="h-4 w-4 text-sage-600 mr-1" />
+              <span className="text-sage-600 font-medium">12.5%</span>
               <span className="text-muted-foreground ml-1">from last period</span>
             </div>
           </CardContent>
@@ -170,8 +170,8 @@ export default function AnalyticsClient() {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex items-center text-sm">
-              <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-500 font-medium">23.2%</span>
+              <ArrowUp className="h-4 w-4 text-sage-600 mr-1" />
+              <span className="text-sage-600 font-medium">23.2%</span>
               <span className="text-muted-foreground ml-1">from last period</span>
             </div>
           </CardContent>
@@ -184,8 +184,8 @@ export default function AnalyticsClient() {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex items-center text-sm">
-              <ArrowDown className="h-4 w-4 text-red-500 mr-1" />
-              <span className="text-red-500 font-medium">2.1%</span>
+              <ArrowDown className="h-4 w-4 text-terracotta-600 mr-1" />
+              <span className="text-terracotta-600 font-medium">2.1%</span>
               <span className="text-muted-foreground ml-1">from last period</span>
             </div>
           </CardContent>
@@ -198,8 +198,8 @@ export default function AnalyticsClient() {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex items-center text-sm">
-              <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-500 font-medium">8.3%</span>
+              <ArrowUp className="h-4 w-4 text-sage-600 mr-1" />
+              <span className="text-sage-600 font-medium">8.3%</span>
               <span className="text-muted-foreground ml-1">from last period</span>
             </div>
           </CardContent>

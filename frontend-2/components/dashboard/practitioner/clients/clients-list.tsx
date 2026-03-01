@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
-import { Star, Eye } from "lucide-react"
+import { Star, Eye, Users as UsersIcon, FilterX } from "lucide-react"
+import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -189,12 +190,11 @@ export default function ClientsList() {
 
   if (!isLoading && (!clients || clients.length === 0)) {
     return (
-      <div className="text-center py-8">
-        <h2 className="text-lg font-semibold">No clients found</h2>
-        <p className="text-muted-foreground">
-          You haven't had any bookings yet. Clients will appear here after they book a session with you.
-        </p>
-      </div>
+      <DashboardEmptyState
+        icon={UsersIcon}
+        title="No clients yet"
+        description="Clients will appear here after they book a session with you. Share your services to start building your practice."
+      />
     )
   }
 
@@ -205,10 +205,12 @@ export default function ClientsList() {
       </div>
 
       {filteredClients.length === 0 ? (
-        <div className="text-center py-8 border rounded-md">
-          <h2 className="text-lg font-semibold">No matching clients</h2>
-          <p className="text-muted-foreground">Try adjusting your filters to find what you're looking for.</p>
-        </div>
+        <DashboardEmptyState
+          icon={FilterX}
+          title="No matching clients"
+          description="Try adjusting your filters to find what you're looking for."
+          variant="inline"
+        />
       ) : (
         <Card>
           <CardContent className="p-0">

@@ -102,16 +102,16 @@ export default function PractitionerRecentRipples() {
         className="flex items-center gap-3 py-3 px-4 border-b border-sage-200/40 last:border-b-0 hover:bg-cream-50 transition-colors cursor-pointer"
         onClick={() => handleViewBooking(booking.id)}
       >
-        <Avatar className="h-9 w-9 flex-shrink-0">
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={booking.user?.avatar_url || ""} alt={clientName} />
-          <AvatarFallback className="bg-gradient-to-br from-terracotta-200 to-sage-200 text-olive-700 text-sm font-medium">
+          <AvatarFallback className="bg-sage-100 text-sage-700 text-sm font-medium">
             {clientInitial}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-medium text-olive-900">{clientName}</p>
-          <p className="text-[12px] font-light text-olive-500">
+          <p className="text-sm font-medium text-olive-900">{clientName}</p>
+          <p className="text-xs font-light text-olive-500">
             {activityLabel.split(/(session|Workshop|Course|Stream)/i).map((part, i) =>
               /session|workshop|course|stream/i.test(part) ? (
                 <em key={i} className="italic text-terracotta-600">{part}</em>
@@ -150,7 +150,7 @@ export default function PractitionerRecentRipples() {
 
   return (
     <div>
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[340px]">
         {recentBookings.length > 0 ? (
           <div className="space-y-1">
             {recentBookings.map(booking => (
