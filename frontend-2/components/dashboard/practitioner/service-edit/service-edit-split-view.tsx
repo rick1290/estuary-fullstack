@@ -9,7 +9,7 @@ import {
   servicesUpdateMutation,
   servicesPartialUpdateMutation
 } from "@/src/client/@tanstack/react-query.gen"
-import type { ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
 import { useToast } from "@/hooks/use-toast"
 import { patchWithFormData } from "@/lib/api-helpers"
 import { getServiceDetailUrl } from "@/lib/service-utils"
@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { 
+import {
   CheckCircle2,
   AlertCircle,
   Circle,
@@ -34,8 +34,14 @@ import {
   Menu,
   X,
   Rocket,
-  ArrowRight
+  ArrowRight,
+  Star,
+  Users,
+  Calendar,
+  AlertTriangle,
+  CalendarPlus,
 } from "lucide-react"
+import { format } from "date-fns"
 import {
   Tooltip,
   TooltipContent,
@@ -62,6 +68,9 @@ import { ServiceSessionsSection } from "./sections/service-sessions-section"
 import { PackageCompositionSection } from "./sections/package-composition-section"
 import { BundleConfigurationSection } from "./sections/bundle-configuration-section"
 import { StatusVisibilitySection } from "./sections/status-visibility-section"
+import { WaitlistSection } from "./sections/waitlist-section"
+import { ServiceManageView } from "./service-manage-view"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface ServiceEditSplitViewProps {
   serviceId: string
@@ -159,6 +168,16 @@ const sections = [
     required: false,
   },
   {
+    id: "waitlist",
+    title: "Waitlist",
+    description: "Customers waiting for availability",
+    component: WaitlistSection,
+    required: false,
+    conditional: (service: ServiceReadable) =>
+      (service.service_type_code === 'workshop' || service.service_type_code === 'course') &&
+      parseInt(String(service.waitlist_count || '0')) > 0,
+  },
+  {
     id: "status-visibility",
     title: "Status & Visibility",
     description: "Control when and how your service appears to customers",
@@ -166,6 +185,34 @@ const sections = [
     required: true,
   },
 ]
+
+// Section ordering priority by service type (lower = appears first)
+function getSectionPriority(sectionId: string, serviceTypeCode: string): number {
+  const priorities: Record<string, Record<string, number>> = {
+    session: {
+      "basic-info": 0, "pricing-duration": 1, "schedule-selection": 2, "location": 3,
+      "media": 4, "benefits": 5, "resources": 6, "advanced": 7, "status-visibility": 8,
+    },
+    workshop: {
+      "basic-info": 0, "pricing-duration": 1, "service-sessions": 2, "location": 3,
+      "media": 4, "benefits": 5, "resources": 6, "advanced": 7, "waitlist": 8, "status-visibility": 9,
+    },
+    course: {
+      "basic-info": 0, "pricing-duration": 1, "service-sessions": 2, "media": 3,
+      "benefits": 4, "resources": 5, "location": 6, "advanced": 7, "waitlist": 8, "status-visibility": 9,
+    },
+    bundle: {
+      "basic-info": 0, "bundle-configuration": 1, "pricing-duration": 2, "media": 3,
+      "advanced": 4, "status-visibility": 5,
+    },
+    package: {
+      "basic-info": 0, "package-composition": 1, "pricing-duration": 2, "media": 3,
+      "advanced": 4, "status-visibility": 5,
+    },
+  }
+  const typePriorities = priorities[serviceTypeCode] || priorities.session
+  return typePriorities[sectionId] ?? 99
+}
 
 type SectionStatus = "complete" | "incomplete" | "optional"
 
@@ -175,6 +222,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   const queryClient = useQueryClient()
   
   // State
+  const [activeTab, setActiveTab] = useState<"manage" | "settings">("settings")
   const [activeSection, setActiveSection] = useState("basic-info")
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
   const [sectionData, setSectionData] = useState<Record<string, any>>({})
@@ -216,6 +264,17 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       })
     },
   })
+
+  // Set initial tab based on service status
+  const [initialTabSet, setInitialTabSet] = useState(false)
+  useEffect(() => {
+    if (service && !initialTabSet) {
+      if (service.status !== 'draft') {
+        setActiveTab("manage")
+      }
+      setInitialTabSet(true)
+    }
+  }, [service, initialTabSet])
 
   // Initialize section data from service
   useEffect(() => {
@@ -545,9 +604,10 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
     setMobileOpen(false)
   }
 
-  const visibleSections = sections.filter(section => 
-    !section.conditional || (service && section.conditional(service))
-  )
+  const serviceTypeCode = service?.service_type_code || 'session'
+  const visibleSections = sections
+    .filter(section => !section.conditional || (service && section.conditional(service)))
+    .sort((a, b) => getSectionPriority(a.id, serviceTypeCode) - getSectionPriority(b.id, serviceTypeCode))
   
   // Handle scroll spy
   useEffect(() => {
@@ -722,313 +782,411 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
       )
     }
     
+    // Separate required and optional config sections
+    const configRequired = visibleSections.filter(s => s.required)
+    const configOptional = visibleSections.filter(s => !s.required)
+    const showConfigDivider = configRequired.length > 0 && configOptional.length > 0
+
     return (
           <div className={cn(
             "flex flex-col h-full",
             isCompact ? "space-y-0.5" : "space-y-1"
           )}>
-            {/* Required sections */}
-            {requiredSections.map((section, index) => renderSection(section, index))}
-            
+            {/* Required config sections */}
+            {configRequired.map((section, index) => renderSection(section, index))}
+
             {/* Divider between required and optional */}
-            {showDivider && (
+            {showConfigDivider && (
               <div className="flex items-center gap-2 px-2 py-1">
                 <div className="flex-1 h-px bg-border/50" />
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Optional</span>
                 <div className="flex-1 h-px bg-border/50" />
               </div>
             )}
-            
+
             {/* Optional sections */}
-            {optionalSections.map((section, index) => renderSection(section, index + requiredSections.length))}
+            {configOptional.map((section, index) => renderSection(section, index + configRequired.length))}
       </div>
     )
   }
 
+  const isDraft = service.status === 'draft'
+
   return (
     <TooltipProvider>
-      <div className="flex h-screen overflow-hidden">
-        {/* Mobile Menu Button */}
-        <div className="lg:hidden fixed top-4 left-4 z-50">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
-              <div className="p-6">
-                <h2 className="font-semibold mb-4">Sections</h2>
-                <SidebarContent />
+      <div className="flex flex-col h-screen overflow-hidden">
+
+        {/* Sticky header — shared across both tabs */}
+        <div className="flex-shrink-0 border-b bg-background">
+          <div className="px-6 pt-4 pb-0 max-w-6xl">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="-ml-2 mb-3 text-xs"
+            >
+              <ChevronLeft className="h-3 w-3 mr-1" />
+              Back
+            </Button>
+
+            {/* Service name + badges */}
+            <h1 className="font-serif text-2xl font-light text-olive-900 mb-2">{service.name}</h1>
+            <div className="flex items-center gap-2">
+              <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
+                {service.status}
+              </Badge>
+              <Badge variant="outline">
+                {service.service_type_display || service.service_type_code}
+              </Badge>
+              {service.is_featured && (
+                <Badge variant="default" className="bg-amber-100 text-amber-800">
+                  Featured
+                </Badge>
+              )}
+            </div>
+
+            {/* Context strip — type-specific meta pills */}
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {service.average_rating && parseFloat(String(service.average_rating)) > 0 && (
+                <span className="inline-flex items-center gap-1.5 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5 text-xs font-light text-olive-600">
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  {parseFloat(String(service.average_rating)).toFixed(1)}
+                  {service.total_reviews && parseInt(String(service.total_reviews)) > 0 && (
+                    <span className="text-muted-foreground">({service.total_reviews} review{parseInt(String(service.total_reviews)) !== 1 ? 's' : ''})</span>
+                  )}
+                </span>
+              )}
+              {service.total_bookings && parseInt(String(service.total_bookings)) > 0 && (
+                <span className="inline-flex items-center gap-1.5 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5 text-xs font-light text-olive-600">
+                  <Users className="h-3 w-3" />
+                  {service.total_bookings} booking{parseInt(String(service.total_bookings)) !== 1 ? 's' : ''}
+                </span>
+              )}
+              {service.next_session_date && (
+                <span className="inline-flex items-center gap-1.5 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5 text-xs font-light text-olive-600">
+                  <Calendar className="h-3 w-3" />
+                  Next: {format(new Date(String(service.next_session_date)), "MMM d, yyyy")}
+                </span>
+              )}
+              {service.has_ended && (
+                <span className="inline-flex items-center gap-1.5 bg-terracotta-50 border border-terracotta-200 rounded-full px-3.5 py-1.5 text-xs font-light text-terracotta-700">
+                  <AlertTriangle className="h-3 w-3" />
+                  Service has ended
+                </span>
+              )}
+            </div>
+
+            {/* Tab bar — only for non-draft services */}
+            {!isDraft && (
+              <div className="mt-4">
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "manage" | "settings")}>
+                  <TabsList className="bg-transparent p-0 h-auto gap-0">
+                    <TabsTrigger
+                      value="manage"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground"
+                    >
+                      Manage
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="settings"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground"
+                    >
+                      Settings
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
-            </SheetContent>
-          </Sheet>
+            )}
+
+            {/* Spacing when no tabs (draft) */}
+            {isDraft && <div className="h-4" />}
+          </div>
         </div>
 
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:flex w-72 bg-muted/30 border-r">
-          <div className="flex flex-col w-full h-screen">
-            {/* Sidebar Header - Compact */}
-            <div className="flex-shrink-0 bg-background border-b p-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="-ml-2 mb-3 text-xs"
-              >
-                <ChevronLeft className="h-3 w-3 mr-1" />
-                Back
-              </Button>
-              
-              <div className="space-y-3">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="font-semibold text-sm truncate">{service.name}</h2>
-                    {/* Quick Actions */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" asChild>
-                            <Link href={getServiceDetailUrl(service)} target="_blank">
-                              <Eye className="h-3.5 w-3.5" />
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p className="text-xs">Preview</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+        {/* Manage tab content */}
+        {activeTab === "manage" && !isDraft && (
+          <div className="flex-1 overflow-auto">
+            <ServiceManageView
+              service={service}
+              onNavigateToSettings={(sectionId) => {
+                setActiveTab("settings")
+                if (sectionId) {
+                  // Small delay to let settings tab render before scrolling
+                  setTimeout(() => scrollToSection(sectionId), 100)
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* Settings tab — hidden (not unmounted) to preserve scroll + form state */}
+        <div className={cn("flex-1 overflow-hidden", activeTab !== "settings" && "hidden")}>
+          <div className="flex h-full overflow-hidden">
+
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden fixed top-4 right-4 z-50">
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 p-0">
+                  <div className="p-6">
+                    <h2 className="font-semibold mb-4">Sections</h2>
+                    <SidebarContent />
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex items-center gap-1.5">
-                      <Progress value={progressPercentage} className="h-1.5 w-20" />
-                      <span className="text-xs font-medium text-primary">{Math.round(progressPercentage)}%</span>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:flex w-72 bg-muted/30 border-r">
+              <div className="flex flex-col w-full h-full">
+                {/* Sidebar Header - Progress + Save */}
+                <div className="flex-shrink-0 bg-background border-b p-4">
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center gap-1.5">
+                          <Progress value={progressPercentage} className="h-1.5 w-20" />
+                          <span className="text-xs font-medium text-primary">{Math.round(progressPercentage)}%</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-0.5">
+                            <CheckCircle2 className="h-3 w-3 text-green-600" />
+                            {completedSections}/{totalSections}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-0.5">
-                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                        {completedSections}/{totalSections}
-                      </span>
-                    </div>
+
+                    {unsavedChanges.size > 0 && (
+                      <Button
+                        size="sm"
+                        className="w-full h-8 text-xs"
+                        onClick={handleSaveAll}
+                        disabled={updateMutation.isPending}
+                      >
+                        {updateMutation.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <Save className="h-3 w-3 mr-1" />
+                        )}
+                        Save All ({unsavedChanges.size})
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                {unsavedChanges.size > 0 && (
-                  <Button
-                    size="sm"
-                    className="w-full h-8 text-xs"
-                    onClick={handleSaveAll}
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    ) : (
-                      <Save className="h-3 w-3 mr-1" />
-                    )}
-                    Save All ({unsavedChanges.size})
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar Navigation - No scroll needed */}
-            <div className="flex-1 p-3 bg-gradient-to-b from-transparent to-muted/20">
-              <div className="h-full flex flex-col">
-                <SidebarContent />
-              </div>
-            </div>
-            
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
-          {/* Sticky Header for Mobile */}
-          <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
-            <div className="px-4 py-3 ml-16">
-              <h1 className="font-semibold">{service.name}</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{Math.round(progressPercentage)}% Complete</span>
-                {unsavedChanges.size > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleSaveAll}
-                    disabled={updateMutation.isPending}
-                  >
-                    Save ({unsavedChanges.size})
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-4xl mx-auto p-6 pb-20">
-            {/* Service Header */}
-            <div className="mb-8">
-              <h1 className="font-serif text-3xl font-light text-olive-900 mb-2">{service.name}</h1>
-              <div className="flex items-center gap-2">
-                <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
-                  {service.status}
-                </Badge>
-                <Badge variant="outline">
-                  {service.service_type_display || service.service_type_code}
-                </Badge>
-                {service.is_featured && (
-                  <Badge variant="default" className="bg-amber-100 text-amber-800">
-                    Featured
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Publish Banner - only shown for draft services */}
-            {service.status === 'draft' && (
-              <Card className={cn(
-                "mb-8 border-2",
-                progressPercentage === 100
-                  ? "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50"
-                  : "border-sage-200 bg-gradient-to-r from-sage-50 to-cream-50"
-              )}>
-                <CardContent className="py-5">
-                  {progressPercentage === 100 ? (
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100">
-                          <Rocket className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-green-900">Ready to go live!</h3>
-                          <p className="text-sm text-green-700">
-                            All required sections are complete. Publish to make this service visible and bookable.
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={handlePublish}
-                        disabled={updateMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700 shrink-0"
-                        size="lg"
-                      >
-                        {updateMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : (
-                          <Rocket className="h-4 w-4 mr-2" />
-                        )}
-                        Publish Service
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-100">
-                          <AlertCircle className="h-5 w-5 text-sage-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-olive-900">Almost there!</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Complete {totalSections - completedSections} more required {totalSections - completedSections === 1 ? 'section' : 'sections'} to publish this service.
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => {
-                          const firstIncomplete = visibleSections.find(
-                            s => s.required && sectionStatus[s.id] !== "complete"
-                          )
-                          if (firstIncomplete) scrollToSection(firstIncomplete.id)
-                        }}
-                      >
-                        Continue Setup
-                        <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Sections */}
-            <div className="space-y-8">
-              {visibleSections.map((section) => {
-                const SectionComponent = section.component
-                const hasChanges = unsavedChanges.has(section.id)
-
-                const isActive = activeSection === section.id
-                
-                return (
-                  <div
-                    key={section.id}
-                    ref={(el) => sectionRefs.current[section.id] = el}
-                    className="scroll-mt-24"
-                  >
-                    <Card className={cn(
-                      "transition-all duration-300",
-                      isActive ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md"
-                    )}>
-                      <CardHeader className={cn(
-                        "transition-colors duration-300",
-                        isActive && "bg-primary/5"
-                      )}>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="flex items-center gap-2">
-                              <span className={cn(
-                                "transition-colors duration-300",
-                                isActive && "text-primary"
-                              )}>
-                                {section.title}
-                              </span>
-                              {section.required && (
-                                <Badge variant="outline" className="text-xs">
-                                  Required
-                                </Badge>
-                              )}
-                            </CardTitle>
-                            <CardDescription>{section.description}</CardDescription>
-                          </div>
-                          {hasChanges && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleSaveSection(section.id)}
-                              disabled={updateMutation.isPending}
-                            >
-                              {updateMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                "Save"
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {section.id === 'media' ? (
-                          <MediaSection service={service} />
-                        ) : section.id === 'resources' ? (
-                          <ResourcesSection service={service} />
-                        ) : (
-                          <SectionComponent
-                            service={service}
-                            data={sectionData[section.id] || {}}
-                            onChange={(data) => handleSectionChange(section.id, data)}
-                            onSave={() => handleSaveSection(section.id)}
-                            hasChanges={hasChanges}
-                            isSaving={updateMutation.isPending}
-                          />
-                        )}
-                      </CardContent>
-                    </Card>
+                {/* Sidebar Navigation */}
+                <div className="flex-1 p-3 bg-gradient-to-b from-transparent to-muted/20">
+                  <div className="h-full flex flex-col">
+                    <SidebarContent />
                   </div>
-                )
-              })}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content — scrollable sections */}
+            <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
+              <div className="max-w-4xl mx-auto p-6 pb-20">
+
+                {/* Service Ended Banner */}
+                {service.status === 'active' && service.has_ended && (
+                  <Card className="mb-8 border-2 border-terracotta-200 bg-terracotta-50">
+                    <CardContent className="py-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-terracotta-100">
+                            <AlertTriangle className="h-5 w-5 text-terracotta-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-terracotta-900">This service has ended</h3>
+                            <p className="text-sm text-terracotta-700">
+                              All scheduled sessions are in the past. Add new dates or archive this service.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-terracotta-300 text-terracotta-700 hover:bg-terracotta-100"
+                            onClick={() => scrollToSection('service-sessions')}
+                          >
+                            <CalendarPlus className="h-4 w-4 mr-1.5" />
+                            Add New Dates
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-terracotta-300 text-terracotta-700 hover:bg-terracotta-100"
+                            onClick={async () => {
+                              await updateMutation.mutateAsync({
+                                path: { id: parseInt(serviceId) },
+                                body: { status: 'archived', is_active: false, is_public: false },
+                              })
+                            }}
+                            disabled={updateMutation.isPending}
+                          >
+                            <Archive className="h-4 w-4 mr-1.5" />
+                            Archive
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Publish Banner - only shown for draft services */}
+                {service.status === 'draft' && (
+                  <Card className={cn(
+                    "mb-8 border-2",
+                    progressPercentage === 100
+                      ? "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50"
+                      : "border-sage-200 bg-gradient-to-r from-sage-50 to-cream-50"
+                  )}>
+                    <CardContent className="py-5">
+                      {progressPercentage === 100 ? (
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100">
+                              <Rocket className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-green-900">Ready to go live!</h3>
+                              <p className="text-sm text-green-700">
+                                All required sections are complete. Publish to make this service visible and bookable.
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={handlePublish}
+                            disabled={updateMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700 shrink-0"
+                            size="lg"
+                          >
+                            {updateMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <Rocket className="h-4 w-4 mr-2" />
+                            )}
+                            Publish Service
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-100">
+                              <AlertCircle className="h-5 w-5 text-sage-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-olive-900">Almost there!</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Complete {totalSections - completedSections} more required {totalSections - completedSections === 1 ? 'section' : 'sections'} to publish this service.
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => {
+                              const firstIncomplete = visibleSections.find(
+                                s => s.required && sectionStatus[s.id] !== "complete"
+                              )
+                              if (firstIncomplete) scrollToSection(firstIncomplete.id)
+                            }}
+                          >
+                            Continue Setup
+                            <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Sections */}
+                <div className="space-y-8">
+                  {visibleSections.map((section) => {
+                    const SectionComponent = section.component
+                    const hasChanges = unsavedChanges.has(section.id)
+                    const isActive = activeSection === section.id
+
+                    return (
+                      <div
+                        key={section.id}
+                        ref={(el) => { sectionRefs.current[section.id] = el }}
+                        className="scroll-mt-24"
+                      >
+                        <Card className={cn(
+                          "transition-all duration-300",
+                          isActive ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md"
+                        )}>
+                          <CardHeader className={cn(
+                            "transition-colors duration-300",
+                            isActive && "bg-primary/5"
+                          )}>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="flex items-center gap-2">
+                                  <span className={cn(
+                                    "transition-colors duration-300",
+                                    isActive && "text-primary"
+                                  )}>
+                                    {section.title}
+                                  </span>
+                                  {section.required && (
+                                    <Badge variant="outline" className="text-xs">
+                                      Required
+                                    </Badge>
+                                  )}
+                                </CardTitle>
+                                <CardDescription>{section.description}</CardDescription>
+                              </div>
+                              {hasChanges && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveSection(section.id)}
+                                  disabled={updateMutation.isPending}
+                                >
+                                  {updateMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Save"
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {section.id === 'media' ? (
+                              <MediaSection service={service} />
+                            ) : section.id === 'resources' ? (
+                              <ResourcesSection service={service} />
+                            ) : (
+                              <SectionComponent
+                                service={service}
+                                data={sectionData[section.id] || {}}
+                                onChange={(data) => handleSectionChange(section.id, data)}
+                                onSave={() => handleSaveSection(section.id)}
+                                hasChanges={hasChanges}
+                                isSaving={updateMutation.isPending}
+                              />
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
       </div>
     </TooltipProvider>
   )

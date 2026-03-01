@@ -305,7 +305,7 @@ export function GuidedServiceWizard() {
       })
       // Redirect to the service editor
       if (data?.id) {
-        router.push(`/dashboard/practitioner/services/edit/${data.id}`)
+        router.push(`/dashboard/practitioner/services/${data.id}/settings`)
       } else {
         console.error('No service ID in response:', data)
         router.push('/dashboard/practitioner/services')

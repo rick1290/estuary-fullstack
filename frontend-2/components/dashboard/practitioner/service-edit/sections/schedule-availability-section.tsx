@@ -22,7 +22,7 @@ import {
   AlertCircle,
   CalendarDays
 } from "lucide-react"
-import type { ServiceReadable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 
 interface ScheduleAvailabilitySectionProps {
   service: ServiceReadable

@@ -17,7 +17,7 @@ import {
 import { Plus, X, Package } from "lucide-react"
 import { servicesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
-import type { ServiceReadable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 
 interface PackageItem {
   child_service_id: number

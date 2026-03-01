@@ -34,7 +34,7 @@ import {
   Loader2,
   CheckCircle2
 } from "lucide-react"
-import type { ServiceReadable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 
 interface ResourcesSectionProps {
   service: ServiceReadable

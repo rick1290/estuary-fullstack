@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import type { ServiceReadable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 
 interface AdvancedSectionProps {
   service: ServiceReadable

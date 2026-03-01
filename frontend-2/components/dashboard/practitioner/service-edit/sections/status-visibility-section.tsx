@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Eye, EyeOff, AlertCircle, Sparkles, Globe, FileText, Archive, Power } from "lucide-react"
-import type { ServiceReadable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 
 interface StatusVisibilitySectionProps {
   service: ServiceReadable
@@ -127,6 +127,16 @@ export function StatusVisibilitySection({
           <AlertTitle className="text-red-900">Service is Archived</AlertTitle>
           <AlertDescription className="text-red-700">
             This service is completely hidden from customers and cannot be booked. You can restore it by changing the status.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {service.is_purchasable === false && localData.status === 'active' && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-900">Not Bookable</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            This service is visible to customers but cannot be booked. This usually means it&apos;s missing scheduled dates or required configuration. Check the Sessions &amp; Schedule section.
           </AlertDescription>
         </Alert>
       )}

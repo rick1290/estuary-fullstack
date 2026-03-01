@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,17 +10,25 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Search, SlidersHorizontal, X, LayoutGrid, List, Settings2 } from "lucide-react"
+import { Plus, Search, SlidersHorizontal, X, LayoutGrid, List, Settings2, AlertTriangle } from "lucide-react"
 import ServiceCard from "./service-card"
 import ServiceListItem from "./service-list-item"
-import { servicesListOptions, servicesPartialUpdateMutation, servicesDestroyMutation, practitionerCategoriesListOptions } from "@/src/client/@tanstack/react-query.gen"
+import {
+  servicesListOptions,
+  servicesPartialUpdateMutation,
+  servicesDestroyMutation,
+  servicesDuplicateCreateMutation,
+  practitionerCategoriesListOptions,
+} from "@/src/client/@tanstack/react-query.gen"
 import type { ServiceListReadable } from "@/src/client/types.gen"
 import EmptyState from "./empty-state"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 import { PractitionerPageHeader } from "../practitioner-page-header"
 import { ManageCategoriesDialog } from "./manage-categories-dialog"
+import { getAttentionState } from "@/lib/service-card-utils"
 
 // Service types for filtering
 const SERVICE_TYPE_TABS = [
@@ -98,14 +107,24 @@ const convertServiceForDisplay = (service: ServiceListReadable): any => {
     bookings: parseInt(service.total_bookings || '0'),
     sessions: 1, // Default sessions count
     updatedAt: service.updated_at || new Date().toISOString(),
-    created_at: service.created_at || new Date().toISOString()
+    created_at: service.created_at || new Date().toISOString(),
+    // Additional backend fields for type-specific display
+    next_session_date: service.next_session_date || null,
+    first_session_date: service.first_session_date || null,
+    last_session_date: service.last_session_date || null,
+    is_purchasable: service.is_purchasable ?? null,
+    has_ended: service.has_ended || false,
+    max_participants: service.max_participants || null,
+    location_type: service.location_type || null,
   }
 }
 
 export default function PractitionerServicesManagerV2() {
   const isMobile = useMediaQuery("(max-width: 640px)")
   const queryClient = useQueryClient()
+  const router = useRouter()
   const { user } = useAuth()
+  const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -207,9 +226,9 @@ export default function PractitionerServicesManagerV2() {
       const newStatus = service.status === 'active' ? 'draft' : 'active'
       const newIsActive = newStatus === 'active'
       
-      updateMutation.mutate({ 
+      updateMutation.mutate({
         path: { id: parseInt(serviceId) },
-        body: { 
+        body: {
           status: newStatus,
           is_active: newIsActive,
           is_public: newIsActive,
@@ -219,6 +238,51 @@ export default function PractitionerServicesManagerV2() {
       })
     }
   }
+
+  // Duplicate service mutation — uses real backend /duplicate/ endpoint
+  const duplicateMutation = useMutation({
+    ...servicesDuplicateCreateMutation(),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: servicesListOptions({ query: queryParams }).queryKey })
+      const newId = data?.id || data?.data?.id
+      if (newId) {
+        toast({
+          title: "Service duplicated",
+          description: "Redirecting to the new draft copy...",
+        })
+        router.push(`/dashboard/practitioner/services/${newId}`)
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Duplicate failed",
+        description: error.message || "Failed to duplicate service",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Handle duplicate service
+  const handleDuplicate = async (serviceId: string) => {
+    duplicateMutation.mutate({
+      path: { id: parseInt(serviceId) },
+      body: { name: '' }, // Backend handles naming (appends "Copy")
+    })
+  }
+
+  // Compute stats from loaded services
+  const stats = useMemo(() => {
+    const displayed = sortedServices.map(convertServiceForDisplay)
+    const activeCount = displayed.filter((s: any) => s.status === 'active').length
+    const draftCount = displayed.filter((s: any) => s.status === 'draft').length
+    const totalBookings = displayed.reduce((sum: number, s: any) => sum + (s.total_bookings || 0), 0)
+    const rated = displayed.filter((s: any) => s.average_rating && parseFloat(s.average_rating) > 0)
+    const avgRating = rated.length > 0
+      ? (rated.reduce((sum: number, s: any) => sum + parseFloat(s.average_rating), 0) / rated.length).toFixed(1)
+      : null
+    const needsAttention = displayed.filter((s: any) => getAttentionState(s) !== null).length
+    return { activeCount, draftCount, totalBookings, avgRating, needsAttention }
+  }, [sortedServices])
 
   return (
     <>
@@ -240,6 +304,31 @@ export default function PractitionerServicesManagerV2() {
       />
 
       <div className="px-6 py-4 space-y-4">
+        {/* Stats summary bar */}
+        {!isLoading && sortedServices.length > 0 && (
+          <div className="bg-white border border-sage-200/60 rounded-full overflow-x-auto flex items-center divide-x divide-sage-200/40 px-2 py-1.5">
+            {[
+              { label: "Active", value: stats.activeCount },
+              { label: "Draft", value: stats.draftCount },
+              { label: "Total Bookings", value: stats.totalBookings },
+              ...(stats.avgRating ? [{ label: "Avg Rating", value: stats.avgRating }] : []),
+              ...(stats.needsAttention > 0 ? [{ label: "Needs Attention", value: stats.needsAttention, attention: true }] : []),
+            ].map((stat) => (
+              <div key={stat.label} className="flex items-center gap-2 px-4 py-1 flex-shrink-0">
+                <span className="text-[11px] font-normal text-olive-500">{stat.label}</span>
+                <span className={`font-serif text-base ${
+                  'attention' in stat && stat.attention ? 'text-terracotta-600' : 'text-olive-900'
+                }`}>
+                  {stat.value}
+                </span>
+                {'attention' in stat && stat.attention && (
+                  <AlertTriangle className="h-3.5 w-3.5 text-terracotta-500" />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Search and filters bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
@@ -420,6 +509,7 @@ export default function PractitionerServicesManagerV2() {
                   service={convertServiceForDisplay(service)}
                   onDelete={handleDeleteService}
                   onToggleStatus={handleToggleStatus}
+                  onDuplicate={handleDuplicate}
                 />
               ))}
             </div>
@@ -431,6 +521,7 @@ export default function PractitionerServicesManagerV2() {
                   service={convertServiceForDisplay(service)}
                   onDelete={handleDeleteService}
                   onToggleStatus={handleToggleStatus}
+                  onDuplicate={handleDuplicate}
                 />
               ))}
             </div>
