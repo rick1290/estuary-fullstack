@@ -99,7 +99,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
         <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
           <Skeleton className="h-5 w-64 mb-6" />
           <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
-            <div>
+            <div className="min-w-0">
               <div className="flex gap-2 mb-4">
                 <Skeleton className="h-6 w-16 rounded-full" />
                 <Skeleton className="h-6 w-20 rounded-full" />
@@ -117,7 +117,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 <Skeleton className="h-8 w-16" />
               </div>
             </div>
-            <div>
+            <div className="hidden lg:block">
               <Skeleton className="h-[600px] rounded-2xl" />
             </div>
           </div>
@@ -189,7 +189,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
         {/* Two-column layout — content left, booking right */}
         <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
           {/* Left Column */}
-          <div>
+          <div className="min-w-0">
             {/* Hero Zone */}
             <div className="mb-8 lg:mb-10">
               {/* Pills */}
@@ -473,8 +473,8 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
             </div>
           </div>
 
-          {/* Right Column — Booking panel starts at top, sticks on scroll */}
-          <div ref={bookingPanelRef}>
+          {/* Right Column — Booking panel (desktop only) */}
+          <div ref={bookingPanelRef} className="hidden lg:block">
             {/* Booking panel — sticks on scroll */}
             <div className="lg:sticky lg:top-24 space-y-5">
               {service && (

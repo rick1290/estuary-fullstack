@@ -88,7 +88,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 )}
               </div>
               {practitioner.is_verified && (
-                <div className="absolute -bottom-2 -right-2 bg-sage-600 text-white rounded-full p-1.5">
+                <div className="absolute -bottom-2 -right-2 bg-olive-800 text-white rounded-full p-1.5">
                   <Check className="h-4 w-4" strokeWidth="2.5" />
                 </div>
               )}

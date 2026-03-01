@@ -175,7 +175,7 @@ export default function SubscriptionModal({
                   )}
                   
                   {currentTier === tier.value && (
-                    <Badge className="absolute -top-3 left-4 bg-sage-600 text-white">
+                    <Badge className="absolute -top-3 left-4 bg-olive-800 text-white">
                       Current Plan
                     </Badge>
                   )}
@@ -184,7 +184,7 @@ export default function SubscriptionModal({
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`p-2 rounded-lg ${
                         selectedTier === tier.value
-                          ? "bg-sage-600 text-white"
+                          ? "bg-olive-800 text-white"
                           : "bg-gray-100 text-gray-600"
                       }`}>
                         {tier.icon}
@@ -238,7 +238,7 @@ export default function SubscriptionModal({
               <Button
                 onClick={handleSubscribe}
                 disabled={loading || currentTier === selectedTier}
-                className="bg-sage-600 hover:bg-sage-700"
+                className="bg-olive-800 hover:bg-olive-700"
               >
                 {loading ? "Processing..." : 
                  currentTier === selectedTier ? "Current Plan" :

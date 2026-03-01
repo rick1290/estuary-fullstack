@@ -1010,7 +1010,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             <CardContent className="space-y-2">
               {/* Join/Start virtual session button */}
               {session.room?.public_uuid && (session.status === "scheduled" || session.status === "in_progress") && (
-                <Button className="w-full bg-sage-600 hover:bg-sage-700" asChild>
+                <Button className="w-full bg-olive-800 hover:bg-olive-700" asChild>
                   <Link href={`/room/${session.room.public_uuid}/lobby`}>
                     <Video className="h-4 w-4 mr-2" />
                     {session.status === "in_progress" ? "Join Session" : "Start Session"}

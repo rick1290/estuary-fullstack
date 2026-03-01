@@ -94,8 +94,8 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                   className={cn(
                     "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300",
                     isCompleted && "bg-terracotta-500 border-terracotta-500",
-                    isCurrent && "bg-sage-600 border-sage-600 ring-4 ring-sage-100",
-                    isPast && !isCompleted && "bg-sage-600 border-sage-600",
+                    isCurrent && "bg-olive-800 border-olive-800 ring-4 ring-sage-100",
+                    isPast && !isCompleted && "bg-olive-800 border-olive-800",
                     isFuture && "bg-white border-sage-200"
                   )}
                 >
@@ -159,8 +159,8 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                 className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 flex-shrink-0",
                   isCompleted && "bg-terracotta-500 border-terracotta-500",
-                  isCurrent && "bg-sage-600 border-sage-600 ring-4 ring-sage-100",
-                  isPast && !isCompleted && "bg-sage-600 border-sage-600",
+                  isCurrent && "bg-olive-800 border-olive-800 ring-4 ring-sage-100",
+                  isPast && !isCompleted && "bg-olive-800 border-olive-800",
                   isFuture && "bg-white border-sage-200"
                 )}
               >

@@ -399,7 +399,7 @@ function ScheduleTable({
                                   }
                                 }}
                                 disabled={!isSessionJoinable(calendarEvent)}
-                                className={isSessionJoinable(calendarEvent) ? "bg-sage-600 hover:bg-sage-700" : ""}
+                                className={isSessionJoinable(calendarEvent) ? "bg-olive-800 hover:bg-olive-700" : ""}
                               >
                                 <Play className="h-4 w-4 mr-1" />
                                 Join

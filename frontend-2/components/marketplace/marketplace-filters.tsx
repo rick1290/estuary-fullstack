@@ -182,7 +182,7 @@ export default function MarketplaceFilters({
                       id={`modality-${modality.id}`}
                       checked={filters.modalities.includes(String(modality.id))}
                       onCheckedChange={() => toggleArrayFilter('modalities', String(modality.id))}
-                      className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+                      className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
                     />
                     <Label htmlFor={`modality-${modality.id}`} className="text-sm font-normal text-olive-700 cursor-pointer">
                       {modality.name}
@@ -213,7 +213,7 @@ export default function MarketplaceFilters({
                         id={`category-${category.id}`}
                         checked={filters.categories.includes(String(category.id))}
                         onCheckedChange={() => toggleArrayFilter('categories', String(category.id))}
-                        className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+                        className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
                       />
                       <Label htmlFor={`category-${category.id}`} className="text-sm font-normal text-olive-700 cursor-pointer">
                         {category.name}

@@ -193,7 +193,7 @@ export default function SubscriptionDialog({
               <Button
                 onClick={handleSubscribe}
                 disabled={subscribeMutation.isPending}
-                className="flex-1 bg-sage-600 hover:bg-sage-700"
+                className="flex-1 bg-olive-800 hover:bg-olive-700"
               >
                 {subscribeMutation.isPending ? (
                   <Spinner className="h-4 w-4" />

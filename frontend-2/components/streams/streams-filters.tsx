@@ -125,7 +125,7 @@ export default function StreamsFilters({
               <Checkbox
                 checked={contentType === type.value}
                 onCheckedChange={() => handleContentTypeChange(type.value)}
-                className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+                className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
               />
               <span className="flex items-center gap-2 text-sm text-olive-700 group-hover:text-olive-900">
                 <span className="text-sage-600">{type.icon}</span>
@@ -172,7 +172,7 @@ export default function StreamsFilters({
               <Checkbox 
                 checked={showSubscribed} 
                 onCheckedChange={(checked) => setShowSubscribed(checked as boolean)}
-                className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+                className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
               />
               <span className="flex items-center gap-2 text-sm text-olive-700 group-hover:text-olive-900">
                 <Crown className="h-4 w-4 text-sage-600" />
@@ -196,7 +196,7 @@ export default function StreamsFilters({
               <Checkbox 
                 checked={tags.includes(tag)} 
                 onCheckedChange={() => handleTagChange(tag)}
-                className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+                className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
               />
               <span className="text-sm text-olive-700 group-hover:text-olive-900">{tag}</span>
             </label>
@@ -212,7 +212,7 @@ export default function StreamsFilters({
           <Checkbox 
             checked={showLocked} 
             onCheckedChange={(checked) => setShowLocked(checked as boolean)}
-            className="border-sage-300 data-[state=checked]:bg-sage-600 data-[state=checked]:border-sage-600"
+            className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
           />
           <span className="text-sm text-olive-700 group-hover:text-olive-900">
             Include Premium Content

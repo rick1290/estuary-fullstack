@@ -133,8 +133,8 @@ export default function CreditsTab() {
                   </p>
                 )}
               </div>
-              <div className="p-3 rounded-full bg-sage-600/10">
-                <Wallet className="h-8 w-8 text-sage-600" />
+              <div className="p-3 rounded-full bg-olive-800/10">
+                <Wallet className="h-8 w-8 text-olive-800" />
               </div>
             </div>
           </CardContent>
