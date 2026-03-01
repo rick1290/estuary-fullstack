@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Loader2,
   Clock,
+  ChevronRight,
 } from "lucide-react"
 import { format, isPast } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -92,9 +93,10 @@ export function SessionsTable({
 
   // Column layout differs by service type
   // Individual: wider date column, no #/enrolled/waitlist columns — simpler
+  // Last column is a narrow chevron for click affordance
   const gridCols = isIndividual
-    ? "grid-cols-[1fr_1.2fr_6rem_3rem]"
-    : "grid-cols-[3rem_1fr_1fr_6rem_5rem_4rem_3rem]"
+    ? "grid-cols-[1fr_1.2fr_6rem_3rem_1.5rem]"
+    : "grid-cols-[3rem_1fr_1fr_6rem_5rem_4rem_3rem_1.5rem]"
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -105,6 +107,7 @@ export function SessionsTable({
           <div>Details</div>
           <div>Status</div>
           <div></div>
+          <div></div>
         </div>
       ) : (
         <div className={`hidden md:grid ${gridCols} gap-2 px-4 py-2.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wider`}>
@@ -114,6 +117,7 @@ export function SessionsTable({
           <div>Status</div>
           <div>Enrolled</div>
           <div>Waitlist</div>
+          <div></div>
           <div></div>
         </div>
       )}
@@ -231,6 +235,11 @@ export function SessionsTable({
                       </DropdownMenu>
                     )}
                   </div>
+
+                  {/* Click affordance */}
+                  <div className="flex items-center justify-center">
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+                  </div>
                 </div>
               ) : (
                 /* Workshop/Course layout */
@@ -340,6 +349,11 @@ export function SessionsTable({
                       </DropdownMenu>
                     )}
                   </div>
+
+                  {/* Click affordance */}
+                  <div className="flex items-center justify-center">
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+                  </div>
                 </div>
               )}
 
@@ -424,12 +438,15 @@ export function SessionsTable({
                     <span className="text-amber-600">+{waitlistCount} waitlisted</span>
                   )}
                 </div>
-                {sessionIsPast && sessionStatus === 'scheduled' && (
-                  <p className="text-xs text-amber-600 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    Session date has passed
-                  </p>
-                )}
+                <div className="flex items-center justify-between">
+                  {sessionIsPast && sessionStatus === 'scheduled' ? (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Session date has passed
+                    </p>
+                  ) : <div />}
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+                </div>
               </div>
 
               {/* Inline reschedule form */}

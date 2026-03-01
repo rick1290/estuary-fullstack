@@ -98,7 +98,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
 
   const menuItems: MenuItem[] = [
     { text: "Dashboard", icon: <BarChart className="h-4 w-4" />, path: "/dashboard/practitioner" },
-    { text: "Manage Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
+    { text: "Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
     { text: "Streams", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/streams" },
     { text: "Availability", icon: <Clock className="h-4 w-4" />, path: "/dashboard/practitioner/availability" },
     { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },

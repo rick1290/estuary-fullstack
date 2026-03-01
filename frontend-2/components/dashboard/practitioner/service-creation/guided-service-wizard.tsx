@@ -300,12 +300,12 @@ export function GuidedServiceWizard() {
     ...servicesCreateMutation(),
     onSuccess: (data) => {
       toast({
-        title: "Service created successfully! 🎉",
-        description: "Redirecting to complete your service details...",
+        title: "Service created successfully!",
+        description: "Your new service is ready. Complete the setup to publish it.",
       })
-      // Redirect to the service editor
+      // Redirect to the service overview — draft nudge card guides them to settings
       if (data?.id) {
-        router.push(`/dashboard/practitioner/services/${data.id}/settings`)
+        router.push(`/dashboard/practitioner/services/${data.id}`)
       } else {
         console.error('No service ID in response:', data)
         router.push('/dashboard/practitioner/services')

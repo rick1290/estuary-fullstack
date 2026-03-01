@@ -158,7 +158,7 @@ export default function PractitionerDashboardPage() {
                 <div>
                   <span className="text-xs font-medium tracking-widest uppercase text-sage-600">Schedule</span>
                   <CardTitle className="font-serif text-xl font-light text-olive-900">Your <em className="italic text-terracotta-600">Flow</em></CardTitle>
-                  <CardDescription className="text-sm font-light text-olive-600">Navigate your practice's rhythm</CardDescription>
+                  <CardDescription className="text-sm font-light text-olive-600">This week's schedule</CardDescription>
                 </div>
                 <Link href="/dashboard/practitioner/schedule" className="text-xs font-normal text-olive-500 border-b border-sage-200/60 pb-px hover:text-terracotta-600 hover:border-terracotta-400 transition-colors whitespace-nowrap">
                   Full schedule &rarr;
@@ -182,7 +182,7 @@ export default function PractitionerDashboardPage() {
             <CardHeader className="pb-4">
               <span className="text-xs font-medium tracking-widest uppercase text-sage-600">New Energy</span>
               <CardTitle className="font-serif text-xl font-light text-olive-900">Recent <em className="italic text-terracotta-600">Ripples</em></CardTitle>
-              <CardDescription className="text-sm font-light text-olive-600">Who just booked or subscribed?</CardDescription>
+              <CardDescription className="text-sm font-light text-olive-600">New bookings & activity</CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
               <PractitionerRecentRipples />

@@ -185,6 +185,22 @@ function getSectionPriority(sectionId: string, serviceTypeCode: string): number 
 
 type SectionStatus = "complete" | "incomplete" | "optional"
 
+// Assign each section to a display group
+const CONTENT_SECTIONS = new Set(["media", "benefits", "resources"])
+const ADVANCED_SECTIONS = new Set(["advanced", "waitlist", "status-visibility"])
+
+function getSectionGroup(sectionId: string, isRequired: boolean): "essentials" | "content" | "advanced" {
+  if (CONTENT_SECTIONS.has(sectionId)) return "content"
+  if (ADVANCED_SECTIONS.has(sectionId)) return "advanced"
+  return "essentials"
+}
+
+const GROUP_META: Record<string, { label: string; description: string }> = {
+  essentials: { label: "Essentials", description: "Required to publish" },
+  content: { label: "Content", description: "Make your listing stand out" },
+  advanced: { label: "Advanced", description: "Additional options" },
+}
+
 export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -529,9 +545,13 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
   const SidebarContent = () => {
     const sectionCount = visibleSections.length
     const isCompact = sectionCount > 8
-    const configRequired = visibleSections.filter(s => s.required)
-    const configOptional = visibleSections.filter(s => !s.required)
-    const showConfigDivider = configRequired.length > 0 && configOptional.length > 0
+
+    // Group sections into tiers
+    const groups = (["essentials", "content", "advanced"] as const).map(groupId => ({
+      ...GROUP_META[groupId],
+      id: groupId,
+      sections: visibleSections.filter(s => getSectionGroup(s.id, s.required) === groupId),
+    })).filter(g => g.sections.length > 0)
 
     const renderSection = (section: typeof sections[0]) => {
       const status = sectionStatus[section.id] || "optional"
@@ -571,18 +591,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
                   <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
                 )}
               </div>
-              {!isCompact && (
-                <p className={cn(
-                  "text-[10px] text-muted-foreground truncate mt-0.5",
-                  isActive ? "opacity-80" : "opacity-60"
-                )}>
-                  {section.description}
-                </p>
-              )}
             </div>
-            {!isCompact && section.required && (
-              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">Req</Badge>
-            )}
           </div>
           {isActive && (
             <>
@@ -595,16 +604,21 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
     }
 
     return (
-      <div className={cn("flex flex-col h-full", isCompact ? "space-y-0.5" : "space-y-1")}>
-        {configRequired.map(renderSection)}
-        {showConfigDivider && (
-          <div className="flex items-center gap-2 px-2 py-1">
-            <div className="flex-1 h-px bg-border/50" />
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Optional</span>
-            <div className="flex-1 h-px bg-border/50" />
+      <div className="flex flex-col h-full space-y-3">
+        {groups.map((group, groupIndex) => (
+          <div key={group.id}>
+            {groupIndex > 0 && <div className="h-px bg-border/50 mb-3" />}
+            <div className="px-2 mb-1.5">
+              <h5 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </h5>
+              <p className="text-[10px] text-muted-foreground/70">{group.description}</p>
+            </div>
+            <div className={cn(isCompact ? "space-y-0.5" : "space-y-1")}>
+              {group.sections.map(renderSection)}
+            </div>
           </div>
-        )}
-        {configOptional.map(renderSection)}
+        ))}
       </div>
     )
   }
@@ -802,77 +816,95 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
               </Card>
             )}
 
-            {/* Sections */}
+            {/* Sections — grouped into tiers */}
             <div className="space-y-8">
-              {visibleSections.map((section) => {
-                const SectionComponent = section.component
-                const hasChanges = unsavedChanges.has(section.id)
-                const isActive = activeSection === section.id
+              {(() => {
+                let lastGroup: string | null = null
+                return visibleSections.map((section) => {
+                  const SectionComponent = section.component
+                  const hasChanges = unsavedChanges.has(section.id)
+                  const isActive = activeSection === section.id
+                  const group = getSectionGroup(section.id, section.required)
+                  const showGroupHeader = group !== lastGroup
+                  lastGroup = group
 
-                return (
-                  <div
-                    key={section.id}
-                    ref={(el) => { sectionRefs.current[section.id] = el }}
-                    className="scroll-mt-24"
-                  >
-                    <Card className={cn(
-                      "transition-all duration-300",
-                      isActive ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md"
-                    )}>
-                      <CardHeader className={cn(
-                        "transition-colors duration-300",
-                        isActive && "bg-primary/5"
-                      )}>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="flex items-center gap-2">
-                              <span className={cn(
-                                "transition-colors duration-300",
-                                isActive && "text-primary"
-                              )}>
-                                {section.title}
-                              </span>
-                              {section.required && (
-                                <Badge variant="outline" className="text-xs">Required</Badge>
-                              )}
-                            </CardTitle>
-                            <CardDescription>{section.description}</CardDescription>
-                          </div>
-                          {hasChanges && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleSaveSection(section.id)}
-                              disabled={updateMutation.isPending}
-                            >
-                              {updateMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                "Save"
-                              )}
-                            </Button>
-                          )}
+                  return (
+                    <div key={section.id}>
+                      {/* Group divider in main content */}
+                      {showGroupHeader && group !== "essentials" && (
+                        <div className="flex items-center gap-3 mb-6 pt-2">
+                          <div className="h-px flex-1 bg-border/60" />
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            {GROUP_META[group].label}
+                          </span>
+                          <div className="h-px flex-1 bg-border/60" />
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        {section.id === 'media' ? (
-                          <MediaSection service={service} />
-                        ) : section.id === 'resources' ? (
-                          <ResourcesSection service={service} />
-                        ) : (
-                          <SectionComponent
-                            service={service}
-                            data={sectionData[section.id] || {}}
-                            onChange={(data: any) => handleSectionChange(section.id, data)}
-                            onSave={() => handleSaveSection(section.id)}
-                            hasChanges={hasChanges}
-                            isSaving={updateMutation.isPending}
-                          />
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )
-              })}
+                      )}
+
+                      <div
+                        ref={(el) => { sectionRefs.current[section.id] = el }}
+                        className="scroll-mt-24"
+                      >
+                        <Card className={cn(
+                          "transition-all duration-300",
+                          isActive ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md"
+                        )}>
+                          <CardHeader className={cn(
+                            "transition-colors duration-300",
+                            isActive && "bg-primary/5"
+                          )}>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="flex items-center gap-2">
+                                  <span className={cn(
+                                    "transition-colors duration-300",
+                                    isActive && "text-primary"
+                                  )}>
+                                    {section.title}
+                                  </span>
+                                  {section.required && (
+                                    <Badge variant="outline" className="text-xs">Required</Badge>
+                                  )}
+                                </CardTitle>
+                                <CardDescription>{section.description}</CardDescription>
+                              </div>
+                              {hasChanges && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveSection(section.id)}
+                                  disabled={updateMutation.isPending}
+                                >
+                                  {updateMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Save"
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {section.id === 'media' ? (
+                              <MediaSection service={service} />
+                            ) : section.id === 'resources' ? (
+                              <ResourcesSection service={service} />
+                            ) : (
+                              <SectionComponent
+                                service={service}
+                                data={sectionData[section.id] || {}}
+                                onChange={(data: any) => handleSectionChange(section.id, data)}
+                                onSave={() => handleSaveSection(section.id)}
+                                hasChanges={hasChanges}
+                                isSaving={updateMutation.isPending}
+                              />
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
             </div>
           </div>
         </div>
