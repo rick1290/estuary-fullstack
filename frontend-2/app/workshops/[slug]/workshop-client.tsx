@@ -143,7 +143,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
         <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
           <Skeleton className="h-5 w-72 mb-6" />
           <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-10 w-3/4" />
               <div className="flex items-center gap-2.5">
@@ -155,7 +155,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               <Skeleton className="h-px w-full" />
               <Skeleton className="h-40 w-full" />
             </div>
-            <div>
+            <div className="hidden lg:block">
               <Skeleton className="h-96 w-full rounded-xl" />
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
         {/* Two-column grid */}
         <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
           {/* Left Column - Hero content + main content */}
-          <div>
+          <div className="min-w-0">
             {/* Modalities */}
             {workshop.modalities && workshop.modalities.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
@@ -433,8 +433,8 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             </div>
           </div>
 
-          {/* Right Column - Sticky Booking Panel */}
-          <div className="space-y-6" ref={bookingPanelRef}>
+          {/* Right Column - Sticky Booking Panel (desktop only) */}
+          <div className="hidden lg:block space-y-6" ref={bookingPanelRef}>
             <div className="lg:sticky lg:top-24">
               <WorkshopBookingPanel workshop={transformedWorkshop} serviceData={serviceData} />
 

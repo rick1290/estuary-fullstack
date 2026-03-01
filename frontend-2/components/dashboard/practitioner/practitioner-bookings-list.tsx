@@ -371,7 +371,7 @@ export default function PractitionerBookingsList() {
                                         }
                                       }}
                                       disabled={!isSessionJoinable(booking)}
-                                      className={isSessionJoinable(booking) ? "bg-sage-600 hover:bg-sage-700" : ""}
+                                      className={isSessionJoinable(booking) ? "bg-olive-800 hover:bg-olive-700" : ""}
                                     >
                                       <Play className="h-4 w-4 mr-1" />
                                       Join

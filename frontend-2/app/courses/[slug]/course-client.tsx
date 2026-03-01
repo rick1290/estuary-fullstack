@@ -327,7 +327,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
         <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
           <Skeleton className="h-5 w-72 mb-6" />
           <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0">
               <div className="flex gap-2">
                 <Skeleton className="h-6 w-20 rounded-full" />
                 <Skeleton className="h-6 w-24 rounded-full" />
@@ -348,7 +348,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               <Skeleton className="h-6 w-48" />
               <Skeleton className="h-32 w-full" />
             </div>
-            <div>
+            <div className="hidden lg:block">
               <Skeleton className="h-[400px] w-full rounded-xl" />
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
         {/* Two-column grid */}
         <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_340px]">
           {/* Left Column - Content */}
-          <div>
+          <div className="min-w-0">
             {/* Hero content */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="inline-block text-xs font-medium tracking-widest uppercase text-terracotta-600">
@@ -692,8 +692,8 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
 
-          {/* Right Column - Booking Panel */}
-          <div ref={bookingPanelRef}>
+          {/* Right Column - Booking Panel (desktop only) */}
+          <div ref={bookingPanelRef} className="hidden lg:block">
             <div className="lg:sticky lg:top-24">
               <CourseBookingPanel course={course} serviceData={serviceData} />
 

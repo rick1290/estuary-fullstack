@@ -140,7 +140,7 @@ export function WaitingRoom({
             <Button
               onClick={onStartSession}
               disabled={admittedParticipants.length === 0 || sessionStarted}
-              className="bg-sage-600 hover:bg-sage-700"
+              className="bg-olive-800 hover:bg-olive-700"
             >
               {sessionStarted ? 'Session Started' : 'Start Session'}
             </Button>
@@ -275,7 +275,7 @@ function ParticipantItem({
     )}>
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarFallback className="bg-sage-600 text-white">
+          <AvatarFallback className="bg-olive-800 text-white">
             {getInitials(participant.name)}
           </AvatarFallback>
         </Avatar>

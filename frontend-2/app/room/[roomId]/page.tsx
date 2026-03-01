@@ -175,7 +175,7 @@ export default function RoomPage() {
             </Alert>
             <Button
               onClick={() => router.push(`/room/${roomId}/lobby`)}
-              className="w-full mt-4 bg-sage-600 hover:bg-sage-700"
+              className="w-full mt-4 bg-olive-800 hover:bg-olive-700"
             >
               Return to Lobby
             </Button>
@@ -199,7 +199,7 @@ export default function RoomPage() {
             </Alert>
             <Button
               onClick={() => router.push('/dashboard/user')}
-              className="w-full mt-4 bg-sage-600 hover:bg-sage-700"
+              className="w-full mt-4 bg-olive-800 hover:bg-olive-700"
             >
               Return to Dashboard
             </Button>

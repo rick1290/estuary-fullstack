@@ -589,7 +589,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 type="submit" 
                 size="sm" 
                 disabled={!comment.trim() || createCommentMutation.isPending} 
-                className="bg-sage-600 hover:bg-sage-700 rounded-xl"
+                className="bg-olive-800 hover:bg-olive-700 rounded-xl"
               >
                 {createCommentMutation.isPending ? "Posting..." : "Post"}
               </Button>

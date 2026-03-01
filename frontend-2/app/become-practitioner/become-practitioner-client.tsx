@@ -580,7 +580,7 @@ export default function BecomePractitionerPage() {
             {[
               {
                 badge: "$0/mo",
-                badgeClass: "bg-sage-600",
+                badgeClass: "bg-olive-800",
                 text: "No monthly subscription \u2014 ever",
               },
               {
