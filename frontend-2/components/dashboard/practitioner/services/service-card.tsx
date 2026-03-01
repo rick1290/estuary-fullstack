@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff,
+  MoreVertical, Eye, Trash2, Copy, Globe, EyeOff, Settings, LayoutDashboard,
   Calendar, Clock, DollarSign, ImageIcon, Star, Users, BookOpen, ShoppingBag, AlertTriangle
 } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
@@ -113,7 +113,9 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
 
       {/* Card content */}
       <CardContent className="flex-grow p-4">
-        <h3 className="font-serif font-light text-lg line-clamp-1 mb-1 text-olive-900">{service.name}</h3>
+        <Link href={`/dashboard/practitioner/services/${service.id}`} className="block">
+          <h3 className="font-serif font-light text-lg line-clamp-1 mb-1 text-olive-900 hover:text-terracotta-600 transition-colors">{service.name}</h3>
+        </Link>
 
         {/* Category badge */}
         {service.practitioner_category && (
@@ -182,12 +184,17 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
       {/* Action buttons */}
       <CardFooter className="p-4 pt-0 flex justify-between">
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" asChild>
+          <Button variant="outline" size="icon" asChild title="Manage">
             <Link href={`/dashboard/practitioner/services/${service.id}`}>
-              <Edit className="h-4 w-4" />
+              <LayoutDashboard className="h-4 w-4" />
             </Link>
           </Button>
-          <Button variant="outline" size="icon" asChild>
+          <Button variant="outline" size="icon" asChild title="Settings">
+            <Link href={`/dashboard/practitioner/services/${service.id}/settings`}>
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button variant="outline" size="icon" asChild title="View public page">
             <Link href={getServiceDetailUrl(service)} target="_blank">
               <Eye className="h-4 w-4" />
             </Link>
@@ -216,8 +223,14 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href={`/dashboard/practitioner/services/${service.id}`}>
-                <Edit className="mr-2 h-4 w-4" />
-                <span>Edit</span>
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Manage</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/practitioner/services/${service.id}/settings`}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onDuplicate?.(service.id)}>

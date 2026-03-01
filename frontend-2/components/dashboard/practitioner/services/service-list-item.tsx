@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff,
+  MoreVertical, Eye, Trash2, Copy, Globe, EyeOff, Settings, LayoutDashboard,
   Calendar, Clock, DollarSign, Users, ImageIcon, Star, BookOpen, ShoppingBag, AlertTriangle
 } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
@@ -137,7 +137,9 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
             {/* Content row */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex-grow space-y-2">
-                <h3 className="font-serif font-light text-lg text-olive-900">{service.name}</h3>
+                <Link href={`/dashboard/practitioner/services/${service.id}`}>
+                  <h3 className="font-serif font-light text-lg text-olive-900 hover:text-terracotta-600 transition-colors">{service.name}</h3>
+                </Link>
 
                 <p className="text-sm text-muted-foreground line-clamp-1 hidden sm:block">{service.description}</p>
 
@@ -184,13 +186,17 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 self-end sm:self-center">
-                <Button variant="outline" size="icon" asChild>
+                <Button variant="outline" size="icon" asChild title="Manage">
                   <Link href={`/dashboard/practitioner/services/${service.id}`}>
-                    <Edit className="h-4 w-4" />
+                    <LayoutDashboard className="h-4 w-4" />
                   </Link>
                 </Button>
-
-                <Button variant="outline" size="icon" asChild>
+                <Button variant="outline" size="icon" asChild title="Settings">
+                  <Link href={`/dashboard/practitioner/services/${service.id}/settings`}>
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button variant="outline" size="icon" asChild title="View public page">
                   <Link href={getServiceDetailUrl(service)} target="_blank">
                     <Eye className="h-4 w-4" />
                   </Link>
@@ -218,8 +224,14 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/practitioner/services/${service.id}`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Manage</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/practitioner/services/${service.id}/settings`}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDuplicate?.(service.id)}>
