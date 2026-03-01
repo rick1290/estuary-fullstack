@@ -86,11 +86,11 @@ export function QuickServiceCreate() {
     onSuccess: (data) => {
       toast({
         title: "Service created!",
-        description: "Now let's add more details to your service.",
+        description: "Your new service is ready. Complete the setup to publish it.",
       })
-      // Redirect to the service editor
+      // Redirect to the service overview — draft nudge card guides them to settings
       if (data?.id) {
-        router.push(`/dashboard/practitioner/services/edit/${data.id}`)
+        router.push(`/dashboard/practitioner/services/${data.id}`)
       } else {
         console.error('No service ID in response:', data)
         router.push('/dashboard/practitioner/services')

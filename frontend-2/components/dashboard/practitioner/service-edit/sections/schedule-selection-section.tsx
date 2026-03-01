@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Info } from "lucide-react"
-import type { ServiceReadable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
 import { schedulesListOptions } from "@/src/client/@tanstack/react-query.gen"

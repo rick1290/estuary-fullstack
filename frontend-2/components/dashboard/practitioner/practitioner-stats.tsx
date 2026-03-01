@@ -71,7 +71,7 @@ export default function PractitionerStats() {
 
   return (
     <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
-      <span className="text-[10px] font-medium tracking-[0.1em] uppercase text-olive-500 whitespace-nowrap mr-4 flex-shrink-0">
+      <span className="text-xs font-medium tracking-[0.1em] uppercase text-olive-500 whitespace-nowrap mr-4 flex-shrink-0">
         Your Pulse
       </span>
       <div className="flex items-center bg-white border border-sage-200/60 rounded-full overflow-hidden flex-shrink-0">
@@ -82,9 +82,9 @@ export default function PractitionerStats() {
               i < stats.length - 1 ? 'border-r border-sage-200/60' : ''
             }`}
           >
-            <span className="text-[11px] font-normal text-olive-500">{stat.label}</span>
+            <span className="text-xs font-normal text-olive-500">{stat.label}</span>
             <span className="font-serif text-base font-normal text-olive-900 leading-none">{stat.value}</span>
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
               stat.isFlat
                 ? 'text-olive-500'
                 : stat.isPositive

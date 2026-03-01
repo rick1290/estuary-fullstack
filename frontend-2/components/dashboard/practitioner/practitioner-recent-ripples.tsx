@@ -122,7 +122,7 @@ export default function PractitionerRecentRipples() {
           </p>
         </div>
 
-        <span className="text-[11px] font-light text-olive-400 flex-shrink-0 whitespace-nowrap">{timeAgo}</span>
+        <span className="text-xs font-light text-olive-400 flex-shrink-0 whitespace-nowrap">{timeAgo}</span>
         <span className="text-olive-300 text-sm flex-shrink-0">&rsaquo;</span>
       </div>
     )

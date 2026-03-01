@@ -21,7 +21,7 @@ import {
   AlertCircle
 } from "lucide-react"
 import { practitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
-import type { ServiceReadable, PractitionerListResponse } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable, PractitionerListResponse } from "@/src/client/types.gen"
 import { useAuth } from "@/hooks/use-auth"
 
 interface RevenueSharingSectionProps {

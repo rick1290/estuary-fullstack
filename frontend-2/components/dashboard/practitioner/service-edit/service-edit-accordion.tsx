@@ -8,7 +8,7 @@ import {
   servicesUpdateMutation,
   servicesPartialUpdateMutation
 } from "@/src/client/@tanstack/react-query.gen"
-import type { ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
+import type { ServiceDetailReadable as ServiceReadable, ServiceCreateUpdateRequestWritable } from "@/src/client/types.gen"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

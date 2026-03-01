@@ -21,31 +21,40 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff, Calendar, Clock, DollarSign, ImageIcon } from "lucide-react"
+import {
+  MoreVertical, Edit, Eye, Trash2, Copy, Globe, EyeOff,
+  Calendar, Clock, DollarSign, ImageIcon, Star, Users, BookOpen, ShoppingBag, AlertTriangle
+} from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
 import { ServiceTypeBadge } from "@/components/ui/service-type-badge"
 import { getServiceDetailUrl } from "@/lib/service-utils"
+import { getTypeSpecificMeta, getAttentionState } from "@/lib/service-card-utils"
+import type { MetaItem } from "@/lib/service-card-utils"
+
+// Icon mapping for meta pills
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  DollarSign, Clock, Calendar, Users, Star, BookOpen, ShoppingBag,
+}
 
 // Status variants
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  active: "default",     // Green/primary color for published/active
-  draft: "secondary",    // Gray for draft  
-  inactive: "outline",   // Outline for inactive
-  archived: "destructive", // Red for archived
+  active: "default",
+  draft: "secondary",
+  inactive: "outline",
+  archived: "destructive",
 }
 
 interface ServiceCardProps {
   service: any
   onDelete: (id: string) => void
   onToggleStatus: (id: string) => void
+  onDuplicate?: (id: string) => void
 }
 
-export default function ServiceCard({ service, onDelete, onToggleStatus }: ServiceCardProps) {
-  // Dialog states
+export default function ServiceCard({ service, onDelete, onToggleStatus, onDuplicate }: ServiceCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
-  // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat("en-US", {
@@ -55,20 +64,19 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
     }).format(date)
   }
 
-  // Handle delete confirmation
   const handleDeleteConfirm = () => {
     onDelete(service.id)
     setDeleteDialogOpen(false)
   }
 
-  // Handle status toggle confirmation
   const handleStatusConfirm = () => {
     onToggleStatus(service.id)
     setStatusDialogOpen(false)
   }
 
-  // Get service type config
   const typeConfig = getServiceTypeConfig(service.type)
+  const metaItems = getTypeSpecificMeta(service)
+  const attention = getAttentionState(service)
 
   return (
     <Card className="overflow-hidden flex flex-col h-full border border-sage-200/60 bg-white">
@@ -89,7 +97,14 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
 
         {/* Type and status badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between">
-          <ServiceTypeBadge type={service.type} />
+          <div className="flex items-center gap-1.5">
+            {service.is_featured && (
+              <span className="bg-terracotta-500 text-cream-50 text-xs tracking-widest uppercase rounded-full px-2.5 py-0.5 font-medium">
+                Featured
+              </span>
+            )}
+            <ServiceTypeBadge type={service.type} />
+          </div>
           <Badge variant={STATUS_VARIANTS[service.status] || "outline"}>
             {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
           </Badge>
@@ -98,7 +113,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
 
       {/* Card content */}
       <CardContent className="flex-grow p-4">
-        <h3 className="font-medium text-lg line-clamp-1 mb-1 text-olive-900">{service.name}</h3>
+        <h3 className="font-serif font-light text-lg line-clamp-1 mb-1 text-olive-900">{service.name}</h3>
 
         {/* Category badge */}
         {service.practitioner_category && (
@@ -120,38 +135,55 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{service.description}</p>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{service.description}</p>
 
-        {/* Service details */}
-        <div className="mt-auto space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center text-sm">
-              <DollarSign className="h-4 w-4 mr-1 text-muted-foreground" />
-              <span>${service.price}</span>
-            </div>
-            <div className="flex items-center text-sm">
-              <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-              <span>{service.duration || "60"} min</span>
-            </div>
+        {/* Attention banner */}
+        {attention && (
+          <div
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 mb-3 text-xs ${
+              attention.severity === "error"
+                ? "bg-terracotta-50 text-terracotta-700"
+                : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>{attention.message}</span>
           </div>
+        )}
 
-          <div className="flex justify-between items-center">
-            <div className="flex items-center text-sm">
-              <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-              <span>
-                {service.sessions || "1"} session{service.sessions !== 1 ? "s" : ""}
+        {/* Type-specific meta pills */}
+        <div className="mt-auto flex flex-wrap gap-1.5">
+          {metaItems.map((item: MetaItem) => {
+            const IconComponent = ICON_MAP[item.icon]
+            return (
+              <span
+                key={item.label}
+                className="inline-flex items-center gap-1.5 bg-white border border-sage-200/60 rounded-full px-3 py-1.5 text-xs font-light text-olive-600"
+              >
+                {IconComponent && <IconComponent className="h-3 w-3" />}
+                <span>{item.value}</span>
               </span>
-            </div>
-            <div className="text-sm text-muted-foreground">Updated {formatDate(service.updatedAt)}</div>
-          </div>
+            )
+          })}
         </div>
+
+        {/* Rating display */}
+        {service.average_rating && parseFloat(service.average_rating) > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-olive-600">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <span className="font-medium">{parseFloat(service.average_rating).toFixed(1)}</span>
+            {service.total_reviews > 0 && (
+              <span className="text-muted-foreground">({service.total_reviews} review{service.total_reviews !== 1 ? "s" : ""})</span>
+            )}
+          </div>
+        )}
       </CardContent>
 
       {/* Action buttons */}
       <CardFooter className="p-4 pt-0 flex justify-between">
         <div className="flex gap-2">
           <Button variant="outline" size="icon" asChild>
-            <Link href={`/dashboard/practitioner/services/edit/${service.id}`}>
+            <Link href={`/dashboard/practitioner/services/${service.id}`}>
               <Edit className="h-4 w-4" />
             </Link>
           </Button>
@@ -183,12 +215,12 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
               )}
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href={`/dashboard/practitioner/services/edit/${service.id}`}>
+              <Link href={`/dashboard/practitioner/services/${service.id}`}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Edit</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate?.(service.id)}>
               <Copy className="mr-2 h-4 w-4" />
               <span>Duplicate</span>
             </DropdownMenuItem>
@@ -210,7 +242,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus }: Servi
           <DialogHeader>
             <DialogTitle>Delete Service?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{service.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{service.name}&quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

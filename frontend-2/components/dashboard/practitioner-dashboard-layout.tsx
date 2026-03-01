@@ -98,7 +98,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
 
   const menuItems: MenuItem[] = [
     { text: "Dashboard", icon: <BarChart className="h-4 w-4" />, path: "/dashboard/practitioner" },
-    { text: "Manage Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
+    { text: "Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
     { text: "Streams", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/streams" },
     { text: "Availability", icon: <Clock className="h-4 w-4" />, path: "/dashboard/practitioner/availability" },
     { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
@@ -239,8 +239,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-sage-200/60 px-4">
-          <Link href="/" className="flex items-center font-serif text-xl font-semibold tracking-wide text-olive-900">
-            Estuary
+          <Link href="/" className="flex items-center font-bold text-xl tracking-widest text-olive-900">
+            ESTUARY
           </Link>
         </div>
         <ScrollArea className="flex-1 py-2 flex flex-col h-[calc(100vh-4rem)]">
@@ -368,7 +368,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <SheetHeader className="h-16 border-b px-4">
-            <SheetTitle className="flex items-center justify-start text-left font-serif font-light">Estuary</SheetTitle>
+            <SheetTitle className="flex items-center justify-start text-left font-bold tracking-widest">ESTUARY</SheetTitle>
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-4rem)]">
             <div className="flex flex-col h-[calc(100vh-4rem)]">

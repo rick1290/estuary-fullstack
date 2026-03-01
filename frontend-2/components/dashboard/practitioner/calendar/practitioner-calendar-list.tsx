@@ -340,14 +340,14 @@ function ScheduleTable({
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{scheduleEvent.title}</p>
                         {hasRecordings && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                          <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
                             <Play className="h-2.5 w-2.5 mr-0.5" />
                             Recording
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 capitalize">
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 capitalize">
                           {scheduleEvent.type.replace(/_/g, " ")}
                         </Badge>
                         <span className="text-sm text-muted-foreground">

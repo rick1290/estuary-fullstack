@@ -149,11 +149,11 @@ export default function PractitionerFlowTabs() {
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium text-olive-900">{getServiceLabel(booking)}</p>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[11px] font-light text-olive-500 flex items-center gap-1">
+            <span className="text-xs font-light text-olive-500 flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {timeField ? format(parseISO(timeField), "h:mm a") : 'Time TBD'}
             </span>
-            <span className={`text-[10px] font-medium uppercase tracking-wide px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-medium uppercase tracking-wide px-2 py-0.5 rounded-full ${
               locationText === 'Virtual'
                 ? 'bg-sage-100 text-sage-700'
                 : 'bg-terracotta-100 text-terracotta-700'
