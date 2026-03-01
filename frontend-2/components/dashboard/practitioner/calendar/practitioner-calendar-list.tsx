@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import { MoreVertical, Calendar, Clock, User, Users, Video, MapPin, Loader2, Search, Filter, Play, BookOpen, SpadeIcon as Spa } from "lucide-react"
+import { MoreVertical, Calendar, Clock, User, Users, Video, MapPin, Loader2, Search, Filter, Play, BookOpen, SpadeIcon as Spa, CalendarX2 } from "lucide-react"
+import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -165,8 +167,23 @@ export default function PractitionerCalendarList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-[280px]" />
+          <Skeleton className="h-9 w-[140px]" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-4 border rounded-lg">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-3 w-[140px]" />
+              </div>
+              <Skeleton className="h-6 w-[80px] rounded-full" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -187,17 +204,17 @@ export default function PractitionerCalendarList() {
       {/* Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <TabsList className="bg-sage-100 p-1 rounded-lg">
-            <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsList className="h-auto p-0 bg-transparent border-0 rounded-none justify-start">
+            <TabsTrigger value="all" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground">
               All
             </TabsTrigger>
-            <TabsTrigger value="upcoming" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="upcoming" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground">
               Upcoming
             </TabsTrigger>
-            <TabsTrigger value="past" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="past" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground">
               Past
             </TabsTrigger>
-            <TabsTrigger value="canceled" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="canceled" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground">
               Canceled
             </TabsTrigger>
           </TabsList>
@@ -250,14 +267,21 @@ export default function PractitionerCalendarList() {
         {/* Table Content */}
         <TabsContent value={selectedTab} className="mt-4">
           {transformedSchedule.length === 0 ? (
-            <div className="rounded-md border p-8 text-center">
-              <p className="text-muted-foreground">
-                {selectedTab === "upcoming" && "No upcoming events"}
-                {selectedTab === "past" && "No past events"}
-                {selectedTab === "canceled" && "No canceled events"}
-                {selectedTab === "all" && "No calendar events found"}
-              </p>
-            </div>
+            <DashboardEmptyState
+              icon={CalendarX2}
+              title={
+                selectedTab === "upcoming" ? "No upcoming events" :
+                selectedTab === "past" ? "No past events" :
+                selectedTab === "canceled" ? "No canceled events" :
+                "No calendar events found"
+              }
+              description={
+                selectedTab === "upcoming"
+                  ? "Your schedule is clear. New bookings will appear here as clients book with you."
+                  : "Try adjusting your filters or date range to find what you're looking for."
+              }
+              variant="inline"
+            />
           ) : (
             <ScheduleTable events={transformedSchedule} onViewDetails={handleViewDetails} />
           )}

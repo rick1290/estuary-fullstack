@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { formatDistanceToNow } from "date-fns"
-import { MoreHorizontal, Edit, Trash2, Eye, Calendar, Users, Image } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Eye, Calendar, Users, Image, PenSquare } from "lucide-react"
+import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -90,16 +91,11 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
 
   if (posts.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <div className="text-center">
-            <h3 className="text-lg font-medium mb-2">No posts found</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first stream post to start engaging with your subscribers.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <DashboardEmptyState
+        icon={PenSquare}
+        title="No posts yet"
+        description="Create your first stream post to start engaging with your subscribers."
+      />
     )
   }
 

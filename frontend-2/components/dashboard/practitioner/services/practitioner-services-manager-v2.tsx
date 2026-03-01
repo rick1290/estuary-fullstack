@@ -315,7 +315,7 @@ export default function PractitionerServicesManagerV2() {
               ...(stats.needsAttention > 0 ? [{ label: "Needs Attention", value: stats.needsAttention, attention: true }] : []),
             ].map((stat) => (
               <div key={stat.label} className="flex items-center gap-2 px-4 py-1 flex-shrink-0">
-                <span className="text-[11px] font-normal text-olive-500">{stat.label}</span>
+                <span className="text-xs font-normal text-olive-500">{stat.label}</span>
                 <span className={`font-serif text-base ${
                   'attention' in stat && stat.attention ? 'text-terracotta-600' : 'text-olive-900'
                 }`}>

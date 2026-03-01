@@ -185,7 +185,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   href={subItem.path}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                    (pathname === subItem.path || pathname.startsWith(subItem.path)) && "text-primary",
+                    (pathname === subItem.path || pathname.startsWith(subItem.path)) && "text-sage-700 font-semibold",
                   )}
                 >
                   {subItem.icon}
@@ -220,7 +220,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         href={item.path}
         className={cn(
           "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-          isActive && "bg-primary/10 text-primary",
+          isActive && "bg-sage-100 text-sage-700",
         )}
       >
         {item.icon}
@@ -324,7 +324,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/placeholder-user.jpg" alt={user?.firstName || "User"} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarFallback className="bg-sage-100 text-sage-700">
                         {user?.firstName?.charAt(0) || "P"}
                       </AvatarFallback>
                     </Avatar>
@@ -456,7 +456,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src="/placeholder-user.jpg" alt={user?.firstName || "User"} />
-                            <AvatarFallback className="bg-primary text-primary-foreground">
+                            <AvatarFallback className="bg-sage-100 text-sage-700">
                               {user?.firstName?.charAt(0) || "P"}
                             </AvatarFallback>
                           </Avatar>
@@ -542,7 +542,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/placeholder-user.jpg" alt={user?.firstName || "User"} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                    <AvatarFallback className="bg-sage-100 text-sage-700">
                       {user?.firstName?.charAt(0) || "P"}
                     </AvatarFallback>
                   </Avatar>

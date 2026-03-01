@@ -1,22 +1,30 @@
 "use client"
 
+import { PractitionerPageHeader } from "@/components/dashboard/practitioner/practitioner-page-header"
 import PractitionerMessagesList from "@/components/dashboard/practitioner/messages/practitioner-messages-list"
 import PractitionerMessageDetail from "@/components/dashboard/practitioner/messages/practitioner-message-detail"
 
 export default function MessagesClient() {
   return (
-    <div className="h-[calc(100vh-4rem-3rem)]">
-      <div className="flex bg-background border rounded-lg shadow-sm overflow-hidden h-full">
-        {/* Conversations List */}
-        <div className="w-full md:w-1/3 border-r overflow-hidden">
-          <PractitionerMessagesList />
-        </div>
+    <>
+      <PractitionerPageHeader
+        title="Messages"
+        helpLink="/help/practitioner/messages"
+      />
 
-        {/* Message Thread */}
-        <div className="hidden md:flex flex-1 overflow-hidden">
-          <PractitionerMessageDetail />
+      <div className="px-6 py-4 h-[calc(100vh-4rem-6rem)]">
+        <div className="flex bg-background border border-sage-200 rounded-lg overflow-hidden h-full">
+          {/* Conversations List */}
+          <div className="w-full md:w-1/3 border-r overflow-hidden">
+            <PractitionerMessagesList />
+          </div>
+
+          {/* Message Thread */}
+          <div className="hidden md:flex flex-1 overflow-hidden">
+            <PractitionerMessageDetail />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

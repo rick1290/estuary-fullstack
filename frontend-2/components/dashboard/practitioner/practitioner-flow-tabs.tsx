@@ -143,11 +143,11 @@ export default function PractitionerFlowTabs() {
 
     return (
       <div className="flex items-center gap-3 py-3 px-4 border-b border-sage-200/40 last:border-b-0 hover:bg-cream-50 transition-colors">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-medium text-olive-700">{clientInitial}</span>
+        <div className="w-8 h-8 rounded-full bg-sage-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-medium text-sage-700">{clientInitial}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-medium text-olive-900">{getServiceLabel(booking)}</p>
+          <p className="text-sm font-medium text-olive-900">{getServiceLabel(booking)}</p>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-xs font-light text-olive-500 flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -213,7 +213,7 @@ export default function PractitionerFlowTabs() {
       <TabsContent value="today" className="mt-0">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground mb-3">What's happening today?</p>
-          <ScrollArea className="h-[300px] pr-4">
+          <ScrollArea className="h-[340px] pr-4">
             {filteredBookings.length > 0 ? (
               <div className="space-y-2">
                 {filteredBookings.map(booking => (
@@ -230,7 +230,7 @@ export default function PractitionerFlowTabs() {
       <TabsContent value="week" className="mt-0">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground mb-3">What's already scheduled in the days ahead?</p>
-          <ScrollArea className="h-[300px] pr-4">
+          <ScrollArea className="h-[340px] pr-4">
             {filteredBookings.length > 0 ? (
               <div className="space-y-2">
                 {filteredBookings.map(booking => (
@@ -255,7 +255,7 @@ export default function PractitionerFlowTabs() {
       <TabsContent value="ahead" className="mt-0">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground mb-3">What's coming further ahead?</p>
-          <ScrollArea className="h-[300px] pr-4">
+          <ScrollArea className="h-[340px] pr-4">
             {filteredBookings.length > 0 ? (
               <div className="space-y-2">
                 {filteredBookings.map(booking => (

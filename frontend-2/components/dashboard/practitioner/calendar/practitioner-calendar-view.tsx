@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight, CalendarIcon, Video, User, Users, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { calendarListOptions } from "@/src/client/@tanstack/react-query.gen"
@@ -368,8 +369,22 @@ export default function PractitionerCalendarView({ view = "week" }: Practitioner
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-4">
+        <div className="flex justify-between items-center mb-4">
+          <Skeleton className="h-7 w-[250px]" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+          </div>
+        </div>
+        <div className="grid grid-cols-7 gap-px bg-muted rounded-lg overflow-hidden">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={`h-${i}`} className="h-8 rounded-none" />
+          ))}
+          {Array.from({ length: 35 }).map((_, i) => (
+            <Skeleton key={`c-${i}`} className="h-24 rounded-none" />
+          ))}
+        </div>
       </div>
     )
   }
