@@ -198,12 +198,12 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
     <div className="flex flex-col min-h-screen">
       <CompactServiceHeader service={service} />
 
-      <div className="max-w-5xl mx-auto w-full px-6 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto w-full px-4 py-4 sm:px-6 sm:py-6 space-y-6">
 
         {/* Draft nudge */}
         {isDraft && (
-          <Card className="p-5 border-2 border-sage-200 bg-gradient-to-r from-sage-50 to-cream-50">
-            <div className="flex items-center justify-between gap-4">
+          <Card className="p-4 sm:p-5 border-2 border-sage-200 bg-gradient-to-r from-sage-50 to-cream-50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-100">
                   <Sparkles className="h-5 w-5 text-sage-600" />
@@ -217,6 +217,7 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
               </div>
               <Button
                 size="sm"
+                className="self-start sm:self-auto shrink-0"
                 onClick={() => router.push(`/dashboard/practitioner/services/${serviceId}/settings`)}
               >
                 <Settings className="h-3.5 w-3.5 mr-1.5" />
@@ -437,8 +438,8 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
 
         {/* Ended Service Alert */}
         {service.has_ended && service.status === 'active' && hasSessions && (
-          <Card className="border-2 border-terracotta-200 bg-terracotta-50 p-5">
-            <div className="flex items-center justify-between gap-4">
+          <Card className="border-2 border-terracotta-200 bg-terracotta-50 p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-terracotta-100">
                   <AlertTriangle className="h-5 w-5 text-terracotta-600" />
@@ -450,7 +451,7 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
                 <Button
                   variant="outline"
                   size="sm"

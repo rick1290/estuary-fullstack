@@ -68,7 +68,7 @@ export default function EarningsClient() {
         }}
       />
 
-      <div className="px-6 py-4 space-y-6">
+      <div className="px-4 sm:px-6 py-4 space-y-6">
         <Tabs defaultValue="monthly" className="space-y-4" onValueChange={(value) => {
           setPeriod(value === 'monthly' ? 'month' : value === 'quarterly' ? 'quarter' : 'year')
         }}>

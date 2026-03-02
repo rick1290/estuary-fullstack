@@ -12,7 +12,7 @@ export default function BookingsClient() {
         helpLink="/help/practitioner/bookings"
       />
 
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         <PractitionerBookingsList />
       </div>
     </>

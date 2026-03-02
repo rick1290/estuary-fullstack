@@ -818,7 +818,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
 
         {/* Sticky header — shared across both tabs */}
         <div className="flex-shrink-0 border-b bg-background">
-          <div className="px-6 pt-4 pb-0 max-w-6xl">
+          <div className="px-4 sm:px-6 pt-4 pb-0 max-w-6xl">
             <Button
               variant="ghost"
               size="sm"
@@ -931,8 +931,8 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
                     <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 p-0">
-                  <div className="p-6">
+                <SheetContent side="left" className="w-[280px] sm:w-80 p-0">
+                  <div className="p-4 sm:p-6">
                     <h2 className="font-semibold mb-4">Sections</h2>
                     <SidebarContent />
                   </div>

@@ -303,10 +303,10 @@ export default function PractitionerServicesManagerV2() {
         }}
       />
 
-      <div className="px-6 py-4 space-y-4">
+      <div className="px-4 sm:px-6 py-4 space-y-4 overflow-hidden">
         {/* Stats summary bar */}
         {!isLoading && sortedServices.length > 0 && (
-          <div className="bg-white border border-sage-200/60 rounded-full overflow-x-auto flex items-center divide-x divide-sage-200/40 px-2 py-1.5">
+          <div className="bg-white border border-sage-200/60 rounded-2xl sm:rounded-full overflow-x-auto flex flex-wrap sm:flex-nowrap items-center divide-sage-200/40 sm:divide-x px-2 py-1.5">
             {[
               { label: "Active", value: stats.activeCount },
               { label: "Draft", value: stats.draftCount },
@@ -314,7 +314,7 @@ export default function PractitionerServicesManagerV2() {
               ...(stats.avgRating ? [{ label: "Avg Rating", value: stats.avgRating }] : []),
               ...(stats.needsAttention > 0 ? [{ label: "Needs Attention", value: stats.needsAttention, attention: true }] : []),
             ].map((stat) => (
-              <div key={stat.label} className="flex items-center gap-2 px-4 py-1 flex-shrink-0">
+              <div key={stat.label} className="flex items-center gap-2 px-3 sm:px-4 py-1 shrink-0">
                 <span className="text-xs font-normal text-olive-500">{stat.label}</span>
                 <span className={`font-serif text-base ${
                   'attention' in stat && stat.attention ? 'text-terracotta-600' : 'text-olive-900'
@@ -348,12 +348,12 @@ export default function PractitionerServicesManagerV2() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={selectedStatus} onValueChange={(value) => {
               setSelectedStatus(value)
               setCurrentPage(1)
             }}>
-              <SelectTrigger className="w-[120px] h-9">
+              <SelectTrigger className="w-[100px] sm:w-[120px] h-9">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -377,7 +377,7 @@ export default function PractitionerServicesManagerV2() {
                 }
               }}
             >
-              <SelectTrigger className="w-[160px] h-9">
+              <SelectTrigger className="w-[130px] sm:w-[160px] h-9">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -410,7 +410,7 @@ export default function PractitionerServicesManagerV2() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[160px] h-9">
+              <SelectTrigger className="w-[130px] sm:w-[160px] h-9">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -422,10 +422,10 @@ export default function PractitionerServicesManagerV2() {
               </SelectContent>
             </Select>
 
-            <Separator orientation="vertical" className="h-6 mx-1" />
+            <Separator orientation="vertical" className="h-6 mx-1 hidden sm:block" />
 
-            {/* View mode toggle */}
-            <div className="flex items-center rounded-md border bg-background">
+            {/* View mode toggle — hidden on mobile (always grid) */}
+            <div className="hidden sm:flex items-center rounded-md border bg-background">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
                 size="sm"

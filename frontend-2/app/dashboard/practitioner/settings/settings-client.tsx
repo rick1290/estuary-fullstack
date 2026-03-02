@@ -38,7 +38,7 @@ export default function SettingsClient() {
         onTabChange={setActiveTab}
       />
 
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         {activeTab === "billing" && <BillingSettings />}
         {activeTab === "payment" && <PaymentIntegrationSettings />}
         {activeTab === "password" && <PasswordSettings />}

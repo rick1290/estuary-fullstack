@@ -121,7 +121,7 @@ export default function AnalyticsClient() {
         }}
       />
 
-      <div className="px-6 py-4 space-y-6">
+      <div className="px-4 sm:px-6 py-4 space-y-6">
         <div className="flex items-center gap-2 justify-end">
           <Popover>
             <PopoverTrigger asChild>

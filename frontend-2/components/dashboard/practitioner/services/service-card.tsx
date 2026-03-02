@@ -189,12 +189,12 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
               <LayoutDashboard className="h-4 w-4" />
             </Link>
           </Button>
-          <Button variant="outline" size="icon" asChild title="Settings">
+          <Button variant="outline" size="icon" asChild title="Settings" className="hidden sm:inline-flex">
             <Link href={`/dashboard/practitioner/services/${service.id}/settings`}>
               <Settings className="h-4 w-4" />
             </Link>
           </Button>
-          <Button variant="outline" size="icon" asChild title="View public page">
+          <Button variant="outline" size="icon" asChild title="View public page" className="hidden sm:inline-flex">
             <Link href={getServiceDetailUrl(service)} target="_blank">
               <Eye className="h-4 w-4" />
             </Link>

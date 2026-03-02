@@ -96,7 +96,7 @@ export function CompactServiceHeader({
           {displayTitle}
         </h1>
 
-        {/* Inline badges */}
+        {/* Inline badges — hide type/featured on small screens */}
         <div className="flex items-center gap-1.5 shrink-0">
           <Badge
             variant={STATUS_VARIANTS[status] || "outline"}
@@ -105,12 +105,12 @@ export function CompactServiceHeader({
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
           {typeDisplay && (
-            <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+            <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 hidden sm:inline-flex">
               {typeDisplay}
             </Badge>
           )}
           {service?.is_featured && (
-            <Badge className="bg-blush-100 text-terracotta-800 text-xs px-1.5 py-0 h-5">
+            <Badge className="bg-blush-100 text-terracotta-800 text-xs px-1.5 py-0 h-5 hidden sm:inline-flex">
               Featured
             </Badge>
           )}
@@ -139,13 +139,13 @@ function DefaultServiceActions({ service }: { service: ServiceReadable }) {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex items-center gap-1">
-        {/* Settings gear */}
+        {/* Settings gear — hidden on mobile, in dropdown instead */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hidden sm:inline-flex"
               onClick={() => router.push(`/dashboard/practitioner/services/${service.id}/settings`)}
             >
               <Settings className="h-4 w-4" />
@@ -154,10 +154,10 @@ function DefaultServiceActions({ service }: { service: ServiceReadable }) {
           <TooltipContent>Settings</TooltipContent>
         </Tooltip>
 
-        {/* View public page */}
+        {/* View public page — hidden on mobile, in dropdown instead */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex" asChild>
               <Link href={getServiceDetailUrl(service)} target="_blank">
                 <Eye className="h-4 w-4" />
               </Link>
@@ -166,7 +166,7 @@ function DefaultServiceActions({ service }: { service: ServiceReadable }) {
           <TooltipContent>View Public Page</TooltipContent>
         </Tooltip>
 
-        {/* Overflow menu */}
+        {/* Overflow menu — contains all actions on mobile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -174,6 +174,13 @@ function DefaultServiceActions({ service }: { service: ServiceReadable }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="sm:hidden"
+              onClick={() => router.push(`/dashboard/practitioner/services/${service.id}/settings`)}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href={getServiceDetailUrl(service)} target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />

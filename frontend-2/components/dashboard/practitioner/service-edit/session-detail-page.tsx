@@ -228,25 +228,30 @@ export function SessionDetailPage({
         actions={headerActions}
       >
         {/* Status badge below title */}
-        <div className="flex items-center gap-2 px-4 pb-2">
+        <div className="flex items-center gap-2 px-4 pb-2 flex-wrap">
           <Badge variant={statusConfig.variant} className={statusConfig.className}>
             {statusConfig.label}
           </Badge>
           {session.start_time && (
-            <span className="text-xs text-muted-foreground">
-              {format(parseISO(session.start_time), "EEEE, MMMM d, yyyy 'at' h:mm a")}
-            </span>
+            <>
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {format(parseISO(session.start_time), "EEEE, MMMM d, yyyy 'at' h:mm a")}
+              </span>
+              <span className="text-xs text-muted-foreground sm:hidden">
+                {format(parseISO(session.start_time), "MMM d, yyyy · h:mm a")}
+              </span>
+            </>
           )}
         </div>
       </CompactServiceHeader>
 
-      <div className="max-w-6xl mx-auto w-full px-6 py-6">
+      <div className="max-w-6xl mx-auto w-full px-4 py-4 sm:px-6 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Main content (2/3) */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4">
+              <TabsList className="grid grid-cols-2 sm:grid-cols-4">
                 <TabsTrigger value="participants">Participants</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="recordings">Recordings</TabsTrigger>
@@ -306,62 +311,62 @@ export function SessionDetailPage({
                     {session.recordings.map((recording: any, index: number) => (
                       <Card key={recording.recording_id || index}>
                         <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Film className="h-4 w-4 text-primary" />
-                                <h4 className="font-medium text-sm">Recording {index + 1}</h4>
-                                <Badge variant="outline" className="text-xs">
-                                  {recording.file_format?.toUpperCase() || 'MP4'}
-                                </Badge>
-                                <Badge
-                                  variant={recording.status === 'completed' ? 'default' : 'secondary'}
-                                  className="text-xs capitalize"
-                                >
-                                  {recording.status}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {recording.duration_formatted || `${Math.floor(recording.duration_seconds / 60)} min`}
-                                </span>
-                                {recording.started_at && (
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 space-y-2 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Film className="h-4 w-4 text-primary shrink-0" />
+                                  <h4 className="font-medium text-sm">Recording {index + 1}</h4>
+                                  <Badge variant="outline" className="text-xs">
+                                    {recording.file_format?.toUpperCase() || 'MP4'}
+                                  </Badge>
+                                  <Badge
+                                    variant={recording.status === 'completed' ? 'default' : 'secondary'}
+                                    className="text-xs capitalize"
+                                  >
+                                    {recording.status}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                   <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {format(parseISO(recording.started_at), "MMM d, h:mm a")}
+                                    <Clock className="h-3 w-3" />
+                                    {recording.duration_formatted || `${Math.floor(recording.duration_seconds / 60)} min`}
                                   </span>
+                                  {recording.started_at && (
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      {format(parseISO(recording.started_at), "MMM d, h:mm a")}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {recording.status === 'completed' && (
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="text-muted-foreground">
+                                    {recording.is_visible_to_participants ? 'Visible' : 'Hidden'}
+                                  </span>
+                                  <Switch
+                                    checked={recording.is_visible_to_participants}
+                                    onCheckedChange={(checked) => {
+                                      updateRecordingMutation.mutate({
+                                        path: { id: recording.id },
+                                        body: { is_visible_to_participants: checked }
+                                      })
+                                    }}
+                                  />
+                                </div>
+                                {recording.download_url && (
+                                  <Button variant="outline" size="sm" className="h-8" asChild>
+                                    <a href={recording.download_url} target="_blank" rel="noopener noreferrer">
+                                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                                      Download
+                                    </a>
+                                  </Button>
                                 )}
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {recording.status === 'completed' && (
-                                <>
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <span className="text-muted-foreground">
-                                      {recording.is_visible_to_participants ? 'Visible' : 'Hidden'}
-                                    </span>
-                                    <Switch
-                                      checked={recording.is_visible_to_participants}
-                                      onCheckedChange={(checked) => {
-                                        updateRecordingMutation.mutate({
-                                          path: { id: recording.id },
-                                          body: { is_visible_to_participants: checked }
-                                        })
-                                      }}
-                                    />
-                                  </div>
-                                  {recording.download_url && (
-                                    <Button variant="outline" size="sm" className="h-8" asChild>
-                                      <a href={recording.download_url} target="_blank" rel="noopener noreferrer">
-                                        <Download className="h-3.5 w-3.5 mr-1.5" />
-                                        Download
-                                      </a>
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
