@@ -101,7 +101,7 @@ export default function PayoutsClient() {
         }}
       />
 
-      <div className="px-6 py-4 space-y-6">
+      <div className="px-4 sm:px-6 py-4 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row">
           <Card className="flex-1">
             <CardHeader className="pb-3">

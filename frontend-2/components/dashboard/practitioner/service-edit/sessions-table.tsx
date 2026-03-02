@@ -457,7 +457,7 @@ export function SessionsTable({
                       <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                       <span>Rescheduling will notify {bookingCount} enrolled participant{bookingCount !== 1 ? 's' : ''}.</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Date</Label>
                         <Popover>

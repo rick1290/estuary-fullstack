@@ -12,7 +12,7 @@ export default function ClientsClient() {
         helpLink="/help/practitioner/clients"
       />
 
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         <ClientsList />
       </div>
     </>

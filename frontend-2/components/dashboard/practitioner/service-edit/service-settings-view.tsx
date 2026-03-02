@@ -640,8 +640,8 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
                 <Menu className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
-              <div className="p-6">
+            <SheetContent side="left" className="w-[280px] sm:w-80 p-0">
+              <div className="p-4 sm:p-6">
                 <h2 className="font-semibold mb-4">Sections</h2>
                 <SidebarContent />
               </div>
@@ -698,7 +698,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
-          <div className="max-w-4xl mx-auto p-6 pb-20">
+          <div className="max-w-4xl mx-auto px-4 py-4 sm:p-6 pb-20">
 
             {/* Service Ended Banner */}
             {service.status === 'active' && service.has_ended && (

@@ -60,7 +60,7 @@ export default function FinancialOverviewClient() {
         }}
       />
 
-      <div className="px-6 py-4 space-y-6">
+      <div className="px-4 sm:px-6 py-4 space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

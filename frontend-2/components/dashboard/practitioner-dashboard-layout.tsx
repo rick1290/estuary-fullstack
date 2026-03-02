@@ -496,7 +496,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       </Sheet>
 
       {/* Main Content */}
-      <div className={cn("flex-1 transition-all", sidebarOpen ? "md:ml-64" : "md:ml-0")}>
+      <div className={cn("flex-1 transition-all overflow-x-hidden min-w-0", sidebarOpen ? "md:ml-64" : "md:ml-0")}>
         {/* Top Navigation */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sage-200/60 bg-cream-50/95 backdrop-blur-sm px-4 md:px-6 relative">
           <div className="flex items-center gap-2">
@@ -576,7 +576,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 relative z-0 overflow-x-hidden">
+        <main className="flex-1 relative z-0 overflow-x-hidden">
           <SetupBanner />
           {children}
         </main>

@@ -321,7 +321,7 @@ export default function AvailabilityClient() {
         } : undefined}
       />
 
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         {isCreating || editingSchedule ? (
           <ScheduleForm
             schedule={editingSchedule}
