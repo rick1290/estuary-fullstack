@@ -116,7 +116,7 @@ export default function ServiceCard({
       <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer overflow-hidden">
         {/* Cover Image with overlaid badges */}
         {hasServiceImage ? (
-          <div className="relative w-full h-40 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
+          <div className="relative w-full h-52 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
             <img
               src={image}
               alt={title}
@@ -230,28 +230,18 @@ export default function ServiceCard({
               </span>
             )}
 
-            {/* Location */}
-            <span className="inline-flex items-center gap-1 text-xs text-olive-500">
-              {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? (
-                <>
-                  <Globe className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
-                  Online
-                </>
-              ) : (
-                <>
-                  <MapPin className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
-                  {location}
-                </>
-              )}
-            </span>
-
-            {/* Capacity/Reviews */}
-            {(capacity || reviewCount) && (
+            {/* Capacity (hide for 1-on-1 sessions) / Reviews */}
+            {type !== "one-on-one" && capacity && capacity > 1 ? (
               <span className="inline-flex items-center gap-1 text-xs text-olive-500">
                 <Users className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
-                {capacity ? `${capacity} spots` : `${reviewCount} reviews`}
+                {capacity} spots
               </span>
-            )}
+            ) : reviewCount ? (
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Users className="h-3 w-3 text-sage-500" strokeWidth="1.5" />
+                {reviewCount} reviews
+              </span>
+            ) : null}
           </div>
 
           {/* Category tags */}
