@@ -45,7 +45,10 @@ import {
   Wand2,
   FileText,
   Compass,
-  Globe
+  Globe,
+  Target,
+  BookMarked,
+  Shield,
 } from "lucide-react"
 import {
   servicesCreateMutation,
@@ -83,6 +86,7 @@ const phase1Schema = z.object({
   serviceType: z.string().min(1, "Please select a service type"),
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
   shortDescription: z.string().min(10, "Description must be at least 10 characters").max(300),
+  description: z.string().min(50, "Please provide a detailed description (50+ characters)").max(2000),
 })
 
 const phase2Schema = z.object({
@@ -99,7 +103,6 @@ const phase3Schema = z.object({
   modalityId: z.string().optional(),
   practitionerCategoryId: z.string().optional(),
   includes: z.string().optional(),
-  description: z.string().min(50, "Please provide a detailed description").max(2000),
 })
 
 // Combined schema
@@ -238,6 +241,12 @@ export function GuidedServiceWizard() {
   // Publish choice state
   const [publishChoice, setPublishChoice] = useState<"publish" | "draft" | null>(null)
 
+  // Celebration screen state
+  const [creationComplete, setCreationComplete] = useState(false)
+  const [createdServiceId, setCreatedServiceId] = useState<number | null>(null)
+  const [createdServiceName, setCreatedServiceName] = useState("")
+  const [showConfetti, setShowConfetti] = useState(false)
+
   // Fetch data
   const { data: modalities } = useQuery({
     ...modalitiesListOptions({}),
@@ -295,7 +304,7 @@ export function GuidedServiceWizard() {
     }
 
     base.push({ key: "image", title: "Cover Image", icon: ImageIcon })
-    base.push({ key: "polish", title: "Polish & Publish", icon: Sparkles })
+    base.push({ key: "review", title: "Review & Launch", icon: CheckCircle2 })
 
     return base
   }, [isBundle, isPackage])
@@ -488,20 +497,14 @@ export function GuidedServiceWizard() {
         // Image upload failed — service still created, user can re-do in settings
       }
 
-      // Redirect based on publish choice
-      if (publishChoice === "publish") {
-        toast({
-          title: "Service published!",
-          description: "It's now visible to clients.",
-        })
-        router.push(`/dashboard/practitioner/services/${data.id}`)
-      } else {
-        toast({
-          title: "Draft saved!",
-          description: "Continue setting up in Settings.",
-        })
-        router.push(`/dashboard/practitioner/services/${data.id}/settings`)
-      }
+      // Show celebration screen instead of redirecting
+      setCreatedServiceId(data.id)
+      setCreatedServiceName(form.getValues("name"))
+      setCreationComplete(true)
+      setShowConfetti(true)
+      setIsCreating(false)
+      // Auto-hide confetti after 5 seconds
+      setTimeout(() => setShowConfetti(false), 5000)
     },
     onError: (error: any) => {
       toast({
@@ -526,14 +529,15 @@ export function GuidedServiceWizard() {
       case "package-pricing":
         return packageFinalPrice > 0
       case "basic-info":
-        return await form.trigger(["name", "shortDescription"])
+        return await form.trigger(["name", "shortDescription", "description"])
       case "delivery":
         return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
       case "image":
         // Image step is optional — always valid
         return true
-      case "polish":
-        return await form.trigger(["description"])
+      case "review":
+        // Review step is read-only — always valid
+        return true
       default:
         return true
     }
@@ -694,6 +698,146 @@ export function GuidedServiceWizard() {
         />
 
         <div className="px-6 py-4">
+          {/* Celebration Screen */}
+          {creationComplete && createdServiceId ? (
+            <>
+              {/* Confetti overlay */}
+              {showConfetti && (
+                <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+                  {[...Array(50)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-3 h-3 rounded-full"
+                      style={{
+                        left: `${Math.random() * 100}%`,
+                        backgroundColor: ['#9CAF88', '#E07A5F', '#F4A261'][Math.floor(Math.random() * 3)]
+                      }}
+                      initial={{ y: -20, opacity: 1 }}
+                      animate={{
+                        y: typeof window !== 'undefined' ? window.innerHeight + 20 : 800,
+                        x: Math.random() * 200 - 100,
+                        rotate: Math.random() * 360,
+                        opacity: 0
+                      }}
+                      transition={{
+                        duration: 3 + Math.random() * 2,
+                        delay: Math.random() * 2,
+                        ease: "easeIn"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="max-w-2xl mx-auto py-8">
+                {/* Animated Checkmark */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", duration: 0.6 }}
+                  className="flex justify-center mb-6"
+                >
+                  <div className="w-20 h-20 bg-gradient-to-br from-sage-500 to-terracotta-500 rounded-full flex items-center justify-center shadow-xl">
+                    <CheckCircle2 className="h-12 w-12 text-white" strokeWidth={2.5} />
+                  </div>
+                </motion.div>
+
+                {/* Headline */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center mb-8"
+                >
+                  <h2 className="text-3xl font-bold text-olive-900 mb-2">
+                    {publishChoice === "publish"
+                      ? `${createdServiceName} is live!`
+                      : "Your draft has been saved!"}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {publishChoice === "publish"
+                      ? "Your service is now visible to clients."
+                      : "You can finish setting it up anytime from your dashboard."}
+                  </p>
+                </motion.div>
+
+                {/* Level Up Cards */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="mb-8"
+                >
+                  <h3 className="text-lg font-semibold text-center mb-4">Level Up Your Service</h3>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <Card
+                      className="cursor-pointer hover:shadow-md transition-shadow border-sage-200"
+                      onClick={() => router.push(`/dashboard/practitioner/services/${createdServiceId}/settings?section=benefits`)}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <div className="w-10 h-10 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Target className="h-5 w-5 text-sage-700" />
+                        </div>
+                        <h4 className="font-medium text-sm mb-1">Learning Goals & Prerequisites</h4>
+                        <p className="text-xs text-muted-foreground">Help clients know what to expect</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card
+                      className="cursor-pointer hover:shadow-md transition-shadow border-terracotta-200"
+                      onClick={() => router.push(`/dashboard/practitioner/services/${createdServiceId}/settings?section=resources`)}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <div className="w-10 h-10 bg-terracotta-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <BookMarked className="h-5 w-5 text-terracotta-700" />
+                        </div>
+                        <h4 className="font-medium text-sm mb-1">Resources & Materials</h4>
+                        <p className="text-xs text-muted-foreground">Upload files for participants</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card
+                      className="cursor-pointer hover:shadow-md transition-shadow border-blush-200"
+                      onClick={() => router.push(`/dashboard/practitioner/services/${createdServiceId}/settings?section=advanced`)}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <div className="w-10 h-10 bg-blush-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Shield className="h-5 w-5 text-blush-700" />
+                        </div>
+                        <h4 className="font-medium text-sm mb-1">Terms & Advanced Rules</h4>
+                        <p className="text-xs text-muted-foreground">Cancellation policies and more</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </motion.div>
+
+                {/* CTAs */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className="flex flex-col sm:flex-row items-center justify-center gap-3"
+                >
+                  <Button
+                    size="lg"
+                    onClick={() => router.push(`/dashboard/practitioner/services/${createdServiceId}`)}
+                    className="min-w-[180px]"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View My Service
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => router.push("/dashboard/practitioner/services")}
+                  >
+                    Back to Services
+                  </Button>
+                </motion.div>
+              </div>
+            </>
+          ) : (
+          <>
           {/* Progress Bar */}
           <div className="mb-6 space-y-2">
             <div className="flex justify-between text-sm">
@@ -957,6 +1101,154 @@ export function GuidedServiceWizard() {
                               {field.value.length}/300
                             </span>
                           </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Full Description */}
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Provide a detailed description of your service. Explain what participants can expect, the journey they'll go through, and the transformation they'll experience..."
+                              className="resize-none"
+                              rows={6}
+                              {...field}
+                            />
+                          </FormControl>
+                          <div className="flex justify-between text-sm">
+                            <FormDescription>
+                              Tell the full story of your service (minimum 50 characters)
+                            </FormDescription>
+                            <span className={cn(
+                              "text-muted-foreground",
+                              field.value.length < 50 && field.value.length > 0 && "text-amber-600"
+                            )}>
+                              {field.value.length}/2000
+                            </span>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Modality and Practitioner Category */}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {/* Modality */}
+                      <FormField
+                        control={form.control}
+                        name="modalityId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center">
+                              <Tag className="h-4 w-4 mr-2" />
+                              Modality (Optional)
+                            </FormLabel>
+                            <Select
+                              onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                              value={field.value || "none"}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a modality" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">No modality</SelectItem>
+                                {modalities?.results?.map((modality) => (
+                                  <SelectItem key={modality.id} value={String(modality.id)}>
+                                    {modality.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              e.g., Yoga, Meditation, Breathwork
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Practitioner Category */}
+                      <FormField
+                        control={form.control}
+                        name="practitionerCategoryId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between">
+                              <FormLabel className="flex items-center">
+                                <Tag className="h-4 w-4 mr-2" />
+                                Your Category (Optional)
+                              </FormLabel>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowCategoryDialog(true)}
+                                className="text-xs h-7"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Manage
+                              </Button>
+                            </div>
+                            <Select
+                              onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                              value={field.value || "none"}
+                              key={practitionerCategories?.results?.length}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select or create your category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">No category</SelectItem>
+                                {practitionerCategories?.results?.map((category) => (
+                                  <SelectItem key={category.id} value={String(category.id)}>
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="w-3 h-3 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: category.color || '#9CAF88' }}
+                                      />
+                                      {category.name}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Organize into your own custom categories
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* What's Included */}
+                    <FormField
+                      control={form.control}
+                      name="includes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>What's Included (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="e.g., Course materials, Personal feedback, Certificate of completion..."
+                              className="resize-none"
+                              rows={3}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            List the key benefits or materials included (one per line)
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1398,10 +1690,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Polish & Publish Phase */}
-            {currentPhaseKey === "polish" && (
+            {/* Review & Launch Phase */}
+            {currentPhaseKey === "review" && (
               <motion.div
-                key="phase-polish"
+                key="phase-review"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -1409,208 +1701,92 @@ export function GuidedServiceWizard() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Make it shine!</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Review Your Service
+                    </CardTitle>
                     <CardDescription>
-                      Add details that will help your service stand out
+                      Everything looks good? Launch it or save as a draft.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Modality and Practitioner Category */}
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {/* Modality */}
-                      <FormField
-                        control={form.control}
-                        name="modalityId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center">
-                              <Tag className="h-4 w-4 mr-2" />
-                              Modality
-                            </FormLabel>
-                            <Select
-                              onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                              value={field.value || "none"}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a modality" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="none">No modality</SelectItem>
-                                {modalities?.results?.map((modality) => (
-                                  <SelectItem key={modality.id} value={String(modality.id)}>
-                                    {modality.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              The primary practice modality for this service (e.g., Yoga, Meditation)
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Practitioner Category */}
-                      <FormField
-                        control={form.control}
-                        name="practitionerCategoryId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="flex items-center justify-between">
-                              <FormLabel className="flex items-center">
-                                <Tag className="h-4 w-4 mr-2" />
-                                Your Category (Optional)
-                              </FormLabel>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowCategoryDialog(true)}
-                                className="text-xs h-7"
-                              >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Manage
-                              </Button>
-                            </div>
-                            <Select 
-                              onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
-                              value={field.value || "none"}
-                              key={practitionerCategories?.results?.length}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select or create your category" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="none">No category</SelectItem>
-                                {practitionerCategories?.results?.map((category) => (
-                                  <SelectItem key={category.id} value={String(category.id)}>
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className="w-3 h-3 rounded-full flex-shrink-0"
-                                        style={{ backgroundColor: category.color || '#9CAF88' }}
-                                      />
-                                      {category.name}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              Organize your services into your own custom categories (e.g., "Beginner Classes", "Premium Sessions")
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* What's Included */}
-                    <FormField
-                      control={form.control}
-                      name="includes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>What's Included (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Course materials, Personal feedback, Certificate of completion..."
-                              className="resize-none"
-                              rows={3}
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            List the key benefits or materials included
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Full Description */}
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Provide a detailed description of your service. Explain what participants can expect, the journey they'll go through, and the transformation they'll experience..."
-                              className="resize-none"
-                              rows={6}
-                              {...field} 
-                            />
-                          </FormControl>
-                          <div className="flex justify-between text-sm">
-                            <FormDescription>
-                              Tell the full story of your service
-                            </FormDescription>
-                            <span className={cn(
-                              "text-muted-foreground",
-                              field.value.length < 50 && "text-amber-600"
-                            )}>
-                              {field.value.length}/2000
-                            </span>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Preview Card */}
-                    <div className="border rounded-lg overflow-hidden bg-muted/50">
+                    {/* Review Summary Card */}
+                    <div className="border rounded-lg overflow-hidden">
                       {(pendingImagePreview || pendingAiImageUrl) && (
                         <img
                           src={pendingImagePreview || pendingAiImageUrl || ""}
                           alt="Cover"
-                          className="w-full h-32 object-cover"
+                          className="w-full h-40 object-cover"
                         />
                       )}
-                      <div className="p-4">
-                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        Preview
-                      </h4>
-                      <div className="space-y-2">
-                        <h5 className="font-medium">{form.watch("name") || "Your Service Name"}</h5>
+                      <div className="p-5 space-y-4">
+                        {/* Type + Name */}
+                        <div className="flex items-start gap-3">
+                          <Badge variant="secondary" className="mt-0.5">
+                            {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name || 'Service'}
+                          </Badge>
+                          <h3 className="text-lg font-semibold">{form.watch("name") || "Untitled Service"}</h3>
+                        </div>
+
+                        {/* Short Description */}
                         <p className="text-sm text-muted-foreground">
-                          {form.watch("shortDescription") || "Your service description will appear here"}
+                          {(form.watch("shortDescription") || "").length > 120
+                            ? form.watch("shortDescription").substring(0, 120) + "..."
+                            : form.watch("shortDescription") || "No description"}
                         </p>
-                        {isPackage && packageSessions.length > 0 ? (
-                          // Package-specific preview
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-4 text-sm">
+
+                        {/* Price, Duration, Location */}
+                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                          {isPackage && packageSessions.length > 0 ? (
+                            <>
                               <span className="font-medium text-primary">${packageFinalPrice.toFixed(2)}</span>
-                              <span className="text-muted-foreground line-through">
-                                ${packageSessions.reduce((sum, s) => sum + parseFloat(s.service?.price || "0"), 0).toFixed(2)}
-                              </span>
-                              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                {packageDiscount}% off
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span className="text-muted-foreground">|</span>
                               <span>{packageSessions.length} sessions</span>
-                              <span>•</span>
+                              <span className="text-muted-foreground">|</span>
                               <span>{packageSessions.reduce((sum, s) => sum + (s.service?.duration_minutes || 0), 0)} min total</span>
-                            </div>
-                          </div>
-                        ) : (
-                          // Standard preview for other service types
-                          <div className="flex items-center gap-4 text-sm">
-                            <span className="font-medium">${form.watch("price") || "0"}</span>
-                            <span>{form.watch("duration_minutes") || 60} minutes</span>
-                            <Badge variant="secondary">{form.watch("location_type") || "virtual"}</Badge>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-medium">${form.watch("price") || "0"}</span>
+                              <span className="text-muted-foreground">|</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                {form.watch("duration_minutes") || 60} min
+                              </span>
+                              <span className="text-muted-foreground">|</span>
+                              <span className="flex items-center gap-1">
+                                {form.watch("location_type") === "virtual" ? (
+                                  <Video className="h-3.5 w-3.5" />
+                                ) : (
+                                  <MapPin className="h-3.5 w-3.5" />
+                                )}
+                                {form.watch("location_type") === "virtual" ? "Virtual" : "In-Person"}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Modality + Category */}
+                        {(form.watch("modalityId") || form.watch("practitionerCategoryId")) && (
+                          <div className="flex flex-wrap gap-2">
+                            {form.watch("modalityId") && form.watch("modalityId") !== "none" && (
+                              <Badge variant="outline">
+                                {modalities?.results?.find(m => String(m.id) === form.watch("modalityId"))?.name || "Modality"}
+                              </Badge>
+                            )}
+                            {form.watch("practitionerCategoryId") && form.watch("practitionerCategoryId") !== "none" && (
+                              <Badge variant="outline">
+                                {practitionerCategories?.results?.find(c => String(c.id) === form.watch("practitionerCategoryId"))?.name || "Category"}
+                              </Badge>
+                            )}
                           </div>
                         )}
                       </div>
-                      </div>
                     </div>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                      Published services are immediately visible to clients. Drafts can be completed later.
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1630,7 +1806,7 @@ export function GuidedServiceWizard() {
             </Button>
 
             <div className="flex gap-2">
-              {currentPhaseKey !== "polish" ? (
+              {currentPhaseKey !== "review" ? (
                 <Button
                   type="button"
                   onClick={handleNext}
@@ -1681,13 +1857,10 @@ export function GuidedServiceWizard() {
               )}
             </div>
           </div>
-          {currentPhaseKey === "polish" && (
-            <p className="text-center text-sm text-muted-foreground mt-3">
-              Published services are immediately visible to clients. Drafts can be completed later.
-            </p>
-          )}
         </form>
       </Form>
+          </>
+          )}
 
       {/* Category Manager Dialog */}
       <Dialog open={showCategoryDialog} onOpenChange={(open) => {

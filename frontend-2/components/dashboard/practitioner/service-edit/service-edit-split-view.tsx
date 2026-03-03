@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -218,9 +218,10 @@ type SectionStatus = "complete" | "incomplete" | "optional"
 
 export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  
+
   // State
   const [activeTab, setActiveTab] = useState<"manage" | "settings">("settings")
   const [activeSection, setActiveSection] = useState("basic-info")
@@ -603,6 +604,16 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
     }
     setMobileOpen(false)
   }
+
+  // Auto-scroll to section from ?section= query param
+  useEffect(() => {
+    const targetSection = searchParams?.get('section')
+    if (targetSection && service) {
+      setTimeout(() => {
+        scrollToSection(targetSection)
+      }, 300)
+    }
+  }, [service, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const serviceTypeCode = service?.service_type_code || 'session'
   const visibleSections = sections
