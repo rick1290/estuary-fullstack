@@ -20,6 +20,7 @@ import {
 import {
   ChevronLeft,
   Settings,
+  LayoutDashboard,
   Eye,
   MoreVertical,
   Archive,
@@ -48,6 +49,8 @@ interface CompactServiceHeaderProps {
   actions?: ReactNode
   children?: ReactNode
   isLoading?: boolean
+  /** When "settings", swaps the Settings gear for a Manage icon */
+  currentPage?: "manage" | "settings"
 }
 
 export function CompactServiceHeader({
@@ -58,6 +61,7 @@ export function CompactServiceHeader({
   actions,
   children,
   isLoading,
+  currentPage = "manage",
 }: CompactServiceHeaderProps) {
   const router = useRouter()
 
@@ -123,7 +127,7 @@ export function CompactServiceHeader({
         {actions ? (
           actions
         ) : service ? (
-          <DefaultServiceActions service={service} />
+          <DefaultServiceActions service={service} currentPage={currentPage} />
         ) : null}
       </div>
 
@@ -133,25 +137,32 @@ export function CompactServiceHeader({
   )
 }
 
-function DefaultServiceActions({ service }: { service: ServiceReadable }) {
+function DefaultServiceActions({ service, currentPage }: { service: ServiceReadable; currentPage: "manage" | "settings" }) {
   const router = useRouter()
+
+  const isOnSettings = currentPage === "settings"
+  const primaryHref = isOnSettings
+    ? `/dashboard/practitioner/services/${service.id}`
+    : `/dashboard/practitioner/services/${service.id}/settings`
+  const PrimaryIcon = isOnSettings ? LayoutDashboard : Settings
+  const primaryLabel = isOnSettings ? "Manage" : "Settings"
 
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex items-center gap-1">
-        {/* Settings gear — hidden on mobile, in dropdown instead */}
+        {/* Primary nav icon — hidden on mobile, in dropdown instead */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 hidden sm:inline-flex"
-              onClick={() => router.push(`/dashboard/practitioner/services/${service.id}/settings`)}
+              onClick={() => router.push(primaryHref)}
             >
-              <Settings className="h-4 w-4" />
+              <PrimaryIcon className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Settings</TooltipContent>
+          <TooltipContent>{primaryLabel}</TooltipContent>
         </Tooltip>
 
         {/* View public page — hidden on mobile, in dropdown instead */}
@@ -176,10 +187,10 @@ function DefaultServiceActions({ service }: { service: ServiceReadable }) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               className="sm:hidden"
-              onClick={() => router.push(`/dashboard/practitioner/services/${service.id}/settings`)}
+              onClick={() => router.push(primaryHref)}
             >
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+              <PrimaryIcon className="mr-2 h-4 w-4" />
+              {primaryLabel}
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href={getServiceDetailUrl(service)} target="_blank">

@@ -78,7 +78,7 @@ const phase2Schema = z.object({
   price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
     message: "Price must be a valid number",
   }),
-  duration_minutes: z.number().min(15, "Duration must be at least 15 minutes"),
+  duration_minutes: z.number().min(1, "Duration must be at least 1 minute"),
   max_participants: z.number().min(1),
   location_type: z.enum(["virtual", "in_person"]),
   schedule_id: z.string().optional(),
@@ -301,11 +301,11 @@ export function GuidedServiceWizard() {
     onSuccess: (data) => {
       toast({
         title: "Service created successfully!",
-        description: "Your new service is ready. Complete the setup to publish it.",
+        description: "Continue filling in the details to publish your service.",
       })
-      // Redirect to the service overview — draft nudge card guides them to settings
+      // Redirect to settings so practitioner can complete all fields
       if (data?.id) {
-        router.push(`/dashboard/practitioner/services/${data.id}`)
+        router.push(`/dashboard/practitioner/services/${data.id}/settings`)
       } else {
         console.error('No service ID in response:', data)
         router.push('/dashboard/practitioner/services')
@@ -836,9 +836,9 @@ export function GuidedServiceWizard() {
                             <FormControl>
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 min="0"
-                                placeholder="0.00"
+                                placeholder="0"
                                 {...field}
                               />
                             </FormControl>
@@ -864,16 +864,17 @@ export function GuidedServiceWizard() {
                               Duration (minutes)
                             </FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                min="15"
-                                step="15"
+                              <Input
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder="e.g. 60"
                                 {...field}
-                                onChange={e => field.onChange(parseInt(e.target.value) || 60)}
+                                onChange={e => field.onChange(parseInt(e.target.value) || 0)}
                               />
                             </FormControl>
                             <FormDescription>
-                              How long is each session?
+                              Duration in minutes — enter any value
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
