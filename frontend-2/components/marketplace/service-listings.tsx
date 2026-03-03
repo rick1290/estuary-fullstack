@@ -263,7 +263,11 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
     },
     price: service.price_cents ? Math.floor(service.price_cents / 100) : service.price || 0,
     duration: service.duration_minutes || service.duration || 60,
-    location: service.location_type === 'virtual' ? 'Virtual' : service.location || 'Location TBD',
+    location: service.location_type === 'virtual'
+      ? 'Virtual'
+      : (service.practitioner_location?.city_name && service.practitioner_location?.state_code
+          ? `${service.practitioner_location.city_name}, ${service.practitioner_location.state_code}`
+          : service.practitioner_location?.full_address || service.practitioner_location?.name || service.location || 'In Person'),
     rating: service.average_rating || 4.5,
     reviewCount: service.total_reviews || 0,
     categories: service.categories?.map(c => c.name) || service.category ? [service.category.name] : ['Wellness'],

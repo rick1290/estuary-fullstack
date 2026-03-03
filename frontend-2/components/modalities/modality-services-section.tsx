@@ -79,7 +79,10 @@ export default function ModalityServicesSection({ slug, modalityName }: Modality
                       description={service.short_description || service.description || ""}
                       price={service.price || 0}
                       duration={service.duration_minutes || service.duration}
-                      location={service.location_type || "virtual"}
+                      location={service.location_type === 'virtual' ? 'Virtual'
+                        : (service.practitioner_location?.city_name && service.practitioner_location?.state_code
+                          ? `${service.practitioner_location.city_name}, ${service.practitioner_location.state_code}`
+                          : service.practitioner_location?.full_address || service.practitioner_location?.name || 'In Person')}
                       categories={(service.categories || service.modalities || []).map((c: any) => c.name || c)}
                       practitioner={{
                         id: service.primary_practitioner?.id || service.practitioner?.id || 0,
