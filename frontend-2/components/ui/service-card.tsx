@@ -114,7 +114,7 @@ export default function ServiceCard({
   return (
     <Link href={href} className="group block animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
       <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer overflow-hidden">
-        {/* Cover Image */}
+        {/* Cover Image with overlaid badges */}
         {hasServiceImage ? (
           <div className="relative w-full h-40 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
             <img
@@ -122,34 +122,38 @@ export default function ServiceCard({
               alt={title}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
+            <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+              <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm text-olive-800 text-[10px] font-medium px-2.5 py-1 shadow-sm">
+                <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
+                {getServiceTypeLabel()}
+              </span>
+              {savingsPercentage && savingsPercentage > 0 ? (
+                <span className="text-[10px] font-medium text-terracotta-700 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
+                  Save {savingsPercentage}%
+                </span>
+              ) : rating ? (
+                <span className="inline-flex items-center gap-1 text-xs bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">
+                  <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
+                  <span className="font-medium text-olive-800">{rating}</span>
+                </span>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="relative w-full h-28 overflow-hidden bg-gradient-to-br from-cream-50 via-sage-50 to-terracotta-50">
             <div className="absolute inset-0 flex items-center justify-center">
               <Sparkles className="h-8 w-8 text-sage-300" strokeWidth="1" />
             </div>
+            <div className="absolute top-3 left-3">
+              <Badge variant={getBadgeVariant()} className="text-[10px]">
+                <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
+                {getServiceTypeLabel()}
+              </Badge>
+            </div>
           </div>
         )}
 
         <CardContent className="p-5">
-          {/* Service type badge + rating */}
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant={getBadgeVariant()} className="text-[10px]">
-              <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
-              {getServiceTypeLabel()}
-            </Badge>
-            {savingsPercentage && savingsPercentage > 0 ? (
-              <span className="text-[10px] font-medium text-terracotta-600 bg-terracotta-50 px-2 py-0.5 rounded-full">
-                Save {savingsPercentage}%
-              </span>
-            ) : rating ? (
-              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
-                <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
-                <span className="font-medium text-olive-800">{rating}</span>
-              </span>
-            ) : null}
-          </div>
-
           {/* Title */}
           <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors line-clamp-1">
             {title}
