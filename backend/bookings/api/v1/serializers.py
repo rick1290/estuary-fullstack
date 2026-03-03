@@ -555,6 +555,24 @@ class AvailabilityCheckSerializer(serializers.Serializer):
         return data
 
 
+class AvailableDatesRequestSerializer(serializers.Serializer):
+    """Serializer for fetching dates with availability over a range."""
+    service_id = serializers.IntegerField()
+    start_date = serializers.DateField(required=False)
+    days_ahead = serializers.IntegerField(required=False, default=30, min_value=1, max_value=90)
+
+    def validate_service_id(self, value):
+        try:
+            service = Service.objects.get(id=value)
+        except Service.DoesNotExist:
+            raise serializers.ValidationError("Service not found")
+        return service
+
+    def validate(self, data):
+        data['service'] = data.pop('service_id')
+        return data
+
+
 class AvailableSlotSerializer(serializers.Serializer):
     """Serializer for available time slots"""
     start_time = serializers.DateTimeField()

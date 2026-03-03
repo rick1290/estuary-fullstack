@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useCallback, useRef } from "react"
 import Link from "next/link"
-import { ChevronRight, Clock, MapPin, User, Star, Heart, Check, AlertCircle } from "lucide-react"
+import { ChevronRight, Clock, MapPin, User, Star, Heart, Check, AlertCircle, DollarSign } from "lucide-react"
 import SessionBookingPanel from "@/components/sessions/session-booking-panel"
 import PractitionerSpotlight from "@/components/services/practitioner-spotlight"
 import { Button } from "@/components/ui/button"
@@ -317,6 +317,15 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Logistics</p>
                 <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session <em className="italic text-terracotta-600">Details</em></h2>
                 <div className="bg-white rounded-2xl border border-sage-200/60 divide-y divide-sage-200/60">
+                  {service?.price != null && (
+                    <div className="flex justify-between items-center px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <DollarSign className="h-4 w-4 text-sage-500" strokeWidth="1.5" />
+                        <span className="text-sm font-light text-olive-500">Price</span>
+                      </div>
+                      <span className="text-sm font-medium text-olive-900">${service.price} per session</span>
+                    </div>
+                  )}
                   {service?.duration_minutes && (
                     <div className="flex justify-between items-center px-5 py-3.5">
                       <div className="flex items-center gap-2.5">

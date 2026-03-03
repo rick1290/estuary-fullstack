@@ -55,13 +55,6 @@ export default function PractitionerStats() {
       isPositive: statsData?.active_clients?.is_positive !== false,
     },
     {
-      label: "Energy Given",
-      value: statsData?.average_rating?.value?.toString() || "4.9",
-      change: `★ ${statsData?.average_rating?.total_reviews || 27} reviews`,
-      isPositive: true,
-      isFlat: true,
-    },
-    {
       label: "Abundance",
       value: statsData?.total_revenue?.value_display || "$2,450",
       change: `${statsData?.total_revenue?.change > 0 ? '↑ ' : ''}${statsData?.total_revenue?.change || 12}%`,
