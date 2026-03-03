@@ -4,13 +4,6 @@ import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Info } from "lucide-react"
 import {
@@ -35,17 +28,22 @@ interface PricingDurationSectionProps {
   isSaving: boolean
 }
 
-const durationOptions = [
-  { value: 30, label: "30 minutes" },
-  { value: 45, label: "45 minutes" },
-  { value: 60, label: "1 hour" },
-  { value: 90, label: "1.5 hours" },
-  { value: 120, label: "2 hours" },
-  { value: 180, label: "3 hours" },
-  { value: 240, label: "4 hours" },
-  { value: 360, label: "6 hours" },
-  { value: 480, label: "8 hours (full day)" },
+const durationPresets = [
+  { value: 30, label: "30m" },
+  { value: 45, label: "45m" },
+  { value: 60, label: "1h" },
+  { value: 90, label: "1.5h" },
+  { value: 120, label: "2h" },
+  { value: 180, label: "3h" },
 ]
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} minutes`
+  const hours = Math.floor(minutes / 60)
+  const remaining = minutes % 60
+  if (remaining === 0) return `${hours} hour${hours > 1 ? "s" : ""}`
+  return `${hours}h ${remaining}m`
+}
 
 export function PricingDurationSection({ 
   service, 
@@ -85,9 +83,9 @@ export function PricingDurationSection({
               type="number"
               value={localData.price || ""}
               onChange={(e) => handleChange("price", e.target.value)}
-              placeholder="0.00"
+              placeholder="0"
               className="pl-8"
-              step="0.01"
+              step="1"
               min="0"
             />
           </div>
@@ -99,33 +97,43 @@ export function PricingDurationSection({
         {/* Duration */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="duration">Duration*</Label>
+            <Label htmlFor="duration">Duration (minutes)*</Label>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <Info className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Total duration of the service</p>
+                  <p>Total duration of the service in minutes</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-          <Select
-            value={localData.duration_minutes?.toString() || ""}
-            onValueChange={(value) => handleChange("duration_minutes", parseInt(value))}
-          >
-            <SelectTrigger className="max-w-xs">
-              <SelectValue placeholder="Select duration" />
-            </SelectTrigger>
-            <SelectContent>
-              {durationOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()}>
-                  {option.label}
-                </SelectItem>
+          <div className="max-w-xs space-y-2">
+            <Input
+              id="duration"
+              type="number"
+              value={localData.duration_minutes || ""}
+              onChange={(e) => handleChange("duration_minutes", parseInt(e.target.value) || 0)}
+              placeholder="e.g. 60"
+              min="1"
+              step="1"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {durationPresets.map((preset) => (
+                <Button
+                  key={preset.value}
+                  type="button"
+                  variant={localData.duration_minutes === preset.value ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-xs px-2.5"
+                  onClick={() => handleChange("duration_minutes", preset.value)}
+                >
+                  {preset.label}
+                </Button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+          </div>
         </div>
 
         {/* Participants - Only show for group services */}
@@ -204,10 +212,7 @@ export function PricingDurationSection({
             <div className="flex justify-between">
               <span>Duration:</span>
               <span className="font-medium">
-                {localData.duration_minutes ? 
-                  durationOptions.find(d => d.value === localData.duration_minutes)?.label || 
-                  `${localData.duration_minutes} minutes` : 
-                  "Not set"}
+                {localData.duration_minutes ? formatDuration(localData.duration_minutes) : "Not set"}
               </span>
             </div>
             {localData.price && localData.duration_minutes && (

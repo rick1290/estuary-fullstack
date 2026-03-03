@@ -629,6 +629,7 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
         service={service}
         backHref={`/dashboard/practitioner/services/${serviceId}`}
         backLabel={service.name || "Overview"}
+        currentPage="settings"
       />
 
       <div className="flex flex-1 overflow-hidden">
