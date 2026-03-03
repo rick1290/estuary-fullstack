@@ -595,7 +595,7 @@ class Service(PublicModel):
         For courses/workshops: must have at least one future session.
         For sessions: always purchasable if active.
         """
-        if not self.is_active or self.status != 'published':
+        if not self.is_active or self.status != ServiceStatusEnum.ACTIVE:
             return False
 
         # Check available_from/until windows
