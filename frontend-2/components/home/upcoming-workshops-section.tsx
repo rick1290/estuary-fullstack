@@ -57,7 +57,11 @@ export default function UpcomingWorkshopsSection() {
     },
     date: service.start_date ? new Date(service.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
     capacity: service.max_participants || service.capacity || 10,
-    location: service.location_type === 'virtual' ? 'Virtual' : 'In-person',
+    location: service.location_type === 'virtual'
+      ? 'Virtual'
+      : (service.practitioner_location?.city_name && service.practitioner_location?.state_code
+          ? `${service.practitioner_location.city_name}, ${service.practitioner_location.state_code}`
+          : service.practitioner_location?.full_address || service.practitioner_location?.name || 'In Person'),
     price: service.price_cents ? Math.floor(service.price_cents / 100) : service.price || 50,
     duration: service.duration_minutes || service.duration || 120,
     categories: service.categories?.map(c => c.name) || service.category ? [service.category.name] : ['Workshop'],
