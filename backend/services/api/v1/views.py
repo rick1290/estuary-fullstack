@@ -183,7 +183,9 @@ class ServiceViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Get services with optimized queries"""
-        queryset = Service.objects.select_related(
+        queryset = Service.objects.filter(
+            is_deleted=False,
+        ).select_related(
             'service_type', 'category', 'practitioner_category',
             'primary_practitioner', 'primary_practitioner__user', 'practitioner_location',
             'schedule'
@@ -201,7 +203,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
             'waitlist_entries',
             Prefetch('reviews', queryset=Review.objects.filter(is_published=True))
         )
-        
+
         # Filter based on user role
         if self.action in ['list', 'retrieve']:
             # Public users see only active and public services
@@ -215,8 +217,17 @@ class ServiceViewSet(viewsets.ModelViewSet):
                 )
             else:
                 queryset = queryset.filter(is_active=True, is_public=True, status='active')
-        
+
         return queryset
+
+    def perform_destroy(self, instance):
+        """Soft delete instead of hard delete — preserves booking history and financial records."""
+        from django.utils import timezone
+        instance.is_deleted = True
+        instance.deleted_at = timezone.now()
+        instance.is_active = False
+        instance.is_public = False
+        instance.save(update_fields=['is_deleted', 'deleted_at', 'is_active', 'is_public'])
     
     def get_serializer_class(self):
         """Use different serializers for different actions"""

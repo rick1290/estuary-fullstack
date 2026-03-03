@@ -26,6 +26,7 @@ interface ServiceCardProps {
     name: string
     image?: string
   }
+  image?: string
   href: string
   index?: number
   firstSessionDate?: string
@@ -49,6 +50,7 @@ export default function ServiceCard({
   reviewCount,
   categories,
   practitioner,
+  image,
   href,
   index = 0,
   firstSessionDate,
@@ -106,14 +108,56 @@ export default function ServiceCard({
 
   const initials = practitioner.name.split(' ').map(n => n[0]).filter(Boolean).join('')
 
+  // Check if the image is a real URL (not a local placeholder path)
+  const hasServiceImage = image && (image.startsWith('http') || image.startsWith('data:'))
+
   return (
     <Link href={href} className="group block animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
-      <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer">
+      <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer overflow-hidden">
+        {/* Cover Image */}
+        {hasServiceImage ? (
+          <div className="relative w-full h-40 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
+            <img
+              src={image}
+              alt={title}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+        ) : (
+          <div className="relative w-full h-28 overflow-hidden bg-gradient-to-br from-cream-50 via-sage-50 to-terracotta-50">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="h-8 w-8 text-sage-300" strokeWidth="1" />
+            </div>
+          </div>
+        )}
+
         <CardContent className="p-5">
-          {/* Top: Avatar + Header */}
-          <div className="flex gap-4">
-            {/* Left: Practitioner Avatar */}
-            <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100">
+          {/* Service type badge + rating */}
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant={getBadgeVariant()} className="text-[10px]">
+              <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
+              {getServiceTypeLabel()}
+            </Badge>
+            {savingsPercentage && savingsPercentage > 0 ? (
+              <span className="text-[10px] font-medium text-terracotta-600 bg-terracotta-50 px-2 py-0.5 rounded-full">
+                Save {savingsPercentage}%
+              </span>
+            ) : rating ? (
+              <span className="inline-flex items-center gap-1 text-xs text-olive-500">
+                <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
+                <span className="font-medium text-olive-800">{rating}</span>
+              </span>
+            ) : null}
+          </div>
+
+          {/* Title */}
+          <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors line-clamp-1">
+            {title}
+          </h3>
+
+          {/* Practitioner avatar + name */}
+          <div className="flex items-center gap-2 mt-1.5">
+            <div className="relative w-5 h-5 flex-shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-terracotta-100 to-sage-100">
               {practitioner.image ? (
                 <img
                   src={practitioner.image}
@@ -122,43 +166,15 @@ export default function ServiceCard({
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xl font-serif font-light text-olive-700/30">
+                  <span className="text-[8px] font-serif font-medium text-olive-700/40">
                     {initials}
                   </span>
                 </div>
               )}
             </div>
-
-            {/* Right: Title area */}
-            <div className="flex-1 min-w-0">
-              {/* Service type badge + rating */}
-              <div className="flex items-center gap-2 mb-1">
-                <Badge variant={getBadgeVariant()} className="text-[10px]">
-                  <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
-                  {getServiceTypeLabel()}
-                </Badge>
-                {savingsPercentage && savingsPercentage > 0 ? (
-                  <span className="text-[10px] font-medium text-terracotta-600 bg-terracotta-50 px-2 py-0.5 rounded-full">
-                    Save {savingsPercentage}%
-                  </span>
-                ) : rating ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-olive-500">
-                    <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
-                    <span className="font-medium text-olive-800">{rating}</span>
-                  </span>
-                ) : null}
-              </div>
-
-              {/* Title */}
-              <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors line-clamp-1">
-                {title}
-              </h3>
-
-              {/* Practitioner */}
-              <p className="text-[13px] font-light text-olive-500 mt-0.5 truncate">
-                by {practitioner.name} · {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? "Online" : location}
-              </p>
-            </div>
+            <p className="text-[13px] font-light text-olive-500 truncate">
+              {practitioner.name} · {location.toLowerCase() === "virtual" || location.toLowerCase() === "online" ? "Online" : location}
+            </p>
           </div>
 
           {/* Description */}
