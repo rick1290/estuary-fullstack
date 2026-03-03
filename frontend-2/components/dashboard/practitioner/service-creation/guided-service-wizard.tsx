@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
@@ -18,11 +18,11 @@ import { useToast } from "@/hooks/use-toast"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { 
-  Loader2, 
-  ArrowLeft, 
-  ArrowRight, 
-  Plus, 
+import {
+  Loader2,
+  ArrowLeft,
+  ArrowRight,
+  Plus,
   Tag,
   User,
   Users,
@@ -38,13 +38,22 @@ import {
   Save,
   Eye,
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  Image as ImageIcon,
+  Upload,
+  X,
+  Wand2,
+  FileText,
+  Compass,
+  Globe
 } from "lucide-react"
 import {
   servicesCreateMutation,
   practitionerCategoriesListOptions,
   schedulesListOptions,
-  modalitiesListOptions
+  modalitiesListOptions,
+  aiImagesGenerateCreateMutation,
+  servicesUploadCoverImageCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import Link from "next/link"
 import { PractitionerPageHeader } from "../practitioner-page-header"
@@ -61,6 +70,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Label } from "@/components/ui/label"
 import CompactCategoryManager from "../categories/compact-category-manager"
 import { BundleConfigStep } from "./steps/bundle-config-step"
 import { WizardPackageBuilder, type PackageServiceItem } from "./steps/wizard-package-builder"
@@ -215,6 +226,18 @@ export function GuidedServiceWizard() {
   const [packageDiscount, setPackageDiscount] = useState(15) // Default to recommended 15%
   const [packageFinalPrice, setPackageFinalPrice] = useState(0)
 
+  // Image step state
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null)
+  const [pendingAiImageId, setPendingAiImageId] = useState<number | null>(null)
+  const [pendingAiImageUrl, setPendingAiImageUrl] = useState<string | null>(null)
+  const [aiPrompt, setAiPrompt] = useState("")
+  const [generationsRemaining, setGenerationsRemaining] = useState<number | null>(null)
+  const [imageActiveTab, setImageActiveTab] = useState("upload")
+
+  // Publish choice state
+  const [publishChoice, setPublishChoice] = useState<"publish" | "draft" | null>(null)
+
   // Fetch data
   const { data: modalities } = useQuery({
     ...modalitiesListOptions({}),
@@ -252,17 +275,33 @@ export function GuidedServiceWizard() {
   const isPackage = selectedServiceType === 'package'
   const isBundle = selectedServiceType === 'bundle'
 
-  // Calculate total phases dynamically
-  // Package: 1 (type) + 2 (sessions) + 3 (pricing) + 4 (basic info) + 5 (polish) = 5 phases
-  // Bundle: 1 (type) + 2 (config) + 3 (basic info) + 4 (delivery) + 5 (polish) = 5 phases
-  // Others: 1 (type) + 2 (basic info) + 3 (delivery) + 4 (polish) = 4 phases
-  const totalPhases = needsConfigStep ? 5 : 4
+  // Build phases array dynamically based on service type
+  const phases = useMemo(() => {
+    const base: Array<{ key: string; title: string; icon: any }> = [
+      { key: "type", title: "Service Type", icon: Compass },
+    ]
 
-  // Get the actual phase number accounting for config step
-  const getDisplayPhase = (phase: number) => {
-    if (!needsConfigStep || phase === 1) return phase
-    return phase
-  }
+    if (isBundle) {
+      base.push({ key: "bundle-config", title: "Bundle Setup", icon: Layers })
+    } else if (isPackage) {
+      base.push({ key: "package-sessions", title: "Select Sessions", icon: Package })
+      base.push({ key: "package-pricing", title: "Pricing", icon: DollarSign })
+    }
+
+    base.push({ key: "basic-info", title: "Basic Info", icon: FileText })
+
+    if (!isPackage) {
+      base.push({ key: "delivery", title: "Details", icon: Clock })
+    }
+
+    base.push({ key: "image", title: "Cover Image", icon: ImageIcon })
+    base.push({ key: "polish", title: "Polish & Publish", icon: Sparkles })
+
+    return base
+  }, [isBundle, isPackage])
+
+  const totalPhases = phases.length
+  const currentPhaseKey = phases[currentPhase - 1]?.key || "type"
 
   // Apply template when service type changes
   useEffect(() => {
@@ -295,20 +334,173 @@ export function GuidedServiceWizard() {
     }
   }, [packageSessions.length, isPackage]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // AI Image Generation mutation
+  const generateImageMutation = useMutation({
+    ...aiImagesGenerateCreateMutation(),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Image Generated!",
+        description: "Your AI-generated image is ready. Click 'Use This' to select it.",
+      })
+      if (data.image_url) {
+        setPendingAiImageUrl(data.image_url)
+        setPendingAiImageId(data.id)
+      }
+      if (typeof data.generations_remaining_today === 'number') {
+        setGenerationsRemaining(data.generations_remaining_today)
+      }
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.body?.error || error?.message || "Failed to generate image"
+      toast({
+        title: "Generation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Fetch initial AI generation stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const session = await fetch('/api/auth/session').then(r => r.json())
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const response = await fetch(`${apiUrl}/api/v1/ai-images/stats/`, {
+          headers: {
+            'Authorization': `Bearer ${session?.accessToken || ''}`
+          },
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (typeof data.generations_remaining_today === 'number') {
+            setGenerationsRemaining(data.generations_remaining_today)
+          }
+        }
+      } catch {
+        // Silently fail - not critical
+      }
+    }
+    fetchStats()
+  }, [])
+
+  // Image handlers
+  const generateExamplePrompt = () => {
+    const serviceName = form.getValues("name") || "wellness service"
+    const description = form.getValues("shortDescription") || ""
+    const cleanDescription = description.replace(/\s+/g, ' ').trim().substring(0, 150)
+    if (cleanDescription) {
+      return `"${serviceName}" - ${cleanDescription}`
+    }
+    return `"${serviceName}"`
+  }
+
+  const handleWizardImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select a valid image file",
+          variant: "destructive",
+        })
+        return
+      }
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPendingImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      setPendingImageFile(file)
+      // Clear any AI image selection
+      setPendingAiImageId(null)
+      setPendingAiImageUrl(null)
+    }
+  }
+
+  const handleGenerateImage = async () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Prompt Required",
+        description: "Please enter a description for the image",
+        variant: "destructive",
+      })
+      return
+    }
+    try {
+      await generateImageMutation.mutateAsync({
+        body: { prompt: aiPrompt },
+      })
+    } catch {
+      // Error handled in mutation onError
+    }
+  }
+
+  const handleUseGeneratedImage = () => {
+    // Clear file upload selection since we're using AI image
+    setPendingImageFile(null)
+    setPendingImagePreview(null)
+    // pendingAiImageId and pendingAiImageUrl are already set from generation
+  }
+
+  const cancelGeneratedImage = () => {
+    setPendingAiImageUrl(null)
+    setPendingAiImageId(null)
+  }
+
+  const removeSelectedImage = () => {
+    setPendingImageFile(null)
+    setPendingImagePreview(null)
+  }
+
   // Create service mutation
   const createMutation = useMutation({
     ...servicesCreateMutation(),
-    onSuccess: (data) => {
-      toast({
-        title: "Service created successfully!",
-        description: "Continue filling in the details to publish your service.",
-      })
-      // Redirect to settings so practitioner can complete all fields
-      if (data?.id) {
-        router.push(`/dashboard/practitioner/services/${data.id}/settings`)
-      } else {
+    onSuccess: async (data) => {
+      if (!data?.id) {
         console.error('No service ID in response:', data)
         router.push('/dashboard/practitioner/services')
+        return
+      }
+
+      // Chain image upload/apply after service creation
+      try {
+        if (pendingImageFile) {
+          await servicesUploadCoverImageCreateMutation().mutationFn({
+            path: { id: data.id },
+            body: { image: pendingImageFile },
+          } as any)
+        } else if (pendingAiImageId) {
+          const session = await fetch('/api/auth/session').then(r => r.json())
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+          await fetch(`${apiUrl}/api/v1/ai-images/${pendingAiImageId}/apply-to-service/`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session?.accessToken || ''}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ service_id: data.id }),
+            credentials: 'include',
+          })
+        }
+      } catch {
+        // Image upload failed — service still created, user can re-do in settings
+      }
+
+      // Redirect based on publish choice
+      if (publishChoice === "publish") {
+        toast({
+          title: "Service published!",
+          description: "It's now visible to clients.",
+        })
+        router.push(`/dashboard/practitioner/services/${data.id}`)
+      } else {
+        toast({
+          title: "Draft saved!",
+          description: "Continue setting up in Settings.",
+        })
+        router.push(`/dashboard/practitioner/services/${data.id}/settings`)
       }
     },
     onError: (error: any) => {
@@ -321,61 +513,29 @@ export function GuidedServiceWizard() {
     },
   })
 
-  // Phase validation - dynamic based on service type
+  // Phase validation — uses phase keys so it works regardless of ordering
   const validatePhase = async (phase: number) => {
-    // For packages: 1 (type) + 2 (sessions) + 3 (pricing) + 4 (basic info) + 5 (polish)
-    // Note: Packages SKIP the delivery details phase - price/duration/participants are calculated
-    if (isPackage) {
-      switch (phase) {
-        case 1:
-          return await form.trigger(["serviceType"])
-        case 2:
-          // Validate package sessions selection
-          return packageSessions.length > 0
-        case 3:
-          // Validate pricing (discount is always valid since it has a default)
-          return packageFinalPrice > 0
-        case 4:
-          // Basic info for packages
-          return await form.trigger(["name", "shortDescription"])
-        case 5:
-          // Polish & Publish - only description needed (no price/duration/participants)
-          return await form.trigger(["description"])
-        default:
-          return true
-      }
-    }
-    // For bundles: 1 (type) + 2 (config) + 3 (basic info) + 4 (delivery) + 5 (polish)
-    else if (isBundle) {
-      switch (phase) {
-        case 1:
-          return await form.trigger(["serviceType"])
-        case 2:
-          // Validate bundle config
-          return bundleConfig.sessionServiceId !== null && bundleConfig.sessionsIncluded >= 2
-        case 3:
-          return await form.trigger(["name", "shortDescription"])
-        case 4:
-          return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
-        case 5:
-          return await form.trigger(["description"])
-        default:
-          return true
-      }
-    } else {
-      // Standard flow for session/workshop/course
-      switch (phase) {
-        case 1:
-          return await form.trigger(["serviceType"])
-        case 2:
-          return await form.trigger(["name", "shortDescription"])
-        case 3:
-          return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
-        case 4:
-          return await form.trigger(["description"])
-        default:
-          return true
-      }
+    const key = phases[phase - 1]?.key
+    switch (key) {
+      case "type":
+        return await form.trigger(["serviceType"])
+      case "bundle-config":
+        return bundleConfig.sessionServiceId !== null && bundleConfig.sessionsIncluded >= 2
+      case "package-sessions":
+        return packageSessions.length > 0
+      case "package-pricing":
+        return packageFinalPrice > 0
+      case "basic-info":
+        return await form.trigger(["name", "shortDescription"])
+      case "delivery":
+        return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+      case "image":
+        // Image step is optional — always valid
+        return true
+      case "polish":
+        return await form.trigger(["description"])
+      default:
+        return true
     }
   }
 
@@ -385,20 +545,20 @@ export function GuidedServiceWizard() {
     if (isValid && currentPhase < totalPhases) {
       setCurrentPhase(currentPhase + 1)
     } else if (!isValid) {
-      // Show specific error messages based on service type and phase
-      if (isPackage && currentPhase === 2) {
+      // Show specific error messages based on phase key
+      if (currentPhaseKey === "package-sessions") {
         toast({
           title: "No sessions selected",
           description: "Please select at least one session to include in your package.",
           variant: "destructive"
         })
-      } else if (isPackage && currentPhase === 3) {
+      } else if (currentPhaseKey === "package-pricing") {
         toast({
           title: "Pricing incomplete",
           description: "Please set a discount for your package.",
           variant: "destructive"
         })
-      } else if (isBundle && currentPhase === 2) {
+      } else if (currentPhaseKey === "bundle-config") {
         toast({
           title: "Bundle configuration incomplete",
           description: "Please select a session service and set the number of sessions.",
@@ -414,10 +574,16 @@ export function GuidedServiceWizard() {
     }
   }
 
-  // Submit handler
-  const onSubmit = async (data: WizardFormData) => {
+  // Submit handler — called by both "Save as Draft" and "Create & Publish"
+  const handleCreate = async (choice: "publish" | "draft") => {
+    // Validate the final phase first
+    const isValid = await validatePhase(currentPhase)
+    if (!isValid) return
+
+    setPublishChoice(choice)
     setIsCreating(true)
 
+    const data = form.getValues()
     const selectedType = SERVICE_TYPES.find(t => t.code === data.serviceType)
     if (!selectedType) {
       setIsCreating(false)
@@ -441,11 +607,10 @@ export function GuidedServiceWizard() {
       }]
       sessionsIncluded = bundleConfig.sessionsIncluded
     } else if (data.serviceType === 'package' && packageSessions.length > 0) {
-      // Use new package builder state
       childServiceConfigs = packageSessions.map(s => ({
         child_service_id: s.serviceId,
-        quantity: 1, // Each session in package has quantity 1
-        discount_percentage: 0, // Discount is applied at package level
+        quantity: 1,
+        discount_percentage: 0,
         order: s.order
       }))
     }
@@ -456,13 +621,12 @@ export function GuidedServiceWizard() {
     let finalMaxParticipants = data.max_participants
 
     if (data.serviceType === 'package' && packageSessions.length > 0) {
-      // Use the calculated final price from discount slider
       finalPrice = packageFinalPrice.toFixed(2)
-      // Calculate total duration from all sessions
       finalDuration = packageSessions.reduce((sum, s) => sum + (s.service?.duration_minutes || 0), 0)
-      // Packages are always for 1 participant
       finalMaxParticipants = 1
     }
+
+    const isPublish = choice === "publish"
 
     // Build request body
     const requestBody = {
@@ -475,9 +639,9 @@ export function GuidedServiceWizard() {
       max_participants: finalMaxParticipants,
       min_participants: 1,
       location_type: data.location_type,
-      status: 'draft',
-      is_active: false,
-      is_public: false,
+      status: isPublish ? 'active' : 'draft',
+      is_active: isPublish,
+      is_public: isPublish,
       experience_level: "all_levels",
       what_youll_learn: "",
       prerequisites: "",
@@ -499,6 +663,11 @@ export function GuidedServiceWizard() {
       },
       bodySerializer: (body: typeof requestBody) => JSON.stringify(body),
     } as any)
+  }
+
+  // Keep form onSubmit for "Create & Publish" (form validation still applies)
+  const onSubmit = async () => {
+    await handleCreate("publish")
   }
 
   // Progress calculation - dynamic based on total phases
@@ -638,8 +807,8 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 2: Bundle Config (only for bundle type) */}
-            {currentPhase === 2 && isBundle && (
+            {/* Bundle Config Phase */}
+            {currentPhaseKey === "bundle-config" && (
               <motion.div
                 key="phase2-bundle-config"
                 initial={{ opacity: 0, x: 20 }}
@@ -661,8 +830,8 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 2: Package Session Selection (only for package type) */}
-            {currentPhase === 2 && isPackage && (
+            {/* Package Session Selection Phase */}
+            {currentPhaseKey === "package-sessions" && (
               <motion.div
                 key="phase2-package-sessions"
                 initial={{ opacity: 0, x: 20 }}
@@ -681,8 +850,8 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 3: Package Pricing (only for package type) */}
-            {currentPhase === 3 && isPackage && (
+            {/* Package Pricing Phase */}
+            {currentPhaseKey === "package-pricing" && (
               <motion.div
                 key="phase3-package-pricing"
                 initial={{ opacity: 0, x: 20 }}
@@ -704,12 +873,8 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Basic Info Phase:
-                - Standard (session/workshop/course): Phase 2
-                - Bundle: Phase 3 (after config)
-                - Package: Phase 4 (after sessions + pricing)
-            */}
-            {((currentPhase === 2 && !needsConfigStep) || (currentPhase === 3 && isBundle) || (currentPhase === 4 && isPackage)) && (
+            {/* Basic Info Phase */}
+            {currentPhaseKey === "basic-info" && (
               <motion.div
                 key="phase-basic-info"
                 initial={{ opacity: 0, x: 20 }}
@@ -801,12 +966,8 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Delivery Details Phase:
-                - Standard (session/workshop/course): Phase 3
-                - Bundle: Phase 4 (after basic info)
-                - Package: SKIP (price/duration/participants are calculated)
-            */}
-            {((currentPhase === 3 && !needsConfigStep) || (currentPhase === 4 && isBundle)) && (
+            {/* Delivery Details Phase (skipped for packages) */}
+            {currentPhaseKey === "delivery" && (
               <motion.div
                 key="phase-delivery"
                 initial={{ opacity: 0, x: 20 }}
@@ -1019,8 +1180,200 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Phase 4/5: Polish & Publish (phase 4 for standard, phase 5 for bundle/package) */}
-            {((currentPhase === 4 && !needsConfigStep) || (currentPhase === 5 && needsConfigStep)) && (
+            {/* Cover Image Phase */}
+            {currentPhaseKey === "image" && (
+              <motion.div
+                key="phase-image"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ImageIcon className="h-5 w-5" />
+                      Cover Image
+                    </CardTitle>
+                    <CardDescription>
+                      Add a visual identity to your service. You can skip this and add one later in Settings.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Tabs value={imageActiveTab} onValueChange={setImageActiveTab} className="w-full">
+                      <TabsList className="grid w-full max-w-md grid-cols-2">
+                        <TabsTrigger value="upload">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </TabsTrigger>
+                        <TabsTrigger value="ai">
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate with AI
+                        </TabsTrigger>
+                      </TabsList>
+
+                      {/* Upload Tab */}
+                      <TabsContent value="upload" className="space-y-4">
+                        {pendingImagePreview ? (
+                          <div className="space-y-4">
+                            <div className="relative w-full max-w-md">
+                              <img
+                                src={pendingImagePreview}
+                                alt="Cover preview"
+                                className="w-full h-64 object-cover rounded-lg"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2"
+                                onClick={removeSelectedImage}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Image selected. It will be uploaded when you create the service.
+                            </p>
+                          </div>
+                        ) : (
+                          <Card className="max-w-md">
+                            <label className="flex flex-col items-center justify-center p-8 cursor-pointer hover:bg-muted/50 transition-colors">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleWizardImageChange}
+                                className="hidden"
+                              />
+                              <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
+                              <span className="text-sm font-medium">Upload Cover Image</span>
+                              <span className="text-xs text-muted-foreground mt-1">
+                                PNG, JPG up to 10MB
+                              </span>
+                            </label>
+                          </Card>
+                        )}
+                      </TabsContent>
+
+                      {/* AI Generation Tab */}
+                      <TabsContent value="ai" className="space-y-4">
+                        {pendingAiImageUrl ? (
+                          <div className="space-y-4">
+                            <div className="relative w-full max-w-md">
+                              <img
+                                src={pendingAiImageUrl}
+                                alt="AI generated"
+                                className="w-full h-64 object-cover rounded-lg"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2"
+                                onClick={cancelGeneratedImage}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="flex gap-2 max-w-md">
+                              <Button
+                                type="button"
+                                onClick={handleUseGeneratedImage}
+                                className="flex-1"
+                              >
+                                <Wand2 className="h-4 w-4 mr-2" />
+                                Use This Image
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  cancelGeneratedImage()
+                                  setAiPrompt("")
+                                }}
+                              >
+                                Try Again
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="max-w-md space-y-4">
+                            <Card className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+                              <div className="flex items-start gap-3">
+                                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5" />
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium text-sm">AI Image Generation</h4>
+                                    {generationsRemaining !== null && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {generationsRemaining} left today
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Describe your ideal service image and AI will create it for you.
+                                  </p>
+                                </div>
+                              </div>
+                            </Card>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="wizard-ai-prompt">Describe Your Image</Label>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setAiPrompt(generateExamplePrompt())}
+                                  className="h-7 text-xs"
+                                >
+                                  <Wand2 className="h-3 w-3 mr-1" />
+                                  Use Example
+                                </Button>
+                              </div>
+                              <Textarea
+                                id="wizard-ai-prompt"
+                                placeholder={generateExamplePrompt()}
+                                value={aiPrompt}
+                                onChange={(e) => setAiPrompt(e.target.value)}
+                                rows={4}
+                                className="resize-none"
+                              />
+                            </div>
+
+                            <Button
+                              type="button"
+                              onClick={handleGenerateImage}
+                              disabled={generateImageMutation.isPending || !aiPrompt.trim()}
+                              className="w-full"
+                            >
+                              {generateImageMutation.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  Generating... (this may take 30-60 seconds)
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="h-4 w-4 mr-2" />
+                                  Generate Image
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+
+                    <p className="text-sm text-muted-foreground">
+                      You can add or change the image later in Settings.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Polish & Publish Phase */}
+            {currentPhaseKey === "polish" && (
               <motion.div
                 key="phase-polish"
                 initial={{ opacity: 0, x: 20 }}
@@ -1185,7 +1538,15 @@ export function GuidedServiceWizard() {
                     />
 
                     {/* Preview Card */}
-                    <div className="border rounded-lg p-4 bg-muted/50">
+                    <div className="border rounded-lg overflow-hidden bg-muted/50">
+                      {(pendingImagePreview || pendingAiImageUrl) && (
+                        <img
+                          src={pendingImagePreview || pendingAiImageUrl || ""}
+                          alt="Cover"
+                          className="w-full h-32 object-cover"
+                        />
+                      )}
+                      <div className="p-4">
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Eye className="h-4 w-4" />
                         Preview
@@ -1222,6 +1583,7 @@ export function GuidedServiceWizard() {
                           </div>
                         )}
                       </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1242,22 +1604,7 @@ export function GuidedServiceWizard() {
             </Button>
 
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  toast({
-                    title: "Draft saved",
-                    description: "You can continue editing later",
-                  })
-                }}
-                disabled={isCreating}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                Save Draft
-              </Button>
-
-              {currentPhase < totalPhases ? (
+              {currentPhaseKey !== "polish" ? (
                 <Button
                   type="button"
                   onClick={handleNext}
@@ -1267,26 +1614,52 @@ export function GuidedServiceWizard() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button
-                  type="submit"
-                  disabled={isCreating}
-                  className="min-w-[120px]"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Create {selectedServiceType === 'bundle' ? 'Bundle' : selectedServiceType === 'package' ? 'Package' : 'Service'}
-                    </>
-                  )}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleCreate("draft")}
+                    disabled={isCreating}
+                  >
+                    {isCreating && publishChoice === "draft" ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save as Draft
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleCreate("publish")}
+                    disabled={isCreating}
+                    className="min-w-[140px]"
+                  >
+                    {isCreating && publishChoice === "publish" ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Publishing...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="mr-2 h-4 w-4" />
+                        Create & Publish
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
           </div>
+          {currentPhaseKey === "polish" && (
+            <p className="text-center text-sm text-muted-foreground mt-3">
+              Published services are immediately visible to clients. Drafts can be completed later.
+            </p>
+          )}
         </form>
       </Form>
 
