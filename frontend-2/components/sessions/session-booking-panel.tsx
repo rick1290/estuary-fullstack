@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe, ArrowRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
-import { bookingsCheckAvailabilityCreate } from "@/src/client"
+import { bookingsCheckAvailabilityCreate, bookingsAvailableDatesCreate } from "@/src/client"
 import { format, addDays, startOfDay } from "date-fns"
 
 interface SessionBookingPanelProps {
@@ -26,12 +26,15 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
   const [showAllTimes, setShowAllTimes] = useState(false)
   const [timeSlots, setTimeSlots] = useState<string[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+  const [availableDatesMap, setAvailableDatesMap] = useState<Record<string, number>>({})
+  const [isLoadingDates, setIsLoadingDates] = useState(true)
+  const mobileScrollRef = useRef<HTMLDivElement>(null)
 
   // Generate dates for the next 30 days
   const generateDates = () => {
     const dates = []
     const today = startOfDay(new Date())
-    
+
     for (let i = 0; i < 30; i++) {
       const date = addDays(today, i)
       dates.push({
@@ -40,31 +43,42 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
         dateObj: date
       })
     }
-    
+
     return dates
   }
 
   const allDates = generateDates()
 
+  // Check if a date has availability
+  const dateKey = (dateObj: Date) => format(dateObj, 'yyyy-MM-dd')
+  const hasAvailability = (dateObj: Date) => (availableDatesMap[dateKey(dateObj)] ?? 0) > 0
+
+  // Find the next date with availability after a given index
+  const findNextAvailableIndex = useCallback((afterIndex: number): number | null => {
+    for (let i = afterIndex + 1; i < allDates.length; i++) {
+      if (hasAvailability(allDates[i].dateObj)) return i
+    }
+    return null
+  }, [allDates, availableDatesMap])
+
   // Fetch availability when date changes
   const fetchAvailability = async (dateObj: Date) => {
     if (!session?.primary_practitioner?.id || !session?.id) return
-    
+
     setIsLoadingSlots(true)
     setTimeSlots([])
-    
+
     try {
       const response = await bookingsCheckAvailabilityCreate({
         body: {
           practitioner_id: session.primary_practitioner.id,
           service_id: session.id,
-          date: format(dateObj, 'yyyy-MM-dd') as any,  // Format as YYYY-MM-DD string
+          date: format(dateObj, 'yyyy-MM-dd') as any,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }
       })
-      
+
       if (response.data && 'available_slots' in response.data) {
-        // Format time slots from the response
         const slots = (response.data as any).available_slots.map((slot: any) => {
           const time = new Date(slot.start_time)
           return format(time, 'h:mm a')
@@ -79,18 +93,74 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
     }
   }
 
-  // Initialize with first date selected
+  // Fetch all available dates on mount
   useEffect(() => {
-    if (allDates.length > 0 && !selectedDate) {
-      const firstDate = allDates[0]
-      setSelectedDate(`${firstDate.day}, ${firstDate.date}`)
-      updateVisibleDates(0)
-      fetchAvailability(firstDate.dateObj)
+    if (!session?.id) return
+
+    const fetchAvailableDates = async () => {
+      setIsLoadingDates(true)
+      try {
+        const response = await bookingsAvailableDatesCreate({
+          body: {
+            service_id: session.id,
+            days_ahead: 30,
+          }
+        })
+
+        const data = response.data as any
+        if (data?.available_dates) {
+          const map: Record<string, number> = {}
+          for (const entry of data.available_dates) {
+            map[entry.date] = entry.slot_count
+          }
+          setAvailableDatesMap(map)
+
+          // Auto-select the first date with availability
+          const firstAvailable = allDates.find(d => map[dateKey(d.dateObj)] > 0)
+          const target = firstAvailable || allDates[0]
+          const dateLabel = `${target.day}, ${target.date}`
+          setSelectedDate(dateLabel)
+
+          // Scroll desktop carousel to show the selected date
+          const targetIndex = allDates.indexOf(target)
+          updateVisibleDates(Math.max(0, targetIndex - 1))
+
+          // Fetch time slots for the selected date
+          fetchAvailability(target.dateObj)
+
+          // On mobile, scroll to show the first available date
+          if (firstAvailable && mobileScrollRef.current) {
+            const idx = allDates.indexOf(firstAvailable)
+            // Each chip is ~56px wide (52px + 4px gap)
+            setTimeout(() => {
+              mobileScrollRef.current?.scrollTo({ left: Math.max(0, idx * 56 - 20), behavior: 'smooth' })
+            }, 50)
+          }
+        } else {
+          // Fallback if endpoint returns unexpected shape
+          setAvailableDatesMap({})
+          const firstDate = allDates[0]
+          setSelectedDate(`${firstDate.day}, ${firstDate.date}`)
+          updateVisibleDates(0)
+          fetchAvailability(firstDate.dateObj)
+        }
+      } catch (error) {
+        console.error('Failed to fetch available dates:', error)
+        // Fallback: select today and fetch normally
+        setAvailableDatesMap({})
+        const firstDate = allDates[0]
+        setSelectedDate(`${firstDate.day}, ${firstDate.date}`)
+        updateVisibleDates(0)
+        fetchAvailability(firstDate.dateObj)
+      } finally {
+        setIsLoadingDates(false)
+      }
     }
-  }, [])
+
+    fetchAvailableDates()
+  }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateVisibleDates = (startIndex: number) => {
-    // Show 3 dates on desktop, 2 on mobile
     const visibleCount = typeof window !== 'undefined' && window.innerWidth < 600 ? 2 : 3
     const endIndex = Math.min(startIndex + visibleCount, allDates.length)
     setVisibleDates(allDates.slice(startIndex, endIndex))
@@ -118,13 +188,37 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date)
-    setSelectedTime(null) // Reset time when date changes
-    
-    // Find the date object and fetch availability
+    setSelectedTime(null)
+    setShowAllTimes(false)
+
     const selectedDateObj = allDates.find(d => `${d.day}, ${d.date}` === date)
     if (selectedDateObj) {
       fetchAvailability(selectedDateObj.dateObj)
     }
+  }
+
+  const handleSkipToNextAvailable = () => {
+    const currentIdx = allDates.findIndex(d => `${d.day}, ${d.date}` === selectedDate)
+    const nextIdx = findNextAvailableIndex(currentIdx)
+    if (nextIdx === null) return
+
+    const next = allDates[nextIdx]
+    const dateLabel = `${next.day}, ${next.date}`
+    setSelectedDate(dateLabel)
+    setSelectedTime(null)
+    setShowAllTimes(false)
+
+    // Scroll desktop carousel
+    updateVisibleDates(Math.max(0, nextIdx - 1))
+
+    // Scroll mobile strip
+    if (mobileScrollRef.current) {
+      setTimeout(() => {
+        mobileScrollRef.current?.scrollTo({ left: Math.max(0, nextIdx * 56 - 20), behavior: 'smooth' })
+      }, 50)
+    }
+
+    fetchAvailability(next.dateObj)
   }
 
   const handleTimeSelect = (time: string) => {
@@ -147,11 +241,14 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
       return
     }
 
-    // Redirect to checkout page with session details
     router.push(`/checkout?serviceId=${session.id}&type=session&date=${selectedDate}&time=${selectedTime}`)
   }
 
-  // Display only first 6 time slots unless "show more" is clicked
+  // Check if there's a next available date after current selection
+  const currentIdx = allDates.findIndex(d => `${d.day}, ${d.date}` === selectedDate)
+  const hasNextAvailable = findNextAvailableIndex(currentIdx) !== null
+  const noAvailabilityAtAll = !isLoadingDates && Object.keys(availableDatesMap).length === 0
+
   const displayedTimeSlots = showAllTimes ? timeSlots : timeSlots.slice(0, 6)
 
   const practitioner = session.primary_practitioner
@@ -161,6 +258,41 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
   const practitionerInitials = practitionerName
     ? practitionerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)
     : ''
+
+  // Date chip component for reuse between desktop and mobile
+  const DateChip = ({ date, isMobile = false }: { date: typeof allDates[0]; isMobile?: boolean }) => {
+    const label = `${date.day}, ${date.date}`
+    const isSelected = selectedDate === label
+    const available = hasAvailability(date.dateObj)
+    const datesLoaded = !isLoadingDates
+
+    return (
+      <div
+        onClick={() => handleDateSelect(label)}
+        className={`${isMobile ? 'flex-shrink-0 w-[52px]' : 'flex-1'} py-2 rounded-lg cursor-pointer text-center border-[1.5px] transition-all relative ${
+          isSelected
+            ? "border-olive-900 bg-olive-900 text-white"
+            : datesLoaded && !available
+              ? "border-sage-200/60 bg-sage-50/50 text-olive-400 opacity-50"
+              : "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
+        }`}
+      >
+        <p className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} font-medium uppercase tracking-wide leading-none ${
+          isSelected ? 'text-white/60' : 'text-olive-400'
+        }`}>{date.day}</p>
+        <p className={`text-sm font-medium mt-1 leading-none ${
+          isSelected ? 'text-white' : datesLoaded && !available ? 'text-olive-400' : 'text-olive-800'
+        }`}>{date.date.split(' ')[1]}</p>
+        {/* Availability dot indicator */}
+        {datesLoaded && available && !isSelected && (
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-400" />
+        )}
+        {datesLoaded && available && isSelected && (
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-300" />
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className={`w-full bg-white overflow-hidden ${compact ? '' : 'rounded-2xl border border-sage-200/60'}`}>
@@ -229,18 +361,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
 
                 <div className="flex gap-1.5 justify-center flex-1 overflow-hidden">
                   {visibleDates.map((date) => (
-                    <div
-                      key={date.date}
-                      onClick={() => handleDateSelect(`${date.day}, ${date.date}`)}
-                      className={`flex-1 py-2 rounded-lg cursor-pointer text-center border-[1.5px] transition-all ${
-                        selectedDate === `${date.day}, ${date.date}`
-                          ? "border-olive-900 bg-olive-900 text-white"
-                          : "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
-                      }`}
-                    >
-                      <p className={`text-[10px] font-medium uppercase tracking-wide leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white/60' : 'text-olive-400'}`}>{date.day}</p>
-                      <p className={`text-sm font-medium mt-1 leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : 'text-olive-800'}`}>{date.date.split(' ')[1]}</p>
-                    </div>
+                    <DateChip key={date.date} date={date} />
                   ))}
                 </div>
 
@@ -258,22 +379,9 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
 
             {/* Mobile: horizontal scrollable chips */}
             <div className="sm:hidden mb-5">
-              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+              <div ref={mobileScrollRef} className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
                 {allDates.slice(0, 14).map((date) => (
-                  <div
-                    key={date.date}
-                    onClick={() => {
-                      handleDateSelect(`${date.day}, ${date.date}`)
-                    }}
-                    className={`flex-shrink-0 w-[52px] py-2 rounded-lg cursor-pointer text-center border-[1.5px] transition-all ${
-                      selectedDate === `${date.day}, ${date.date}`
-                        ? "border-olive-900 bg-olive-900 text-white"
-                        : "border-sage-200 bg-white text-olive-700"
-                    }`}
-                  >
-                    <p className={`text-[9px] font-medium uppercase tracking-wide leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white/60' : 'text-olive-400'}`}>{date.day}</p>
-                    <p className={`text-sm font-medium mt-1 leading-none ${selectedDate === `${date.day}, ${date.date}` ? 'text-white' : 'text-olive-800'}`}>{date.date.split(' ')[1]}</p>
-                  </div>
+                  <DateChip key={date.date} date={date} isMobile />
                 ))}
               </div>
             </div>
@@ -291,8 +399,8 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
             ) : timeSlots.length > 0 ? (
               <>
                 <div className={`grid grid-cols-3 gap-2.5 mb-4 ${
-                  showAllTimes && timeSlots.length > 9 
-                    ? 'max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sage-300 scrollbar-track-sage-50' 
+                  showAllTimes && timeSlots.length > 9
+                    ? 'max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sage-300 scrollbar-track-sage-50'
                     : ''
                 }`}>
                   {displayedTimeSlots.map((time) => (
@@ -315,10 +423,23 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
                   </p>
                 )}
               </>
-            ) : (
+            ) : noAvailabilityAtAll ? (
               <div className="text-center py-8 text-olive-600">
-                <p className="text-sm">No available time slots for this date.</p>
-                <p className="text-xs mt-2">Please select another date.</p>
+                <p className="text-sm">No availability in the next 30 days.</p>
+                <p className="text-xs mt-2">Please check back later or contact the practitioner directly.</p>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-olive-600">
+                <p className="text-sm">No available times on this date.</p>
+                {hasNextAvailable && (
+                  <button
+                    onClick={handleSkipToNextAvailable}
+                    className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-terracotta-600 hover:text-terracotta-700 transition-colors"
+                  >
+                    Skip to next available
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             )}
           </div>

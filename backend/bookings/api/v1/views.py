@@ -14,12 +14,15 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from bookings.models import (
     Booking, BookingNote, BookingFactory
 )
+from datetime import timedelta
+
 from bookings.api.v1.serializers import (
     BookingListSerializer, BookingDetailSerializer,
     BookingCreateSerializer, BookingUpdateSerializer,
     BookingStatusChangeSerializer, BookingScheduleSerializer,
     BookingRescheduleSerializer, BookingNoteSerializer,
-    AvailabilityCheckSerializer, AvailableSlotSerializer
+    AvailabilityCheckSerializer, AvailableSlotSerializer,
+    AvailableDatesRequestSerializer
 )
 from bookings.api.v1.filters import BookingFilter
 from services.models import Service
@@ -42,6 +45,7 @@ from practitioners.utils.availability import get_practitioner_availability
     reschedule=extend_schema(tags=['Bookings']),
     notes=extend_schema(tags=['Bookings']),
     check_availability=extend_schema(tags=['Bookings']),
+    available_dates=extend_schema(tags=['Bookings']),
     create_bundle=extend_schema(tags=['Bookings']),
     create_package=extend_schema(tags=['Bookings']),
     create_course=extend_schema(tags=['Bookings'])
@@ -123,6 +127,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             return BookingNoteSerializer
         elif self.action == 'check_availability':
             return AvailabilityCheckSerializer
+        elif self.action == 'available_dates':
+            return AvailableDatesRequestSerializer
         return super().get_serializer_class()
     
     def perform_create(self, serializer):
@@ -407,6 +413,39 @@ class BookingViewSet(viewsets.ModelViewSet):
             response_serializer = BookingNoteSerializer(note)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
     
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def available_dates(self, request):
+        """Get dates with availability for the next N days (public endpoint)."""
+        serializer = AvailableDatesRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = serializer.validated_data['service']
+        start_date = serializer.validated_data.get('start_date') or timezone.now().date()
+        days_ahead = serializer.validated_data.get('days_ahead', 30)
+        end_date = start_date + timedelta(days=days_ahead)
+
+        slots = get_practitioner_availability(
+            service_id=service.id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        # Group by date, return just date + slot count
+        dates_with_slots = {}
+        for slot in slots:
+            d = slot['start_datetime'].date().isoformat()
+            dates_with_slots[d] = dates_with_slots.get(d, 0) + 1
+
+        return Response({
+            'service_id': service.id,
+            'available_dates': [
+                {'date': d, 'slot_count': c}
+                for d, c in sorted(dates_with_slots.items())
+            ],
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat(),
+        })
+
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def check_availability(self, request):
         """Check practitioner availability for a service (public endpoint)"""

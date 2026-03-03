@@ -984,7 +984,7 @@ export function GuidedServiceWizard() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid gap-6 md:grid-cols-2">
-                      {/* Price - show as read-only info for bundles/packages since it was set in config */}
+                      {/* Price - with $ prefix, matching settings page */}
                       <FormField
                         control={form.control}
                         name="price"
@@ -995,18 +995,24 @@ export function GuidedServiceWizard() {
                               {needsConfigStep ? `${selectedServiceType === 'bundle' ? 'Bundle' : 'Package'} Price` : 'Price'}
                             </FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="0"
-                                {...field}
-                              />
+                              <div className="relative max-w-xs">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                  $
+                                </span>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="0"
+                                  placeholder="0"
+                                  className="pl-8"
+                                  {...field}
+                                />
+                              </div>
                             </FormControl>
                             <FormDescription>
                               {needsConfigStep
                                 ? "Price was set in the previous step. You can adjust it here if needed."
-                                : "You can adjust pricing later"
+                                : "Set to 0 for free services"
                               }
                             </FormDescription>
                             <FormMessage />
@@ -1014,7 +1020,7 @@ export function GuidedServiceWizard() {
                         )}
                       />
 
-                      {/* Duration */}
+                      {/* Duration - with preset buttons, matching settings page */}
                       <FormField
                         control={form.control}
                         name="duration_minutes"
@@ -1025,18 +1031,38 @@ export function GuidedServiceWizard() {
                               Duration (minutes)
                             </FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                min="1"
-                                step="1"
-                                placeholder="e.g. 60"
-                                {...field}
-                                onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                              />
+                              <div className="max-w-xs space-y-2">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  placeholder="e.g. 60"
+                                  {...field}
+                                  onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                />
+                                <div className="flex flex-wrap gap-1.5">
+                                  {[
+                                    { value: 30, label: "30m" },
+                                    { value: 45, label: "45m" },
+                                    { value: 60, label: "1h" },
+                                    { value: 90, label: "1.5h" },
+                                    { value: 120, label: "2h" },
+                                    { value: 180, label: "3h" },
+                                  ].map((preset) => (
+                                    <Button
+                                      key={preset.value}
+                                      type="button"
+                                      variant={field.value === preset.value ? "default" : "outline"}
+                                      size="sm"
+                                      className="h-7 text-xs px-2.5"
+                                      onClick={() => field.onChange(preset.value)}
+                                    >
+                                      {preset.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
                             </FormControl>
-                            <FormDescription>
-                              Duration in minutes — enter any value
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
