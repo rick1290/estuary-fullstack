@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   servicesRetrieveOptions,
@@ -203,6 +203,7 @@ const GROUP_META: Record<string, { label: string; description: string }> = {
 
 export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -475,6 +476,16 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
     }
     setMobileOpen(false)
   }
+
+  // Auto-scroll to section from ?section= query param
+  useEffect(() => {
+    const targetSection = searchParams?.get('section')
+    if (targetSection && service) {
+      setTimeout(() => {
+        scrollToSection(targetSection)
+      }, 300)
+    }
+  }, [service, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const serviceTypeCode = service?.service_type_code || 'session'
   const visibleSections = sections
