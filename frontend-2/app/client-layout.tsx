@@ -19,7 +19,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const shouldHideRoleSwitcher = isInRoom // Hide role switcher in room for immersive experience
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden">
+    <div className="flex min-h-screen flex-col overflow-x-clip">
       {!shouldHideRoleSwitcher && <RoleSwitcherBanner />}
       {!shouldHideNavAndFooter && <Navbar />}
       <main className="flex-1">{children}</main>
