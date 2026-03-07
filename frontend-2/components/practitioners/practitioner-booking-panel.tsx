@@ -103,7 +103,7 @@ export default function PractitionerBookingPanel({ practitioner }: PractitionerB
 
   return (
     <>
-      <Card className="border border-sage-200/60 bg-white rounded-2xl overflow-hidden sticky top-24">
+      <Card className="border border-sage-200/60 bg-white rounded-2xl overflow-hidden">
         <CardContent className="p-6">
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2 mb-6">

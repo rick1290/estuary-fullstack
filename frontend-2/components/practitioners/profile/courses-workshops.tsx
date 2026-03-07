@@ -85,13 +85,31 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
             key={item.id}
             className="min-w-[320px] max-w-[320px] flex flex-col border border-sage-200/60 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
           >
-            {/* Card Header */}
-            <div className="bg-sage-50 p-5 pb-6">
-              <span className="text-xs px-2.5 py-1 bg-white text-olive-600 rounded-full font-light inline-flex items-center gap-1 mb-3">
-                <Sparkles className="h-3 w-3" strokeWidth="1.5" />
-                {item.service_type_display || item.service_type_code || item.service_type?.name}
-              </span>
+            {/* Card Image */}
+            {item.image_url ? (
+              <div className="relative h-44 overflow-hidden bg-sage-100">
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute top-3 left-3 text-xs px-2.5 py-1 bg-white/90 backdrop-blur-sm text-olive-600 rounded-full font-light inline-flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" strokeWidth="1.5" />
+                  {item.service_type_display || item.service_type_code || item.service_type?.name}
+                </span>
+              </div>
+            ) : (
+              <div className="relative h-44 bg-sage-50 flex items-center justify-center">
+                <Sparkles className="h-10 w-10 text-sage-300" strokeWidth="1" />
+                <span className="absolute top-3 left-3 text-xs px-2.5 py-1 bg-white text-olive-600 rounded-full font-light inline-flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" strokeWidth="1.5" />
+                  {item.service_type_display || item.service_type_code || item.service_type?.name}
+                </span>
+              </div>
+            )}
 
+            {/* Card Header */}
+            <div className="p-5 pb-2">
               <h3 className="text-base font-medium text-olive-900 mb-2 line-clamp-2">{item.name}</h3>
 
               <p className="text-[15px] font-light text-olive-600 leading-relaxed line-clamp-2">{item.description}</p>
