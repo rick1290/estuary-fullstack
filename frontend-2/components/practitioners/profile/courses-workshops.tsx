@@ -1,12 +1,11 @@
 "use client"
 
 import { useRef } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Clock, MapPin, ChevronLeft, ChevronRight, Calendar, Sparkles } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
+import { getServiceDetailUrl } from "@/lib/service-utils"
+import ServiceCard from "@/components/ui/service-card"
 
 interface Service {
   id: string | number
@@ -15,8 +14,8 @@ interface Service {
   name: string
   description: string
   price: string
-  duration?: number // Legacy field
-  duration_minutes?: number // Actual API field
+  duration?: number
+  duration_minutes?: number
   location_type: string
   image_url?: string
   service_type: {
@@ -26,6 +25,28 @@ interface Service {
   }
   service_type_code?: string
   service_type_display?: string
+  practitioner?: {
+    id?: string | number
+    public_uuid?: string
+    display_name?: string
+    profile_image_url?: string
+  }
+  primary_practitioner?: {
+    id?: string | number
+    public_uuid?: string
+    display_name?: string
+    profile_image_url?: string
+  }
+  categories?: { name: string }[]
+  category?: { name: string }
+  max_participants?: number
+  capacity?: number
+  average_rating?: number | string
+  total_reviews?: number
+  start_date?: string
+  first_session_date?: string
+  next_session_date?: string
+  upcoming_sessions?: { start_time: string }[]
 }
 
 interface CoursesWorkshopsProps {
@@ -36,16 +57,15 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
   const coursesScrollRef = useRef<HTMLDivElement>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  // Scroll handlers for courses & workshops
   const scrollLeft = () => {
     if (coursesScrollRef.current) {
-      coursesScrollRef.current.scrollBy({ left: -300, behavior: "smooth" })
+      coursesScrollRef.current.scrollBy({ left: -350, behavior: "smooth" })
     }
   }
 
   const scrollRight = () => {
     if (coursesScrollRef.current) {
-      coursesScrollRef.current.scrollBy({ left: 300, behavior: "smooth" })
+      coursesScrollRef.current.scrollBy({ left: 350, behavior: "smooth" })
     }
   }
 
@@ -55,20 +75,20 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
 
   return (
     <div className="mt-12 mb-12">
-      {/* Section title with enhanced spacing */}
+      {/* Section title */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Explore</p>
-          <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Upcoming Transformations</h2>
+          <h2 className="font-serif text-xl font-light text-olive-900 mb-2">Upcoming Transformations</h2>
           <p className="text-[15px] font-light text-olive-600 leading-relaxed">Group experiences and learning journeys</p>
         </div>
 
         {!isMobile && (
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={scrollLeft} className="rounded-full">
+            <Button variant="outline" size="icon" onClick={scrollLeft} className="rounded-full border-sage-200/60 hover:bg-sage-50">
               <ChevronLeft className="h-4 w-4" strokeWidth="1.5" />
             </Button>
-            <Button variant="outline" size="icon" onClick={scrollRight} className="rounded-full">
+            <Button variant="outline" size="icon" onClick={scrollRight} className="rounded-full border-sage-200/60 hover:bg-sage-50">
               <ChevronRight className="h-4 w-4" strokeWidth="1.5" />
             </Button>
           </div>
@@ -77,74 +97,53 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
 
       <div
         ref={coursesScrollRef}
-        className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide"
+        className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory sm:snap-none"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {coursesAndWorkshops.map((item, index) => (
-          <Card
-            key={item.id}
-            className="min-w-[320px] max-w-[320px] flex flex-col border border-sage-200/60 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
-          >
-            {/* Card Image */}
-            {item.image_url ? (
-              <div className="relative h-44 overflow-hidden bg-sage-100">
-                <img
-                  src={item.image_url}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute top-3 left-3 text-xs px-2.5 py-1 bg-white/90 backdrop-blur-sm text-olive-600 rounded-full font-light inline-flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" strokeWidth="1.5" />
-                  {item.service_type_display || item.service_type_code || item.service_type?.name}
-                </span>
-              </div>
-            ) : (
-              <div className="relative h-44 bg-sage-50 flex items-center justify-center">
-                <Sparkles className="h-10 w-10 text-sage-300" strokeWidth="1" />
-                <span className="absolute top-3 left-3 text-xs px-2.5 py-1 bg-white text-olive-600 rounded-full font-light inline-flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" strokeWidth="1.5" />
-                  {item.service_type_display || item.service_type_code || item.service_type?.name}
-                </span>
-              </div>
-            )}
+        {coursesAndWorkshops.map((item, index) => {
+          const serviceType = (item.service_type_code || item.service_type?.code || item.service_type?.name || "workshop").toLowerCase()
+          const cardType = serviceType === "course" ? "courses" : "workshops"
+          const pract = item.practitioner || item.primary_practitioner
 
-            {/* Card Header */}
-            <div className="p-5 pb-2">
-              <h3 className="text-base font-medium text-olive-900 mb-2 line-clamp-2">{item.name}</h3>
+          // Get first upcoming session date
+          const nextSessionDate = item.next_session_date ||
+            (item.upcoming_sessions?.[0]?.start_time) ||
+            item.start_date ||
+            item.first_session_date
 
-              <p className="text-[15px] font-light text-olive-600 leading-relaxed line-clamp-2">{item.description}</p>
+          // Build categories array
+          const categories = item.categories?.map(c => c.name) ||
+            (item.category?.name ? [item.category.name] : [])
+
+          return (
+            <div key={item.id} className="flex-shrink-0 w-[280px] sm:w-[320px] snap-start">
+              <ServiceCard
+                id={item.id}
+                title={item.name}
+                type={cardType}
+                description={item.description}
+                price={item.price || "Free"}
+                duration={item.duration_minutes || item.duration}
+                location={item.location_type?.charAt(0).toUpperCase() + item.location_type?.slice(1) || "Virtual"}
+                categories={categories}
+                practitioner={{
+                  id: pract?.public_uuid || pract?.id || "",
+                  name: pract?.display_name || "Practitioner",
+                  image: pract?.profile_image_url,
+                }}
+                image={item.image_url}
+                href={getServiceDetailUrl(item)}
+                index={index}
+                capacity={item.max_participants || item.capacity}
+                rating={typeof item.average_rating === "string" ? parseFloat(item.average_rating) : item.average_rating}
+                reviewCount={item.total_reviews}
+                date={nextSessionDate ? new Date(nextSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : undefined}
+                nextSessionDate={cardType === "workshops" ? nextSessionDate : undefined}
+                firstSessionDate={cardType === "courses" ? nextSessionDate : undefined}
+              />
             </div>
-
-            <CardContent className="flex flex-col h-full p-5">
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                  <span className="text-xs font-light text-olive-600">Next session starting soon</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                  <span className="text-xs font-light text-olive-600">{item.duration_minutes || item.duration} minutes</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-sage-500" strokeWidth="1.5" />
-                  <span className="text-xs font-light text-olive-600">{item.location_type.charAt(0).toUpperCase() + item.location_type.slice(1)}</span>
-                </div>
-              </div>
-
-              <div className="mt-auto flex justify-between items-center pt-4 border-t border-sage-200/40">
-                <p className="text-lg font-semibold text-olive-900">{item.price ? `$${item.price}` : "Free"}</p>
-
-                <Button asChild size="sm" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full">
-                  <Link href={getServiceDetailUrl(item)}>
-                    {getServiceCtaText(item.service_type_code || item.service_type?.name)}
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
