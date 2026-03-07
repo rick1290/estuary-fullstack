@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Clock, MapPin, Star, Users, Check, Heart, MessageCircle, Share2 } from "lucide-react"
+import { Clock, MapPin, Star, Users, Heart, MessageCircle, Share2 } from "lucide-react"
 import type { Practitioner } from "@/types/practitioner"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
@@ -88,8 +88,11 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 )}
               </div>
               {practitioner.is_verified && (
-                <div className="absolute -bottom-2 -right-2 bg-olive-800 text-white rounded-full p-1.5">
-                  <Check className="h-4 w-4" strokeWidth="2.5" />
+                <div className="absolute -top-1 -right-1">
+                  <span className="relative flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sage-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-sage-500"></span>
+                  </span>
                 </div>
               )}
             </div>
@@ -99,10 +102,12 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           <div className="flex-1">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-1 leading-[1.15]">
                   {practitioner.display_name}
                 </h1>
-                <p className="text-[15px] font-light text-olive-600 leading-relaxed mb-3">{practitioner.title}</p>
+                {(practitioner.professional_title || practitioner.title) && (
+                  <p className="text-base font-light text-olive-700 mb-3">{practitioner.professional_title || practitioner.title}</p>
+                )}
                 
                 {/* Key Stats - Horizontal */}
                 <div className="flex flex-wrap items-center gap-4 text-xs font-light">
@@ -208,8 +213,11 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
             Send Message
           </Button>
           {practitioner.is_verified && (
-            <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light inline-flex items-center">
-              <Check className="h-3.5 w-3.5 mr-1.5" />
+            <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light inline-flex items-center gap-1.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sage-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sage-500"></span>
+              </span>
               Verified Expert
             </span>
           )}

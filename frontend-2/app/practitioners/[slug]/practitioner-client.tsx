@@ -101,7 +101,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
           </div>
 
           {/* Right Column - Booking Panel (Sticky) */}
-          <div className="w-full lg:sticky lg:top-24 lg:self-start">
+          <div className="w-full lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scrollbar-hide">
             <PractitionerBookingPanel practitioner={practitioner} />
           </div>
         </div>

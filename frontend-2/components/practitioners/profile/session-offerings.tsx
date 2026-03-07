@@ -1,9 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Clock, MapPin, User, Package, ShoppingBag } from "lucide-react"
+import { Clock, MapPin, User, Package, ShoppingBag, ChevronDown } from "lucide-react"
 import { getServiceDetailUrl, getServiceCtaText } from "@/lib/service-utils"
 
 // Format price to remove unnecessary decimals (e.g., "5.00" -> "5", "5.50" -> "5.50")
@@ -62,15 +63,26 @@ interface SessionOfferingsProps {
   handleServiceTypeChange: (categoryId: string | null) => void
 }
 
+const INITIAL_VISIBLE_COUNT = 4
+
 export default function SessionOfferings({
   sessions,
   categories,
   selectedServiceType,
   handleServiceTypeChange,
 }: SessionOfferingsProps) {
+  const [showAll, setShowAll] = useState(false)
+
   if (sessions.length === 0) {
     return null
   }
+
+  const filteredSessions = sessions.filter(
+    (session) => !selectedServiceType || (session.practitioner_category && session.practitioner_category.id === selectedServiceType),
+  )
+
+  const visibleSessions = showAll ? filteredSessions : filteredSessions.slice(0, INITIAL_VISIBLE_COUNT)
+  const hasMore = filteredSessions.length > INITIAL_VISIBLE_COUNT
 
   return (
     <div className="mt-10 mb-10">
@@ -86,7 +98,7 @@ export default function SessionOfferings({
                 ? "bg-olive-800 text-white"
                 : "bg-sage-50 text-olive-600 border border-sage-200/60"
             }`}
-            onClick={() => handleServiceTypeChange(null)}
+            onClick={() => { handleServiceTypeChange(null); setShowAll(false) }}
           >
             All Categories
           </button>
@@ -99,7 +111,7 @@ export default function SessionOfferings({
                   ? "bg-olive-800 text-white"
                   : "bg-sage-50 text-olive-600 border border-sage-200/60"
               }`}
-              onClick={() => handleServiceTypeChange(category.id)}
+              onClick={() => { handleServiceTypeChange(category.id); setShowAll(false) }}
             >
               {category.name}
             </button>
@@ -109,10 +121,7 @@ export default function SessionOfferings({
 
       {/* Sessions list */}
       <div className="space-y-4">
-        {sessions
-          .filter(
-            (session) => !selectedServiceType || (session.practitioner_category && session.practitioner_category.id === selectedServiceType),
-          )
+        {visibleSessions
           .map((session) => {
             const serviceType = session.service_type_code || session.service_type?.name || "session"
             const ServiceIcon = getServiceIcon(serviceType)
@@ -175,6 +184,20 @@ export default function SessionOfferings({
             )
           })}
       </div>
+
+      {/* See More / Show Less */}
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="ghost"
+            className="flex items-center gap-1 text-olive-500 hover:text-olive-700"
+            onClick={() => setShowAll(!showAll)}
+          >
+            <span>{showAll ? "Show Less" : `See More (${filteredSessions.length - INITIAL_VISIBLE_COUNT} more)`}</span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${showAll ? "rotate-180" : ""}`} />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
