@@ -1,6 +1,7 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { conversationsCreate, conversationsList } from "@/src/client"
 import { bookingsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import type {
   BookingDetailReadable,
@@ -13,7 +14,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Calendar,
   Clock,
@@ -32,7 +32,6 @@ import {
   Music,
   ArrowLeft,
   Layers,
-  Send,
   Phone,
   ExternalLink,
 } from "lucide-react"
@@ -46,7 +45,12 @@ import {
   differenceInHours,
 } from "date-fns"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useMemo, useState, useCallback } from "react"
+import { toast } from "sonner"
+import JournalSection from "@/components/dashboard/user/journeys/journal-section"
+import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
+import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,6 +67,12 @@ interface WorkshopDeliveryProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  if (typeof value === "string") return parseISO(value)
+  return new Date(String(value))
+}
+
 function deriveWorkshopState(
   booking: BookingDetailReadable
 ): WorkshopState {
@@ -74,7 +84,7 @@ function deriveWorkshopState(
   if (
     session?.status === "scheduled" &&
     session?.start_time &&
-    isFuture(parseISO(String(session.start_time)))
+    isFuture(toDate(session.start_time))
   ) {
     return "upcoming"
   }
@@ -82,7 +92,7 @@ function deriveWorkshopState(
   if (
     session?.status === "scheduled" &&
     session?.start_time &&
-    isPast(parseISO(String(session.start_time)))
+    isPast(toDate(session.start_time))
   ) {
     return "completed"
   }
@@ -98,7 +108,7 @@ function isJoinable(
   const isVirtual = booking.service?.location_type === "virtual"
   if (!isVirtual) return false
   if (!session?.start_time) return false
-  const start = parseISO(String(session.start_time))
+  const start = toDate(session.start_time)
   const minutesUntil = differenceInMinutes(start, new Date())
   return minutesUntil <= 15 || workshopState === "live"
 }
@@ -115,6 +125,18 @@ function formatCountdown(targetDate: Date): {
   const hours = differenceInHours(targetDate, now) % 24
   const minutes = totalMinutes % 60
   return { days, hours, minutes }
+}
+
+function generateCalendarUrl(title: string, startTime: Date, endTime: Date, description: string, location: string): string {
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${fmt(startTime)}/${fmt(endTime)}`,
+    details: description,
+    location: location,
+  })
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
 // ---------------------------------------------------------------------------
@@ -216,17 +238,17 @@ function HeroSection({
   workshopState: WorkshopState
 }) {
   const startTime = session?.start_time
-    ? parseISO(String(session.start_time))
+    ? toDate(session.start_time)
     : null
   const endTime = session?.end_time
-    ? parseISO(String(session.end_time))
+    ? toDate(session.end_time)
     : null
   const countdown = startTime ? formatCountdown(startTime) : null
   const isVirtual = service?.location_type === "virtual"
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-cream-50 to-orange-50/30">
-      <div className="relative z-10 px-8 md:px-12 pt-11 pb-16 max-w-6xl mx-auto" style={{ minHeight: "280px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div className="relative z-10 px-8 md:px-12 pt-4 pb-6 max-w-6xl mx-auto" style={{ minHeight: "280px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
         <div>
           {/* Personal greeting strip */}
           <div className="flex items-center gap-2.5 mb-4 bg-amber-50 border-b border-amber-200 rounded-lg px-4 py-3">
@@ -391,10 +413,10 @@ function MainColumn({
   workshopState: WorkshopState
 }) {
   const startTime = session?.start_time
-    ? parseISO(String(session.start_time))
+    ? toDate(session.start_time)
     : null
   const endTime = session?.end_time
-    ? parseISO(String(session.end_time))
+    ? toDate(session.end_time)
     : null
   const duration = booking.duration_minutes ?? session?.duration
   const isVirtual = service?.location_type === "virtual"
@@ -405,9 +427,10 @@ function MainColumn({
     setPrepChecked((prev) => ({ ...prev, [idx]: !prev[idx] }))
   }, [])
 
-  // Star rating state
-  const [rating, setRating] = useState(0)
-  const [reviewText, setReviewText] = useState("")
+  const router = useRouter()
+
+  // Review dialog state
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
 
   // Default prep items (can be extended from API data)
   const prepItems = useMemo(() => {
@@ -446,7 +469,7 @@ function MainColumn({
   }, [session, startTime, endTime, isVirtual])
 
   return (
-    <main className="pt-10 pb-16 min-w-0">
+    <main className="pt-4 pb-16 min-w-0">
       {/* ── UPCOMING STATE ── */}
       {(workshopState === "upcoming" || workshopState === "live") && (
         <>
@@ -736,13 +759,18 @@ function MainColumn({
       {/* ── POST-WORKSHOP STATE ── */}
       {workshopState === "completed" && (
         <>
-          {/* Workshop Recording */}
-          {booking.recordings && Array.isArray(booking.recordings) && booking.recordings.length > 0 && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Workshop Recording
-              </div>
-              <div className="space-y-2.5">
+          {/* ── Your Journal ── */}
+          <JournalSection bookingUuid={String(booking.public_uuid || "")} accentColor="amber" />
+
+          {/* ── Resources & Materials ── */}
+          <section className="mb-11">
+            <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
+              Resources &amp; Materials
+            </div>
+
+            {/* Session recordings */}
+            {booking.recordings && Array.isArray(booking.recordings) && booking.recordings.length > 0 && (
+              <div className="space-y-2.5 mb-4">
                 {booking.recordings.map((recording: any, i: number) => (
                   <div
                     key={recording?.id ?? i}
@@ -759,7 +787,7 @@ function MainColumn({
                       <div className="text-xs text-olive-500">
                         {recording.date_formatted ??
                           (session?.start_time
-                            ? format(parseISO(String(session.start_time)), "MMM d, yyyy")
+                            ? format(toDate(session.start_time), "MMM d, yyyy")
                             : "")}
                         {recording.duration_formatted
                           ? ` · ${recording.duration_formatted}`
@@ -768,23 +796,27 @@ function MainColumn({
                             : ""}
                       </div>
                     </div>
-                    <button className="flex items-center gap-1.5 text-[12.5px] text-amber-700 bg-amber-100 border-none rounded-full px-3 py-1.5 hover:bg-amber-200 transition-colors">
+                    <button
+                      className="flex items-center gap-1.5 text-[12.5px] text-amber-700 bg-amber-100 border-none rounded-full px-3 py-1.5 hover:bg-amber-200 transition-colors"
+                      onClick={() => {
+                        if (recording?.file_url) {
+                          window.open(recording.file_url, '_blank')
+                        } else if (booking?.public_uuid) {
+                          router.push(`/dashboard/user/bookings/${booking.public_uuid}/recordings/${recording?.id || ''}`)
+                        }
+                      }}
+                    >
                       <PlayCircle className="w-3 h-3" />
                       Watch
                     </button>
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+            )}
 
-          {/* Resources & Materials */}
-          {(booking as any).resources && Array.isArray((booking as any).resources) && (booking as any).resources.length > 0 && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Your Materials
-              </div>
-              <div className="space-y-2.5">
+            {/* Attached files / resources */}
+            {(booking as any).resources && Array.isArray((booking as any).resources) && (booking as any).resources.length > 0 && (
+              <div className="space-y-2.5 mb-4">
                 {(booking as any).resources.map((resource: any, i: number) => {
                   const type = resource.type ?? "pdf"
                   const iconBg =
@@ -840,8 +872,16 @@ function MainColumn({
                   )
                 })}
               </div>
-            </section>
-          )}
+            )}
+
+            {/* Placeholder when no resources yet */}
+            {!(booking.recordings && Array.isArray(booking.recordings) && booking.recordings.length > 0) &&
+              !((booking as any).resources && Array.isArray((booking as any).resources) && (booking as any).resources.length > 0) && (
+              <p className="text-sm text-olive-400 italic">
+                Recordings, files and materials from your workshop will appear here.
+              </p>
+            )}
+          </section>
 
           {/* Post-workshop Note from Facilitator */}
           {practitioner && (
@@ -872,7 +912,7 @@ function MainColumn({
                   </div>
                   {session?.start_time && (
                     <div className="text-xs text-olive-500">
-                      {format(parseISO(String(session.start_time)), "MMM d")}
+                      {format(toDate(session.start_time), "MMM d")}
                     </div>
                   )}
                 </div>
@@ -884,48 +924,11 @@ function MainColumn({
             </section>
           )}
 
-          {/* Leave a Review */}
-          {!booking.has_review && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Share Your Experience
-              </div>
-              <div className="bg-white border border-sage-200/60 rounded-xl shadow-sm p-6">
-                <div className="text-sm font-medium text-olive-900 mb-2.5">
-                  How was the workshop?
-                </div>
-                {/* Star row */}
-                <div className="flex gap-1.5 mb-3.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setRating(star)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-base transition-all ${
-                        star <= rating
-                          ? "bg-amber-100 text-amber-600"
-                          : "bg-sage-100 text-olive-400 hover:bg-amber-100 hover:text-amber-600"
-                      }`}
-                    >
-                      <Star className="w-4 h-4" fill={star <= rating ? "currentColor" : "none"} />
-                    </button>
-                  ))}
-                </div>
-                <Textarea
-                  className="w-full min-h-[80px] bg-cream-50 border-[1.5px] border-sage-200/60 rounded-lg text-sm font-light text-olive-900 placeholder:text-olive-400 focus:border-amber-400 focus-visible:ring-0 resize-none mb-3"
-                  placeholder="Share what the experience was like for you..."
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                />
-                <Button
-                  className="bg-amber-500 hover:bg-amber-600 text-white rounded-full text-[13.5px] font-medium gap-1.5 px-5"
-                  size="sm"
-                >
-                  <Send className="w-[13px] h-[13px]" />
-                  Submit Review
-                </Button>
-              </div>
-            </section>
-          )}
+          <ReviewBookingDialog
+            open={reviewDialogOpen}
+            onOpenChange={setReviewDialogOpen}
+            booking={booking as any}
+          />
         </>
       )}
 
@@ -946,7 +949,7 @@ function MainColumn({
               <p className="text-xs text-red-600 mt-1">
                 Canceled on{" "}
                 {format(
-                  parseISO(String(booking.canceled_at)),
+                  toDate(booking.canceled_at),
                   "MMM d, yyyy"
                 )}
               </p>
@@ -969,6 +972,7 @@ function Sidebar({
   session,
   workshopState,
   joinable,
+  journeyData,
 }: {
   booking: BookingDetailReadable
   service: BookingService | undefined
@@ -976,25 +980,78 @@ function Sidebar({
   session: ServiceSession | undefined
   workshopState: WorkshopState
   joinable: boolean
+  journeyData?: JourneyDetail
 }) {
   const startTime = session?.start_time
-    ? parseISO(String(session.start_time))
+    ? toDate(session.start_time)
     : null
   const endTime = session?.end_time
-    ? parseISO(String(session.end_time))
+    ? toDate(session.end_time)
     : null
   const isVirtual = service?.location_type === "virtual"
   const priceDollars = service?.price_cents
     ? `$${(service.price_cents / 100).toFixed(2)}`
     : null
   const roomUuid = booking.room
+  const router = useRouter()
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+
+  const bookingUuid = String(booking.public_uuid || (booking as any).id || "")
+
+  const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
+    mutationFn: async (reason: string) => {
+      const { bookingsCancelCreate } = await import("@/src/client")
+      await bookingsCancelCreate({
+        path: { public_uuid: bookingUuid },
+        body: { reason, status: "canceled", canceled_by: "client" } as any,
+      })
+    },
+    onSuccess: () => {
+      toast.success("Workshop booking canceled")
+      router.push("/dashboard/user/journeys")
+    },
+    onError: () => {
+      toast.error("Failed to cancel booking")
+    },
+  })
+
+  const handleMessagePractitioner = async () => {
+    const practitionerUserId = (practitioner as any)?.user_id
+    if (!practitionerUserId) {
+      toast.error("Unable to message practitioner")
+      return
+    }
+    try {
+      const { data: convos } = await conversationsList({ query: { page_size: 100 } as any })
+      const existing = (convos as any)?.results?.find(
+        (c: any) => c.participants?.some((p: any) => p.user === practitionerUserId || p.user_id === practitionerUserId)
+      )
+      if (existing) {
+        router.push(`/dashboard/user/messages?conversationId=${(existing as any).id}`)
+        return
+      }
+      const result = await conversationsCreate({ body: { participant_ids: [practitionerUserId] } as any })
+      router.push(`/dashboard/user/messages?conversationId=${(result.data as any)?.id}`)
+    } catch {
+      toast.error("Failed to start conversation")
+    }
+  }
 
   return (
-    <aside className="lg:sticky lg:top-[58px] p-7 px-7 flex flex-col gap-0">
+    <aside className="lg:sticky lg:top-20 pb-16 flex flex-col gap-0 self-start">
       {/* ── TICKET CARD ── */}
       <div className="bg-white border border-sage-200/60 rounded-xl shadow-sm overflow-visible relative mb-5">
         {/* Ticket header */}
         <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-[#1e1508] to-[#2e1f0a] p-5 pb-[18px]">
+          {/* Service image background */}
+          {(journeyData?.service_image_url || (service as any)?.featured_image_url) && (
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-30"
+              style={{ backgroundImage: `url(${journeyData?.service_image_url || (service as any)?.featured_image_url})` }}
+            />
+          )}
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1e1508] via-[#1e1508]/60 to-transparent" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(176,125,58,0.2)_0%,transparent_60%)]" />
           <div className="relative z-10">
             <div className="text-[10px] tracking-[0.12em] uppercase text-[#f5f0e8]/35 mb-1.5">
@@ -1111,7 +1168,22 @@ function Sidebar({
               </a>
             </Button>
           )}
-          <Button className="w-full h-[50px] rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-medium gap-2">
+          <Button
+            className="w-full h-[50px] rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-medium gap-2"
+            onClick={() => {
+              if (!startTime) return
+              const start = startTime
+              const end = endTime ?? new Date(start.getTime() + 60 * 60000)
+              const url = generateCalendarUrl(
+                service?.name || 'Workshop',
+                start,
+                end,
+                `Workshop with ${(practitioner as any)?.display_name || practitioner?.name || 'your facilitator'}`,
+                isVirtual ? 'Virtual (Estuary)' : 'In Person'
+              )
+              window.open(url, '_blank')
+            }}
+          >
             <CalendarPlus className="w-[15px] h-[15px]" />
             Add to Calendar
           </Button>
@@ -1124,8 +1196,11 @@ function Sidebar({
               Get Directions
             </Button>
           )}
-          <button className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 transition-colors py-1.5">
-            I can&apos;t make this date — cancel my spot
+          <button
+            onClick={() => setCancelDialogOpen(true)}
+            className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 transition-colors py-1"
+          >
+            Cancel Workshop
           </button>
         </div>
       )}
@@ -1152,6 +1227,7 @@ function Sidebar({
           <Button
             variant="outline"
             className="w-full h-11 rounded-full border border-sage-200 text-olive-700 hover:border-sage-300 hover:text-olive-900 text-sm gap-2"
+            onClick={handleMessagePractitioner}
           >
             <MessageSquare className="w-3.5 h-3.5" />
             Message {practitioner?.name?.split(" ")[0] ?? "Facilitator"}
@@ -1165,7 +1241,17 @@ function Sidebar({
           {booking.recordings &&
             Array.isArray(booking.recordings) &&
             booking.recordings.length > 0 && (
-              <Button className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium gap-2">
+              <Button
+                className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium gap-2"
+                onClick={() => {
+                  const recording = (booking as any)?.recordings?.[0]
+                  if (recording?.file_url) {
+                    window.open(recording.file_url, '_blank')
+                  } else if (booking?.public_uuid) {
+                    router.push(`/dashboard/user/bookings/${booking.public_uuid}/recordings/${recording?.id || ''}`)
+                  }
+                }}
+              >
                 <Video className="w-[15px] h-[15px]" />
                 Watch Recording
               </Button>
@@ -1173,6 +1259,7 @@ function Sidebar({
           <Button
             variant="outline"
             className="w-full h-11 rounded-full border border-sage-200 text-olive-700 hover:border-sage-300 hover:text-olive-900 text-sm gap-2"
+            onClick={handleMessagePractitioner}
           >
             <MessageSquare className="w-3.5 h-3.5" />
             Message {practitioner?.name?.split(" ")[0] ?? "Facilitator"}
@@ -1219,6 +1306,7 @@ function Sidebar({
             size="sm"
             variant="ghost"
             className="text-sage-700 bg-sage-100 hover:bg-sage-200 rounded-full text-xs shrink-0 gap-1.5"
+            onClick={handleMessagePractitioner}
           >
             <MessageSquare className="w-3 h-3" />
             Message
@@ -1249,6 +1337,20 @@ function Sidebar({
           </Button>
         </div>
       )}
+
+      {/* ── Cancel Dialog ── */}
+      <CancelBookingDialog
+        bookingId={booking.public_uuid || String(booking.id)}
+        serviceName={service?.name || "Workshop"}
+        practitionerName={practitioner?.name || "Facilitator"}
+        date={startTime ? format(startTime, "MMMM d, yyyy") : ""}
+        time={startTime ? format(startTime, "h:mm a") : ""}
+        price={`$${booking.credits_allocated_dollars || 0}`}
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={(reason) => cancelBooking(reason)}
+        isLoading={isCancelling}
+      />
     </aside>
   )
 }
@@ -1327,6 +1429,7 @@ export default function WorkshopDelivery({ bookingUuid, journeyData }: WorkshopD
           session={session}
           workshopState={workshopState}
           joinable={joinable}
+          journeyData={journeyData}
         />
       </div>
     </div>

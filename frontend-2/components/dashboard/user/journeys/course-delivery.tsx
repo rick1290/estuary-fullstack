@@ -1,7 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useMemo, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { conversationsCreate, conversationsList } from "@/src/client"
 import {
   bookingsRetrieveOptions,
   bookingsListOptions,
@@ -18,12 +20,21 @@ import {
   differenceInMinutes,
 } from "date-fns"
 import Link from "next/link"
+import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
+import JournalSection from "@/components/dashboard/user/journeys/journal-section"
+import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
+import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   ArrowLeft,
   CheckCircle,
@@ -62,6 +73,11 @@ interface ModuleBooking {
   title: string
   sequenceNumber: number
   durationMinutes: number | null
+  description?: string | null
+  agenda?: string | null
+  whatYoullLearn?: string | null
+  roomUuid?: string | null
+  clientNotes?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -77,16 +93,31 @@ const TEAL_DARK = "#1e4a4a"
 // Helpers
 // ---------------------------------------------------------------------------
 
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  if (typeof value === "string") return parseISO(value)
+  return new Date(String(value))
+}
+
 function parseStartTime(booking: BookingListReadable): Date | null {
   const raw = booking.service_session?.start_time
   if (!raw) return null
-  return parseISO(String(raw))
+  return toDate(raw)
 }
 
 function getSessionStatus(booking: BookingListReadable): string | undefined {
   return booking.service_session?.status as string | undefined
 }
 
+function isModuleJoinable(mod: ModuleBooking): boolean {
+  if (!mod.startTime) return false
+  const status = mod.booking?.status
+  if (status !== "confirmed" && mod.sessionStatus !== "in_progress") return false
+  const minutesUntil = differenceInMinutes(mod.startTime, new Date())
+  return minutesUntil <= 15 && isFuture(mod.startTime)
+}
+
+/** @deprecated Use isModuleJoinable instead */
 function isJoinable(booking: BookingListReadable): boolean {
   const startTime = parseStartTime(booking)
   if (!startTime) return false
@@ -198,7 +229,7 @@ function HeroSection({
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-cream-50 to-sage-50/30">
-      <div className="relative z-10 px-6 pt-10 pb-14 max-w-6xl mx-auto">
+      <div className="relative z-10 px-6 pt-4 pb-6 max-w-6xl mx-auto">
         {/* Back link */}
         <Link
           href="/dashboard/user"
@@ -460,14 +491,14 @@ function CurriculumSection({
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-3.5">
-                    {isJoinable(upNext.booking) && upNext.booking.room ? (
+                    {isModuleJoinable(upNext) && (upNext.roomUuid || upNext.booking.room) ? (
                       <Button
                         size="sm"
                         className="rounded-full bg-teal-600 hover:bg-teal-700 text-white text-[13px] gap-1.5"
                         asChild
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <a href={`/room/${upNext.booking.room}/lobby`}>
+                        <a href={`/room/${upNext.roomUuid || upNext.booking.room}/lobby`}>
                           <Video className="w-3.5 h-3.5" />
                           Join Session
                           <ChevronRight className="w-3 h-3" />
@@ -565,72 +596,50 @@ function CurriculumSection({
 // ---------------------------------------------------------------------------
 
 function CourseResourcesSection({ modules }: { modules: ModuleBooking[] }) {
-  const completedWithRecordings = modules.filter(
-    (m) => m.sessionStatus === "completed" && (m.booking as any).recordings
-  )
+  const router = useRouter()
+  const completedModules = modules.filter((m) => m.sessionStatus === "completed")
 
   return (
     <section className="mb-11">
       <div className="text-[11px] font-medium uppercase tracking-widest text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-        Course Resources
+        Resources & Materials
       </div>
 
-      {/* Recordings */}
-      {completedWithRecordings.length > 0 ? (
-        <div className="space-y-2.5 mb-6">
-          {completedWithRecordings.map((mod) => (
-            <div
-              key={mod.booking.id ?? mod.sequenceNumber}
-              className="flex items-center gap-3.5 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-teal-200 hover:shadow-sm transition cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-teal-50 text-teal-700">
-                <Film className="w-[18px] h-[18px]" />
+      {/* Recordings from completed sessions */}
+      {completedModules.length > 0 && (
+        <div className="space-y-2.5 mb-4">
+          {completedModules.map(mod => (
+            <div key={mod.sequenceNumber} className="flex items-center gap-3.5 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-teal-200 transition cursor-pointer">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-50 text-teal-700">
+                <Film className="w-4 h-4" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-olive-900 truncate">
-                  {mod.title}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-olive-500 mt-0.5">
-                  {mod.durationMinutes && <span>{mod.durationMinutes} min</span>}
-                  {mod.startTime && (
-                    <>
-                      <span>&middot;</span>
-                      <span>{format(mod.startTime, "MMM d")}</span>
-                    </>
-                  )}
-                </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-olive-900">{mod.title}</div>
+                <div className="text-xs text-olive-500">{mod.durationMinutes} min · Recording</div>
               </div>
               <Button
-                size="sm"
                 variant="ghost"
-                className="rounded-full text-xs gap-1.5 shrink-0 bg-teal-50 text-teal-700 hover:bg-teal-100"
-                asChild
+                size="sm"
+                className="text-teal-700 rounded-full"
+                onClick={() => {
+                  const recording = (mod.booking as any)?.recordings?.[0]
+                  if (recording?.file_url) {
+                    window.open(recording.file_url, '_blank')
+                  } else if (mod.booking?.public_uuid) {
+                    router.push(`/dashboard/user/bookings/${mod.booking.public_uuid}/recordings/${recording?.id || ''}`)
+                  }
+                }}
               >
-                <Link href={`/dashboard/user/bookings/${mod.booking.id}`}>
-                  <PlayCircle className="w-3 h-3" />
-                  Watch
-                </Link>
+                Watch
               </Button>
             </div>
           ))}
         </div>
-      ) : (
-        <p className="text-sm text-olive-500 mb-6">
-          Recordings from completed sessions will appear here.
-        </p>
       )}
 
-      {/* Materials placeholder */}
-      <div className="flex items-center gap-3.5 p-4 bg-white border border-sage-200/60 rounded-xl mb-2.5">
-        <div className="w-10 h-10 rounded-xl bg-sage-50 flex items-center justify-center shrink-0">
-          <FileText className="w-[18px] h-[18px] text-sage-600" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-olive-900">Course Materials</div>
-          <div className="text-xs text-olive-500">
-            Files and materials from your instructor will appear here
-          </div>
-        </div>
+      {/* Placeholder for attached files */}
+      <div className="text-sm text-olive-400 italic">
+        Course materials will appear here as your instructor shares them.
       </div>
     </section>
   )
@@ -697,10 +706,10 @@ function InstructorSection({ practitioner }: { practitioner: any }) {
 }
 
 // ---------------------------------------------------------------------------
-// Review Section
+// Review Section (uses dialog via callback)
 // ---------------------------------------------------------------------------
 
-function ReviewSection({ booking }: { booking: BookingDetailReadable }) {
+function ReviewSection({ onOpenReview }: { onOpenReview: () => void }) {
   return (
     <section className="mb-11">
       <div className="text-[11px] font-medium uppercase tracking-widest text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
@@ -718,12 +727,10 @@ function ReviewSection({ booking }: { booking: BookingDetailReadable }) {
             </p>
           </div>
           <Button
-            asChild
             className="bg-teal-600 hover:bg-teal-700 text-white rounded-full"
+            onClick={onOpenReview}
           >
-            <Link href={`/dashboard/user/bookings/${booking.id}?review=true`}>
-              Leave Review
-            </Link>
+            Leave Review
           </Button>
         </div>
       </div>
@@ -731,65 +738,6 @@ function ReviewSection({ booking }: { booking: BookingDetailReadable }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Notes Section (in main column)
-// ---------------------------------------------------------------------------
-
-function NotesSection({ modules }: { modules: ModuleBooking[] }) {
-  const modulesWithNotes = modules.filter((m) => {
-    const detail = m.booking as unknown as BookingDetailReadable
-    return detail.client_notes || (detail.notes && (detail.notes as any[]).length > 0)
-  })
-
-  return (
-    <section className="mb-11">
-      <div className="text-[11px] font-medium uppercase tracking-widest text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-        Your Notes
-      </div>
-
-      {modulesWithNotes.length > 0 && (
-        <div className="space-y-4 mb-4">
-          {modulesWithNotes.map((mod) => {
-            const detail = mod.booking as unknown as BookingDetailReadable
-            return (
-              <div key={mod.booking.id ?? mod.sequenceNumber} className="p-4 bg-white border border-sage-200/60 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <StickyNote className="h-4 w-4 text-olive-500" />
-                  <span className="text-sm font-medium text-olive-900">{mod.title}</span>
-                  {mod.startTime && (
-                    <span className="text-xs text-olive-500">
-                      {format(mod.startTime, "MMM d")}
-                    </span>
-                  )}
-                </div>
-                {detail.client_notes && (
-                  <p className="text-sm text-olive-600 pl-6">{detail.client_notes}</p>
-                )}
-                {detail.notes &&
-                  Array.isArray(detail.notes) &&
-                  detail.notes.map((note: any, i: number) => (
-                    <p key={i} className="text-sm text-olive-600 pl-6 mt-1">
-                      {note.content}
-                    </p>
-                  ))}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      <div className="bg-white border border-sage-200/60 rounded-xl p-4">
-        <Textarea
-          placeholder="Add personal notes about this course..."
-          className="min-h-[100px] resize-y bg-transparent border-sage-200/60"
-        />
-        <p className="text-xs text-olive-500 mt-1.5">
-          These notes are only visible to you.
-        </p>
-      </div>
-    </section>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Sidebar
@@ -804,6 +752,7 @@ function CourseSidebar({
   totalCount,
   progressPercent,
   upNext,
+  journeyData,
 }: {
   booking: BookingDetailReadable
   service: any
@@ -811,19 +760,80 @@ function CourseSidebar({
   modules: ModuleBooking[]
   completedCount: number
   totalCount: number
+  journeyData?: JourneyDetail
   progressPercent: number
   upNext: ModuleBooking | undefined
 }) {
   const allComplete = completedCount === totalCount && totalCount > 0
+  const router = useRouter()
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+
+  const bookingUuid = String(booking.public_uuid || (booking as any).id || "")
+
+  const canCancelCourse = useMemo(() => {
+    if (!modules.length) return false
+    const firstSessionTime = modules[0]?.startTime
+    if (!firstSessionTime) return true // no sessions yet, can cancel
+    const daysSinceStart = Math.floor((Date.now() - firstSessionTime.getTime()) / (1000 * 60 * 60 * 24))
+    return daysSinceStart <= 14
+  }, [modules])
+
+  const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
+    mutationFn: async (reason: string) => {
+      const { bookingsCancelCreate } = await import("@/src/client")
+      await bookingsCancelCreate({
+        path: { public_uuid: bookingUuid },
+        body: { reason, status: "canceled", canceled_by: "client" } as any,
+      })
+    },
+    onSuccess: () => {
+      toast.success("Course enrollment canceled")
+      router.push("/dashboard/user/journeys")
+    },
+    onError: () => {
+      toast.error("Failed to cancel enrollment")
+    },
+  })
+
+  const handleMessagePractitioner = async () => {
+    const practitionerUserId = (practitioner as any)?.user_id
+    if (!practitionerUserId) {
+      toast.error("Unable to message instructor")
+      return
+    }
+    try {
+      const { data: convos } = await conversationsList({ query: { page_size: 100 } as any })
+      const existing = (convos as any)?.results?.find(
+        (c: any) => c.participants?.some((p: any) => p.user === practitionerUserId || p.user_id === practitionerUserId)
+      )
+      if (existing) {
+        router.push(`/dashboard/user/messages?conversationId=${(existing as any).id}`)
+        return
+      }
+      const result = await conversationsCreate({ body: { participant_ids: [practitionerUserId] } as any })
+      router.push(`/dashboard/user/messages?conversationId=${(result.data as any)?.id}`)
+    } catch {
+      toast.error("Failed to start conversation")
+    }
+  }
 
   return (
-    <aside className="lg:sticky lg:top-[58px] pt-10 pb-16 flex flex-col">
+    <aside className="lg:sticky lg:top-20 pb-16 flex flex-col self-start">
       {/* Ticket card */}
       <div className="bg-white border border-sage-200/60 rounded-xl overflow-visible relative mb-5">
         {/* Ticket header - KEEP dark */}
         <div className="relative overflow-hidden rounded-t-xl p-5 pb-[18px]" style={{
           background: `linear-gradient(135deg, #1e1508 0%, #2a2520 100%)`
         }}>
+          {/* Service image background */}
+          {(journeyData?.service_image_url || (service as any)?.featured_image_url) && (
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-30"
+              style={{ backgroundImage: `url(${journeyData?.service_image_url || (service as any)?.featured_image_url})` }}
+            />
+          )}
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1e1508] via-[#1e1508]/60 to-transparent" />
           <div
             className="absolute inset-0"
             style={{
@@ -923,12 +933,12 @@ function CourseSidebar({
       {/* Action buttons */}
       <div className="flex flex-col gap-2 mb-5">
         {/* Join Next Session */}
-        {upNext && isJoinable(upNext.booking) && upNext.booking.room && (
+        {upNext && isModuleJoinable(upNext) && (upNext.roomUuid || upNext.booking.room) && (
           <Button
             className="w-full h-[50px] rounded-full bg-teal-600 hover:bg-teal-700 text-white text-[15px] font-medium gap-2"
             asChild
           >
-            <a href={`/room/${upNext.booking.room}/lobby`}>
+            <a href={`/room/${upNext.roomUuid || upNext.booking.room}/lobby`}>
               <Video className="w-4 h-4" />
               Join Next Session
             </a>
@@ -949,10 +959,40 @@ function CourseSidebar({
           <Button
             variant="outline"
             className="w-full h-11 rounded-full border-sage-200/60 text-olive-600 hover:border-teal-300 hover:text-olive-900 text-sm gap-2"
+            onClick={handleMessagePractitioner}
           >
             <MessageSquare className="w-3.5 h-3.5" />
             Message {practitioner.name?.split(" ")[0] ?? "Instructor"}
           </Button>
+        )}
+
+        {/* Cancel Enrollment */}
+        {!allComplete && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <button
+                    onClick={() => setCancelDialogOpen(true)}
+                    disabled={!canCancelCourse}
+                    className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 transition-colors py-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-olive-400"
+                  >
+                    Cancel Enrollment
+                  </button>
+                </div>
+              </TooltipTrigger>
+              {!canCancelCourse && (
+                <TooltipContent>
+                  <p>Cancellation window has passed. Please contact support.</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {!allComplete && canCancelCourse && (
+          <p className="text-[11px] text-olive-400 text-center -mt-1">
+            This will cancel all remaining sessions
+          </p>
         )}
       </div>
 
@@ -985,6 +1025,7 @@ function CourseSidebar({
             size="sm"
             variant="ghost"
             className="rounded-full text-xs shrink-0 gap-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100"
+            onClick={handleMessagePractitioner}
           >
             <MessageSquare className="w-3 h-3" />
             Message
@@ -1015,6 +1056,20 @@ function CourseSidebar({
           </Button>
         </div>
       )}
+
+      {/* ── Cancel Dialog ── */}
+      <CancelBookingDialog
+        bookingId={booking.public_uuid || String(booking.id)}
+        serviceName={service?.name || "Course"}
+        practitionerName={practitioner?.name || "Instructor"}
+        date={modules[0]?.startTime ? format(modules[0].startTime, "MMMM d, yyyy") : ""}
+        time={modules[0]?.startTime ? format(modules[0].startTime, "h:mm a") : ""}
+        price={`$${booking.credits_allocated_dollars || 0}`}
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={(reason) => cancelBooking(reason)}
+        isLoading={isCancelling}
+      />
     </aside>
   )
 }
@@ -1024,13 +1079,17 @@ function CourseSidebar({
 // ---------------------------------------------------------------------------
 
 export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliveryProps) {
-  // 1. Fetch the initial booking by uuid
+  // If journeyData is provided, use it directly
+  const hasJourneyData = !!journeyData?.sessions?.length
+
+  // Only fetch from bookings API as fallback when no journeyData
   const {
     data: initialBooking,
     isLoading: isLoadingInitial,
     error: initialError,
   } = useQuery({
     ...bookingsRetrieveOptions({ path: { public_uuid: bookingUuid } }),
+    enabled: !hasJourneyData && !!bookingUuid,
   })
 
   // 2. Fetch ALL bookings for this user, then filter client-side by same service
@@ -1045,7 +1104,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
         page_size: 200,
       },
     }),
-    enabled: !!serviceId,
+    enabled: !hasJourneyData && !!serviceId,
   })
 
   // 3. Filter to only bookings for the same service (same course)
@@ -1056,16 +1115,65 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
     )
   }, [allBookingsData?.results, serviceId])
 
-  // 4. Build module list from bookings
-  const modules = useMemo(() => buildModules(courseBookings), [courseBookings])
+  // 4. Build modules from journeyData.sessions OR from bookings
+  const modules = useMemo(() => {
+    if (hasJourneyData) {
+      // Map JourneySession[] to ModuleBooking[] format
+      return journeyData!.sessions.map((s, index) => ({
+        booking: { public_uuid: s.booking_uuid, status: s.booking_status } as any,
+        sessionStatus: s.status || undefined,
+        startTime: s.start_time ? toDate(s.start_time) : null,
+        title: s.title || `Module ${s.sequence_number ?? index + 1}`,
+        sequenceNumber: s.sequence_number ?? index + 1,
+        durationMinutes: s.duration_minutes ?? null,
+        description: s.description,
+        agenda: s.agenda,
+        whatYoullLearn: s.what_youll_learn,
+        roomUuid: s.room_uuid,
+        clientNotes: s.client_notes,
+      })).sort((a, b) => {
+        if (a.sequenceNumber !== b.sequenceNumber) return a.sequenceNumber - b.sequenceNumber
+        if (a.startTime && b.startTime) return a.startTime.getTime() - b.startTime.getTime()
+        return 0
+      })
+    }
+    return buildModules(courseBookings)
+  }, [hasJourneyData, journeyData, courseBookings])
 
-  // Derived data
-  const service = initialBooking?.service
-  const practitioner = initialBooking?.practitioner
+  // Service/practitioner from journeyData or booking
+  const serviceName = journeyData?.service_name || initialBooking?.service?.name
+  const serviceDescription = journeyData?.service_description || initialBooking?.service?.description
+  const practitionerName = journeyData?.practitioner?.name || (initialBooking?.practitioner as any)?.display_name || (initialBooking?.practitioner as any)?.name
+  const practitionerSlug = journeyData?.practitioner?.slug || (initialBooking?.practitioner as any)?.slug
+  const practitionerBio = journeyData?.practitioner?.bio || (initialBooking?.practitioner as any)?.bio
+  const practitionerUuid = journeyData?.practitioner?.public_uuid || (initialBooking?.practitioner as any)?.public_uuid
 
-  const completedCount = modules.filter((m) => m.sessionStatus === "completed").length
-  const totalCount = modules.length
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  // Build unified service/practitioner objects for child components
+  const service = hasJourneyData
+    ? { name: serviceName, description: serviceDescription }
+    : initialBooking?.service
+  const practitioner = hasJourneyData
+    ? journeyData!.practitioner
+      ? {
+          name: practitionerName,
+          slug: practitionerSlug,
+          bio: practitionerBio,
+          public_uuid: practitionerUuid,
+          id: practitionerUuid,
+          profile_image_url: null,
+        }
+      : null
+    : initialBooking?.practitioner
+
+  const completedCount = hasJourneyData
+    ? journeyData!.completed_sessions
+    : modules.filter((m) => m.sessionStatus === "completed").length
+  const totalCount = hasJourneyData ? journeyData!.total_sessions : modules.length
+  const progressPercent = hasJourneyData
+    ? journeyData!.progress_percentage
+    : totalCount > 0
+      ? Math.round((completedCount / totalCount) * 100)
+      : 0
   const allCompleted = completedCount === totalCount && totalCount > 0
 
   // Date range
@@ -1081,15 +1189,19 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   )
 
   // Check if entire course is canceled
-  const isCanceled = initialBooking?.status === "canceled"
+  const isCanceled = hasJourneyData ? false : initialBooking?.status === "canceled"
+
+  // Review dialog
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const queryClient = useQueryClient()
 
   // Loading state
-  if (isLoadingInitial || (serviceId && isLoadingAll)) {
+  if (!hasJourneyData && (isLoadingInitial || (serviceId && isLoadingAll))) {
     return <CourseDeliverySkeleton />
   }
 
-  // Error state
-  if (initialError || !initialBooking) {
+  // Error state (only applies to fallback path)
+  if (!hasJourneyData && (initialError || !initialBooking)) {
     return (
       <div className="max-w-2xl mx-auto p-8 text-center">
         <div className="text-[#9b9088] mb-4">
@@ -1123,7 +1235,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
       {/* Body - two column */}
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
         {/* Main column */}
-        <main className="pt-10 pb-16 min-w-0">
+        <main className="pt-4 pb-16 min-w-0">
           {/* Canceled banner */}
           {isCanceled && (
             <div className="mb-8 rounded-lg bg-red-50 border border-red-200 p-5">
@@ -1131,7 +1243,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 <AlertCircle className="w-4 h-4" />
                 Course Enrollment Canceled
               </div>
-              {initialBooking.cancellation_reason && (
+              {initialBooking?.cancellation_reason && (
                 <p className="text-sm text-red-700">
                   Reason: {initialBooking.cancellation_reason}
                 </p>
@@ -1153,20 +1265,17 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
               {/* Instructor */}
               <InstructorSection practitioner={practitioner} />
 
-              {/* Notes */}
-              <NotesSection modules={modules} />
+              {/* Journal */}
+              <JournalSection bookingUuid={bookingUuid} serviceUuid={journeyData?.service_uuid || String((service as any)?.public_uuid || "")} accentColor="teal" />
 
-              {/* Review - when all modules complete */}
-              {allCompleted && !initialBooking.has_review && (
-                <ReviewSection booking={initialBooking} />
-              )}
+              {/* Review moved to sidebar */}
             </>
           )}
         </main>
 
         {/* Sidebar */}
         <CourseSidebar
-          booking={initialBooking}
+          booking={initialBooking ?? { public_uuid: bookingUuid } as any}
           service={service}
           practitioner={practitioner}
           modules={modules}
@@ -1174,8 +1283,21 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
           totalCount={totalCount}
           progressPercent={progressPercent}
           upNext={upNext}
+          journeyData={journeyData}
         />
       </div>
+
+      {/* Review Dialog */}
+      {initialBooking && (
+        <ReviewBookingDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          booking={initialBooking as any}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['bookings'] })
+          }}
+        />
+      )}
     </div>
   )
 }

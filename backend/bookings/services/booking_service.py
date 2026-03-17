@@ -500,13 +500,22 @@ class BookingService:
         booking.canceled_by = canceled_by
         booking.cancellation_reason = reason
         booking.save()
-        
+
+        # Decrement workshop participant count
+        if booking.service_session and booking.service_session.session_type == 'workshop':
+            booking.service_session.current_participants = F('current_participants') - 1
+            booking.service_session.save(update_fields=['current_participants'])
+
         # Handle room cancellation
-        if hasattr(booking, 'livekit_room') and booking.livekit_room:
-            try:
-                self.room_service.cancel_room(booking.livekit_room)
-            except Exception as e:
-                logger.error(f"Failed to cancel room for booking {booking.id}: {e}")
+        if booking.service_session and hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            room = booking.service_session.livekit_room
+            # Only close room for individual sessions (not shared)
+            if booking.service_session.session_type == 'individual':
+                try:
+                    room.status = 'closed'
+                    room.save(update_fields=['status'])
+                except Exception as e:
+                    logger.error(f"Failed to close room for booking {booking.id}: {e}")
         
         # Send cancellation notifications
         try:

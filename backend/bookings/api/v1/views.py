@@ -796,7 +796,8 @@ class JourneyViewSet(GenericViewSet):
 
         # Sort: active first, then upcoming, then completed
         status_order = {'active': 0, 'upcoming': 1, 'completed': 2}
-        results.sort(key=lambda j: (status_order.get(j['status'], 9), j.get('next_session_time') or '9999'))
+        far_future = timezone.now() + timedelta(days=36500)
+        results.sort(key=lambda j: (status_order.get(j['status'], 9), j.get('next_session_time') or far_future))
 
         serializer = JourneyListResponseSerializer(data={'count': len(results), 'results': results})
         serializer.is_valid()
@@ -860,12 +861,26 @@ class JourneyViewSet(GenericViewSet):
         total = len(sessions)
         completed = sum(1 for s in sessions if s.get('status') == 'completed')
 
+        # Compute session counts
+        upcoming = sum(1 for s in sessions if s.get('status') in ('scheduled', 'in_progress') and s.get('start_time') and s['start_time'] > timezone.now())
+        needs_sched = sum(1 for s in sessions if not s.get('start_time'))
+
+        # Date range
+        session_dates = [s['start_time'] for s in sessions if s.get('start_time')]
+        first_date = min(session_dates) if session_dates else None
+        last_date = max(session_dates) if session_dates else None
+
         data = {
             'journey_id': str(booking.public_uuid),
             'journey_type': service_type_code,
             'service_name': service.name,
             'service_description': service.description or '',
             'service_uuid': str(service.public_uuid),
+            'service_price_cents': service.price_cents if hasattr(service, 'price_cents') else None,
+            'service_duration_minutes': service.duration_minutes if hasattr(service, 'duration_minutes') else None,
+            'service_location_type': getattr(service, 'location_type', ''),
+            'service_image_url': getattr(service, 'featured_image_url', '') or getattr(service, 'image_url', '') or '',
+            'service_slug': getattr(service, 'slug', ''),
             'practitioner': {
                 'name': practitioner.display_name if practitioner else None,
                 'slug': practitioner.slug if practitioner else None,
@@ -875,8 +890,12 @@ class JourneyViewSet(GenericViewSet):
             'sessions': sessions,
             'total_sessions': total,
             'completed_sessions': completed,
+            'upcoming_sessions': upcoming,
+            'needs_scheduling': needs_sched,
             'progress_percentage': (completed / max(total, 1)) * 100,
             'order_uuid': str(booking.order.public_uuid) if booking.order else None,
+            'first_session_date': first_date,
+            'last_session_date': last_date,
         }
 
         serializer = JourneyDetailSerializer(data=data)
