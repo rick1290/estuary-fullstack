@@ -365,13 +365,20 @@ class Booking(PublicModel):
     # Session lifecycle is tracked on ServiceSession.status
     # Attendance is tracked on SessionParticipant.attendance_status
     
-    def calculate_refund_amount(self):
+    def calculate_refund_amount(self, canceled_by='client'):
         """
         Calculate refund amount based on cancellation policy.
+
+        Args:
+            canceled_by: Who initiated the cancellation ('client', 'practitioner', 'system', 'admin')
 
         Returns:
             int: Refund amount in cents (based on credits_allocated)
         """
+        # Practitioner or system cancels → always full refund
+        if canceled_by in ('practitioner', 'system', 'admin'):
+            return self.credits_allocated or 0
+
         start = self.get_start_time()
 
         # Unscheduled bookings (no start_time) are fully refundable
@@ -385,10 +392,7 @@ class Booking(PublicModel):
             # Full refund if canceled more than 24 hours before
             if hours_until_start >= 24:
                 return self.credits_allocated
-            # 50% refund if canceled 6-24 hours before
-            elif hours_until_start >= 6:
-                return int(self.credits_allocated * 0.5)
-            # No refund if canceled less than 6 hours before
+            # No refund if canceled less than 24 hours before
             else:
                 return 0
         else:
@@ -405,11 +409,17 @@ class Booking(PublicModel):
 
         self.transition_to('canceled', reason=reason, canceled_by=canceled_by)
 
+        # Decrement workshop participant count
+        if self.service_session and self.service_session.session_type == 'workshop':
+            from django.db.models import F
+            self.service_session.current_participants = F('current_participants') - 1
+            self.service_session.save(update_fields=['current_participants'])
+
         # Process refund if payment was made
         if self.payment_status == 'paid' and self.credits_allocated > 0:
             from payments.tasks import process_refund_credits
             # Calculate refund amount based on cancellation policy
-            refund_amount_cents = self.calculate_refund_amount()
+            refund_amount_cents = self.calculate_refund_amount(canceled_by=canceled_by)
             if refund_amount_cents > 0:
                 process_refund_credits.delay(
                     str(self.public_uuid),
@@ -417,10 +427,44 @@ class Booking(PublicModel):
                     reason or 'Booking canceled'
                 )
 
-        # Cancel related bookings in same order (but don't let them cascade back)
+            # Update payment_status
+            if refund_amount_cents and refund_amount_cents > 0:
+                if refund_amount_cents >= (self.credits_allocated or 0):
+                    self.payment_status = 'refunded'
+                else:
+                    self.payment_status = 'partially_refunded'
+                self.save(update_fields=['payment_status'])
+
+        # For private/individual sessions, cancel the ServiceSession too (frees practitioner calendar)
+        if self.service_session:
+            if self.service_session.session_type == 'individual' or (
+                self.service_session.max_participants == 1 and
+                self.service_session.visibility == 'private'
+            ):
+                self.service_session.status = 'canceled'
+                self.service_session.save(update_fields=['status'])
+
+        # Cascade cancel related bookings (courses, packages, bundles)
         if _cascade and self.order and self.order.bookings.count() > 1:
+            # For courses: check 14-day cancellation window
+            if self.service and hasattr(self.service, 'is_course') and self.service.is_course:
+                first_session = self.order.bookings.filter(
+                    service_session__start_time__isnull=False
+                ).order_by('service_session__start_time').first()
+
+                if first_session and first_session.service_session:
+                    days_since_start = (timezone.now() - first_session.service_session.start_time).days
+                    if days_since_start > 14:
+                        raise ValidationError(
+                            "Course cancellation is only allowed within 14 days of the first session. "
+                            "Please contact support for assistance."
+                        )
+
+            # Cancel siblings, but SKIP completed bookings
             siblings = self.order.bookings.exclude(
                 status='canceled'
+            ).exclude(
+                service_session__status='completed'
             ).exclude(
                 public_uuid=self.public_uuid
             )

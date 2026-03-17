@@ -7,8 +7,8 @@ import { conversationsCreate, conversationsList } from "@/src/client"
 import type { BookingDetailReadable, JourneyDetail } from "@/src/client/types.gen"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import JournalSection from "@/components/dashboard/user/journeys/journal-section"
 import {
   ArrowLeft,
   Calendar,
@@ -71,6 +71,18 @@ function toDate(value: unknown): Date {
   if (value instanceof Date) return value
   if (typeof value === "string") return parseISO(value)
   return new Date(String(value))
+}
+
+function generateCalendarUrl(title: string, startTime: Date, endTime: Date, description: string, location: string): string {
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${fmt(startTime)}/${fmt(endTime)}`,
+    details: description,
+    location: location,
+  })
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
 function deriveSessionState(booking: BookingDetailReadable): SessionState {
@@ -171,9 +183,6 @@ export default function SessionDelivery({
   const router = useRouter()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
-  const initialNotes = booking?.client_notes ?? journeyData?.sessions?.[0]?.client_notes ?? ""
-  const [clientNotes, setClientNotes] = useState(initialNotes)
-  const [isEditingNotes, setIsEditingNotes] = useState(false)
   const [checkedPrep, setCheckedPrep] = useState<Set<string>>(new Set())
 
   // Countdown state
@@ -291,25 +300,6 @@ export default function SessionDelivery({
     },
   })
 
-  // Save notes mutation
-  const { mutate: saveNotes, isPending: isSavingNotes } = useMutation({
-    mutationFn: async (notes: string) => {
-      const { bookingsPartialUpdate } = await import("@/src/client")
-      await bookingsPartialUpdate({
-        path: { public_uuid: bookingUuid },
-        body: { client_notes: notes } as any,
-      })
-    },
-    onSuccess: () => {
-      toast.success("Notes saved")
-      setIsEditingNotes(false)
-      refetch()
-    },
-    onError: () => {
-      toast.error("Failed to save notes")
-    },
-  })
-
   // Message practitioner handler
   const handleMessagePractitioner = async () => {
     if (!practitioner?.user_id) {
@@ -374,7 +364,7 @@ export default function SessionDelivery({
     <div className="min-h-screen">
       {/* ── HERO SECTION ── */}
       <div
-        className="relative overflow-hidden px-6 md:px-12 pt-10 pb-16 bg-gradient-to-br from-sage-50 via-cream-50 to-sage-50/30 border-b border-sage-200/40"
+        className="relative overflow-hidden px-6 md:px-12 pt-4 pb-6 bg-gradient-to-br from-sage-50 via-cream-50 to-sage-50/30 border-b border-sage-200/40"
       >
         {/* Content */}
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -529,7 +519,7 @@ export default function SessionDelivery({
       {/* ── TWO-COLUMN BODY ── */}
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
         {/* ── MAIN COLUMN ── */}
-        <main className="pt-10 pb-20 min-w-0">
+        <main className="pt-4 pb-20 min-w-0">
 
           {/* ── Canceled notice ── */}
           {sessionState === "canceled" && (
@@ -622,53 +612,41 @@ export default function SessionDelivery({
             </div>
           )}
 
-          {/* ── Your Notes ── */}
+          {/* ── Your Journal ── */}
+          <JournalSection bookingUuid={bookingUuid} accentColor="sage" />
+
+          {/* ── Resources & Materials ── */}
           <div className="mb-11">
-            <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60 flex items-center justify-between">
-              <span>Your Notes</span>
-              {!isEditingNotes && (
-                <button
-                  type="button"
-                  onClick={() => setIsEditingNotes(true)}
-                  className="text-[12px] normal-case tracking-normal text-sage-600 hover:text-sage-700 font-medium transition-colors"
-                >
-                  Edit
-                </button>
-              )}
+            <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
+              Resources & Materials
             </div>
-            {isEditingNotes ? (
-              <div className="space-y-3">
-                <Textarea
-                  value={clientNotes}
-                  onChange={(e) => setClientNotes(e.target.value)}
-                  placeholder="Add any personal notes about this session..."
-                  className="min-h-[100px] bg-white border-sage-200/60 focus:border-sage-400 text-[14px] font-light leading-relaxed text-olive-900 placeholder:text-olive-400"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-sage-600 hover:bg-sage-700 text-white rounded-full px-5"
-                    onClick={() => saveNotes(clientNotes)}
-                    disabled={isSavingNotes}
-                  >
-                    {isSavingNotes ? "Saving..." : "Save Notes"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-olive-400"
-                    onClick={() => {
-                      setClientNotes(effectiveBooking.client_notes ?? "")
-                      setIsEditingNotes(false)
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+
+            {/* Show recordings if available */}
+            {effectiveBooking.recordings && (effectiveBooking.recordings as unknown as any[]).length > 0 && (
+              <div className="space-y-2.5 mb-4">
+                {(effectiveBooking.recordings as unknown as any[]).map((recording: any, idx: number) => (
+                  <div key={recording.id || idx} className="flex items-center gap-3.5 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 transition cursor-pointer">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-sage-50 text-sage-600">
+                      <Film className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-olive-900">Session Recording</div>
+                      <div className="text-xs text-olive-500">
+                        {recording.duration_formatted || `${recording.duration_seconds ? Math.round(recording.duration_seconds / 60) : '?'} min`}
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-sage-700 rounded-full text-xs">
+                      Watch
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <p className="text-[15px] font-light leading-relaxed text-olive-600">
-                {effectiveBooking.client_notes || "No notes yet. Click Edit to add some."}
+            )}
+
+            {/* Placeholder when no resources */}
+            {(!effectiveBooking.recordings || (effectiveBooking.recordings as unknown as any[]).length === 0) && sessionState !== "completed" && (
+              <p className="text-sm text-olive-400 italic">
+                Resources and recordings will appear here after your session.
               </p>
             )}
           </div>
@@ -725,112 +703,10 @@ export default function SessionDelivery({
             </div>
           )}
 
-          {/* ── Session Recordings — completed only ── */}
-          {sessionState === "completed" &&
-            effectiveBooking.recordings &&
-            (effectiveBooking.recordings as any).length > 0 && (
-              <div className="mb-11">
-                <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                  Session Recording
-                </div>
-                {(effectiveBooking.recordings as any).map(
-                  (recording: any, index: number) => (
-                    <div
-                      key={recording.recording_id || index}
-                      className="flex items-center gap-3.5 px-4 py-3.5 bg-white border border-sage-200/60 rounded-xl shadow-sm mb-2.5 hover:shadow-sm transition-shadow cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-sage-600/10 flex items-center justify-center flex-shrink-0">
-                        <Film className="h-[18px] w-[18px] text-sage-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[14px] font-medium text-olive-900 mb-0.5">
-                          {service?.name ?? "Session"} Recording{" "}
-                          {(effectiveBooking.recordings as any).length > 1
-                            ? `(${index + 1})`
-                            : ""}
-                        </div>
-                        <div className="text-[12px] text-olive-400">
-                          {recording.duration_seconds
-                            ? `${Math.floor(recording.duration_seconds / 60)} min`
-                            : ""}
-                          {recording.started_at &&
-                            ` \u00b7 ${format(parseISO(recording.started_at), "MMM d, h:mm a")}`}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/user/bookings/${effectiveBooking.public_uuid || effectiveBooking.id}/recordings/${recording.id}`
-                            )
-                          }
-                          className="inline-flex items-center gap-1.5 text-[12.5px] text-sage-600 bg-sage-100 border-none px-3 py-1.5 rounded-full hover:bg-sage-200 transition-colors font-medium"
-                        >
-                          <PlayCircle className="h-3 w-3" />
-                          Watch
-                        </button>
-                        {(recording.download_url || recording.file_url) && (
-                          <a
-                            href={recording.download_url || recording.file_url}
-                            download
-                            className="inline-flex items-center gap-1.5 text-[12.5px] text-sage-600 bg-sage-100 border-none px-3 py-1.5 rounded-full hover:bg-sage-200 transition-colors font-medium"
-                          >
-                            <Download className="h-3 w-3" />
-                            Download
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-
-          {/* ── Leave a Review — completed only ── */}
-          {sessionState === "completed" && (
-            <div className="mb-11">
-              <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Share Your Experience
-              </div>
-              <div className="bg-white border border-sage-200/60 rounded-xl p-6">
-                {effectiveBooking.has_review ? (
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-sage-600" />
-                    <div>
-                      <p className="text-[14px] font-medium text-olive-900">
-                        Thank you for your review!
-                      </p>
-                      <p className="text-[13px] text-olive-400 mt-0.5">
-                        Your feedback helps others find great practitioners
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-[14px] font-medium text-olive-900 mb-3">
-                      How was your session?
-                    </p>
-                    <p className="text-[13px] text-olive-400 mb-4">
-                      Share your experience to help others on their wellness
-                      journey.
-                    </p>
-                    <Button
-                      onClick={() => setReviewDialogOpen(true)}
-                      className="bg-sage-600 hover:bg-sage-700 text-white rounded-full px-5 text-[13.5px] font-medium"
-                    >
-                      <Star className="h-3.5 w-3.5 mr-1.5" />
-                      Leave Review
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </main>
 
         {/* ── SIDEBAR ── */}
-        <aside className="sticky top-[58px] pt-8 pb-20 flex flex-col gap-0">
+        <aside className="sticky top-20 pb-20 flex flex-col gap-0 self-start">
           {/* ── Ticket Card ── */}
           <div className="bg-white border border-sage-200/60 rounded-xl shadow-sm overflow-visible mb-5 relative">
             {/* Ticket header */}
@@ -841,6 +717,15 @@ export default function SessionDelivery({
                   "linear-gradient(135deg, #1e1508 0%, #2e1f0a 100%)",
               }}
             >
+              {/* Service image background */}
+              {journeyData?.service_image_url && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-30"
+                  style={{ backgroundImage: `url(${journeyData.service_image_url})` }}
+                />
+              )}
+              {/* Dark overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1e1508] via-[#1e1508]/60 to-transparent" />
               <div
                 className="absolute inset-0"
                 style={{
@@ -982,6 +867,19 @@ export default function SessionDelivery({
               <Button
                 variant="outline"
                 className="w-full h-11 rounded-full border-[1.5px] border-sage-200/60 text-olive-600 text-[14px] hover:border-sage-300 hover:text-olive-900"
+                onClick={() => {
+                  if (!startTime) return
+                  const start = toDate(startTime)
+                  const end = endTime ? toDate(endTime) : new Date(start.getTime() + (duration || 60) * 60000)
+                  const url = generateCalendarUrl(
+                    service?.name || 'Session',
+                    start,
+                    end,
+                    `Session with ${(practitioner as any)?.display_name || practitioner?.name || 'your practitioner'}`,
+                    isVirtual ? 'Virtual (Estuary)' : 'In Person'
+                  )
+                  window.open(url, '_blank')
+                }}
               >
                 <Calendar className="h-3.5 w-3.5 mr-2" />
                 Add to Calendar

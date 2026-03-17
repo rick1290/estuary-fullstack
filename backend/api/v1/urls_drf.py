@@ -68,6 +68,9 @@ from rooms.api.v1.views import RoomViewSet
 # AI Image Generation
 from ai_images.api.v1.views import GeneratedImageViewSet
 
+# Journal
+from journal.api.v1.views import JournalEntryViewSet
+
 # Register all ViewSets properly
 # Bookings
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -141,6 +144,9 @@ router.register(r'rooms', RoomViewSet, basename='room')
 
 # AI Image Generation
 router.register(r'ai-images', GeneratedImageViewSet, basename='ai-images')
+
+# Journal
+router.register(r'journal', JournalEntryViewSet, basename='journal-entry')
 
 # Import documentation views
 from api.v1.docs import (

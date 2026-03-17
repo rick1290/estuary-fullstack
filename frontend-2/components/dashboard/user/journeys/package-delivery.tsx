@@ -1,14 +1,14 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import {
   bookingsRetrieveOptions,
   bookingsListOptions,
 } from "@/src/client/@tanstack/react-query.gen"
 import { conversationsCreate, conversationsList } from "@/src/client"
-import type { BookingListReadable, JourneyDetail } from "@/src/client/types.gen"
+import type { BookingListReadable, JourneyDetail, JourneySession } from "@/src/client/types.gen"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -39,6 +39,19 @@ import {
   differenceInDays,
 } from "date-fns"
 import Link from "next/link"
+import JournalSection from "@/components/dashboard/user/journeys/journal-section"
+import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
+import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  if (typeof value === "string") return parseISO(value)
+  return new Date(String(value))
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -102,6 +115,25 @@ function PackageDeliverySkeleton() {
 
 export default function PackageDelivery({ bookingUuid, journeyData }: PackageDeliveryProps) {
   const router = useRouter()
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+
+  const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
+    mutationFn: async (reason: string) => {
+      const { bookingsCancelCreate } = await import("@/src/client")
+      await bookingsCancelCreate({
+        path: { public_uuid: String(bookingUuid) },
+        body: { reason, status: "canceled", canceled_by: "client" } as any,
+      })
+    },
+    onSuccess: () => {
+      toast.success("Package booking canceled")
+      router.push("/dashboard/user/journeys")
+    },
+    onError: () => {
+      toast.error("Failed to cancel booking")
+    },
+  })
 
   // Fetch the initial booking by uuid
   const {
@@ -113,6 +145,9 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
   })
 
   // Fetch ALL bookings for the same user to find siblings from same service/package
+  // Skip when journeyData already provides the session list
+  const hasJourneySessions = !!(journeyData?.sessions && journeyData.sessions.length > 0)
+
   const {
     data: allBookingsData,
     isLoading: isLoadingAll,
@@ -123,7 +158,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
         page_size: 200,
       },
     }),
-    enabled: !!booking,
+    enabled: !!booking && !hasJourneySessions,
   })
 
   // Filter bookings belonging to the same service (package siblings)
@@ -137,8 +172,46 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
     )
   }, [booking, allBookingsData])
 
-  // Sort bookings into three buckets
+  // Sort bookings / journey-sessions into three buckets
+  // When journeyData is available, use its sessions directly
   const { completed, scheduled, needsScheduling } = useMemo(() => {
+    // -- Path A: use journeyData.sessions --
+    if (hasJourneySessions) {
+      const completedArr: JourneySession[] = []
+      const scheduledArr: JourneySession[] = []
+      const needsSchedulingArr: JourneySession[] = []
+
+      for (const s of journeyData!.sessions) {
+        if (s.booking_status === "canceled") continue
+        if (s.status === "completed") {
+          completedArr.push(s)
+        } else if (
+          s.booking_status === "confirmed" &&
+          s.start_time &&
+          isFuture(toDate(s.start_time))
+        ) {
+          scheduledArr.push(s)
+        } else {
+          needsSchedulingArr.push(s)
+        }
+      }
+
+      scheduledArr.sort((a, b) => {
+        const aTime = a.start_time ? toDate(a.start_time).getTime() : Infinity
+        const bTime = b.start_time ? toDate(b.start_time).getTime() : Infinity
+        return aTime - bTime
+      })
+
+      completedArr.sort((a, b) => {
+        const aTime = a.start_time ? toDate(a.start_time).getTime() : 0
+        const bTime = b.start_time ? toDate(b.start_time).getTime() : 0
+        return bTime - aTime
+      })
+
+      return { completed: completedArr, scheduled: scheduledArr, needsScheduling: needsSchedulingArr }
+    }
+
+    // -- Path B: fallback to bookings API list --
     const completedArr: BookingListReadable[] = []
     const scheduledArr: BookingListReadable[] = []
     const needsSchedulingArr: BookingListReadable[] = []
@@ -149,7 +222,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
       } else if (
         b.status === "confirmed" &&
         b.service_session?.start_time &&
-        isFuture(parseISO(String(b.service_session.start_time)))
+        isFuture(toDate(b.service_session.start_time))
       ) {
         scheduledArr.push(b)
       } else {
@@ -180,46 +253,69 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
       scheduled: scheduledArr,
       needsScheduling: needsSchedulingArr,
     }
-  }, [packageBookings])
+  }, [packageBookings, hasJourneySessions, journeyData])
 
-  const totalCount = packageBookings.length
+  const totalCount = hasJourneySessions
+    ? journeyData!.total_sessions
+    : packageBookings.length
   const completedCount = completed.length
   const usedCount = completedCount + scheduled.length
   const isPackageComplete = completedCount === totalCount && totalCount > 0
 
+  // Type guard to distinguish JourneySession from BookingListReadable
+  type SessionItem = BookingListReadable | JourneySession
+  const isJourneySession = (item: SessionItem): item is JourneySession =>
+    "booking_uuid" in item && !("service_session" in item)
+
+  // Helper: extract common fields from either BookingListReadable or JourneySession
+  const getItemId = (item: SessionItem): string =>
+    isJourneySession(item) ? item.booking_uuid : (item.public_uuid || String(item.id))
+
+  const getItemStartTime = (item: SessionItem): Date | null => {
+    if (isJourneySession(item)) {
+      return item.start_time ? toDate(item.start_time) : null
+    }
+    return item.service_session?.start_time ? toDate(item.service_session.start_time) : null
+  }
+
+  const getItemDuration = (item: SessionItem): number => {
+    if (isJourneySession(item)) return item.duration_minutes || 60
+    return (item as any).duration_minutes || 60
+  }
+
+  const getItemBookingUuid = (item: SessionItem): string =>
+    isJourneySession(item) ? item.booking_uuid : (item.public_uuid || String(item.id))
+
   // Check if a session is joinable (within 15 min of start)
-  const isSessionJoinable = (b: BookingListReadable) => {
-    const startTime = b.service_session?.start_time
-    if (!startTime || (b.status !== "confirmed")) return false
-    const start = parseISO(String(startTime))
+  const isSessionJoinable = (item: SessionItem) => {
+    const startTime = getItemStartTime(item)
+    const status = isJourneySession(item) ? item.booking_status : item.status
+    if (!startTime || status !== "confirmed") return false
     const now = new Date()
-    const minutesUntil = differenceInMinutes(start, now)
-    // Joinable from 15 min before start until session would end
-    const duration = b.duration_minutes || 60
-    const minutesSinceStart = differenceInMinutes(now, start)
+    const minutesUntil = differenceInMinutes(startTime, now)
+    const duration = getItemDuration(item)
+    const minutesSinceStart = differenceInMinutes(now, startTime)
     return minutesUntil <= 15 && minutesSinceStart < duration
   }
 
   // Get a session number based on order in the full list
-  const getSessionNumber = (b: BookingListReadable) => {
-    const sorted = [...packageBookings].sort((a, b2) => {
-      const aTime = a.service_session?.start_time
-        ? new Date(String(a.service_session.start_time)).getTime()
-        : Infinity
-      const bTime = b2.service_session?.start_time
-        ? new Date(String(b2.service_session.start_time)).getTime()
-        : Infinity
+  const allItems = useMemo(() => [...completed, ...scheduled, ...needsScheduling], [completed, scheduled, needsScheduling])
+
+  const getSessionNumber = (item: SessionItem) => {
+    if (isJourneySession(item) && item.sequence_number != null) return item.sequence_number
+    const sorted = [...allItems].sort((a, b2) => {
+      const aTime = getItemStartTime(a)?.getTime() ?? Infinity
+      const bTime = getItemStartTime(b2)?.getTime() ?? Infinity
       return aTime - bTime
     })
-    const idx = sorted.findIndex(
-      (s) => (s.public_uuid || s.id) === (b.public_uuid || b.id)
-    )
+    const id = getItemId(item)
+    const idx = sorted.findIndex((s) => getItemId(s) === id)
     return idx + 1
   }
 
   // Check expiration (placeholder -- service may have an expiration field)
   const purchasedDate = booking?.created_at
-    ? format(parseISO(String(booking.created_at)), "MMM d, yyyy")
+    ? format(toDate(booking.created_at), "MMM d, yyyy")
     : null
 
   // Expiration heuristic: if service has metadata, use it. Otherwise show nothing.
@@ -271,7 +367,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
     }
   }
 
-  const isLoading = isLoadingBooking || isLoadingAll
+  const isLoading = isLoadingBooking || (!hasJourneySessions && isLoadingAll)
 
   // ---------------------------------------------------------------------------
   // Loading state
@@ -314,7 +410,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
       {/* WARM LIGHT HERO SECTION                                            */}
       {/* ================================================================== */}
       <div className="relative overflow-hidden bg-gradient-to-br from-sage-50 via-cream-50 to-olive-50/30">
-        <div className="relative z-10 px-8 md:px-12 pt-10 pb-16 max-w-6xl mx-auto">
+        <div className="relative z-10 px-8 md:px-12 pt-4 pb-6 max-w-6xl mx-auto">
           {/* Back link */}
           <Link
             href="/dashboard/user/journeys"
@@ -424,7 +520,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
         {/* ---------------------------------------------------------------- */}
         {/* MAIN COLUMN                                                      */}
         {/* ---------------------------------------------------------------- */}
-        <main className="pt-10 pb-16 min-w-0">
+        <main className="pt-4 pb-16 min-w-0">
 
           {/* Package complete banner */}
           {isPackageComplete && (
@@ -446,13 +542,15 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
               </div>
               <div className="flex flex-col gap-2.5">
                 {scheduled.map((b) => {
-                  const startTime = parseISO(String(b.service_session!.start_time))
+                  const startTime = getItemStartTime(b)!
                   const joinable = locationIsVirtual && isSessionJoinable(b)
                   const sessionNum = getSessionNumber(b)
+                  const uuid = getItemBookingUuid(b)
+                  const dur = getItemDuration(b)
 
                   return (
                     <div
-                      key={b.public_uuid || b.id}
+                      key={getItemId(b)}
                       className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-400 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -464,9 +562,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                           <p className="text-[12.5px] text-olive-500">
                             {format(startTime, "EEE, MMM d")} &middot;{" "}
                             {format(startTime, "h:mm a")}
-                            {b.duration_minutes
-                              ? ` \u00B7 ${b.duration_minutes} min`
-                              : ""}
+                            {dur ? ` \u00B7 ${dur} min` : ""}
                           </p>
                         </div>
                       </div>
@@ -474,18 +570,14 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {joinable && (
                           <Button size="sm" asChild className="bg-green-600 hover:bg-green-700 text-white rounded-full px-4">
-                            <Link
-                              href={`/dashboard/user/bookings/${b.public_uuid || b.id}`}
-                            >
+                            <Link href={`/dashboard/user/bookings/${uuid}`}>
                               <Video className="h-3.5 w-3.5 mr-1.5" />
                               Join
                             </Link>
                           </Button>
                         )}
                         <Button variant="outline" size="sm" asChild className="rounded-full border-sage-200 text-olive-600 hover:border-sage-400 hover:text-olive-800">
-                          <Link
-                            href={`/dashboard/user/bookings/${b.public_uuid || b.id}`}
-                          >
+                          <Link href={joinable ? `/dashboard/user/bookings/${uuid}` : `/dashboard/user/bookings/${uuid}/reschedule`}>
                             {joinable ? "Details" : "Reschedule"}
                           </Link>
                         </Button>
@@ -520,7 +612,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                   </div>
                   <Button size="sm" asChild className="bg-sage-600 hover:bg-sage-700 text-white rounded-full px-4 flex-shrink-0">
                     <Link
-                      href={`/dashboard/user/bookings/${needsScheduling[0].public_uuid || needsScheduling[0].id}/schedule`}
+                      href={`/dashboard/user/bookings/${getItemBookingUuid(needsScheduling[0])}/schedule`}
                     >
                       Schedule
                       <ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -532,10 +624,11 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
               <div className="flex flex-col gap-2.5">
                 {needsScheduling.map((b) => {
                   const sessionNum = getSessionNumber(b)
+                  const uuid = getItemBookingUuid(b)
 
                   return (
                     <div
-                      key={b.public_uuid || b.id}
+                      key={getItemId(b)}
                       className="flex items-center justify-between gap-4 px-5 py-4 bg-sage-50/50 border border-dashed border-sage-300 rounded-xl hover:border-sage-400 transition-colors"
                     >
                       <div className="flex items-center gap-3">
@@ -546,9 +639,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                       </div>
 
                       <Button variant="outline" size="sm" asChild className="rounded-full border-sage-300 text-sage-700 hover:border-sage-500 hover:text-sage-800">
-                        <Link
-                          href={`/dashboard/user/bookings/${b.public_uuid || b.id}/schedule`}
-                        >
+                        <Link href={`/dashboard/user/bookings/${uuid}/schedule`}>
                           Schedule
                           <ChevronRight className="h-3.5 w-3.5 ml-1" />
                         </Link>
@@ -571,13 +662,13 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
               <div className="flex flex-col gap-2.5">
                 {completed.map((b) => {
                   const sessionNum = getSessionNumber(b)
-                  const startTime = b.service_session?.start_time
-                    ? parseISO(String(b.service_session.start_time))
-                    : null
+                  const startTime = getItemStartTime(b)
+                  const dur = getItemDuration(b)
+                  const uuid = getItemBookingUuid(b)
 
                   return (
                     <div
-                      key={b.public_uuid || b.id}
+                      key={getItemId(b)}
                       className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl"
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -590,18 +681,14 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                             {startTime
                               ? format(startTime, "EEE, MMM d")
                               : "Completed"}
-                            {b.duration_minutes
-                              ? ` \u00B7 ${b.duration_minutes} min`
-                              : ""}
+                            {dur ? ` \u00B7 ${dur} min` : ""}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <Button variant="ghost" size="sm" asChild className="text-[12.5px] text-olive-600 hover:text-olive-800">
-                          <Link
-                            href={`/dashboard/user/bookings/${b.public_uuid || b.id}`}
-                          >
+                          <Link href={`/dashboard/user/bookings/${uuid}`}>
                             <FileText className="h-3.5 w-3.5 mr-1" />
                             View Notes
                           </Link>
@@ -613,6 +700,23 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
               </div>
             </section>
           )}
+
+          {/* ============================================================== */}
+          {/* YOUR JOURNAL                                                   */}
+          {/* ============================================================== */}
+          <JournalSection bookingUuid={bookingUuid} accentColor="sage" />
+
+          {/* ============================================================== */}
+          {/* RESOURCES & MATERIALS                                          */}
+          {/* ============================================================== */}
+          <div className="mb-11">
+            <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
+              Resources &amp; Materials
+            </div>
+            <p className="text-sm text-olive-400 italic">
+              Resources, recordings and materials from your sessions will appear here.
+            </p>
+          </div>
 
           {/* ============================================================== */}
           {/* YOUR PRACTITIONER                                              */}
@@ -653,50 +757,22 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                       View Profile
                     </Link>
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 rounded-full border-sage-200 text-olive-600 hover:border-sage-400 hover:text-olive-800"
-                    onClick={handleMessagePractitioner}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Message
-                  </Button>
                 </div>
               </div>
             </section>
           )}
 
-          {/* ============================================================== */}
-          {/* LEAVE A REVIEW (when package complete)                         */}
-          {/* ============================================================== */}
-          {isPackageComplete && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Share Your Experience
-              </div>
-              <div className="bg-white border border-sage-200/60 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Star className="h-5 w-5 text-amber-500" />
-                  <h3 className="text-[15px] font-medium text-olive-900">
-                    How was your experience?
-                  </h3>
-                </div>
-                <p className="text-[13px] text-olive-500 mb-4 leading-relaxed">
-                  Your feedback helps other seekers find the right practitioner for their journey.
-                </p>
-                <Button className="rounded-full bg-sage-600 hover:bg-sage-700 text-white">
-                  <Star className="h-4 w-4 mr-2" />
-                  Leave a Review
-                </Button>
-              </div>
-            </section>
-          )}
+          <ReviewBookingDialog
+            open={reviewDialogOpen}
+            onOpenChange={setReviewDialogOpen}
+            booking={booking as any}
+          />
         </main>
 
         {/* ---------------------------------------------------------------- */}
         {/* SIDEBAR                                                          */}
         {/* ---------------------------------------------------------------- */}
-        <aside className="lg:sticky lg:top-[58px] pt-8 pb-16 flex flex-col gap-0 self-start">
+        <aside className="lg:sticky lg:top-20 pb-16 flex flex-col gap-0 self-start">
 
           {/* ============================================================== */}
           {/* TICKET CARD                                                    */}
@@ -706,6 +782,15 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             <div className="relative overflow-hidden rounded-t-xl px-5 py-5"
               style={{ background: "linear-gradient(135deg, #1e1508 0%, #2e1f0a 100%)" }}
             >
+              {/* Service image background */}
+              {(journeyData?.service_image_url || (service as any)?.featured_image_url) && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-30"
+                  style={{ backgroundImage: `url(${journeyData?.service_image_url || (service as any)?.featured_image_url})` }}
+                />
+              )}
+              {/* Dark overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1e1508] via-[#1e1508]/60 to-transparent" />
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(74,94,74,0.25)_0%,transparent_60%)]" />
               <div className="relative z-10">
                 <div className="text-[10px] tracking-[0.12em] uppercase text-[#f5f0e8]/35 mb-1.5">
@@ -807,7 +892,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {needsScheduling.length > 0 && (
               <Button asChild className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium">
                 <Link
-                  href={`/dashboard/user/bookings/${needsScheduling[0].public_uuid || needsScheduling[0].id}/schedule`}
+                  href={`/dashboard/user/bookings/${getItemBookingUuid(needsScheduling[0])}/schedule`}
                 >
                   <CalendarPlus className="h-4 w-4 mr-2" />
                   Schedule Next Session
@@ -825,8 +910,8 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             </Button>
 
             <button
-              className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 transition-colors py-1.5"
-              onClick={() => router.push(`/dashboard/user/bookings/${bookingUuid}`)}
+              onClick={() => setCancelDialogOpen(true)}
+              className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 transition-colors py-1"
             >
               Cancel Package
             </button>
@@ -881,6 +966,20 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
           )}
         </aside>
       </div>
+
+      {/* ── Cancel Dialog ── */}
+      <CancelBookingDialog
+        bookingId={bookingUuid}
+        serviceName={service?.name || "Package"}
+        practitionerName={practitioner?.name || "Practitioner"}
+        date={scheduled.length > 0 ? format(toDate(getItemStartTime(scheduled[0])!), "MMMM d, yyyy") : ""}
+        time={scheduled.length > 0 ? format(toDate(getItemStartTime(scheduled[0])!), "h:mm a") : ""}
+        price={`$${booking?.credits_allocated_dollars || 0}`}
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={(reason) => cancelBooking(reason)}
+        isLoading={isCancelling}
+      />
     </div>
   )
 }

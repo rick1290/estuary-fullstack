@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "streams",
     "utils",
     "workflows",
+    "journal",
 ]
 
 MIDDLEWARE = [
