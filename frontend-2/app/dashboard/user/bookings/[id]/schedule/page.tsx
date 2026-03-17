@@ -111,7 +111,7 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     if (!isLoading && !booking) {
       toast.error("Booking not found")
-      router.push("/dashboard/user/bookings")
+      router.push("/dashboard/user/journeys")
     } else if (!isLoading && booking && !isSchedulable) {
       toast.error("This booking is already scheduled")
       setTimeout(() => {

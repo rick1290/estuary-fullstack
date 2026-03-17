@@ -5,7 +5,8 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Q, Prefetch
+from rest_framework.viewsets import GenericViewSet
+from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -22,7 +23,8 @@ from bookings.api.v1.serializers import (
     BookingStatusChangeSerializer, BookingScheduleSerializer,
     BookingRescheduleSerializer, BookingNoteSerializer,
     AvailabilityCheckSerializer, AvailableSlotSerializer,
-    AvailableDatesRequestSerializer
+    AvailableDatesRequestSerializer,
+    JourneyListResponseSerializer, JourneyDetailSerializer,
 )
 from bookings.api.v1.filters import BookingFilter
 from services.models import Service
@@ -48,27 +50,29 @@ from practitioners.utils.availability import get_practitioner_availability
     available_dates=extend_schema(tags=['Bookings']),
     create_bundle=extend_schema(tags=['Bookings']),
     create_package=extend_schema(tags=['Bookings']),
-    create_course=extend_schema(tags=['Bookings'])
+    create_course=extend_schema(tags=['Bookings']),
+    journey=extend_schema(tags=['Bookings'])
 )
 class BookingViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing bookings.
-    
+
     Endpoints:
     - GET /bookings/ - List bookings (filtered by user role)
     - POST /bookings/ - Create a new booking
-    - GET /bookings/{id}/ - Get booking details
-    - PATCH /bookings/{id}/ - Update booking details
-    - DELETE /bookings/{id}/ - Cancel booking
-    - POST /bookings/{id}/confirm/ - Confirm booking (after payment)
-    - POST /bookings/{id}/cancel/ - Cancel booking with reason
-    - POST /bookings/{id}/complete/ - Mark booking as completed
-    - POST /bookings/{id}/no-show/ - Mark as no-show
-    - POST /bookings/{id}/schedule/ - Schedule an unscheduled draft booking
-    - POST /bookings/{id}/reschedule/ - Reschedule booking (creates new booking)
-    - POST /bookings/{id}/notes/ - Add note to booking
+    - GET /bookings/{uuid}/ - Get booking details
+    - PATCH /bookings/{uuid}/ - Update booking details
+    - DELETE /bookings/{uuid}/ - Cancel booking
+    - POST /bookings/{uuid}/confirm/ - Confirm booking (after payment)
+    - POST /bookings/{uuid}/cancel/ - Cancel booking with reason
+    - POST /bookings/{uuid}/complete/ - Mark booking as completed
+    - POST /bookings/{uuid}/no-show/ - Mark as no-show
+    - POST /bookings/{uuid}/schedule/ - Schedule an unscheduled draft booking
+    - POST /bookings/{uuid}/reschedule/ - Reschedule booking (creates new booking)
+    - POST /bookings/{uuid}/notes/ - Add note to booking
     - POST /bookings/check-availability/ - Check practitioner availability
     """
+    lookup_field = 'public_uuid'
     serializer_class = BookingDetailSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -577,7 +581,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 {"detail": "service_id is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             service = Service.objects.get(id=service_id, is_active=True)
             if not service.is_course:
@@ -590,7 +594,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 {"detail": "Invalid service"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         # Create course booking
         try:
             with transaction.atomic():
@@ -599,7 +603,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                     course=service,
                     status='pending_payment'
                 )
-                
+
                 serializer = BookingDetailSerializer(booking, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -607,3 +611,274 @@ class BookingViewSet(viewsets.ModelViewSet):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=True, methods=['get'], url_path='journey')
+    def journey(self, request, pk=None):
+        """
+        Get all bookings related to this booking's journey.
+
+        For courses: returns all bookings for the same service + same user.
+        For packages/bundles: returns all bookings for the same order + same user.
+        For individual sessions/workshops: returns just this booking.
+
+        Includes progress information (total, completed, percentage).
+        """
+        booking = self.get_object()
+
+        # For courses: get all bookings for same service by this user
+        if (booking.service and booking.service.service_type and
+                booking.service.service_type.code == 'course'):
+            related = Booking.objects.filter(
+                user=request.user,
+                service=booking.service,
+                status__in=['draft', 'pending_payment', 'confirmed', 'completed']
+            ).select_related(
+                'service_session', 'service', 'service__service_type',
+                'practitioner__user', 'order'
+            ).prefetch_related(
+                'notes__author'
+            ).order_by(
+                'service_session__sequence_number',
+                'service_session__start_time'
+            )
+
+        # For packages/bundles: get all bookings for same order by this user
+        elif booking.order and booking.order.package_metadata:
+            related = Booking.objects.filter(
+                user=request.user,
+                order=booking.order,
+                status__in=['draft', 'pending_payment', 'confirmed', 'completed']
+            ).select_related(
+                'service_session', 'service', 'service__service_type',
+                'practitioner__user', 'order'
+            ).prefetch_related(
+                'notes__author'
+            ).order_by(
+                'service_session__start_time'
+            )
+
+        # For individual sessions/workshops: just return this booking
+        else:
+            related = Booking.objects.filter(
+                pk=booking.pk
+            ).select_related(
+                'service_session', 'service', 'service__service_type',
+                'practitioner__user', 'order'
+            ).prefetch_related(
+                'notes__author'
+            )
+
+        serializer = self.get_serializer(related, many=True)
+
+        total_count = related.count()
+        completed_count = related.filter(
+            service_session__status='completed'
+        ).count()
+        progress_percentage = (
+            (completed_count / max(total_count, 1)) * 100
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {
+                'bookings': serializer.data,
+                'journey_type': self._get_journey_type(booking),
+                'total_count': total_count,
+                'completed_count': completed_count,
+                'progress_percentage': round(progress_percentage, 1),
+            }
+        })
+
+    def _get_journey_type(self, booking):
+        """Determine the journey type for a booking."""
+        if booking.order and booking.order.package_metadata:
+            order_type = booking.order.order_type
+            if order_type == 'bundle':
+                return 'bundle'
+            return 'package'
+        if booking.service and booking.service.service_type:
+            code = booking.service.service_type.code
+            if code in ('session', 'workshop', 'course'):
+                return code
+        return 'session'
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['Journeys'], responses=JourneyListResponseSerializer),
+    retrieve=extend_schema(tags=['Journeys'], responses=JourneyDetailSerializer),
+)
+class JourneyViewSet(GenericViewSet):
+    """
+    User journeys — their purchased services grouped with sessions and progress.
+
+    GET /api/v1/journeys/ — List all user journeys
+    GET /api/v1/journeys/{booking_uuid}/ — Journey detail (pass any booking UUID from the journey)
+    """
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'booking_uuid'
+    lookup_url_kwarg = 'booking_uuid'
+    serializer_class = JourneyDetailSerializer  # For OpenAPI schema
+
+    def get_queryset(self):
+        return Booking.objects.filter(user=self.request.user).exclude(status='canceled')
+
+    def list(self, request):
+        """List user's journeys grouped by service."""
+        user = request.user
+        bookings = Booking.objects.filter(user=user).exclude(
+            status='canceled'
+        ).select_related(
+            'service', 'service__service_type', 'service__primary_practitioner__user',
+            'service_session', 'order'
+        ).order_by('service_session__start_time')
+
+        # Group by service
+        journeys_map = {}
+        for booking in bookings:
+            service = booking.service
+            if not service:
+                continue
+            service_id = service.id
+
+            if service_id not in journeys_map:
+                practitioner = service.primary_practitioner
+                service_type_code = service.service_type.code if service.service_type else 'session'
+                journeys_map[service_id] = {
+                    'journey_id': str(booking.public_uuid),  # First booking's UUID
+                    'journey_type': service_type_code,
+                    'service_name': service.name,
+                    'service_description': (service.description or '')[:200],
+                    'service_uuid': str(service.public_uuid),
+                    'practitioner': {
+                        'name': practitioner.display_name if practitioner else None,
+                        'slug': practitioner.slug if practitioner else None,
+                        'public_uuid': str(practitioner.public_uuid) if practitioner and hasattr(practitioner, 'public_uuid') else None,
+                        'bio': getattr(practitioner, 'bio', None),
+                    } if practitioner else None,
+                    'total_sessions': 0,
+                    'completed_sessions': 0,
+                    'upcoming_sessions': 0,
+                    'needs_scheduling': 0,
+                    'next_session_time': None,
+                    'next_session_title': None,
+                    'progress_percentage': 0.0,
+                    'status': 'upcoming',
+                }
+
+            journey = journeys_map[service_id]
+            journey['total_sessions'] += 1
+
+            ss = booking.service_session
+            if ss:
+                if ss.status == 'completed':
+                    journey['completed_sessions'] += 1
+                elif ss.status in ('scheduled', 'in_progress') and ss.start_time and ss.start_time > timezone.now():
+                    journey['upcoming_sessions'] += 1
+                    if not journey['next_session_time'] or ss.start_time < journey['next_session_time']:
+                        journey['next_session_time'] = ss.start_time
+                        journey['next_session_title'] = ss.title
+                elif not ss.start_time:
+                    journey['needs_scheduling'] += 1
+
+        # Calculate status and progress
+        results = []
+        for j in journeys_map.values():
+            total = j['total_sessions']
+            completed = j['completed_sessions']
+            j['progress_percentage'] = (completed / max(total, 1)) * 100
+            if completed == total and total > 0:
+                j['status'] = 'completed'
+            elif completed > 0:
+                j['status'] = 'active'
+            else:
+                j['status'] = 'upcoming'
+            results.append(j)
+
+        # Sort: active first, then upcoming, then completed
+        status_order = {'active': 0, 'upcoming': 1, 'completed': 2}
+        results.sort(key=lambda j: (status_order.get(j['status'], 9), j.get('next_session_time') or '9999'))
+
+        serializer = JourneyListResponseSerializer(data={'count': len(results), 'results': results})
+        serializer.is_valid()
+        return Response(serializer.data)
+
+    def retrieve(self, request, booking_uuid=None):
+        """Get journey detail by booking UUID."""
+        user = request.user
+
+        # Find the booking
+        try:
+            booking = Booking.objects.select_related(
+                'service', 'service__service_type', 'service__primary_practitioner__user',
+                'service_session', 'order'
+            ).get(public_uuid=booking_uuid, user=user)
+        except Booking.DoesNotExist:
+            return Response({'detail': 'Journey not found.'}, status=404)
+
+        service = booking.service
+        if not service:
+            return Response({'detail': 'Service not found.'}, status=404)
+
+        practitioner = service.primary_practitioner
+        service_type_code = service.service_type.code if service.service_type else 'session'
+
+        # For courses/packages/bundles — get ALL related bookings
+        if service_type_code in ('course', 'package', 'bundle') or service.is_course or service.is_package or service.is_bundle:
+            related = Booking.objects.filter(
+                user=user, service=service
+            ).exclude(status='canceled').select_related(
+                'service_session', 'order'
+            ).order_by('service_session__sequence_number', 'service_session__start_time')
+        else:
+            # Session/workshop — just this booking
+            related = [booking]
+
+        # Build sessions list
+        sessions = []
+        for b in (related if not isinstance(related, list) else related):
+            ss = b.service_session
+            sessions.append({
+                'booking_uuid': str(b.public_uuid),
+                'booking_status': b.status,
+                'title': (ss.title if ss else None) or f'Session {getattr(ss, "sequence_number", "") or ""}',
+                'description': ss.description if ss else None,
+                'start_time': ss.start_time if ss else None,
+                'end_time': ss.end_time if ss else None,
+                'status': ss.status if ss else None,
+                'sequence_number': ss.sequence_number if ss else None,
+                'duration_minutes': ss.duration if ss else None,
+                'room_uuid': str(ss.livekit_room.public_uuid) if ss and hasattr(ss, 'livekit_room') and ss.livekit_room else None,
+                'client_notes': b.client_notes or '',
+                'confirmed_at': b.confirmed_at,
+                'completed_at': b.completed_at,
+                'agenda': ss.agenda if ss else None,
+                'what_youll_learn': getattr(ss, 'what_youll_learn', None) if ss else None,
+                'max_participants': ss.max_participants if ss else None,
+                'current_participants': ss.current_participants if ss else None,
+            })
+
+        total = len(sessions)
+        completed = sum(1 for s in sessions if s.get('status') == 'completed')
+
+        data = {
+            'journey_id': str(booking.public_uuid),
+            'journey_type': service_type_code,
+            'service_name': service.name,
+            'service_description': service.description or '',
+            'service_uuid': str(service.public_uuid),
+            'practitioner': {
+                'name': practitioner.display_name if practitioner else None,
+                'slug': practitioner.slug if practitioner else None,
+                'public_uuid': str(practitioner.public_uuid) if practitioner and hasattr(practitioner, 'public_uuid') else None,
+                'bio': getattr(practitioner, 'bio', None),
+            } if practitioner else None,
+            'sessions': sessions,
+            'total_sessions': total,
+            'completed_sessions': completed,
+            'progress_percentage': (completed / max(total, 1)) * 100,
+            'order_uuid': str(booking.order.public_uuid) if booking.order else None,
+        }
+
+        serializer = JourneyDetailSerializer(data=data)
+        serializer.is_valid()
+        return Response(serializer.data)

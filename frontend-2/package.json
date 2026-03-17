@@ -13,7 +13,11 @@
     "generate": "openapi-ts",
     "generate:safe": "openapi-ts || echo 'Warning: Could not generate API client. Using cached version if available.'",
     "generate:prod": "OPENAPI_CONFIG_ENV=production openapi-ts || echo 'Warning: Could not generate API client. Using cached version if available.'",
-    "predev": "pnpm run generate:safe"
+    "predev": "pnpm run generate:safe",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report playwright-report"
   },
   "dependencies": {
     "@emoji-mart/data": "latest",
@@ -94,6 +98,7 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.72.2",
+    "@playwright/test": "^1.58.2",
     "@tanstack/react-query-devtools": "^5.0.0",
     "@types/node": "^22",
     "@types/react": "^19.1.8",

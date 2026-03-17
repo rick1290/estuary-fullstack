@@ -228,9 +228,9 @@ export default function Navbar() {
           {isAuthenticated ? (
             <div className="hidden md:flex md:items-center md:gap-2">
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/user/bookings" className="flex items-center gap-1">
+                <Link href="/dashboard/user/journeys" className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>My Bookings</span>
+                  <span>My Journeys</span>
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild>
@@ -313,9 +313,9 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/user/bookings" className="flex items-center gap-2">
+                    <Link href="/dashboard/user/journeys" className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span>My Bookings</span>
+                      <span>My Journeys</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -416,11 +416,11 @@ export default function Navbar() {
                   <div className="flex flex-col gap-2">
                     <SheetClose asChild>
                       <Link
-                        href="/dashboard/user/bookings"
+                        href="/dashboard/user/journeys"
                         className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
                       >
                         <Calendar className="h-4 w-4" />
-                        <span>My Bookings</span>
+                        <span>My Journeys</span>
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>

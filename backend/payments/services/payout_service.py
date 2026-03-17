@@ -5,10 +5,12 @@ import logging
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from django.db import transaction
+from django.conf import settings
 from django.utils import timezone
+import stripe
 
 from payments.models import (
-    PractitionerPayout, PractitionerEarnings, 
+    PractitionerPayout, PractitionerEarnings,
     EarningsTransaction
 )
 from practitioners.models import Practitioner
@@ -191,34 +193,100 @@ class PayoutService:
     
     def _process_single_payout(self, payout: PractitionerPayout) -> None:
         """
-        Process a single payout.
-        
+        Process a single payout via Stripe Connect transfer.
+
         Args:
             payout: Payout to process
+
+        Raises:
+            ValueError: If payout is not in pending status or practitioner
+                        has no Stripe Connect account configured.
         """
         if payout.status != 'pending':
             raise ValueError(f"Payout {payout.id} is not in pending status")
-        
-        # Here you would integrate with Stripe Connect to transfer funds
-        # For now, we'll just update the status
-        
-        # TODO: Implement Stripe Connect transfer
-        # stripe_transfer = stripe.Transfer.create(
-        #     amount=payout.amount_cents,
-        #     currency='usd',
-        #     destination=payout.practitioner.stripe_account_id,
-        #     description=f"Payout for practitioner {payout.practitioner.id}"
-        # )
-        
-        # Update payout status
+
+        practitioner = payout.practitioner
+
+        # Resolve the practitioner's Stripe Connect account ID.
+        # Prefer the value already stored on the payout record (set at
+        # creation time); fall back to the practitioner's payment profile.
+        stripe_account_id = payout.stripe_account_id
+        if not stripe_account_id:
+            try:
+                stripe_account_id = practitioner.user.payment_profile.stripe_account_id
+            except Exception:
+                stripe_account_id = None
+
+        if not stripe_account_id:
+            payout.status = 'failed'
+            payout.error_message = (
+                f"Practitioner {practitioner} (id={practitioner.id}) does not have a "
+                "Stripe Connect account configured. Please complete Stripe onboarding "
+                "before requesting a payout."
+            )
+            payout.save(update_fields=['status', 'error_message', 'updated_at'])
+            logger.error(
+                "Payout %s failed: practitioner %s has no stripe_account_id",
+                payout.id, practitioner.id,
+            )
+            raise ValueError(payout.error_message)
+
+        # Persist the resolved account ID on the payout for audit purposes.
+        if not payout.stripe_account_id:
+            payout.stripe_account_id = stripe_account_id
+            payout.save(update_fields=['stripe_account_id', 'updated_at'])
+
+        # Mark payout as processing before calling Stripe.
         payout.status = 'processing'
-        payout.initiated_at = timezone.now()
-        payout.save()
-        
-        # Update earnings transactions
-        payout.earnings_transactions.update(status='paid_out')
-        
-        logger.info(f"Started processing payout {payout.id}")
+        payout.save(update_fields=['status', 'updated_at'])
+
+        payout_amount_cents = payout.credits_payout_cents or 0
+        if payout_amount_cents <= 0:
+            payout.status = 'failed'
+            payout.error_message = "Payout amount must be greater than zero."
+            payout.save(update_fields=['status', 'error_message', 'updated_at'])
+            raise ValueError(payout.error_message)
+
+        try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+
+            transfer = stripe.Transfer.create(
+                amount=payout_amount_cents,
+                currency=payout.currency.lower(),
+                destination=stripe_account_id,
+                transfer_group=f"payout_{payout.batch_id or payout.id}",
+                description=f"Payout for practitioner {practitioner}",
+                metadata={
+                    'payout_id': str(payout.id),
+                    'practitioner_id': str(practitioner.id),
+                    'batch_id': str(payout.batch_id) if payout.batch_id else '',
+                },
+            )
+
+            # Mark as completed using the model helper.
+            payout.mark_as_completed(transfer_id=transfer.id)
+
+            logger.info(
+                "Payout %s completed: transferred %d cents to %s (transfer %s)",
+                payout.id, payout_amount_cents, stripe_account_id, transfer.id,
+            )
+
+        except stripe.error.StripeError as e:
+            payout.status = 'failed'
+            payout.error_message = f"Stripe transfer failed: {str(e)}"
+            payout.save(update_fields=['status', 'error_message', 'updated_at'])
+            logger.error(
+                "Payout %s failed with Stripe error: %s", payout.id, str(e),
+            )
+            raise
+        except Exception as e:
+            payout.status = 'failed'
+            payout.error_message = f"Unexpected error during transfer: {str(e)}"
+            payout.save(update_fields=['status', 'error_message', 'updated_at'])
+            logger.error(
+                "Payout %s failed with unexpected error: %s", payout.id, str(e),
+            )
+            raise
     
     def mark_payout_completed(self, payout: PractitionerPayout) -> None:
         """

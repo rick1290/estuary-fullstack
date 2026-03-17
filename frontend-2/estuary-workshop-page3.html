@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estuary — The Dream Cartography Workshop</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #4a5e4a;
+    --sage-light: #6b7f6b;
+    --sage-pale: #e8ede8;
+    --clay: #c4856a;
+    --clay-light: #d4a08c;
+    --bark: #3d2e1e;
+    --cream: #f8f5f0;
+    --mist: #f0ede8;
+    --sand: #e8e0d4;
+    --white: #ffffff;
+    --text-primary: #2a2218;
+    --text-secondary: #6b6258;
+    --text-muted: #9b9088;
+    --border: #e0d8ce;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-pill: 100px;
+    /* Workshop fingerprint */
+    --amber: #b07d3a;
+    --amber-light: #c99448;
+    --amber-pale: #f5ede0;
+    --amber-dark: #7a5420;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-primary); min-height: 100vh; }
+
+  /* ── BANNER ── */
+  .announcement-bar {
+    background: var(--bark);
+    color: rgba(245,240,232,0.75);
+    font-size: 12.5px;
+    padding: 9px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .announcement-bar .left { display: flex; align-items: center; gap: 6px; }
+  .announcement-bar strong { color: #f5f0e8; font-weight: 500; }
+  .switch-view-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12.5px; color: rgba(245,240,232,0.7);
+    background: none; border: 1px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius-pill); padding: 4px 12px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .switch-view-btn:hover { border-color: rgba(255,255,255,0.35); color: #f5f0e8; }
+
+  /* ── NAV ── */
+  .top-nav {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(248,245,240,0.92);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 58px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 20px; letter-spacing: 0.12em; color: var(--bark); text-transform: uppercase; }
+  .top-nav-links { display: flex; align-items: center; gap: 4px; }
+  .top-nav-links a { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-pill); font-size: 13.5px; color: var(--text-secondary); text-decoration: none; transition: all 0.2s; }
+  .top-nav-links a:hover { background: var(--mist); color: var(--text-primary); }
+  .top-nav-links a.active { background: var(--sage); color: var(--white); }
+  .nav-right { display: flex; align-items: center; gap: 8px; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all 0.2s; }
+  .icon-btn:hover { background: var(--mist); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--sage-pale); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb-bar { padding: 13px 48px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--white); }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+  .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+  .breadcrumb a:hover { color: var(--sage); }
+  .breadcrumb-current { color: var(--text-secondary); }
+  .save-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); background: none; border: 1.5px solid var(--border); border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .save-btn:hover { border-color: var(--clay); color: var(--clay); }
+
+  /* ── HERO ── */
+  .workshop-hero {
+    background: var(--bark); position: relative; overflow: hidden;
+    padding: 52px 48px 0; min-height: 310px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%);
+    margin-bottom: -2px;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 20%, rgba(176,125,58,0.32) 0%, transparent 50%),
+                radial-gradient(ellipse at 10% 80%, rgba(176,125,58,0.15) 0%, transparent 45%),
+                radial-gradient(ellipse at 90% 90%, rgba(74,94,74,0.2) 0%, transparent 40%),
+                linear-gradient(160deg, #1e1508 0%, #2e1f0a 45%, #1a1206 100%);
+  }
+  .hero-bg::after { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); opacity: 0.35; pointer-events: none; }
+  .hero-content { position: relative; z-index: 2; max-width: 660px; padding-bottom: 64px; animation: fadeUp 0.5s ease both; }
+  .hero-eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .hero-tag { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15); padding: 3px 10px; border-radius: var(--radius-pill); }
+  .hero-tag.spots { border-color: rgba(176,125,58,0.6); color: rgba(201,148,72,0.95); background: rgba(176,125,58,0.1); }
+  .hero-tag.ended-tag { border-color: rgba(155,144,136,0.3); color: rgba(155,144,136,0.7); }
+  .hero-title { font-family: 'Cormorant Garamond', serif; font-size: 50px; font-weight: 500; color: #f5f0e8; line-height: 1.0; letter-spacing: -0.01em; margin-bottom: 14px; }
+  .hero-title em { font-style: italic; color: var(--amber-light); }
+  .hero-desc { font-size: 15px; font-weight: 300; color: rgba(245,240,232,0.6); line-height: 1.65; max-width: 540px; margin-bottom: 22px; }
+  .hero-meta-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .practitioner-chip { display: flex; align-items: center; gap: 9px; cursor: pointer; transition: opacity 0.2s; text-decoration: none; }
+  .practitioner-chip:hover { opacity: 0.8; }
+  .practitioner-avatar { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.2); background: linear-gradient(135deg,#8a7060,#5a4030); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 13px; color: rgba(255,255,255,0.8); font-style: italic; flex-shrink: 0; }
+  .practitioner-name { font-size: 14px; color: rgba(245,240,232,0.85); }
+  .hero-stat { display: flex; align-items: center; gap: 5px; font-size: 13px; color: rgba(245,240,232,0.42); }
+
+  /* ── LAYOUT ── */
+  .workshop-body { display: grid; grid-template-columns: 1fr 380px; gap: 0; max-width: 1200px; margin: 0 auto; padding: 0 0 80px; align-items: start; background: var(--cream); }
+
+  /* ── MAIN ── */
+  .workshop-main { padding: 40px 48px 0; min-width: 0; border-right: 1px solid var(--border); animation: fadeUp 0.4s 0.1s ease both; }
+  .section-block { margin-bottom: 44px; }
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+  .workshop-lede { border-left: 3px solid var(--amber); padding: 2px 0 2px 20px; margin-bottom: 22px; }
+  .workshop-lede p { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; font-style: italic; color: var(--bark); line-height: 1.5; }
+
+  .body-text { font-size: 15px; font-weight: 300; line-height: 1.75; color: var(--text-secondary); }
+  .body-text p + p { margin-top: 14px; }
+
+  .expect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .expect-item { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .expect-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-top: 7px; flex-shrink: 0; }
+  .expect-text { font-size: 13.5px; color: var(--text-secondary); line-height: 1.45; }
+
+  .includes-list { display: flex; flex-direction: column; gap: 10px; }
+  .include-item { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-secondary); }
+  .include-check { width: 20px; height: 20px; border-radius: 50%; background: var(--sage-pale); display: flex; align-items: center; justify-content: center; color: var(--sage); flex-shrink: 0; }
+
+  .practitioner-card { display: flex; gap: 20px; align-items: flex-start; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; }
+  .prac-avatar-lg { width: 68px; height: 68px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg,#8a7060,#5a4030); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 26px; color: rgba(255,255,255,0.8); font-style: italic; flex-shrink: 0; }
+  .prac-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+  .prac-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; color: var(--bark); margin-bottom: 2px; }
+  .prac-role { font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .prac-bio { font-size: 13.5px; font-weight: 300; line-height: 1.65; color: var(--text-secondary); }
+  .btn-view-profile { margin-top: 12px; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--sage); background: none; border: 1.5px solid var(--sage-pale); border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .btn-view-profile:hover { background: var(--sage-pale); }
+
+  /* ── SIDEBAR ── */
+  .workshop-sidebar { position: sticky; top: 58px; padding: 32px 28px; display: flex; flex-direction: column; animation: fadeUp 0.4s 0.15s ease both; }
+
+  .price-block { margin-bottom: 22px; }
+  .price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .price-amount { font-family: 'Cormorant Garamond', serif; font-size: 44px; font-weight: 400; color: var(--bark); line-height: 1; }
+  .price-per { font-size: 13px; color: var(--text-muted); font-weight: 300; }
+  .price-note { font-size: 12.5px; color: var(--text-muted); font-weight: 300; }
+
+  .session-details {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  /* Ticket notch effect */
+  .session-details::before,
+  .session-details::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: var(--cream);
+    border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+    z-index: 2;
+  }
+  .session-details::before { left: -7px; border-right: 1px solid var(--border); }
+  .session-details::after  { right: -7px; border-left: 1px solid var(--border); }
+  .session-detail-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .session-detail-row:last-child { border-bottom: none; }
+  /* Dashed ticket divider between info rows and spots */
+  .session-detail-row.ticket-divider {
+    border-bottom: 1.5px dashed var(--border);
+    padding-bottom: 0; margin-bottom: 0;
+  }
+  .detail-label { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+  .detail-value { font-weight: 500; color: var(--text-primary); text-align: right; }
+  .detail-value.urgent { color: var(--amber); font-weight: 600; }
+
+  .sessions-label { font-size: 11px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+
+  .session-option { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; margin-bottom: 8px; background: var(--white); }
+  .session-option:hover { border-color: var(--sage-light); }
+  .session-option.selected { border-color: var(--sage); background: rgba(74,94,74,0.04); }
+  .session-option.sold-out { opacity: 0.5; cursor: not-allowed; }
+  .session-option.sold-out:hover { border-color: var(--border); }
+  .session-date { font-size: 13.5px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .session-time { font-size: 12px; color: var(--text-muted); }
+  .session-spots { font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: var(--radius-pill); }
+  .session-spots.open { background: #eef4ee; color: var(--sage); }
+  .session-spots.low { background: #fdf4e6; color: var(--amber); }
+  .session-spots.full { background: var(--mist); color: var(--text-muted); }
+
+  .btn-reserve { width: 100%; height: 50px; border-radius: var(--radius-pill); background: var(--amber); color: var(--white); border: none; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; margin-top: 6px; margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.02em; }
+  .btn-reserve:hover { background: var(--amber-light); }
+  .btn-reserve:disabled { background: var(--sand); color: var(--text-muted); cursor: not-allowed; }
+
+  .btn-waitlist { width: 100%; height: 44px; border-radius: var(--radius-pill); background: var(--white); color: var(--amber); border: 1.5px solid var(--amber); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+  .btn-waitlist:hover { background: var(--amber-pale); }
+
+  .ended-notice { display: flex; align-items: flex-start; gap: 10px; background: var(--mist); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 15px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+  .ended-notice svg { color: var(--text-muted); flex-shrink: 0; margin-top: 1px; }
+
+  .trust-list { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .trust-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-muted); }
+  .trust-item svg { color: var(--sage); flex-shrink: 0; }
+
+  .more-from { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .more-from-label { font-size: 11px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .more-card { display: flex; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); cursor: pointer; transition: box-shadow 0.2s; margin-bottom: 8px; text-decoration: none; }
+  .more-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+  .more-card-thumb { width: 52px; height: 52px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .more-card-title { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 500; color: var(--bark); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .more-card-meta { font-size: 12px; color: var(--text-muted); }
+
+  /* State toggling */
+  body.state-upcoming .ended-only { display: none !important; }
+  body.state-ended .upcoming-only { display: none !important; }
+
+  /* Demo toggle */
+  .demo-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; gap: 8px; background: white; padding: 8px; border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .demo-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .demo-btn.active { background: var(--sage); border-color: var(--sage); color: white; }
+
+  /* Live event badge */
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(201,148,72,0.9);
+    border: 1px solid rgba(176,125,58,0.4);
+    padding: 3px 10px 3px 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(176,125,58,0.08);
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber-light);
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+  @keyframes pulse-amber {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(176,125,58,0.5); }
+    50% { opacity: 0.8; transform: scale(1.15); box-shadow: 0 0 0 4px rgba(176,125,58,0); }
+  }
+
+  /* Ticket date block in sidebar */
+  .ticket-date-block {
+    background: linear-gradient(135deg, #1e1508, #2e1f0a);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 16px 18px 14px;
+    margin: -1px -1px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1.5px dashed rgba(255,255,255,0.1);
+  }
+  .ticket-date-main {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: #f5f0e8;
+    line-height: 1.1;
+  }
+  .ticket-date-sub {
+    font-size: 12px;
+    color: rgba(245,240,232,0.5);
+    margin-top: 2px;
+  }
+  .ticket-type-badge {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--amber-light);
+    background: rgba(176,125,58,0.15);
+    border: 1px solid rgba(176,125,58,0.3);
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body class="state-upcoming">
+
+<!-- BANNER -->
+<div class="announcement-bar">
+  <div class="left">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    You're viewing as: <strong>Client</strong>
+  </div>
+  <button class="switch-view-btn">
+    Switch to Practitioner View
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
+</div>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <div class="logo">Estuary</div>
+  <div class="top-nav-links">
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Marketplace
+    </a>
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Practitioners
+    </a>
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      Streams
+    </a>
+    <a href="#" class="active">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      My Journey
+    </a>
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Messages
+    </a>
+  </div>
+  <div class="nav-right">
+    <button class="icon-btn">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <div class="avatar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9b9088" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+  </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-bar">
+  <div class="breadcrumb">
+    <a href="#">Home</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="#">Workshops</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    <span class="breadcrumb-current">The Dream Cartography Workshop</span>
+  </div>
+  <button class="save-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Save
+  </button>
+</div>
+
+<!-- HERO -->
+<div class="workshop-hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="live-badge upcoming-only">
+        <span class="live-dot"></span>
+        Live Workshop
+      </span>
+      <span class="live-badge ended-only" style="animation:none;opacity:0.5;">
+        <span class="live-dot" style="animation:none;background:#9b9088;"></span>
+        Workshop Ended
+      </span>
+      <span class="hero-tag">Energy Healing</span>
+      <span class="hero-tag spots upcoming-only">4 spots left</span>
+    </div>
+    <h1 class="hero-title">The Dream <em>Cartography</em><br>Workshop</h1>
+    <p class="hero-desc">A guided, in-person experience designed to help you understand your dreams not as predictions, but as maps — revealing patterns, questions, and insights already present within you.</p>
+    <div class="hero-meta-row">
+      <a class="practitioner-chip" href="#">
+        <div class="practitioner-avatar">D</div>
+        <span class="practitioner-name">with Shaman Dave</span>
+      </a>
+      <span class="hero-stat">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        1 hour
+      </span>
+      <span class="hero-stat">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Max 12 people
+      </span>
+      <span class="hero-stat">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Sebastopol, CA
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="workshop-body">
+
+  <!-- MAIN -->
+  <main class="workshop-main">
+
+    <div class="section-block">
+      <div class="section-label">Overview</div>
+      <div class="workshop-lede">
+        <p>Your dreams are not noise — they are cartography. This workshop teaches you to read the map.</p>
+      </div>
+      <div class="body-text">
+        <p>The Dream Cartography Workshop is a guided, in-person group experience that reframes how you relate to your nighttime mind. Rather than treating dreams as random noise or mysterious omens, we approach them as living documents — full of symbol, pattern, and personal meaning waiting to be decoded.</p>
+        <p>Over the course of this single immersive session, Shaman Dave leads participants through a structured process of active dream recall, symbol mapping, and group sharing. No prior experience with dream work is required — only a willingness to look inward.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">What You'll Experience</div>
+      <div class="expect-grid">
+        <div class="expect-item"><div class="expect-dot"></div><span class="expect-text">A guided dream recall and mapping process</span></div>
+        <div class="expect-item"><div class="expect-dot"></div><span class="expect-text">Introduction to shamanic dream symbology</span></div>
+        <div class="expect-item"><div class="expect-dot"></div><span class="expect-text">Small group sharing and collective insight</span></div>
+        <div class="expect-item"><div class="expect-dot"></div><span class="expect-text">Personal dream map you take home</span></div>
+        <div class="expect-item"><div class="expect-dot"></div><span class="expect-text">Practices for ongoing dream journaling</span></div>
+        <div class="expect-item"><div class="expect-dot"></div><span class="expect-text">A grounded integration ritual to close</span></div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">What's Included</div>
+      <div class="includes-list">
+        <div class="include-item"><div class="include-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>All materials &amp; resources included</div>
+        <div class="include-item"><div class="include-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>Personal dream cartography worksheet</div>
+        <div class="include-item"><div class="include-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>Post-workshop follow-up resources via Estuary</div>
+        <div class="include-item"><div class="include-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>Small group size — maximum 12 participants</div>
+        <div class="include-item"><div class="include-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>100% satisfaction guarantee</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">Your Facilitator</div>
+      <div class="practitioner-card">
+        <div class="prac-avatar-lg">D</div>
+        <div class="prac-info">
+          <div class="prac-name">Shaman Dave</div>
+          <div class="prac-role">Workshop Facilitator · Shamanic Practitioner</div>
+          <div class="prac-bio">Shaman Dave is a Shift Network pro and PNW retreat leader with over 8 years of experience. Trained in Peru in 2016 by don Oscar, he guides deep transformation through dreams, ceremony, and shamanic practice.</div>
+          <button class="btn-view-profile">View Full Profile <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside class="workshop-sidebar">
+
+    <div class="price-block">
+      <div class="price-row">
+        <span class="price-amount">$25</span>
+        <span class="price-per">per person</span>
+      </div>
+      <div class="price-note">1 hour · In-person · Sebastopol, CA</div>
+    </div>
+
+    <div class="session-details">
+      <!-- Ticket header -->
+      <div class="ticket-date-block upcoming-only">
+        <div>
+          <div class="ticket-date-main">Saturday, March 22</div>
+          <div class="ticket-date-sub">10:00 AM – 11:00 AM · Sebastopol, CA</div>
+        </div>
+        <span class="ticket-type-badge">In-Person</span>
+      </div>
+      <div class="ticket-date-block ended-only" style="opacity:0.6;">
+        <div>
+          <div class="ticket-date-main">No Upcoming Dates</div>
+          <div class="ticket-date-sub">Sebastopol, CA</div>
+        </div>
+        <span class="ticket-type-badge" style="opacity:0.5;">In-Person</span>
+      </div>
+      <div class="session-detail-row">
+        <span class="detail-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Duration</span>
+        <span class="detail-value">1 hour</span>
+      </div>
+      <div class="session-detail-row upcoming-only">
+        <span class="detail-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Spots left</span>
+        <span class="detail-value urgent">4 of 12</span>
+      </div>
+      <div class="session-detail-row">
+        <span class="detail-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>Location</span>
+        <span class="detail-value">Sebastopol, CA</span>
+      </div>
+    </div>
+
+    <!-- Session picker: upcoming -->
+    <div class="upcoming-only" style="margin-bottom:18px;">
+      <div class="sessions-label">Select a session</div>
+      <div class="session-option selected">
+        <div><div class="session-date">Saturday, March 22</div><div class="session-time">10:00 AM – 11:00 AM</div></div>
+        <span class="session-spots low">4 left</span>
+      </div>
+      <div class="session-option">
+        <div><div class="session-date">Saturday, April 5</div><div class="session-time">10:00 AM – 11:00 AM</div></div>
+        <span class="session-spots open">10 left</span>
+      </div>
+      <div class="session-option sold-out">
+        <div><div class="session-date">Saturday, March 8</div><div class="session-time">10:00 AM – 11:00 AM</div></div>
+        <span class="session-spots full">Full</span>
+      </div>
+    </div>
+
+    <!-- CTA: upcoming -->
+    <div class="upcoming-only">
+      <button class="btn-reserve">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Reserve Your Spot
+      </button>
+    </div>
+
+    <!-- CTA: ended -->
+    <div class="ended-only">
+      <div class="ended-notice">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        This workshop has already completed. No upcoming sessions are currently scheduled.
+      </div>
+      <button class="btn-reserve" disabled>Workshop Ended</button>
+      <button class="btn-waitlist">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notify Me of Next Session
+      </button>
+    </div>
+
+    <!-- Trust -->
+    <div class="trust-list">
+      <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Small group size — max 12</div>
+      <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>All materials &amp; resources included</div>
+      <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>100% satisfaction guarantee</div>
+    </div>
+
+    <!-- More from practitioner -->
+    <div class="more-from">
+      <div class="more-from-label">More from Shaman Dave</div>
+      <a class="more-card" href="#">
+        <div class="more-card-thumb" style="background:#dcd0c0;">🌙</div>
+        <div>
+          <div class="more-card-title">Nightmare Healing</div>
+          <div class="more-card-meta">Course · 6 modules</div>
+        </div>
+      </a>
+      <a class="more-card" href="#">
+        <div class="more-card-thumb" style="background:#c8d0d8;">🧭</div>
+        <div>
+          <div class="more-card-title">Inner Compass Reading</div>
+          <div class="more-card-meta">1:1 Session · 45 min</div>
+        </div>
+      </a>
+    </div>
+
+  </aside>
+</div>
+
+<!-- Demo state toggle -->
+<div class="demo-toggle">
+  <button class="demo-btn active" id="btn-upcoming" onclick="setState('upcoming')">Upcoming</button>
+  <button class="demo-btn" id="btn-ended" onclick="setState('ended')">Ended</button>
+</div>
+
+<script>
+  document.querySelectorAll('.session-option:not(.sold-out)').forEach(opt => {
+    opt.addEventListener('click', function() {
+      document.querySelectorAll('.session-option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  function setState(state) {
+    document.body.className = 'state-' + state;
+    document.getElementById('btn-upcoming').classList.toggle('active', state === 'upcoming');
+    document.getElementById('btn-ended').classList.toggle('active', state === 'ended');
+  }
+</script>
+</body>
+</html>

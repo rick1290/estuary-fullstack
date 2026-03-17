@@ -53,7 +53,7 @@ export function SessionCompletionScreen({
   }
 
   const handleViewBookings = () => {
-    router.push(isPractitioner ? "/dashboard/practitioner/bookings" : "/dashboard/user/bookings")
+    router.push(isPractitioner ? "/dashboard/practitioner/bookings" : "/dashboard/user/journeys")
   }
 
   return (

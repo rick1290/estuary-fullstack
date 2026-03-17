@@ -365,10 +365,12 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
         
         # Get current month stats
+        # 'completed' is no longer a valid Booking status (moved to ServiceSession per migration 0020).
+        # Use 'confirmed' for active bookings; exclude canceled for broad queries.
         current_month_bookings = Booking.objects.filter(
             practitioner=practitioner,
             created_at__gte=current_month_start,
-            status__in=['completed', 'confirmed']
+            status='confirmed'
         )
         
         # Get last month stats for comparison
@@ -376,21 +378,22 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             practitioner=practitioner,
             created_at__gte=last_month_start,
             created_at__lt=current_month_start,
-            status__in=['completed', 'confirmed']
+            status='confirmed'
         )
         
         # Calculate stats
         total_bookings = current_month_bookings.count()
         total_bookings_last = last_month_bookings.count()
         
+        # Revenue uses ServiceSession.status='completed' since event lifecycle moved there
         total_revenue = current_month_bookings.filter(
-            status='completed'
+            service_session__status='completed'
         ).aggregate(
             total=Sum('credits_allocated')
         )['total'] or 0
 
         total_revenue_last = last_month_bookings.filter(
-            status='completed'
+            service_session__status='completed'
         ).aggregate(
             total=Sum('credits_allocated')
         )['total'] or 0
@@ -399,14 +402,14 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         active_clients = User.objects.filter(
             bookings__practitioner=practitioner,
             bookings__created_at__gte=now - timedelta(days=30),
-            bookings__status__in=['completed', 'confirmed']
+            bookings__status='confirmed'
         ).distinct().count()
-        
+
         active_clients_last = User.objects.filter(
             bookings__practitioner=practitioner,
             bookings__created_at__gte=now - timedelta(days=60),
             bookings__created_at__lt=now - timedelta(days=30),
-            bookings__status__in=['completed', 'confirmed']
+            bookings__status='confirmed'
         ).distinct().count()
         
         # Average rating
@@ -468,17 +471,19 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         
         # Get unique users who have bookings with this practitioner
         # Annotate with booking statistics
+        # 'in_progress'/'completed' are now on ServiceSession, not Booking (migration 0020).
+        # Use confirmed for active bookings; exclude canceled for broad client queries.
         clients = User.objects.filter(
             bookings__practitioner=practitioner,
-            bookings__status__in=['completed', 'confirmed', 'in_progress']
+            bookings__status='confirmed'
         ).distinct().annotate(
             total_bookings=Count('bookings', filter=Q(
                 bookings__practitioner=practitioner,
-                bookings__status__in=['completed', 'confirmed', 'in_progress']
+                bookings__status='confirmed'
             )),
             total_spent=Sum('bookings__credits_allocated', filter=Q(
                 bookings__practitioner=practitioner,
-                bookings__status='completed'
+                bookings__service_session__status='completed'
             )),
             last_booking_date=Max('bookings__service_session__start_time', filter=Q(
                 bookings__practitioner=practitioner
@@ -537,7 +542,7 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         has_bookings = Booking.objects.filter(
             user=client,
             practitioner=practitioner,
-            status__in=['completed', 'confirmed', 'in_progress']
+            status='confirmed'
         ).exists()
 
         if not has_bookings:
@@ -549,14 +554,15 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         # Annotate with booking statistics
         from django.db.models import Count, Sum, Max, Subquery, OuterRef
 
+        # Event lifecycle (in_progress/completed) now lives on ServiceSession, not Booking
         client_data = User.objects.filter(id=client_id).annotate(
             total_bookings=Count('bookings', filter=Q(
                 bookings__practitioner=practitioner,
-                bookings__status__in=['completed', 'confirmed', 'in_progress']
+                bookings__status='confirmed'
             )),
             total_spent=Sum('bookings__credits_allocated', filter=Q(
                 bookings__practitioner=practitioner,
-                bookings__status='completed'
+                bookings__service_session__status='completed'
             )),
             last_booking_date=Max('bookings__service_session__start_time', filter=Q(
                 bookings__practitioner=practitioner
@@ -613,9 +619,9 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         has_bookings = Booking.objects.filter(
             practitioner=practitioner,
             user=client,
-            status__in=['completed', 'confirmed', 'in_progress']
+            status='confirmed'
         ).exists()
-        
+
         if not has_bookings:
             return Response(
                 {"detail": "You have not had any bookings with this client"},
@@ -709,11 +715,12 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         group_by = request.query_params.get('group_by', 'day')  # day, week, month, year
         
         # Base queryset
+        # 'completed' status now lives on ServiceSession, not Booking (migration 0020)
         bookings = Booking.objects.filter(
             practitioner=practitioner,
-            status='completed'
+            service_session__status='completed'
         )
-        
+
         # Apply date filters
         if start_date:
             bookings = bookings.filter(completed_at__gte=start_date)
@@ -1170,7 +1177,8 @@ class PractitionerViewSet(viewsets.ModelViewSet):
         )
         
         total_bookings = bookings.count()
-        completed_bookings = bookings.filter(status='completed').count()
+        # 'completed' status now lives on ServiceSession, not Booking (migration 0020)
+        completed_bookings = bookings.filter(service_session__status='completed').count()
         canceled_bookings = bookings.filter(status='canceled').count()
         
         # Conversion rate (views to bookings)

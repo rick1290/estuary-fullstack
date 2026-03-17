@@ -28,7 +28,7 @@ class BookingFilter(django_filters.FilterSet):
     
     class Meta:
         model = Booking
-        fields = ['practitioner', 'service', 'user']
+        fields = ['practitioner', 'service', 'user', 'order']
     
     def filter_status(self, queryset, name, value):
         """Filter by status, handling comma-separated values"""

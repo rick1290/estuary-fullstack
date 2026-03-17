@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from .models import Order, CreditTransaction, PractitionerCreditTransaction, PractitionerPayout, UserCreditBalance
+from .models import Order, UserCreditTransaction, EarningsTransaction, PractitionerPayout, UserCreditBalance
 import logging
 
 # Set up logging
@@ -94,17 +94,18 @@ def handle_payment_intent_succeeded(payment_intent):
         order.save()
         
         # Create credit transaction if applicable
+        # TODO: Consolidate with webhook_service.py
         if order.service and order.user:
-            CreditTransaction.objects.create(
-                user=order.user,
-                amount=order.amount,
-                service=order.service,
-                practitioner=order.practitioner,
-                order=order,
-                transaction_type='purchase',
-                currency=order.currency,
-                created_at=timezone.now()
-            )
+            try:
+                UserCreditTransaction.objects.create(
+                    user=order.user,
+                    amount_cents=order.total_amount_cents,
+                    transaction_type='purchase',
+                    order=order,
+                    description=f"Purchase for order {order.id}"
+                )
+            except Exception as e:
+                logger.error(f"Error creating user credit transaction: {str(e)}")
             
             # Update user credit balance
             try:
@@ -116,28 +117,13 @@ def handle_payment_intent_succeeded(payment_intent):
             except Exception as e:
                 logger.error(f"Error updating user credit balance: {str(e)}")
             
-        # Update practitioner credit transaction if applicable
+        # Practitioner earnings are now handled by EarningsService
+        # TODO: Consolidate with webhook_service.py
         if order.practitioner:
-            try:
-                # Calculate commission (could be based on practitioner's agreement)
-                commission_rate = getattr(order.practitioner, 'commission_rate', 0.2)  # Default 20%
-                commission = float(order.amount) * commission_rate
-                net_credits = float(order.amount) - commission
-                
-                # Create practitioner credit transaction
-                PractitionerCreditTransaction.objects.create(
-                    credits_earned=order.amount,
-                    commission=commission,
-                    commission_rate=commission_rate,
-                    net_credits=net_credits,
-                    practitioner=order.practitioner,
-                    payout_status='pending',
-                    booking=order.booking if hasattr(order, 'booking') else None,
-                    currency=order.currency,
-                    created_at=timezone.now()
-                )
-            except Exception as e:
-                logger.error(f"Error creating practitioner credit transaction: {str(e)}")
+            logger.info(
+                f"Practitioner earnings for order {order.id} should be handled by EarningsService "
+                f"via the booking creation flow, not the webhook directly."
+            )
             
     except Order.DoesNotExist:
         # Log that we received a payment for an unknown order
@@ -226,57 +212,57 @@ def handle_charge_refunded(charge):
             order.save()
             
             # Create refund credit transaction
+            # TODO: Consolidate with webhook_service.py
             if order.user:
-                # Convert cents to dollars if needed
-                refund_amount = charge['amount_refunded'] / 100 if charge['currency'].lower() == 'usd' else charge['amount_refunded']
-                
-                CreditTransaction.objects.create(
-                    user=order.user,
-                    amount=-float(refund_amount),  # Negative amount for refund
-                    service=order.service,
-                    practitioner=order.practitioner,
-                    order=order,
-                    transaction_type='refund',
-                    currency=order.currency,
-                    created_at=timezone.now()
-                )
-                
+                refund_amount_cents = charge['amount_refunded']
+
+                try:
+                    UserCreditTransaction.objects.create(
+                        user=order.user,
+                        amount_cents=-refund_amount_cents,  # Negative amount for refund
+                        transaction_type='refund',
+                        order=order,
+                        description=f"Refund for order {order.id}"
+                    )
+                except Exception as e:
+                    logger.error(f"Error creating refund credit transaction: {str(e)}")
+
                 # Update user credit balance
                 try:
-                    balance = UserCreditBalance.objects.get(user=order.user)
-                    balance.update_balance()
-                except UserCreditBalance.DoesNotExist:
-                    pass
+                    UserCreditBalance.update_balance(order.user)
                 except Exception as e:
                     logger.error(f"Error updating user credit balance after refund: {str(e)}")
                 
-            # Update practitioner credit transaction if applicable
+            # Reverse practitioner earnings if applicable
+            # TODO: Consolidate with webhook_service.py
             if order.practitioner:
                 try:
-                    # Find related practitioner credit transactions
-                    pct = PractitionerCreditTransaction.objects.filter(
-                        booking=order.booking if hasattr(order, 'booking') else None
-                    ).first()
-                    
-                    if pct:
-                        # Calculate refunded amount for practitioner
-                        refund_ratio = charge['amount_refunded'] / charge['amount']
-                        practitioner_refund = float(pct.net_credits) * refund_ratio
-                        
-                        # Create a negative credit transaction
-                        PractitionerCreditTransaction.objects.create(
-                            credits_earned=-float(practitioner_refund),
-                            commission=0,  # No commission on refunds
-                            commission_rate=0,
-                            net_credits=-float(practitioner_refund),
-                            practitioner=order.practitioner,
-                            payout_status='pending',
-                            booking=order.booking if hasattr(order, 'booking') else None,
-                            currency=order.currency,
-                            created_at=timezone.now()
-                        )
+                    booking = order.booking if hasattr(order, 'booking') else None
+                    if booking:
+                        earning = EarningsTransaction.objects.filter(
+                            booking=booking,
+                            transaction_type='booking_completion'
+                        ).exclude(status='reversed').first()
+
+                        if earning:
+                            # Zero-division check for refund ratio
+                            if charge['amount'] > 0:
+                                refund_ratio = charge['amount_refunded'] / charge['amount']
+                            else:
+                                refund_ratio = 1.0
+
+                            if refund_ratio >= 1.0:
+                                # Full refund - reverse the earning
+                                earning.status = 'reversed'
+                                earning.save(update_fields=['status'])
+                                logger.info(f"Reversed earning {earning.id} for full refund")
+                            else:
+                                logger.info(
+                                    f"Partial refund ({refund_ratio:.2%}) for earning {earning.id} - "
+                                    f"manual review may be needed"
+                                )
                 except Exception as e:
-                    logger.error(f"Error handling practitioner refund: {str(e)}")
+                    logger.error(f"Error handling practitioner earnings reversal: {str(e)}")
                 
     except Exception as e:
         logger.error(f"Error handling charge.refunded: {str(e)}")
@@ -312,9 +298,9 @@ def handle_payout_paid(payout):
                 practitioner_payout.audit_log = current_metadata
                 practitioner_payout.save()
                 
-                # Update associated credit transactions
-                PractitionerCreditTransaction.objects.filter(payout=practitioner_payout).update(
-                    payout_status='paid'
+                # Update associated earnings transactions
+                EarningsTransaction.objects.filter(payout=practitioner_payout).update(
+                    status='paid'
                 )
                 
     except Exception as e:
@@ -350,9 +336,9 @@ def handle_payout_failed(payout):
                 practitioner_payout.audit_log = current_metadata
                 practitioner_payout.save()
                 
-                # Update associated credit transactions
-                PractitionerCreditTransaction.objects.filter(payout=practitioner_payout).update(
-                    payout_status='on_hold'
+                # Update associated earnings transactions
+                EarningsTransaction.objects.filter(payout=practitioner_payout).update(
+                    status='pending'
                 )
                 
     except Exception as e:

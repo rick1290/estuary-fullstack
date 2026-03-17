@@ -307,14 +307,20 @@ async def complete_booking(booking_id: str) -> bool:
         with transaction.atomic():
             booking = Booking.objects.select_for_update().get(id=booking_id)
             
-            if booking.status != 'in_progress':
-                # Assume it should be in progress by now
-                booking.status = 'in_progress'
-            
-            # Complete the booking
-            booking.status = 'completed'
+            # Event lifecycle status (in_progress, completed) lives on ServiceSession,
+            # not Booking. Booking.status tracks purchase state only (draft, pending_payment, confirmed, canceled).
+            service_session = booking.service_session
+            if service_session and service_session.status != 'in_progress':
+                service_session.status = 'in_progress'
+                service_session.save(update_fields=['status'])
+
+            # Complete the session
+            if service_session:
+                service_session.status = 'completed'
+                service_session.save(update_fields=['status'])
+
             booking.completed_at = datetime.utcnow()
-            booking.save()
+            booking.save(update_fields=['completed_at'])
             
             # Close the room
             if hasattr(booking, 'room') and booking.room:

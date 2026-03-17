@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation"
 
 // Check if a session can be joined
 const isSessionJoinable = (booking: any) => {
-  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.service_session?.status !== "in_progress")) return false
   
   const now = new Date()
   const startTime = parseISO(booking.service_session?.start_time)
@@ -61,18 +61,19 @@ export default function PractitionerUpcomingBookings() {
       .filter(booking => {
         const startTime = parseISO(booking.service_session?.start_time)
         
-        // Include confirmed and in_progress bookings in all tabs except pending
-        const validStatuses = ["confirmed", "in_progress"]
-        
+        // Include confirmed bookings and in_progress service sessions
+        const isConfirmed = booking.status === "confirmed"
+        const isInProgress = booking.service_session?.status === "in_progress"
+
         if (tabValue === "today") {
-          return isToday(startTime) && (validStatuses.includes(booking.status) || booking.status === "in_progress")
+          return isToday(startTime) && (isConfirmed || isInProgress)
         } else if (tabValue === "upcoming") {
-          // Include in_progress bookings that haven't ended yet
-          if (booking.status === "in_progress") {
+          // Include in_progress service sessions that haven't ended yet
+          if (isInProgress) {
             const endTime = booking.service_session?.end_time ? parseISO(booking.service_session?.end_time) : new Date(startTime.getTime() + (booking.duration_minutes || 60) * 60 * 1000)
             return endTime > now
           }
-          return startTime > now && validStatuses.includes(booking.status)
+          return startTime > now && isConfirmed
         } else if (tabValue === "pending") {
           return booking.payment_status === "pending" || booking.status === "pending" || booking.status === "pending_payment"
         }
@@ -100,6 +101,7 @@ export default function PractitionerUpcomingBookings() {
           time: `${format(startTime, "h:mm a")} - ${format(endTime, "h:mm a")}`,
           type: booking.service?.location_type === "virtual" ? "Virtual" : "In-Person",
           status: booking.status,
+          session_status: booking.service_session?.status,
           livekit_room: booking.livekit_room,
           location_type: booking.service?.location_type,
           start_time: booking.service_session?.start_time,
@@ -147,8 +149,8 @@ export default function PractitionerUpcomingBookings() {
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{booking.service}</div>
-                  <Badge variant={booking.status === "confirmed" ? "success" : booking.status === "in_progress" ? "default" : "outline"}>
-                    {booking.status === "in_progress" ? "In Progress" : booking.status}
+                  <Badge variant={booking.session_status === "in_progress" ? "default" : booking.status === "confirmed" ? "success" : "outline"}>
+                    {booking.session_status === "in_progress" ? "In Progress" : booking.status}
                   </Badge>
                 </div>
 
@@ -189,7 +191,7 @@ export default function PractitionerUpcomingBookings() {
                     </Link>
                   </DropdownMenuItem>
                   {/* Join button for virtual sessions */}
-                  {service.location_type === "virtual" && booking.livekit_room && (
+                  {booking.location_type === "virtual" && booking.livekit_room && (
                     <DropdownMenuItem 
                       onClick={() => {
                         if (isSessionJoinable(booking)) {

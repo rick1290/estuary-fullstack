@@ -47,7 +47,7 @@ export default function RoomPage() {
   // Fetch booking details if we have a booking ID
   const bookingId = accessData?.booking?.id;
   const { data: bookingData } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: bookingId! } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId! } }),
     enabled: !!bookingId
   });
 

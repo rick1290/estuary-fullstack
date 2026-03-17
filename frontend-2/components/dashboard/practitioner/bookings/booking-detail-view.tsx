@@ -50,7 +50,7 @@ import {
 
 // Check if a session can be joined
 const isSessionJoinable = (booking: any) => {
-  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  if (!booking.service_session?.start_time || (booking.status !== "confirmed" && booking.service_session?.status !== "in_progress")) return false
   
   const now = new Date()
   const startTime = typeof booking.service_session?.start_time === 'string' ? parseISO(booking.service_session?.start_time) : new Date(booking.service_session?.start_time)
@@ -86,7 +86,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId) } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId } }),
   })
 
   // Mutations
@@ -146,7 +146,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   // Fetch notes
   const { data: notes = [] } = useQuery({
     ...bookingsNotesRetrieveOptions({
-      path: { id: bookingId }
+      path: { public_uuid: bookingId }
     }),
   })
 
@@ -158,7 +158,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         description: "Your note has been saved successfully.",
       })
       queryClient.invalidateQueries({
-        queryKey: bookingsNotesRetrieveOptions({ path: { id: bookingId } }).queryKey
+        queryKey: bookingsNotesRetrieveOptions({ path: { public_uuid: bookingId } }).queryKey
       })
       setIsEditingNote(false)
       setNoteContent("")
@@ -196,14 +196,22 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
     )
   }
 
-  const StatusIcon = statusConfig[booking.status as keyof typeof statusConfig]?.icon || AlertCircle
-  const statusVariant = statusConfig[booking.status as keyof typeof statusConfig]?.color || "default"
-  const statusLabel = statusConfig[booking.status as keyof typeof statusConfig]?.label || booking.status_display
+  // Derive display status from both booking.status and service_session.status
+  const derivedStatus = booking.status === "canceled"
+    ? "canceled"
+    : booking.service_session?.status === "completed"
+    ? "completed"
+    : booking.service_session?.status === "in_progress"
+    ? "in_progress"
+    : booking.status as string
+  const StatusIcon = statusConfig[derivedStatus as keyof typeof statusConfig]?.icon || AlertCircle
+  const statusVariant = statusConfig[derivedStatus as keyof typeof statusConfig]?.color || "default"
+  const statusLabel = statusConfig[derivedStatus as keyof typeof statusConfig]?.label || booking.status_display
 
   const handleCancel = () => {
     if (confirm("Are you sure you want to cancel this booking?")) {
       cancelMutation.mutate({
-        path: { id: parseInt(bookingId) },
+        path: { public_uuid: bookingId },
         body: {
           reason: "Canceled by practitioner",
           canceled_by: "practitioner"
@@ -214,13 +222,13 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
 
   const handleComplete = () => {
     completeMutation.mutate({
-      path: { id: parseInt(bookingId) }
+      path: { public_uuid: bookingId }
     })
   }
 
   const handleConfirm = () => {
     confirmMutation.mutate({
-      path: { id: parseInt(bookingId) }
+      path: { public_uuid: bookingId }
     })
   }
 
@@ -228,7 +236,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
     if (!noteContent.trim()) return
 
     createNoteMutation.mutate({
-      path: { id: bookingId },
+      path: { public_uuid: bookingId },
       body: {
         content: noteContent,
         is_private: true
@@ -265,7 +273,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
           </Badge>
 
           {/* Prominent Mark Complete button for in-progress bookings */}
-          {booking.status === "in_progress" && (
+          {booking.service_session?.status === "in_progress" && (
             <Button
               onClick={handleComplete}
               disabled={completeMutation.isPending}
@@ -296,7 +304,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   Confirm Booking
                 </DropdownMenuItem>
               )}
-              {(booking.status === "confirmed" || booking.status === "in_progress") && (
+              {(booking.status === "confirmed" || booking.service_session?.status === "in_progress") && (
                 <>
                   <DropdownMenuItem
                     onClick={handleComplete}

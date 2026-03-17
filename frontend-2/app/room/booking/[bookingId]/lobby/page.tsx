@@ -21,7 +21,7 @@ export default function BookingLobbyPage() {
 
   // Fetch booking details using React Query
   const { data: bookingDetails, isLoading: loadingBooking, error: bookingError } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId) } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId } }),
     enabled: !!bookingId
   });
 
