@@ -2,6 +2,7 @@
 Earnings service for managing practitioner earnings and commissions.
 """
 import logging
+from decimal import Decimal
 from typing import Optional, Tuple, Any, Dict
 from django.db import transaction
 from django.utils import timezone
@@ -45,8 +46,8 @@ class EarningsService:
             service_type=service_type
         )
         
-        # Calculate amounts
-        commission_amount_cents = int((commission_rate / 100) * gross_amount_cents)
+        # Calculate amounts using Decimal to avoid floating-point errors
+        commission_amount_cents = int(Decimal(str(commission_rate)) / Decimal('100') * gross_amount_cents)
         net_amount_cents = gross_amount_cents - commission_amount_cents
         
         return commission_rate, commission_amount_cents, net_amount_cents
@@ -74,6 +75,13 @@ class EarningsService:
         """
         if not practitioner:
             return None
+
+        # Idempotency check: don't create duplicate earnings for same booking
+        existing = EarningsTransaction.objects.filter(
+            booking=booking, transaction_type='booking_completion'
+        ).first()
+        if existing:
+            return existing
 
         # Determine gross amount based on booking type
         if hasattr(booking, 'order') and booking.order and booking.order.is_package_or_bundle:

@@ -249,7 +249,7 @@ export default function UserUpcomingBookings() {
           {hasMore && (
             <div className="text-center mt-4">
               <Button variant="link" asChild className="text-sage-700">
-                <Link href="/dashboard/user/bookings">
+                <Link href="/dashboard/user/journeys">
                   Show More ({totalCount - 4} more bookings)
                 </Link>
               </Button>

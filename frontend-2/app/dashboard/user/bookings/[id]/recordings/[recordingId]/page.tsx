@@ -19,7 +19,7 @@ export default function RecordingViewerPage() {
   // Fetch booking data with recordings
   const { data: booking, isLoading } = useSuspenseQuery(
     bookingsRetrieveOptions({
-      path: { id: bookingId },
+      path: { public_uuid: bookingId },
     })
   );
 

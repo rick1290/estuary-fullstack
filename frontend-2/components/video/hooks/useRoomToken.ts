@@ -24,13 +24,13 @@ export function useRoomToken({ roomId, bookingId, sessionId }: UseRoomTokenProps
 
   // Fetch booking details if bookingId provided
   const bookingQuery = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId || '0') } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId || '' } }),
     enabled: !!bookingId && !!user
   });
 
   // Fetch session details if sessionId provided
   const sessionQuery = useQuery({
-    ...serviceSessionsRetrieveOptions({ path: { id: parseInt(sessionId || '0') } }),
+    ...serviceSessionsRetrieveOptions({ path: { id: sessionId || '0' } }),
     enabled: !!sessionId && !!user
   });
 
@@ -38,10 +38,10 @@ export function useRoomToken({ roomId, bookingId, sessionId }: UseRoomTokenProps
   useEffect(() => {
     if (roomId) {
       setRoomUuid(roomId);
-    } else if (bookingQuery.data?.room?.public_uuid) {
-      setRoomUuid(bookingQuery.data.room.public_uuid);
-    } else if (sessionQuery.data?.room?.public_uuid) {
-      setRoomUuid(sessionQuery.data.room.public_uuid);
+    } else if (bookingQuery.data?.room) {
+      setRoomUuid(bookingQuery.data.room);
+    } else if (sessionQuery.data?.room) {
+      setRoomUuid(sessionQuery.data.room);
     }
   }, [roomId, bookingQuery.data, sessionQuery.data]);
 
@@ -85,8 +85,8 @@ export function useRoomToken({ roomId, bookingId, sessionId }: UseRoomTokenProps
   const error = bookingQuery.error || sessionQuery.error || tokenMutation.error || 
     (!user && new Error('User must be authenticated to join a room')) ||
     (!roomId && !bookingId && !sessionId && new Error('Room, booking, or session ID required')) ||
-    ((bookingId && bookingQuery.data && !bookingQuery.data.room?.public_uuid) && new Error('No room associated with this booking')) ||
-    ((sessionId && sessionQuery.data && !sessionQuery.data.room?.public_uuid) && new Error('No room associated with this session'));
+    ((bookingId && bookingQuery.data && !bookingQuery.data.room) && new Error('No room associated with this booking')) ||
+    ((sessionId && sessionQuery.data && !sessionQuery.data.room) && new Error('No room associated with this session'));
 
   return {
     token: tokenMutation.data?.token || null,

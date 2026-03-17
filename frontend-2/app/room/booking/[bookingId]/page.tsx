@@ -23,7 +23,7 @@ export default function BookingRoomPage() {
 
   // Fetch booking details using React Query
   const { data: bookingDetails } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId) } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId } }),
     enabled: !!bookingId
   });
 

@@ -27,7 +27,6 @@ const statusVariants = {
   confirmed: "success" as const,
   pending: "secondary" as const,
   pending_payment: "warning" as const,
-  cancelled: "destructive" as const,
   canceled: "destructive" as const,
   completed: "outline" as const,
 }
@@ -43,7 +42,7 @@ const serviceTypeConfig = {
 const isSessionJoinable = (booking: any) => {
   const sessionStartTime = booking.service_session?.start_time
   const sessionEndTime = booking.service_session?.end_time
-  if (!sessionStartTime || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+  if (!sessionStartTime || (booking.status !== "confirmed" && booking.service_session?.status !== "in_progress")) return false
 
   const now = new Date()
   const startTime = parseISO(sessionStartTime)
@@ -110,9 +109,9 @@ export default function PractitionerBookingsList() {
         if (selectedTab === "upcoming") {
           return booking.status === "confirmed" && sessionStartTime && isFuture(parseISO(sessionStartTime))
         } else if (selectedTab === "past") {
-          return booking.status === "completed" || (sessionStartTime && isPast(parseISO(sessionStartTime)))
+          return booking.service_session?.status === "completed" || (sessionStartTime && isPast(parseISO(sessionStartTime)))
         } else if (selectedTab === "canceled") {
-          return booking.status === "cancelled" || booking.status === "canceled"
+          return booking.status === "canceled"
         }
         return true
       })
@@ -262,7 +261,7 @@ export default function PractitionerBookingsList() {
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="canceled">Canceled</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -356,7 +355,7 @@ export default function PractitionerBookingsList() {
                           {/* Inline Join Button for virtual sessions */}
                           {booking.service?.location_type === "virtual" &&
                            booking.room?.public_uuid &&
-                           (booking.status === "confirmed" || booking.status === "in_progress") && (
+                           (booking.status === "confirmed" || booking.service_session?.status === "in_progress") && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>

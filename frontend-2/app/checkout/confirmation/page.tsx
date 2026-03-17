@@ -23,7 +23,7 @@ export default function ConfirmationPage() {
 
   // Fetch booking data
   const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId || '0') } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId || '' } }),
     enabled: !!bookingId && !isNaN(parseInt(bookingId)),
   })
 
@@ -90,6 +90,26 @@ export default function ConfirmationPage() {
 
   const sessionTime = booking.service_session?.start_time
   const totalPaid = ((booking.final_amount_cents || order?.total_amount_cents || 0) / 100).toFixed(2)
+
+  // Format session time in the booking's timezone if available, otherwise user's local timezone
+  const bookingTimezone = (booking as any).timezone as string | undefined
+  const formatSessionDate = (dateValue: string | Date) => {
+    if (bookingTimezone) {
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue)
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: bookingTimezone })
+    }
+    const iso = dateValue instanceof Date ? dateValue.toISOString() : dateValue
+    return format(parseISO(iso), "MMM d, yyyy")
+  }
+
+  const formatSessionTime = (dateValue: string | Date) => {
+    if (bookingTimezone) {
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue)
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: bookingTimezone })
+    }
+    const iso = dateValue instanceof Date ? dateValue.toISOString() : dateValue
+    return format(parseISO(iso), "h:mm a")
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sage-50/30 to-white">
@@ -180,14 +200,14 @@ export default function ConfirmationPage() {
                       <Calendar className="h-4 w-4 text-sage-600" />
                       <div>
                         <p className="text-xs text-muted-foreground">Date</p>
-                        <p className="font-medium text-olive-900">{format(parseISO(sessionTime), "MMM d, yyyy")}</p>
+                        <p className="font-medium text-olive-900">{formatSessionDate(sessionTime)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Clock className="h-4 w-4 text-sage-600" />
                       <div>
                         <p className="text-xs text-muted-foreground">Time</p>
-                        <p className="font-medium text-olive-900">{format(parseISO(sessionTime), "h:mm a")}</p>
+                        <p className="font-medium text-olive-900">{formatSessionTime(sessionTime)}</p>
                       </div>
                     </div>
                   </>
@@ -253,8 +273,8 @@ export default function ConfirmationPage() {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800">
-            <Link href="/dashboard/user/bookings">
-              View My Bookings
+            <Link href="/dashboard/user/journeys">
+              View My Journeys
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </Button>

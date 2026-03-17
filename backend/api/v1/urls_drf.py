@@ -14,7 +14,7 @@ router = DefaultRouter()
 
 # Import and register all viewsets for OpenAPI documentation
 # Booking system
-from bookings.api.v1.views import BookingViewSet
+from bookings.api.v1.views import BookingViewSet, JourneyViewSet
 
 # Service catalog
 from services.api.v1.views import (
@@ -71,6 +71,7 @@ from ai_images.api.v1.views import GeneratedImageViewSet
 # Register all ViewSets properly
 # Bookings
 router.register(r'bookings', BookingViewSet, basename='booking')
+router.register(r'journeys', JourneyViewSet, basename='journey')
 
 # Services
 router.register(r'service-categories', ServiceCategoryViewSet, basename='service-category')

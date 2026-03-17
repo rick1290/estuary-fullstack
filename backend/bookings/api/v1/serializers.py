@@ -579,3 +579,75 @@ class AvailableSlotSerializer(serializers.Serializer):
     end_time = serializers.DateTimeField()
     duration_minutes = serializers.IntegerField()
     is_available = serializers.BooleanField(default=True)
+
+
+# ---------------------------------------------------------------------------
+# Journey Serializers (for OpenAPI type generation)
+# ---------------------------------------------------------------------------
+
+class JourneyPractitionerSerializer(serializers.Serializer):
+    """Practitioner info within a journey."""
+    name = serializers.CharField(allow_null=True)
+    slug = serializers.CharField(allow_null=True)
+    public_uuid = serializers.UUIDField(allow_null=True)
+    bio = serializers.CharField(allow_null=True, allow_blank=True)
+
+
+class JourneySessionSerializer(serializers.Serializer):
+    """A single session within a journey."""
+    booking_uuid = serializers.UUIDField()
+    booking_status = serializers.CharField()
+    title = serializers.CharField(allow_null=True, allow_blank=True)
+    description = serializers.CharField(allow_null=True, allow_blank=True)
+    start_time = serializers.DateTimeField(allow_null=True)
+    end_time = serializers.DateTimeField(allow_null=True)
+    status = serializers.CharField(allow_null=True)
+    sequence_number = serializers.IntegerField(allow_null=True)
+    duration_minutes = serializers.IntegerField(allow_null=True)
+    room_uuid = serializers.UUIDField(allow_null=True)
+    client_notes = serializers.CharField(allow_blank=True, default='')
+    confirmed_at = serializers.DateTimeField(allow_null=True)
+    completed_at = serializers.DateTimeField(allow_null=True)
+    agenda = serializers.CharField(allow_null=True, allow_blank=True)
+    what_youll_learn = serializers.CharField(allow_null=True, allow_blank=True)
+    max_participants = serializers.IntegerField(allow_null=True)
+    current_participants = serializers.IntegerField(allow_null=True)
+
+
+class JourneyListItemSerializer(serializers.Serializer):
+    """A journey in the list view."""
+    journey_id = serializers.UUIDField(help_text="Booking UUID to use for navigation")
+    journey_type = serializers.ChoiceField(choices=['session', 'workshop', 'course', 'package', 'bundle'])
+    service_name = serializers.CharField()
+    service_description = serializers.CharField(allow_blank=True, default='')
+    service_uuid = serializers.UUIDField()
+    practitioner = JourneyPractitionerSerializer(allow_null=True)
+    total_sessions = serializers.IntegerField()
+    completed_sessions = serializers.IntegerField()
+    upcoming_sessions = serializers.IntegerField()
+    needs_scheduling = serializers.IntegerField()
+    next_session_time = serializers.DateTimeField(allow_null=True)
+    next_session_title = serializers.CharField(allow_null=True, allow_blank=True)
+    progress_percentage = serializers.FloatField()
+    status = serializers.ChoiceField(choices=['upcoming', 'active', 'completed'])
+
+
+class JourneyListResponseSerializer(serializers.Serializer):
+    """Response wrapper for journey list."""
+    count = serializers.IntegerField()
+    results = JourneyListItemSerializer(many=True)
+
+
+class JourneyDetailSerializer(serializers.Serializer):
+    """Full journey detail."""
+    journey_id = serializers.UUIDField(help_text="Booking UUID used for lookup")
+    journey_type = serializers.ChoiceField(choices=['session', 'workshop', 'course', 'package', 'bundle'])
+    service_name = serializers.CharField()
+    service_description = serializers.CharField(allow_blank=True, default='')
+    service_uuid = serializers.UUIDField()
+    practitioner = JourneyPractitionerSerializer(allow_null=True)
+    sessions = JourneySessionSerializer(many=True)
+    total_sessions = serializers.IntegerField()
+    completed_sessions = serializers.IntegerField()
+    progress_percentage = serializers.FloatField()
+    order_uuid = serializers.UUIDField(allow_null=True)

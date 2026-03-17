@@ -14,7 +14,7 @@ export function BookingDebugInfo({ bookingId }: BookingDebugInfoProps) {
   const { cameras, microphones, error } = useMediaDevices();
   
   const { data: booking } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id: parseInt(bookingId) } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: bookingId } }),
     enabled: !!bookingId
   });
 

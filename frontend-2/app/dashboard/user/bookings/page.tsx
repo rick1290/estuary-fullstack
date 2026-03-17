@@ -1,10 +1,5 @@
-import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
-import UserBookingsList from "@/components/dashboard/user/user-bookings-list"
+import { redirect } from "next/navigation"
 
 export default function UserBookingsPage() {
-  return (
-    <UserDashboardLayout title="My Bookings">
-      <UserBookingsList />
-    </UserDashboardLayout>
-  )
+  redirect("/dashboard/user/journeys")
 }

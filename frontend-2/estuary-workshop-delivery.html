@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estuary — My Workshop: Dream Cartography</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #4a5e4a;
+    --sage-light: #6b7f6b;
+    --sage-pale: #e8ede8;
+    --clay: #c4856a;
+    --clay-light: #d4a08c;
+    --bark: #3d2e1e;
+    --cream: #f8f5f0;
+    --mist: #f0ede8;
+    --sand: #e8e0d4;
+    --white: #ffffff;
+    --text-primary: #2a2218;
+    --text-secondary: #6b6258;
+    --text-muted: #9b9088;
+    --border: #e0d8ce;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-pill: 100px;
+    --amber: #b07d3a;
+    --amber-light: #c99448;
+    --amber-pale: #f5ede0;
+    --amber-dark: #7a5420;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-primary); min-height: 100vh; }
+
+  /* ── BANNER ── */
+  .announcement-bar {
+    background: var(--bark);
+    color: rgba(245,240,232,0.75);
+    font-size: 12.5px;
+    padding: 9px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .announcement-bar .left { display: flex; align-items: center; gap: 6px; }
+  .announcement-bar strong { color: #f5f0e8; font-weight: 500; }
+  .switch-view-btn { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: rgba(245,240,232,0.7); background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-pill); padding: 4px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .switch-view-btn:hover { border-color: rgba(255,255,255,0.35); color: #f5f0e8; }
+
+  /* ── NAV ── */
+  .top-nav { position: sticky; top: 0; z-index: 200; background: rgba(248,245,240,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 32px; height: 58px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 20px; letter-spacing: 0.12em; color: var(--bark); text-transform: uppercase; }
+  .top-nav-links { display: flex; align-items: center; gap: 4px; }
+  .top-nav-links a { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-pill); font-size: 13.5px; color: var(--text-secondary); text-decoration: none; transition: all 0.2s; }
+  .top-nav-links a:hover { background: var(--mist); color: var(--text-primary); }
+  .top-nav-links a.active { background: var(--sage); color: var(--white); }
+  .nav-right { display: flex; align-items: center; gap: 8px; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all 0.2s; }
+  .icon-btn:hover { background: var(--mist); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--sage-pale); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+  /* ── HERO ── */
+  .workshop-hero {
+    background: var(--bark);
+    position: relative; overflow: hidden;
+    padding: 44px 48px 0;
+    min-height: 280px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%);
+    margin-bottom: -2px;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 70% 20%, rgba(176,125,58,0.28) 0%, transparent 50%),
+      radial-gradient(ellipse at 10% 80%, rgba(176,125,58,0.12) 0%, transparent 45%),
+      radial-gradient(ellipse at 90% 90%, rgba(74,94,74,0.18) 0%, transparent 40%),
+      linear-gradient(160deg, #1e1508 0%, #2e1f0a 45%, #1a1206 100%);
+  }
+
+  .hero-bg::after { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); opacity: 0.35; pointer-events: none; }
+
+  .hero-content { position: relative; z-index: 2; padding-bottom: 64px; animation: fadeUp 0.45s ease both; }
+
+  /* Personal greeting strip */
+  .hero-greeting {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .hero-greeting-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--amber-dark), var(--amber));
+    border: 2px solid rgba(176,125,58,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px; color: #f5f0e8; font-style: italic;
+    flex-shrink: 0;
+  }
+
+  .hero-greeting-text {
+    font-size: 13px; color: rgba(245,240,232,0.55);
+    font-weight: 300;
+  }
+
+  .hero-greeting-text strong {
+    color: rgba(245,240,232,0.85);
+    font-weight: 500;
+  }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 11px; border-radius: var(--radius-pill);
+    margin-left: auto;
+  }
+
+  .status-pill.registered {
+    background: rgba(176,125,58,0.15);
+    border: 1px solid rgba(176,125,58,0.4);
+    color: var(--amber-light);
+  }
+
+  .status-pill.today {
+    background: rgba(196,133,106,0.15);
+    border: 1px solid rgba(196,133,106,0.4);
+    color: #e0a080;
+  }
+
+  .status-pill.completed {
+    background: rgba(74,94,74,0.2);
+    border: 1px solid rgba(74,94,74,0.3);
+    color: #8aaa8a;
+  }
+
+  .pulse-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .pulse-dot.amber { background: var(--amber-light); animation: pulse-amber 2s ease-in-out infinite; }
+  .pulse-dot.live { background: #e0a080; animation: pulse-live 1.4s ease-in-out infinite; }
+  .pulse-dot.done { background: #8aaa8a; }
+
+  .hero-workshop-title {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(245,240,232,0.35);
+    margin-bottom: 8px;
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 46px; font-weight: 500;
+    color: #f5f0e8; line-height: 1.0; letter-spacing: -0.01em;
+    margin-bottom: 14px;
+  }
+
+  .hero-title em { font-style: italic; color: var(--amber-light); }
+
+  /* Countdown strip (upcoming state) */
+  .countdown-strip {
+    display: flex; align-items: center; gap: 24px;
+    padding: 14px 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(176,125,58,0.2);
+    border-radius: var(--radius-sm);
+    margin-bottom: 0;
+  }
+
+  .countdown-unit { text-align: center; }
+  .countdown-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px; font-weight: 500; color: var(--amber-light);
+    line-height: 1;
+  }
+  .countdown-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.3); margin-top: 2px; }
+  .countdown-sep { font-size: 24px; color: rgba(176,125,58,0.3); font-weight: 300; margin-top: -4px; }
+
+  /* Today strip */
+  .today-strip {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px;
+    background: rgba(196,133,106,0.12);
+    border: 1px solid rgba(196,133,106,0.3);
+    border-radius: var(--radius-sm);
+  }
+  .today-strip-icon { color: #e0a080; flex-shrink: 0; }
+  .today-strip-text { font-size: 14px; color: rgba(245,240,232,0.75); line-height: 1.4; }
+  .today-strip-text strong { color: #f5f0e8; font-weight: 500; }
+
+  /* ── LAYOUT ── */
+  .workshop-body { display: grid; grid-template-columns: 1fr 380px; max-width: 1200px; margin: 0 auto; padding: 0 0 80px; align-items: start; background: var(--cream); }
+  .workshop-main { padding: 40px 48px 0; min-width: 0; border-right: 1px solid var(--border); animation: fadeUp 0.4s 0.1s ease both; }
+  .section-block { margin-bottom: 44px; }
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .body-text { font-size: 15px; font-weight: 300; line-height: 1.75; color: var(--text-secondary); }
+  .body-text p + p { margin-top: 12px; }
+
+  /* ── PREP CHECKLIST ── */
+  .prep-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .prep-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 18px;
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .prep-item:hover { border-color: var(--amber); }
+  .prep-item.done { background: #fdfaf5; border-color: rgba(176,125,58,0.25); }
+
+  .prep-checkbox {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+    transition: all 0.2s;
+  }
+
+  .prep-item.done .prep-checkbox {
+    background: var(--amber); border-color: var(--amber); color: white;
+  }
+
+  .prep-item-text { flex: 1; }
+  .prep-item-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .prep-item.done .prep-item-title { color: var(--text-muted); text-decoration: line-through; text-decoration-color: rgba(176,125,58,0.4); }
+  .prep-item-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.45; }
+
+  /* ── LOGISTICS ── */
+  .logistics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .logistics-card {
+    padding: 18px 20px;
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  }
+
+  .logistics-card-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .logistics-card-label svg { color: var(--amber); }
+  .logistics-card-value { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+  .logistics-card-sub { font-size: 12.5px; color: var(--text-muted); line-height: 1.45; }
+
+  .logistics-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12.5px; color: var(--amber); margin-top: 8px;
+    text-decoration: none; transition: opacity 0.2s;
+  }
+  .logistics-link:hover { opacity: 0.75; }
+
+  /* ── ATTENDEES ── */
+  .attendee-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .attendee-row:last-child { border-bottom: none; }
+  .attendee-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 14px;
+    font-style: italic; color: rgba(255,255,255,0.8);
+    flex-shrink: 0;
+  }
+  .attendee-name { font-size: 14px; color: var(--text-primary); }
+  .attendee-location { font-size: 12px; color: var(--text-muted); }
+  .attendee-you-badge { font-size: 11px; font-weight: 500; background: var(--amber-pale); color: var(--amber); border-radius: var(--radius-pill); padding: 2px 8px; margin-left: auto; }
+
+  /* ── MESSAGE FROM FACILITATOR ── */
+  .facilitator-message {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--amber);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 20px 22px;
+  }
+
+  .facilitator-message-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+
+  .facilitator-msg-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg,#8a7060,#5a4030);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 14px;
+    color: rgba(255,255,255,0.8); font-style: italic; flex-shrink: 0;
+  }
+
+  .facilitator-msg-meta { flex: 1; }
+  .facilitator-msg-name { font-size: 13.5px; font-weight: 500; color: var(--text-primary); }
+  .facilitator-msg-role { font-size: 12px; color: var(--text-muted); }
+  .facilitator-msg-date { font-size: 12px; color: var(--text-muted); }
+
+  .facilitator-msg-body { font-size: 14px; font-weight: 300; line-height: 1.7; color: var(--text-secondary); }
+
+  /* ── POST-WORKSHOP RESOURCES ── */
+  .resource-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    transition: box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .resource-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+
+  .resource-icon {
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .resource-icon.video { background: rgba(176,125,58,0.12); color: var(--amber); }
+  .resource-icon.pdf { background: rgba(74,94,74,0.1); color: var(--sage); }
+  .resource-icon.audio { background: rgba(196,133,106,0.12); color: var(--clay); }
+
+  .resource-info { flex: 1; }
+  .resource-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .resource-meta { font-size: 12px; color: var(--text-muted); }
+
+  .resource-action {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12.5px; color: var(--amber);
+    background: var(--amber-pale); border: none;
+    padding: 6px 12px; border-radius: var(--radius-pill);
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .resource-action:hover { background: rgba(176,125,58,0.2); }
+
+  /* ── REVIEW BLOCK ── */
+  .review-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+
+  .star-row { display: flex; gap: 6px; margin-bottom: 14px; }
+  .star-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--mist); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); transition: all 0.2s;
+    font-size: 16px;
+  }
+  .star-btn.filled { background: var(--amber-pale); color: var(--amber); }
+  .star-btn:hover { background: var(--amber-pale); color: var(--amber); }
+
+  .review-textarea {
+    width: 100%; min-height: 80px; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--cream); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 300; color: var(--text-primary);
+    resize: none; line-height: 1.6; margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .review-textarea:focus { outline: none; border-color: var(--amber); }
+  .review-textarea::placeholder { color: var(--text-muted); }
+
+  .btn-submit-review {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--amber); color: white;
+    border: none; border-radius: var(--radius-pill);
+    padding: 9px 20px; font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px; font-weight: 500; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-submit-review:hover { background: var(--amber-light); }
+
+  /* ── SIDEBAR ── */
+  .workshop-sidebar { position: sticky; top: 58px; padding: 32px 28px; display: flex; flex-direction: column; gap: 0; animation: fadeUp 0.4s 0.15s ease both; }
+
+  /* ── TICKET CARD ── */
+  .ticket-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: visible;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .ticket-header {
+    background: linear-gradient(135deg, #1e1508 0%, #2e1f0a 100%);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 20px 20px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ticket-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 20%, rgba(176,125,58,0.2) 0%, transparent 60%);
+  }
+
+  .ticket-header-content { position: relative; z-index: 1; }
+
+  .ticket-event-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.35); margin-bottom: 6px; }
+
+  .ticket-event-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 500; color: #f5f0e8;
+    line-height: 1.15; margin-bottom: 14px;
+  }
+
+  .ticket-date-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: rgba(245,240,232,0.6);
+    margin-bottom: 4px;
+  }
+  .ticket-date-row svg { color: var(--amber); flex-shrink: 0; }
+  .ticket-date-row strong { color: rgba(245,240,232,0.9); font-weight: 500; }
+
+  /* Dashed tear line */
+  .ticket-tear {
+    display: flex; align-items: center;
+    margin: 0 -1px;
+    position: relative;
+  }
+
+  .ticket-tear-notch {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--cream);
+    flex-shrink: 0;
+    position: relative; z-index: 1;
+  }
+
+  .ticket-tear-line {
+    flex: 1;
+    border-top: 1.5px dashed var(--border);
+    margin: 0 4px;
+  }
+
+  /* Ticket stub area */
+  .ticket-stub {
+    padding: 16px 20px;
+  }
+
+  .ticket-stub-row {
+    display: flex; justify-content: space-between;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .ticket-stub-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .ticket-stub-label { color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .ticket-stub-label svg { color: var(--amber); }
+  .ticket-stub-value { font-weight: 500; color: var(--text-primary); text-align: right; }
+
+  .ticket-confirmation {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .ticket-conf-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+  .ticket-conf-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 500; letter-spacing: 0.06em;
+    color: var(--amber);
+  }
+
+  /* ── SIDEBAR ACTIONS ── */
+  .sidebar-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+  .btn-primary-action {
+    width: 100%; height: 50px; border-radius: var(--radius-pill);
+    background: var(--amber); color: white; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary-action:hover { background: var(--amber-light); }
+
+  .btn-primary-action.sage { background: var(--sage); }
+  .btn-primary-action.sage:hover { background: var(--sage-light); }
+
+  .btn-secondary-action {
+    width: 100%; height: 44px; border-radius: var(--radius-pill);
+    background: var(--white); color: var(--text-secondary);
+    border: 1.5px solid var(--border);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 400;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .btn-secondary-action:hover { border-color: var(--text-muted); color: var(--text-primary); }
+
+  .btn-danger-text {
+    width: 100%; background: none; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 12.5px;
+    color: var(--text-muted); cursor: pointer; padding: 6px;
+    transition: color 0.2s; text-align: center;
+  }
+  .btn-danger-text:hover { color: #c4756a; }
+
+  /* ── SIDEBAR PRACTITIONER ── */
+  .sidebar-practitioner {
+    padding: 16px; background: var(--mist); border-radius: var(--radius-sm);
+    display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
+  }
+
+  .prac-avatar-sm {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg,#8a7060,#5a4030);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 18px;
+    color: rgba(255,255,255,0.8); font-style: italic; flex-shrink: 0;
+  }
+
+  .prac-sm-name { font-size: 14px; font-weight: 500; color: var(--bark); }
+  .prac-sm-role { font-size: 12px; color: var(--text-muted); }
+
+  .btn-message-prac {
+    margin-left: auto; display: flex; align-items: center; gap: 5px;
+    font-size: 12.5px; color: var(--sage); background: var(--sage-pale);
+    border: none; border-radius: var(--radius-pill); padding: 6px 12px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-message-prac:hover { background: #d4e0d4; }
+
+  /* ── NEXT STEP UPSELL ── */
+  .upsell-card {
+    background: linear-gradient(135deg, rgba(74,94,74,0.06), rgba(74,94,74,0.02));
+    border: 1px solid rgba(74,94,74,0.2);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+  }
+
+  .upsell-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage-light); margin-bottom: 8px; }
+  .upsell-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: var(--bark); margin-bottom: 4px; }
+  .upsell-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
+
+  .btn-upsell {
+    width: 100%; height: 38px; border-radius: var(--radius-pill);
+    background: var(--sage); color: white; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-upsell:hover { background: var(--sage-light); }
+
+  /* ── TODAY STATE SPECIFICS ── */
+  .join-banner {
+    background: linear-gradient(135deg, rgba(196,133,106,0.12), rgba(176,125,58,0.08));
+    border: 1.5px solid rgba(196,133,106,0.3);
+    border-radius: var(--radius-sm);
+    padding: 20px 22px;
+    margin-bottom: 10px;
+  }
+
+  .join-banner-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+  .join-banner-sub { font-size: 13px; color: var(--text-muted); }
+
+  /* ── STATE VISIBILITY ── */
+  body.state-upcoming .today-only,
+  body.state-upcoming .post-only { display: none !important; }
+
+  body.state-today .upcoming-only,
+  body.state-today .post-only { display: none !important; }
+
+  body.state-post .upcoming-only,
+  body.state-post .today-only { display: none !important; }
+
+  /* ── DEMO TOGGLE ── */
+  .demo-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; gap: 6px; background: white; padding: 8px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+  .demo-btn { padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .demo-btn.active { background: var(--bark); border-color: var(--bark); color: white; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse-amber { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(176,125,58,0.5); } 50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(176,125,58,0); } }
+  @keyframes pulse-live { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(196,133,106,0.5); } 50% { box-shadow: 0 0 0 5px rgba(196,133,106,0); } }
+</style>
+</head>
+<body class="state-upcoming">
+
+<!-- BANNER -->
+<div class="announcement-bar">
+  <div class="left">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    You're viewing as: <strong>Client</strong>
+  </div>
+  <button class="switch-view-btn">
+    Switch to Practitioner View
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
+</div>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <div class="logo">Estuary</div>
+  <div class="top-nav-links">
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Marketplace
+    </a>
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Practitioners
+    </a>
+    <a href="#" class="active">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      My Journey
+    </a>
+    <a href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Messages
+    </a>
+  </div>
+  <div class="nav-right">
+    <button class="icon-btn">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <div class="avatar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9b9088" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="workshop-hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+
+    <!-- Personal greeting -->
+    <div class="hero-greeting">
+      <div class="hero-greeting-avatar">A</div>
+      <span class="hero-greeting-text">
+        Hey <strong>Alex</strong> — you're registered for this workshop
+      </span>
+      <span class="status-pill registered upcoming-only">
+        <span class="pulse-dot amber"></span>
+        Upcoming
+      </span>
+      <span class="status-pill today today-only">
+        <span class="pulse-dot live"></span>
+        Today
+      </span>
+      <span class="status-pill completed post-only">
+        <span class="pulse-dot done"></span>
+        Attended
+      </span>
+    </div>
+
+    <div class="hero-workshop-title">Workshop · Energy Healing</div>
+    <h1 class="hero-title">The Dream <em>Cartography</em><br>Workshop</h1>
+
+    <!-- Countdown — upcoming state -->
+    <div class="countdown-strip upcoming-only">
+      <div class="countdown-unit">
+        <div class="countdown-number" id="cd-days">11</div>
+        <div class="countdown-label">Days</div>
+      </div>
+      <span class="countdown-sep">·</span>
+      <div class="countdown-unit">
+        <div class="countdown-number" id="cd-hours">06</div>
+        <div class="countdown-label">Hours</div>
+      </div>
+      <span class="countdown-sep">·</span>
+      <div class="countdown-unit">
+        <div class="countdown-number" id="cd-mins">42</div>
+        <div class="countdown-label">Min</div>
+      </div>
+      <div style="margin-left:auto;font-size:13px;color:rgba(245,240,232,0.4);line-height:1.4;">
+        Saturday, March 22<br>10:00 AM · Sebastopol, CA
+      </div>
+    </div>
+
+    <!-- Today strip -->
+    <div class="today-strip today-only">
+      <svg class="today-strip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div class="today-strip-text">
+        <strong>Your workshop starts in 2 hours.</strong><br>
+        10:00 AM at Sebastopol Community Center, 390 Morris St
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="workshop-body">
+
+  <!-- MAIN COLUMN -->
+  <main class="workshop-main">
+
+    <!-- UPCOMING: Message from facilitator -->
+    <div class="section-block upcoming-only">
+      <div class="section-label">Message from Your Facilitator</div>
+      <div class="facilitator-message">
+        <div class="facilitator-message-header">
+          <div class="facilitator-msg-avatar">D</div>
+          <div class="facilitator-msg-meta">
+            <div class="facilitator-msg-name">Shaman Dave</div>
+            <div class="facilitator-msg-role">Workshop Facilitator</div>
+          </div>
+          <div class="facilitator-msg-date">Sent Mar 10</div>
+        </div>
+        <div class="facilitator-msg-body">
+          I'm so glad you're joining us. Before we meet, I'd love for you to spend a few minutes with your dreams — even jotting down fragments or images that have stayed with you recently. Come with an open hand and a willingness to not-know. That's the whole practice, really.
+        </div>
+      </div>
+    </div>
+
+    <!-- UPCOMING: Prep checklist -->
+    <div class="section-block upcoming-only">
+      <div class="section-label">Prepare for Your Workshop</div>
+      <div class="prep-list">
+        <div class="prep-item done" onclick="togglePrep(this)">
+          <div class="prep-checkbox">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="prep-item-text">
+            <div class="prep-item-title">Download the Dream Journal worksheet</div>
+            <div class="prep-item-desc">Use this the night before to capture any dreams or images from sleep.</div>
+          </div>
+        </div>
+        <div class="prep-item" onclick="togglePrep(this)">
+          <div class="prep-checkbox"></div>
+          <div class="prep-item-text">
+            <div class="prep-item-title">Spend 5 minutes with a dream</div>
+            <div class="prep-item-desc">Recall a recent dream — even fragments. Write down whatever surfaces without judgment.</div>
+          </div>
+        </div>
+        <div class="prep-item" onclick="togglePrep(this)">
+          <div class="prep-checkbox"></div>
+          <div class="prep-item-text">
+            <div class="prep-item-title">Add the event to your calendar</div>
+            <div class="prep-item-desc">Saturday, March 22 · 10:00–11:00 AM · Sebastopol Community Center</div>
+          </div>
+        </div>
+        <div class="prep-item" onclick="togglePrep(this)">
+          <div class="prep-checkbox"></div>
+          <div class="prep-item-text">
+            <div class="prep-item-title">Review the location and parking info</div>
+            <div class="prep-item-desc">Street parking available on Morris St. Enter through the side garden gate.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPCOMING: Logistics -->
+    <div class="section-block upcoming-only">
+      <div class="section-label">Day-of Logistics</div>
+      <div class="logistics-grid">
+        <div class="logistics-card">
+          <div class="logistics-card-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Location
+          </div>
+          <div class="logistics-card-value">Sebastopol Community Center</div>
+          <div class="logistics-card-sub">390 Morris St, Sebastopol, CA 95472</div>
+          <a class="logistics-link" href="#">
+            Open in Maps
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+        <div class="logistics-card">
+          <div class="logistics-card-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Time
+          </div>
+          <div class="logistics-card-value">10:00 – 11:00 AM</div>
+          <div class="logistics-card-sub">Doors open at 9:45 AM. Please arrive a few minutes early.</div>
+        </div>
+        <div class="logistics-card">
+          <div class="logistics-card-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Group Size
+          </div>
+          <div class="logistics-card-value">8 of 12 registered</div>
+          <div class="logistics-card-sub">Small, intimate group format.</div>
+        </div>
+        <div class="logistics-card">
+          <div class="logistics-card-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            What to Bring
+          </div>
+          <div class="logistics-card-value">Just yourself</div>
+          <div class="logistics-card-sub">All materials provided. Optional: a journal if you like to write.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPCOMING: Who's attending -->
+    <div class="section-block upcoming-only">
+      <div class="section-label">Who's Attending · 8 registered</div>
+      <div class="attendee-row">
+        <div class="attendee-avatar" style="background:linear-gradient(135deg,#8a7060,#5a4030);">A</div>
+        <div><div class="attendee-name">Alex Rivera</div><div class="attendee-location">Santa Rosa, CA</div></div>
+        <span class="attendee-you-badge">You</span>
+      </div>
+      <div class="attendee-row">
+        <div class="attendee-avatar" style="background:linear-gradient(135deg,#6a7a5a,#3a4a2a);">M</div>
+        <div><div class="attendee-name">Morgan T.</div><div class="attendee-location">Petaluma, CA</div></div>
+      </div>
+      <div class="attendee-row">
+        <div class="attendee-avatar" style="background:linear-gradient(135deg,#6a5a7a,#3a2a4a);">J</div>
+        <div><div class="attendee-name">Jamie L.</div><div class="attendee-location">Sebastopol, CA</div></div>
+      </div>
+      <div class="attendee-row" style="padding-top:12px;border-bottom:none;">
+        <div style="font-size:13px;color:var(--text-muted);">+ 5 others · names visible to facilitator only</div>
+      </div>
+    </div>
+
+    <!-- TODAY: Big logistics view -->
+    <div class="section-block today-only">
+      <div class="section-label">Getting There</div>
+      <div class="join-banner">
+        <div class="join-banner-title">Sebastopol Community Center</div>
+        <div class="join-banner-sub">390 Morris St, Sebastopol, CA · Enter through side garden gate</div>
+        <a class="logistics-link" href="#" style="margin-top:10px;display:inline-flex;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Open in Maps
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+      <div class="logistics-grid" style="margin-top:12px;">
+        <div class="logistics-card">
+          <div class="logistics-card-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timing</div>
+          <div class="logistics-card-value">Doors open 9:45 AM</div>
+          <div class="logistics-card-sub">Please arrive a few minutes early.</div>
+        </div>
+        <div class="logistics-card">
+          <div class="logistics-card-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Questions?</div>
+          <div class="logistics-card-value">Message Shaman Dave</div>
+          <div class="logistics-card-sub">He's available until 9:30 AM today.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST: Recording -->
+    <div class="section-block post-only">
+      <div class="section-label">Workshop Recording</div>
+      <div class="resource-item">
+        <div class="resource-icon video">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        </div>
+        <div class="resource-info">
+          <div class="resource-title">Dream Cartography Workshop — Full Session</div>
+          <div class="resource-meta">Mar 22, 2025 · 58 min · Added to My Journey</div>
+        </div>
+        <button class="resource-action">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Watch
+        </button>
+      </div>
+    </div>
+
+    <!-- POST: Resources -->
+    <div class="section-block post-only">
+      <div class="section-label">Your Materials</div>
+      <div class="resource-item">
+        <div class="resource-icon pdf">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="resource-info">
+          <div class="resource-title">Dream Cartography Worksheet</div>
+          <div class="resource-meta">PDF · Your completed map from the session</div>
+        </div>
+        <button class="resource-action">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+      <div class="resource-item">
+        <div class="resource-icon audio">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div class="resource-info">
+          <div class="resource-title">Closing Meditation — Shaman Dave</div>
+          <div class="resource-meta">Audio · 12 min · From your session</div>
+        </div>
+        <button class="resource-action">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Play
+        </button>
+      </div>
+      <div class="resource-item">
+        <div class="resource-icon pdf">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        </div>
+        <div class="resource-info">
+          <div class="resource-title">Continuing Your Practice — Reading List</div>
+          <div class="resource-meta">PDF · Curated by Shaman Dave</div>
+        </div>
+        <button class="resource-action">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+    </div>
+
+    <!-- POST: Note from facilitator -->
+    <div class="section-block post-only">
+      <div class="section-label">Note from Shaman Dave</div>
+      <div class="facilitator-message">
+        <div class="facilitator-message-header">
+          <div class="facilitator-msg-avatar">D</div>
+          <div class="facilitator-msg-meta">
+            <div class="facilitator-msg-name">Shaman Dave</div>
+            <div class="facilitator-msg-role">Workshop Facilitator</div>
+          </div>
+          <div class="facilitator-msg-date">Mar 22</div>
+        </div>
+        <div class="facilitator-msg-body">
+          What a group. I'm still sitting with the richness of what came up in the room. The resources above are yours to keep — use the worksheet as a living document over the next few weeks. If the Nightmare Healing course calls you, it goes deeper into everything we touched. And my door is always open for a 1:1 if you want to continue the work with more personal attention.
+        </div>
+      </div>
+    </div>
+
+    <!-- POST: Leave a review -->
+    <div class="section-block post-only">
+      <div class="section-label">Share Your Experience</div>
+      <div class="review-card">
+        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:10px;">How was the workshop?</div>
+        <div class="star-row" id="star-row">
+          <button class="star-btn filled" onclick="setStars(1)">★</button>
+          <button class="star-btn filled" onclick="setStars(2)">★</button>
+          <button class="star-btn filled" onclick="setStars(3)">★</button>
+          <button class="star-btn filled" onclick="setStars(4)">★</button>
+          <button class="star-btn" onclick="setStars(5)">★</button>
+        </div>
+        <textarea class="review-textarea" placeholder="Share what the experience was like for you…"></textarea>
+        <button class="btn-submit-review">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Submit Review
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside class="workshop-sidebar">
+
+    <!-- TICKET -->
+    <div class="ticket-card">
+      <div class="ticket-header">
+        <div class="ticket-header-content">
+          <div class="ticket-event-label">Your Ticket</div>
+          <div class="ticket-event-name">The Dream Cartography<br>Workshop</div>
+          <div class="ticket-date-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <strong>Saturday, March 22</strong>
+          </div>
+          <div class="ticket-date-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            10:00 – 11:00 AM
+          </div>
+        </div>
+      </div>
+      <div class="ticket-tear">
+        <div class="ticket-tear-notch"></div>
+        <div class="ticket-tear-line"></div>
+        <div class="ticket-tear-notch"></div>
+      </div>
+      <div class="ticket-stub">
+        <div class="ticket-stub-row">
+          <span class="ticket-stub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Attendee
+          </span>
+          <span class="ticket-stub-value">Alex Rivera</span>
+        </div>
+        <div class="ticket-stub-row">
+          <span class="ticket-stub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
+            Location
+          </span>
+          <span class="ticket-stub-value" style="font-size:12px;">Sebastopol, CA</span>
+        </div>
+        <div class="ticket-stub-row">
+          <span class="ticket-stub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+            Facilitator
+          </span>
+          <span class="ticket-stub-value">Shaman Dave</span>
+        </div>
+        <div class="ticket-stub-row">
+          <span class="ticket-stub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Paid
+          </span>
+          <span class="ticket-stub-value">$25.00</span>
+        </div>
+        <div class="ticket-confirmation">
+          <div class="ticket-conf-label">Confirmation</div>
+          <div class="ticket-conf-number">EST-2025-7742</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR ACTIONS: upcoming -->
+    <div class="sidebar-actions upcoming-only">
+      <button class="btn-primary-action">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Add to Calendar
+      </button>
+      <button class="btn-secondary-action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Get Directions
+      </button>
+      <button class="btn-danger-text">I can't make this date — cancel my spot</button>
+    </div>
+
+    <!-- SIDEBAR ACTIONS: today -->
+    <div class="sidebar-actions today-only">
+      <button class="btn-primary-action" style="background:linear-gradient(135deg,#c4856a,#b07d3a);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Get Directions
+      </button>
+      <button class="btn-secondary-action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Message Shaman Dave
+      </button>
+    </div>
+
+    <!-- SIDEBAR ACTIONS: post -->
+    <div class="sidebar-actions post-only">
+      <button class="btn-primary-action sage">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Watch Recording
+      </button>
+      <button class="btn-secondary-action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Message Shaman Dave
+      </button>
+    </div>
+
+    <!-- Practitioner contact -->
+    <div class="sidebar-practitioner">
+      <div class="prac-avatar-sm">D</div>
+      <div>
+        <div class="prac-sm-name">Shaman Dave</div>
+        <div class="prac-sm-role">Your facilitator</div>
+      </div>
+      <button class="btn-message-prac">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Message
+      </button>
+    </div>
+
+    <!-- Upsell: next step -->
+    <div class="upsell-card">
+      <div class="upsell-label">Continue the work</div>
+      <div class="upsell-title">Nightmare Healing</div>
+      <div class="upsell-desc">Shaman Dave's 6-module course goes deeper into everything you touched today — dream symbology, shamanic journeying, and integration practices.</div>
+      <button class="btn-upsell">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Explore Course
+      </button>
+    </div>
+
+  </aside>
+</div>
+
+<!-- Demo toggle -->
+<div class="demo-toggle">
+  <button class="demo-btn active" onclick="setState('upcoming')">Upcoming</button>
+  <button class="demo-btn" onclick="setState('today')">Day-of</button>
+  <button class="demo-btn" onclick="setState('post')">Post-Workshop</button>
+</div>
+
+<script>
+  function setState(s) {
+    document.body.className = 'state-' + s;
+    document.querySelectorAll('.demo-btn').forEach((b, i) => {
+      b.classList.toggle('active', ['upcoming','today','post'][i] === s);
+    });
+  }
+
+  function togglePrep(item) {
+    item.classList.toggle('done');
+    const box = item.querySelector('.prep-checkbox');
+    if (item.classList.contains('done')) {
+      box.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+    } else {
+      box.innerHTML = '';
+    }
+  }
+
+  function setStars(n) {
+    const stars = document.querySelectorAll('.star-btn');
+    stars.forEach((s, i) => s.classList.toggle('filled', i < n));
+  }
+
+  // Live countdown
+  const target = new Date();
+  target.setDate(target.getDate() + 11);
+  target.setHours(target.getHours() + 6);
+  target.setMinutes(target.getMinutes() + 42);
+
+  setInterval(() => {
+    const now = new Date();
+    const diff = target - now;
+    if (diff <= 0) return;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const fmt = n => String(n).padStart(2, '0');
+    document.getElementById('cd-days').textContent = fmt(d);
+    document.getElementById('cd-hours').textContent = fmt(h);
+    document.getElementById('cd-mins').textContent = fmt(m);
+  }, 1000);
+</script>
+</body>
+</html>

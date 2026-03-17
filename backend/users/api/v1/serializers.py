@@ -77,12 +77,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'uuid', 'email', 'first_name', 'last_name', 'full_name', 'display_name',
             'phone_number', 'phone_number_verified', 'timezone', 'is_practitioner',
             'practitioner_public_id', 'practitioner_id', 'practitioner_slug',
-            'account_status', 'last_login', 'date_joined', 'is_active', 'is_staff', 'is_superuser'
+            'account_status', 'last_login', 'date_joined', 'is_active'
         )
         read_only_fields = (
             'id', 'uuid', 'email', 'phone_number_verified', 'is_practitioner',
             'practitioner_public_id', 'practitioner_id', 'practitioner_slug',
-            'account_status', 'last_login', 'date_joined', 'is_active', 'is_staff', 'is_superuser'
+            'account_status', 'last_login', 'date_joined', 'is_active'
         )
     
     def get_practitioner_public_id(self, obj):

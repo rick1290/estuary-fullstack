@@ -173,10 +173,10 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => router.push("/dashboard/user/bookings")}
+          onClick={() => router.push("/dashboard/user/journeys")}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Bookings
+          Back to Journeys
         </Button>
       </UserDashboardLayout>
     )
@@ -250,10 +250,10 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         <Button
           variant="ghost"
           className="flex items-center gap-2 mb-4 pl-0 hover:pl-2 transition-all"
-          onClick={() => router.push("/dashboard/user/bookings")}
+          onClick={() => router.push("/dashboard/user/journeys")}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Bookings
+          Back to Journeys
         </Button>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

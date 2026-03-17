@@ -108,7 +108,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
   useEffect(() => {
     if (!isLoading && !booking) {
       toast.error("Booking not found")
-      router.push("/dashboard/user/bookings")
+      router.push("/dashboard/user/journeys")
     } else if (!isLoading && booking && !isReschedulable) {
       toast.error("This booking cannot be rescheduled less than 24 hours before the session")
       setTimeout(() => {

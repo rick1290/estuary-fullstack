@@ -86,6 +86,54 @@ def process_refund_credits(booking_id, refund_amount_cents, reason='Booking canc
         }
 
 
+@shared_task(name='transition-projected-to-pending')
+def transition_projected_to_pending():
+    """
+    Transition earnings from 'projected' to 'pending' when the associated
+    booking has been completed (service delivered). This checks for bookings
+    that have ended (based on available_after - 48hr buffer).
+    Runs every 30 minutes via Celery Beat.
+    """
+    now = timezone.now()
+
+    # Find projected earnings where the booking end time has passed
+    # (available_after = booking_end_time + 48hrs, so booking_end_time = available_after - 48hrs)
+    projected_earnings = EarningsTransaction.objects.filter(
+        status='projected',
+        available_after__lte=now + timedelta(hours=48)  # booking_end_time <= now
+    ).select_related('practitioner', 'booking')
+
+    updated_count = 0
+    error_count = 0
+
+    for earning in projected_earnings:
+        try:
+            # Verify the booking is actually completed or the session time has passed
+            booking_end_time = earning.available_after - timedelta(hours=48)
+            if booking_end_time <= now:
+                earning.status = 'pending'
+                earning.save(update_fields=['status', 'updated_at'])
+                updated_count += 1
+                logger.info(
+                    f"Transitioned earning {earning.id} from projected to pending "
+                    f"for practitioner {earning.practitioner_id}"
+                )
+        except Exception as e:
+            logger.error(f"Error transitioning earning {earning.id}: {e}")
+            error_count += 1
+
+    logger.info(
+        f"Projected-to-pending transition finished. "
+        f"Updated {updated_count} earnings. Errors: {error_count}"
+    )
+
+    return {
+        'updated_count': updated_count,
+        'error_count': error_count,
+        'checked_at': timezone.now().isoformat()
+    }
+
+
 @shared_task(name='calculate-pending-earnings')
 def calculate_pending_earnings():
     """

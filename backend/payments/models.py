@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -778,26 +778,28 @@ class UserCreditBalance(BaseModel):
     def update_balance(cls, user):
         """
         Update the user's credit balance by recalculating from all transactions.
+        Uses select_for_update() to prevent race conditions.
         """
         from django.db.models import Sum
-        
-        # Calculate the current balance in cents
-        transactions = UserCreditTransaction.objects.filter(user=user)
-        balance_cents = transactions.aggregate(Sum('amount_cents'))['amount_cents__sum'] or 0
-        
-        # Get or create the balance record
-        credit_balance, created = cls.objects.get_or_create(user=user)
-        
-        # Update the balance
-        credit_balance.balance_cents = balance_cents
-        
-        # Set the last transaction if there are any
-        last_transaction = transactions.order_by('-created_at').first()
-        if last_transaction:
-            credit_balance.last_transaction = last_transaction
-            
-        credit_balance.save()
-        return credit_balance
+
+        with transaction.atomic():
+            # Calculate the current balance in cents
+            transactions = UserCreditTransaction.objects.filter(user=user)
+            balance_cents = transactions.aggregate(Sum('amount_cents'))['amount_cents__sum'] or 0
+
+            # Get or create the balance record with row-level locking
+            credit_balance, created = cls.objects.select_for_update().get_or_create(user=user)
+
+            # Update the balance
+            credit_balance.balance_cents = balance_cents
+
+            # Set the last transaction if there are any
+            last_transaction = transactions.order_by('-created_at').first()
+            if last_transaction:
+                credit_balance.last_transaction = last_transaction
+
+            credit_balance.save()
+            return credit_balance
 
 
 class SubscriptionTier(BaseModel):

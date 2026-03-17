@@ -11,6 +11,7 @@ BOOKING_STATUS_CHOICES = [
     ('draft', 'Draft'),              # Initial creation, not yet submitted
     ('pending_payment', 'Pending Payment'),  # Awaiting payment
     ('confirmed', 'Confirmed'),      # Payment received, seat reserved
+    ('completed', 'Completed'),      # Session finished, booking fulfilled
     ('canceled', 'Canceled'),        # Booking was canceled
 ]
 
@@ -155,21 +156,18 @@ class Booking(PublicModel):
         """Validate booking data."""
         super().clean()
 
+        # service_session is required for all non-draft bookings
+        if self.status != 'draft' and not self.service_session_id:
+            raise ValidationError(
+                "service_session is required for bookings with status '%s'" % self.status
+            )
+
         # Validate time range (only if times are set)
         start = self.get_start_time()
         end = self.get_end_time()
 
         if start and end and start >= end:
             raise ValidationError("Start time must be before end time")
-
-        # For scheduled bookings (non-draft with times), require service_session
-        # Draft bookings don't need service_session yet (will get one when scheduled)
-        if self.status not in ['draft', 'cancelled']:
-            if start and not self.service_session:
-                raise ValidationError("Scheduled bookings must have a service_session")
-            if not start and not self.service_session:
-                # Confirmed booking without times - might be package/bundle, allow it
-                pass
 
     # Credits property in dollars
     @property
@@ -330,7 +328,8 @@ class Booking(PublicModel):
         valid_transitions = {
             'draft': ['pending_payment', 'confirmed', 'canceled'],
             'pending_payment': ['confirmed', 'canceled'],
-            'confirmed': ['canceled'],  # Can only cancel once confirmed
+            'confirmed': ['completed', 'canceled'],  # Can complete or cancel once confirmed
+            'completed': [],  # Terminal state
             'canceled': [],  # Terminal state
         }
 
@@ -351,6 +350,8 @@ class Booking(PublicModel):
         # Handle status-specific updates
         if new_status == 'confirmed':
             self.confirmed_at = kwargs.get('confirmed_at', timezone.now())
+        elif new_status == 'completed':
+            self.completed_at = kwargs.get('completed_at', timezone.now())
         elif new_status == 'canceled':
             self.canceled_at = kwargs.get('canceled_at', timezone.now())
             self.canceled_by = kwargs.get('canceled_by', 'system')
@@ -394,8 +395,11 @@ class Booking(PublicModel):
             # No refund for already started bookings
             return 0
 
-    def cancel(self, reason=None, canceled_by='client'):
+    def cancel(self, reason=None, canceled_by='client', _cascade=True):
         """Cancel this booking."""
+        if self.status == 'canceled':
+            return  # Already canceled, don't process again
+
         if not self.can_be_canceled:
             raise ValidationError("This booking cannot be canceled")
 
@@ -413,16 +417,18 @@ class Booking(PublicModel):
                     reason or 'Booking canceled'
                 )
 
-        # Cancel related bookings if this is part of a package/bundle order
-        if self.order and self.order.bookings.count() > 1:
-            for booking in self.order.bookings.exclude(
+        # Cancel related bookings in same order (but don't let them cascade back)
+        if _cascade and self.order and self.order.bookings.count() > 1:
+            siblings = self.order.bookings.exclude(
                 status='canceled'
             ).exclude(
                 public_uuid=self.public_uuid
-            ):
-                booking.cancel(
+            )
+            for sibling in siblings:
+                sibling.cancel(
                     reason=f"Related booking {self.public_uuid} was canceled",
-                    canceled_by='system'
+                    canceled_by='system',
+                    _cascade=False  # PREVENT RECURSIVE CASCADE
                 )
 
     def reschedule(self, new_start_time, new_end_time, rescheduled_by_user=None):

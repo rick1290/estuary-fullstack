@@ -62,10 +62,11 @@ export default function CheckoutPage() {
   })
   
   // Fetch real user credit balance
-  const { data: creditBalance } = useQuery({
+  const { data: creditBalanceRaw } = useQuery({
     ...creditsBalanceRetrieveOptions(),
     enabled: isAuthenticated,
   })
+  const creditBalance = creditBalanceRaw as { balance_cents?: number } | undefined
   
   // Auto-select default payment method when it changes
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function CheckoutPage() {
   
   // Auto-enable credits if user has balance
   useEffect(() => {
-    if (creditBalance && creditBalance.balance_cents > 0) {
+    if (creditBalance && (creditBalance.balance_cents ?? 0) > 0) {
       setApplyCredits(true)
     }
   }, [creditBalance])
@@ -142,19 +143,23 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (processingPayment) return
+    setProcessingPayment(true)
+
     if (!selectedPaymentMethodId) {
       setCheckoutError("Please select a payment method")
+      setProcessingPayment(false)
       return
     }
 
     if (!serviceId || !serviceData) {
       setCheckoutError("Service information is missing")
+      setProcessingPayment(false)
       return
     }
 
     // Clear any previous errors
     setCheckoutError(null)
-    setProcessingPayment(true)
 
     // Get the current URL for success/cancel redirects
     const currentOrigin = window.location.origin
@@ -209,12 +214,17 @@ export default function CheckoutPage() {
           // Create the full datetime
           const startDateTime = new Date(baseDate)
           startDateTime.setHours(hours, minutes, 0, 0)
-          
+
+          // If the parsed date is in the past, it's likely next year (Dec→Jan edge case)
+          if (startDateTime < new Date()) {
+            startDateTime.setFullYear(startDateTime.getFullYear() + 1)
+          }
+
           // Calculate end time based on service duration
           const durationMinutes = serviceData.duration_minutes || 60
           const endDateTime = new Date(startDateTime)
           endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
-          
+
           bookingDetails.start_time = startDateTime.toISOString()
           bookingDetails.end_time = endDateTime.toISOString()
           bookingDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -261,18 +271,23 @@ export default function CheckoutPage() {
           // Create the full datetime
           const startDateTime = new Date(baseDate)
           startDateTime.setHours(hours, minutes, 0, 0)
-          
+
+          // If the parsed date is in the past, it's likely next year (Dec→Jan edge case)
+          if (startDateTime < new Date()) {
+            startDateTime.setFullYear(startDateTime.getFullYear() + 1)
+          }
+
           // Calculate end time based on service duration
           const durationMinutes = serviceData.duration_minutes || 60
           const endDateTime = new Date(startDateTime)
           endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
-          
+
           bookingDetails.start_time = startDateTime.toISOString()
           bookingDetails.end_time = endDateTime.toISOString()
           bookingDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
         }
       }
-      
+
       // Use direct payment with saved payment method
       await directPayment.mutateAsync({
         body: bookingDetails
@@ -336,8 +351,10 @@ export default function CheckoutPage() {
   }
 
   // Calculate pricing - ensure all values are numbers
-  const basePrice = service.price
-  const userCreditBalance = creditBalance ? creditBalance.balance : 0
+  // All calculations in dollars for display; credit balance comes as cents from API
+  const basePrice = service.price ?? 0
+  const creditBalanceCents = creditBalance?.balance_cents ?? 0
+  const userCreditBalance = creditBalanceCents / 100
   const creditsToApply = applyCredits ? Math.min(userCreditBalance, basePrice) : 0
   const subtotal = basePrice
   const discount = creditsToApply + promoDiscount

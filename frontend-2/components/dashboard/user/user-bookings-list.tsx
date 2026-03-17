@@ -79,11 +79,11 @@ export default function UserBookingsList() {
           return booking.status === "confirmed" && startTime && isFuture(parseISO(startTime))
         } else if (activeTab === "past") {
           const startTime = booking.service_session?.start_time
-          return booking.status === "completed" || (startTime && isPast(parseISO(startTime)))
+          return booking.service_session?.status === "completed" || (startTime && isPast(parseISO(startTime)))
         } else if (activeTab === "canceled") {
           return booking.status === "canceled"
         } else if (activeTab === "unscheduled") {
-          return booking.status === "pending" || !booking.service_session?.start_time
+          return booking.status === "draft" || !booking.service_session?.start_time
         }
         return true
       })
@@ -146,18 +146,17 @@ export default function UserBookingsList() {
     const startTime = booking.service_session?.start_time
     if (booking.status === "canceled") {
       return <Badge variant="destructive">Canceled</Badge>
-    } else if (booking.status === "completed") {
+    } else if (booking.service_session?.status === "completed") {
       return <Badge variant="outline">Completed</Badge>
-    } else if (booking.status === "confirmed" && startTime) {
-      if (isFuture(parseISO(startTime))) {
-        return <Badge variant="default">Upcoming</Badge>
-      } else {
-        return <Badge variant="outline">Past</Badge>
-      }
-    } else if (booking.status === "pending" || !startTime) {
+    } else if (booking.service_session?.status === "in_progress") {
+      return <Badge variant="default">In Progress</Badge>
+    } else if (booking.status === "confirmed" && startTime && isFuture(parseISO(startTime))) {
+      return <Badge variant="default">Upcoming</Badge>
+    } else if (booking.status === "draft" || !startTime) {
       return <Badge variant="secondary">Unscheduled</Badge>
+    } else {
+      return <Badge variant="outline">Past</Badge>
     }
-    return <Badge variant="outline">{booking.status}</Badge>
   }
 
   const handleServiceTypeChange = (type: ServiceType) => {
@@ -177,7 +176,7 @@ export default function UserBookingsList() {
   const isSessionJoinable = (booking: any) => {
     const sessionStartTime = booking.service_session?.start_time
     const sessionEndTime = booking.service_session?.end_time
-    if (!sessionStartTime || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+    if (!sessionStartTime || (booking.status !== "confirmed" && booking.service_session?.status !== "in_progress")) return false
 
     const now = new Date()
     const startTime = parseISO(sessionStartTime)
@@ -191,7 +190,7 @@ export default function UserBookingsList() {
 
   const isSessionStartingSoon = (booking: any) => {
     const sessionStartTime = booking.service_session?.start_time
-    if (!sessionStartTime || (booking.status !== "confirmed" && booking.status !== "in_progress")) return false
+    if (!sessionStartTime || (booking.status !== "confirmed" && booking.service_session?.status !== "in_progress")) return false
 
     const now = new Date()
     const startTime = parseISO(sessionStartTime)
@@ -360,7 +359,7 @@ export default function UserBookingsList() {
             const service = booking.service
             const practitioner = booking.practitioner
             const sessionStartTime = booking.service_session?.start_time
-            const isUnscheduled = booking.status === "pending" || !sessionStartTime
+            const isUnscheduled = booking.status === "draft" || !sessionStartTime
 
             return (
               <Card
@@ -492,7 +491,7 @@ export default function UserBookingsList() {
                       {/* Join Button for virtual sessions */}
                       {booking.location_type === "virtual" && 
                        booking.room?.public_uuid && 
-                       (booking.status === "confirmed" || booking.status === "in_progress") && (
+                       (booking.status === "confirmed" || booking.service_session?.status === "in_progress") && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>

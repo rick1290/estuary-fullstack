@@ -23,12 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-rxts$d4^xi5us3dc21bi8o_25if^vd7=idqjnfn(kf+s)behcl"
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-rxts$d4^xi5us3dc21bi8o_25if^vd7=idqjnfn(kf+s)behcl')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'admin', 'api', 'estuary-backend.onrender.com', '.onrender.com', 'haughty-unbrokenly-merrie.ngrok-free.dev']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,admin,api,estuary-backend.onrender.com,.onrender.com').split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -589,12 +593,9 @@ CHANNEL_LAYERS = {
 # ============================================================================
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Frontend development
-    "http://localhost:3001",  # Frontend development
-    "http://localhost:8000",  # API development
-    "http://localhost:8001",  # Alternative API port
-    "https://estuary-backend.onrender.com",  # Backend on Render
-    "https://estuary-frontend.onrender.com",  # Frontend on Render
+    origin.strip()
+    for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost:8000,http://localhost:8001,https://estuary-backend.onrender.com,https://estuary-frontend.onrender.com').split(',')
+    if origin.strip()
 ]
 
 # Allow credentials to be included in CORS requests (for cookies/auth)

@@ -4,6 +4,8 @@ Booking service for managing booking creation and updates.
 import logging
 from typing import Optional, Dict, Any
 from django.db import transaction
+from django.db.models import F
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
@@ -59,18 +61,19 @@ class BookingService:
         else:
             booking = self._create_default_booking(user, service, booking_data, payment_data)
         
-        # Create room if needed (explicit, not via signal)
-        # NEW: Always create room for service_session (not booking directly)
+        # Create room synchronously so it's available immediately when user joins
         if self._should_create_room(service, booking):
             try:
-                # NEW: Create room for ServiceSession (works for all booking types)
                 room = self.room_service.create_room_for_session(booking.service_session)
                 logger.info(f"Created room {room.livekit_room_name} for ServiceSession {booking.service_session.id}")
             except Exception as e:
-                logger.error(f"Failed to create room for ServiceSession {booking.service_session.id}: {e}")
-                # Don't fail the booking if room creation fails
-                # Can be retried later
-        
+                logger.warning(f"Room creation failed for session {booking.service_session.id}: {e}")
+                # Don't fail the booking - room can be created later
+
+        # For courses, create rooms for ALL service sessions on first enrollment
+        if service_type_code == 'course' and booking:
+            self._create_rooms_for_course_sessions(service, booking)
+
         # Send notifications
         try:
             self.notification_service.send_booking_confirmation(booking)
@@ -138,21 +141,50 @@ class BookingService:
 
         User selects an existing ServiceSession and books a seat.
         Times come from service_session, not duplicated on booking.
+        Uses select_for_update() to prevent race conditions on capacity.
         """
-        service_session = get_object_or_404(ServiceSession, id=booking_data['service_session_id'])
+        with transaction.atomic():
+            # Lock the ServiceSession row to prevent race conditions
+            service_session = ServiceSession.objects.select_for_update().get(
+                id=booking_data['service_session_id']
+            )
 
-        return Booking.objects.create(
-            user=user,
-            service=service,
-            practitioner=service.primary_practitioner,
-            service_session=service_session,
-            order=payment_data.get('order'),
-            credits_allocated=payment_data.get('amount_charged_cents', 0),
-            status='confirmed',
-            payment_status='paid',
-            client_notes=booking_data.get('special_requests', ''),
-            confirmed_at=timezone.now()
-        )
+            # Validate session status
+            if service_session.status != 'scheduled':
+                raise ValidationError(
+                    f"Cannot book a workshop session with status '{service_session.status}'. "
+                    f"Only 'scheduled' sessions can be booked."
+                )
+
+            # Validate session has not already started
+            if service_session.start_time and service_session.start_time <= timezone.now():
+                raise ValidationError("Cannot book a session that has already started.")
+
+            # Validate capacity
+            if service_session.max_participants and service_session.current_participants >= service_session.max_participants:
+                raise ValidationError(
+                    f"This workshop session is full ({service_session.max_participants}/{service_session.max_participants} seats taken)."
+                )
+
+            # Create the booking
+            booking = Booking.objects.create(
+                user=user,
+                service=service,
+                practitioner=service.primary_practitioner,
+                service_session=service_session,
+                order=payment_data.get('order'),
+                credits_allocated=payment_data.get('amount_charged_cents', 0),
+                status='confirmed',
+                payment_status='paid',
+                client_notes=booking_data.get('special_requests', ''),
+                confirmed_at=timezone.now()
+            )
+
+            # Atomically increment participant count
+            service_session.current_participants = F('current_participants') + 1
+            service_session.save(update_fields=['current_participants'])
+
+            return booking
     
     def _create_course_booking(
         self,
@@ -338,13 +370,38 @@ class BookingService:
             return False
 
         return True
-    
+
+    def _create_rooms_for_course_sessions(self, service: Service, booking: Booking) -> None:
+        """
+        Create rooms for all ServiceSessions in a course.
+        Only creates rooms for sessions that don't already have one.
+
+        Args:
+            service: The course service
+            booking: One of the course bookings (used to find the order)
+        """
+        # Skip if not virtual
+        if service.location_type not in ['virtual', 'online', 'hybrid']:
+            return
+
+        # Get all service sessions for this course
+        course_sessions = ServiceSession.objects.filter(service=service)
+
+        for session in course_sessions:
+            # Skip if session already has a room
+            if hasattr(session, 'livekit_room') and session.livekit_room:
+                continue
+            try:
+                room = self.room_service.create_room_for_session(session)
+                logger.info(f"Created room {room.livekit_room_name} for course session {session.id}")
+            except Exception as e:
+                logger.warning(f"Room creation failed for course session {session.id}: {e}")
+
     @transaction.atomic
     def mark_booking_completed(self, booking: Booking) -> Booking:
         """
         Mark a booking's session as completed, update earnings, and send review request.
-        UPDATED: Session lifecycle (in_progress, completed) is tracked on ServiceSession,
-        not on Booking. Booking status remains 'confirmed' throughout.
+        UPDATED: Transitions Booking.status to 'completed' alongside ServiceSession.
 
         Args:
             booking: Booking to complete
@@ -357,15 +414,19 @@ class BookingService:
             logger.warning(f"Booking {booking.id} session already completed")
             return booking
 
-        # Update ServiceSession status (not Booking status)
+        # Update ServiceSession status
         if booking.service_session:
             booking.service_session.actual_end_time = timezone.now()
             booking.service_session.status = 'completed'
             booking.service_session.save(update_fields=['actual_end_time', 'status'])
 
-        # Update booking completion timestamp (status stays 'confirmed')
+        # Transition booking status to 'completed'
         booking.completed_at = timezone.now()
-        booking.save(update_fields=['completed_at'])
+        if booking.status == 'confirmed':
+            booking.status = 'completed'
+            booking.save(update_fields=['status', 'completed_at'])
+        else:
+            booking.save(update_fields=['completed_at'])
 
         # Update earnings transaction status from 'projected' to 'pending'
         try:

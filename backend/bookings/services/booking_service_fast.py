@@ -4,11 +4,14 @@ Fast booking service that defers non-critical operations to background tasks.
 import logging
 from typing import Optional, Dict, Any
 from django.db import transaction
+from django.db.models import F
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
 from bookings.models import Booking, BookingFactory
 from services.models import Service, ServiceSession
+from rooms.services.room_service import RoomService
 from users.models import User
 
 logger = logging.getLogger(__name__)
@@ -16,7 +19,10 @@ logger = logging.getLogger(__name__)
 
 class FastBookingService:
     """Service for creating bookings with deferred operations."""
-    
+
+    def __init__(self):
+        self.room_service = RoomService()
+
     @transaction.atomic
     def create_booking_fast(
         self,
@@ -57,15 +63,28 @@ class FastBookingService:
         else:
             booking = self._create_default_booking(user, service, booking_data, payment_data)
         
-        # Queue post-payment tasks after transaction commits
+        # Create room synchronously so it's available immediately when user joins
+        if self._should_create_room(service, booking):
+            try:
+                room = self.room_service.create_room_for_session(booking.service_session)
+                logger.info(f"Created room {room.livekit_room_name} for ServiceSession {booking.service_session.id}")
+            except Exception as e:
+                logger.warning(f"Room creation failed for session {booking.service_session.id}: {e}")
+                # Don't fail the booking - room can be created later by background task
+
+        # For courses, create rooms for ALL service sessions on first enrollment
+        if service_type_code == 'course' and booking:
+            self._create_rooms_for_course_sessions(service, booking)
+
+        # Queue post-payment tasks after transaction commits (kept as fallback)
         from payments.tasks import complete_booking_post_payment
-        
+
         def queue_post_payment_tasks():
             complete_booking_post_payment.delay(booking.id)
             logger.info(f"Queued post-payment tasks for booking {booking.id}")
-        
+
         transaction.on_commit(queue_post_payment_tasks)
-        
+
         logger.info(f"Created booking {booking.id}")
         
         return booking
@@ -115,10 +134,34 @@ class FastBookingService:
         booking_data: Dict[str, Any],
         payment_data: Dict[str, Any]
     ) -> Booking:
-        """Create a workshop booking."""
-        service_session = get_object_or_404(ServiceSession, id=booking_data['service_session_id'])
+        """
+        Create a workshop booking.
+        Uses select_for_update() to prevent race conditions on capacity.
+        """
+        # Lock the ServiceSession row to prevent race conditions
+        service_session = ServiceSession.objects.select_for_update().get(
+            id=booking_data['service_session_id']
+        )
 
-        return Booking.objects.create(
+        # Validate session status
+        if service_session.status != 'scheduled':
+            raise ValidationError(
+                f"Cannot book a workshop session with status '{service_session.status}'. "
+                f"Only 'scheduled' sessions can be booked."
+            )
+
+        # Validate session has not already started
+        if service_session.start_time and service_session.start_time <= timezone.now():
+            raise ValidationError("Cannot book a session that has already started.")
+
+        # Validate capacity
+        if service_session.max_participants and service_session.current_participants >= service_session.max_participants:
+            raise ValidationError(
+                f"This workshop session is full ({service_session.max_participants}/{service_session.max_participants} seats taken)."
+            )
+
+        # Create the booking
+        booking = Booking.objects.create(
             user=user,
             service=service,
             practitioner=service.primary_practitioner,
@@ -130,6 +173,12 @@ class FastBookingService:
             client_notes=booking_data.get('special_requests', ''),
             confirmed_at=timezone.now()
         )
+
+        # Atomically increment participant count
+        service_session.current_participants = F('current_participants') + 1
+        service_session.save(update_fields=['current_participants'])
+
+        return booking
 
     def _create_course_booking(
         self,
@@ -325,3 +374,58 @@ class FastBookingService:
             client_notes=booking_data.get('special_requests', ''),
             confirmed_at=timezone.now()
         )
+
+    def _should_create_room(self, service: Service, booking: Booking) -> bool:
+        """
+        Determine if a room should be created for this booking.
+
+        Args:
+            service: Service being booked
+            booking: Created booking
+
+        Returns:
+            True if room should be created
+        """
+        # Must have service_session
+        if not booking.service_session:
+            return False
+
+        # Skip if service_session already has a room (e.g., workshop with multiple bookings)
+        if hasattr(booking.service_session, 'livekit_room') and booking.service_session.livekit_room:
+            return False
+
+        # Skip if not virtual
+        if service.location_type not in ['virtual', 'online', 'hybrid']:
+            return False
+
+        # Skip package/bundle parent bookings
+        if booking.is_package_booking:
+            return False
+
+        return True
+
+    def _create_rooms_for_course_sessions(self, service: Service, booking: Booking) -> None:
+        """
+        Create rooms for all ServiceSessions in a course.
+        Only creates rooms for sessions that don't already have one.
+
+        Args:
+            service: The course service
+            booking: One of the course bookings (used to find the order)
+        """
+        # Skip if not virtual
+        if service.location_type not in ['virtual', 'online', 'hybrid']:
+            return
+
+        # Get all service sessions for this course
+        course_sessions = ServiceSession.objects.filter(service=service)
+
+        for session in course_sessions:
+            # Skip if session already has a room
+            if hasattr(session, 'livekit_room') and session.livekit_room:
+                continue
+            try:
+                room = self.room_service.create_room_for_session(session)
+                logger.info(f"Created room {room.livekit_room_name} for course session {session.id}")
+            except Exception as e:
+                logger.warning(f"Room creation failed for course session {session.id}: {e}")
