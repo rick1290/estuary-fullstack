@@ -422,6 +422,10 @@ export default function AuthModal({
                           type="button"
                           variant="link"
                           className="p-0 h-auto text-sm"
+                          onClick={() => {
+                            onClose()
+                            router.push("/forgot-password")
+                          }}
                         >
                           Forgot password?
                         </Button>

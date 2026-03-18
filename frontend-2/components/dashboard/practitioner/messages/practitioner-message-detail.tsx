@@ -500,7 +500,7 @@ export default function PractitionerMessageDetail() {
                               {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
                               <a
                                 href={serviceUrl}
-                                target="_blank"
+                                target="_blank" rel="noopener noreferrer"
                                 rel="noopener noreferrer"
                                 className={`mt-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
                                   isSentByMe
@@ -525,7 +525,7 @@ export default function PractitionerMessageDetail() {
                               <a
                                 key={idx}
                                 href={attachment.url}
-                                target="_blank"
+                                target="_blank" rel="noopener noreferrer"
                                 rel="noopener noreferrer"
                                 className="block"
                               >
@@ -544,7 +544,7 @@ export default function PractitionerMessageDetail() {
                               <a
                                 key={idx}
                                 href={attachment.url}
-                                target="_blank"
+                                target="_blank" rel="noopener noreferrer"
                                 rel="noopener noreferrer"
                                 className={`flex items-center p-2 rounded ${
                                   isSentByMe ? "bg-primary-foreground/10" : "bg-muted"

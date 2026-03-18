@@ -490,7 +490,7 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
           <h4 className="text-sm font-medium mb-3">Quick Actions</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Button variant="outline" size="sm" className="justify-start h-9" asChild>
-              <Link href={getServiceDetailUrl(service)} target="_blank">
+              <Link href={getServiceDetailUrl(service)} target="_blank" rel="noopener noreferrer">
                 <Eye className="h-3.5 w-3.5 mr-2" />
                 View Public Page
                 <ExternalLink className="h-3 w-3 ml-auto opacity-50" />

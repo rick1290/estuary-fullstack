@@ -393,7 +393,7 @@ export default function UserMessageDetail() {
                               {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
                               <a
                                 href={serviceUrl}
-                                target="_blank"
+                                target="_blank" rel="noopener noreferrer"
                                 rel="noopener noreferrer"
                                 className={`mt-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
                                   isSentByMe

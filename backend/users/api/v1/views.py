@@ -9,6 +9,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from django.db.models import Count, Q
@@ -236,6 +239,130 @@ class ChangePasswordView(APIView):
             }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetRequestView(APIView):
+    """Request a password reset email"""
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        operation_id='auth_password_reset_request',
+        summary='Request password reset',
+        description='Send a password reset email to the given address if an account exists',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'email': {'type': 'string', 'format': 'email'}
+                },
+                'required': ['email']
+            }
+        },
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description='Reset email sent (always returns success)'),
+        },
+        tags=['Authentication']
+    )
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        if not email:
+            return Response({
+                "message": "Email is required",
+                "success": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Always return success to prevent email enumeration
+        try:
+            user = User.objects.get(email=email)
+            # Generate token using Django's built-in token generator
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            # Combine uid and token for the frontend
+            reset_token = f"{uid}:{token}"
+
+            # Send the email
+            try:
+                from integrations.courier.utils import send_password_reset_email
+                send_password_reset_email(user, reset_token)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send password reset email: {e}")
+        except User.DoesNotExist:
+            pass  # Don't reveal whether email exists
+
+        return Response({
+            "message": "If an account with that email exists, a reset link has been sent.",
+            "success": True
+        }, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(APIView):
+    """Confirm password reset with token"""
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        operation_id='auth_password_reset_confirm',
+        summary='Confirm password reset',
+        description='Reset password using the token received via email',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'token': {'type': 'string', 'description': 'Reset token from email'},
+                    'new_password': {'type': 'string', 'minLength': 8}
+                },
+                'required': ['token', 'new_password']
+            }
+        },
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description='Password reset successfully'),
+            400: OpenApiResponse(description='Invalid or expired token'),
+        },
+        tags=['Authentication']
+    )
+    def post(self, request):
+        token_combined = request.data.get('token', '')
+        new_password = request.data.get('new_password', '')
+
+        if not token_combined or not new_password:
+            return Response({
+                "message": "Token and new password are required",
+                "success": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(new_password) < 8:
+            return Response({
+                "message": "Password must be at least 8 characters",
+                "success": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Parse the combined token (uid:token)
+        try:
+            uid_b64, token = token_combined.split(':', 1)
+            uid = force_str(urlsafe_base64_decode(uid_b64))
+            user = User.objects.get(pk=uid)
+        except (ValueError, TypeError, User.DoesNotExist, OverflowError):
+            return Response({
+                "message": "Invalid or expired reset link",
+                "success": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify the token
+        if not default_token_generator.check_token(user, token):
+            return Response({
+                "message": "Invalid or expired reset link",
+                "success": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        return Response({
+            "message": "Password has been reset successfully",
+            "success": True
+        }, status=status.HTTP_200_OK)
 
 
 # Alternative function-based view implementations for simpler endpoints

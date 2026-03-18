@@ -163,7 +163,7 @@ export default function Footer() {
                 >
                   <a 
                     href={link.href} 
-                    target="_blank" 
+                    target="_blank" rel="noopener noreferrer" 
                     rel="noopener noreferrer"
                     aria-label={link.label}
                   >

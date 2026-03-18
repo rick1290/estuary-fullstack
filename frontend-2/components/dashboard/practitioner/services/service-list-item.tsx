@@ -197,7 +197,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
                   </Link>
                 </Button>
                 <Button variant="outline" size="icon" asChild title="View public page" className="hidden sm:inline-flex">
-                  <Link href={getServiceDetailUrl(service)} target="_blank">
+                  <Link href={getServiceDetailUrl(service)} target="_blank" rel="noopener noreferrer">
                     <Eye className="h-4 w-4" />
                   </Link>
                 </Button>
