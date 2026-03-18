@@ -278,7 +278,7 @@ export function ResourcesSection({ service }: ResourcesSectionProps) {
                       {resource.external_url && (
                         <a 
                           href={resource.external_url} 
-                          target="_blank" 
+                          target="_blank" rel="noopener noreferrer" 
                           rel="noopener noreferrer"
                           className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                         >
@@ -290,7 +290,7 @@ export function ResourcesSection({ service }: ResourcesSectionProps) {
                         <div className="flex items-center gap-2">
                           <a 
                             href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${resource.file_url}`}
-                            target="_blank" 
+                            target="_blank" rel="noopener noreferrer" 
                             rel="noopener noreferrer"
                             className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                           >

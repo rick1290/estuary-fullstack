@@ -774,9 +774,21 @@ class JourneyViewSet(GenericViewSet):
 
             ss = booking.service_session
             if ss:
-                if ss.status == 'completed':
+                now = timezone.now()
+                is_past = ss.end_time and ss.end_time < now if ss.end_time else (ss.start_time and ss.start_time < now)
+
+                if ss.status == 'completed' or (is_past and ss.status != 'canceled'):
+                    # Session is done — either explicitly completed or past its end time
                     journey['completed_sessions'] += 1
-                elif ss.status in ('scheduled', 'in_progress') and ss.start_time and ss.start_time > timezone.now():
+                    # Track most recent past session date (for cards when no future sessions)
+                    if ss.start_time:
+                        if not journey.get('_last_session_time') or ss.start_time > journey['_last_session_time']:
+                            journey['_last_session_time'] = ss.start_time
+                            journey['_last_session_title'] = ss.title
+                elif ss.status == 'canceled':
+                    pass  # Don't count canceled sessions
+                elif ss.start_time and ss.start_time > now:
+                    # Future session
                     journey['upcoming_sessions'] += 1
                     if not journey['next_session_time'] or ss.start_time < journey['next_session_time']:
                         journey['next_session_time'] = ss.start_time
@@ -796,6 +808,16 @@ class JourneyViewSet(GenericViewSet):
                 j['status'] = 'active'
             else:
                 j['status'] = 'upcoming'
+
+            # If no future sessions, use last past session date for card display
+            if not j['next_session_time'] and j.get('_last_session_time'):
+                j['next_session_time'] = j['_last_session_time']
+                j['next_session_title'] = j.get('_last_session_title')
+
+            # Clean up internal tracking fields
+            j.pop('_last_session_time', None)
+            j.pop('_last_session_title', None)
+
             results.append(j)
 
         # Sort: active first, then upcoming, then completed
@@ -838,10 +860,17 @@ class JourneyViewSet(GenericViewSet):
             # Session/workshop — just this booking
             related = [booking]
 
-        # Build sessions list
+        # Build sessions list (deduplicate by service_session to avoid showing
+        # duplicate bookings for the same session)
         sessions = []
+        seen_session_ids = set()
         for b in (related if not isinstance(related, list) else related):
             ss = b.service_session
+            # Skip duplicate bookings for the same service session
+            if ss and ss.id in seen_session_ids:
+                continue
+            if ss:
+                seen_session_ids.add(ss.id)
             sessions.append({
                 'booking_uuid': str(b.public_uuid),
                 'booking_status': b.status,
@@ -863,7 +892,13 @@ class JourneyViewSet(GenericViewSet):
             })
 
         total = len(sessions)
-        completed = sum(1 for s in sessions if s.get('status') == 'completed')
+        now = timezone.now()
+        completed = sum(
+            1 for s in sessions
+            if s.get('status') == 'completed'
+            or (s.get('end_time') and s['end_time'] < now and s.get('status') != 'canceled')
+            or (not s.get('end_time') and s.get('start_time') and s['start_time'] < now and s.get('status') != 'canceled')
+        )
 
         # Compute session counts
         upcoming = sum(1 for s in sessions if s.get('status') in ('scheduled', 'in_progress') and s.get('start_time') and s['start_time'] > timezone.now())

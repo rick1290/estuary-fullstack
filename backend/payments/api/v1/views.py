@@ -264,15 +264,15 @@ class CheckoutViewSet(viewsets.GenericViewSet):
             if result.requires_action:
                 return Response({
                     'status': 'requires_action',
-                    'order_id': str(result.order.id),
+                    'order_id': str(result.order.public_uuid),
                     'payment_intent_id': result.payment_intent.id,
                     'client_secret': result.client_secret
                 })
             elif result.success:
                 return Response({
                     'status': 'success',
-                    'order_id': str(result.order.id),
-                    'booking_id': str(result.booking.id) if result.booking else None,
+                    'order_id': str(result.order.public_uuid),
+                    'booking_id': str(result.booking.public_uuid) if result.booking else None,
                     'payment_intent_id': result.payment_intent.id if result.payment_intent else None,
                     'amount_charged': result.order.total_amount_cents / 100,
                     'credits_applied': result.order.credits_applied_cents / 100
@@ -368,7 +368,7 @@ class CreditViewSet(viewsets.GenericViewSet):
                 return Response({
                     'payment_intent_id': result.payment_intent.id if result.payment_intent else None,
                     'status': 'success',
-                    'order_id': str(result.order.id),
+                    'order_id': str(result.order.public_uuid),
                     'credits_added': serializer.validated_data['amount']
                 })
             else:

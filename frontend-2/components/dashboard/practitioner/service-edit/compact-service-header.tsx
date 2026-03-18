@@ -169,7 +169,7 @@ function DefaultServiceActions({ service, currentPage }: { service: ServiceReada
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex" asChild>
-              <Link href={getServiceDetailUrl(service)} target="_blank">
+              <Link href={getServiceDetailUrl(service)} target="_blank" rel="noopener noreferrer">
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
@@ -193,7 +193,7 @@ function DefaultServiceActions({ service, currentPage }: { service: ServiceReada
               {primaryLabel}
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href={getServiceDetailUrl(service)} target="_blank">
+              <Link href={getServiceDetailUrl(service)} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 View Public Page
               </Link>

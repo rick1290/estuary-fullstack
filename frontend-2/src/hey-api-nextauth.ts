@@ -55,8 +55,6 @@ export const createClientConfig: CreateClientConfig = (config) => {
           // On 401, emit an event - don't try to refresh here
           // SessionProvider will handle refresh on next interval
           if (error instanceof Response && error.status === 401) {
-            console.warn('API returned 401 - session may have expired');
-
             // Emit event for the app to handle (show login modal, etc.)
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('auth:unauthorized'));

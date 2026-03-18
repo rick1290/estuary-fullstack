@@ -149,7 +149,7 @@ export default function Navbar() {
     <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
       isHomepage 
         ? 'bg-white/10 backdrop-blur-lg border-white/20' 
-        : 'bg-white/95 backdrop-blur-md border-gray-100'
+        : 'bg-white/95 backdrop-blur-md border-sage-200/60'
     }`}>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
@@ -176,8 +176,8 @@ export default function Navbar() {
                               <Link
                                 href="/marketplace"
                                 className={cn(
-                                  "flex w-full items-center gap-2 rounded-lg p-2 text-sm hover:bg-gray-100",
-                                  pathname === "/marketplace" && "bg-gray-100 font-medium",
+                                  "flex w-full items-center gap-2 rounded-lg p-2 text-sm hover:bg-sage-50",
+                                  pathname === "/marketplace" && "bg-sage-100 font-medium",
                                 )}
                               >
                                 <Layers className="h-4 w-4" />
@@ -191,8 +191,8 @@ export default function Navbar() {
                                 <Link
                                   href={subItem.href}
                                   className={cn(
-                                    "flex w-full items-center gap-2 rounded-lg p-2 text-sm hover:bg-gray-100",
-                                    pathname === subItem.href && "bg-gray-100 font-medium",
+                                    "flex w-full items-center gap-2 rounded-lg p-2 text-sm hover:bg-sage-50",
+                                    pathname === subItem.href && "bg-sage-100 font-medium",
                                   )}
                                 >
                                   {subItem.icon}
@@ -208,8 +208,8 @@ export default function Navbar() {
                     <Link
                       href={item.href}
                       className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-normal transition-colors hover:bg-gray-100",
-                        pathname === item.href ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-600",
+                        "px-4 py-2 rounded-lg text-sm font-normal transition-colors hover:bg-sage-50",
+                        pathname === item.href ? "bg-sage-100 text-olive-900 font-medium" : "text-olive-600",
                         "flex items-center gap-2",
                       )}
                     >
