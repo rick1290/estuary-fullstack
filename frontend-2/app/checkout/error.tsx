@@ -27,6 +27,7 @@ export default function CheckoutError({
         </h1>
         <p className="text-olive-500 text-[15px] mb-8">
           We hit an unexpected error during checkout. No payment has been processed. Please try again.
+          If this persists, contact <a href="mailto:support@estuary.com" className="underline">support@estuary.com</a>.
         </p>
         <div className="flex gap-3 justify-center">
           <Button

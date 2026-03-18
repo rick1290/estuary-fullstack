@@ -50,6 +50,7 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
   const [promoDiscount, setPromoDiscount] = useState(0)
+  const [showPromo, setShowPromo] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Payment form state
@@ -429,6 +430,16 @@ export default function CheckoutPage() {
                     />
                   </div>
 
+                  <details className="mb-4 text-sm">
+                    <summary className="text-olive-500 cursor-pointer hover:text-olive-700 transition-colors">
+                      Cancellation Policy
+                    </summary>
+                    <p className="mt-2 text-olive-400 leading-relaxed pl-4 border-l-2 border-sage-200">
+                      Full refund if canceled 24+ hours before your session. No refund within 24 hours.
+                      Practitioner cancellations always receive a full refund.
+                    </p>
+                  </details>
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 shadow-lg"
@@ -465,6 +476,10 @@ export default function CheckoutPage() {
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
                       Secure checkout powered by Stripe
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Need help?{" "}
+                      <a href="mailto:support@estuary.com" className="underline hover:text-foreground">Contact support</a>
                     </p>
                   </div>
                 </div>
@@ -572,23 +587,31 @@ export default function CheckoutPage() {
 
                     {/* Promo Code Input */}
                     {!promoApplied && (
-                      <div className="flex gap-1 pt-1">
-                        <Input
-                          id="promo-code"
-                          placeholder="Promo code"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          className="h-8 text-xs"
-                        />
-                        <Button
-                          onClick={handleApplyPromo}
-                          className="h-8 px-3"
-                          size="sm"
-                          disabled={!promoCode}
-                        >
-                          Apply
-                        </Button>
-                      </div>
+                      <>
+                        {!showPromo ? (
+                          <button onClick={() => setShowPromo(true)} className="text-sm text-sage-600 hover:text-sage-700 underline">
+                            Have a promo code?
+                          </button>
+                        ) : (
+                          <div className="flex gap-1 pt-1">
+                            <Input
+                              id="promo-code"
+                              placeholder="Promo code"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                            <Button
+                              onClick={handleApplyPromo}
+                              className="h-8 px-3"
+                              size="sm"
+                              disabled={!promoCode}
+                            >
+                              Apply
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     <Separator className="my-2" />

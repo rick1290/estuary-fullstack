@@ -11,7 +11,6 @@ import { useStripeConnectStatus } from "@/hooks/use-stripe-connect-status"
 import {
   Menu,
   Home,
-  Bell,
   LogOut,
   RefreshCw,
   User,
@@ -49,6 +48,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import SetupBanner from "@/components/dashboard/practitioner/setup-banner"
+import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
 
 interface PractitionerDashboardLayoutProps {
   children: React.ReactNode
@@ -144,7 +144,6 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       ],
     },
     { text: "Profile", icon: <User className="h-4 w-4" />, path: "/dashboard/practitioner/profile" },
-    { text: "Analytics", icon: <BarChart className="h-4 w-4" />, path: "/dashboard/practitioner/analytics", comingSoon: true },
   ]
 
   const isSubmenuActive = (item: MenuItem) => {
@@ -516,25 +515,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
             </Button>
 
             {/* Notifications */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="sr-only">Notifications</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  No new notifications
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="justify-center">
-                  <Link href="/dashboard/notifications" className="text-primary">
-                    View all notifications
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <NotificationsDropdown />
 
             {/* User Menu */}
             <DropdownMenu>

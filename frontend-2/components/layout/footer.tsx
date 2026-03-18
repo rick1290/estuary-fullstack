@@ -23,6 +23,8 @@ export default function Footer() {
     ],
     support: [
       { name: "Help Center", href: "/help" },
+      { name: "FAQ", href: "/help/faq" },
+      { name: "Practitioner Guide", href: "/help/practitioners" },
       { name: "Community", href: "/community" },
       { name: "Resources", href: "/resources" },
       { name: "For Practitioners", href: "/become-practitioner" },
@@ -35,12 +37,13 @@ export default function Footer() {
     ],
   }
 
+  // TODO: Replace '#' hrefs with real social media URLs once accounts are created
   const socialLinks = [
-    { icon: Instagram, href: "https://instagram.com/estuary", label: "Instagram" },
-    { icon: Facebook, href: "https://facebook.com/estuary", label: "Facebook" },
-    { icon: Twitter, href: "https://twitter.com/estuary", label: "Twitter" },
-    { icon: Linkedin, href: "https://linkedin.com/company/estuary", label: "LinkedIn" },
-    { icon: Youtube, href: "https://youtube.com/estuary", label: "YouTube" },
+    { icon: Instagram, href: "#", label: "Instagram" },
+    { icon: Facebook, href: "#", label: "Facebook" },
+    { icon: Twitter, href: "#", label: "Twitter" },
+    { icon: Linkedin, href: "#", label: "LinkedIn" },
+    { icon: Youtube, href: "#", label: "YouTube" },
   ]
 
   return (
