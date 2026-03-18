@@ -187,7 +187,15 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   // ── Build modules ──────────────────────────────────────────────────────
   const modules = useMemo(() => {
     if (hasJourneyData) {
+      // Deduplicate sessions by room_uuid (same service session = same room)
+      const seen = new Set<string>()
       return journeyData!.sessions
+        .filter((s) => {
+          const key = s.room_uuid || s.booking_uuid || String(s.sequence_number)
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
         .map((s, index) => ({
           booking: { public_uuid: s.booking_uuid, status: s.booking_status } as any,
           sessionStatus: s.status || undefined,
@@ -331,13 +339,16 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   }, [practitioner, router])
 
   // ── Curriculum categorisation ──────────────────────────────────────────
-  const completed = modules.filter((m) => m.sessionStatus === "completed")
+  // Sessions with status "completed" OR past start time are considered completed
+  const completed = modules.filter(
+    (m) => m.sessionStatus === "completed" || (m.startTime && !isFuture(m.startTime) && m.sessionStatus !== "canceled")
+  )
   const canceled = modules.filter((m) => m.sessionStatus === "canceled")
   const upNextModule = upNext
   const upcoming = modules.filter(
     (m) =>
       m !== upNextModule &&
-      m.sessionStatus !== "completed" &&
+      !completed.includes(m) &&
       m.sessionStatus !== "canceled" &&
       (m.startTime ? isFuture(m.startTime) : true)
   )

@@ -24,7 +24,7 @@ export default function ConfirmationPage() {
   // Fetch booking data
   const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery({
     ...bookingsRetrieveOptions({ path: { public_uuid: bookingId || '' } }),
-    enabled: !!bookingId && !isNaN(parseInt(bookingId)),
+    enabled: !!bookingId,
   })
 
   // Fetch order/payment data
