@@ -3,7 +3,7 @@ import JourneysList from "@/components/dashboard/user/journeys/journeys-list"
 
 export default function UserJourneysPage() {
   return (
-    <UserDashboardLayout title="My Journeys">
+    <UserDashboardLayout>
       <JourneysList />
     </UserDashboardLayout>
   )

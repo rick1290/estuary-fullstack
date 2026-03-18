@@ -8,8 +8,6 @@ import type {
   JourneyDetail,
   JourneySession,
   JourneyPractitioner,
-  JourneyListResponse,
-  PaginatedJourneyListResponseList,
 } from "@/src/client/types.gen"
 
 // ---------------------------------------------------------------------------
@@ -30,43 +28,31 @@ export type FilterType = "all" | "session" | "course" | "workshop" | "package"
 // ---------------------------------------------------------------------------
 
 export function useJourneys() {
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data, isLoading, error } = useQuery({
     ...journeysListOptions(),
   })
 
-  // The API returns PaginatedJourneyListResponseList:
-  //   { count, results: JourneyListResponse[] }
-  // Each JourneyListResponse is { count, results: JourneyListItem[] }
-  // Flatten all JourneyListItem[] from the nested structure.
+  // The API returns { count, results: JourneyListItem[] }
+  // The heyapi interceptor may unwrap the {status, data} wrapper
+  // So data could be: { count, results } or { status, data: { count, results } }
   const journeys = useMemo(() => {
     if (!data) return [] as JourneyListItem[]
-    const paginated = data as PaginatedJourneyListResponseList
-    // Flatten: each item in paginated.results is a JourneyListResponse with its own results
-    const allItems: JourneyListItem[] = []
-    for (const group of paginated.results ?? []) {
-      if (Array.isArray((group as JourneyListResponse).results)) {
-        allItems.push(...(group as JourneyListResponse).results)
-      }
-    }
-    // If the structure is already flat (interceptor unwrapped), handle that too
-    if (allItems.length === 0 && Array.isArray((data as any)?.results)) {
-      const directResults = (data as any).results
-      // Check if first item looks like a JourneyListItem (has journey_id)
-      if (directResults.length > 0 && directResults[0].journey_id) {
-        return directResults as JourneyListItem[]
-      }
-    }
-    return allItems
-  }, [data])
 
-  const count = useMemo(() => {
-    if (!data) return 0
-    return (data as PaginatedJourneyListResponseList)?.count ?? journeys.length
-  }, [data, journeys.length])
+    // Try direct: data.results (interceptor unwrapped)
+    const raw = data as any
+    let items: any[] = []
+
+    if (Array.isArray(raw?.results)) {
+      items = raw.results
+    } else if (Array.isArray(raw?.data?.results)) {
+      items = raw.data.results
+    } else if (Array.isArray(raw)) {
+      items = raw
+    }
+
+    // Filter to actual JourneyListItem objects (have journey_id)
+    return items.filter((item: any) => item?.journey_id) as JourneyListItem[]
+  }, [data])
 
   const upcomingJourneys = useMemo(
     () => journeys.filter((j) => j.status === "upcoming"),
@@ -90,6 +76,6 @@ export function useJourneys() {
     completedJourneys,
     isLoading,
     error,
-    count,
+    count: journeys.length,
   }
 }

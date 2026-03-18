@@ -1,13 +1,15 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Calendar, Clock, ChevronRight } from "lucide-react"
-import { format, parseISO } from "date-fns"
+import { Calendar, ChevronRight, Users } from "lucide-react"
+import { format } from "date-fns"
 import Link from "next/link"
+
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  if (typeof value === "string") return new Date(value)
+  return new Date(String(value))
+}
 
 interface JourneyCardWorkshopProps {
   journey: JourneyListItem
@@ -16,76 +18,94 @@ interface JourneyCardWorkshopProps {
 export default function JourneyCardWorkshop({ journey }: JourneyCardWorkshopProps) {
   const practitioner = journey.practitioner
   const nextSessionTime = journey.next_session_time
-    ? parseISO(String(journey.next_session_time))
+    ? toDate(journey.next_session_time)
     : null
   const isCompleted = journey.status === "completed"
 
   return (
-    <Card className="border border-sage-200/60 hover:shadow-sm transition-all">
-      <CardContent className="p-5">
-        <div className="flex items-start gap-4">
-          {/* Practitioner avatar */}
-          <Avatar className="h-12 w-12 flex-shrink-0">
-            <AvatarFallback className="bg-terracotta-100 text-terracotta-700">
-              {practitioner?.name?.charAt(0) ?? "P"}
-            </AvatarFallback>
-          </Avatar>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <Badge
-                  variant="outline"
-                  className="mb-1.5 text-[10px] uppercase tracking-wider font-medium text-terracotta-600 border-terracotta-200"
-                >
-                  Workshop
-                </Badge>
-                <h3 className="font-medium text-olive-900 line-clamp-1">
-                  {journey.service_name ?? "Workshop"}
-                </h3>
-                {practitioner?.name && (
-                  <p className="text-sm text-olive-500 mt-0.5">
-                    with {practitioner.name}
-                  </p>
-                )}
-              </div>
-
-              {isCompleted && (
-                <Badge variant="outline" className="text-olive-500 flex-shrink-0">
-                  Completed
-                </Badge>
-              )}
+    <Link
+      href={`/dashboard/user/journeys/${journey.journey_id}`}
+      className="block group"
+    >
+      <div className="flex gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-amber-300 hover:shadow-md transition-all">
+        {/* Image */}
+        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-amber-50">
+          {journey.service_image_url ? (
+            <img src={journey.service_image_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-amber-400">
+              <Users className="h-6 w-6" />
             </div>
+          )}
+        </div>
 
-            {/* Details row */}
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-olive-600">
-              {nextSessionTime && (
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Line 1: Title */}
+          <h3 className="text-[15px] font-medium text-olive-900 truncate group-hover:text-amber-700 transition-colors">
+            {journey.service_name}
+          </h3>
+
+          {/* Line 2: Practitioner */}
+          {practitioner?.name && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {practitioner.profile_image_url ? (
+                <img src={practitioner.profile_image_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-sage-200 flex items-center justify-center">
+                  <span className="text-[8px] text-olive-600">{practitioner.name?.charAt(0)}</span>
+                </div>
+              )}
+              <span className="text-[12px] text-olive-400">with {practitioner.name}</span>
+            </div>
+          )}
+
+          {/* Line 3: Date + participant count */}
+          <div className="flex items-center gap-2 mt-2 text-[12px] text-olive-500">
+            {nextSessionTime && (
+              <>
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
                   {format(nextSessionTime, "EEE, MMM d")}
                 </span>
-              )}
-              {nextSessionTime && (
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  {format(nextSessionTime, "h:mm a")}
-                </span>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="mt-3">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={`/dashboard/user/journeys/${journey.journey_id}`}>
-                  View Details
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Link>
-              </Button>
-            </div>
+                <span>·</span>
+                <span>{format(nextSessionTime, "h:mm a")}</span>
+              </>
+            )}
+            {journey.service_duration_minutes && (
+              <>
+                <span>·</span>
+                <span>{journey.service_duration_minutes} min</span>
+              </>
+            )}
+            {journey.service_location_type && (
+              <>
+                <span>·</span>
+                <span className="capitalize">{journey.service_location_type}</span>
+              </>
+            )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Right: type badge + status + chevron */}
+        <div className="flex flex-col items-end justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+              Workshop
+            </span>
+            {isCompleted ? (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-olive-100 text-olive-600">
+                Completed
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                Upcoming
+              </span>
+            )}
+          </div>
+          <ChevronRight className="h-4 w-4 text-olive-300 group-hover:text-amber-500 transition-colors" />
+        </div>
+      </div>
+    </Link>
   )
 }

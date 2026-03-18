@@ -109,6 +109,15 @@ app.conf.beat_schedule = {
         }
     },
     
+    # Transition projected earnings to pending after session completion
+    'transition-projected-to-pending': {
+        'task': 'transition-projected-to-pending',
+        'schedule': crontab(minute='*/30'),  # Every 30 minutes
+        'options': {
+            'expires': 1800.0,
+        }
+    },
+
     # Mark completed bookings
     'mark-bookings-complete': {
         'task': 'mark-completed-bookings',

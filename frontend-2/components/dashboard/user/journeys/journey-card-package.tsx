@@ -1,13 +1,15 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Calendar, CalendarPlus, ChevronRight } from "lucide-react"
-import { format, parseISO } from "date-fns"
+import { Calendar, ChevronRight, Layers } from "lucide-react"
+import { format } from "date-fns"
 import Link from "next/link"
+
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  if (typeof value === "string") return new Date(value)
+  return new Date(String(value))
+}
 
 interface JourneyCardPackageProps {
   journey: JourneyListItem
@@ -18,104 +20,106 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
   const { completed_sessions, total_sessions, needs_scheduling } = journey
 
   const nextSessionTime = journey.next_session_time
-    ? parseISO(String(journey.next_session_time))
+    ? toDate(journey.next_session_time)
     : null
 
   return (
-    <Card className="border border-sage-200/60 hover:shadow-sm transition-all">
-      <CardContent className="p-5">
-        <div className="flex items-start gap-4">
-          {/* Practitioner avatar */}
-          <Avatar className="h-12 w-12 flex-shrink-0">
-            <AvatarFallback className="bg-cream-200 text-olive-700">
-              {practitioner?.name?.charAt(0) ?? "P"}
-            </AvatarFallback>
-          </Avatar>
+    <Link
+      href={`/dashboard/user/journeys/${journey.journey_id}`}
+      className="block group"
+    >
+      <div className="flex gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 hover:shadow-md transition-all">
+        {/* Image */}
+        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
+          {journey.service_image_url ? (
+            <img src={journey.service_image_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-sage-400">
+              <Layers className="h-6 w-6" />
+            </div>
+          )}
+        </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <Badge
-                  variant="outline"
-                  className="mb-1.5 text-[10px] uppercase tracking-wider font-medium text-olive-600 border-olive-300"
-                >
-                  Package
-                </Badge>
-                <h3 className="font-medium text-olive-900 line-clamp-1">
-                  {journey.service_name ?? "Package"}
-                </h3>
-                {practitioner?.name && (
-                  <p className="text-sm text-olive-500 mt-0.5">
-                    with {practitioner.name}
-                  </p>
-                )}
-              </div>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Line 1: Title */}
+          <h3 className="text-[15px] font-medium text-olive-900 truncate group-hover:text-sage-700 transition-colors">
+            {journey.service_name}
+          </h3>
 
-              {journey.status === "completed" && (
-                <Badge variant="outline" className="text-olive-500 flex-shrink-0">
-                  Completed
-                </Badge>
+          {/* Line 2: Practitioner */}
+          {practitioner?.name && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {practitioner.profile_image_url ? (
+                <img src={practitioner.profile_image_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-sage-200 flex items-center justify-center">
+                  <span className="text-[8px] text-olive-600">{practitioner.name?.charAt(0)}</span>
+                </div>
               )}
+              <span className="text-[12px] text-olive-400">with {practitioner.name}</span>
             </div>
+          )}
 
-            {/* Dot progress indicator */}
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex items-center gap-1" aria-label={`${completed_sessions} of ${total_sessions} complete`}>
-                {Array.from({ length: total_sessions }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`inline-block h-2.5 w-2.5 rounded-full ${
-                      i < completed_sessions
-                        ? "bg-sage-500"
-                        : "bg-sage-200"
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-olive-500">
-                {completed_sessions} of {total_sessions} complete
-              </span>
+          {/* Line 3: Dot progress */}
+          <div className="flex items-center gap-2 mt-2">
+            <div
+              className="flex items-center gap-1"
+              aria-label={`${completed_sessions} of ${total_sessions} complete`}
+            >
+              {Array.from({ length: Math.min(total_sessions, 12) }).map((_, i) => (
+                <span
+                  key={i}
+                  className={`inline-block h-2 w-2 rounded-full ${
+                    i < completed_sessions ? "bg-sage-500" : "bg-sage-200"
+                  }`}
+                />
+              ))}
             </div>
+            <span className="text-[11px] text-olive-400">
+              {completed_sessions} of {total_sessions} used
+            </span>
+          </div>
 
-            {/* Next scheduled session */}
+          {/* Line 4: Next session or scheduling notice */}
+          <div className="flex items-center gap-3 mt-1.5 text-[12px]">
             {nextSessionTime && (
-              <div className="mt-3 flex items-center gap-1.5 text-sm text-olive-600">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>
-                  Next: {format(nextSessionTime, "EEE MMM d · h:mm a")}
-                </span>
-              </div>
+              <span className="flex items-center gap-1 text-olive-500">
+                <Calendar className="h-3 w-3" />
+                Next: {format(nextSessionTime, "EEE MMM d · h:mm a")}
+              </span>
             )}
-
-            {/* Needs scheduling notice */}
             {needs_scheduling > 0 && (
-              <p className="mt-1.5 text-xs text-amber-600">
-                {needs_scheduling} session{needs_scheduling !== 1 ? "s" : ""} need
-                {needs_scheduling === 1 ? "s" : ""} scheduling
-              </p>
+              <span className="text-amber-600 font-medium">
+                {needs_scheduling} need{needs_scheduling === 1 ? "s" : ""} scheduling
+              </span>
             )}
-
-            {/* Actions */}
-            <div className="mt-3 flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={`/dashboard/user/journeys/${journey.journey_id}`}>
-                  View Journey
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Link>
-              </Button>
-              {needs_scheduling > 0 && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/dashboard/user/journeys/${journey.journey_id}`}>
-                    <CalendarPlus className="h-3.5 w-3.5 mr-1" />
-                    Schedule Next
-                  </Link>
-                </Button>
-              )}
-            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Right: type badge + status + chevron */}
+        <div className="flex flex-col items-end justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-50 text-sage-600">
+              Package
+            </span>
+            {journey.status === "completed" ? (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-olive-100 text-olive-600">
+                Completed
+              </span>
+            ) : needs_scheduling > 0 ? (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                Action Needed
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-100 text-sage-700">
+                Active
+              </span>
+            )}
+          </div>
+          <ChevronRight className="h-4 w-4 text-olive-300 group-hover:text-sage-500 transition-colors" />
+        </div>
+      </div>
+    </Link>
   )
 }

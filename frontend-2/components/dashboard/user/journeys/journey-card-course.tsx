@@ -1,14 +1,15 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Calendar, ChevronRight } from "lucide-react"
-import { format, parseISO } from "date-fns"
+import { Calendar, ChevronRight, BookOpen } from "lucide-react"
+import { format } from "date-fns"
 import Link from "next/link"
+
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  if (typeof value === "string") return new Date(value)
+  return new Date(String(value))
+}
 
 interface JourneyCardCourseProps {
   journey: JourneyListItem
@@ -19,87 +20,113 @@ export default function JourneyCardCourse({ journey }: JourneyCardCourseProps) {
   const { completed_sessions, total_sessions, progress_percentage } = journey
 
   const nextSessionTime = journey.next_session_time
-    ? parseISO(String(journey.next_session_time))
+    ? toDate(journey.next_session_time)
     : null
   const nextTitle = journey.next_session_title
 
   return (
-    <Card className="border border-sage-200/60 hover:shadow-sm transition-all">
-      <CardContent className="p-5">
-        <div className="flex items-start gap-4">
-          {/* Practitioner avatar */}
-          <Avatar className="h-12 w-12 flex-shrink-0">
-            <AvatarFallback className="bg-sage-100 text-sage-700">
-              {practitioner?.name?.charAt(0) ?? "P"}
-            </AvatarFallback>
-          </Avatar>
+    <Link
+      href={`/dashboard/user/journeys/${journey.journey_id}`}
+      className="block group"
+    >
+      <div className="flex gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-teal-300 hover:shadow-md transition-all">
+        {/* Image */}
+        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-teal-50">
+          {journey.service_image_url ? (
+            <img src={journey.service_image_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-teal-400">
+              <BookOpen className="h-6 w-6" />
+            </div>
+          )}
+        </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <Badge
-                  variant="outline"
-                  className="mb-1.5 text-[10px] uppercase tracking-wider font-medium text-sage-600 border-sage-300"
-                >
-                  Course
-                </Badge>
-                <h3 className="font-medium text-olive-900 line-clamp-1">
-                  {journey.service_name ?? "Course"}
-                </h3>
-                {practitioner?.name && (
-                  <p className="text-sm text-olive-500 mt-0.5">
-                    with {practitioner.name}
-                  </p>
-                )}
-              </div>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Line 1: Title */}
+          <h3 className="text-[15px] font-medium text-olive-900 truncate group-hover:text-teal-700 transition-colors">
+            {journey.service_name}
+          </h3>
 
-              {journey.status === "completed" && (
-                <Badge variant="outline" className="text-olive-500 flex-shrink-0">
-                  Completed
-                </Badge>
+          {/* Line 2: Practitioner */}
+          {practitioner?.name && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {practitioner.profile_image_url ? (
+                <img src={practitioner.profile_image_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-sage-200 flex items-center justify-center">
+                  <span className="text-[8px] text-olive-600">{practitioner.name?.charAt(0)}</span>
+                </div>
+              )}
+              <span className="text-[12px] text-olive-400">with {practitioner.name}</span>
+            </div>
+          )}
+
+          {/* Line 3: Date + meta */}
+          {nextSessionTime && (
+            <div className="flex items-center gap-2 mt-2 text-[12px] text-olive-500">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {format(nextSessionTime, "EEE, MMM d")}
+              </span>
+              <span>·</span>
+              <span>{format(nextSessionTime, "h:mm a")}</span>
+              {journey.service_duration_minutes && (
+                <>
+                  <span>·</span>
+                  <span>{journey.service_duration_minutes} min</span>
+                </>
+              )}
+              {journey.service_location_type && (
+                <>
+                  <span>·</span>
+                  <span className="capitalize">{journey.service_location_type}</span>
+                </>
               )}
             </div>
+          )}
 
-            {/* Progress bar */}
-            <div className="mt-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-olive-500">
-                <span>
-                  {completed_sessions} of {total_sessions} complete
-                </span>
-                <span>{progress_percentage}%</span>
-              </div>
-              <Progress
-                value={progress_percentage}
-                className="h-2 bg-sage-100"
+          {/* Line 4: Progress bar + next module */}
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-1.5 bg-sage-100 rounded-full overflow-hidden max-w-[140px]">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all"
+                style={{ width: `${progress_percentage || 0}%` }}
               />
             </div>
-
-            {/* Next session info */}
-            {nextSessionTime && (
-              <div className="mt-3 flex items-center gap-1.5 text-sm text-olive-600">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>
-                  Next: {format(nextSessionTime, "EEE MMM d")}
-                  {nextTitle && (
-                    <span className="text-olive-400"> &middot; &ldquo;{nextTitle}&rdquo;</span>
-                  )}
-                </span>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="mt-3">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={`/dashboard/user/journeys/${journey.journey_id}`}>
-                  View Journey
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Link>
-              </Button>
-            </div>
+            <span className="text-[11px] text-olive-400">
+              {completed_sessions} of {total_sessions}
+            </span>
           </div>
+
+          {nextTitle && nextSessionTime && (
+            <div className="flex items-center gap-1.5 mt-1 text-[12px] text-olive-500">
+              <span>
+                Next: {nextTitle} · {format(nextSessionTime, "EEE MMM d")}
+              </span>
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Right: type badge + status + chevron */}
+        <div className="flex flex-col items-end justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-600">
+              Course
+            </span>
+            {journey.status === "completed" ? (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-olive-100 text-olive-600">
+                Completed
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">
+                In Progress
+              </span>
+            )}
+          </div>
+          <ChevronRight className="h-4 w-4 text-olive-300 group-hover:text-teal-500 transition-colors" />
+        </div>
+      </div>
+    </Link>
   )
 }
