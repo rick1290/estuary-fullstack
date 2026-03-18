@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,60 +11,69 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Copy, 
-  Gift, 
-  Users, 
-  TrendingUp, 
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Copy,
+  Gift,
+  Users,
+  TrendingUp,
   CheckCircle,
   Share2,
   Mail,
   DollarSign,
   Calendar,
   ChevronRight,
-  Info
+  Info,
+  Loader2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { referralsStatsRetrieveOptions, referralsListOptions, referralsInviteCreateMutation } from "@/src/client/@tanstack/react-query.gen"
 
 export default function PractitionerReferrals() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
-  
-  // Mock data - in real app, fetch from API
-  const referralCode = "ESTUARY-PRO-2024"
-  const referralLink = `https://estuary.app/join?ref=${referralCode}`
-  const totalReferrals = 12
-  const activeReferrals = 8
-  const pendingReferrals = 4
-  const totalEarnings = 1250.00
-  const pendingEarnings = 200.00
-  
-  const recentReferrals = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah@example.com",
-      status: "active",
-      joinedDate: "2024-01-15",
-      earnings: 150.00
+
+  // Fetch referral stats from API
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    ...referralsStatsRetrieveOptions(),
+  })
+
+  // Fetch referral list from API
+  const { data: referralsData, isLoading: referralsLoading } = useQuery({
+    ...referralsListOptions(),
+  })
+
+  // Invite mutation
+  const inviteMutation = useMutation({
+    ...referralsInviteCreateMutation(),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Invitation sent!",
+        description: data?.message || `An invitation has been sent to ${email}`,
+      })
+      setEmail("")
+      queryClient.invalidateQueries({ queryKey: referralsListOptions().queryKey })
+      queryClient.invalidateQueries({ queryKey: referralsStatsRetrieveOptions().queryKey })
     },
-    {
-      id: 2,
-      name: "Michael Chen",
-      email: "michael@example.com",
-      status: "pending",
-      joinedDate: "2024-01-18",
-      earnings: 0
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send invite",
+        description: error?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
     },
-    {
-      id: 3,
-      name: "Emma Williams",
-      email: "emma@example.com",
-      status: "active",
-      joinedDate: "2024-01-10",
-      earnings: 200.00
-    }
-  ]
+  })
+
+  const referralCode = stats?.referral_code ?? ""
+  const referralLink = stats?.referral_link ?? ""
+  const totalReferrals = stats?.total_referrals ?? 0
+  const convertedReferrals = stats?.converted_referrals ?? 0
+  const pendingReferrals = stats?.pending_referrals ?? 0
+  const totalEarnings = Number(stats?.total_earnings ?? 0)
+  const pendingEarnings = Number(stats?.pending_earnings ?? 0)
+
+  const referrals = referralsData?.results ?? []
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink)
@@ -84,12 +94,40 @@ export default function PractitionerReferrals() {
   const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) return
-    
-    toast({
-      title: "Invitation sent!",
-      description: `An invitation has been sent to ${email}`,
-    })
-    setEmail("")
+
+    inviteMutation.mutate({
+      body: { email },
+    } as any)
+  }
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'converted': return 'default'
+      case 'pending': return 'secondary'
+      case 'expired': return 'outline'
+      case 'rejected': return 'destructive'
+      default: return 'secondary'
+    }
+  }
+
+  if (statsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-3 w-32 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -104,11 +142,11 @@ export default function PractitionerReferrals() {
           <CardContent>
             <div className="font-serif text-2xl font-light text-olive-900">{totalReferrals}</div>
             <p className="text-xs text-muted-foreground">
-              {activeReferrals} active, {pendingReferrals} pending
+              {convertedReferrals} converted, {pendingReferrals} pending
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
@@ -116,15 +154,15 @@ export default function PractitionerReferrals() {
           </CardHeader>
           <CardContent>
             <div className="font-serif text-2xl font-light text-olive-900">
-              {totalReferrals > 0 ? Math.round((activeReferrals / totalReferrals) * 100) : 0}%
+              {totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0}%
             </div>
-            <Progress 
-              value={totalReferrals > 0 ? (activeReferrals / totalReferrals) * 100 : 0} 
+            <Progress
+              value={totalReferrals > 0 ? (convertedReferrals / totalReferrals) * 100 : 0}
               className="mt-2 h-2"
             />
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -137,7 +175,7 @@ export default function PractitionerReferrals() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Rewards</CardTitle>
@@ -190,7 +228,7 @@ export default function PractitionerReferrals() {
               </p>
             </div>
           </div>
-          
+
           <Alert className="border-sage-200 bg-sage-50">
             <Info className="h-4 w-4" />
             <AlertDescription>
@@ -206,7 +244,7 @@ export default function PractitionerReferrals() {
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="rewards">Rewards</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="share" className="space-y-4">
           {/* Referral Link */}
           <Card>
@@ -227,7 +265,7 @@ export default function PractitionerReferrals() {
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <Label className="text-sm">Referral Code</Label>
@@ -241,9 +279,9 @@ export default function PractitionerReferrals() {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <h4 className="text-sm font-medium">Share via</h4>
                 <div className="flex gap-2">
@@ -280,15 +318,19 @@ export default function PractitionerReferrals() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  <Mail className="h-4 w-4 mr-2" />
+                <Button type="submit" className="w-full" disabled={inviteMutation.isPending}>
+                  {inviteMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
                   Send Invitation
                 </Button>
               </form>
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="referrals" className="space-y-4">
           <Card>
             <CardHeader>
@@ -298,39 +340,65 @@ export default function PractitionerReferrals() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentReferrals.map((referral) => (
-                  <div key={referral.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <p className="font-medium">{referral.name}</p>
-                      <p className="text-sm text-muted-foreground">{referral.email}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        Joined {referral.joinedDate}
+              {referralsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  ))}
+                </div>
+              ) : referrals.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No referrals yet. Share your link to get started!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {referrals.map((referral: any) => (
+                    <div key={referral.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">
+                          {referral.referred_name || referral.email_sent_to}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{referral.email_sent_to}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {referral.created_at
+                            ? new Date(referral.created_at).toLocaleDateString()
+                            : "Unknown"}
+                        </div>
+                      </div>
+                      <div className="text-right space-y-2">
+                        <Badge variant={getStatusVariant(referral.status) as any}>
+                          {referral.status}
+                        </Badge>
+                        {referral.referrer_reward_amount && Number(referral.referrer_reward_amount) > 0 && (
+                          <p className="text-sm font-medium text-green-600">
+                            +${Number(referral.referrer_reward_amount).toFixed(2)}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right space-y-2">
-                      <Badge variant={referral.status === 'active' ? 'default' : 'secondary'}>
-                        {referral.status}
-                      </Badge>
-                      {referral.earnings > 0 && (
-                        <p className="text-sm font-medium text-green-600">
-                          +${referral.earnings.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <Button variant="outline" className="w-full mt-4">
-                View All Referrals
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
+                  ))}
+                </div>
+              )}
+
+              {referrals.length > 0 && (
+                <Button variant="outline" className="w-full mt-4">
+                  View All Referrals
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="rewards" className="space-y-4">
           <Card>
             <CardHeader>
@@ -352,9 +420,9 @@ export default function PractitionerReferrals() {
                   </p>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <h4 className="font-medium">Reward Tiers</h4>
                 <div className="space-y-2">
@@ -381,7 +449,7 @@ export default function PractitionerReferrals() {
                   </div>
                 </div>
               </div>
-              
+
               <Button className="w-full">
                 Request Payout
               </Button>

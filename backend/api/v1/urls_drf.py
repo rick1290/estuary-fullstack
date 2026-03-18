@@ -71,6 +71,9 @@ from ai_images.api.v1.views import GeneratedImageViewSet
 # Journal
 from journal.api.v1.views import JournalEntryViewSet
 
+# Referrals
+from referrals.api.v1.views import ReferralViewSet
+
 # Register all ViewSets properly
 # Bookings
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -147,6 +150,9 @@ router.register(r'ai-images', GeneratedImageViewSet, basename='ai-images')
 
 # Journal
 router.register(r'journal', JournalEntryViewSet, basename='journal-entry')
+
+# Referrals
+router.register(r'referrals', ReferralViewSet, basename='referral')
 
 # Import documentation views
 from api.v1.docs import (

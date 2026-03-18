@@ -3,7 +3,6 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
@@ -16,7 +15,6 @@ import {
   LogOut,
   LogIn,
   UserPlus,
-  Bell,
   RefreshCw,
   Users,
   GraduationCap,
@@ -42,13 +40,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import {
-  notificationsUnreadCountRetrieveOptions,
-  notificationsListOptions
-} from "@/src/client/@tanstack/react-query.gen"
-import { formatDistanceToNow } from "date-fns"
+import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -59,27 +52,6 @@ export default function Navbar() {
   // Check if we're in the practitioner dashboard or checkout pages
   const isInPractitionerDashboard = pathname.startsWith("/dashboard/practitioner")
   const isInCheckout = pathname.startsWith("/checkout")
-
-  // Fetch notifications data
-  const { data: unreadCountData } = useQuery({
-    ...notificationsUnreadCountRetrieveOptions(),
-    enabled: isAuthenticated,
-    refetchInterval: 30000, // Refresh every 30 seconds
-  })
-
-  const { data: notificationsData } = useQuery({
-    ...notificationsListOptions({
-      query: {
-        page_size: 5,
-        ordering: '-created_at'
-      }
-    }),
-    enabled: isAuthenticated,
-    refetchInterval: 30000, // Refresh every 30 seconds
-  })
-
-  const unreadCount = unreadCountData?.unread_count || 0
-  const recentNotifications = notificationsData?.results || []
 
   // If we're in the practitioner dashboard or checkout, don't show the main navbar
   if (isInPractitionerDashboard || isInCheckout) {
@@ -241,57 +213,7 @@ export default function Navbar() {
               </Button>
 
               {/* Notifications */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    {unreadCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -right-1 -top-1 h-5 min-w-5 p-0 flex items-center justify-center text-xs"
-                      >
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </Badge>
-                    )}
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  {recentNotifications.length > 0 ? (
-                    <>
-                      <div className="p-2 border-b">
-                        <p className="text-sm font-semibold text-olive-900">Recent Notifications</p>
-                      </div>
-                      {recentNotifications.map((notification: any) => (
-                        <div
-                          key={notification.id}
-                          className={cn(
-                            "p-3 hover:bg-sage-50 cursor-pointer border-b border-sage-100 last:border-0",
-                            !notification.is_read && "bg-blush-50"
-                          )}
-                        >
-                          <p className="text-sm font-medium text-olive-900">{notification.title}</p>
-                          <p className="text-xs text-olive-600 mt-1 line-clamp-2">{notification.message}</p>
-                          <p className="text-xs text-sage-600 mt-1">
-                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="p-4 text-center">
-                      <Bell className="h-8 w-8 mx-auto text-sage-300 mb-2" />
-                      <p className="text-sm text-olive-600">No notifications yet</p>
-                    </div>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="justify-center">
-                    <Link href="/dashboard/user/notifications" className="text-primary">
-                      View all notifications
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationsDropdown />
 
               {/* User Menu */}
               <DropdownMenu>

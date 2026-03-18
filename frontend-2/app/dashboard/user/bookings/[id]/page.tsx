@@ -496,7 +496,8 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                     <span className="font-medium">Rescheduling:</span> You can reschedule up to 24 hours before your session.
                   </p>
                   <p>
-                    <span className="font-medium">Cancellation:</span> Full refund if cancelled 24+ hours before. 50% refund if cancelled 12-24 hours before. No refund within 12 hours.
+                    <span className="font-medium">Cancellation:</span> Full refund if canceled 24+ hours before your session. No refund within 24 hours.
+                    Practitioner cancellations always receive a full refund.
                   </p>
                   <p>
                     <span className="font-medium">No-show:</span> Missing your session without notice may result in forfeiting the session fee.
@@ -689,14 +690,14 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                 <CardTitle className="font-serif text-lg font-light text-olive-900">Need Help?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="link" className="p-0 h-auto justify-start text-sm">
-                  Contact Support
+                <Button variant="link" className="p-0 h-auto justify-start text-sm" asChild>
+                  <a href="mailto:support@estuary.com">Contact Support</a>
                 </Button>
-                <Button variant="link" className="p-0 h-auto justify-start text-sm">
-                  Report an Issue
+                <Button variant="link" className="p-0 h-auto justify-start text-sm" asChild>
+                  <Link href="/contact">Report an Issue</Link>
                 </Button>
-                <Button variant="link" className="p-0 h-auto justify-start text-sm">
-                  View Cancellation Policy
+                <Button variant="link" className="p-0 h-auto justify-start text-sm" asChild>
+                  <Link href="/terms">View Cancellation Policy</Link>
                 </Button>
               </CardContent>
             </Card>
