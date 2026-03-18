@@ -3,51 +3,55 @@
     <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#3c412a" />
-      <mj-button background-color="#7a8b63" color="#ffffff" font-weight="600" border-radius="12px" padding="14px 32px" font-size="16px" />
+      <mj-text font-size="16px" line-height="1.6" color="#576039" />
+      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
     </mj-attributes>
   </mj-head>
 
-  <mj-body background-color="#f5f1e6">
-    <mj-section background-color="#ffffff" padding="32px 24px">
+  <mj-body background-color="#f5f2ed">
+    <mj-section background-color="#3c412a" padding="16px 36px">
       <mj-column>
-        <mj-text align="center" font-size="20px" font-weight="700" color="#3c412a" letter-spacing="5px" padding="12px 0">ESTUARY</mj-text>
+        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">ESTUARY</mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">Approved</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#474e31" padding="40px 36px">
+      <mj-column>
+        <mj-text align="center" font-size="22px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
+          Congratulations!
+        </mj-text>
+        <mj-text align="center" font-size="13px" color="#95a57f">Your practitioner profile has been approved</mj-text>
       </mj-column>
     </mj-section>
 
     <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section padding="12px 0 8px">
-        <mj-column>
-          <mj-text align="center" font-size="18px" padding-bottom="4px">🎉</mj-text>
-          <mj-text align="center" font-size="18px" font-weight="700" color="#3c412a" padding-bottom="2px">Congratulations!</mj-text>
-          <mj-text align="center" font-size="13px" color="#6f7a47">Your practitioner profile has been approved</mj-text>
-        </mj-column>
-      </mj-section>
-
-      <mj-section background-color="#ffffff" border-radius="16px" padding="28px 24px">
+      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="28px 24px">
         <mj-column>
           <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
             Hi {{ user.first_name }},
           </mj-text>
           <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
-            Great news! Your practitioner profile has been reviewed and <strong>approved</strong>. You're now officially part of the ESTUARY community and can start accepting bookings!
+            Great news! Your practitioner profile has been reviewed and <strong style="color: #e8ebe6;">approved</strong>. You're now officially part of the ESTUARY community and can start accepting bookings!
           </mj-text>
 
-          <mj-text font-size="17px" font-weight="600" color="#3c412a" padding-bottom="14px">Next Steps:</mj-text>
+          <mj-text font-size="17px" font-weight="600" color="#576039" padding-bottom="14px">Next Steps:</mj-text>
 
-          <mj-text padding-bottom="12px">✓ <strong>Create your first service</strong> to start receiving bookings</mj-text>
-          <mj-text padding-bottom="12px">✓ <strong>Set your availability</strong> so clients know when to book</mj-text>
-          <mj-text padding-bottom="12px">✓ <strong>Share your profile</strong> with your network</mj-text>
-          <mj-text padding-bottom="32px">✓ <strong>Explore marketing tools</strong> to grow your practice</mj-text>
+          <mj-text padding-bottom="12px"><strong>Create your first service</strong> to start receiving bookings</mj-text>
+          <mj-text padding-bottom="12px"><strong>Set your availability</strong> so clients know when to book</mj-text>
+          <mj-text padding-bottom="12px"><strong>Share your profile</strong> with your network</mj-text>
+          <mj-text padding-bottom="32px"><strong>Explore marketing tools</strong> to grow your practice</mj-text>
 
           <mj-button href="{{ WEBSITE_URL }}/practitioner/dashboard">Go to Dashboard</mj-button>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#f5f1e6" border-radius="12px" border-left="4px solid #7a8b63" padding="24px 28px">
+      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 28px">
         <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#6f7a47" padding-bottom="8px">💡 Pro Tip</mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#3c412a">
+          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">Pro Tip</mj-text>
+          <mj-text font-size="14px" line-height="1.6" color="#576039">
             Practitioners who create at least 3 services in their first week get 2x more bookings. Diversify your offerings to attract more clients!
           </mj-text>
         </mj-column>
@@ -55,17 +59,17 @@
 
       <mj-section padding="32px 0">
         <mj-column>
-          <mj-text align="center" font-size="14px" color="#8b985b">
-            Need help getting started? <a href="{{ WEBSITE_URL }}/practitioner/help" style="color: #7a8b63; font-weight: 600;">Visit Help Center →</a>
+          <mj-text align="center" font-size="14px" color="#95a57f">
+            Need help getting started? <a href="{{ WEBSITE_URL }}/practitioner/help" style="color: #61704d; font-weight: 600;">Visit Help Center</a>
           </mj-text>
         </mj-column>
       </mj-section>
     </mj-wrapper>
 
-    <mj-section background-color="#3c412a" padding="40px 24px">
+    <mj-section background-color="#3c412a" padding="24px 36px">
       <mj-column>
-        <mj-text align="center" color="#ffffff" font-size="18px" font-weight="700" letter-spacing="5px" padding-bottom="16px">ESTUARY</mj-text>
-        <mj-text align="center" color="#8b985b" font-size="12px">© {{ YEAR }} ESTUARY. All rights reserved.</mj-text>
+        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">ESTUARY</mj-text>
+        <mj-text align="center" color="#4d5a3e" font-size="11px">© {{ YEAR }} ESTUARY. All rights reserved.</mj-text>
       </mj-column>
     </mj-section>
   </mj-body>

@@ -2,7 +2,7 @@
 <!-- Usage: {% include 'emails/components/practitioner_card.mjml' %} -->
 <!-- Requires: practitioner in context -->
 
-<mj-section background-color="#f5f1e6" border-radius="12px" padding="20px">
+<mj-section background-color="#e8ebe6" border-radius="12px" padding="20px">
   <mj-column width="80px" vertical-align="middle">
     {% if practitioner.profile_image_url %}
     <mj-image
@@ -29,7 +29,7 @@
     </mj-text>
 
     {% if practitioner.specializations.all %}
-    <mj-text font-size="14px" color="#6f7a47" padding="4px 0 0 0">
+    <mj-text font-size="14px" color="#576039" padding="4px 0 0 0">
       {% for spec in practitioner.specializations.all|slice:":3" %}
         {{ spec.name }}{% if not forloop.last %}, {% endif %}
       {% endfor %}
