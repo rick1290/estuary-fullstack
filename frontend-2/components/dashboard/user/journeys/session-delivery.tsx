@@ -19,15 +19,10 @@ import {
   CalendarRange,
   XCircle,
   CheckCircle,
-  User,
   MessageSquare,
   Film,
-  PlayCircle,
-  Download,
   Star,
-  DollarSign,
-  Layers,
-  Check,
+  ExternalLink,
 } from "lucide-react"
 import {
   Tooltip,
@@ -37,12 +32,7 @@ import {
 } from "@/components/ui/tooltip"
 import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
 import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
-import {
-  format,
-  parseISO,
-  differenceInHours,
-  isPast,
-} from "date-fns"
+import { format, parseISO, differenceInHours, isPast } from "date-fns"
 import Link from "next/link"
 
 // ---------------------------------------------------------------------------
@@ -55,28 +45,38 @@ interface SessionDeliveryProps {
   journeyData?: JourneyDetail
 }
 
-type SessionState =
-  | "upcoming"
-  | "joinable"
-  | "in_progress"
-  | "completed"
-  | "canceled"
+type SessionState = "upcoming" | "joinable" | "in_progress" | "completed" | "canceled"
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Safely convert any date value (Date, string, or null) to a Date object */
 function toDate(value: unknown): Date {
   if (value instanceof Date) return value
   if (typeof value === "string") return parseISO(value)
   return new Date(String(value))
 }
 
-function generateCalendarUrl(title: string, startTime: Date, endTime: Date, description: string, location: string): string {
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+function formatDuration(minutes: number): string {
+  if (minutes >= 60) {
+    const hrs = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `${hrs} hr ${mins} min` : `${hrs} hr`
+  }
+  return `${minutes} min`
+}
+
+function generateCalendarUrl(
+  title: string,
+  startTime: Date,
+  endTime: Date,
+  description: string,
+  location: string
+): string {
+  const fmt = (d: Date) =>
+    d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
   const params = new URLSearchParams({
-    action: 'TEMPLATE',
+    action: "TEMPLATE",
     text: title,
     dates: `${fmt(startTime)}/${fmt(endTime)}`,
     details: description,
@@ -87,11 +87,9 @@ function generateCalendarUrl(title: string, startTime: Date, endTime: Date, desc
 
 function deriveSessionState(booking: BookingDetailReadable): SessionState {
   if (booking.status === "canceled") return "canceled"
-
   const sessionStatus = booking.service_session?.status
   if (sessionStatus === "completed") return "completed"
   if (sessionStatus === "in_progress") return "in_progress"
-
   const startTime = booking.service_session?.start_time
   if (startTime) {
     const start = toDate(startTime)
@@ -101,75 +99,12 @@ function deriveSessionState(booking: BookingDetailReadable): SessionState {
       : new Date(start.getTime() + 60 * 60 * 1000)
     const now = new Date()
     const joinWindow = new Date(start.getTime() - 15 * 60 * 1000)
-
-    if (now >= joinWindow && now < end && booking.status === "confirmed") {
+    if (now >= joinWindow && now < end && booking.status === "confirmed")
       return "joinable"
-    }
-
     if (isPast(end)) return "completed"
   }
-
   return "upcoming"
 }
-
-function getStatusConfig(state: SessionState) {
-  switch (state) {
-    case "upcoming":
-      return {
-        label: "Confirmed",
-        pillClass: "bg-sage-100 border border-sage-300 text-sage-700",
-        dotClass: "bg-sage-500 animate-pulse",
-      }
-    case "joinable":
-      return {
-        label: "Live",
-        pillClass: "bg-amber-50 border border-amber-300 text-amber-700",
-        dotClass: "bg-amber-500 animate-[pulse_1.4s_ease-in-out_infinite]",
-      }
-    case "in_progress":
-      return {
-        label: "In Progress",
-        pillClass: "bg-amber-50 border border-amber-300 text-amber-700",
-        dotClass: "bg-amber-500 animate-[pulse_1.4s_ease-in-out_infinite]",
-      }
-    case "completed":
-      return {
-        label: "Completed",
-        pillClass: "bg-sage-100 border border-sage-200 text-sage-600",
-        dotClass: "bg-sage-500",
-      }
-    case "canceled":
-      return {
-        label: "Canceled",
-        pillClass: "bg-red-50 border border-red-200 text-red-600",
-        dotClass: "bg-red-400",
-      }
-  }
-}
-
-// Prep checklist items for sessions
-const SESSION_PREP_ITEMS = [
-  {
-    id: "quiet_space",
-    title: "Find a quiet, comfortable space",
-    desc: "Choose somewhere you won't be interrupted for the duration of your session.",
-  },
-  {
-    id: "test_tech",
-    title: "Test your camera and microphone",
-    desc: "Make sure your video and audio are working before the session begins.",
-  },
-  {
-    id: "intentions",
-    title: "Write down your intentions",
-    desc: "Take a moment to reflect on what you'd like to explore or receive from this session.",
-  },
-  {
-    id: "calendar",
-    title: "Add the session to your calendar",
-    desc: "Block out the time so you can be fully present.",
-  },
-]
 
 // ---------------------------------------------------------------------------
 // Component
@@ -184,53 +119,60 @@ export default function SessionDelivery({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
   const [checkedPrep, setCheckedPrep] = useState<Set<string>>(new Set())
-
-  // Countdown state
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0 })
 
-  // Build a booking-like object from journeyData if no booking provided
-  const effectiveBooking: BookingDetailReadable | undefined = booking ?? (journeyData ? (() => {
-    const s = journeyData.sessions?.[0]
-    return {
-      public_uuid: s?.booking_uuid,
-      status: s?.booking_status,
-      client_notes: s?.client_notes ?? "",
-      confirmed_at: s?.confirmed_at ?? undefined,
-      completed_at: s?.completed_at ?? undefined,
-      service: {
-        name: journeyData.service_name,
-        description: journeyData.service_description,
-        public_uuid: journeyData.service_uuid,
-        location_type: "virtual",
-      },
-      practitioner: journeyData.practitioner ? {
-        display_name: journeyData.practitioner.name,
-        slug: journeyData.practitioner.slug,
-        public_uuid: journeyData.practitioner.public_uuid,
-        bio: journeyData.practitioner.bio,
-      } : undefined,
-      service_session: s ? {
-        title: s.title,
-        description: s.description,
-        start_time: s.start_time ?? undefined,
-        end_time: s.end_time ?? undefined,
-        status: s.status,
-        duration: s.duration_minutes,
-        sequence_number: s.sequence_number,
-        agenda: s.agenda,
-        what_youll_learn: s.what_youll_learn,
-        max_participants: s.max_participants,
-        current_participants: s.current_participants,
-      } : undefined,
-      room: s?.room_uuid,
-      duration_minutes: s?.duration_minutes,
-    } as any as BookingDetailReadable
-  })() : undefined)
+  // Build effective booking from journeyData if no booking prop
+  const effectiveBooking: BookingDetailReadable | undefined =
+    booking ??
+    (journeyData
+      ? (() => {
+          const s = journeyData.sessions?.[0]
+          return {
+            public_uuid: s?.booking_uuid,
+            status: s?.booking_status,
+            client_notes: s?.client_notes ?? "",
+            confirmed_at: s?.confirmed_at ?? undefined,
+            completed_at: s?.completed_at ?? undefined,
+            service: {
+              name: journeyData.service_name,
+              description: journeyData.service_description,
+              public_uuid: journeyData.service_uuid,
+              location_type: journeyData.service_location_type || "virtual",
+            },
+            practitioner: journeyData.practitioner
+              ? {
+                  display_name: journeyData.practitioner.name,
+                  name: journeyData.practitioner.name,
+                  slug: journeyData.practitioner.slug,
+                  public_uuid: journeyData.practitioner.public_uuid,
+                  bio: journeyData.practitioner.bio,
+                }
+              : undefined,
+            service_session: s
+              ? {
+                  title: s.title,
+                  description: s.description,
+                  start_time: s.start_time ?? undefined,
+                  end_time: s.end_time ?? undefined,
+                  status: s.status,
+                  duration: s.duration_minutes,
+                  sequence_number: s.sequence_number,
+                  agenda: s.agenda,
+                  what_youll_learn: s.what_youll_learn,
+                  max_participants: s.max_participants,
+                  current_participants: s.current_participants,
+                }
+              : undefined,
+            room: s?.room_uuid,
+            duration_minutes: s?.duration_minutes,
+          } as any as BookingDetailReadable
+        })()
+      : undefined)
 
   if (!effectiveBooking) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
-        <p className="text-olive-500">Loading session details...</p>
+      <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+        <p className="text-olive-400">Loading session...</p>
       </div>
     )
   }
@@ -241,14 +183,31 @@ export default function SessionDelivery({
   const startTime = session?.start_time
   const endTime = session?.end_time
   const isVirtual = (service as any)?.location_type === "virtual"
-  const duration = effectiveBooking.duration_minutes ?? session?.duration
+  const rawDuration =
+    effectiveBooking.duration_minutes ?? session?.duration ?? journeyData?.service_duration_minutes
+  const duration = rawDuration && rawDuration < 600 ? rawDuration : journeyData?.service_duration_minutes || rawDuration
   const sessionState = deriveSessionState(effectiveBooking)
-  const statusConfig = getStatusConfig(sessionState)
+  const imageUrl = journeyData?.service_image_url || ""
+  const bookingUuid = String(
+    effectiveBooking.public_uuid || (effectiveBooking as any).id || ""
+  )
+
+  // Room UUID
+  const roomUuid =
+    typeof effectiveBooking.room === "object" && effectiveBooking.room
+      ? (effectiveBooking.room as any).public_uuid
+      : effectiveBooking.room
+
+  // Modifiable check (24+ hrs before)
+  const isModifiable = (() => {
+    if (effectiveBooking.status !== "confirmed" || !startTime) return false
+    const start = toDate(startTime)
+    return differenceInHours(start, new Date()) >= 24
+  })()
 
   // Countdown timer
   useEffect(() => {
     if (!startTime || sessionState !== "upcoming") return
-
     const update = () => {
       const now = new Date()
       const start = toDate(startTime)
@@ -260,856 +219,611 @@ export default function SessionDelivery({
         mins: Math.floor((diff % 3600000) / 60000),
       })
     }
-
     update()
     const interval = setInterval(update, 60000)
     return () => clearInterval(interval)
   }, [startTime, sessionState])
 
-  // Check if modifiable (24+ hours before start)
-  const isModifiable = (() => {
-    if (effectiveBooking.status !== "confirmed" || !startTime) return false
-    const start = toDate(startTime)
-    return differenceInHours(start, new Date()) >= 24
-  })()
+  const fmt = (n: number) => String(n).padStart(2, "0")
 
-  const bookingUuid = String(effectiveBooking.public_uuid || (effectiveBooking as any).id || "")
-
-  // Cancel booking mutation
+  // Cancel mutation
   const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
     mutationFn: async (reason: string) => {
       const { bookingsCancelCreate } = await import("@/src/client")
       await bookingsCancelCreate({
         path: { public_uuid: bookingUuid },
-        body: {
-          reason,
-          status: "canceled",
-          canceled_by: "client",
-        } as any,
+        body: { reason, status: "canceled", canceled_by: "client" } as any,
       })
     },
     onSuccess: () => {
-      toast.success("Booking canceled successfully")
+      toast.success("Session canceled")
       refetch()
     },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message ||
-          "Failed to cancel booking. Please try again."
-      )
+    onError: () => {
+      toast.error("Failed to cancel. Please try again.")
     },
   })
 
-  // Message practitioner handler
-  const handleMessagePractitioner = async () => {
-    if (!practitioner?.user_id) {
+  // Message practitioner
+  const handleMessagePractitioner = useCallback(async () => {
+    const practitionerUserId = (practitioner as any)?.user_id
+    if (!practitionerUserId) {
       toast.error("Unable to message practitioner")
       return
     }
-
     try {
-      const conversationsResponse = await conversationsList()
-      const existingConversation = conversationsResponse.data?.results?.find(
-        (conv: any) =>
-          conv.participants?.some(
-            (p: any) => p.user_id === practitioner.user_id
-          )
+      const { data: convos } = await conversationsList({
+        query: { page_size: 100 } as any,
+      })
+      const existing = (convos as any)?.results?.find((c: any) =>
+        c.participants?.some(
+          (p: any) =>
+            p.user === practitionerUserId || p.user_id === practitionerUserId
+        )
       )
-
-      if (existingConversation) {
+      if (existing) {
         router.push(
-          `/dashboard/user/messages?conversationId=${existingConversation.id}`
+          `/dashboard/user/messages?conversationId=${(existing as any).id}`
         )
         return
       }
-
-      const response = await conversationsCreate({
-        body: {
-          other_user_id: practitioner.user_id,
-          initial_message: `Hi, I have a question about my booking for "${service?.name}".`,
-        },
+      const result = await conversationsCreate({
+        body: { participant_ids: [practitionerUserId] } as any,
       })
-
-      if ((response.data as any)?.id) {
-        router.push(
-          `/dashboard/user/messages?conversationId=${(response.data as any).id}`
-        )
-      }
+      router.push(
+        `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
+      )
     } catch {
-      toast.error("Unable to open conversation. Please try again.")
+      toast.error("Failed to start conversation")
     }
-  }
+  }, [practitioner, router])
 
-  // Room UUID - effectiveBooking.room is typed as string but may be an object
-  const roomUuid =
-    typeof effectiveBooking.room === "object" && effectiveBooking.room
-      ? (effectiveBooking.room as any).public_uuid
-      : effectiveBooking.room
-
-  const togglePrep = useCallback((id: string) => {
-    setCheckedPrep((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }, [])
-
-  const fmt = (n: number) => String(n).padStart(2, "0")
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="min-h-screen">
-      {/* ── HERO SECTION ── */}
-      <div
-        className="relative overflow-hidden px-6 md:px-12 pt-4 pb-6 bg-gradient-to-br from-sage-50 via-cream-50 to-sage-50/30 border-b border-sage-200/40"
-      >
-        {/* Content */}
-        <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Back link */}
+      {/* ── COMPACT HEADER ── */}
+      <div className="bg-gradient-to-r from-sage-50/80 to-cream-50 border-b border-sage-200/40">
+        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-sage-600 transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
           </Link>
-
-          {/* Greeting + status pill */}
-          <div className="flex items-center gap-3 mb-4">
+          <span
+            className={`inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase px-3 py-1 rounded-full ${
+              sessionState === "completed"
+                ? "bg-sage-100 border border-sage-200 text-sage-600"
+                : sessionState === "canceled"
+                ? "bg-red-50 border border-red-200 text-red-600"
+                : sessionState === "joinable" || sessionState === "in_progress"
+                ? "bg-amber-50 border border-amber-300 text-amber-700"
+                : "bg-sage-100 border border-sage-300 text-sage-700"
+            }`}
+          >
             <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase px-3 py-1 rounded-full ${statusConfig.pillClass}`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotClass}`}
-              />
-              {statusConfig.label}
-            </span>
-          </div>
-
-          {/* Session type label */}
-          <div className="text-[12px] font-medium tracking-widest uppercase text-olive-400 mb-2">
-            Session {(service as any)?.category_name ? `\u00b7 ${(service as any).category_name}` : ""}
-          </div>
-
-          {/* Title */}
-          <h1 className="font-serif text-[40px] md:text-[46px] font-medium text-olive-900 leading-none tracking-tight mb-4">
-            {service?.name ?? "Session"}
-          </h1>
-
-          {/* Practitioner chip */}
-          {practitioner?.name && (
-            <div className="flex items-center gap-2.5 mb-6">
-              <Avatar className="h-8 w-8 border-2 border-sage-300">
-                {practitioner.profile_image_url ? (
-                  <AvatarImage
-                    src={practitioner.profile_image_url}
-                    alt={practitioner.name}
-                  />
-                ) : null}
-                <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-olive-700 text-xs font-serif italic">
-                  {practitioner.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-[13px] text-olive-500">
-                with{" "}
-                <span className="text-olive-700 font-medium">
-                  {practitioner.name}
-                </span>
-              </span>
-            </div>
-          )}
-
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-4 text-[13px] text-olive-500">
-            {duration && (
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-sage-500" />
-                {duration} min
-              </span>
-            )}
-            <span className="flex items-center gap-1.5">
-              {isVirtual ? (
-                <>
-                  <Video className="h-3.5 w-3.5 text-sage-500" />
-                  Virtual
-                </>
-              ) : (
-                <>
-                  <MapPin className="h-3.5 w-3.5 text-sage-500" />
-                  In-person
-                </>
-              )}
-            </span>
-            {startTime && (
-              <span className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-sage-500" />
-                {format(toDate(startTime), "EEEE, MMMM d")} at{" "}
-                {format(toDate(startTime), "h:mm a")}
-              </span>
-            )}
-          </div>
-
-          {/* Countdown strip — upcoming */}
-          {sessionState === "upcoming" && startTime && (
-            <div className="flex items-center gap-6 mt-6 px-5 py-3.5 bg-sage-50 border border-sage-200 rounded-xl">
-              <div className="text-center">
-                <div className="font-serif text-[32px] font-medium text-sage-700 leading-none">
-                  {fmt(countdown.days)}
-                </div>
-                <div className="text-[10px] tracking-widest uppercase text-olive-400 mt-0.5">
-                  Days
-                </div>
-              </div>
-              <span className="text-[24px] text-sage-300 font-light -mt-1">
-                ·
-              </span>
-              <div className="text-center">
-                <div className="font-serif text-[32px] font-medium text-sage-700 leading-none">
-                  {fmt(countdown.hours)}
-                </div>
-                <div className="text-[10px] tracking-widest uppercase text-olive-400 mt-0.5">
-                  Hours
-                </div>
-              </div>
-              <span className="text-[24px] text-sage-300 font-light -mt-1">
-                ·
-              </span>
-              <div className="text-center">
-                <div className="font-serif text-[32px] font-medium text-sage-700 leading-none">
-                  {fmt(countdown.mins)}
-                </div>
-                <div className="text-[10px] tracking-widest uppercase text-olive-400 mt-0.5">
-                  Min
-                </div>
-              </div>
-              <div className="ml-auto text-[13px] text-olive-500 leading-snug text-right hidden sm:block">
-                {format(toDate(startTime), "EEEE, MMMM d")}
-                <br />
-                {format(toDate(startTime), "h:mm a")}
-                {isVirtual ? " \u00b7 Virtual" : ""}
-              </div>
-            </div>
-          )}
-
-          {/* Today/Live strip */}
-          {(sessionState === "joinable" || sessionState === "in_progress") && (
-            <div className="flex items-center gap-3.5 mt-6 px-5 py-3.5 bg-amber-50 border border-amber-200 rounded-xl">
-              <Clock className="h-5 w-5 text-amber-600 flex-shrink-0" />
-              <div className="text-[14px] text-olive-600 leading-snug">
-                <strong className="text-olive-800 font-medium">
-                  {sessionState === "in_progress"
-                    ? "Your session is in progress."
-                    : "Your session is starting soon."}
-                </strong>
-                <br />
-                {startTime &&
-                  format(toDate(startTime), "h:mm a")}
-                {isVirtual
-                  ? " \u00b7 Virtual Session"
-                  : ""}
-              </div>
-            </div>
-          )}
+              className={`w-1.5 h-1.5 rounded-full ${
+                sessionState === "completed"
+                  ? "bg-sage-500"
+                  : sessionState === "canceled"
+                  ? "bg-red-400"
+                  : sessionState === "joinable" || sessionState === "in_progress"
+                  ? "bg-amber-500 animate-pulse"
+                  : "bg-sage-500 animate-pulse"
+              }`}
+            />
+            {sessionState === "upcoming"
+              ? "Confirmed"
+              : sessionState === "joinable"
+              ? "Live"
+              : sessionState === "in_progress"
+              ? "In Progress"
+              : sessionState === "completed"
+              ? "Completed"
+              : "Canceled"}
+          </span>
         </div>
       </div>
 
-      {/* ── TWO-COLUMN BODY ── */}
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
-        {/* ── MAIN COLUMN ── */}
-        <main className="pt-4 pb-20 min-w-0">
+      {/* ── MAIN CONTENT ── */}
+      <div className="max-w-5xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+          {/* ── LEFT COLUMN ── */}
+          <div className="space-y-8">
+            {/* Hero Card — service image + title + key info */}
+            <div className="relative rounded-2xl overflow-hidden bg-[#2a2218]">
+              {/* Background image */}
+              {imageUrl && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-40"
+                  style={{ backgroundImage: `url(${imageUrl})` }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2a2218] via-[#2a2218]/70 to-[#2a2218]/40" />
 
-          {/* ── Canceled notice ── */}
-          {sessionState === "canceled" && (
-            <div className="mb-10">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <XCircle className="h-5 w-5 text-red-500" />
-                  <h3 className="font-medium text-red-900">
-                    Session Canceled
-                  </h3>
+              <div className="relative z-10 p-8 pb-7">
+                <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
+                  {isVirtual ? "Virtual Session" : "In-Person Session"}
                 </div>
-                {effectiveBooking.cancellation_reason && (
-                  <p className="text-sm text-red-700 mt-1">
-                    Reason: {effectiveBooking.cancellation_reason}
-                  </p>
-                )}
-                {effectiveBooking.canceled_at && (
-                  <p className="text-sm text-red-700 mt-1">
-                    Canceled on:{" "}
-                    {format(
-                      toDate(effectiveBooking.canceled_at),
-                      "MMM d, yyyy 'at' h:mm a"
-                    )}
-                  </p>
-                )}
+                <h1 className="font-serif text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
+                  {service?.name ?? "Session"}
+                </h1>
+
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Practitioner */}
+                  {practitioner && (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-7 w-7 border border-white/20">
+                        <AvatarFallback className="bg-white/10 text-white/70 text-xs font-serif italic">
+                          {(practitioner as any)?.display_name?.charAt(0) ||
+                            practitioner?.name?.charAt(0) ||
+                            "P"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-[13px] text-white/60">
+                        with{" "}
+                        <span className="text-white/85 font-medium">
+                          {(practitioner as any)?.display_name ||
+                            practitioner?.name}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Date */}
+                  {startTime && (
+                    <span className="flex items-center gap-1.5 text-[13px] text-white/50">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {format(toDate(startTime), "MMM d, yyyy")}
+                    </span>
+                  )}
+
+                  {/* Duration */}
+                  {duration && (
+                    <span className="flex items-center gap-1.5 text-[13px] text-white/50">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatDuration(duration)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          )}
 
-          {/* ── About This Session ── */}
-          {service?.description && (
-            <div className="mb-11">
-              <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                About This Session
+            {/* Canceled Notice */}
+            {sessionState === "canceled" && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <XCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[14px] font-medium text-red-800">
+                    This session has been canceled
+                  </p>
+                  {effectiveBooking.cancellation_reason && (
+                    <p className="text-[13px] text-red-600 mt-1">
+                      {effectiveBooking.cancellation_reason}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="text-[15px] font-light leading-relaxed text-olive-600">
-                {service.description}
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* ── Preparation — upcoming only ── */}
-          {(sessionState === "upcoming" ||
-            sessionState === "joinable") && (
-            <div className="mb-11">
-              <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Prepare for Your Session
+            {/* About */}
+            {service?.description && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  About This Session
+                </h2>
+                <p className="text-[15px] font-light leading-relaxed text-olive-600">
+                  {service.description}
+                </p>
               </div>
-              <div className="flex flex-col gap-2.5">
-                {SESSION_PREP_ITEMS.map((item) => {
-                  const isDone = checkedPrep.has(item.id)
-                  return (
+            )}
+
+            {/* Prep Checklist — upcoming only */}
+            {sessionState === "upcoming" && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  Prepare for Your Session
+                </h2>
+                <div className="space-y-2">
+                  {[
+                    { id: "space", text: "Find a quiet, comfortable space" },
+                    { id: "tech", text: "Test your camera and microphone" },
+                    { id: "intent", text: "Set an intention for this session" },
+                  ].map((item) => (
                     <button
                       key={item.id}
-                      type="button"
-                      onClick={() => togglePrep(item.id)}
-                      className={`flex items-start gap-3.5 px-[18px] py-4 bg-white border rounded-xl text-left transition-colors cursor-pointer ${
-                        isDone
-                          ? "bg-cream-50 border-sage-600/25"
-                          : "border-sage-200/60 hover:border-sage-400"
+                      onClick={() => {
+                        const next = new Set(checkedPrep)
+                        next.has(item.id) ? next.delete(item.id) : next.add(item.id)
+                        setCheckedPrep(next)
+                      }}
+                      className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                        checkedPrep.has(item.id)
+                          ? "bg-sage-50 border-sage-300 text-olive-500 line-through"
+                          : "bg-white border-sage-200/60 text-olive-700 hover:border-sage-300"
                       }`}
                     >
                       <div
-                        className={`w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                          isDone
-                            ? "bg-sage-600 border-sage-600 text-white"
-                            : "border-sage-200/60"
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          checkedPrep.has(item.id)
+                            ? "bg-sage-500 border-sage-500 text-white"
+                            : "border-sage-300"
                         }`}
                       >
-                        {isDone && <Check className="h-3 w-3" />}
+                        {checkedPrep.has(item.id) && (
+                          <CheckCircle className="h-3 w-3" />
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <div
-                          className={`text-[14px] font-medium mb-0.5 ${
-                            isDone
-                              ? "text-olive-400 line-through decoration-sage-600/40"
-                              : "text-olive-900"
-                          }`}
-                        >
-                          {item.title}
-                        </div>
-                        <div className="text-[12.5px] text-olive-400 leading-snug">
-                          {item.desc}
-                        </div>
-                      </div>
+                      <span className="text-[14px]">{item.text}</span>
                     </button>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ── Your Journal ── */}
-          <JournalSection bookingUuid={bookingUuid} accentColor="sage" />
-
-          {/* ── Resources & Materials ── */}
-          <div className="mb-11">
-            <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-              Resources & Materials
-            </div>
-
-            {/* Show recordings if available */}
-            {effectiveBooking.recordings && (effectiveBooking.recordings as unknown as any[]).length > 0 && (
-              <div className="space-y-2.5 mb-4">
-                {(effectiveBooking.recordings as unknown as any[]).map((recording: any, idx: number) => (
-                  <div key={recording.id || idx} className="flex items-center gap-3.5 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 transition cursor-pointer">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-sage-50 text-sage-600">
-                      <Film className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-olive-900">Session Recording</div>
-                      <div className="text-xs text-olive-500">
-                        {recording.duration_formatted || `${recording.duration_seconds ? Math.round(recording.duration_seconds / 60) : '?'} min`}
+            {/* Resources — completed only */}
+            {sessionState === "completed" &&
+              effectiveBooking.recordings &&
+              (effectiveBooking.recordings as unknown as any[]).length > 0 && (
+                <div>
+                  <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                    Session Recording
+                  </h2>
+                  {(effectiveBooking.recordings as unknown as any[]).map(
+                    (rec: any, idx: number) => (
+                      <div
+                        key={rec.id || idx}
+                        className="flex items-center gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 transition cursor-pointer"
+                        onClick={() => {
+                          if (rec?.file_url) window.open(rec.file_url, "_blank")
+                          else if (rec?.id)
+                            router.push(
+                              `/dashboard/user/bookings/${bookingUuid}/recordings/${rec.id}`
+                            )
+                        }}
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-sage-50 flex items-center justify-center text-sage-600">
+                          <Film className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[14px] font-medium text-olive-900">
+                            Watch Recording
+                          </div>
+                          <div className="text-[12px] text-olive-400">
+                            {rec.duration_formatted ||
+                              (rec.duration_seconds
+                                ? formatDuration(
+                                    Math.round(rec.duration_seconds / 60)
+                                  )
+                                : "Recording available")}
+                          </div>
+                        </div>
+                        <Play className="h-4 w-4 text-sage-500" />
                       </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-sage-700 rounded-full text-xs">
-                      Watch
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+                    )
+                  )}
+                </div>
+              )}
 
-            {/* Placeholder when no resources */}
-            {(!effectiveBooking.recordings || (effectiveBooking.recordings as unknown as any[]).length === 0) && sessionState !== "completed" && (
-              <p className="text-sm text-olive-400 italic">
-                Resources and recordings will appear here after your session.
-              </p>
-            )}
-          </div>
+            {/* Journal */}
+            <JournalSection bookingUuid={bookingUuid} accentColor="sage" />
 
-          {/* ── Your Practitioner card ── */}
-          {practitioner && (
-            <div className="mb-11">
-              <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Your Practitioner
-              </div>
-              <div className="bg-white border border-sage-200/60 rounded-xl shadow-sm p-5">
-                <div className="flex items-start gap-4">
+            {/* Practitioner Card */}
+            {practitioner && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  Your Practitioner
+                </h2>
+                <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
                   <Avatar className="h-14 w-14">
-                    {practitioner.profile_image_url ? (
-                      <AvatarImage
-                        src={practitioner.profile_image_url}
-                        alt={practitioner.name ?? "Practitioner"}
-                      />
-                    ) : null}
-                    <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-olive-700 font-serif text-lg italic">
-                      {practitioner.name?.charAt(0) ?? "P"}
+                    <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-olive-700 font-serif text-xl italic">
+                      {(practitioner as any)?.display_name?.charAt(0) ||
+                        practitioner?.name?.charAt(0) ||
+                        "P"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className="text-[16px] font-medium text-olive-900">
-                      {practitioner.name}
-                    </h3>
-                    <p className="text-[13px] text-olive-400 mt-0.5">
-                      Wellness Practitioner
-                    </p>
-                    {practitioner.bio && (
-                      <p className="text-[14px] font-light leading-relaxed text-olive-600 mt-3">
-                        {practitioner.bio}
+                    <div className="text-[16px] font-medium text-olive-900">
+                      {(practitioner as any)?.display_name || practitioner?.name}
+                    </div>
+                    {(practitioner as any)?.bio && (
+                      <p className="text-[13px] text-olive-500 mt-1 line-clamp-2">
+                        {(practitioner as any).bio}
                       </p>
                     )}
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-3">
                       <Button
-                        size="sm"
                         variant="outline"
-                        className="rounded-full text-[13px] border-sage-200/60 text-olive-600 hover:border-sage-300"
+                        size="sm"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
                         asChild
                       >
                         <Link
-                          href={`/practitioners/${practitioner.slug || practitioner.id}`}
+                          href={`/practitioners/${(practitioner as any)?.slug || (practitioner as any)?.id}`}
                         >
-                          <User className="h-3.5 w-3.5 mr-1.5" />
                           View Profile
+                          <ExternalLink className="h-3 w-3 ml-1.5" />
                         </Link>
                       </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </main>
-
-        {/* ── SIDEBAR ── */}
-        <aside className="sticky top-20 pb-20 flex flex-col gap-0 self-start">
-          {/* ── Ticket Card ── */}
-          <div className="bg-white border border-sage-200/60 rounded-xl shadow-sm overflow-visible mb-5 relative">
-            {/* Ticket header */}
-            <div
-              className="rounded-t-xl px-5 pt-5 pb-[18px] relative overflow-hidden"
-              style={{
-                background:
-                  "linear-gradient(135deg, #1e1508 0%, #2e1f0a 100%)",
-              }}
-            >
-              {/* Service image background */}
-              {journeyData?.service_image_url && (
-                <div
-                  className="absolute inset-0 bg-cover bg-center opacity-30"
-                  style={{ backgroundImage: `url(${journeyData.service_image_url})` }}
-                />
-              )}
-              {/* Dark overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1e1508] via-[#1e1508]/60 to-transparent" />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 80% 20%, rgba(74,94,74,0.2) 0%, transparent 60%)",
-                }}
-              />
-              <div className="relative z-10">
-                <div className="text-[10px] tracking-wider uppercase text-[#f5f0e8]/35 mb-1.5">
-                  Your Session
-                </div>
-                <div className="font-serif text-[20px] font-medium text-[#f5f0e8] leading-tight mb-3.5">
-                  {service?.name ?? "Session"}
-                </div>
-                {startTime && (
-                  <>
-                    <div className="flex items-center gap-2 text-[13px] text-[#f5f0e8]/60 mb-1">
-                      <Calendar className="h-3 w-3 text-sage-600" />
-                      <strong className="text-[#f5f0e8]/90 font-medium">
-                        {format(
-                          toDate(startTime),
-                          "EEEE, MMMM d"
-                        )}
-                      </strong>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] text-[#f5f0e8]/60">
-                      <Clock className="h-3 w-3 text-sage-600" />
-                      {format(toDate(startTime), "h:mm a")}
-                      {endTime &&
-                        ` \u2013 ${format(toDate(endTime), "h:mm a")}`}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Dashed tear line */}
-            <div className="flex items-center -mx-[1px]">
-              <div className="w-4 h-4 rounded-full bg-cream-50 flex-shrink-0 relative z-10" />
-              <div className="flex-1 border-t-[1.5px] border-dashed border-sage-200/60 mx-1" />
-              <div className="w-4 h-4 rounded-full bg-cream-50 flex-shrink-0 relative z-10" />
-            </div>
-
-            {/* Ticket stub */}
-            <div className="px-5 py-4">
-              {/* Duration */}
-              {duration && (
-                <div className="flex justify-between py-[7px] border-b border-sage-200/60 text-[13px]">
-                  <span className="flex items-center gap-1.5 text-olive-400">
-                    <Clock className="h-3 w-3 text-sage-600" />
-                    Duration
-                  </span>
-                  <span className="font-medium text-olive-900">
-                    {duration} min
-                  </span>
-                </div>
-              )}
-
-              {/* Location */}
-              <div className="flex justify-between py-[7px] border-b border-sage-200/60 text-[13px]">
-                <span className="flex items-center gap-1.5 text-olive-400">
-                  {isVirtual ? (
-                    <Video className="h-3 w-3 text-sage-600" />
-                  ) : (
-                    <MapPin className="h-3 w-3 text-sage-600" />
-                  )}
-                  Location
-                </span>
-                <span className="font-medium text-olive-900">
-                  {isVirtual ? "Virtual" : "In-person"}
-                </span>
-              </div>
-
-              {/* Type */}
-              <div className="flex justify-between py-[7px] border-b border-sage-200/60 text-[13px]">
-                <span className="flex items-center gap-1.5 text-olive-400">
-                  <Layers className="h-3 w-3 text-sage-600" />
-                  Type
-                </span>
-                <span className="font-medium text-olive-900">
-                  1:1 Session
-                </span>
-              </div>
-
-              {/* Price */}
-              {effectiveBooking.credits_allocated_dollars != null && (
-                <div className="flex justify-between py-[7px] text-[13px]">
-                  <span className="flex items-center gap-1.5 text-olive-400">
-                    <DollarSign className="h-3 w-3 text-sage-600" />
-                    Paid
-                  </span>
-                  <span className="font-medium text-olive-900">
-                    ${effectiveBooking.credits_allocated_dollars}
-                  </span>
-                </div>
-              )}
-
-              {/* Confirmation number */}
-              {effectiveBooking.public_uuid && (
-                <div className="mt-3 pt-3 border-t border-sage-200/60 text-center">
-                  <div className="text-[10px] tracking-widest uppercase text-olive-400 mb-1">
-                    Confirmation
-                  </div>
-                  <div className="font-serif text-[18px] font-medium tracking-wider text-sage-600">
-                    {effectiveBooking.public_uuid.slice(0, 14).toUpperCase()}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Action Buttons ── */}
-
-          {/* Upcoming actions */}
-          {sessionState === "upcoming" && (
-            <div className="flex flex-col gap-2 mb-5">
-              {isVirtual && roomUuid && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <Button
-                          className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium"
-                          disabled
-                        >
-                          <Video className="h-4 w-4 mr-2" />
-                          Join Session
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        You can join 15 minutes before your session starts
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <Button
-                variant="outline"
-                className="w-full h-11 rounded-full border-[1.5px] border-sage-200/60 text-olive-600 text-[14px] hover:border-sage-300 hover:text-olive-900"
-                onClick={() => {
-                  if (!startTime) return
-                  const start = toDate(startTime)
-                  const end = endTime ? toDate(endTime) : new Date(start.getTime() + (duration || 60) * 60000)
-                  const url = generateCalendarUrl(
-                    service?.name || 'Session',
-                    start,
-                    end,
-                    `Session with ${(practitioner as any)?.display_name || practitioner?.name || 'your practitioner'}`,
-                    isVirtual ? 'Virtual (Estuary)' : 'In Person'
-                  )
-                  window.open(url, '_blank')
-                }}
-              >
-                <Calendar className="h-3.5 w-3.5 mr-2" />
-                Add to Calendar
-              </Button>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
                       <Button
                         variant="outline"
-                        className="w-full h-11 rounded-full border-[1.5px] border-sage-200/60 text-olive-600 text-[14px] hover:border-sage-300 hover:text-olive-900"
-                        disabled={!isModifiable}
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/user/bookings/${effectiveBooking.public_uuid || effectiveBooking.id}/reschedule`
-                          )
-                        }
+                        size="sm"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        onClick={handleMessagePractitioner}
                       >
-                        <CalendarRange className="h-3.5 w-3.5 mr-2" />
-                        Reschedule
+                        <MessageSquare className="h-3 w-3 mr-1.5" />
+                        Message
                       </Button>
                     </div>
-                  </TooltipTrigger>
-                  {!isModifiable && (
-                    <TooltipContent>
-                      <p>
-                        Rescheduling is only available up to 24 hours before
-                        your session
-                      </p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <button
-                        type="button"
-                        className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 py-1.5 transition-colors disabled:opacity-50"
-                        disabled={!isModifiable}
-                        onClick={() => setCancelDialogOpen(true)}
-                      >
-                        I need to cancel this session
-                      </button>
-                    </div>
-                  </TooltipTrigger>
-                  {!isModifiable && (
-                    <TooltipContent>
-                      <p>
-                        Cancellation is only available up to 24 hours before
-                        your session
-                      </p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Joinable / In Progress actions */}
-          {(sessionState === "joinable" ||
-            sessionState === "in_progress") && (
-            <div className="flex flex-col gap-2 mb-5">
-              {isVirtual && roomUuid && (
-                <Button
-                  className="w-full h-[50px] rounded-full text-white text-[15px] font-medium animate-pulse"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--sage-600, #6b8f6b), var(--sage-700, #4a7a4a))",
-                  }}
-                  asChild
-                >
-                  <Link href={`/room/${roomUuid}/lobby`}>
-                    <Play className="h-4 w-4 mr-2" />
-                    Join Now
-                  </Link>
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                className="w-full h-11 rounded-full border-[1.5px] border-sage-200/60 text-olive-600 text-[14px] hover:border-sage-300 hover:text-olive-900"
-                onClick={handleMessagePractitioner}
-              >
-                <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                Message {practitioner?.name?.split(" ")[0] ?? "Practitioner"}
-              </Button>
-            </div>
-          )}
+          {/* ── RIGHT COLUMN (SIDEBAR) ── */}
+          <aside className="lg:sticky lg:top-20 self-start space-y-4">
+            {/* Countdown — upcoming only */}
+            {sessionState === "upcoming" && startTime && (
+              <div className="flex items-center justify-center gap-5 px-5 py-4 bg-sage-50 border border-sage-200 rounded-xl text-center">
+                <div>
+                  <div className="font-serif text-2xl font-medium text-sage-700 leading-none">
+                    {fmt(countdown.days)}
+                  </div>
+                  <div className="text-[9px] tracking-widest uppercase text-olive-400 mt-0.5">
+                    Days
+                  </div>
+                </div>
+                <span className="text-sage-300 text-lg">·</span>
+                <div>
+                  <div className="font-serif text-2xl font-medium text-sage-700 leading-none">
+                    {fmt(countdown.hours)}
+                  </div>
+                  <div className="text-[9px] tracking-widest uppercase text-olive-400 mt-0.5">
+                    Hrs
+                  </div>
+                </div>
+                <span className="text-sage-300 text-lg">·</span>
+                <div>
+                  <div className="font-serif text-2xl font-medium text-sage-700 leading-none">
+                    {fmt(countdown.mins)}
+                  </div>
+                  <div className="text-[9px] tracking-widest uppercase text-olive-400 mt-0.5">
+                    Min
+                  </div>
+                </div>
+              </div>
+            )}
 
-          {/* Completed actions */}
-          {sessionState === "completed" && (
-            <div className="flex flex-col gap-2 mb-5">
-              {effectiveBooking.recordings &&
-                (effectiveBooking.recordings as any).length > 0 && (
+            {/* Live banner — joinable */}
+            {(sessionState === "joinable" || sessionState === "in_progress") && (
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+                <Clock className="h-5 w-5 text-amber-600 shrink-0" />
+                <div className="text-[13px] text-olive-700">
+                  <strong>
+                    {sessionState === "in_progress"
+                      ? "Session in progress"
+                      : "Starting soon"}
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            {/* Session Details Card */}
+            <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
+              {/* Card header */}
+              <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
+                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                  Session Details
+                </div>
+              </div>
+
+              <div className="px-5 py-3">
+                {/* Date */}
+                {startTime && (
+                  <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                    <span className="flex items-center gap-2 text-olive-400">
+                      <Calendar className="h-3.5 w-3.5 text-sage-500" />
+                      Date
+                    </span>
+                    <span className="font-medium text-olive-800">
+                      {format(toDate(startTime), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                )}
+
+                {/* Time */}
+                {startTime && (
+                  <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                    <span className="flex items-center gap-2 text-olive-400">
+                      <Clock className="h-3.5 w-3.5 text-sage-500" />
+                      Time
+                    </span>
+                    <span className="font-medium text-olive-800">
+                      {format(toDate(startTime), "h:mm a")}
+                    </span>
+                  </div>
+                )}
+
+                {/* Duration */}
+                {duration && (
+                  <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                    <span className="text-olive-400">Duration</span>
+                    <span className="font-medium text-olive-800">
+                      {formatDuration(duration)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Location */}
+                <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                  <span className="flex items-center gap-2 text-olive-400">
+                    {isVirtual ? (
+                      <Video className="h-3.5 w-3.5 text-sage-500" />
+                    ) : (
+                      <MapPin className="h-3.5 w-3.5 text-sage-500" />
+                    )}
+                    Location
+                  </span>
+                  <span className="font-medium text-olive-800">
+                    {isVirtual ? "Virtual" : "In Person"}
+                  </span>
+                </div>
+
+                {/* Confirmation */}
+                <div className="flex justify-between py-2.5 text-[13px]">
+                  <span className="text-olive-400">Confirmation</span>
+                  <span className="font-mono text-[11px] text-sage-600 tracking-wide">
+                    {bookingUuid.slice(0, 8).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              {/* Upcoming: Join (disabled), Calendar, Reschedule, Cancel */}
+              {sessionState === "upcoming" && (
+                <>
+                  {isVirtual && roomUuid && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button
+                              className="w-full h-11 rounded-full bg-sage-600 text-white"
+                              disabled
+                            >
+                              <Video className="h-4 w-4 mr-2" />
+                              Join Session
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Available 15 minutes before your session
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   <Button
-                    className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium"
+                    variant="outline"
+                    className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
                     onClick={() => {
-                      const rec = (effectiveBooking.recordings as any)[0]
-                      if (rec?.id) {
-                        router.push(
-                          `/dashboard/user/bookings/${effectiveBooking.public_uuid || effectiveBooking.id}/recordings/${rec.id}`
-                        )
-                      }
+                      if (!startTime) return
+                      const start = toDate(startTime)
+                      const end = endTime
+                        ? toDate(endTime)
+                        : new Date(start.getTime() + (duration || 60) * 60000)
+                      window.open(
+                        generateCalendarUrl(
+                          service?.name || "Session",
+                          start,
+                          end,
+                          `Session with ${(practitioner as any)?.display_name || "your practitioner"}`,
+                          isVirtual ? "Virtual (Estuary)" : "In Person"
+                        ),
+                        "_blank"
+                      )
                     }}
                   >
-                    <Film className="h-4 w-4 mr-2" />
-                    Watch Recording
+                    <Calendar className="h-3.5 w-3.5 mr-2" />
+                    Add to Calendar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                    disabled={!isModifiable}
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/user/bookings/${bookingUuid}/reschedule`
+                      )
+                    }
+                  >
+                    <CalendarRange className="h-3.5 w-3.5 mr-2" />
+                    Reschedule
+                  </Button>
+                  <button
+                    className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-1 transition-colors"
+                    disabled={!isModifiable}
+                    onClick={() => setCancelDialogOpen(true)}
+                  >
+                    Cancel Session
+                  </button>
+                </>
+              )}
+
+              {/* Joinable / In Progress: Join Now */}
+              {(sessionState === "joinable" || sessionState === "in_progress") &&
+                isVirtual &&
+                roomUuid && (
+                  <Button
+                    className="w-full h-12 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium"
+                    asChild
+                  >
+                    <Link href={`/room/${roomUuid}/lobby`}>
+                      <Play className="h-4 w-4 mr-2" />
+                      Join Now
+                    </Link>
                   </Button>
                 )}
-              {!effectiveBooking.has_review && (
-                <Button
-                  variant="outline"
-                  className="w-full h-11 rounded-full border-[1.5px] border-sage-200/60 text-olive-600 text-[14px] hover:border-sage-300 hover:text-olive-900"
-                  onClick={() => setReviewDialogOpen(true)}
-                >
-                  <Star className="h-3.5 w-3.5 mr-2" />
-                  Leave Review
-                </Button>
+
+              {/* Completed: Watch Recording, Leave Review */}
+              {sessionState === "completed" && (
+                <>
+                  {effectiveBooking.recordings &&
+                    (effectiveBooking.recordings as unknown as any[]).length >
+                      0 && (
+                      <Button
+                        className="w-full h-11 rounded-full bg-sage-600 hover:bg-sage-700 text-white"
+                        onClick={() => {
+                          const rec = (
+                            effectiveBooking.recordings as unknown as any[]
+                          )[0]
+                          if (rec?.file_url) window.open(rec.file_url, "_blank")
+                          else if (rec?.id)
+                            router.push(
+                              `/dashboard/user/bookings/${bookingUuid}/recordings/${rec.id}`
+                            )
+                        }}
+                      >
+                        <Film className="h-4 w-4 mr-2" />
+                        Watch Recording
+                      </Button>
+                    )}
+                  {!(effectiveBooking as any).has_review && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                      onClick={() => setReviewDialogOpen(true)}
+                    >
+                      <Star className="h-3.5 w-3.5 mr-2" />
+                      Leave Review
+                    </Button>
+                  )}
+                </>
               )}
-              <Button
-                variant="outline"
-                className="w-full h-11 rounded-full border-[1.5px] border-sage-200/60 text-olive-600 text-[14px] hover:border-sage-300 hover:text-olive-900"
-                onClick={handleMessagePractitioner}
-              >
-                <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                Message {practitioner?.name?.split(" ")[0] ?? "Practitioner"}
-              </Button>
             </div>
-          )}
-
-          {/* Canceled actions */}
-          {sessionState === "canceled" && (
-            <div className="mb-5 bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-              <XCircle className="h-5 w-5 text-red-400 mx-auto mb-2" />
-              <p className="text-[13px] font-medium text-red-800">
-                This session has been canceled
-              </p>
-            </div>
-          )}
-
-          {/* ── Practitioner chip ── */}
-          {practitioner && (
-            <div className="flex items-center gap-3 px-4 py-3.5 bg-sage-50 rounded-xl mb-5">
-              <Avatar className="h-11 w-11">
-                {practitioner.profile_image_url ? (
-                  <AvatarImage
-                    src={practitioner.profile_image_url}
-                    alt={practitioner.name ?? "Practitioner"}
-                  />
-                ) : null}
-                <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-olive-700 font-serif text-lg italic">
-                  {practitioner.name?.charAt(0) ?? "P"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-olive-800">
-                  {practitioner.name}
-                </div>
-                <div className="text-[12px] text-olive-400">
-                  Your practitioner
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleMessagePractitioner}
-                className="flex items-center gap-1.5 text-[12.5px] text-sage-600 bg-sage-100 px-3 py-1.5 rounded-full hover:bg-sage-200 transition-colors whitespace-nowrap font-medium"
-              >
-                <MessageSquare className="h-3 w-3" />
-                Message
-              </button>
-            </div>
-          )}
-
-          {/* ── Continue Your Journey upsell ── */}
-          {practitioner && (
-            <div className="bg-gradient-to-br from-sage-50 to-sage-50/30 border border-sage-200/60 rounded-xl p-[18px]">
-              <div className="text-[10px] tracking-widest uppercase text-sage-500 mb-2">
-                Continue the work
-              </div>
-              <div className="font-serif text-[18px] font-medium text-olive-800 mb-1">
-                Explore More Sessions
-              </div>
-              <div className="text-[12.5px] text-olive-400 leading-snug mb-3">
-                {practitioner.name} offers a range of services to support your
-                wellness journey.
-              </div>
-              <Button
-                className="w-full h-[38px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[13px] font-medium"
-                asChild
-              >
-                <Link
-                  href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                >
-                  <Layers className="h-3.5 w-3.5 mr-1.5" />
-                  View All Services
-                </Link>
-              </Button>
-            </div>
-          )}
-        </aside>
+          </aside>
+        </div>
       </div>
 
-      {/* ── Dialogs ── */}
+      {/* Dialogs */}
       <CancelBookingDialog
-        bookingId={effectiveBooking.public_uuid || String(effectiveBooking.id)}
-        serviceName={service?.name || "Service"}
-        practitionerName={practitioner?.name || "Practitioner"}
-        date={
-          startTime
-            ? format(toDate(startTime), "MMMM d, yyyy")
-            : ""
-        }
-        time={
-          startTime ? format(toDate(startTime), "h:mm a") : ""
-        }
-        price={`$${effectiveBooking.credits_allocated_dollars || 0}`}
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}
-        onConfirm={(reason) => cancelBooking(reason)}
+        booking={effectiveBooking as any}
+        onConfirm={(reason: string) => cancelBooking(reason)}
         isLoading={isCancelling}
       />
-
       <ReviewBookingDialog
         open={reviewDialogOpen}
         onOpenChange={setReviewDialogOpen}
         booking={effectiveBooking as any}
-        onSuccess={() => {
-          refetch()
-        }}
+        onSuccess={() => refetch()}
       />
     </div>
   )

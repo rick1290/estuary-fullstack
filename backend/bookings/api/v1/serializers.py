@@ -591,6 +591,7 @@ class JourneyPractitionerSerializer(serializers.Serializer):
     slug = serializers.CharField(allow_null=True)
     public_uuid = serializers.UUIDField(allow_null=True)
     bio = serializers.CharField(allow_null=True, allow_blank=True)
+    profile_image_url = serializers.CharField(allow_null=True, allow_blank=True, default='')
 
 
 class JourneySessionSerializer(serializers.Serializer):
@@ -621,6 +622,9 @@ class JourneyListItemSerializer(serializers.Serializer):
     service_name = serializers.CharField()
     service_description = serializers.CharField(allow_blank=True, default='')
     service_uuid = serializers.UUIDField()
+    service_image_url = serializers.CharField(allow_null=True, allow_blank=True, default='')
+    service_duration_minutes = serializers.IntegerField(allow_null=True, default=None)
+    service_location_type = serializers.CharField(allow_null=True, allow_blank=True, default='')
     practitioner = JourneyPractitionerSerializer(allow_null=True)
     total_sessions = serializers.IntegerField()
     completed_sessions = serializers.IntegerField()

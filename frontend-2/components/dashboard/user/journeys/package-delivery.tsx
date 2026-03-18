@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import {
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -23,13 +22,10 @@ import {
   CalendarPlus,
   CheckCircle,
   FileText,
-  Film,
-  User,
   MessageSquare,
   AlertCircle,
   ChevronRight,
-  Package,
-  Star,
+  ExternalLink,
 } from "lucide-react"
 import {
   format,
@@ -53,6 +49,15 @@ function toDate(value: unknown): Date {
   return new Date(String(value))
 }
 
+function formatDuration(minutes: number): string {
+  if (minutes >= 60) {
+    const hrs = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `${hrs} hr ${mins} min` : `${hrs} hr`
+  }
+  return `${minutes} min`
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -68,41 +73,25 @@ interface PackageDeliveryProps {
 
 function PackageDeliverySkeleton() {
   return (
-    <div className="space-y-0">
-      {/* Hero skeleton */}
-      <div className="bg-gradient-to-br from-sage-50 via-cream-50 to-olive-50/30 px-8 py-12 pb-16">
-        <div className="max-w-6xl mx-auto space-y-4">
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-20 bg-sage-200/40 rounded-full" />
-            <Skeleton className="h-6 w-28 bg-sage-200/40 rounded-full" />
-          </div>
-          <Skeleton className="h-12 w-3/4 bg-sage-200/40" />
-          <Skeleton className="h-5 w-48 bg-sage-200/40" />
-          <div className="flex gap-1.5 pt-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-3 w-3 rounded-full bg-sage-200/40" />
-            ))}
-          </div>
-          <div className="flex gap-4 pt-2">
-            <Skeleton className="h-5 w-28 bg-sage-200/40" />
-            <Skeleton className="h-5 w-20 bg-sage-200/40" />
-            <Skeleton className="h-5 w-32 bg-sage-200/40" />
-          </div>
+    <div className="min-h-screen">
+      <div className="bg-gradient-to-r from-sage-50/80 to-cream-50 border-b border-sage-200/40">
+        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+          <Skeleton className="h-4 w-28 bg-sage-200/40" />
+          <Skeleton className="h-6 w-24 bg-sage-200/40 rounded-full" />
         </div>
       </div>
-      {/* Body skeleton */}
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
-        <div className="pt-8 pb-16 space-y-8">
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-6 w-36" />
-          <Skeleton className="h-20 w-full" />
-        </div>
-        <div className="pt-8 pb-16 space-y-4">
-          <Skeleton className="h-52 w-full rounded-xl" />
-          <Skeleton className="h-12 w-full rounded-full" />
-          <Skeleton className="h-10 w-full rounded-full" />
+      <div className="max-w-5xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+          <div className="space-y-8">
+            <Skeleton className="h-56 w-full rounded-2xl bg-sage-200/40" />
+            <Skeleton className="h-20 w-full bg-sage-200/40" />
+            <Skeleton className="h-20 w-full bg-sage-200/40" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-20 w-full rounded-xl bg-sage-200/40" />
+            <Skeleton className="h-52 w-full rounded-xl bg-sage-200/40" />
+            <Skeleton className="h-12 w-full rounded-full bg-sage-200/40" />
+          </div>
         </div>
       </div>
     </div>
@@ -173,7 +162,6 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
   }, [booking, allBookingsData])
 
   // Sort bookings / journey-sessions into three buckets
-  // When journeyData is available, use its sessions directly
   const { completed, scheduled, needsScheduling } = useMemo(() => {
     // -- Path A: use journeyData.sessions --
     if (hasJourneySessions) {
@@ -230,14 +218,12 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
       }
     }
 
-    // Sort scheduled by start_time ascending
     scheduledArr.sort((a, b) => {
       const aTime = new Date(String(a.service_session?.start_time)).getTime()
       const bTime = new Date(String(b.service_session?.start_time)).getTime()
       return aTime - bTime
     })
 
-    // Sort completed by start_time descending
     completedArr.sort((a, b) => {
       const aTime = a.service_session?.start_time
         ? new Date(String(a.service_session.start_time)).getTime()
@@ -313,12 +299,11 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
     return idx + 1
   }
 
-  // Check expiration (placeholder -- service may have an expiration field)
+  // Check expiration
   const purchasedDate = booking?.created_at
     ? format(toDate(booking.created_at), "MMM d, yyyy")
     : null
 
-  // Expiration heuristic: if service has metadata, use it. Otherwise show nothing.
   const expirationDate: Date | null = null
   const daysUntilExpiration = expirationDate
     ? differenceInDays(expirationDate, new Date())
@@ -327,7 +312,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
     daysUntilExpiration !== null && daysUntilExpiration < 30 && daysUntilExpiration > 0
 
   // Message practitioner
-  const handleMessagePractitioner = async () => {
+  const handleMessagePractitioner = useCallback(async () => {
     if (!booking?.practitioner?.user_id) {
       toast.error("Unable to message practitioner")
       return
@@ -365,7 +350,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
       console.error("Failed to open conversation:", error)
       toast.error("Unable to open conversation. Please try again.")
     }
-  }
+  }, [booking, router])
 
   const isLoading = isLoadingBooking || (!hasJourneySessions && isLoadingAll)
 
@@ -381,20 +366,20 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
   // ---------------------------------------------------------------------------
   if (bookingError || !booking) {
     return (
-      <div className="max-w-2xl mx-auto p-8 space-y-4">
-        <Alert variant="destructive">
+      <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+        <Alert variant="destructive" className="max-w-md mx-auto mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Failed to load package details. Please try again later.
           </AlertDescription>
         </Alert>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/dashboard/user/journeys")}
+        <Link
+          href="/dashboard/user/journeys"
+          className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           Back to Journeys
-        </Button>
+        </Link>
       </div>
     )
   }
@@ -403,331 +388,345 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
   const practitioner = booking.practitioner
   const remainingCount = totalCount - completedCount
   const locationIsVirtual = service?.location_type === "virtual"
+  const imageUrl = journeyData?.service_image_url || (service as any)?.featured_image_url || ""
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-0">
-      {/* ================================================================== */}
-      {/* WARM LIGHT HERO SECTION                                            */}
-      {/* ================================================================== */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-sage-50 via-cream-50 to-olive-50/30">
-        <div className="relative z-10 px-8 md:px-12 pt-4 pb-6 max-w-6xl mx-auto">
-          {/* Back link */}
+    <div className="min-h-screen">
+      {/* -- COMPACT HEADER BAR -- */}
+      <div className="bg-gradient-to-r from-sage-50/80 to-cream-50 border-b border-sage-200/40">
+        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-1.5 text-[13px] text-olive-400 hover:text-olive-600 transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Journeys
+            <ArrowLeft className="h-3.5 w-3.5" />
+            My Journeys
           </Link>
-
-          <div className="max-w-[660px]">
-            {/* Eyebrow badges */}
-            <div className="flex items-center gap-2 flex-wrap mb-3.5">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider bg-sage-100 text-sage-700 rounded-full px-2.5 py-0.5">
-                <Package className="w-3 h-3" />
-                Package
-              </span>
-              {totalCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider bg-olive-100 text-olive-700 rounded-full px-2.5 py-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-olive-500" />
-                  {usedCount} of {totalCount} used
-                </span>
-              )}
-              {isPackageComplete && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider bg-sage-100 text-sage-700 rounded-full px-2.5 py-0.5">
-                  <CheckCircle className="w-3 h-3" />
-                  Complete
-                </span>
-              )}
-            </div>
-
-            {/* Title */}
-            <h1 className="font-serif text-4xl md:text-[50px] font-medium text-olive-900 leading-none tracking-tight mb-3.5">
-              {service?.name ?? "Package"}
-            </h1>
-
-            {/* Practitioner chip */}
-            {practitioner?.name && (
-              <div className="flex items-center gap-2.5 mb-5">
-                <Avatar className="h-7 w-7 border border-sage-300">
-                  {practitioner.profile_image_url ? (
-                    <AvatarImage
-                      src={practitioner.profile_image_url}
-                      alt={practitioner.name}
-                    />
-                  ) : null}
-                  <AvatarFallback className="bg-sage-200 text-sage-700 text-xs font-serif italic">
-                    {practitioner.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-[14px] font-light text-olive-500">
-                  with <span className="text-olive-700 font-normal">{practitioner.name}</span>
-                </span>
-              </div>
-            )}
-
-            {/* Meta row */}
-            <div className="flex items-center gap-4 flex-wrap text-[13px] text-olive-500 mb-5">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-sage-500" />
-                {totalCount} session{totalCount !== 1 ? "s" : ""} total
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-sage-500" />
-                {remainingCount} remaining
-              </span>
-              {purchasedDate && (
-                <span className="flex items-center gap-1.5">
-                  Purchased {purchasedDate}
-                </span>
-              )}
-              {expirationDate && (
-                <span className="flex items-center gap-1.5">
-                  Expires {format(expirationDate, "MMM d, yyyy")}
-                </span>
-              )}
-            </div>
-
-            {/* Dot progress indicator */}
+          <div className="flex items-center gap-2">
             {totalCount > 0 && (
-              <div
-                className="flex items-center gap-1.5"
-                aria-label={`${completedCount} of ${totalCount} complete`}
+              <span
+                className={`inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase px-3 py-1 rounded-full ${
+                  isPackageComplete
+                    ? "bg-sage-100 border border-sage-200 text-sage-600"
+                    : "bg-sage-100 border border-sage-300 text-sage-700"
+                }`}
               >
-                {Array.from({ length: totalCount }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`inline-block h-3 w-3 rounded-full transition-colors ${
-                      i < completedCount
-                        ? "bg-sage-500"
-                        : i < usedCount
-                          ? "bg-sage-400"
-                          : "bg-sage-200"
-                    }`}
-                  />
-                ))}
-              </div>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isPackageComplete ? "bg-sage-500" : "bg-sage-500 animate-pulse"
+                  }`}
+                />
+                {isPackageComplete
+                  ? "Complete"
+                  : `${usedCount} of ${totalCount} used`}
+              </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* ================================================================== */}
-      {/* TWO-COLUMN BODY                                                    */}
-      {/* ================================================================== */}
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+      {/* -- MAIN CONTENT -- */}
+      <div className="max-w-5xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+          {/* -- LEFT COLUMN -- */}
+          <div className="space-y-8">
+            {/* Hero Card -- sage-tinted with service image */}
+            <div className="relative rounded-2xl overflow-hidden bg-[#1e2e1e]">
+              {/* Background image */}
+              {imageUrl && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-35"
+                  style={{ backgroundImage: `url(${imageUrl})` }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1e2e1e] via-[#1e2e1e]/75 to-[#1e2e1e]/40" />
 
-        {/* ---------------------------------------------------------------- */}
-        {/* MAIN COLUMN                                                      */}
-        {/* ---------------------------------------------------------------- */}
-        <main className="pt-4 pb-16 min-w-0">
+              <div className="relative z-10 p-8 pb-7">
+                <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
+                  Package
+                </div>
+                <h1 className="font-serif text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
+                  {service?.name ?? "Package"}
+                </h1>
 
-          {/* Package complete banner */}
-          {isPackageComplete && (
-            <div className="flex items-center gap-3 p-5 rounded-xl bg-sage-50 border border-sage-200 mb-10">
-              <CheckCircle className="h-5 w-5 text-sage-600 flex-shrink-0" />
-              <p className="text-[15px] font-medium text-olive-900">
-                Package complete! All {totalCount} sessions have been completed.
-              </p>
-            </div>
-          )}
+                <div className="flex items-center gap-4 flex-wrap mb-5">
+                  {/* Practitioner */}
+                  {practitioner?.name && (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-7 w-7 border border-white/20">
+                        {practitioner.profile_image_url ? (
+                          <AvatarImage
+                            src={practitioner.profile_image_url}
+                            alt={practitioner.name}
+                          />
+                        ) : null}
+                        <AvatarFallback className="bg-white/10 text-white/70 text-xs font-serif italic">
+                          {practitioner.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-[13px] text-white/60">
+                        with{" "}
+                        <span className="text-white/85 font-medium">
+                          {practitioner.name}
+                        </span>
+                      </span>
+                    </div>
+                  )}
 
-          {/* ============================================================== */}
-          {/* SCHEDULED SESSIONS                                             */}
-          {/* ============================================================== */}
-          {scheduled.length > 0 && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Scheduled Sessions
+                  {/* Total sessions */}
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/50">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {totalCount} session{totalCount !== 1 ? "s" : ""} total
+                  </span>
+
+                  {/* Remaining */}
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/50">
+                    <Clock className="h-3.5 w-3.5" />
+                    {remainingCount} remaining
+                  </span>
+
+                  {/* Purchased */}
+                  {purchasedDate && (
+                    <span className="text-[13px] text-white/50">
+                      Purchased {purchasedDate}
+                    </span>
+                  )}
+                </div>
+
+                {/* Dot progress at bottom of hero */}
+                {totalCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    {Array.from({ length: totalCount }).map((_, i) => (
+                      <span
+                        key={i}
+                        className={`inline-block h-2.5 w-2.5 rounded-full ${
+                          i < completedCount
+                            ? "bg-[#6b8f6b] border border-[#8aaf8a]"
+                            : i < usedCount
+                              ? "bg-[#6b8f6b]/40 border border-[#6b8f6b]/50"
+                              : "bg-transparent border border-white/20"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-col gap-2.5">
-                {scheduled.map((b) => {
-                  const startTime = getItemStartTime(b)!
-                  const joinable = locationIsVirtual && isSessionJoinable(b)
-                  const sessionNum = getSessionNumber(b)
-                  const uuid = getItemBookingUuid(b)
-                  const dur = getItemDuration(b)
+            </div>
 
-                  return (
-                    <div
-                      key={getItemId(b)}
-                      className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-400 transition-colors"
+            {/* Package complete banner */}
+            {isPackageComplete && (
+              <div className="flex items-start gap-3 p-4 bg-sage-50 border border-sage-200 rounded-xl">
+                <CheckCircle className="h-5 w-5 text-sage-600 shrink-0 mt-0.5" />
+                <p className="text-[14px] font-medium text-olive-900">
+                  Package complete! All {totalCount} sessions have been completed.
+                </p>
+              </div>
+            )}
+
+            {/* ── SCHEDULED SESSIONS ── */}
+            {scheduled.length > 0 && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  Scheduled Sessions
+                </h2>
+                <div className="flex flex-col gap-2.5">
+                  {scheduled.map((b) => {
+                    const startTime = getItemStartTime(b)!
+                    const joinable = locationIsVirtual && isSessionJoinable(b)
+                    const sessionNum = getSessionNumber(b)
+                    const uuid = getItemBookingUuid(b)
+                    const dur = getItemDuration(b)
+
+                    return (
+                      <div
+                        key={getItemId(b)}
+                        className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-sage-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-medium text-olive-900">
+                              Session {sessionNum}
+                            </p>
+                            <p className="text-[12.5px] text-olive-500">
+                              {format(startTime, "EEE, MMM d")} &middot;{" "}
+                              {format(startTime, "h:mm a")}
+                              {dur ? ` \u00B7 ${formatDuration(dur)}` : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {joinable && (
+                            <Button
+                              size="sm"
+                              asChild
+                              className="bg-sage-600 hover:bg-sage-700 text-white rounded-full px-4"
+                            >
+                              <Link href={`/dashboard/user/bookings/${uuid}`}>
+                                <Video className="h-3.5 w-3.5 mr-1.5" />
+                                Join
+                              </Link>
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="rounded-full border-sage-200 text-olive-600 hover:border-sage-400 hover:text-olive-800"
+                          >
+                            <Link
+                              href={
+                                joinable
+                                  ? `/dashboard/user/bookings/${uuid}`
+                                  : `/dashboard/user/bookings/${uuid}/reschedule`
+                              }
+                            >
+                              {joinable ? "Details" : "Reschedule"}
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── READY TO SCHEDULE ── */}
+            {needsScheduling.length > 0 && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  Ready to Schedule
+                </h2>
+
+                {/* Prominent CTA card */}
+                {!isPackageComplete && (
+                  <div className="flex items-center gap-3 p-5 rounded-xl bg-sage-50 border border-sage-200 mb-4">
+                    <CalendarPlus className="h-5 w-5 text-sage-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-olive-900">
+                        Schedule Your Next Session
+                      </p>
+                      <p className="text-[12.5px] text-olive-500">
+                        {needsScheduling.length} session{needsScheduling.length !== 1 ? "s" : ""} ready to be scheduled
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      asChild
+                      className="bg-sage-600 hover:bg-sage-700 text-white rounded-full px-4 flex-shrink-0"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-500 flex-shrink-0" />
-                        <div className="min-w-0">
+                      <Link
+                        href={`/dashboard/user/bookings/${getItemBookingUuid(needsScheduling[0])}/schedule`}
+                      >
+                        Schedule
+                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2.5">
+                  {needsScheduling.map((b) => {
+                    const sessionNum = getSessionNumber(b)
+                    const uuid = getItemBookingUuid(b)
+
+                    return (
+                      <div
+                        key={getItemId(b)}
+                        className="flex items-center justify-between gap-4 px-5 py-4 bg-sage-50/50 border border-dashed border-sage-300 rounded-xl hover:border-sage-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="inline-block h-2.5 w-2.5 rounded border border-sage-300 flex-shrink-0" />
                           <p className="text-[14px] font-medium text-olive-900">
                             Session {sessionNum}
                           </p>
-                          <p className="text-[12.5px] text-olive-500">
-                            {format(startTime, "EEE, MMM d")} &middot;{" "}
-                            {format(startTime, "h:mm a")}
-                            {dur ? ` \u00B7 ${dur} min` : ""}
-                          </p>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {joinable && (
-                          <Button size="sm" asChild className="bg-green-600 hover:bg-green-700 text-white rounded-full px-4">
-                            <Link href={`/dashboard/user/bookings/${uuid}`}>
-                              <Video className="h-3.5 w-3.5 mr-1.5" />
-                              Join
-                            </Link>
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm" asChild className="rounded-full border-sage-200 text-olive-600 hover:border-sage-400 hover:text-olive-800">
-                          <Link href={joinable ? `/dashboard/user/bookings/${uuid}` : `/dashboard/user/bookings/${uuid}/reschedule`}>
-                            {joinable ? "Details" : "Reschedule"}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="rounded-full border-sage-300 text-sage-700 hover:border-sage-500 hover:text-sage-800"
+                        >
+                          <Link href={`/dashboard/user/bookings/${uuid}/schedule`}>
+                            Schedule
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
                           </Link>
                         </Button>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* ============================================================== */}
-          {/* READY TO SCHEDULE                                              */}
-          {/* ============================================================== */}
-          {needsScheduling.length > 0 && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Ready to Schedule
-              </div>
-
-              {/* Prominent CTA card */}
-              {!isPackageComplete && (
-                <div className="flex items-center gap-3 p-5 rounded-xl bg-sage-50 border border-sage-200 mb-4">
-                  <CalendarPlus className="h-5 w-5 text-sage-600 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium text-olive-900">
-                      Schedule Your Next Session
-                    </p>
-                    <p className="text-[12.5px] text-olive-500">
-                      {needsScheduling.length} session{needsScheduling.length !== 1 ? "s" : ""} ready to be scheduled
-                    </p>
-                  </div>
-                  <Button size="sm" asChild className="bg-sage-600 hover:bg-sage-700 text-white rounded-full px-4 flex-shrink-0">
-                    <Link
-                      href={`/dashboard/user/bookings/${getItemBookingUuid(needsScheduling[0])}/schedule`}
-                    >
-                      Schedule
-                      <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                    </Link>
-                  </Button>
+                    )
+                  })}
                 </div>
-              )}
-
-              <div className="flex flex-col gap-2.5">
-                {needsScheduling.map((b) => {
-                  const sessionNum = getSessionNumber(b)
-                  const uuid = getItemBookingUuid(b)
-
-                  return (
-                    <div
-                      key={getItemId(b)}
-                      className="flex items-center justify-between gap-4 px-5 py-4 bg-sage-50/50 border border-dashed border-sage-300 rounded-xl hover:border-sage-400 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="inline-block h-2.5 w-2.5 rounded border border-sage-300 flex-shrink-0" />
-                        <p className="text-[14px] font-medium text-olive-900">
-                          Session {sessionNum}
-                        </p>
-                      </div>
-
-                      <Button variant="outline" size="sm" asChild className="rounded-full border-sage-300 text-sage-700 hover:border-sage-500 hover:text-sage-800">
-                        <Link href={`/dashboard/user/bookings/${uuid}/schedule`}>
-                          Schedule
-                          <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                        </Link>
-                      </Button>
-                    </div>
-                  )
-                })}
               </div>
-            </section>
-          )}
+            )}
 
-          {/* ============================================================== */}
-          {/* COMPLETED SESSIONS                                             */}
-          {/* ============================================================== */}
-          {completed.length > 0 && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Completed Sessions
-              </div>
-              <div className="flex flex-col gap-2.5">
-                {completed.map((b) => {
-                  const sessionNum = getSessionNumber(b)
-                  const startTime = getItemStartTime(b)
-                  const dur = getItemDuration(b)
-                  const uuid = getItemBookingUuid(b)
+            {/* ── COMPLETED SESSIONS ── */}
+            {completed.length > 0 && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  Completed Sessions
+                </h2>
+                <div className="flex flex-col gap-2.5">
+                  {completed.map((b) => {
+                    const sessionNum = getSessionNumber(b)
+                    const startTime = getItemStartTime(b)
+                    const dur = getItemDuration(b)
+                    const uuid = getItemBookingUuid(b)
 
-                  return (
-                    <div
-                      key={getItemId(b)}
-                      className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-[14px] font-medium text-olive-700">
-                            Session {sessionNum}
-                          </p>
-                          <p className="text-[12.5px] text-olive-500">
-                            {startTime
-                              ? format(startTime, "EEE, MMM d")
-                              : "Completed"}
-                            {dur ? ` \u00B7 ${dur} min` : ""}
-                          </p>
+                    return (
+                      <div
+                        key={getItemId(b)}
+                        className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <CheckCircle className="h-4 w-4 text-sage-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-medium text-olive-700">
+                              Session {sessionNum}
+                            </p>
+                            <p className="text-[12.5px] text-olive-500">
+                              {startTime
+                                ? format(startTime, "EEE, MMM d")
+                                : "Completed"}
+                              {dur ? ` \u00B7 ${formatDuration(dur)}` : ""}
+                            </p>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <Button variant="ghost" size="sm" asChild className="text-[12.5px] text-olive-600 hover:text-olive-800">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="text-[12.5px] text-olive-600 hover:text-olive-800"
+                        >
                           <Link href={`/dashboard/user/bookings/${uuid}`}>
                             <FileText className="h-3.5 w-3.5 mr-1" />
                             View Notes
                           </Link>
                         </Button>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </section>
-          )}
+            )}
 
-          {/* ============================================================== */}
-          {/* YOUR JOURNAL                                                   */}
-          {/* ============================================================== */}
-          <JournalSection bookingUuid={bookingUuid} accentColor="sage" />
+            {/* ── JOURNAL ── */}
+            <JournalSection bookingUuid={bookingUuid} accentColor="sage" />
 
-          {/* ============================================================== */}
-          {/* RESOURCES & MATERIALS                                          */}
-          {/* ============================================================== */}
-          <div className="mb-11">
-            <div className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-              Resources &amp; Materials
-            </div>
-            <p className="text-sm text-olive-400 italic">
-              Resources, recordings and materials from your sessions will appear here.
-            </p>
-          </div>
-
-          {/* ============================================================== */}
-          {/* YOUR PRACTITIONER                                              */}
-          {/* ============================================================== */}
-          {practitioner && (
-            <section className="mb-11">
-              <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-olive-500 mb-4 pb-2.5 border-b border-sage-200/60">
-                Your Practitioner
-              </div>
-              <div className="bg-white border border-sage-200/60 rounded-xl p-6">
-                <div className="flex items-center gap-4 mb-5">
+            {/* ── YOUR PRACTITIONER ── */}
+            {practitioner && (
+              <div>
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  Your Practitioner
+                </h2>
+                <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
                   <Avatar className="h-14 w-14">
                     {practitioner.profile_image_url ? (
                       <AvatarImage
@@ -735,239 +734,177 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                         alt={practitioner.name ?? "Practitioner"}
                       />
                     ) : null}
-                    <AvatarFallback className="bg-sage-200 text-sage-700 font-serif italic text-lg">
+                    <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-olive-700 font-serif text-xl italic">
                       {practitioner.name?.charAt(0) ?? "P"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-medium text-olive-900">
+                  <div className="flex-1">
+                    <div className="text-[16px] font-medium text-olive-900">
                       {practitioner.name}
-                    </h3>
-                    <p className="text-[13px] text-olive-500">
-                      {practitioner.bio || "Wellness Practitioner"}
-                    </p>
+                    </div>
+                    {practitioner.bio && (
+                      <p className="text-[13px] text-olive-500 mt-1 line-clamp-2">
+                        {practitioner.bio}
+                      </p>
+                    )}
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        asChild
+                      >
+                        <Link
+                          href={`/practitioners/${practitioner.slug || practitioner.id}`}
+                        >
+                          View Profile
+                          <ExternalLink className="h-3 w-3 ml-1.5" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        onClick={handleMessagePractitioner}
+                      >
+                        <MessageSquare className="h-3 w-3 mr-1.5" />
+                        Message
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button variant="outline" className="flex-1 rounded-full border-sage-200 text-olive-600 hover:border-sage-400 hover:text-olive-800" asChild>
-                    <Link
-                      href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      View Profile
-                    </Link>
-                  </Button>
-                </div>
               </div>
-            </section>
-          )}
+            )}
+          </div>
 
-          <ReviewBookingDialog
-            open={reviewDialogOpen}
-            onOpenChange={setReviewDialogOpen}
-            booking={booking as any}
-          />
-        </main>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* SIDEBAR                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <aside className="lg:sticky lg:top-20 pb-16 flex flex-col gap-0 self-start">
-
-          {/* ============================================================== */}
-          {/* TICKET CARD                                                    */}
-          {/* ============================================================== */}
-          <div className="bg-white border border-sage-200/60 rounded-xl overflow-visible mb-5">
-            {/* Ticket header - KEEP dark */}
-            <div className="relative overflow-hidden rounded-t-xl px-5 py-5"
-              style={{ background: "linear-gradient(135deg, #1e1508 0%, #2e1f0a 100%)" }}
-            >
-              {/* Service image background */}
-              {(journeyData?.service_image_url || (service as any)?.featured_image_url) && (
-                <div
-                  className="absolute inset-0 bg-cover bg-center opacity-30"
-                  style={{ backgroundImage: `url(${journeyData?.service_image_url || (service as any)?.featured_image_url})` }}
-                />
-              )}
-              {/* Dark overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1e1508] via-[#1e1508]/60 to-transparent" />
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(74,94,74,0.25)_0%,transparent_60%)]" />
-              <div className="relative z-10">
-                <div className="text-[10px] tracking-[0.12em] uppercase text-[#f5f0e8]/35 mb-1.5">
-                  Package
+          {/* -- RIGHT COLUMN (SIDEBAR) -- */}
+          <aside className="lg:sticky lg:top-20 self-start space-y-4">
+            {/* Package Progress Card */}
+            {totalCount > 0 && (
+              <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
+                <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
+                  <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                    Package Progress
+                  </div>
                 </div>
-                <div className="font-serif text-[20px] font-medium text-[#f5f0e8] leading-tight mb-4">
-                  {service?.name ?? "Package"}
-                </div>
-
-                {/* Dot progress inside ticket */}
-                {totalCount > 0 && (
-                  <div className="flex items-center gap-1.5 mb-2">
+                <div className="px-5 py-4">
+                  {/* Dot indicator */}
+                  <div
+                    className="flex items-center gap-1.5 mb-3 flex-wrap"
+                    aria-label={`${completedCount} of ${totalCount} complete`}
+                  >
                     {Array.from({ length: totalCount }).map((_, i) => (
                       <span
                         key={i}
-                        className={`inline-block h-2 w-2 rounded-full ${
+                        className={`inline-block h-3 w-3 rounded-full transition-colors ${
                           i < completedCount
-                            ? "bg-[#4a5e4a] border border-[#6b7f6b]"
+                            ? "bg-sage-500"
                             : i < usedCount
-                              ? "bg-[#4a5e4a]/40 border border-[#4a5e4a]/50"
-                              : "bg-transparent border border-[#f5f0e8]/20"
+                              ? "bg-sage-400"
+                              : "bg-sage-200"
                         }`}
                       />
                     ))}
                   </div>
-                )}
-                <div className="text-[13px] text-[#f5f0e8]/50">
-                  {usedCount} of {totalCount} sessions used
+                  <p className="text-[13px] text-olive-600">
+                    <span className="font-medium text-olive-800">{usedCount} of {totalCount}</span>{" "}
+                    sessions used
+                  </p>
+                  {expirationDate && (
+                    <p className={`text-[12px] mt-1 ${isNearingExpiration ? "text-amber-700 font-medium" : "text-olive-400"}`}>
+                      Expires {format(expirationDate, "MMM d, yyyy")}
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-
-            {/* Dashed tear line */}
-            <div className="flex items-center -mx-[1px]">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-sage-50 via-cream-50 to-olive-50/30 flex-shrink-0 relative z-10" />
-              <div className="flex-1 border-t-[1.5px] border-dashed border-sage-200 mx-1" />
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-sage-50 via-cream-50 to-olive-50/30 flex-shrink-0 relative z-10" />
-            </div>
-
-            {/* Ticket stub */}
-            <div className="px-5 py-4">
-              <div className="flex justify-between items-center py-2 border-b border-sage-200/60 text-[13px]">
-                <span className="text-olive-500 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-sage-500" />
-                  Total sessions
-                </span>
-                <span className="font-medium text-olive-900">{totalCount}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-sage-200/60 text-[13px]">
-                <span className="text-olive-500 flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-sage-500" />
-                  Completed
-                </span>
-                <span className="font-medium text-olive-900">{completedCount}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-sage-200/60 text-[13px]">
-                <span className="text-olive-500 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-sage-500" />
-                  Remaining
-                </span>
-                <span className="font-medium text-olive-900">{remainingCount}</span>
-              </div>
-              {purchasedDate && (
-                <div className="flex justify-between items-center py-2 border-b border-sage-200/60 text-[13px]">
-                  <span className="text-olive-500">Purchased</span>
-                  <span className="font-medium text-olive-900">{purchasedDate}</span>
-                </div>
-              )}
-              {expirationDate && (
-                <div className="flex justify-between items-center py-2 text-[13px]">
-                  <span className={`flex items-center gap-1.5 ${isNearingExpiration ? "text-amber-700" : "text-olive-500"}`}>
-                    <AlertCircle className={`w-3.5 h-3.5 ${isNearingExpiration ? "text-amber-600" : "text-sage-500"}`} />
-                    Expires
-                  </span>
-                  <span className={`font-medium ${isNearingExpiration ? "text-amber-700" : "text-olive-900"}`}>
-                    {format(expirationDate, "MMM d, yyyy")}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ============================================================== */}
-          {/* EXPIRATION WARNING                                             */}
-          {/* ============================================================== */}
-          {isNearingExpiration && daysUntilExpiration !== null && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 mb-5 text-[13px] text-amber-800">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>
-                Your package expires in <strong>{daysUntilExpiration} day{daysUntilExpiration !== 1 ? "s" : ""}</strong>. Schedule your remaining sessions soon.
-              </span>
-            </div>
-          )}
-
-          {/* ============================================================== */}
-          {/* ACTION BUTTONS                                                 */}
-          {/* ============================================================== */}
-          <div className="flex flex-col gap-2 mb-5">
-            {needsScheduling.length > 0 && (
-              <Button asChild className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium">
-                <Link
-                  href={`/dashboard/user/bookings/${getItemBookingUuid(needsScheduling[0])}/schedule`}
-                >
-                  <CalendarPlus className="h-4 w-4 mr-2" />
-                  Schedule Next Session
-                </Link>
-              </Button>
             )}
 
-            <Button
-              variant="outline"
-              className="w-full h-[44px] rounded-full border-[1.5px] border-sage-200 text-olive-600 text-[14px] hover:border-sage-400 hover:text-olive-800"
-              onClick={handleMessagePractitioner}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Message Practitioner
-            </Button>
-
-            <button
-              onClick={() => setCancelDialogOpen(true)}
-              className="w-full text-center text-[12.5px] text-olive-400 hover:text-red-500 transition-colors py-1"
-            >
-              Cancel Package
-            </button>
-          </div>
-
-          {/* ============================================================== */}
-          {/* SIDEBAR PRACTITIONER CHIP                                      */}
-          {/* ============================================================== */}
-          {practitioner && (
-            <div className="flex items-center gap-3 p-4 bg-white border border-sage-200/60 rounded-xl mb-5">
-              <Avatar className="h-11 w-11 flex-shrink-0">
-                {practitioner.profile_image_url ? (
-                  <AvatarImage
-                    src={practitioner.profile_image_url}
-                    alt={practitioner.name ?? "Practitioner"}
-                  />
-                ) : null}
-                <AvatarFallback className="bg-sage-200 text-sage-700 font-serif italic text-lg">
-                  {practitioner.name?.charAt(0) ?? "P"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-olive-900">
-                  {practitioner.name}
+            {/* Package Details Card */}
+            <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
+              <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
+                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                  Package Details
                 </div>
-                <div className="text-[12px] text-olive-500">Practitioner</div>
               </div>
+
+              <div className="px-5 py-3">
+                {/* Total sessions */}
+                <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                  <span className="flex items-center gap-2 text-olive-400">
+                    <Calendar className="h-3.5 w-3.5 text-sage-500" />
+                    Total Sessions
+                  </span>
+                  <span className="font-medium text-olive-800">{totalCount}</span>
+                </div>
+
+                {/* Remaining */}
+                <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                  <span className="flex items-center gap-2 text-olive-400">
+                    <Clock className="h-3.5 w-3.5 text-sage-500" />
+                    Remaining
+                  </span>
+                  <span className="font-medium text-olive-800">{remainingCount}</span>
+                </div>
+
+                {/* Location */}
+                <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                  <span className="flex items-center gap-2 text-olive-400">
+                    <Video className="h-3.5 w-3.5 text-sage-500" />
+                    Location
+                  </span>
+                  <span className="font-medium text-olive-800">
+                    {locationIsVirtual ? "Virtual" : "In Person"}
+                  </span>
+                </div>
+
+                {/* Confirmation */}
+                <div className="flex justify-between py-2.5 text-[13px]">
+                  <span className="text-olive-400">Confirmation</span>
+                  <span className="font-mono text-[11px] text-sage-600 tracking-wide">
+                    {bookingUuid.slice(0, 8).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Expiration Warning */}
+            {isNearingExpiration && daysUntilExpiration !== null && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-[13px] text-amber-800">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  Your package expires in <strong>{daysUntilExpiration} day{daysUntilExpiration !== 1 ? "s" : ""}</strong>. Schedule your remaining sessions soon.
+                </span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              {needsScheduling.length > 0 && (
+                <Button
+                  asChild
+                  className="w-full h-11 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium"
+                >
+                  <Link
+                    href={`/dashboard/user/bookings/${getItemBookingUuid(needsScheduling[0])}/schedule`}
+                  >
+                    <CalendarPlus className="h-4 w-4 mr-2" />
+                    Schedule Next Session
+                  </Link>
+                </Button>
+              )}
+
               <button
-                onClick={handleMessagePractitioner}
-                className="flex items-center gap-1.5 text-[12.5px] text-sage-700 bg-sage-100 hover:bg-sage-200 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+                onClick={() => setCancelDialogOpen(true)}
+                className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-1 transition-colors"
               >
-                <MessageSquare className="w-3.5 h-3.5" />
-                Message
+                Cancel Package
               </button>
             </div>
-          )}
-
-          {/* ============================================================== */}
-          {/* PACKAGE INFO                                                   */}
-          {/* ============================================================== */}
-          {service?.description && (
-            <div className="bg-white border border-sage-200/60 rounded-xl p-5">
-              <div className="text-[10px] tracking-[0.1em] uppercase text-sage-600 mb-2">
-                What&apos;s Included
-              </div>
-              <p className="text-[13px] text-olive-600 leading-relaxed">
-                {service.description.length > 180
-                  ? `${service.description.slice(0, 180)}...`
-                  : service.description}
-              </p>
-            </div>
-          )}
-        </aside>
+          </aside>
+        </div>
       </div>
 
-      {/* ── Cancel Dialog ── */}
+      {/* Dialogs */}
       <CancelBookingDialog
         bookingId={bookingUuid}
         serviceName={service?.name || "Package"}
@@ -979,6 +916,11 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
         onOpenChange={setCancelDialogOpen}
         onConfirm={(reason) => cancelBooking(reason)}
         isLoading={isCancelling}
+      />
+      <ReviewBookingDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        booking={booking as any}
       />
     </div>
   )

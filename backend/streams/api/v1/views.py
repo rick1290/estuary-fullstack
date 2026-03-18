@@ -777,14 +777,8 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Create a new stream post with optional media uploads."""
         try:
-            # Debug logging
-            print(f"DEBUG POST CREATE: request.data keys: {list(request.data.keys())}")
-            print(f"DEBUG POST CREATE: request.FILES keys: {list(request.FILES.keys())}")
-            print(f"DEBUG POST CREATE: Content-Type: {request.content_type}")
-            
             # Get stream_id from request data
             stream_id = request.data.get('stream')
-            print(f"DEBUG POST CREATE: stream_id = {stream_id}")
             
             if not stream_id:
                 return Response(
@@ -793,8 +787,8 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
                 )
         except Exception as e:
             import traceback
-            print(f"ERROR in create method start: {e}")
-            print(f"ERROR traceback: {traceback.format_exc()}")
+            import logging
+            logging.getLogger(__name__).error(f"Error in stream post create: {e}\n{traceback.format_exc()}")
             return Response(
                 {'error': f'Server error: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -816,14 +810,12 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         
         # Extract media files from request
         for key in request.FILES:
-            print(f"DEBUG: Found file key: {key}")
             if key.startswith('media_files['):
                 try:
                     index = key.split('[')[1].split(']')[0]
                     media_files.append((int(index), request.FILES[key]))
-                    print(f"DEBUG: Added media file at index {index}")
-                except Exception as e:
-                    print(f"DEBUG: Error parsing file key {key}: {e}")
+                except Exception:
+                    pass
                 
         # Sort by index to maintain order
         media_files.sort(key=lambda x: x[0])
