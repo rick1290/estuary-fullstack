@@ -21,16 +21,13 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import AddResourceDialog from "@/components/dashboard/practitioner/calendar/add-resource-dialog"
-import ResourceCard from "@/components/dashboard/practitioner/calendar/resource-card"
-import ResourceViewerDialog from "@/components/dashboard/practitioner/calendar/resource-viewer-dialog"
+import { SessionResourcesSection } from "./session-resources-section"
 import {
   Calendar,
   Clock,
   MapPin,
   Users,
   Video,
-  FileText,
   Plus,
   ExternalLink,
   Loader2,
@@ -128,9 +125,6 @@ export function SessionDetailPage({
 
   // State
   const [activeTab, setActiveTab] = useState("participants")
-  const [resources, setResources] = useState<any[]>([])
-  const [selectedResource, setSelectedResource] = useState<any>(null)
-  const [resourceViewerOpen, setResourceViewerOpen] = useState(false)
   const [newNote, setNewNote] = useState((session as any)?.practitioner_notes || "")
   const [newSharedNote, setNewSharedNote] = useState((session as any)?.shared_notes || "")
 
@@ -289,38 +283,8 @@ export function SessionDetailPage({
               </TabsContent>
 
               {/* Resources tab */}
-              <TabsContent value="resources" className="space-y-4 mt-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-sm font-medium">Resources</h2>
-                  <AddResourceDialog onAddResource={(r: any) => {
-                    setResources([...resources, { id: `res-${Date.now()}`, ...r, dateAdded: new Date().toISOString().split("T")[0] }])
-                  }} />
-                </div>
-                {resources.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-3">
-                    {resources.map((resource) => (
-                      <ResourceCard
-                        key={resource.id}
-                        resource={resource}
-                        onView={(r: any) => { setSelectedResource(r); setResourceViewerOpen(true) }}
-                        onDelete={(id: string) => setResources(resources.filter(r => r.id !== id))}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="p-6 text-center">
-                      <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">No resources added yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Add materials to share with participants</p>
-                    </CardContent>
-                  </Card>
-                )}
-                <ResourceViewerDialog
-                  resource={selectedResource}
-                  open={resourceViewerOpen}
-                  onOpenChange={setResourceViewerOpen}
-                />
+              <TabsContent value="resources" className="mt-4">
+                <SessionResourcesSection sessionId={parseInt(sessionId)} />
               </TabsContent>
 
               {/* Recordings tab */}
