@@ -732,18 +732,25 @@ class JourneyViewSet(GenericViewSet):
             'service_session', 'order'
         ).order_by('service_session__start_time')
 
-        # Group by service
+        # Group bookings into journeys
+        # Sessions/workshops: each booking = its own journey (separate purchases)
+        # Courses/packages/bundles: group by service (one enrollment = one journey)
         journeys_map = {}
         for booking in bookings:
             service = booking.service
             if not service:
                 continue
-            service_id = service.id
 
-            if service_id not in journeys_map:
+            service_type_code = service.service_type.code if service.service_type else 'session'
+
+            if service_type_code in ('session', 'workshop'):
+                group_key = f'booking-{booking.id}'
+            else:
+                group_key = f'service-{service.id}'
+
+            if group_key not in journeys_map:
                 practitioner = service.primary_practitioner
-                service_type_code = service.service_type.code if service.service_type else 'session'
-                journeys_map[service_id] = {
+                journeys_map[group_key] = {
                     'journey_id': str(booking.public_uuid),  # First booking's UUID
                     'journey_type': service_type_code,
                     'service_name': service.name,
@@ -769,7 +776,7 @@ class JourneyViewSet(GenericViewSet):
                     'status': 'upcoming',
                 }
 
-            journey = journeys_map[service_id]
+            journey = journeys_map[group_key]
             journey['total_sessions'] += 1
 
             ss = booking.service_session
