@@ -55,7 +55,7 @@ export function PackageCompositionSection({
   const { data: availableServices, isLoading: isLoadingServices } = useQuery(
     servicesListOptions({
       query: {
-        practitioner: user?.practitioner_profile?.id,
+        practitioner: user?.practitionerId,
         page_size: 100,
       }
     })

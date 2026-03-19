@@ -49,6 +49,30 @@ import { BundleConfigurationSection } from "./sections/bundle-configuration-sect
 import { StatusVisibilitySection } from "./sections/status-visibility-section"
 import { WaitlistSection } from "./sections/waitlist-section"
 
+// child_relationships comes from the API as an array at runtime,
+// but the generated type says string. Safely parse either format.
+function parseChildRelationships(raw: any, type: 'bundle' | 'package'): any[] {
+  let rels: any[] = []
+  if (Array.isArray(raw)) {
+    rels = raw
+  } else if (typeof raw === 'string') {
+    try { rels = JSON.parse(raw) } catch { return [] }
+  }
+  if (!Array.isArray(rels)) return []
+
+  return rels.map((rel: any) => {
+    const base: any = {
+      child_service_id: rel.child_service?.id ?? rel.child_service_id,
+      quantity: rel.quantity ?? 1,
+    }
+    if (type === 'package') {
+      base.discount_percentage = rel.discount_percentage ?? 0
+      base.order = rel.order ?? 0
+    }
+    return base
+  })
+}
+
 interface ServiceSettingsViewProps {
   serviceId: string
 }
@@ -297,18 +321,10 @@ export function ServiceSettingsView({ serviceId }: ServiceSettingsViewProps) {
         },
         "bundle-configuration": {
           sessions_included: service.sessions_included,
-          child_service_configs: service.child_relationships?.map(rel => ({
-            child_service_id: rel.child_service?.id,
-            quantity: rel.quantity
-          })) || [],
+          child_service_configs: parseChildRelationships(service.child_relationships, 'bundle'),
         },
         "package-composition": {
-          child_service_configs: service.child_relationships?.map(rel => ({
-            child_service_id: rel.child_service?.id,
-            quantity: rel.quantity,
-            discount_percentage: rel.discount_percentage,
-            order: rel.order
-          })) || [],
+          child_service_configs: parseChildRelationships(service.child_relationships, 'package'),
         },
         "service-sessions": {
           sessions: service.sessions || [],

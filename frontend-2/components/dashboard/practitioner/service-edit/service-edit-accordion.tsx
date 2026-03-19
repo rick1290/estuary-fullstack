@@ -56,6 +56,27 @@ import { PackageCompositionSection } from "./sections/package-composition-sectio
 import { BundleConfigurationSection } from "./sections/bundle-configuration-section"
 import { StatusVisibilitySection } from "./sections/status-visibility-section"
 
+function parseChildRelationships(raw: any, type: 'bundle' | 'package'): any[] {
+  let rels: any[] = []
+  if (Array.isArray(raw)) {
+    rels = raw
+  } else if (typeof raw === 'string') {
+    try { rels = JSON.parse(raw) } catch { return [] }
+  }
+  if (!Array.isArray(rels)) return []
+  return rels.map((rel: any) => {
+    const base: any = {
+      child_service_id: rel.child_service?.id ?? rel.child_service_id,
+      quantity: rel.quantity ?? 1,
+    }
+    if (type === 'package') {
+      base.discount_percentage = rel.discount_percentage ?? 0
+      base.order = rel.order ?? 0
+    }
+    return base
+  })
+}
+
 interface ServiceEditAccordionProps {
   serviceId: string
 }
@@ -223,18 +244,10 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
         },
         "bundle-configuration": {
           sessions_included: service.sessions_included,
-          child_service_configs: service.child_relationships?.map(rel => ({
-            child_service_id: rel.child_service?.id,
-            quantity: rel.quantity
-          })) || [],
+          child_service_configs: parseChildRelationships(service.child_relationships, 'bundle'),
         },
         "package-composition": {
-          child_service_configs: service.child_relationships?.map(rel => ({
-            child_service_id: rel.child_service?.id,
-            quantity: rel.quantity,
-            discount_percentage: rel.discount_percentage,
-            order: rel.order
-          })) || [],
+          child_service_configs: parseChildRelationships(service.child_relationships, 'package'),
         },
         "service-sessions": {
           sessions: service.sessions || [],

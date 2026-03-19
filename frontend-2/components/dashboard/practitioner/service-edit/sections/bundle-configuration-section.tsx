@@ -50,7 +50,7 @@ export function BundleConfigurationSection({
   const { data: availableServices } = useQuery(
     servicesListOptions({
       query: {
-        practitioner: user?.practitioner_profile?.id,
+        practitioner: user?.practitionerId,
         service_type: 'session',
         page_size: 100
       }
