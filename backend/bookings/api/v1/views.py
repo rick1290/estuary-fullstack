@@ -248,7 +248,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def schedule(self, request, pk=None):
-        """Schedule an unscheduled draft booking (sets initial time)"""
+        """Schedule an unscheduled booking (sets initial time on its ServiceSession)"""
         booking = self.get_object()
         serializer = BookingScheduleSerializer(
             data=request.data,
@@ -288,8 +288,8 @@ class BookingViewSet(viewsets.ModelViewSet):
                     )
                     booking.service_session = service_session
 
-                # If payment is complete, confirm the booking
-                if booking.payment_status == 'paid':
+                # Ensure booking is confirmed now that it's scheduled
+                if booking.status not in ['confirmed']:
                     booking.status = 'confirmed'
 
                 booking.save()

@@ -648,8 +648,9 @@ class BookingFactory:
                     service_session=service_session,  # Link to draft session
                     order=order,  # Link to order (not parent_booking)
                     credits_allocated=credits_per_session,
-                    status='draft',  # Draft until scheduled
-                    **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_intent_id']}
+                    status='confirmed',  # Paid — just needs scheduling
+                    payment_status='paid',
+                    **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_status', 'payment_intent_id']}
                 )
                 created_bookings.append(booking)
 
@@ -721,8 +722,9 @@ class BookingFactory:
                 service_session=service_session,  # Link to draft session
                 order=order,
                 credits_allocated=credits_per_session,
-                status='draft',  # Draft until scheduled
-                **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_intent_id']}
+                status='confirmed',  # Paid — just needs scheduling
+                payment_status='paid',
+                **{k: v for k, v in kwargs.items() if k not in ['status', 'payment_status', 'payment_intent_id']}
             )
             created_bookings.append(booking)
 

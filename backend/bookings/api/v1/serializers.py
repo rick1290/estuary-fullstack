@@ -410,7 +410,7 @@ class BookingStatusChangeSerializer(serializers.Serializer):
 
 
 class BookingScheduleSerializer(serializers.Serializer):
-    """Serializer for scheduling unscheduled draft bookings"""
+    """Serializer for scheduling unscheduled bookings"""
     start_time = serializers.DateTimeField()
     end_time = serializers.DateTimeField()
 
@@ -418,9 +418,9 @@ class BookingScheduleSerializer(serializers.Serializer):
         """Validate scheduling data"""
         booking = self.context.get('booking')
 
-        # Check if booking can be scheduled (must be draft with no start_time)
-        if booking.status not in ['draft', 'pending_payment']:
-            raise serializers.ValidationError("Only draft bookings can be scheduled")
+        # Booking must not be canceled or completed
+        if booking.status in ['canceled', 'completed']:
+            raise serializers.ValidationError("Cannot schedule a canceled or completed booking")
 
         # Check if already scheduled (service_session has start_time)
         if booking.service_session and booking.service_session.start_time is not None:

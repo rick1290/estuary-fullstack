@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { conversationsCreate, conversationsList } from "@/src/client"
+import { conversationsCreate } from "@/src/client"
 import { bookingsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import type {
   BookingDetailReadable,
@@ -225,27 +225,14 @@ export default function WorkshopDelivery({
       return
     }
     try {
-      const { data: convos } = await conversationsList({
-        query: { page_size: 100 } as any,
-      })
-      const existing = (convos as any)?.results?.find((c: any) =>
-        c.participants?.some(
-          (p: any) =>
-            p.user === practitionerUserId || p.user_id === practitionerUserId
-        )
-      )
-      if (existing) {
-        router.push(
-          `/dashboard/user/messages?conversationId=${(existing as any).id}`
-        )
-        return
-      }
+      // Backend handles dedup — returns existing conversation if one exists
       const result = await conversationsCreate({
         body: { other_user_id: practitionerUserId } as any,
       })
-      router.push(
-        `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
-      )
+      const convoId = (result.data as any)?.id
+      if (convoId) {
+        router.push(`/dashboard/user/messages?conversationId=${convoId}`)
+      }
     } catch {
       toast.error("Failed to start conversation")
     }

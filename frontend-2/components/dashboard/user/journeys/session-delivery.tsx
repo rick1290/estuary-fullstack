@@ -45,7 +45,7 @@ interface SessionDeliveryProps {
   journeyData?: JourneyDetail
 }
 
-type SessionState = "upcoming" | "joinable" | "in_progress" | "completed" | "canceled"
+type SessionState = "unscheduled" | "upcoming" | "joinable" | "in_progress" | "completed" | "canceled"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -91,18 +91,17 @@ function deriveSessionState(booking: BookingDetailReadable): SessionState {
   if (sessionStatus === "completed") return "completed"
   if (sessionStatus === "in_progress") return "in_progress"
   const startTime = booking.service_session?.start_time
-  if (startTime) {
-    const start = toDate(startTime)
-    const endTime = booking.service_session?.end_time
-    const end = endTime
-      ? toDate(endTime)
-      : new Date(start.getTime() + 60 * 60 * 1000)
-    const now = new Date()
-    const joinWindow = new Date(start.getTime() - 15 * 60 * 1000)
-    if (now >= joinWindow && now < end && booking.status === "confirmed")
-      return "joinable"
-    if (isPast(end)) return "completed"
-  }
+  if (!startTime) return "unscheduled"
+  const start = toDate(startTime)
+  const endTime = booking.service_session?.end_time
+  const end = endTime
+    ? toDate(endTime)
+    : new Date(start.getTime() + 60 * 60 * 1000)
+  const now = new Date()
+  const joinWindow = new Date(start.getTime() - 15 * 60 * 1000)
+  if (now >= joinWindow && now < end && booking.status === "confirmed")
+    return "joinable"
+  if (isPast(end)) return "completed"
   return "upcoming"
 }
 
@@ -254,27 +253,14 @@ export default function SessionDelivery({
       return
     }
     try {
-      const { data: convos } = await conversationsList({
-        query: { page_size: 100 } as any,
-      })
-      const existing = (convos as any)?.results?.find((c: any) =>
-        c.participants?.some(
-          (p: any) =>
-            p.user === practitionerUserId || p.user_id === practitionerUserId
-        )
-      )
-      if (existing) {
-        router.push(
-          `/dashboard/user/messages?conversationId=${(existing as any).id}`
-        )
-        return
-      }
+      // Backend handles dedup — returns existing conversation if one exists
       const result = await conversationsCreate({
         body: { other_user_id: practitionerUserId } as any,
       })
-      router.push(
-        `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
-      )
+      const convoId = (result.data as any)?.id
+      if (convoId) {
+        router.push(`/dashboard/user/messages?conversationId=${convoId}`)
+      }
     } catch {
       toast.error("Failed to start conversation")
     }
@@ -298,7 +284,9 @@ export default function SessionDelivery({
           </Link>
           <span
             className={`inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase px-3 py-1 rounded-full ${
-              sessionState === "completed"
+              sessionState === "unscheduled"
+                ? "bg-amber-50 border border-amber-200 text-amber-700"
+                : sessionState === "completed"
                 ? "bg-sage-100 border border-sage-200 text-sage-600"
                 : sessionState === "canceled"
                 ? "bg-red-50 border border-red-200 text-red-600"
@@ -309,7 +297,9 @@ export default function SessionDelivery({
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                sessionState === "completed"
+                sessionState === "unscheduled"
+                  ? "bg-amber-500"
+                  : sessionState === "completed"
                   ? "bg-sage-500"
                   : sessionState === "canceled"
                   ? "bg-red-400"
@@ -318,7 +308,9 @@ export default function SessionDelivery({
                   : "bg-sage-500 animate-pulse"
               }`}
             />
-            {sessionState === "upcoming"
+            {sessionState === "unscheduled"
+              ? "Needs Scheduling"
+              : sessionState === "upcoming"
               ? "Confirmed"
               : sessionState === "joinable"
               ? "Live"
@@ -380,12 +372,12 @@ export default function SessionDelivery({
                   )}
 
                   {/* Date */}
-                  {startTime && (
-                    <span className="flex items-center gap-1.5 text-[13px] text-white/50">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {format(toDate(startTime), "MMM d, yyyy")}
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/50">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {startTime
+                      ? format(toDate(startTime), "MMM d, yyyy")
+                      : "Not yet scheduled"}
+                  </span>
 
                   {/* Duration */}
                   {duration && (
@@ -397,6 +389,21 @@ export default function SessionDelivery({
                 </div>
               </div>
             </div>
+
+            {/* Unscheduled Notice */}
+            {sessionState === "unscheduled" && (
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <CalendarRange className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[14px] font-medium text-amber-800">
+                    This session hasn't been scheduled yet
+                  </p>
+                  <p className="text-[13px] text-amber-600 mt-1">
+                    Choose a date and time that works for you to get started.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Canceled Notice */}
             {sessionState === "canceled" && (
@@ -632,30 +639,30 @@ export default function SessionDelivery({
 
               <div className="px-5 py-3">
                 {/* Date */}
-                {startTime && (
-                  <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                    <span className="flex items-center gap-2 text-olive-400">
-                      <Calendar className="h-3.5 w-3.5 text-sage-500" />
-                      Date
-                    </span>
-                    <span className="font-medium text-olive-800">
-                      {format(toDate(startTime), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                )}
+                <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                  <span className="flex items-center gap-2 text-olive-400">
+                    <Calendar className="h-3.5 w-3.5 text-sage-500" />
+                    Date
+                  </span>
+                  <span className="font-medium text-olive-800">
+                    {startTime
+                      ? format(toDate(startTime), "MMM d, yyyy")
+                      : "Not scheduled"}
+                  </span>
+                </div>
 
                 {/* Time */}
-                {startTime && (
-                  <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                    <span className="flex items-center gap-2 text-olive-400">
-                      <Clock className="h-3.5 w-3.5 text-sage-500" />
-                      Time
-                    </span>
-                    <span className="font-medium text-olive-800">
-                      {format(toDate(startTime), "h:mm a")}
-                    </span>
-                  </div>
-                )}
+                <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
+                  <span className="flex items-center gap-2 text-olive-400">
+                    <Clock className="h-3.5 w-3.5 text-sage-500" />
+                    Time
+                  </span>
+                  <span className="font-medium text-olive-800">
+                    {startTime
+                      ? format(toDate(startTime), "h:mm a")
+                      : "Not scheduled"}
+                  </span>
+                </div>
 
                 {/* Duration */}
                 {duration && (
@@ -694,6 +701,24 @@ export default function SessionDelivery({
 
             {/* Action Buttons */}
             <div className="space-y-2">
+              {/* Unscheduled: Schedule Session */}
+              {sessionState === "unscheduled" && (
+                <>
+                  <Button
+                    className="w-full h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-medium"
+                    asChild
+                  >
+                    <Link href={`/dashboard/user/bookings/${bookingUuid}/schedule`}>
+                      <CalendarRange className="h-4 w-4 mr-2" />
+                      Schedule Session
+                    </Link>
+                  </Button>
+                  <p className="text-center text-[12px] text-olive-400 px-2">
+                    Pick a time from your practitioner's available slots
+                  </p>
+                </>
+              )}
+
               {/* Upcoming: Join (disabled), Calendar, Reschedule, Cancel */}
               {sessionState === "upcoming" && (
                 <>

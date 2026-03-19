@@ -7,7 +7,7 @@ import {
   bookingsRetrieveOptions,
   bookingsListOptions,
 } from "@/src/client/@tanstack/react-query.gen"
-import { conversationsCreate, conversationsList } from "@/src/client"
+import { conversationsCreate } from "@/src/client"
 import type { BookingListReadable, JourneyDetail, JourneySession } from "@/src/client/types.gen"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -313,44 +313,24 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
   // Message practitioner
   const handleMessagePractitioner = useCallback(async () => {
-    if (!booking?.practitioner?.user_id) {
+    const practitionerUserId = (practitioner as any)?.user_id
+    if (!practitionerUserId) {
       toast.error("Unable to message practitioner")
       return
     }
-
     try {
-      const conversationsResponse = await conversationsList()
-      const existingConversation = conversationsResponse.data?.results?.find(
-        (conv: any) =>
-          conv.participants?.some(
-            (p: any) => p.user_id === booking.practitioner?.user_id
-          )
-      )
-
-      if (existingConversation) {
-        router.push(
-          `/dashboard/user/messages?conversationId=${existingConversation.id}`
-        )
-        return
-      }
-
-      const response = await conversationsCreate({
-        body: {
-          other_user_id: booking.practitioner.user_id,
-          initial_message: `Hi, I have a question about my package "${booking.service?.name}".`,
-        },
+      // Backend handles dedup — returns existing conversation if one exists
+      const result = await conversationsCreate({
+        body: { other_user_id: practitionerUserId } as any,
       })
-
-      if ((response.data as any)?.id) {
-        router.push(
-          `/dashboard/user/messages?conversationId=${(response.data as any).id}`
-        )
+      const convoId = (result.data as any)?.id
+      if (convoId) {
+        router.push(`/dashboard/user/messages?conversationId=${convoId}`)
       }
-    } catch (error: any) {
-      console.error("Failed to open conversation:", error)
-      toast.error("Unable to open conversation. Please try again.")
+    } catch {
+      toast.error("Failed to start conversation")
     }
-  }, [booking, router])
+  }, [practitioner, router])
 
   const isLoading = isLoadingBooking || (!hasJourneySessions && isLoadingAll)
 

@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { conversationsCreate, conversationsList } from "@/src/client"
+import { conversationsCreate } from "@/src/client"
 import {
   bookingsRetrieveOptions,
   bookingsListOptions,
@@ -308,31 +308,18 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   const handleMessagePractitioner = useCallback(async () => {
     const practitionerUserId = (practitioner as any)?.user_id
     if (!practitionerUserId) {
-      toast.error("Unable to message instructor")
+      toast.error("Unable to message practitioner")
       return
     }
     try {
-      const { data: convos } = await conversationsList({
-        query: { page_size: 100 } as any,
-      })
-      const existing = (convos as any)?.results?.find((c: any) =>
-        c.participants?.some(
-          (p: any) =>
-            p.user === practitionerUserId || p.user_id === practitionerUserId
-        )
-      )
-      if (existing) {
-        router.push(
-          `/dashboard/user/messages?conversationId=${(existing as any).id}`
-        )
-        return
-      }
+      // Backend handles dedup — returns existing conversation if one exists
       const result = await conversationsCreate({
         body: { other_user_id: practitionerUserId } as any,
       })
-      router.push(
-        `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
-      )
+      const convoId = (result.data as any)?.id
+      if (convoId) {
+        router.push(`/dashboard/user/messages?conversationId=${convoId}`)
+      }
     } catch {
       toast.error("Failed to start conversation")
     }
