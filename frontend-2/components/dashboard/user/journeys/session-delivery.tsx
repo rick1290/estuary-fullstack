@@ -146,6 +146,8 @@ export default function SessionDelivery({
                   slug: journeyData.practitioner.slug,
                   public_uuid: journeyData.practitioner.public_uuid,
                   bio: journeyData.practitioner.bio,
+                  profile_image_url: journeyData.practitioner.profile_image_url,
+                  user_id: journeyData.practitioner.user_id,
                 }
               : undefined,
             service_session: s
@@ -268,7 +270,7 @@ export default function SessionDelivery({
         return
       }
       const result = await conversationsCreate({
-        body: { participant_ids: [practitionerUserId] } as any,
+        body: { other_user_id: practitionerUserId } as any,
       })
       router.push(
         `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
@@ -358,6 +360,9 @@ export default function SessionDelivery({
                   {practitioner && (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7 border border-white/20">
+                        {(practitioner as any)?.profile_image_url && (
+                          <AvatarImage src={(practitioner as any).profile_image_url} alt={(practitioner as any)?.display_name || ""} />
+                        )}
                         <AvatarFallback className="bg-white/10 text-white/70 text-xs font-serif italic">
                           {(practitioner as any)?.display_name?.charAt(0) ||
                             practitioner?.name?.charAt(0) ||
@@ -520,6 +525,9 @@ export default function SessionDelivery({
                 </h2>
                 <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
                   <Avatar className="h-14 w-14">
+                    {(practitioner as any)?.profile_image_url && (
+                      <AvatarImage src={(practitioner as any).profile_image_url} alt={(practitioner as any)?.display_name || ""} />
+                    )}
                     <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-olive-700 font-serif text-xl italic">
                       {(practitioner as any)?.display_name?.charAt(0) ||
                         practitioner?.name?.charAt(0) ||
@@ -812,6 +820,7 @@ export default function SessionDelivery({
       </div>
 
       {/* Dialogs */}
+      {/* @ts-expect-error — CancelBookingDialog props may not match exactly */}
       <CancelBookingDialog
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}

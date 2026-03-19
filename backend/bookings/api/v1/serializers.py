@@ -592,6 +592,7 @@ class JourneyPractitionerSerializer(serializers.Serializer):
     public_uuid = serializers.UUIDField(allow_null=True)
     bio = serializers.CharField(allow_null=True, allow_blank=True)
     profile_image_url = serializers.CharField(allow_null=True, allow_blank=True, default='')
+    user_id = serializers.IntegerField(allow_null=True, default=None)
 
 
 class JourneySessionSerializer(serializers.Serializer):

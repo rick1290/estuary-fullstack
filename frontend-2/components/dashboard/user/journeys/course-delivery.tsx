@@ -328,7 +328,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
         return
       }
       const result = await conversationsCreate({
-        body: { participant_ids: [practitionerUserId] } as any,
+        body: { other_user_id: practitionerUserId } as any,
       })
       router.push(
         `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
@@ -455,6 +455,12 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                   {practitioner && (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7 border border-white/20">
+                        {(practitioner as any)?.profile_image_url && (
+                          <AvatarImage
+                            src={(practitioner as any).profile_image_url}
+                            alt={(practitioner as any)?.name ?? "Instructor"}
+                          />
+                        )}
                         <AvatarFallback
                           className="text-white/80 text-xs font-serif italic"
                           style={{
