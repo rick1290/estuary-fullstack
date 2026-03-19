@@ -200,7 +200,8 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
             'duration', 'max_participants', 'current_participants',
             'participant_count', 'waitlist_count', 'booking_count', 'spots_available', 'sequence_number',
             'room', 'status', 'agenda', 'agenda_items', 'benefits',
-            'what_youll_learn', 'practitioner_location', 'created_at', 'updated_at'
+            'what_youll_learn', 'practitioner_notes', 'shared_notes',
+            'practitioner_location', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'current_participants', 'participant_count', 'booking_count', 'spots_available', 'room', 'created_at', 'updated_at']
 
@@ -237,6 +238,7 @@ class ServiceSessionSerializer(serializers.ModelSerializer):
 class SessionBookingSerializer(serializers.Serializer):
     """Simplified booking serializer for session context"""
     id = serializers.IntegerField()
+    public_uuid = serializers.UUIDField()
     user_id = serializers.IntegerField(source='user.id')
     user_name = serializers.CharField(source='user.get_full_name')
     user_email = serializers.EmailField(source='user.email')
@@ -358,6 +360,7 @@ class ServiceSessionDetailSerializer(serializers.ModelSerializer):
             'max_participants', 'current_participants', 'booking_count', 'spots_available', 'waitlist_count',
             'sequence_number', 'status', 'room',
             'agenda', 'agenda_items', 'benefits', 'what_youll_learn',
+            'practitioner_notes', 'shared_notes',
             'practitioner_location',
             'bookings', 'recordings', 'my_booking', 'reschedule_info',
             'created_at', 'updated_at'

@@ -834,6 +834,8 @@ class ServiceSession(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     agenda = models.TextField(blank=True, null=True)
     what_youll_learn = models.TextField(blank=True, null=True, help_text="Describe what clients will learn or gain from this specific session")
+    practitioner_notes = models.TextField(blank=True, null=True, help_text="Private notes from practitioner about this session")
+    shared_notes = models.TextField(blank=True, null=True, help_text="Notes shared with all participants")
 
     # Location handling for in-person sessions
     practitioner_location = models.ForeignKey(

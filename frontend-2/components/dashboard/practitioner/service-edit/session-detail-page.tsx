@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -8,6 +8,7 @@ import {
   serviceSessionsRetrieveOptions,
   serviceSessionsMarkCompletedCreateMutation,
   serviceSessionsMarkInProgressCreateMutation,
+  serviceSessionsPartialUpdateMutation,
   servicesRetrieveOptions,
   recordingsPartialUpdateMutation,
 } from "@/src/client/@tanstack/react-query.gen"
@@ -114,13 +115,32 @@ export function SessionDetailPage({
     },
   })
 
+  const updateSessionMutation = useMutation({
+    ...serviceSessionsPartialUpdateMutation(),
+    onSuccess: () => {
+      toast({ title: "Saved", description: "Session updated successfully." })
+      refetch()
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to save", description: error?.body?.detail || error?.message || "Could not save", variant: "destructive" })
+    },
+  })
+
   // State
   const [activeTab, setActiveTab] = useState("participants")
   const [resources, setResources] = useState<any[]>([])
   const [selectedResource, setSelectedResource] = useState<any>(null)
   const [resourceViewerOpen, setResourceViewerOpen] = useState(false)
-  const [newNote, setNewNote] = useState("")
-  const [newSharedNote, setNewSharedNote] = useState("")
+  const [newNote, setNewNote] = useState((session as any)?.practitioner_notes || "")
+  const [newSharedNote, setNewSharedNote] = useState((session as any)?.shared_notes || "")
+
+  // Sync notes from session data when loaded
+  useEffect(() => {
+    if (session) {
+      setNewNote((session as any)?.practitioner_notes || "")
+      setNewSharedNote((session as any)?.shared_notes || "")
+    }
+  }, [session])
 
   const isAnyMutating = markCompletedMutation.isPending || markInProgressMutation.isPending
 
@@ -397,13 +417,15 @@ export function SessionDetailPage({
                   />
                   <Button
                     size="sm"
-                    disabled={!newNote.trim()}
+                    disabled={newNote === ((session as any)?.practitioner_notes || "") || updateSessionMutation.isPending}
                     onClick={() => {
-                      toast({ title: "Note saved", description: "Your private note has been saved." })
-                      setNewNote("")
+                      updateSessionMutation.mutate({
+                        path: { id: session.id },
+                        body: { practitioner_notes: newNote } as any,
+                      })
                     }}
                   >
-                    Save Note
+                    {updateSessionMutation.isPending ? "Saving..." : "Save Note"}
                   </Button>
                 </div>
 
@@ -421,13 +443,15 @@ export function SessionDetailPage({
                   />
                   <Button
                     size="sm"
-                    disabled={!newSharedNote.trim()}
+                    disabled={newSharedNote === ((session as any)?.shared_notes || "") || updateSessionMutation.isPending}
                     onClick={() => {
-                      toast({ title: "Shared note saved", description: "Your note has been shared with participants." })
-                      setNewSharedNote("")
+                      updateSessionMutation.mutate({
+                        path: { id: session.id },
+                        body: { shared_notes: newSharedNote } as any,
+                      })
                     }}
                   >
-                    Share Note
+                    {updateSessionMutation.isPending ? "Saving..." : "Save Shared Note"}
                   </Button>
                 </div>
               </TabsContent>
