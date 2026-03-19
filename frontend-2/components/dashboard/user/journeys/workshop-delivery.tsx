@@ -241,7 +241,7 @@ export default function WorkshopDelivery({
         return
       }
       const result = await conversationsCreate({
-        body: { participant_ids: [practitionerUserId] } as any,
+        body: { other_user_id: practitionerUserId } as any,
       })
       router.push(
         `/dashboard/user/messages?conversationId=${(result.data as any)?.id}`
