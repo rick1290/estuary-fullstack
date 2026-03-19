@@ -227,12 +227,15 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                     }
                 return Response(response_data)
 
+            # Strip sensitive room details on denial
+            response_data.pop('room', None)
             response_data['reason'] = 'No confirmed booking for this session'
-            return Response(response_data)
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
 
-        # Default: no access
+        # Default: no access — strip sensitive details
+        response_data.pop('room', None)
         response_data['reason'] = 'No valid access to this room'
-        return Response(response_data)
+        return Response(response_data, status=status.HTTP_403_FORBIDDEN)
     
     @action(detail=True, methods=['post'])
     def get_token(self, request, public_uuid=None):
@@ -248,16 +251,40 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         
-        # Determine user's role in this room
+        # Determine user's role and verify access
         user = request.user
         role = 'participant'  # Default role
-        
+        has_access = False
+
+        # Check if user is room creator
+        if room.created_by == user:
+            role = 'host'
+            has_access = True
+
         # Check if user is the practitioner/host
-        # All access now through service_session (booking FK removed from Room)
-        if room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
+        elif room.service_session and room.service_session.service.primary_practitioner and room.service_session.service.primary_practitioner.user == user:
             role = 'host'
-        elif room.created_by == user:
-            role = 'host'
+            has_access = True
+
+        # Check if user has a confirmed booking for this session
+        elif room.service_session:
+            from bookings.models import Booking
+            session = room.service_session
+            service = session.service
+
+            # Direct session booking (sessions, workshops)
+            if Booking.objects.filter(user=user, service_session=session, status='confirmed').exists():
+                has_access = True
+            # Course booking (linked via service)
+            elif service.service_type and service.service_type.code == 'course':
+                if Booking.objects.filter(user=user, service=service, status='confirmed').exists():
+                    has_access = True
+
+        if not has_access:
+            return Response(
+                {'detail': 'You do not have access to this room'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         # Use custom name if provided, otherwise user's full name
         participant_name = serializer.validated_data.get(

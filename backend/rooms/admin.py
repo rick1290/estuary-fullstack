@@ -67,7 +67,7 @@ class RoomAdmin(admin.ModelAdmin):
             'fields': ('livekit_room_name', 'livekit_room_sid')
         }),
         ('Relationships', {
-            'fields': ('booking', 'service_session')
+            'fields': ('service_session',)
         }),
         ('Room Settings', {
             'fields': ('empty_timeout', 'max_participants')

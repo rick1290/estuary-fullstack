@@ -417,15 +417,30 @@ class Booking(PublicModel):
 
         # Process refund if payment was made
         if self.payment_status == 'paid' and self.credits_allocated > 0:
-            from payments.tasks import process_refund_credits
+            from payments.tasks import process_refund_credits, process_stripe_refund
             # Calculate refund amount based on cancellation policy
             refund_amount_cents = self.calculate_refund_amount(canceled_by=canceled_by)
             if refund_amount_cents > 0:
+                # Refund credits portion back to user's credit balance
                 process_refund_credits.delay(
                     str(self.public_uuid),
                     refund_amount_cents,
                     reason or 'Booking canceled'
                 )
+
+                # Also refund the Stripe-charged portion if applicable
+                if self.order and self.order.stripe_payment_intent_id and self.order.total_amount_cents > 0:
+                    # Calculate what proportion of the refund should go to Stripe
+                    # e.g. service=$100, credits_used=$30, stripe_charge=$70
+                    # If full refund: refund $30 credits + $70 to Stripe
+                    # If partial (50%): refund $15 credits + $35 to Stripe
+                    refund_ratio = refund_amount_cents / max(self.credits_allocated, 1)
+                    stripe_refund_cents = int(self.order.total_amount_cents * refund_ratio)
+                    if stripe_refund_cents > 0:
+                        process_stripe_refund.delay(
+                            self.order.id,
+                            stripe_refund_cents
+                        )
 
             # Update payment_status
             if refund_amount_cents and refund_amount_cents > 0:

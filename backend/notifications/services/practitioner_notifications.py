@@ -21,6 +21,19 @@ class PractitionerNotificationService(BaseNotificationService):
     Handle all practitioner-related notifications.
     """
 
+    def _get_commission_rate(self, practitioner, service) -> Decimal:
+        """Get the actual commission rate for a practitioner and service."""
+        try:
+            from payments.commission_services import CommissionCalculator
+            calculator = CommissionCalculator()
+            return calculator.get_commission_rate(
+                practitioner=practitioner,
+                service_type=service.service_type if service else None
+            )
+        except Exception:
+            # Fallback if commission calculator fails
+            return Decimal('15.0')
+
     def _get_booking_location(self, booking) -> str:
         """
         Get location display string for a booking.
@@ -186,8 +199,8 @@ class PractitionerNotificationService(BaseNotificationService):
         # Calculate earnings - convert cents to dollars
         gross_amount_cents = booking.credits_allocated or 0
         gross_amount = Decimal(str(gross_amount_cents / 100.0))
-        # TODO: Get commission rate from subscription tier
-        commission_rate = Decimal('15.0')  # Default 15%
+        practitioner = booking.service.primary_practitioner if booking.service else None
+        commission_rate = self._get_commission_rate(practitioner, booking.service)
         commission_amount = gross_amount * commission_rate / Decimal('100')
         net_earnings = gross_amount - commission_amount
         
@@ -220,7 +233,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'gross_amount': f"${gross_amount:.2f}",
             'commission_amount': f"${commission_amount:.2f}",
             'net_earnings': f"${net_earnings:.2f}",
-            'commission_rate': 15.0,  # Default commission rate - TODO: Get from subscription tier
+            'commission_rate': float(commission_rate),
             'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
             'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
@@ -342,8 +355,7 @@ class PractitionerNotificationService(BaseNotificationService):
         
         # Calculate lost earnings
         gross_amount = booking.total_amount
-        # TODO: Get commission rate from subscription tier
-        commission_rate = Decimal('15.0')  # Default 15%
+        commission_rate = self._get_commission_rate(practitioner, service)
         commission_amount = gross_amount * commission_rate / 100
         lost_earnings = gross_amount - commission_amount
 
@@ -747,14 +759,22 @@ class PractitionerNotificationService(BaseNotificationService):
             avg_amount_cents=Avg('credits_allocated')
         )
         
-        # Convert cents to dollars
-        total_gross_cents = earnings_data['total_gross_cents'] or 0
-        total_gross = Decimal(str(total_gross_cents / 100.0))
-        
-        # Calculate commission (TODO: Get actual commission rate from subscription tier)
-        commission_rate = Decimal('15.0')  # Default 15%
-        total_commission = total_gross * commission_rate / Decimal('100')
-        total_net = total_gross - total_commission
+        # Use actual earnings transactions instead of recalculating with hardcoded rate
+        from payments.models import EarningsTransaction
+        actual_earnings = EarningsTransaction.objects.filter(
+            practitioner=practitioner,
+            created_at__gte=start_date,
+            created_at__lt=end_date,
+            status__in=['projected', 'pending', 'available', 'paid']
+        ).aggregate(
+            total_gross=Sum('gross_amount_cents'),
+            total_commission=Sum('commission_amount_cents'),
+            total_net=Sum('net_amount_cents')
+        )
+
+        total_gross = Decimal(str((actual_earnings['total_gross'] or 0) / 100.0))
+        total_commission = Decimal(str((actual_earnings['total_commission'] or 0) / 100.0))
+        total_net = Decimal(str((actual_earnings['total_net'] or 0) / 100.0))
         
         # Convert average from cents to dollars
         avg_cents = earnings_data['avg_amount_cents'] or 0

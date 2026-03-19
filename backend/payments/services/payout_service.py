@@ -122,19 +122,16 @@ class PayoutService:
             status='available'
         ).order_by('created_at')
         
-        # Select transactions up to payout amount
+        # Select transactions up to payout amount (only include fully-fitting transactions)
         selected_transactions = []
         accumulated_amount = 0
-        
+
         for transaction in available_transactions:
             if accumulated_amount + transaction.net_amount_cents <= payout_amount_cents:
                 selected_transactions.append(transaction)
                 accumulated_amount += transaction.net_amount_cents
             else:
-                # Partial transaction needed
-                if accumulated_amount < payout_amount_cents:
-                    selected_transactions.append(transaction)
-                    accumulated_amount = payout_amount_cents
+                # Transaction doesn't fit — stop here, remainder stays available
                 break
         
         if not selected_transactions:

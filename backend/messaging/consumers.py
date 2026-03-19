@@ -92,15 +92,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
             pass
 
     async def handle_chat_message(self, data):
-        content = data.get("content", "")
-        message_type = data.get("message_type", "text")
-        metadata = data.get("metadata", {})
-        
-        if not content and message_type == "text":
-            return
-        
-        # Create message in database
-        message = await self.create_message(content, message_type, metadata)
+        # Messages should be created via the REST API (POST /conversations/{id}/send_message/)
+        # which handles creation + WebSocket broadcast in one atomic flow.
+        # Accepting chat_message via WebSocket would create duplicates.
+        # If a client sends a chat_message via WebSocket, ignore it.
+        logger.warning(
+            f"Received chat_message via WebSocket from user {self.user.id} "
+            f"in conversation {self.conversation_id}. "
+            f"Messages should be sent via REST API."
+        )
+        return
         
         # Send message to conversation group
         user_name = await self.get_user_name()

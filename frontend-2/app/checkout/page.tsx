@@ -37,6 +37,49 @@ import { Switch } from "@/components/ui/switch"
 import PaymentMethodSelector from "@/components/checkout/payment-method-selector"
 import AddPaymentMethodModal from "@/components/checkout/add-payment-method-modal"
 
+function parseBookingDateTime(dateStr: string, timeStr: string, durationMinutes: number) {
+  // Parse date — supports ISO "2026-07-07" or formatted "Mon, Jul 07"
+  let baseDate: Date
+  if (dateStr.includes('-') && dateStr.length >= 10) {
+    baseDate = new Date(dateStr)
+  } else {
+    const monthMap: Record<string, number> = {
+      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+      Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+    }
+    const cleaned = dateStr.replace(/^[A-Za-z]+,\s*/, '')
+    const [monthStr, dayStr] = cleaned.split(' ')
+    baseDate = new Date(new Date().getFullYear(), monthMap[monthStr] ?? 0, parseInt(dayStr) || 1)
+  }
+
+  // Parse time — supports "2:30 PM" or "14:30"
+  let hours: number, minutes: number
+  if (timeStr.includes('AM') || timeStr.includes('PM')) {
+    const [time, period] = timeStr.split(' ')
+    const [h, m] = time.split(':')
+    hours = parseInt(h); minutes = parseInt(m)
+    if (period === 'PM' && hours !== 12) hours += 12
+    else if (period === 'AM' && hours === 12) hours = 0
+  } else {
+    const [h, m] = timeStr.split(':')
+    hours = parseInt(h); minutes = parseInt(m)
+  }
+
+  const start = new Date(baseDate)
+  start.setHours(hours, minutes, 0, 0)
+
+  // If in the past, assume next year (Dec→Jan edge case)
+  if (start < new Date()) start.setFullYear(start.getFullYear() + 1)
+
+  const end = new Date(start)
+  end.setMinutes(end.getMinutes() + durationMinutes)
+
+  return {
+    start_time: start.toISOString(),
+    end_time: end.toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  }
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -180,55 +223,10 @@ export default function CheckoutPage() {
       if (serviceType === 'session') {
         // For sessions, we need start and end time
         if (selectedDate && selectedTime) {
-          // Parse the formatted date string (e.g., "Mon, Jul 07")
-          // We need to add the current year since it's not included
-          const currentYear = new Date().getFullYear()
-          const [dayName, monthDate] = selectedDate.split(', ')
-          const dateWithYear = `${monthDate}, ${currentYear}`
-          
-          // Create the date object with the current year
-          const baseDate = new Date(dateWithYear)
-          
-          // Parse the time (e.g., "2:30 PM" or "14:30")
-          let hours: number, minutes: number
-          
-          if (selectedTime.includes('AM') || selectedTime.includes('PM')) {
-            // 12-hour format with AM/PM
-            const [time, period] = selectedTime.split(' ')
-            const [hourStr, minuteStr] = time.split(':')
-            hours = parseInt(hourStr)
-            minutes = parseInt(minuteStr)
-            
-            // Convert to 24-hour format
-            if (period === 'PM' && hours !== 12) {
-              hours += 12
-            } else if (period === 'AM' && hours === 12) {
-              hours = 0
-            }
-          } else {
-            // 24-hour format
-            const [hourStr, minuteStr] = selectedTime.split(':')
-            hours = parseInt(hourStr)
-            minutes = parseInt(minuteStr)
-          }
-          
-          // Create the full datetime
-          const startDateTime = new Date(baseDate)
-          startDateTime.setHours(hours, minutes, 0, 0)
-
-          // If the parsed date is in the past, it's likely next year (Dec→Jan edge case)
-          if (startDateTime < new Date()) {
-            startDateTime.setFullYear(startDateTime.getFullYear() + 1)
-          }
-
-          // Calculate end time based on service duration
-          const durationMinutes = serviceData.duration_minutes || 60
-          const endDateTime = new Date(startDateTime)
-          endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
-
-          bookingDetails.start_time = startDateTime.toISOString()
-          bookingDetails.end_time = endDateTime.toISOString()
-          bookingDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+          const parsed = parseBookingDateTime(selectedDate, selectedTime, serviceData.duration_minutes || 60)
+          bookingDetails.start_time = parsed.start_time
+          bookingDetails.end_time = parsed.end_time
+          bookingDetails.timezone = parsed.timezone
         }
       } else if (serviceType === 'workshop') {
         // For workshops, we need the service session ID
@@ -238,60 +236,18 @@ export default function CheckoutPage() {
       } else if (serviceType === 'package' || serviceType === 'bundle') {
         // For packages and bundles, optionally include first session time
         if (selectedDate && selectedTime) {
-          // Parse the formatted date string (e.g., "Mon, Jul 07")
-          const currentYear = new Date().getFullYear()
-          const [dayName, monthDate] = selectedDate.split(', ')
-          const dateWithYear = `${monthDate}, ${currentYear}`
-          
-          // Create the date object with the current year
-          const baseDate = new Date(dateWithYear)
-          
-          // Parse the time (e.g., "2:30 PM" or "14:30")
-          let hours: number, minutes: number
-          
-          if (selectedTime.includes('AM') || selectedTime.includes('PM')) {
-            // 12-hour format with AM/PM
-            const [time, period] = selectedTime.split(' ')
-            const [hourStr, minuteStr] = time.split(':')
-            hours = parseInt(hourStr)
-            minutes = parseInt(minuteStr)
-            
-            // Convert to 24-hour format
-            if (period === 'PM' && hours !== 12) {
-              hours += 12
-            } else if (period === 'AM' && hours === 12) {
-              hours = 0
-            }
-          } else {
-            // 24-hour format
-            const [hourStr, minuteStr] = selectedTime.split(':')
-            hours = parseInt(hourStr)
-            minutes = parseInt(minuteStr)
-          }
-          
-          // Create the full datetime
-          const startDateTime = new Date(baseDate)
-          startDateTime.setHours(hours, minutes, 0, 0)
-
-          // If the parsed date is in the past, it's likely next year (Dec→Jan edge case)
-          if (startDateTime < new Date()) {
-            startDateTime.setFullYear(startDateTime.getFullYear() + 1)
-          }
-
-          // Calculate end time based on service duration
-          const durationMinutes = serviceData.duration_minutes || 60
-          const endDateTime = new Date(startDateTime)
-          endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
-
-          bookingDetails.start_time = startDateTime.toISOString()
-          bookingDetails.end_time = endDateTime.toISOString()
+          const parsed = parseBookingDateTime(selectedDate, selectedTime, serviceData.duration_minutes || 60)
+          bookingDetails.start_time = parsed.start_time
+          bookingDetails.end_time = parsed.end_time
           bookingDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
         }
       }
 
       // Use direct payment with saved payment method
+      // Generate idempotency key to prevent double-charges
+      const idempotencyKey = `${serviceId}-${Date.now()}-${Math.random().toString(36).slice(2)}`
       await directPayment.mutateAsync({
-        body: bookingDetails
+        body: { ...bookingDetails, idempotency_key: idempotencyKey }
       })
     } catch (error) {
       // Error is handled by onError

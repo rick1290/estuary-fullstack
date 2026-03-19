@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import {
   LiveKitRoom,
   GridLayout,
@@ -18,7 +18,7 @@ import {
   formatChatMessageLinks,
   TrackReferenceOrPlaceholder
 } from '@livekit/components-react';
-import { Track, ConnectionState, RemoteParticipant } from 'livekit-client';
+import { Track, ConnectionState, RemoteParticipant, RoomEvent } from 'livekit-client';
 import '@livekit/components-styles';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -176,6 +176,9 @@ export function VideoRoom({
 
           {/* Connection State Notifications */}
           <ConnectionStateToast />
+
+          {/* Handle host control messages (mute/unmute requests) */}
+          <HostControlHandler />
 
           {/* Recording Indicator */}
           <RecordingIndicator isRecording={isRecording} />
@@ -871,4 +874,45 @@ function EndSessionButton({ onEndSession }: { onEndSession: () => Promise<void> 
       End Session
     </Button>
   );
+}
+
+// Handles incoming data channel messages from host (mute/unmute requests)
+function HostControlHandler() {
+  const room = useRoomContext();
+
+  useEffect(() => {
+    const handleDataReceived = (payload: Uint8Array) => {
+      try {
+        const message = JSON.parse(new TextDecoder().decode(payload));
+        const localIdentity = room.localParticipant.identity;
+
+        // Only act on messages targeted at this participant
+        if (message.participantId !== localIdentity) return;
+
+        switch (message.type) {
+          case 'mute_request':
+            room.localParticipant.setMicrophoneEnabled(false);
+            break;
+          case 'unmute_request':
+            room.localParticipant.setMicrophoneEnabled(true);
+            break;
+          case 'disable_video_request':
+            room.localParticipant.setCameraEnabled(false);
+            break;
+          case 'enable_video_request':
+            room.localParticipant.setCameraEnabled(true);
+            break;
+        }
+      } catch {
+        // Ignore non-JSON data messages (e.g. chat)
+      }
+    };
+
+    room.on(RoomEvent.DataReceived, handleDataReceived);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleDataReceived);
+    };
+  }, [room]);
+
+  return null;
 }

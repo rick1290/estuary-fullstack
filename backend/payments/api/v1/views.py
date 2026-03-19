@@ -238,7 +238,16 @@ class CheckoutViewSet(viewsets.GenericViewSet):
         """Process direct payment with saved payment method using orchestrator"""
         serializer = DirectPaymentSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        
+
+        # Idempotency: prevent double-charges from duplicate submissions
+        idempotency_key = request.data.get('idempotency_key')
+        if idempotency_key:
+            from django.core.cache import cache
+            cache_key = f"payment_idempotency:{request.user.id}:{idempotency_key}"
+            cached_result = cache.get(cache_key)
+            if cached_result:
+                return Response(cached_result)
+
         try:
             # Use fast orchestrator by default (can be controlled by feature flag)
             use_fast_checkout = True  # TODO: Move to settings or feature flag
@@ -269,14 +278,20 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                     'client_secret': result.client_secret
                 })
             elif result.success:
-                return Response({
+                response_data = {
                     'status': 'success',
                     'order_id': str(result.order.public_uuid),
                     'booking_id': str(result.booking.public_uuid) if result.booking else None,
                     'payment_intent_id': result.payment_intent.id if result.payment_intent else None,
                     'amount_charged': result.order.total_amount_cents / 100,
                     'credits_applied': result.order.credits_applied_cents / 100
-                })
+                }
+                # Cache successful result for idempotency (1 hour TTL)
+                if idempotency_key:
+                    from django.core.cache import cache
+                    cache_key = f"payment_idempotency:{request.user.id}:{idempotency_key}"
+                    cache.set(cache_key, response_data, timeout=3600)
+                return Response(response_data)
             else:
                 return Response({
                     'status': 'error',

@@ -33,20 +33,20 @@ def update_available_earnings():
 
 
 @shared_task(name='process-refund-credits')
-def process_refund_credits(booking_id, refund_amount_cents, reason='Booking canceled'):
+def process_refund_credits(booking_uuid, refund_amount_cents, reason='Booking canceled'):
     """
     Process credit refunds when a booking is canceled.
-    
+
     Args:
-        booking_id: ID of the canceled booking
+        booking_uuid: Public UUID of the canceled booking
         refund_amount_cents: Amount to refund in cents
         reason: Reason for the refund
     """
     try:
         from bookings.models import Booking
         from payments.services import CreditService, EarningsService
-        
-        booking = Booking.objects.get(id=booking_id)
+
+        booking = Booking.objects.get(public_uuid=booking_uuid)
         
         # Use CreditService for refund
         credit_service = CreditService()
@@ -84,6 +84,47 @@ def process_refund_credits(booking_id, refund_amount_cents, reason='Booking canc
             'success': False,
             'error': str(e)
         }
+
+
+@shared_task(name='process-stripe-refund')
+def process_stripe_refund(order_id, refund_amount_cents):
+    """
+    Refund the Stripe-charged portion of an order.
+
+    Args:
+        order_id: Internal ID of the Order
+        refund_amount_cents: Amount to refund to Stripe in cents
+    """
+    try:
+        from payments.models import Order
+        from payments.services import PaymentService
+
+        order = Order.objects.get(id=order_id)
+
+        if not order.stripe_payment_intent_id:
+            logger.warning(f"Order {order_id} has no Stripe payment intent, skipping refund")
+            return {'success': True, 'message': 'No Stripe charge to refund'}
+
+        payment_service = PaymentService()
+        result = payment_service.refund_payment(order, amount_cents=refund_amount_cents)
+
+        logger.info(
+            f"Stripe refund processed for order {order_id}. "
+            f"Amount: ${refund_amount_cents / 100:.2f}, Refund ID: {result.get('refund_id')}"
+        )
+
+        return {
+            'success': True,
+            'refund_id': result.get('refund_id'),
+            'amount_refunded': refund_amount_cents / 100
+        }
+
+    except Exception as e:
+        logger.error(
+            f"Error processing Stripe refund for order {order_id}: {str(e)}",
+            exc_info=True
+        )
+        return {'success': False, 'error': str(e)}
 
 
 @shared_task(name='transition-projected-to-pending')
