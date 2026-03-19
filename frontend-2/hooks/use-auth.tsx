@@ -58,60 +58,81 @@ export function useAuth() {
   const retryCountRef = useRef(0)
   const maxRetries = 1
 
+  // Guard against re-entrant logout/refresh calls
+  const isHandlingErrorRef = useRef(false)
+
   // Handle logout using useCallback to avoid dependency issues
   const logout = useCallback(async () => {
+    if (isHandlingErrorRef.current) return // Prevent re-entrant calls
     try {
+      isHandlingErrorRef.current = true
       localStorage.removeItem("userRole")
-      retryCountRef.current = 0 // Reset retry count on logout
+      retryCountRef.current = 0
       await signOut({ redirect: false })
       router.push("/")
     } catch (error) {
-      console.error("Logout error:", error)
+      // Silently fail — don't log or retry, prevents cascade
+    } finally {
+      isHandlingErrorRef.current = false
     }
   }, [router])
 
-  // Handle session refresh with retry logic
+  // Handle session refresh with retry logic — guarded against infinite loops
   const handleSessionError = useCallback(async () => {
-    // If we haven't exceeded retries, try to refresh once more
-    if (retryCountRef.current < maxRetries) {
-      retryCountRef.current++
-      console.log(`Session error detected, attempting refresh (attempt ${retryCountRef.current}/${maxRetries})...`)
+    if (isHandlingErrorRef.current) return false // Already handling
+    isHandlingErrorRef.current = true
 
-      try {
-        // Force a session refresh
-        const newSession = await update()
-
-        if (newSession && !newSession.error) {
-          console.log("Session refreshed successfully after retry")
-          retryCountRef.current = 0 // Reset on success
-          return true
+    try {
+      if (retryCountRef.current < maxRetries) {
+        retryCountRef.current++
+        try {
+          const newSession = await update()
+          if (newSession && !newSession.error) {
+            retryCountRef.current = 0
+            return true
+          }
+        } catch {
+          // Refresh failed — don't cascade
         }
-      } catch (error) {
-        console.error("Session refresh retry failed:", error)
       }
+
+      // Exhausted retries — logout silently
+      localStorage.removeItem("userRole")
+      retryCountRef.current = 0
+      try {
+        await signOut({ redirect: false })
+        router.push("/")
+      } catch {
+        // If even signOut fails (network down), just redirect
+        router.push("/")
+      }
+      return false
+    } finally {
+      isHandlingErrorRef.current = false
     }
+  }, [update, router])
 
-    // If we've exhausted retries or refresh failed, logout
-    console.error("Session refresh failed after retries, logging out...")
-    await logout()
-    return false
-  }, [update, logout])
-
-  // Listen for 401 errors from API calls
+  // Listen for 401 errors from API calls — debounced to prevent floods
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null
+
     const handleUnauthorized = () => {
-      console.warn("Received unauthorized event from API")
-      // Don't immediately logout - the session might still be valid
-      // Just trigger a session check
-      update()
+      // Debounce: only handle once per 5 seconds
+      if (debounceTimer) return
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null
+      }, 5000)
+
+      // Don't call update() directly — it can trigger more 401s
+      // Instead, just let the session effect handle it on next render
     }
 
     window.addEventListener('auth:unauthorized', handleUnauthorized)
-
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized)
+      if (debounceTimer) clearTimeout(debounceTimer)
     }
-  }, [update])
+  }, [])
 
   // Convert session user to our User type and handle errors
   useEffect(() => {
