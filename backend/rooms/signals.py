@@ -255,12 +255,32 @@ def handle_room_started(room):
     Note: Session lifecycle (in_progress, completed) is tracked on ServiceSession,
     not on Booking. Booking status remains 'confirmed' throughout the session.
     """
-    # Update service session if applicable
+    # Update service session if applicable — but ONLY if we're within the
+    # join window (15 min before start). Room creation triggers room_started
+    # immediately, which would incorrectly mark future sessions as in_progress.
     if room.service_session:
-        # Update ServiceSession with actual start time and status
-        room.service_session.actual_start_time = timezone.now()
-        room.service_session.status = 'in_progress'
-        room.service_session.save(update_fields=['actual_start_time', 'status'])
+        session = room.service_session
+        now = timezone.now()
+        start_time = session.start_time
+
+        if start_time:
+            from datetime import timedelta
+            join_window_start = start_time - timedelta(minutes=15)
+            if now >= join_window_start:
+                session.actual_start_time = now
+                session.status = 'in_progress'
+                session.save(update_fields=['actual_start_time', 'status'])
+                logger.info(f"Room {room.id} started - ServiceSession {session.id} marked in_progress")
+            else:
+                logger.info(
+                    f"Room {room.id} started but session {session.id} starts at {start_time} "
+                    f"(too early, keeping status={session.status})"
+                )
+        else:
+            # No start time — allow marking in_progress
+            session.actual_start_time = now
+            session.status = 'in_progress'
+            session.save(update_fields=['actual_start_time', 'status'])
 
     # Send notifications to participants
     send_room_started_notifications(room)
