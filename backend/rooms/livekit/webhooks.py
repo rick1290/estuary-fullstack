@@ -262,10 +262,30 @@ class LiveKitWebhookHandler:
 
                     if is_host:
                         now = timezone.now()
-                        session.status = 'in_progress'
-                        session.actual_start_time = now
-                        session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
-                        logger.info(f"[PARTICIPANT_JOINED] Host joined - ServiceSession {session.id} marked in_progress")
+                        # Only mark in_progress if session start time is within the join window
+                        # (15 minutes before start) to prevent premature status changes
+                        # during room creation
+                        start_time = session.start_time
+                        if start_time:
+                            from datetime import timedelta
+                            join_window_start = start_time - timedelta(minutes=15)
+                            if now < join_window_start:
+                                logger.info(
+                                    f"[PARTICIPANT_JOINED] Host joined but session {session.id} "
+                                    f"starts at {start_time} (too early to mark in_progress, "
+                                    f"join window opens at {join_window_start})"
+                                )
+                            else:
+                                session.status = 'in_progress'
+                                session.actual_start_time = now
+                                session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
+                                logger.info(f"[PARTICIPANT_JOINED] Host joined - ServiceSession {session.id} marked in_progress")
+                        else:
+                            # No start time set — allow marking in_progress
+                            session.status = 'in_progress'
+                            session.actual_start_time = now
+                            session.save(update_fields=['status', 'actual_start_time', 'updated_at'])
+                            logger.info(f"[PARTICIPANT_JOINED] Host joined (no start_time) - ServiceSession {session.id} marked in_progress")
                     else:
                         logger.info(f"[PARTICIPANT_JOINED] Non-host participant joined, session stays scheduled")
 
