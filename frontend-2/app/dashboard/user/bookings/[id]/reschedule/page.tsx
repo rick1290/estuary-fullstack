@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { bookingsRetrieveOptions, bookingsRescheduleCreateMutation } from "@/src/client/@tanstack/react-query.gen"
 import { bookingsCheckAvailabilityCreate } from "@/src/client"
 import { toast } from "sonner"
@@ -22,6 +22,7 @@ import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 export default function RescheduleBookingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: Date; end: Date } | null>(null)
@@ -37,7 +38,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
 
   // Fetch booking details from API
   const { data: booking, isLoading, error } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: id } }),
   })
 
   // Reschedule mutation
@@ -46,8 +47,10 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
     onSuccess: () => {
       setIsSuccess(true)
       toast.success("Booking rescheduled successfully!")
+      queryClient.invalidateQueries({ queryKey: ["journeys"] })
+      queryClient.invalidateQueries({ queryKey: ["bookings"] })
       setTimeout(() => {
-        router.push(`/dashboard/user/bookings/${id}`)
+        router.push(`/dashboard/user/journeys/${id}`)
       }, 2000)
     },
     onError: (error: any) => {
@@ -112,8 +115,8 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
     } else if (!isLoading && booking && !isReschedulable) {
       toast.error("This booking cannot be rescheduled less than 24 hours before the session")
       setTimeout(() => {
-        router.push(`/dashboard/user/bookings/${id}`)
-      }, 3000)
+        router.push(`/dashboard/user/journeys/${id}`)
+      }, 2000)
     }
   }, [booking, isLoading, isReschedulable, id, router])
 
@@ -171,7 +174,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
     if (!selectedTimeSlot) return
 
     rescheduleBooking({
-      path: { id },
+      path: { public_uuid: id },
       body: {
         start_time: selectedTimeSlot.start,
         end_time: selectedTimeSlot.end,
@@ -212,7 +215,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => router.push(`/dashboard/user/bookings/${id}`)}
+          onClick={() => router.push(`/dashboard/user/journeys/${id}`)}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -378,7 +381,7 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
               <CardFooter className="flex gap-4">
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/dashboard/user/bookings/${id}`)}
+                  onClick={() => router.push(`/dashboard/user/journeys/${id}`)}
                   disabled={isSubmitting}
                   className="flex-1"
                 >

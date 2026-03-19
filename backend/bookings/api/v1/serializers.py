@@ -433,12 +433,22 @@ class BookingScheduleSerializer(serializers.Serializer):
         if data['start_time'] < timezone.now():
             raise serializers.ValidationError("Cannot schedule in the past")
 
-        # Validate duration matches service duration
-        service_duration = booking.service.duration_minutes
+        # Validate duration matches service or session duration
         new_duration = int((data['end_time'] - data['start_time']).total_seconds() / 60)
-        if new_duration != service_duration:
+        expected_duration = None
+
+        # Prefer the draft session's duration if it's a sane value
+        if booking.service_session and booking.service_session.duration and booking.service_session.duration < 10000:
+            expected_duration = booking.service_session.duration
+
+        # Fall back to service duration if reasonable (not MAX_INT placeholder)
+        if not expected_duration and booking.service.duration_minutes and booking.service.duration_minutes < 10000:
+            expected_duration = booking.service.duration_minutes
+
+        # Only enforce if we have a reasonable expected duration
+        if expected_duration and new_duration != expected_duration:
             raise serializers.ValidationError(
-                f"Duration must match service duration ({service_duration} minutes)"
+                f"Duration must match service duration ({expected_duration} minutes)"
             )
 
         # TODO: Check practitioner availability for time slot
@@ -634,7 +644,7 @@ class JourneyListItemSerializer(serializers.Serializer):
     next_session_time = serializers.DateTimeField(allow_null=True)
     next_session_title = serializers.CharField(allow_null=True, allow_blank=True)
     progress_percentage = serializers.FloatField()
-    status = serializers.ChoiceField(choices=['upcoming', 'active', 'completed'])
+    status = serializers.ChoiceField(choices=['unscheduled', 'upcoming', 'active', 'completed'])
 
 
 class JourneyListResponseSerializer(serializers.Serializer):

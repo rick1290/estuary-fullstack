@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { bookingsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { bookingsCheckAvailabilityCreate, bookingsScheduleCreate } from "@/src/client"
 import { toast } from "sonner"
@@ -21,6 +21,7 @@ import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 export default function ScheduleBookingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: Date; end: Date } | null>(null)
@@ -36,14 +37,14 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
 
   // Fetch booking details from API
   const { data: booking, isLoading, error } = useQuery({
-    ...bookingsRetrieveOptions({ path: { id } }),
+    ...bookingsRetrieveOptions({ path: { public_uuid: id } }),
   })
 
   // Schedule mutation
   const { mutate: scheduleBooking, isPending: isSubmitting } = useMutation({
     mutationFn: async (data: { start_time: Date; end_time: Date }) => {
       const response = await bookingsScheduleCreate({
-        path: { id },
+        path: { public_uuid: id },
         body: {
           start_time: data.start_time,
           end_time: data.end_time,
@@ -54,8 +55,11 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
     onSuccess: () => {
       setIsSuccess(true)
       toast.success("Booking scheduled successfully!")
+      // Invalidate journey caches so the detail page shows fresh data
+      queryClient.invalidateQueries({ queryKey: ["journeys"] })
+      queryClient.invalidateQueries({ queryKey: ["bookings"] })
       setTimeout(() => {
-        router.push(`/dashboard/user/bookings/${id}`)
+        router.push(`/dashboard/user/journeys/${id}`)
       }, 2000)
     },
     onError: (error: any) => {
@@ -64,10 +68,11 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
     },
   })
 
-  // Check if booking is schedulable (draft with no start_time)
+  // Check if booking is schedulable (no start_time and not canceled/completed)
   const isSchedulable = React.useMemo(() => {
     if (!booking) return false
-    return !booking.service_session?.start_time && (booking.status === 'draft' || booking.status === 'pending_payment')
+    if (booking.status === 'canceled' || booking.status === 'completed') return false
+    return !booking.service_session?.start_time
   }, [booking])
 
   // Initialize dates
@@ -115,8 +120,8 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
     } else if (!isLoading && booking && !isSchedulable) {
       toast.error("This booking is already scheduled")
       setTimeout(() => {
-        router.push(`/dashboard/user/bookings/${id}`)
-      }, 3000)
+        router.push(`/dashboard/user/journeys/${id}`)
+      }, 2000)
     }
   }, [booking, isLoading, isSchedulable, id, router])
 
@@ -214,7 +219,7 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push(`/dashboard/user/bookings/${id}`)}
+          onClick={() => router.push(`/dashboard/user/journeys/${id}`)}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -353,7 +358,7 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
               <CardFooter className="flex gap-4">
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/dashboard/user/bookings/${id}`)}
+                  onClick={() => router.push(`/dashboard/user/journeys/${id}`)}
                   disabled={isSubmitting}
                   className="flex-1"
                 >

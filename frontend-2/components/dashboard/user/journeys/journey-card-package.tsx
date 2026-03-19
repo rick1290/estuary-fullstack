@@ -1,7 +1,7 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Calendar, ChevronRight, Layers } from "lucide-react"
+import { Calendar, CalendarClock, ChevronRight, Layers } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 
@@ -28,7 +28,11 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
       href={`/dashboard/user/journeys/${journey.journey_id}`}
       className="block group"
     >
-      <div className="flex gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 hover:shadow-md transition-all">
+      <div className={`flex gap-4 p-4 bg-white border rounded-xl hover:shadow-md transition-all ${
+        needs_scheduling > 0 && journey.status === "unscheduled"
+          ? "border-amber-200 hover:border-amber-300"
+          : "border-sage-200/60 hover:border-sage-300"
+      }`}>
         {/* Image */}
         <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
           {journey.service_image_url ? (
@@ -90,7 +94,8 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
               </span>
             )}
             {needs_scheduling > 0 && (
-              <span className="text-amber-600 font-medium">
+              <span className="flex items-center gap-1 text-amber-600 font-medium">
+                <CalendarClock className="h-3 w-3" />
                 {needs_scheduling} need{needs_scheduling === 1 ? "s" : ""} scheduling
               </span>
             )}
@@ -108,8 +113,9 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
                 Completed
               </span>
             ) : needs_scheduling > 0 ? (
-              <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                Action Needed
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Schedule
               </span>
             ) : (
               <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-100 text-sage-700">

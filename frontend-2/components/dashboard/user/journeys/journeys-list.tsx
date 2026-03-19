@@ -6,10 +6,10 @@ import JourneyCard from "./journey-card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, CalendarPlus } from "lucide-react"
+import { AlertCircle, CalendarPlus, CalendarClock } from "lucide-react"
 import Link from "next/link"
 
-type TabValue = "all" | "active" | "upcoming" | "completed"
+type TabValue = "all" | "upcoming" | "completed" | "unscheduled"
 
 const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
   { value: "all", label: "All" },
@@ -30,8 +30,8 @@ export default function JourneysList() {
 
   const {
     journeys,
+    unscheduledJourneys,
     upcomingJourneys,
-    activeJourneys,
     completedJourneys,
     isLoading,
     error,
@@ -41,13 +41,13 @@ export default function JourneysList() {
     () => filterJourneys(journeys, activeFilter),
     [journeys, activeFilter]
   )
+  const filteredUnscheduled = useMemo(
+    () => filterJourneys(unscheduledJourneys, activeFilter),
+    [unscheduledJourneys, activeFilter]
+  )
   const filteredUpcoming = useMemo(
     () => filterJourneys(upcomingJourneys, activeFilter),
     [upcomingJourneys, activeFilter]
-  )
-  const filteredActive = useMemo(
-    () => filterJourneys(activeJourneys, activeFilter),
-    [activeJourneys, activeFilter]
   )
   const filteredCompleted = useMemo(
     () => filterJourneys(completedJourneys, activeFilter),
@@ -120,21 +120,29 @@ export default function JourneysList() {
               )}
             </TabsTrigger>
             <TabsTrigger
-              value="active"
-              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors"
-            >
-              Active
-              {activeJourneys.length > 0 && (
-                <span className="ml-1 text-[10px] opacity-70">
-                  ({activeJourneys.length})
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
               value="upcoming"
               className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors"
             >
               Upcoming
+              {upcomingJourneys.length > 0 && (
+                <span className="ml-1 text-[10px] opacity-70">
+                  ({upcomingJourneys.length})
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="unscheduled"
+              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:border-amber-500 transition-colors"
+            >
+              {unscheduledJourneys.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5 data-[state=active]:bg-white" />
+              )}
+              Unscheduled
+              {unscheduledJourneys.length > 0 && (
+                <span className="ml-1 text-[10px] opacity-70">
+                  ({unscheduledJourneys.length})
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="completed"
@@ -170,26 +178,34 @@ export default function JourneysList() {
               subtext="Book a session, course, or workshop to start your wellness journey."
             />
           ) : (
-            <div className="space-y-2">
-              {filteredAll.map((journey) => (
-                <JourneyCard key={journey.journey_id} journey={journey} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
+            <div className="space-y-5">
+              {/* Unscheduled banner — sticky at top when viewing All */}
+              {filteredUnscheduled.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <h3 className="text-[12px] font-medium tracking-wider uppercase text-amber-700">
+                      Needs Scheduling ({filteredUnscheduled.length})
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {filteredUnscheduled.map((journey) => (
+                      <JourneyCard key={journey.journey_id} journey={journey} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-        {/* Active tab */}
-        <TabsContent value="active" className="mt-5">
-          {filteredActive.length === 0 ? (
-            <EmptyState
-              message="No active journeys"
-              subtext="In-progress courses, packages, and current sessions appear here."
-            />
-          ) : (
-            <div className="space-y-2">
-              {filteredActive.map((journey) => (
-                <JourneyCard key={journey.journey_id} journey={journey} />
-              ))}
+              {/* Remaining journeys */}
+              {filteredAll.filter((j) => j.status !== "unscheduled").length > 0 && (
+                <div className="space-y-2">
+                  {filteredAll
+                    .filter((j) => j.status !== "unscheduled")
+                    .map((journey) => (
+                      <JourneyCard key={journey.journey_id} journey={journey} />
+                    ))}
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
@@ -220,6 +236,22 @@ export default function JourneysList() {
           ) : (
             <div className="space-y-2">
               {filteredCompleted.map((journey) => (
+                <JourneyCard key={journey.journey_id} journey={journey} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Unscheduled tab */}
+        <TabsContent value="unscheduled" className="mt-5">
+          {filteredUnscheduled.length === 0 ? (
+            <EmptyState
+              message="Nothing to schedule"
+              subtext="When you purchase packages or bundles, unscheduled sessions appear here."
+            />
+          ) : (
+            <div className="space-y-2">
+              {filteredUnscheduled.map((journey) => (
                 <JourneyCard key={journey.journey_id} journey={journey} />
               ))}
             </div>

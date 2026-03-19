@@ -1,7 +1,7 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Calendar, ChevronRight, User } from "lucide-react"
+import { Calendar, CalendarClock, ChevronRight, User } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 
@@ -21,6 +21,7 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
     ? toDate(journey.next_session_time)
     : null
   const isCompleted = journey.status === "completed"
+  const isUnscheduled = journey.status === "unscheduled"
   const isUpcoming = nextSessionTime && nextSessionTime > new Date()
 
   return (
@@ -28,7 +29,11 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
       href={`/dashboard/user/journeys/${journey.journey_id}`}
       className="block group"
     >
-      <div className="flex gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 hover:shadow-md transition-all">
+      <div className={`flex gap-4 p-4 bg-white border rounded-xl hover:shadow-md transition-all ${
+        isUnscheduled
+          ? "border-amber-200 hover:border-amber-300"
+          : "border-sage-200/60 hover:border-sage-300"
+      }`}>
         {/* Image */}
         <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
           {journey.service_image_url ? (
@@ -61,29 +66,38 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
             </div>
           )}
 
-          {/* Line 3: Date + meta */}
-          <div className="flex items-center gap-2 mt-2 text-[12px] text-olive-500">
-            {nextSessionTime && (
-              <>
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {format(nextSessionTime, "EEE, MMM d")}
-                </span>
-                <span>·</span>
-                <span>{format(nextSessionTime, "h:mm a")}</span>
-              </>
-            )}
-            {journey.service_duration_minutes && (
-              <>
-                <span>·</span>
-                <span>{journey.service_duration_minutes} min</span>
-              </>
-            )}
-            {journey.service_location_type && (
-              <>
-                <span>·</span>
-                <span className="capitalize">{journey.service_location_type}</span>
-              </>
+          {/* Line 3: Date + meta OR scheduling prompt */}
+          <div className="flex items-center gap-2 mt-2 text-[12px]">
+            {isUnscheduled ? (
+              <span className="flex items-center gap-1 text-amber-600 font-medium">
+                <CalendarClock className="h-3 w-3" />
+                Pick a date &amp; time to get started
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 text-olive-500">
+                {nextSessionTime && (
+                  <>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {format(nextSessionTime, "EEE, MMM d")}
+                    </span>
+                    <span>·</span>
+                    <span>{format(nextSessionTime, "h:mm a")}</span>
+                  </>
+                )}
+                {journey.service_duration_minutes && (
+                  <>
+                    <span>·</span>
+                    <span>{journey.service_duration_minutes} min</span>
+                  </>
+                )}
+                {journey.service_location_type && (
+                  <>
+                    <span>·</span>
+                    <span className="capitalize">{journey.service_location_type}</span>
+                  </>
+                )}
+              </span>
             )}
           </div>
         </div>
@@ -94,7 +108,12 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
             <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-50 text-sage-600">
               Session
             </span>
-            {isCompleted ? (
+            {isUnscheduled ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Schedule
+              </span>
+            ) : isCompleted ? (
               <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-olive-100 text-olive-600">
                 Completed
               </span>

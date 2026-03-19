@@ -54,6 +54,11 @@ export function useJourneys() {
     return items.filter((item: any) => item?.journey_id) as JourneyListItem[]
   }, [data])
 
+  const unscheduledJourneys = useMemo(
+    () => journeys.filter((j) => j.status === "unscheduled"),
+    [journeys]
+  )
+
   const upcomingJourneys = useMemo(
     () => journeys.filter((j) => j.status === "upcoming"),
     [journeys]
@@ -71,6 +76,7 @@ export function useJourneys() {
 
   return {
     journeys,
+    unscheduledJourneys,
     upcomingJourneys,
     activeJourneys,
     completedJourneys,

@@ -159,7 +159,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
     
     @action(detail=True, methods=['post'])
-    def confirm(self, request, pk=None):
+    def confirm(self, request, public_uuid=None):
         """Confirm booking after payment"""
         booking = self.get_object()
         
@@ -180,7 +180,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
+    def cancel(self, request, public_uuid=None):
         """Cancel booking with reason"""
         booking = self.get_object()
         serializer = BookingStatusChangeSerializer(
@@ -201,7 +201,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
     
     @action(detail=True, methods=['post'], permission_classes=[IsPractitioner])
-    def complete(self, request, pk=None):
+    def complete(self, request, public_uuid=None):
         """Mark booking as completed (practitioner only)"""
         booking = self.get_object()
         
@@ -224,7 +224,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
     
     @action(detail=True, methods=['post'], permission_classes=[IsPractitioner])
-    def no_show(self, request, pk=None):
+    def no_show(self, request, public_uuid=None):
         """Mark booking as no-show (practitioner only)"""
         booking = self.get_object()
         
@@ -247,7 +247,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=['post'])
-    def schedule(self, request, pk=None):
+    def schedule(self, request, public_uuid=None):
         """Schedule an unscheduled booking (sets initial time on its ServiceSession)"""
         booking = self.get_object()
         serializer = BookingScheduleSerializer(
@@ -322,7 +322,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=['post'])
-    def reschedule(self, request, pk=None):
+    def reschedule(self, request, public_uuid=None):
         """
         Reschedule booking to new time.
 
@@ -381,7 +381,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
     
     @action(detail=True, methods=['post', 'get'])
-    def notes(self, request, pk=None):
+    def notes(self, request, public_uuid=None):
         """Get or add notes to booking"""
         booking = self.get_object()
         
@@ -613,7 +613,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=['get'], url_path='journey')
-    def journey(self, request, pk=None):
+    def journey(self, request, public_uuid=None):
         """
         Get all bookings related to this booking's journey.
 
@@ -814,6 +814,8 @@ class JourneyViewSet(GenericViewSet):
             j['progress_percentage'] = (completed / max(total, 1)) * 100
             if completed == total and total > 0:
                 j['status'] = 'completed'
+            elif j['needs_scheduling'] > 0 and j['upcoming_sessions'] == 0 and completed == 0:
+                j['status'] = 'unscheduled'
             elif completed > 0:
                 j['status'] = 'active'
             else:
@@ -830,8 +832,8 @@ class JourneyViewSet(GenericViewSet):
 
             results.append(j)
 
-        # Sort: active first, then upcoming, then completed
-        status_order = {'active': 0, 'upcoming': 1, 'completed': 2}
+        # Sort: unscheduled first (needs action), then active, upcoming, completed
+        status_order = {'unscheduled': 0, 'active': 1, 'upcoming': 2, 'completed': 3}
         far_future = timezone.now() + timedelta(days=36500)
         results.sort(key=lambda j: (status_order.get(j['status'], 9), j.get('next_session_time') or far_future))
 
