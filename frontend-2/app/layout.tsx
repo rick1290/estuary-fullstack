@@ -39,6 +39,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly site description" />
+      </head>
       <body className={`${dmSans.className} ${dmSans.variable} font-sans`}>
         <Providers>
           <ThemeProvider>

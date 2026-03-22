@@ -66,13 +66,18 @@ export interface StreamAnalytics {
   }
 }
 
+export type PostType = "post" | "video" | "audio" | "image" | "gallery" | "link" | "poll"
+
 export interface CreatePostFormData {
   title: string
   content: string
+  post_type: PostType
   tier: "free" | "entry" | "premium"
   mediaFiles: File[]
   attachments: File[]
   tags: string[]
   scheduledAt?: string
   status: "draft" | "scheduled" | "published"
+  pollOptions?: string[]
+  linkUrl?: string
 }

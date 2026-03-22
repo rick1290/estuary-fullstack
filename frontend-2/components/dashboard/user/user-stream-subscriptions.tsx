@@ -21,13 +21,24 @@ export default function UserStreamSubscriptions() {
   const [selectedSubscription, setSelectedSubscription] = useState<any>(null)
   const [showManageDialog, setShowManageDialog] = useState(false)
 
-  // TODO: The users/me/stream-subscriptions endpoint is not being generated in the OpenAPI client
-  // For now, we'll use a placeholder query
   const { data, isLoading } = useQuery({
     queryKey: ['user-stream-subscriptions'],
     queryFn: async () => {
-      // This would be the actual API call when the endpoint is available
-      return { results: [] }
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${baseUrl}/api/v1/users/me/stream-subscriptions/`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      if (!response.ok) {
+        // If endpoint doesn't exist yet, return empty results gracefully
+        if (response.status === 404) {
+          return { results: [] }
+        }
+        throw new Error('Failed to fetch subscriptions')
+      }
+      return response.json()
     },
     enabled: !!user
   })

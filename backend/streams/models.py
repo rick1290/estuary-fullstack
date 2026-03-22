@@ -282,7 +282,17 @@ class StreamPost(PublicModel):
     
     # Tags
     tags = models.JSONField(default=list, blank=True)
-    
+
+    # Linked service (for booking card in posts)
+    linked_service = models.ForeignKey(
+        'services.Service',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='stream_posts',
+        help_text="Optional service to embed as a booking card in the post"
+    )
+
     class Meta:
         verbose_name = 'Stream Post'
         verbose_name_plural = 'Stream Posts'

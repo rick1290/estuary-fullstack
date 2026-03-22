@@ -228,8 +228,14 @@ export default function ContentCard({ post }: ContentCardProps) {
   }
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`https://estuary.com/streams/post/${post.id}`)
-    // Could add a toast notification here
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/streams/post/${post.id}`
+      : `/streams/post/${post.id}`
+    navigator.clipboard.writeText(url)
+    toast({
+      title: "Link copied!",
+      description: "Post link has been copied to your clipboard.",
+    })
   }
 
   // Format the date
@@ -260,7 +266,28 @@ export default function ContentCard({ post }: ContentCardProps) {
           >
             {post.practitionerName}
           </p>
-          <p className="text-sm text-olive-600">{formattedDate}</p>
+          <p className="text-sm text-olive-600">
+            <span
+              className="hover:underline cursor-pointer"
+              onClick={() => router.push(`/streams/post/${post.id}`)}
+            >
+              {formattedDate}
+            </span>
+            {post.streamTitle && post.streamId && (
+              <>
+                {" · "}
+                <span
+                  className="text-sage-600 hover:text-sage-700 cursor-pointer transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    router.push(`/streams/${post.streamId}`)
+                  }}
+                >
+                  {post.streamTitle}
+                </span>
+              </>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {post.userSubscriptionTier && post.userSubscriptionTier !== "free" && (
@@ -273,6 +300,16 @@ export default function ContentCard({ post }: ContentCardProps) {
               <Lock className="h-3 w-3 mr-1" strokeWidth="1.5" />
               {post.tierLevel || "Premium"}
             </Badge>
+          )}
+          {post.isPremium && !post.hasAccess && !post.userSubscriptionTier && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs border-sage-300 text-sage-700 hover:bg-sage-50"
+              onClick={() => router.push(`/streams/${post.streamId}`)}
+            >
+              Subscribe
+            </Button>
           )}
         </div>
         <DropdownMenu>
@@ -298,7 +335,7 @@ export default function ContentCard({ post }: ContentCardProps) {
         <div className="mb-4 text-olive-700 leading-relaxed">
           {post.isPremium && !post.hasAccess ? (
             <>
-              {post.content.substring(0, 150)}...{" "}
+              {post.teaserText || post.content.substring(0, 150)}...{" "}
               <Button 
                 variant="link" 
                 size="sm" 
@@ -322,7 +359,24 @@ export default function ContentCard({ post }: ContentCardProps) {
               </Button>
             </>
           ) : (
-            post.content
+            <>
+              <span
+                className="cursor-pointer"
+                onClick={() => router.push(`/streams/post/${post.id}`)}
+              >
+                {post.content.length > 300 ? `${post.content.substring(0, 300)}... ` : post.content}
+              </span>
+              {post.content.length > 300 && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => router.push(`/streams/post/${post.id}`)}
+                  className="font-medium text-sage-700 p-0 h-auto"
+                >
+                  Read more
+                </Button>
+              )}
+            </>
           )}
         </div>
 
@@ -512,6 +566,35 @@ export default function ContentCard({ post }: ContentCardProps) {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Linked Service Booking Card */}
+        {post.linkedService && (
+          <div className="mb-4 p-4 rounded-xl border border-sage-200/60 bg-sage-50/50">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-sage-600 font-medium uppercase tracking-wide mb-1">
+                  {post.linkedService.serviceType === 'session' ? 'Book a Session' :
+                   post.linkedService.serviceType === 'workshop' ? 'Join Workshop' :
+                   post.linkedService.serviceType === 'course' ? 'Enroll in Course' : 'Book Now'}
+                </p>
+                <h4 className="font-medium text-olive-900 truncate">{post.linkedService.title}</h4>
+                <div className="flex items-center gap-3 mt-1 text-sm text-olive-600">
+                  <span className="font-semibold text-olive-800">${post.linkedService.price.toFixed(0)}</span>
+                  {post.linkedService.duration && (
+                    <span>{post.linkedService.duration} min</span>
+                  )}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="bg-sage-700 hover:bg-sage-800 text-white ml-4"
+                onClick={() => router.push(`/services/${post.linkedService!.slug || post.linkedService!.id}`)}
+              >
+                Book Now
+              </Button>
+            </div>
           </div>
         )}
 

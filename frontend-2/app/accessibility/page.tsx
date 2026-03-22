@@ -1,3 +1,4 @@
+import { createMetadata } from "@/lib/seo"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,6 +7,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ChevronRight } from "lucide-react"
+
+export const metadata = createMetadata({
+  title: "Accessibility Statement",
+  description: "Estuary is committed to digital accessibility. Learn about our efforts to make our wellness marketplace accessible to everyone.",
+  path: "/accessibility",
+})
 
 export default function AccessibilityPage() {
   return (

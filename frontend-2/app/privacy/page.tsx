@@ -1,3 +1,4 @@
+import { createMetadata } from "@/lib/seo"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,6 +7,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ChevronRight } from "lucide-react"
+
+export const metadata = createMetadata({
+  title: "Privacy Policy",
+  description: "Learn how Estuary collects, uses, and protects your personal information. Read our full privacy policy.",
+  path: "/privacy",
+})
 
 export default function PrivacyPolicyPage() {
   return (

@@ -7,6 +7,7 @@ export interface StreamPost {
   streamId?: string
   streamTitle?: string
   content: string
+  teaserText?: string
   mediaUrls: string[]
   contentType: "video" | "image" | "article" | "audio"
   isPremium: boolean
@@ -22,6 +23,16 @@ export interface StreamPost {
   // User's subscription status to this stream
   userSubscriptionTier?: "free" | "entry" | "premium" | null
   hasAccess?: boolean
+  // Linked service for booking card
+  linkedService?: {
+    id: number
+    title: string
+    serviceType: string
+    price: number
+    duration?: number
+    slug?: string
+    practitionerName?: string
+  } | null
 }
 
 export interface StreamComment {

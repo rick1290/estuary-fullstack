@@ -168,6 +168,17 @@ class StreamPostMediaSerializer(BaseSerializer):
         return obj.filename
 
 
+class LinkedServiceSummarySerializer(serializers.Serializer):
+    """Read-only summary of a linked service for stream post cards."""
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    service_type = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    duration = serializers.IntegerField(source='duration_minutes', default=None)
+    slug = serializers.CharField(default=None)
+    practitioner_name = serializers.CharField(source='practitioner.display_name', default=None)
+
+
 class StreamPostSerializer(BaseSerializer):
     """Serializer for stream posts."""
     stream_title = serializers.CharField(source='stream.title', read_only=True)
@@ -179,7 +190,8 @@ class StreamPostSerializer(BaseSerializer):
     can_access = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     is_saved = serializers.SerializerMethodField()
-    
+    linked_service_detail = LinkedServiceSummarySerializer(source='linked_service', read_only=True)
+
     class Meta:
         model = StreamPost
         fields = [
@@ -192,11 +204,13 @@ class StreamPostSerializer(BaseSerializer):
             'allow_comments', 'allow_tips',
             'poll_options', 'poll_ends_at', 'poll_allows_multiple',
             'tags', 'media', 'can_access', 'is_liked', 'is_saved',
+            'linked_service', 'linked_service_detail',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
             'public_uuid', 'stream_title', 'practitioner_name', 'practitioner_id', 'practitioner_slug', 'practitioner_image',
             'view_count', 'unique_view_count', 'like_count', 'comment_count', 'share_count',
+            'linked_service_detail',
             'created_at', 'updated_at'
         ]
     

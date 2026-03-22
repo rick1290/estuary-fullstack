@@ -1,3 +1,4 @@
+import { createMetadata } from "@/lib/seo"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -7,6 +8,12 @@ import {
 } from "@/components/ui/breadcrumb"
 import { ChevronRight } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+export const metadata = createMetadata({
+  title: "Cookie Policy",
+  description: "Learn about how Estuary uses cookies and similar technologies. Manage your cookie preferences.",
+  path: "/cookies",
+})
 
 export default function CookiePolicyPage() {
   return (

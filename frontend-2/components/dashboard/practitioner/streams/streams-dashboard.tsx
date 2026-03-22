@@ -304,7 +304,16 @@ export default function StreamsDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 text-sage-700 border-sage-300"
+          onClick={() => router.push(`/streams/${practitionerStream?.public_uuid || practitionerStream?.id}`)}
+        >
+          <Eye className="h-4 w-4" />
+          View My Stream
+        </Button>
         <Button onClick={() => setCreatePostOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Create Post
@@ -422,10 +431,19 @@ export default function StreamsDashboard() {
         </TabsContent>
 
         <TabsContent value="pricing">
-          <StreamPricing 
+          <StreamPricing
             streamId={practitionerStream?.id}
             currentEntryPrice={practitionerStream?.entry_tier_price_cents}
             currentPremiumPrice={practitionerStream?.premium_tier_price_cents}
+            currentFreeDescription={practitionerStream?.free_tier_description}
+            currentEntryDescription={practitionerStream?.entry_tier_description}
+            currentPremiumDescription={practitionerStream?.premium_tier_description}
+            currentFreePerks={practitionerStream?.free_tier_perks as string[] || []}
+            currentEntryPerks={practitionerStream?.entry_tier_perks as string[] || []}
+            currentPremiumPerks={practitionerStream?.premium_tier_perks as string[] || []}
+            currentFreeTierName={practitionerStream?.free_tier_name}
+            currentEntryTierName={practitionerStream?.entry_tier_name}
+            currentPremiumTierName={practitionerStream?.premium_tier_name}
             onPricingUpdate={() => {
               // Invalidate the streams query to refetch data
       queryClient.invalidateQueries({ 

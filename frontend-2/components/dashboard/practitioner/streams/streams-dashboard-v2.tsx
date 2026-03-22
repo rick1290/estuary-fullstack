@@ -393,6 +393,18 @@ export default function StreamsDashboardV2() {
         onTabChange={setActiveTab}
       />
 
+      <div className="flex justify-start px-1 -mt-2 mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-sage-600 hover:text-sage-800"
+          onClick={() => router.push(`/streams/${practitionerStream?.public_uuid || practitionerStream?.id}`)}
+        >
+          <Eye className="h-4 w-4" />
+          View My Stream
+        </Button>
+      </div>
+
       <div className="px-4 sm:px-6 py-4 space-y-6">
         {/* Analytics Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -504,17 +516,26 @@ export default function StreamsDashboardV2() {
         )}
 
         {activeTab === "pricing" && (
-          <StreamPricing 
+          <StreamPricing
             streamId={practitionerStream?.id}
             currentEntryPrice={practitionerStream?.entry_tier_price_cents}
             currentPremiumPrice={practitionerStream?.premium_tier_price_cents}
+            currentFreeDescription={practitionerStream?.free_tier_description}
+            currentEntryDescription={practitionerStream?.entry_tier_description}
+            currentPremiumDescription={practitionerStream?.premium_tier_description}
+            currentFreePerks={practitionerStream?.free_tier_perks as string[] || []}
+            currentEntryPerks={practitionerStream?.entry_tier_perks as string[] || []}
+            currentPremiumPerks={practitionerStream?.premium_tier_perks as string[] || []}
+            currentFreeTierName={practitionerStream?.free_tier_name}
+            currentEntryTierName={practitionerStream?.entry_tier_name}
+            currentPremiumTierName={practitionerStream?.premium_tier_name}
             onPricingUpdate={() => {
               // Invalidate the streams query to refetch data
-              queryClient.invalidateQueries({ 
-                queryKey: [{ 
+              queryClient.invalidateQueries({
+                queryKey: [{
                   _id: 'streamsList',
                   query: { practitioner: user?.practitionerId }
-                }] 
+                }]
               })
             }}
           />

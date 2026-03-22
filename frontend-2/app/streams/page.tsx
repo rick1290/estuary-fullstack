@@ -1,4 +1,12 @@
+import { createMetadata } from "@/lib/seo"
 import { Suspense, use } from "react"
+
+export const metadata = createMetadata({
+  title: "Streams — Wellness Content",
+  description:
+    "Discover articles, videos, and audio content from wellness practitioners. Free and premium content on yoga, meditation, breathwork, and more.",
+  path: "/streams",
+})
 import StreamsLayout from "@/components/streams/streams-layout"
 import StreamsFilters from "@/components/streams/streams-filters"
 import ContentFeed from "@/components/streams/content-feed"

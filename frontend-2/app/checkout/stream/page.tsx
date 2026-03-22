@@ -169,20 +169,12 @@ export default function StreamCheckoutPage() {
   const total = price + tax
 
   const tierFeatures = {
-    entry: [
-      "Access to exclusive content",
-      "Monthly updates",
-      "Community discussions",
-      "Early access to new posts"
-    ],
-    premium: [
-      "Everything in Entry tier",
-      "All premium exclusive content", 
-      "Direct messaging with creator",
-      "Monthly Q&A sessions",
-      "Behind-the-scenes content",
-      "Priority support"
-    ]
+    entry: Array.isArray(streamData.entry_tier_perks) && streamData.entry_tier_perks.length > 0
+      ? streamData.entry_tier_perks as string[]
+      : ["Access to exclusive entry-tier content"],
+    premium: Array.isArray(streamData.premium_tier_perks) && streamData.premium_tier_perks.length > 0
+      ? streamData.premium_tier_perks as string[]
+      : ["Access to all content including premium exclusives"]
   }
 
   return (
@@ -247,10 +239,10 @@ export default function StreamCheckoutPage() {
                               <div>
                                 <h3 className="font-semibold text-lg flex items-center gap-2">
                                   <Zap className="h-5 w-5 text-sage-600" />
-                                  Entry Tier
+                                  {streamData.entry_tier_name || 'Entry Tier'}
                                 </h3>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                  Perfect for getting started
+                                  {streamData.entry_tier_description || 'Perfect for getting started'}
                                 </p>
                               </div>
                               <div className="text-right">
@@ -292,10 +284,10 @@ export default function StreamCheckoutPage() {
                               <div>
                                 <h3 className="font-semibold text-lg flex items-center gap-2">
                                   <Crown className="h-5 w-5 text-terracotta-600" />
-                                  Premium Tier
+                                  {streamData.premium_tier_name || 'Premium Tier'}
                                 </h3>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                  The complete experience
+                                  {streamData.premium_tier_description || 'The complete experience'}
                                 </p>
                               </div>
                               <div className="text-right">

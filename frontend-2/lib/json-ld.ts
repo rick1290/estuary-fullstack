@@ -8,6 +8,12 @@ export function organizationSchema() {
     url: SITE_URL,
     description: SITE_DESCRIPTION,
     logo: `${SITE_URL}/logo.png`,
+    foundingDate: "2024",
+    knowsAbout: [
+      "Wellness", "Yoga", "Meditation", "Breathwork", "Reiki", "Energy Healing",
+      "Life Coaching", "Somatic Therapy", "Sound Healing", "Mindfulness",
+      "Acupuncture", "Massage Therapy", "Holistic Health", "Ayurveda",
+    ],
     sameAs: [
       "https://instagram.com/estuary",
       "https://facebook.com/estuary",
@@ -15,6 +21,43 @@ export function organizationSchema() {
       "https://linkedin.com/company/estuary",
       "https://youtube.com/estuary",
     ],
+  }
+}
+
+export function websiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/marketplace?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  }
+}
+
+export function itemListSchema(
+  name: string,
+  items: { name: string; url: string; description?: string; position?: number }[]
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: items.length,
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: item.position || i + 1,
+      name: item.name,
+      url: item.url,
+      ...(item.description && { description: item.description }),
+    })),
   }
 }
 

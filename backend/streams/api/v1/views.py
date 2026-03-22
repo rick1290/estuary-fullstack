@@ -719,7 +719,7 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]  # Support file uploads
     lookup_field = 'public_uuid'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['tier_level', 'post_type', 'is_published', 'is_pinned']
+    filterset_fields = ['stream', 'stream__practitioner', 'tier_level', 'post_type', 'is_published', 'is_pinned']
     search_fields = ['title', 'content', 'tags']
     ordering_fields = ['created_at', 'published_at', 'like_count', 'view_count']
     ordering = ['-published_at', '-created_at']

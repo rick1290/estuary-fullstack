@@ -1,24 +1,24 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Users, Lock, Unlock, Check } from "lucide-react"
+import { ArrowLeft, Users, Lock, Unlock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { 
-  streamsRetrieveOptions, 
+import {
+  streamsRetrieveOptions,
   streamsSubscribeCreateMutation,
   streamsSubscriptionChangeTierCreateMutation,
-  streamPostsListOptions 
+  streamPostsListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { useToast } from "@/components/ui/use-toast"
 import { Spinner } from "@/components/ui/spinner"
 import ContentCard from "./content-card"
+import StreamTierSidebar from "./stream-tier-sidebar"
 import type { StreamPost } from "@/types/stream"
 
 interface StreamDetailContentProps {
@@ -84,6 +84,44 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
     router.push(`/checkout/stream?streamId=${streamId}&tier=${newTier}`)
   }
 
+  // Free follow mutation
+  const followFreeMutation = useMutation({
+    ...streamsSubscribeCreateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Following!",
+        description: `You're now following ${stream?.title}. You'll see free content in your feed.`,
+      })
+      queryClient.invalidateQueries({ queryKey: ['streamsRetrieve'] })
+    },
+    onError: (error: any) => {
+      const message = error?.body?.error || error?.body?.detail || "Could not follow this stream."
+      toast({
+        title: "Failed to follow",
+        description: message,
+        variant: "destructive",
+      })
+    }
+  })
+
+  const handleFollowFree = () => {
+    if (!isAuthenticated) {
+      openAuthModal({
+        defaultTab: "login",
+        redirectUrl: `/streams/${streamId}`,
+        title: "Sign in to Follow",
+        description: "Create an account or sign in to follow this stream for free"
+      })
+      return
+    }
+
+    if (!stream?.id) return
+    followFreeMutation.mutate({
+      path: { id: stream.id },
+      body: { tier: 'free' } as any
+    })
+  }
+
   // Map API response to StreamPost format
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
     const userTier = stream?.user_subscription?.tier_level || null
@@ -100,6 +138,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       streamId: apiPost.stream || stream?.id || '',
       streamTitle: apiPost.stream_title || stream?.title || '',
       content: apiPost.content || '',
+      teaserText: apiPost.teaser_text || undefined,
       mediaUrls: apiPost.media?.map((m: any) => m.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${m.url}` : '') || [],
       contentType: apiPost.post_type as any || 'article',
       isPremium: apiPost.tier_level !== 'free',
@@ -112,7 +151,16 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       isLiked: apiPost.is_liked || false,
       isSaved: apiPost.is_saved || false,
       hasAccess: hasAccess,
-      userSubscriptionTier: userTier
+      userSubscriptionTier: userTier,
+      linkedService: apiPost.linked_service_detail ? {
+        id: apiPost.linked_service_detail.id,
+        title: apiPost.linked_service_detail.title,
+        serviceType: apiPost.linked_service_detail.service_type,
+        price: parseFloat(apiPost.linked_service_detail.price),
+        duration: apiPost.linked_service_detail.duration,
+        slug: apiPost.linked_service_detail.slug,
+        practitionerName: apiPost.linked_service_detail.practitioner_name,
+      } : null
     }
   }
 
@@ -225,6 +273,32 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
               </CardHeader>
             </Card>
 
+            {/* About Section */}
+            {(stream.about || stream.tagline) && (
+              <Card className="mt-4 border border-sage-200/60 bg-white">
+                <CardContent className="pt-6">
+                  {stream.tagline && (
+                    <p className="text-lg font-serif font-light text-olive-800 mb-3 italic">
+                      {stream.tagline}
+                    </p>
+                  )}
+                  {stream.about && (
+                    <div className="text-olive-700 leading-relaxed whitespace-pre-line">
+                      {stream.about}
+                    </div>
+                  )}
+                  <p className="mt-4">
+                    <span
+                      className="text-sm text-sage-600 hover:text-sage-700 cursor-pointer transition-colors font-medium"
+                      onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
+                    >
+                      View {stream.practitioner_name}&apos;s full profile →
+                    </span>
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Content Tabs */}
             <div className="mt-8">
               <Tabs defaultValue="all" className="w-full">
@@ -285,65 +359,14 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
           {/* Sidebar - Subscription */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6 space-y-4">
-              <Card className="border border-sage-200/60 bg-white">
-                <CardHeader>
-                  <CardTitle className="font-serif text-lg font-light text-olive-900">Subscribe to {stream.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!stream.user_subscription ? (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Choose a subscription tier to access exclusive content
-                      </p>
-                      <div className="space-y-3">
-                        <button
-                          onClick={() => handleSubscribe("entry")}
-                          className="w-full p-3 rounded-lg border border-sage-200/60 hover:border-sage-300 transition-colors text-left"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium">Entry Tier</h4>
-                              <p className="text-xs text-muted-foreground">Access to exclusive content</p>
-                            </div>
-                            <span className="font-medium">${((stream.entry_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => handleSubscribe("premium")}
-                          className="w-full p-3 rounded-lg border border-sage-200/60 hover:border-sage-300 transition-colors text-left"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium">Premium Tier</h4>
-                              <p className="text-xs text-muted-foreground">All content + exclusive perks</p>
-                            </div>
-                            <span className="font-medium">${((stream.premium_tier_price_cents || 0) / 100).toFixed(0)}/mo</span>
-                          </div>
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="text-center p-3 bg-sage-50 rounded-lg">
-                        <p className="text-sm text-sage-700 font-medium">
-                          Current tier: {stream.user_subscription.tier_level}
-                        </p>
-                      </div>
-                      {stream.user_subscription.tier_level !== 'premium' && (
-                        <Button 
-                          onClick={() => handleUpgrade(
-                            stream.user_subscription!.tier_level === 'free' ? 'entry' : 'premium'
-                          )} 
-                          className="w-full"
-                        >
-                          Upgrade to {stream.user_subscription.tier_level === 'free' ? 'Entry' : 'Premium'}
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            <div className="sticky top-6">
+              <StreamTierSidebar
+                stream={stream}
+                onFollowFree={handleFollowFree}
+                onSubscribe={handleSubscribe}
+                onUpgrade={handleUpgrade}
+                isAuthenticated={isAuthenticated}
+              />
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 import { SITE_URL } from "@/lib/seo"
-import { publicServicesList, publicPractitionersList, modalitiesList } from "@/src/client/sdk.gen"
+import { publicServicesList, publicPractitionersList, modalitiesList, modalityCategoriesList } from "@/src/client/sdk.gen"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let servicePages: MetadataRoute.Sitemap = []
   let practitionerPages: MetadataRoute.Sitemap = []
   let modalityPages: MetadataRoute.Sitemap = []
+  let modalityCategoryPages: MetadataRoute.Sitemap = []
 
   try {
     const { data: servicesData } = await publicServicesList({
@@ -84,5 +85,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // API may be unavailable during build
   }
 
-  return [...staticPages, ...servicePages, ...practitionerPages, ...modalityPages]
+  try {
+    const { data: categoriesData } = await modalityCategoriesList({
+      query: { page_size: 50 },
+    })
+    const categories = categoriesData?.results || []
+    modalityCategoryPages = categories.map((c: any) => ({
+      url: `${SITE_URL}/modalities/category/${c.slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }))
+  } catch {
+    // API may be unavailable during build
+  }
+
+  return [...staticPages, ...servicePages, ...practitionerPages, ...modalityPages, ...modalityCategoryPages]
 }
