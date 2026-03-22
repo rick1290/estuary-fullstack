@@ -1,0 +1,219 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { padding: 20px 0 32px; }
+.top-bar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+.search-input {
+  flex: 1; padding: 9px 14px; border-radius: 8px; font-size: 14px;
+  border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary);
+  color: var(--color-text-primary); outline: none;
+}
+.search-input:focus { border-color: var(--color-border-primary); }
+.count { font-size: 13px; color: var(--color-text-tertiary); white-space: nowrap; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.cat-btn {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+  border: 1px solid var(--color-border-secondary); background: transparent;
+  color: var(--color-text-secondary); transition: all .15s;
+}
+.cat-btn.active {
+  background: var(--color-background-info); border-color: var(--color-border-info);
+  color: var(--color-text-info); font-weight: 500;
+}
+.cat-btn:hover:not(.active) { border-color: var(--color-border-primary); color: var(--color-text-primary); }
+.section { margin-bottom: 22px; }
+.section-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 9px; }
+.section-label { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.section-count { font-size: 11px; color: var(--color-text-tertiary); }
+.tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border-radius: 20px; font-size: 13px; cursor: pointer;
+  border: 1px solid; transition: all .12s; user-select: none;
+}
+.tag.new::after {
+  content: 'new'; font-size: 9px; font-weight: 500; letter-spacing: .04em;
+  padding: 1px 4px; border-radius: 3px; margin-left: 3px;
+  background: var(--color-background-success); color: var(--color-text-success);
+  border: 1px solid var(--color-border-success);
+}
+.tag.gz::after { content: '⚠'; font-size: 10px; margin-left: 3px; opacity: .65; }
+.tag.selected { font-weight: 500; }
+.legend { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--color-text-secondary); }
+.leg-new { font-size: 9px; font-weight: 500; padding: 1px 5px; border-radius: 3px; background: var(--color-background-success); color: var(--color-text-success); border: 1px solid var(--color-border-success); }
+.empty { font-size: 14px; color: var(--color-text-tertiary); padding: 24px 0; }
+.note { font-size: 12px; color: var(--color-text-tertiary); margin-top: 14px; border-top: 1px solid var(--color-border-tertiary); padding-top: 10px; line-height: 1.6; }
+</style>
+
+<div class="wrap">
+  <div class="top-bar">
+    <input class="search-input" id="search" placeholder="Search modalities…" oninput="render()">
+    <span class="count" id="count"></span>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="leg-new">new</span> Suggested addition</div>
+    <div class="legend-item"><span style="font-size:11px">⚠</span> Clinical gray zone</div>
+  </div>
+  <div class="filter-row" id="cats"></div>
+  <div id="grid"></div>
+  <p class="note" id="sel-note"></p>
+</div>
+
+<script>
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+const C = {
+  purple: { bg:"#EEEDFE", bd:"#AFA9EC", tx:"#3C3489", bgd:"#26215C", bdd:"#7F77DD", txd:"#EEEDFE" },
+  pink:   { bg:"#FBEAF0", bd:"#ED93B1", tx:"#72243E", bgd:"#4B1528", bdd:"#D4537E", txd:"#FBEAF0" },
+  blue:   { bg:"#E6F1FB", bd:"#85B7EB", tx:"#0C447C", bgd:"#042C53", bdd:"#378ADD", txd:"#E6F1FB" },
+  teal:   { bg:"#E1F5EE", bd:"#5DCAA5", tx:"#085041", bgd:"#04342C", bdd:"#1D9E75", txd:"#E1F5EE" },
+  amber:  { bg:"#FAEEDA", bd:"#EF9F27", tx:"#633806", bgd:"#412402", bdd:"#BA7517", txd:"#FAEEDA" },
+  coral:  { bg:"#FAECE7", bd:"#F0997B", tx:"#712B13", bgd:"#4A1B0C", bdd:"#D85A30", txd:"#FAECE7" },
+  green:  { bg:"#EAF3DE", bd:"#97C459", tx:"#27500A", bgd:"#173404", bdd:"#639922", txd:"#EAF3DE" },
+  red:    { bg:"#FCEBEB", bd:"#F09595", tx:"#791F1F", bgd:"#501313", bdd:"#E24B4A", txd:"#FCEBEB" },
+  gray:   { bg:"#F1EFE8", bd:"#B4B2A9", tx:"#444441", bgd:"#2C2C2A", bdd:"#888780", txd:"#F1EFE8" },
+  sky:    { bg:"#E6F1FB", bd:"#85B7EB", tx:"#0C447C", bgd:"#042C53", bdd:"#378ADD", txd:"#E6F1FB" },
+};
+
+const categories = [
+  { id:"divination", label:"Divination & Symbolic Systems", col:C.purple, items:[
+    {n:"Astrology"},{n:"Astrocartography"},{n:"Kabbalistic Astrology"},{n:"Mayan Astrology"},
+    {n:"Tarot"},{n:"Oracle Cards",x:1},{n:"Numerology"},{n:"Enneagram"},
+    {n:"Gene Keys"},{n:"Human Design",x:1},{n:"Soul Plan Reading"},{n:"Aura Reading"},
+    {n:"Clairvoyance",x:1},
+  ]},
+  { id:"psychic", label:"Psychic & Spiritual Arts", col:C.pink, items:[
+    {n:"Mediumship"},{n:"Akashic Records Reading"},{n:"Psychic Reading"},{n:"Psychic Healing"},
+    {n:"Past Life Regression Therapy"},{n:"Channeling",x:1},{n:"Ancestor Work",x:1},
+    {n:"Cord Cutting",x:1},{n:"Spiritual Direction",x:1},
+  ]},
+  { id:"dreamwork", label:"Dreamwork & Altered States", col:C.blue, items:[
+    {n:"Dreamwork"},{n:"Lucid Dreaming"},{n:"Dream Yoga"},{n:"Hypnotherapy"},
+    {n:"Guided Imagery / Visualization",x:1},
+  ]},
+  { id:"energy", label:"Energy & Vibrational Healing", col:C.teal, items:[
+    {n:"Reiki"},{n:"Energy Healing"},{n:"Bioenergetic Healing"},{n:"Distance Energy Work"},
+    {n:"Quantum Healing"},{n:"Chakra Balancing"},{n:"Energy Clearing"},{n:"Crystal Healing"},
+    {n:"Sound Healing"},{n:"Color Therapy"},{n:"Pranic Healing",x:1},
+    {n:"Healing Touch",x:1},{n:"Jin Shin Jyutsu",x:1},{n:"Matrix Reimprinting",x:1},
+  ]},
+  { id:"shamanic", label:"Shamanic & Plant Medicine", col:C.amber, items:[
+    {n:"Shamanic Journeying"},{n:"Shamanic Healing"},{n:"Plant Medicine"},{n:"Herbalism"},
+  ]},
+  { id:"yoga", label:"Yoga", col:C.green, items:[
+    {n:"Yoga (general)"},{n:"Hatha Yoga",x:1},{n:"Vinyasa Yoga",x:1},
+    {n:"Ashtanga Yoga",x:1},{n:"Kundalini Yoga",x:1},{n:"Yin Yoga",x:1},
+    {n:"Restorative Yoga",x:1},{n:"Iyengar Yoga",x:1},{n:"Power Yoga",x:1},
+    {n:"Hot Yoga",x:1},{n:"Yoga Nidra",x:1},{n:"Prenatal Yoga",x:1},
+    {n:"Trauma-Informed Yoga",x:1},{n:"Yoga Therapy",x:1},{n:"Somatic Yoga",x:1},
+    {n:"Anusara Yoga",x:1},{n:"Aerial Yoga",x:1},
+  ]},
+  { id:"breathwork", label:"Breathwork", col:C.sky, items:[
+    {n:"Breathwork (general)"},
+    {n:"Holotropic Breathwork",x:1},{n:"Rebirthing Breathwork",x:1},
+    {n:"Transformational Breathwork",x:1},{n:"Shamanic Breathwork",x:1},
+    {n:"Conscious Connected Breathwork",x:1},{n:"Neurodynamic Breathwork",x:1},
+    {n:"Clarity Breathwork",x:1},{n:"Somatic Breathwork",x:1},
+    {n:"Pranayama",x:1},{n:"Kapalabhati",x:1},
+    {n:"Nadi Shodhana (Alternate Nostril)",x:1},{n:"Breath of Fire",x:1},
+    {n:"Ujjayi Breath",x:1},
+    {n:"Wim Hof Method",x:1},{n:"Buteyko Method",x:1},
+    {n:"Box Breathing",x:1},{n:"4-7-8 Breathing",x:1},
+    {n:"Coherent / Resonance Breathing",x:1},
+  ]},
+  { id:"somatic", label:"Somatic & Movement", col:C.coral, items:[
+    {n:"Qigong"},{n:"Tai Chi"},{n:"Alexander Technique"},
+    {n:"Somatic Therapy",x:1},{n:"Somatic Experiencing",x:1,gz:1},
+    {n:"Somatic Coaching",x:1},{n:"Dance / Movement Therapy",x:1},
+    {n:"Thai Yoga Bodywork",x:1},
+  ]},
+  { id:"bodywork", label:"Bodywork & Touch", col:C.red, items:[
+    {n:"Massage Therapy",x:1},{n:"Craniosacral Therapy",x:1},
+    {n:"Reflexology",x:1},{n:"Acupressure",x:1},{n:"Acupuncture",x:1},
+  ]},
+  { id:"mindbody", label:"Mind-Body Practices", col:C.blue, items:[
+    {n:"Meditation"},{n:"Mindfulness"},{n:"Tapping / EFT"},
+    {n:"Internal Family Systems (IFS)",x:1,gz:1},
+    {n:"Polyvagal / Nervous System Work",x:1},{n:"Neurofeedback",x:1,gz:1},
+  ]},
+  { id:"expressive", label:"Expressive & Creative Arts", col:C.gray, items:[
+    {n:"Art Therapy",x:1},{n:"Music Therapy",x:1},
+    {n:"Expressive Arts Therapy",x:1},{n:"Writing as Healing / Journaling",x:1},
+  ]},
+  { id:"holistic", label:"Holistic Health Systems", col:C.teal, items:[
+    {n:"Naturopathy"},{n:"Homeopathy"},{n:"Ayurveda"},{n:"Aromatherapy"},
+    {n:"Traditional Chinese Medicine (TCM)",x:1},{n:"Functional Nutrition",x:1},
+    {n:"Nutritional Counseling",x:1},
+  ]},
+  { id:"coaching", label:"Coaching & Guidance", col:C.purple, items:[
+    {n:"Holistic Life Coaching"},{n:"Spiritual Counseling / Direction",x:1},
+  ]},
+];
+
+function tagStyle(col) {
+  return dark
+    ? `background:${col.bgd};border-color:${col.bdd};color:${col.txd}`
+    : `background:${col.bg};border-color:${col.bd};color:${col.tx}`;
+}
+
+let active = "all";
+const selected = new Set();
+
+function buildCats() {
+  const el = document.getElementById('cats');
+  const all = document.createElement('button');
+  all.className = 'cat-btn active'; all.textContent = 'All';
+  all.onclick = () => { active = 'all'; sync(); render(); };
+  el.appendChild(all);
+  categories.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'cat-btn'; b.textContent = cat.label; b.dataset.id = cat.id;
+    b.onclick = () => { active = cat.id; sync(); render(); };
+    el.appendChild(b);
+  });
+}
+
+function sync() {
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.id ? b.dataset.id === active : active === 'all');
+  });
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  let total = 0;
+  const cats = active === 'all' ? categories : categories.filter(c => c.id === active);
+
+  cats.forEach(cat => {
+    const items = cat.items.filter(i => i.n.toLowerCase().includes(q));
+    if (!items.length) return;
+    total += items.length;
+    const sec = document.createElement('div');
+    sec.className = 'section';
+    sec.innerHTML = `<div class="section-header"><span class="section-label">${cat.label}</span><span class="section-count">${items.length}</span></div>`;
+    const tagsEl = document.createElement('div');
+    tagsEl.className = 'tags';
+    items.forEach(item => {
+      const t = document.createElement('span');
+      const isSel = selected.has(item.n);
+      t.className = 'tag' + (item.x ? ' new' : '') + (item.gz ? ' gz' : '') + (isSel ? ' selected' : '');
+      t.style = tagStyle(cat.col);
+      t.innerHTML = (isSel ? '<span style="font-size:10px">✓ </span>' : '') + item.n;
+      t.onclick = () => { selected.has(item.n) ? selected.delete(item.n) : selected.add(item.n); render(); };
+      tagsEl.appendChild(t);
+    });
+    sec.appendChild(tagsEl);
+    grid.appendChild(sec);
+  });
+
+  if (!total) grid.innerHTML = '<div class="empty">No modalities match.</div>';
+  document.getElementById('count').textContent = `${total} modalities`;
+  const note = document.getElementById('sel-note');
+  note.textContent = selected.size ? `${selected.size} selected: ${[...selected].join(', ')}` : '';
+}
+
+buildCats();
+render();
+</script>
