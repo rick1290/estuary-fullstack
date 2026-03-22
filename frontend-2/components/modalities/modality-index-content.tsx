@@ -16,21 +16,51 @@ const itemFade = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 }
 
-// Placeholder images per modality slug — swap for real assets later
+// Category-level fallback images — every modality in a category gets at least this
+const CATEGORY_IMAGES: Record<string, string> = {
+  divination: "https://images.unsplash.com/photo-1572435555646-7ad9a149ad91?w=600&h=400&fit=crop",
+  psychic: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=400&fit=crop",
+  dreamwork: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=400&fit=crop",
+  energy: "https://images.unsplash.com/photo-1600618528240-fb9fc964b853?w=600&h=400&fit=crop",
+  shamanic: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=600&h=400&fit=crop",
+  yoga: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=400&fit=crop",
+  breathwork: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop",
+  somatic: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=600&h=400&fit=crop",
+  bodywork: "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=400&fit=crop",
+  mindbody: "https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=600&h=400&fit=crop",
+  expressive: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&h=400&fit=crop",
+  holistic: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=600&h=400&fit=crop",
+  coaching: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&h=400&fit=crop",
+}
+
+// Specific modality images where available — override category fallback
 const MODALITY_IMAGES: Record<string, string> = {
-  "yoga": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=400&fit=crop",
-  "meditation": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop",
+  yoga: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=400&fit=crop",
+  meditation: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop",
   "massage-therapy": "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=400&fit=crop",
-  "acupuncture": "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=600&h=400&fit=crop",
+  acupuncture: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=600&h=400&fit=crop",
+  reiki: "https://images.unsplash.com/photo-1600618528240-fb9fc964b853?w=600&h=400&fit=crop",
+  breathwork: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop",
+  "sound-healing": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=400&fit=crop",
+  tarot: "https://images.unsplash.com/photo-1572435555646-7ad9a149ad91?w=600&h=400&fit=crop",
+  "crystal-healing": "https://images.unsplash.com/photo-1615486511262-c7b5c1949b5a?w=600&h=400&fit=crop",
+  "tai-chi": "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=600&h=400&fit=crop",
+  qigong: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=600&h=400&fit=crop",
+  ayurveda: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=600&h=400&fit=crop",
+  "art-therapy": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&h=400&fit=crop",
   "holistic-life-coaching": "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&h=400&fit=crop",
   "nutritional-counseling": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&h=400&fit=crop",
-  "reiki": "https://images.unsplash.com/photo-1600618528240-fb9fc964b853?w=600&h=400&fit=crop",
-  "breathwork": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop",
-  "sound-healing": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=400&fit=crop",
-  "tarot": "https://images.unsplash.com/photo-1572435555646-7ad9a149ad91?w=600&h=400&fit=crop",
+  hypnotherapy: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=400&fit=crop",
+  astrology: "https://images.unsplash.com/photo-1532968961962-8a0cb3a2d4f5?w=600&h=400&fit=crop",
+  mindfulness: "https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=600&h=400&fit=crop",
+  aromatherapy: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&h=400&fit=crop",
 }
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&h=400&fit=crop"
+
+function getModalityImage(slug: string, categorySlug: string): string {
+  return MODALITY_IMAGES[slug] || CATEGORY_IMAGES[categorySlug] || FALLBACK_IMAGE
+}
 
 export default function ModalityIndexContent() {
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
@@ -161,7 +191,7 @@ export default function ModalityIndexContent() {
                           >
                             <div className="relative h-32 overflow-hidden">
                               <Image
-                                src={MODALITY_IMAGES[modality.slug ?? ""] ?? FALLBACK_IMAGE}
+                                src={getModalityImage(modality.slug ?? "", category.slug ?? "")}
                                 alt={modality.name ?? ""}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-500"

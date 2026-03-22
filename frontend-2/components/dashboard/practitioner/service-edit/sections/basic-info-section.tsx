@@ -194,6 +194,23 @@ export function BasicInfoSection({
           <p className="text-sm text-muted-foreground">
             The primary practice modality for this service (e.g., Yoga, Meditation)
           </p>
+          {(() => {
+            const selectedMod = (modalities?.results || []).find(
+              (m: any) => m.id === localData.modality_ids?.[0]
+            )
+            if ((selectedMod as any)?.gray_zone) {
+              return (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800 max-w-md mt-2">
+                  <p className="font-medium">Note:</p>
+                  <p className="font-light">
+                    This modality may overlap with licensed therapy. Ensure your
+                    profile clearly states your credentials and scope of practice.
+                  </p>
+                </div>
+              )
+            }
+            return null
+          })()}
         </div>
 
         {/* Practitioner Category */}

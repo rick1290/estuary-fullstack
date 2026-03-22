@@ -18,6 +18,7 @@ class ServiceFilter(django_filters.FilterSet):
     # Modality filters
     modality = django_filters.CharFilter(method='filter_modality')
     modality_id = django_filters.CharFilter(method='filter_modality_id')
+    modality_category = django_filters.CharFilter(method='filter_modality_category')
 
     # Service type filters
     service_type = django_filters.CharFilter(method='filter_service_type')
@@ -201,6 +202,13 @@ class ServiceFilter(django_filters.FilterSet):
             result = queryset.filter(modalities__id__in=modality_ids).distinct()
             logger.info(f"Query returned {result.count()} results")
             return result
+        return queryset
+
+    def filter_modality_category(self, queryset, name, value):
+        """Filter by modality category slug(s) - comma-separated. Returns services with any modality in the given categories."""
+        cat_slugs = [s.strip() for s in value.split(',') if s.strip()]
+        if cat_slugs:
+            return queryset.filter(modalities__category_ref__slug__in=cat_slugs).distinct()
         return queryset
 
     def filter_search(self, queryset, name, value):

@@ -61,7 +61,11 @@ class PractitionerFilter(django_filters.FilterSet):
         method='filter_modality_id',
         label='Modality ID(s) - comma-separated'
     )
-    
+    modality_category = django_filters.CharFilter(
+        method='filter_modality_category',
+        label='Modality category slug(s) - comma-separated'
+    )
+
     # Experience and qualifications
     min_experience = django_filters.NumberFilter(
         field_name='years_of_experience',
@@ -132,7 +136,7 @@ class PractitionerFilter(django_filters.FilterSet):
         model = Practitioner
         fields = [
             'city', 'state', 'country', 'service_type', 'service_category',
-            'specialization', 'style', 'topic', 'modality', 'modality_id',
+            'specialization', 'style', 'topic', 'modality', 'modality_id', 'modality_category',
             'min_experience', 'max_experience', 'min_price', 'max_price',
             'is_verified', 'featured', 'practitioner_status',
             'available_now', 'location_type', 'language', 'search'
@@ -215,6 +219,13 @@ class PractitionerFilter(django_filters.FilterSet):
             result = queryset.filter(modalities__id__in=modality_ids).distinct()
             logger.info(f"Query returned {result.count()} results")
             return result
+        return queryset
+
+    def filter_modality_category(self, queryset, name, value):
+        """Filter by modality category slug(s) - comma-separated. Returns practitioners with any modality in the given categories."""
+        cat_slugs = [s.strip() for s in value.split(',') if s.strip()]
+        if cat_slugs:
+            return queryset.filter(modalities__category_ref__slug__in=cat_slugs).distinct()
         return queryset
 
 

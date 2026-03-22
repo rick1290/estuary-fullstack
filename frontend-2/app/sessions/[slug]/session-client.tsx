@@ -211,7 +211,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                 ))}
                 {service?.modalities && service.modalities.length > 0 && (
                   <>
-                    {service.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                    {service.modalities.map((modality) => (
                       <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
                         {modality.name}
                       </span>

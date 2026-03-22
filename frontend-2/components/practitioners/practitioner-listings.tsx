@@ -34,12 +34,22 @@ export default function PractitionerListings({
       ordering: getOrdering(sortBy),
     }
 
-    if (query) params.search = query
-    if (location) params.location = location
+    if (query || filters.search) params.search = query || filters.search
+    if (location || filters.location) params.location = location || filters.location
     if (categories.length > 0) params.categories = categories.join(',')
 
+    // Modality filter from URL
+    if (filters.modalities.length > 0) {
+      params.modality_id = filters.modalities.join(',')
+    }
+
+    // Location format
+    if (filters.locationFormat && filters.locationFormat !== 'all') {
+      params.location_type = filters.locationFormat === 'online' ? 'virtual' : 'in_person'
+    }
+
     return params
-  }, [query, location, categories, page, sortBy, PAGE_SIZE])
+  }, [query, location, categories, filters, page, sortBy, PAGE_SIZE])
 
   // Fetch practitioners from API using public endpoint
   const { data: practitionersData, isLoading, error, refetch } = useQuery({

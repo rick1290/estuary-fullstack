@@ -98,6 +98,21 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
 
       <ModalityHeroSection content={editorial} />
 
+      {/* Gray zone disclaimer for modalities that overlap with licensed therapy */}
+      {(modality as any)?.gray_zone && (
+        <div className="container max-w-3xl px-4 sm:px-6 mt-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800">
+            <p className="font-medium mb-1">Important note</p>
+            <p className="font-light leading-relaxed">
+              {modalityName} may overlap with licensed mental health practices. Practitioners on
+              Estuary offering {modalityName.toLowerCase()} are wellness providers, not licensed
+              therapists, unless specifically stated in their profile. If you are experiencing a
+              mental health crisis, please contact a licensed professional.
+            </p>
+          </div>
+        </div>
+      )}
+
       <ModalityStatsBar
         practitionerCount={modality?.practitioner_count ?? 0}
         serviceCount={modality?.service_count ?? 0}

@@ -436,7 +436,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               </span>
               {course.modalities && course.modalities.length > 0 && (
                 <>
-                  {course.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                  {course.modalities.map((modality) => (
                     <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
                       {modality.name}
                     </span>

@@ -250,7 +250,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             {/* Modalities */}
             {workshop.modalities && workshop.modalities.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
-                {workshop.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                {workshop.modalities.map((modality) => (
                   <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
                     {modality.name}
                   </span>

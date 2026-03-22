@@ -223,7 +223,7 @@ export default function BundleDetailsPage({ params }: { params: Promise<{ slug: 
                 </div>
                 {bundle.modalities && bundle.modalities.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {bundle.modalities.map((modality: { id: number; name: string; slug: string }) => (
+                    {bundle.modalities.map((modality) => (
                       <Badge key={modality.id} variant="sage" className="px-3 py-1">
                         {modality.name}
                       </Badge>
