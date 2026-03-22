@@ -1,11 +1,11 @@
 "use client"
 
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Users, Lock, Unlock } from "lucide-react"
+import { ArrowLeft, Users, Lock, Heart, Zap, Crown, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   streamsRetrieveOptions,
@@ -18,12 +18,13 @@ import { useAuthModal } from "@/components/auth/auth-provider"
 import { useToast } from "@/components/ui/use-toast"
 import { Spinner } from "@/components/ui/spinner"
 import ContentCard from "./content-card"
-import StreamTierSidebar from "./stream-tier-sidebar"
 import type { StreamPost } from "@/types/stream"
 
 interface StreamDetailContentProps {
   streamId: string
 }
+
+type FeedFilter = "all" | "free" | "entry" | "premium"
 
 export default function StreamDetailContent({ streamId }: StreamDetailContentProps) {
   const router = useRouter()
@@ -32,23 +33,41 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
+  const [activeFilter, setActiveFilter] = useState<FeedFilter>("all")
+  const [showStickyBar, setShowStickyBar] = useState(false)
+  const subscribeSectionRef = useRef<HTMLDivElement>(null)
+
+  // Sticky bar intersection observer
+  useEffect(() => {
+    const el = subscribeSectionRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyBar(!entry.isIntersecting)
+      },
+      { threshold: 0 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   // Fetch stream details
   const { data: stream, isLoading: streamLoading } = useQuery({
     ...streamsRetrieveOptions({
-      path: { id: streamId }
+      path: { id: streamId as any }
     })
   })
 
-  // Fetch stream posts - get all posts for preview/subscription purposes
+  // Fetch stream posts
   const { data: postsData, isLoading: postsLoading } = useQuery({
     ...streamPostsListOptions({
       query: {
         stream: stream?.id,
         is_published: true,
         page_size: 20,
-        // Don't filter by tier - we want to show all content for preview
-        include_all_tiers: true
-      }
+      } as any
     }),
     enabled: !!stream?.id && typeof stream.id === 'number'
   })
@@ -124,7 +143,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
   // Map API response to StreamPost format
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
-    const userTier = stream?.user_subscription?.tier_level || null
+    const userTier = (stream as any)?.subscription_tier || null
     // For public users or non-subscribers, show preview access (no full access)
     // For subscribers, check actual access
     const hasAccess = userTier ? (apiPost.can_access || false) : false
@@ -177,7 +196,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="font-serif text-2xl font-light text-olive-900 mb-2">Stream not found</h2>
-          <p className="text-muted-foreground mb-4">This stream may have been removed or doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">This stream may have been removed or doesn&apos;t exist.</p>
           <Button onClick={() => router.push('/streams')}>
             Back to Streams
           </Button>
@@ -191,187 +210,286 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
   const entryPosts = posts.filter(p => p.tierLevel === 'entry')
   const premiumPosts = posts.filter(p => p.tierLevel === 'premium')
 
+  const filteredPosts =
+    activeFilter === "all" ? posts :
+    activeFilter === "free" ? freePosts :
+    activeFilter === "entry" ? entryPosts :
+    premiumPosts
+
+  const userTier = (stream as any)?.subscription_tier || null
+  const isSubscribed = !!userTier
+
+  const entryPriceCents = stream.entry_tier_price_cents || 0
+  const premiumPriceCents = stream.premium_tier_price_cents || 0
+  const entryPriceDisplay = entryPriceCents > 0 ? `$${(entryPriceCents / 100).toFixed(2)}` : "Free"
+  const premiumPriceDisplay = premiumPriceCents > 0 ? `$${(premiumPriceCents / 100).toFixed(2)}` : "Free"
+
+  const initials = stream.practitioner_name?.split(' ').map((n: string) => n[0]).join('') || '?'
+
   return (
     <>
-      <div className="min-h-screen bg-cream-50">
-      {/* Header */}
-      <div className="relative">
-        <div 
-          className="h-64 bg-sage-100"
-          style={{
-            backgroundImage: stream.cover_image_url ? `url(${stream.cover_image_url})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute top-4 left-4">
-            <Button
-              variant="outline"
-              onClick={() => router.back()}
-              className="bg-white/90 backdrop-blur-sm"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
+      {/* Sticky subscribe bar */}
+      {showStickyBar && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-sage-200/60 shadow-sm">
+          <div className="max-w-2xl mx-auto px-4 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar className="h-8 w-8">
+                {stream.practitioner_image ? (
+                  <AvatarImage src={stream.practitioner_image} alt={stream.practitioner_name} />
+                ) : null}
+                <AvatarFallback className="text-xs bg-sage-100 text-olive-800">{initials}</AvatarFallback>
+              </Avatar>
+              <span className="font-serif text-sm font-medium text-olive-900 truncate">{stream.title}</span>
+            </div>
+            {isSubscribed ? (
+              <Badge variant="secondary" className="shrink-0 text-xs">
+                <Check className="h-3 w-3 mr-1" />
+                Following
+              </Badge>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleFollowFree}
+                disabled={followFreeMutation.isPending}
+                className="shrink-0 bg-sage-600 hover:bg-sage-700 text-white text-xs px-4"
+              >
+                {followFreeMutation.isPending ? <Spinner className="h-3 w-3" /> : "Follow"}
+              </Button>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="container max-w-7xl -mt-20 relative z-10">
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <Card className="border border-sage-200/60 bg-white">
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div
-                    className="h-20 w-20 rounded-full bg-sage-100 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-sage-300 transition-all"
-                    onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
-                  >
-                    {stream.practitioner_image ? (
-                      <img
-                        src={stream.practitioner_image}
-                        alt={stream.practitioner_name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl font-medium text-olive-800">
-                        {stream.practitioner_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+      <div className="min-h-screen bg-cream-50">
+        {/* Cover photo */}
+        <div className="relative">
+          <div
+            className="h-48 sm:h-56 w-full bg-sage-100"
+            style={{
+              backgroundImage: stream.cover_image_url ? `url(${stream.cover_image_url})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="absolute top-4 left-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.back()}
+                className="bg-white/90 backdrop-blur-sm"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                Back
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Single column layout */}
+        <div className="max-w-2xl mx-auto px-4">
+          {/* Profile hero */}
+          <div className="relative">
+            {/* Avatar overlapping cover */}
+            <div
+              className="-mt-12 mb-3 cursor-pointer"
+              onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
+            >
+              <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+                {stream.practitioner_image ? (
+                  <AvatarImage src={stream.practitioner_image} alt={stream.practitioner_name} />
+                ) : null}
+                <AvatarFallback className="text-2xl font-medium bg-sage-100 text-olive-800">{initials}</AvatarFallback>
+              </Avatar>
+            </div>
+
+            {/* Name and meta */}
+            <div className="mb-4">
+              <h1 className="font-serif text-2xl font-light text-olive-900 mb-0.5">{stream.title}</h1>
+              <p
+                className="text-muted-foreground text-sm cursor-pointer hover:text-sage-700 transition-colors mb-2"
+                onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
+              >
+                by {stream.practitioner_name}
+              </p>
+
+              {stream.tagline && (
+                <p className="text-olive-800 font-serif font-light italic mb-2">{stream.tagline}</p>
+              )}
+
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                <span className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {stream.subscriber_count || 0} subscribers
+                </span>
+                <span>{stream.post_count || 0} posts</span>
+              </div>
+
+              {stream.about && (
+                <p className="text-olive-700 text-sm leading-relaxed whitespace-pre-line mb-3">{stream.about}</p>
+              )}
+              {!stream.about && stream.description && (
+                <p className="text-olive-700 text-sm leading-relaxed mb-3">{stream.description}</p>
+              )}
+
+              {stream.tags && Array.isArray(stream.tags) && (stream.tags as string[]).length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {(stream.tags as string[]).map((tag: string) => (
+                    <Badge key={tag} variant="secondary" className="text-xs font-normal px-2 py-0.5">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <p className="mt-3">
+                <span
+                  className="text-xs text-sage-600 hover:text-sage-700 cursor-pointer transition-colors font-medium"
+                  onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
+                >
+                  View {stream.practitioner_name}&apos;s full profile &rarr;
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Inline subscribe section */}
+          <div ref={subscribeSectionRef} className="mb-6 pb-6 border-b border-sage-200/60">
+            {!isSubscribed ? (
+              <div className="space-y-3">
+                <Button
+                  onClick={handleFollowFree}
+                  disabled={followFreeMutation.isPending}
+                  className="w-full bg-sage-600 hover:bg-sage-700 text-white"
+                  size="lg"
+                >
+                  {followFreeMutation.isPending ? (
+                    <Spinner className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Heart className="h-4 w-4 mr-2" />
+                  )}
+                  {stream.free_tier_name || "Follow for Free"}
+                </Button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Entry tier card */}
+                  <div className="rounded-lg border border-sage-200/80 bg-white p-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Zap className="h-4 w-4 text-sage-600" />
+                      <span className="text-sm font-medium text-olive-900">
+                        {stream.entry_tier_name || "Member"}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h1 className="font-serif text-2xl font-light text-olive-900 mb-1">{stream.title}</h1>
-                    <p
-                      className="text-muted-foreground mb-2 cursor-pointer hover:text-sage-700 transition-colors"
-                      onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
-                    >
-                      by {stream.practitioner_name}
-                    </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {stream.subscriber_count || 0} subscribers
-                      </span>
-                      <span>{stream.post_count || 0} posts</span>
                     </div>
+                    <p className="text-lg font-semibold text-olive-900 mb-1">{entryPriceDisplay}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
+                    {Array.isArray(stream.entry_tier_perks) && (stream.entry_tier_perks as string[]).length > 0 && (
+                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{(stream.entry_tier_perks as string[]).join(' · ')}</p>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs"
+                      onClick={() => handleSubscribe("entry")}
+                    >
+                      Subscribe
+                    </Button>
+                  </div>
+
+                  {/* Premium tier card */}
+                  <div className="rounded-lg border border-sage-200/80 bg-white p-4 relative">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Crown className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm font-medium text-olive-900">
+                        {stream.premium_tier_name || "Premium"}
+                      </span>
+                    </div>
+                    <p className="text-lg font-semibold text-olive-900 mb-1">{premiumPriceDisplay}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
+                    {Array.isArray(stream.premium_tier_perks) && (stream.premium_tier_perks as string[]).length > 0 && (
+                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{(stream.premium_tier_perks as string[]).join(' · ')}</p>
+                    )}
+                    <Button
+                      size="sm"
+                      className="w-full text-xs bg-amber-500 hover:bg-amber-600 text-white"
+                      onClick={() => handleSubscribe("premium")}
+                    >
+                      Subscribe
+                    </Button>
                   </div>
                 </div>
-                {stream.description && (
-                  <p className="mt-4 text-muted-foreground">{stream.description}</p>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-sage-600" />
+                  <span className="text-sm text-olive-800">
+                    Subscribed &mdash;{" "}
+                    <Badge variant="secondary" className="text-xs">
+                      {userTier === "premium"
+                        ? stream.premium_tier_name || "Premium"
+                        : userTier === "entry"
+                        ? stream.entry_tier_name || "Member"
+                        : stream.free_tier_name || "Free"}
+                    </Badge>
+                  </span>
+                </div>
+                {userTier !== "premium" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => handleUpgrade("premium")}
+                  >
+                    <Crown className="h-3 w-3 mr-1 text-amber-500" />
+                    Upgrade
+                  </Button>
                 )}
-                {stream.tags && stream.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {stream.tags.map((tag: string) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </CardHeader>
-            </Card>
-
-            {/* About Section */}
-            {(stream.about || stream.tagline) && (
-              <Card className="mt-4 border border-sage-200/60 bg-white">
-                <CardContent className="pt-6">
-                  {stream.tagline && (
-                    <p className="text-lg font-serif font-light text-olive-800 mb-3 italic">
-                      {stream.tagline}
-                    </p>
-                  )}
-                  {stream.about && (
-                    <div className="text-olive-700 leading-relaxed whitespace-pre-line">
-                      {stream.about}
-                    </div>
-                  )}
-                  <p className="mt-4">
-                    <span
-                      className="text-sm text-sage-600 hover:text-sage-700 cursor-pointer transition-colors font-medium"
-                      onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
-                    >
-                      View {stream.practitioner_name}&apos;s full profile →
-                    </span>
-                  </p>
-                </CardContent>
-              </Card>
+              </div>
             )}
-
-            {/* Content Tabs */}
-            <div className="mt-8">
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="all">All ({posts.length})</TabsTrigger>
-                  <TabsTrigger value="free">
-                    <Unlock className="h-4 w-4 mr-1" />
-                    Free ({freePosts.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="entry">
-                    <Lock className="h-4 w-4 mr-1" />
-                    Entry ({entryPosts.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="premium">
-                    <Lock className="h-4 w-4 mr-1" />
-                    Premium ({premiumPosts.length})
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="all" className="mt-6 space-y-4">
-                  {postsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Spinner className="h-6 w-6" />
-                    </div>
-                  ) : posts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No posts yet</p>
-                  ) : (
-                    posts.map((post) => <ContentCard key={post.id} post={post} />)
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="free" className="mt-6 space-y-4">
-                  {freePosts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No free posts yet</p>
-                  ) : (
-                    freePosts.map((post) => <ContentCard key={post.id} post={post} />)
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="entry" className="mt-6 space-y-4">
-                  {entryPosts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No entry tier posts yet</p>
-                  ) : (
-                    entryPosts.map((post) => <ContentCard key={post.id} post={post} />)
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="premium" className="mt-6 space-y-4">
-                  {premiumPosts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No premium posts yet</p>
-                  ) : (
-                    premiumPosts.map((post) => <ContentCard key={post.id} post={post} />)
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
           </div>
 
-          {/* Sidebar - Subscription */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-6">
-              <StreamTierSidebar
-                stream={stream}
-                onFollowFree={handleFollowFree}
-                onSubscribe={handleSubscribe}
-                onUpgrade={handleUpgrade}
-                isAuthenticated={isAuthenticated}
-              />
-            </div>
+          {/* Feed filter pills */}
+          <div className="flex items-center gap-2 mb-5 overflow-x-auto">
+            {([
+              { key: "all" as FeedFilter, label: "All", count: posts.length },
+              { key: "free" as FeedFilter, label: "Free", count: freePosts.length },
+              { key: "entry" as FeedFilter, label: "Members", count: entryPosts.length },
+              { key: "premium" as FeedFilter, label: "Premium", count: premiumPosts.length },
+            ]).map(({ key, label, count }) => (
+              <button
+                key={key}
+                onClick={() => setActiveFilter(key)}
+                className={`
+                  inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
+                  ${activeFilter === key
+                    ? "bg-olive-900 text-white"
+                    : "bg-white text-olive-700 border border-sage-200/80 hover:bg-sage-50"
+                  }
+                `}
+              >
+                {(key === "entry" || key === "premium") && <Lock className="h-3 w-3" />}
+                {label}
+                <span className={`text-xs ${activeFilter === key ? "text-white/70" : "text-muted-foreground"}`}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Content feed */}
+          <div className="space-y-4 pb-12">
+            {postsLoading ? (
+              <div className="flex justify-center py-8">
+                <Spinner className="h-6 w-6" />
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {activeFilter === "all" ? "No posts yet" : `No ${activeFilter} posts yet`}
+              </p>
+            ) : (
+              filteredPosts.map((post) => <ContentCard key={post.id} post={post} />)
+            )}
           </div>
         </div>
       </div>
-    </div>
     </>
   )
 }

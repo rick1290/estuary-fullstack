@@ -20,10 +20,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MessageCircle, Share2, Bookmark, MoreHorizontal, Lock, Play, Heart } from "lucide-react"
+import { MessageCircle, Share2, Bookmark, MoreHorizontal, Lock, Play, Heart, DollarSign } from "lucide-react"
 import { useAuthModal } from "@/components/auth/auth-provider"
 
 // Helper function to validate URLs
@@ -48,7 +47,7 @@ export default function ContentCard({ post }: ContentCardProps) {
   const { openAuthModal } = useAuthModal()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  
+
   const [liked, setLiked] = useState(post.isLiked)
   const [saved, setSaved] = useState(post.isSaved)
   const [showComments, setShowComments] = useState(false)
@@ -90,7 +89,7 @@ export default function ContentCard({ post }: ContentCardProps) {
       // Revert optimistic update
       setLiked(!liked)
       setLikeCount(liked ? likeCount + 1 : Math.max(0, likeCount - 1))
-      
+
       toast({
         title: "Failed to update like",
         description: error?.body?.detail || "Please try again",
@@ -116,7 +115,7 @@ export default function ContentCard({ post }: ContentCardProps) {
       path: {
         public_uuid: post.id
       },
-      body: {} // Empty body as required by the API
+      body: {} as any
     })
   }
 
@@ -138,7 +137,7 @@ export default function ContentCard({ post }: ContentCardProps) {
     onError: (error: any) => {
       // Revert optimistic update
       setSaved(!saved)
-      
+
       toast({
         title: "Failed to save post",
         description: error?.body?.detail || "Please try again",
@@ -158,13 +157,13 @@ export default function ContentCard({ post }: ContentCardProps) {
       })
       return
     }
-    
+
     // Call API to toggle save
     saveMutation.mutate({
       path: {
         public_uuid: post.id
       },
-      body: {} // Empty body as required by the API
+      body: {} as any
     })
   }
 
@@ -185,13 +184,13 @@ export default function ContentCard({ post }: ContentCardProps) {
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!comment.trim()) return
-    
+
     // Call API to create comment
     createCommentMutation.mutate({
       path: { public_uuid: post.id },
-      body: { 
+      body: {
         content: comment.trim()
-      }
+      } as any
     })
   }
 
@@ -244,40 +243,40 @@ export default function ContentCard({ post }: ContentCardProps) {
   return (
     <>
       <Card className="relative overflow-hidden border border-sage-200/60 hover:shadow-sm transition-all duration-300 bg-white rounded-2xl">
-      {/* Card header with practitioner info */}
-      <div className="flex items-center p-5">
-        <Avatar
-          className="h-10 w-10 cursor-pointer ring-2 ring-sage-200/60"
-          onClick={handlePractitionerClick}
-        >
-          <AvatarImage
-            src={post.practitionerImage}
-            alt={post.practitionerName}
-            className="object-cover"
-          />
-          <AvatarFallback className="bg-sage-100 text-olive-800 text-sm font-medium">
-            {post.practitionerName.split(' ').map(n => n[0]).join('')}
-          </AvatarFallback>
-        </Avatar>
-        <div className="ml-3 flex-1">
-          <p
-            className="font-medium text-olive-900 cursor-pointer hover:text-sage-700 transition-colors"
+        {/* Compact header with avatar, name, date, badges, and menu inline */}
+        <div className="flex items-center px-4 py-3">
+          <Avatar
+            className="h-9 w-9 cursor-pointer ring-2 ring-sage-200/60"
             onClick={handlePractitionerClick}
           >
-            {post.practitionerName}
-          </p>
-          <p className="text-sm text-olive-600">
-            <span
-              className="hover:underline cursor-pointer"
-              onClick={() => router.push(`/streams/post/${post.id}`)}
-            >
-              {formattedDate}
-            </span>
-            {post.streamTitle && post.streamId && (
-              <>
-                {" · "}
+            <AvatarImage
+              src={post.practitionerImage}
+              alt={post.practitionerName}
+              className="object-cover"
+            />
+            <AvatarFallback className="bg-sage-100 text-olive-800 text-xs font-medium">
+              {post.practitionerName.split(' ').map(n => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
+          <div className="ml-2.5 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p
+                className="font-semibold text-sm text-olive-900 cursor-pointer hover:text-sage-700 transition-colors truncate"
+                onClick={handlePractitionerClick}
+              >
+                {post.practitionerName}
+              </p>
+              <span className="text-xs text-olive-500">
                 <span
-                  className="text-sage-600 hover:text-sage-700 cursor-pointer transition-colors"
+                  className="hover:underline cursor-pointer"
+                  onClick={() => router.push(`/streams/post/${post.id}`)}
+                >
+                  {formattedDate}
+                </span>
+              </span>
+              {post.streamTitle && post.streamId && (
+                <span
+                  className="text-xs text-sage-600 hover:text-sage-700 cursor-pointer transition-colors truncate"
                   onClick={(e) => {
                     e.stopPropagation()
                     router.push(`/streams/${post.streamId}`)
@@ -285,139 +284,92 @@ export default function ContentCard({ post }: ContentCardProps) {
                 >
                   {post.streamTitle}
                 </span>
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {post.userSubscriptionTier && post.userSubscriptionTier !== "free" && (
-            <Badge className="bg-sage-100 text-olive-800 border-0 rounded-full">
-              Subscribed ({post.userSubscriptionTier})
-            </Badge>
-          )}
-          {post.isPremium && (
-            <Badge className="bg-terracotta-100 text-olive-800 border-0 rounded-full">
-              <Lock className="h-3 w-3 mr-1" strokeWidth="1.5" />
-              {post.tierLevel || "Premium"}
-            </Badge>
-          )}
-          {post.isPremium && !post.hasAccess && !post.userSubscriptionTier && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs border-sage-300 text-sage-700 hover:bg-sage-50"
-              onClick={() => router.push(`/streams/${post.streamId}`)}
-            >
-              Subscribe
-            </Button>
-          )}
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-olive-600 hover:text-olive-800 hover:bg-sage-50">
-              <MoreHorizontal className="h-4 w-4" strokeWidth="1.5" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" strokeWidth="1.5" />
-              Share
-            </DropdownMenuItem>
-            <DropdownMenuItem>Report</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Content */}
-      <CardContent className="px-5 pb-5 pt-0">
-        {/* Content text */}
-        <div className="mb-4 text-olive-700 leading-relaxed">
-          {post.isPremium && !post.hasAccess ? (
-            <>
-              {post.teaserText || post.content.substring(0, 150)}...{" "}
-              <Button 
-                variant="link" 
-                size="sm" 
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    openAuthModal({
-                      defaultTab: "login",
-                      redirectUrl: window.location.pathname,
-                      serviceType: "stream",
-                      title: "Subscribe to Premium Content",
-                      description: "Sign in to access exclusive premium content"
-                    })
-                  } else {
-                    // Redirect to stream checkout page
-                    router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
-                  }
-                }} 
-                className="font-medium text-sage-700 p-0 h-auto"
-              >
-                {!isAuthenticated ? "Sign in to subscribe" : "Subscribe to read more"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <span
-                className="cursor-pointer"
-                onClick={() => router.push(`/streams/post/${post.id}`)}
-              >
-                {post.content.length > 300 ? `${post.content.substring(0, 300)}... ` : post.content}
-              </span>
-              {post.content.length > 300 && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => router.push(`/streams/post/${post.id}`)}
-                  className="font-medium text-sage-700 p-0 h-auto"
-                >
-                  Read more
-                </Button>
               )}
-            </>
-          )}
+              {post.userSubscriptionTier && post.userSubscriptionTier !== "free" && (
+                <Badge className="bg-sage-100 text-olive-800 border-0 rounded-full text-[10px] px-2 py-0">
+                  {post.userSubscriptionTier}
+                </Badge>
+              )}
+              {post.isPremium && (
+                <Badge className="bg-terracotta-100 text-olive-800 border-0 rounded-full text-[10px] px-2 py-0">
+                  <Lock className="h-2.5 w-2.5 mr-0.5" strokeWidth="1.5" />
+                  {post.tierLevel || "Premium"}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-olive-500 hover:text-olive-800 hover:bg-sage-50 ml-1 shrink-0">
+                <MoreHorizontal className="h-4 w-4" strokeWidth="1.5" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" strokeWidth="1.5" />
+                Share
+              </DropdownMenuItem>
+              <DropdownMenuItem>Report</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Content media */}
+        {/* Media FIRST -- edge-to-edge, no padding, no rounded corners on media */}
         {validMediaUrls.length > 0 && (
-          <div className="relative mb-4 overflow-hidden rounded-xl">
+          <div className="relative overflow-hidden">
             {post.contentType === "video" ? (
-              <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+              <div className="relative aspect-video bg-black overflow-hidden">
                 {post.isPremium && !post.hasAccess ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="p-3 bg-white/10 backdrop-blur-sm rounded-full mb-3">
-                      <Lock className="h-8 w-8 text-white" strokeWidth="1.5" />
+                  <>
+                    {/* Blurred preview background */}
+                    {validMediaUrls[0] && (
+                      <Image
+                        src={validMediaUrls[0]}
+                        alt="Video thumbnail"
+                        fill
+                        className="object-cover rounded-none"
+                        style={{ filter: "blur(24px)", transform: "scale(1.1)" }}
+                        unoptimized
+                      />
+                    )}
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+                    {/* Lock content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+                      <div className="p-4 bg-white/10 backdrop-blur-md rounded-full mb-4">
+                        <Lock className="h-10 w-10 text-white" strokeWidth="1.5" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-white mb-1">{post.tierLevel || "Premium"} Content</h3>
+                      <p className="text-sm text-white/70 mb-5">Subscribe to watch this video</p>
+                      <Button
+                        size="lg"
+                        className="bg-white text-olive-900 hover:bg-cream-50 font-semibold px-8 shadow-lg"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            openAuthModal({
+                              defaultTab: "login",
+                              redirectUrl: window.location.pathname,
+                              serviceType: "stream",
+                              title: "Subscribe to Watch Video",
+                              description: "Sign in to access exclusive video content"
+                            })
+                          } else {
+                            router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
+                          }
+                        }}
+                      >
+                        <Play className="mr-2 h-5 w-5" strokeWidth="1.5" />
+                        {!isAuthenticated ? "Sign in to watch" : "Subscribe to Unlock"}
+                      </Button>
                     </div>
-                    <h3 className="text-lg font-medium text-white mb-2">{post.tierLevel} Content</h3>
-                    <p className="text-sm text-white/80 mb-4">Subscribe to watch this video</p>
-                    <Button
-                      className="bg-white text-olive-900 hover:bg-cream-50"
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          openAuthModal({
-                            defaultTab: "login",
-                            redirectUrl: window.location.pathname,
-                            serviceType: "stream",
-                            title: "Subscribe to Watch Video",
-                            description: "Sign in to access exclusive video content"
-                          })
-                        } else {
-                          router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
-                        }
-                      }}
-                    >
-                      <Play className="mr-2 h-4 w-4" strokeWidth="1.5" />
-                      {!isAuthenticated ? "Sign in to watch" : "Subscribe to Watch"}
-                    </Button>
-                  </div>
+                  </>
                 ) : validMediaUrls[0] ? (
                   <Image
                     src={validMediaUrls[0]}
                     alt="Video thumbnail"
                     fill
-                    className="object-cover"
+                    className="object-cover rounded-none"
                     unoptimized
                   />
                 ) : (
@@ -435,34 +387,34 @@ export default function ContentCard({ post }: ContentCardProps) {
               </div>
             ) : (
               <div className="relative">
-                {/* Multi-image gallery layout */}
+                {/* Multi-image gallery layout -- edge-to-edge, no rounding */}
                 {validMediaUrls.length === 1 ? (
-                  // Single image - full width
                   <div className="relative">
                     <Image
                       src={validMediaUrls[0]}
                       alt="Post media"
                       width={800}
                       height={450}
-                      className="w-full rounded-xl object-cover"
+                      className="w-full rounded-none object-cover"
                       style={{
-                        filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                        filter: post.isPremium && !post.hasAccess ? "blur(24px)" : "none",
+                        transform: post.isPremium && !post.hasAccess ? "scale(1.1)" : "none",
                       }}
                       unoptimized
                     />
                   </div>
                 ) : validMediaUrls.length === 2 ? (
-                  // Two images - side by side
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-0.5">
                     {validMediaUrls.slice(0, 2).map((url, index) => (
                       <div key={index} className="relative aspect-square">
                         <Image
                           src={url}
                           alt={`Post media ${index + 1}`}
                           fill
-                          className="rounded-xl object-cover"
+                          className="rounded-none object-cover"
                           style={{
-                            filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                            filter: post.isPremium && !post.hasAccess ? "blur(24px)" : "none",
+                            transform: post.isPremium && !post.hasAccess ? "scale(1.1)" : "none",
                           }}
                           unoptimized
                         />
@@ -470,30 +422,31 @@ export default function ContentCard({ post }: ContentCardProps) {
                     ))}
                   </div>
                 ) : validMediaUrls.length === 3 ? (
-                  // Three images - first one larger, two smaller
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-0.5">
                     <div className="relative aspect-square">
                       <Image
                         src={validMediaUrls[0]}
                         alt="Post media 1"
                         fill
-                        className="rounded-xl object-cover"
+                        className="rounded-none object-cover"
                         style={{
-                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                          filter: post.isPremium && !post.hasAccess ? "blur(24px)" : "none",
+                          transform: post.isPremium && !post.hasAccess ? "scale(1.1)" : "none",
                         }}
                         unoptimized
                       />
                     </div>
-                    <div className="grid grid-rows-2 gap-2">
+                    <div className="grid grid-rows-2 gap-0.5">
                       {validMediaUrls.slice(1, 3).map((url, index) => (
-                        <div key={index + 1} className="relative aspect-square">
+                        <div key={index + 1} className="relative aspect-square overflow-hidden">
                           <Image
                             src={url}
                             alt={`Post media ${index + 2}`}
                             fill
-                            className="rounded-xl object-cover"
+                            className="rounded-none object-cover"
                             style={{
-                              filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                              filter: post.isPremium && !post.hasAccess ? "blur(24px)" : "none",
+                              transform: post.isPremium && !post.hasAccess ? "scale(1.1)" : "none",
                             }}
                             unoptimized
                           />
@@ -502,36 +455,37 @@ export default function ContentCard({ post }: ContentCardProps) {
                     </div>
                   </div>
                 ) : (
-                  // Four or more images - 2x2 grid with "+X more" overlay
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-0.5">
                     {validMediaUrls.slice(0, 3).map((url, index) => (
-                      <div key={index} className="relative aspect-square">
+                      <div key={index} className="relative aspect-square overflow-hidden">
                         <Image
                           src={url}
                           alt={`Post media ${index + 1}`}
                           fill
-                          className="rounded-xl object-cover"
+                          className="rounded-none object-cover"
                           style={{
-                            filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                            filter: post.isPremium && !post.hasAccess ? "blur(24px)" : "none",
+                            transform: post.isPremium && !post.hasAccess ? "scale(1.1)" : "none",
                           }}
                           unoptimized
                         />
                       </div>
                     ))}
-                    <div className="relative aspect-square">
+                    <div className="relative aspect-square overflow-hidden">
                       <Image
                         src={validMediaUrls[3]}
                         alt="Post media 4"
                         fill
-                        className="rounded-xl object-cover"
+                        className="rounded-none object-cover"
                         style={{
-                          filter: post.isPremium && !post.hasAccess ? "blur(20px)" : "none",
+                          filter: post.isPremium && !post.hasAccess ? "blur(24px)" : "none",
+                          transform: post.isPremium && !post.hasAccess ? "scale(1.1)" : "none",
                         }}
                         unoptimized
                       />
                       {validMediaUrls.length > 4 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
-                          <span className="text-white font-medium text-lg">
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-white font-semibold text-lg">
                             +{validMediaUrls.length - 4} more
                           </span>
                         </div>
@@ -539,29 +493,38 @@ export default function ContentCard({ post }: ContentCardProps) {
                     </div>
                   </div>
                 )}
-                
-                {/* Premium content overlay */}
+
+                {/* Locked content overlay for images -- gradient + lock + subscribe CTA */}
                 {post.isPremium && !post.hasAccess && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-xl">
-                    <Button 
-                      className="bg-white text-olive-900 hover:bg-cream-50 shadow-sm"
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          openAuthModal({
-                            defaultTab: "login",
-                            redirectUrl: window.location.pathname,
-                            serviceType: "stream",
-                            title: "Subscribe to View Images",
-                            description: "Sign in to access exclusive image content"
-                          })
-                        } else {
-                          router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
-                        }
-                      }}
-                    >
-                      <Lock className="mr-2 h-4 w-4" strokeWidth="1.5" />
-                      {!isAuthenticated ? "Sign in to view" : "Subscribe to View"}
-                    </Button>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                    <div className="relative flex flex-col items-center px-6">
+                      <div className="p-4 bg-white/10 backdrop-blur-md rounded-full mb-4">
+                        <Lock className="h-10 w-10 text-white" strokeWidth="1.5" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-white mb-1">{post.tierLevel || "Premium"} Content</h3>
+                      <p className="text-sm text-white/70 mb-5">Subscribe to see this content</p>
+                      <Button
+                        size="lg"
+                        className="bg-white text-olive-900 hover:bg-cream-50 font-semibold px-8 shadow-lg"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            openAuthModal({
+                              defaultTab: "login",
+                              redirectUrl: window.location.pathname,
+                              serviceType: "stream",
+                              title: "Subscribe to View Images",
+                              description: "Sign in to access exclusive image content"
+                            })
+                          } else {
+                            router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
+                          }
+                        }}
+                      >
+                        <Lock className="mr-2 h-5 w-5" strokeWidth="1.5" />
+                        {!isAuthenticated ? "Sign in to unlock" : "Subscribe to Unlock"}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -569,144 +532,191 @@ export default function ContentCard({ post }: ContentCardProps) {
           </div>
         )}
 
-        {/* Linked Service Booking Card */}
-        {post.linkedService && (
-          <div className="mb-4 p-4 rounded-xl border border-sage-200/60 bg-sage-50/50">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-sage-600 font-medium uppercase tracking-wide mb-1">
-                  {post.linkedService.serviceType === 'session' ? 'Book a Session' :
-                   post.linkedService.serviceType === 'workshop' ? 'Join Workshop' :
-                   post.linkedService.serviceType === 'course' ? 'Enroll in Course' : 'Book Now'}
-                </p>
-                <h4 className="font-medium text-olive-900 truncate">{post.linkedService.title}</h4>
-                <div className="flex items-center gap-3 mt-1 text-sm text-olive-600">
-                  <span className="font-semibold text-olive-800">${post.linkedService.price.toFixed(0)}</span>
-                  {post.linkedService.duration && (
-                    <span>{post.linkedService.duration} min</span>
-                  )}
+        {/* Text content below media */}
+        <CardContent className="px-4 pb-0 pt-3">
+          {/* Content text */}
+          <div className="text-olive-700 leading-relaxed text-[15px]">
+            {post.isPremium && !post.hasAccess ? (
+              <>
+                {post.teaserText || post.content.substring(0, 150)}...{" "}
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      openAuthModal({
+                        defaultTab: "login",
+                        redirectUrl: window.location.pathname,
+                        serviceType: "stream",
+                        title: "Subscribe to Premium Content",
+                        description: "Sign in to access exclusive premium content"
+                      })
+                    } else {
+                      // Redirect to stream checkout page
+                      router.push(`/checkout/stream?streamId=${post.streamId}&tier=${post.tierLevel || 'entry'}`)
+                    }
+                  }}
+                  className="font-medium text-sage-700 p-0 h-auto"
+                >
+                  {!isAuthenticated ? "Sign in to subscribe" : "Subscribe to read more"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <span
+                  className="cursor-pointer"
+                  onClick={() => router.push(`/streams/post/${post.id}`)}
+                >
+                  {post.content.length > 300 ? `${post.content.substring(0, 300)}... ` : post.content}
+                </span>
+                {post.content.length > 300 && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => router.push(`/streams/post/${post.id}`)}
+                    className="font-medium text-sage-700 p-0 h-auto"
+                  >
+                    Read more
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Linked Service Booking Card */}
+          {post.linkedService && (
+            <div className="mt-3 p-4 rounded-xl border border-sage-200/60 bg-sage-50/50">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-sage-600 font-medium uppercase tracking-wide mb-1">
+                    {post.linkedService.serviceType === 'session' ? 'Book a Session' :
+                     post.linkedService.serviceType === 'workshop' ? 'Join Workshop' :
+                     post.linkedService.serviceType === 'course' ? 'Enroll in Course' : 'Book Now'}
+                  </p>
+                  <h4 className="font-medium text-olive-900 truncate">{post.linkedService.title}</h4>
+                  <div className="flex items-center gap-3 mt-1 text-sm text-olive-600">
+                    <span className="font-semibold text-olive-800">${post.linkedService.price.toFixed(0)}</span>
+                    {post.linkedService.duration && (
+                      <span>{post.linkedService.duration} min</span>
+                    )}
+                  </div>
                 </div>
+                <Button
+                  size="sm"
+                  className="bg-sage-700 hover:bg-sage-800 text-white ml-4"
+                  onClick={() => router.push(`/services/${post.linkedService!.slug || post.linkedService!.id}`)}
+                >
+                  Book Now
+                </Button>
               </div>
-              <Button
-                size="sm"
-                className="bg-sage-700 hover:bg-sage-800 text-white ml-4"
-                onClick={() => router.push(`/services/${post.linkedService!.slug || post.linkedService!.id}`)}
-              >
-                Book Now
-              </Button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {post.tags.map((tag) => (
-              <Badge
-                key={tag}
-                className="bg-sage-100 text-olive-700 hover:bg-sage-200 cursor-pointer transition-colors px-3 py-1 rounded-full"
-                onClick={() => router.push(`/streams?tag=${encodeURIComponent(tag)}`)}
-              >
-                #{tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+          {/* Tags -- smaller and more subtle, above engagement bar */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {post.tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="bg-sage-50 text-olive-500 hover:bg-sage-100 cursor-pointer transition-colors px-2 py-0 rounded-full text-[11px] font-normal"
+                  onClick={() => router.push(`/streams?tag=${encodeURIComponent(tag)}`)}
+                >
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
 
-        <Separator className="mb-4 bg-sage-200" />
-
-        {/* Action buttons */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`px-3 ${liked ? "text-rose-500" : "text-olive-600"} hover:text-rose-500 hover:bg-rose-50`}
-              onClick={handleLike}
-            >
-              <Heart className={`h-4 w-4 mr-1.5 ${liked ? "fill-current" : ""}`} strokeWidth="1.5" />
-              <span className="font-medium">{likeCount}</span>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-3 text-olive-600 hover:text-sage-700 hover:bg-sage-50"
-              onClick={handleCommentToggle}
-            >
-              <MessageCircle className="h-4 w-4 mr-1.5" strokeWidth="1.5" />
-              <span className="font-medium">{post.comments}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-3 text-olive-600 hover:text-sage-700 hover:bg-sage-50"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" strokeWidth="1.5" />
-            </Button>
-          </div>
+        {/* Engagement bar -- full-width, prominent, evenly spaced */}
+        <div className="flex items-center justify-between px-2 py-1 mt-2 border-t border-sage-100">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex-1 gap-2 h-11 ${liked ? "text-rose-500" : "text-olive-600"} hover:text-rose-500 hover:bg-rose-50/50`}
+            onClick={handleLike}
+          >
+            <Heart className={`h-5 w-5 ${liked ? "fill-current" : ""}`} strokeWidth="1.5" />
+            <span className="font-semibold text-sm">{likeCount}</span>
+          </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className={`px-3 ${saved ? "text-sage-600" : "text-olive-600"} hover:text-sage-700 hover:bg-sage-50`}
+            className="flex-1 gap-2 h-11 text-olive-600 hover:text-sage-700 hover:bg-sage-50/50"
+            onClick={handleCommentToggle}
+          >
+            <MessageCircle className="h-5 w-5" strokeWidth="1.5" />
+            <span className="font-semibold text-sm">{post.comments}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 gap-2 h-11 text-olive-600 hover:text-sage-700 hover:bg-sage-50/50"
+            onClick={handleShare}
+          >
+            <Share2 className="h-5 w-5" strokeWidth="1.5" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 gap-2 h-11 text-olive-600 hover:text-amber-600 hover:bg-amber-50/50"
+            onClick={() => {
+              toast({
+                title: "Tipping coming soon",
+                description: "This feature is under development.",
+              })
+            }}
+          >
+            <DollarSign className="h-5 w-5" strokeWidth="1.5" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex-1 gap-2 h-11 ${saved ? "text-sage-600" : "text-olive-600"} hover:text-sage-700 hover:bg-sage-50/50`}
             onClick={handleSave}
           >
-            <Bookmark className={`h-4 w-4 ${saved ? "fill-current" : ""}`} strokeWidth="1.5" />
+            <Bookmark className={`h-5 w-5 ${saved ? "fill-current" : ""}`} strokeWidth="1.5" />
           </Button>
         </div>
 
-        {/* Comments section */}
+        {/* Comments section -- inline, natural feel */}
         {showComments && (
-          <div className="mt-4 pt-4 border-t">
-            <form onSubmit={handleCommentSubmit} className="flex gap-2 mb-4">
-              <Input
-                className="flex-1 border-sage-300 focus:border-sage-500 rounded-xl"
-                placeholder="Add a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-              <Button 
-                type="submit" 
-                size="sm" 
-                disabled={!comment.trim() || createCommentMutation.isPending} 
-                className="bg-olive-800 hover:bg-olive-700 rounded-xl"
-              >
-                {createCommentMutation.isPending ? "Posting..." : "Post"}
-              </Button>
-            </form>
-            
-            {commentsData?.results && commentsData.results.length > 0 ? (
-              <div className="space-y-3">
-                {commentsData.results.map((comment: any) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8">
+          <div className="px-4 pb-4 pt-2 border-t border-sage-100">
+            {/* Existing comments */}
+            {(commentsData as any)?.results && (commentsData as any).results.length > 0 ? (
+              <div className="space-y-3 mb-3">
+                {(commentsData as any).results.map((comment: any) => (
+                  <div key={comment.id} className="flex gap-2.5">
+                    <Avatar className="h-7 w-7 shrink-0">
                       <AvatarImage src={comment.user_image || "/placeholder.svg"} alt={comment.user_name} />
-                      <AvatarFallback className="text-xs">{comment.user_name?.charAt(0) || '?'}</AvatarFallback>
+                      <AvatarFallback className="text-[10px]">{comment.user_name?.charAt(0) || '?'}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
-                        <span className="font-medium text-sm text-olive-900">{comment.user_name}</span>
-                        <span className="text-xs text-olive-500">
+                        <span className="font-semibold text-sm text-olive-900">{comment.user_name}</span>
+                        <span className="text-[11px] text-olive-400">
                           {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-sm text-olive-700 mt-0.5">{comment.content}</p>
+                      <p className="text-sm text-olive-700 mt-0.5 leading-snug">{comment.content}</p>
                       {/* Show replies if any */}
                       {comment.replies && comment.replies.length > 0 && (
-                        <div className="ml-8 mt-2 space-y-2">
+                        <div className="ml-6 mt-2 space-y-2">
                           {comment.replies.map((reply: any) => (
                             <div key={reply.id} className="flex gap-2">
-                              <Avatar className="h-6 w-6">
+                              <Avatar className="h-5 w-5 shrink-0">
                                 <AvatarImage src={reply.user_image || "/placeholder.svg"} alt={reply.user_name} />
-                                <AvatarFallback className="text-xs">{reply.user_name?.charAt(0) || '?'}</AvatarFallback>
+                                <AvatarFallback className="text-[9px]">{reply.user_name?.charAt(0) || '?'}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                  <span className="font-medium text-xs text-olive-900">{reply.user_name}</span>
-                                  <span className="text-xs text-olive-500">
+                                  <span className="font-semibold text-xs text-olive-900">{reply.user_name}</span>
+                                  <span className="text-[10px] text-olive-400">
                                     {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
                                   </span>
                                 </div>
@@ -721,13 +731,29 @@ export default function ContentCard({ post }: ContentCardProps) {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-sm text-olive-500">No comments yet. Be the first to comment!</p>
+              <p className="text-center text-xs text-olive-400 py-3">No comments yet. Be the first to comment!</p>
             )}
+
+            {/* Comment input -- always visible at bottom when expanded */}
+            <form onSubmit={handleCommentSubmit} className="flex gap-2">
+              <Input
+                className="flex-1 border-sage-200 focus:border-sage-400 rounded-full h-9 text-sm px-4 bg-sage-50/50"
+                placeholder="Add a comment..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!comment.trim() || createCommentMutation.isPending}
+                className="bg-olive-800 hover:bg-olive-700 rounded-full h-9 px-4 text-sm"
+              >
+                {createCommentMutation.isPending ? "..." : "Post"}
+              </Button>
+            </form>
           </div>
         )}
-      </CardContent>
-    </Card>
-
+      </Card>
     </>
   )
 }

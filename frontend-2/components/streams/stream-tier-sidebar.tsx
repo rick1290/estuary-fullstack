@@ -39,7 +39,7 @@ export default function StreamTierSidebar({
   onUpgrade,
   isAuthenticated,
 }: StreamTierSidebarProps) {
-  const currentTier = stream.user_subscription?.tier_level as
+  const currentTier = (stream.subscription_tier || stream.user_subscription?.tier_level) as
     | "free"
     | "entry"
     | "premium"
