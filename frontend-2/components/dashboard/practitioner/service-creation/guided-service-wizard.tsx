@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { Progress } from "@/components/ui/progress"
@@ -55,6 +55,7 @@ import {
   practitionerCategoriesListOptions,
   schedulesListOptions,
   modalitiesListOptions,
+  modalityCategoriesListOptions,
   aiImagesGenerateCreateMutation,
   servicesUploadCoverImageCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
@@ -249,8 +250,20 @@ export function GuidedServiceWizard() {
 
   // Fetch data
   const { data: modalities } = useQuery({
-    ...modalitiesListOptions({}),
+    ...modalitiesListOptions({ query: { page_size: 200 } }),
   })
+
+  const { data: modalityCategories } = useQuery({
+    ...modalityCategoriesListOptions({ query: { page_size: 50 } }),
+  })
+
+  // Group modalities by category slug for the dropdown
+  const modalitiesByCategory = (modalities?.results || []).reduce<Record<string, any[]>>((acc, mod) => {
+    const catSlug = (mod as any).category_slug || "other"
+    if (!acc[catSlug]) acc[catSlug] = []
+    acc[catSlug].push(mod)
+    return acc
+  }, {})
 
   const { data: practitionerCategories, refetch: refetchPractitionerCategories } = useQuery({
     ...practitionerCategoriesListOptions({}),
@@ -1158,13 +1171,24 @@ export function GuidedServiceWizard() {
                                   <SelectValue placeholder="Select a modality" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent className="max-h-80">
                                 <SelectItem value="none">No modality</SelectItem>
-                                {modalities?.results?.map((modality) => (
-                                  <SelectItem key={modality.id} value={String(modality.id)}>
-                                    {modality.name}
-                                  </SelectItem>
-                                ))}
+                                {(modalityCategories?.results || []).map((cat) => {
+                                  const catMods = modalitiesByCategory[(cat as any).slug ?? ""] || []
+                                  if (catMods.length === 0) return null
+                                  return (
+                                    <SelectGroup key={cat.id}>
+                                      <SelectLabel className="text-xs font-semibold text-olive-500 uppercase tracking-wider">
+                                        {cat.name}
+                                      </SelectLabel>
+                                      {catMods.map((modality: any) => (
+                                        <SelectItem key={modality.id} value={String(modality.id)}>
+                                          {modality.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectGroup>
+                                  )
+                                })}
                               </SelectContent>
                             </Select>
                             <FormDescription>

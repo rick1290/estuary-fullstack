@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { 
+import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -18,6 +20,7 @@ import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/type
 import { useQuery } from "@tanstack/react-query"
 import {
   modalitiesListOptions,
+  modalityCategoriesListOptions,
   practitionerCategoriesListOptions
 } from "@/src/client/@tanstack/react-query.gen"
 import {
@@ -58,10 +61,22 @@ export function BasicInfoSection({
   const [tagInput, setTagInput] = useState("")
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
 
-  // Fetch modalities and practitioner categories
+  // Fetch modalities grouped by category
   const { data: modalities } = useQuery({
-    ...modalitiesListOptions({}),
+    ...modalitiesListOptions({ query: { page_size: 200 } }),
   })
+
+  const { data: modalityCategories } = useQuery({
+    ...modalityCategoriesListOptions({ query: { page_size: 50 } }),
+  })
+
+  // Group modalities by category slug
+  const modalitiesByCategory = (modalities?.results || []).reduce<Record<string, any[]>>((acc, mod) => {
+    const catSlug = (mod as any).category_slug || "other"
+    if (!acc[catSlug]) acc[catSlug] = []
+    acc[catSlug].push(mod)
+    return acc
+  }, {})
 
   const { data: practitionerCategories, refetch: refetchPractitionerCategories } = useQuery({
     ...practitionerCategoriesListOptions({}),
@@ -156,13 +171,24 @@ export function BasicInfoSection({
             <SelectTrigger className="max-w-md">
               <SelectValue placeholder="Select a modality" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-80">
               <SelectItem value="none">No modality</SelectItem>
-              {modalities?.results?.map((modality) => (
-                <SelectItem key={modality.id} value={modality.id.toString()}>
-                  {modality.name}
-                </SelectItem>
-              ))}
+              {(modalityCategories?.results || []).map((cat) => {
+                const catMods = modalitiesByCategory[(cat as any).slug ?? ""] || []
+                if (catMods.length === 0) return null
+                return (
+                  <SelectGroup key={cat.id}>
+                    <SelectLabel className="text-xs font-semibold text-olive-500 uppercase tracking-wider">
+                      {cat.name}
+                    </SelectLabel>
+                    {catMods.map((modality: any) => (
+                      <SelectItem key={modality.id} value={modality.id!.toString()}>
+                        {modality.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )
+              })}
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">

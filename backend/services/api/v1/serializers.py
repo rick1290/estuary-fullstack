@@ -17,15 +17,32 @@ from services.models import (
 from practitioners.models import Practitioner, Schedule
 from media.models import Media, MediaEntityType
 from users.models import User
-from common.models import Modality
+from common.models import Modality, ModalityCategory
 from locations.api.v1.serializers import PractitionerLocationSerializer
+
+
+class ModalityCategorySerializer(serializers.ModelSerializer):
+    """Serializer for modality categories"""
+    modality_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = ModalityCategory
+        fields = ['id', 'name', 'slug', 'short_description', 'icon', 'color',
+                  'order', 'is_active', 'modality_count']
+        read_only_fields = ['id', 'slug']
 
 
 class ModalitySerializer(serializers.ModelSerializer):
     """Serializer for modalities"""
+    category_name = serializers.CharField(source='category_ref.name', read_only=True, default=None)
+    category_slug = serializers.CharField(source='category_ref.slug', read_only=True, default=None)
+    category_color = serializers.CharField(source='category_ref.color', read_only=True, default=None)
+
     class Meta:
         model = Modality
         fields = ['id', 'name', 'slug', 'description', 'icon', 'category',
+                  'category_name', 'category_slug', 'category_color',
+                  'cluster', 'short_description', 'gray_zone',
                   'is_active', 'is_featured', 'order']
         read_only_fields = ['id', 'slug']
 

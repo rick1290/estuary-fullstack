@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,10 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
-import { MapPin, Globe, Users, Navigation, Tag } from "lucide-react"
+import { MapPin, Globe, Users, Navigation, Tag, ChevronDown } from "lucide-react"
 import { useMarketplaceFilters } from "@/hooks/use-marketplace-filters"
-import { modalitiesListOptions, serviceCategoriesListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { modalitiesListOptions, modalityCategoriesListOptions, serviceCategoriesListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 interface MarketplaceFiltersProps {
   showServiceTypeFilter?: boolean
@@ -21,10 +23,16 @@ export default function MarketplaceFilters({
   showServiceTypeFilter = true,
 }: MarketplaceFiltersProps) {
   const { filters, updateFilter, resetFilters, toggleArrayFilter } = useMarketplaceFilters()
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+
+  // Fetch modality categories
+  const { data: modalityCategoriesData, isLoading: isLoadingModalityCategories } = useQuery({
+    ...modalityCategoriesListOptions({ query: { page_size: 50 } }),
+  })
 
   // Fetch modalities from API
   const { data: modalitiesData, isLoading: isLoadingModalities } = useQuery({
-    ...modalitiesListOptions({}),
+    ...modalitiesListOptions({ query: { page_size: 200 } }),
   })
 
   // Fetch service categories from API
@@ -32,9 +40,28 @@ export default function MarketplaceFilters({
     ...serviceCategoriesListOptions({}),
   })
 
+  const modalityCategories = modalityCategoriesData?.results || []
   const modalities = modalitiesData?.results || []
   const categories = categoriesData?.results || []
 
+  const isLoadingAll = isLoadingModalities || isLoadingModalityCategories
+
+  // Group modalities by category slug
+  const modalitiesByCategory = modalities.reduce<Record<string, typeof modalities>>((acc, mod) => {
+    const catSlug = (mod as any).category_slug || "other"
+    if (!acc[catSlug]) acc[catSlug] = []
+    acc[catSlug].push(mod)
+    return acc
+  }, {})
+
+  const toggleCategory = (slug: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(slug)) next.delete(slug)
+      else next.add(slug)
+      return next
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -162,33 +189,74 @@ export default function MarketplaceFilters({
             </div>
           )}
 
-          {/* Modalities Filter */}
+          {/* Modalities Filter — grouped by category */}
           <div className="space-y-3">
             <Label className="text-sm font-medium text-olive-900 flex items-center gap-2">
               <Tag className="h-4 w-4" />
               Modalities
             </Label>
-            {isLoadingModalities ? (
+            {isLoadingAll ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
                   <Skeleton key={i} className="h-6 w-full" />
                 ))}
               </div>
-            ) : modalities.length > 0 ? (
-              <div className="space-y-2.5">
-                {modalities.map((modality: any) => (
-                  <div key={modality.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`modality-${modality.id}`}
-                      checked={filters.modalities.includes(String(modality.id))}
-                      onCheckedChange={() => toggleArrayFilter('modalities', String(modality.id))}
-                      className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
-                    />
-                    <Label htmlFor={`modality-${modality.id}`} className="text-sm font-normal text-olive-700 cursor-pointer">
-                      {modality.name}
-                    </Label>
-                  </div>
-                ))}
+            ) : modalityCategories.length > 0 ? (
+              <div className="space-y-1">
+                {modalityCategories.map((cat) => {
+                  const catModalities = modalitiesByCategory[cat.slug ?? ""] || []
+                  if (catModalities.length === 0) return null
+                  const isExpanded = expandedCategories.has(cat.slug ?? "")
+                  const selectedCount = catModalities.filter(
+                    (m) => filters.modalities.includes(String(m.id))
+                  ).length
+
+                  return (
+                    <div key={cat.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(cat.slug ?? "")}
+                        className="w-full flex items-center justify-between py-2 text-left group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: cat.color || "#9CAF88" }}
+                          />
+                          <span className="text-sm font-medium text-olive-800 group-hover:text-olive-900">
+                            {cat.name}
+                          </span>
+                          {selectedCount > 0 && (
+                            <span className="text-[10px] bg-olive-800 text-white rounded-full w-4 h-4 flex items-center justify-center">
+                              {selectedCount}
+                            </span>
+                          )}
+                        </div>
+                        <ChevronDown className={cn(
+                          "h-3.5 w-3.5 text-olive-400 transition-transform",
+                          isExpanded && "rotate-180"
+                        )} />
+                      </button>
+                      {isExpanded && (
+                        <div className="pl-4 pb-2 space-y-1.5">
+                          {catModalities.map((modality: any) => (
+                            <div key={modality.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`modality-${modality.id}`}
+                                checked={filters.modalities.includes(String(modality.id))}
+                                onCheckedChange={() => toggleArrayFilter('modalities', String(modality.id))}
+                                className="border-sage-300 data-[state=checked]:bg-olive-800 data-[state=checked]:border-olive-800"
+                              />
+                              <Label htmlFor={`modality-${modality.id}`} className="text-sm font-normal text-olive-700 cursor-pointer">
+                                {modality.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No modalities available</p>

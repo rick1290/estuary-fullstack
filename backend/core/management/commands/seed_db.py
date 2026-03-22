@@ -24,7 +24,7 @@ from payments.models import (
     ServiceTypeCommission, UserCreditBalance
 )
 from locations.models import Country, State, City, ZipCode, PractitionerLocation
-from common.models import Modality
+from common.models import Modality, ModalityCategory
 from utils.models import Address, Language
 
 fake = Faker()
@@ -151,25 +151,47 @@ class Command(BaseCommand):
 
     def create_modalities(self):
         self.stdout.write('Creating modalities...')
-        
-        modalities_data = [
-            {'name': 'Yoga', 'category': 'Movement', 'description': 'Ancient practice combining physical postures, breathing, and meditation'},
-            {'name': 'Meditation', 'category': 'Mindfulness', 'description': 'Practice of focused attention and awareness'},
-            {'name': 'Massage Therapy', 'category': 'Bodywork', 'description': 'Manual manipulation of soft tissues'},
-            {'name': 'Acupuncture', 'category': 'Traditional Medicine', 'description': 'Traditional Chinese medicine using thin needles'},
-            {'name': 'Life Coaching', 'category': 'Coaching', 'description': 'Personal development and goal achievement'},
-            {'name': 'Nutrition Counseling', 'category': 'Health', 'description': 'Dietary guidance and meal planning'},
-            {'name': 'Reiki', 'category': 'Energy Work', 'description': 'Japanese energy healing technique'},
-            {'name': 'Pilates', 'category': 'Movement', 'description': 'Low-impact exercise focusing on core strength'},
+        # Modalities are now seeded via data migration (0005_seed_modalities).
+        # This method only ensures categories and a few representative modalities exist
+        # for local dev if the migration hasn't run yet.
+        if ModalityCategory.objects.exists():
+            self.stdout.write('  Modalities already seeded via migration, skipping.')
+            return
+
+        categories_data = [
+            {'name': 'Yoga', 'slug': 'yoga', 'color': '#27500A', 'order': 6},
+            {'name': 'Breathwork', 'slug': 'breathwork', 'color': '#0C447C', 'order': 7},
+            {'name': 'Energy & Vibrational Healing', 'slug': 'energy', 'color': '#085041', 'order': 4},
+            {'name': 'Bodywork & Touch', 'slug': 'bodywork', 'color': '#791F1F', 'order': 9},
+            {'name': 'Coaching & Guidance', 'slug': 'coaching', 'color': '#3C3489', 'order': 13},
+            {'name': 'Holistic Health Systems', 'slug': 'holistic', 'color': '#085041', 'order': 12},
+            {'name': 'Mind-Body Practices', 'slug': 'mindbody', 'color': '#0C447C', 'order': 10},
         ]
-        
+        cat_map = {}
+        for data in categories_data:
+            cat, _ = ModalityCategory.objects.get_or_create(slug=data['slug'], defaults=data)
+            cat_map[data['slug']] = cat
+
+        modalities_data = [
+            {'name': 'Yoga', 'category_slug': 'yoga', 'description': 'Ancient practice combining physical postures, breathing, and meditation'},
+            {'name': 'Meditation', 'category_slug': 'mindbody', 'description': 'Practice of focused attention and awareness'},
+            {'name': 'Massage Therapy', 'category_slug': 'bodywork', 'description': 'Manual manipulation of soft tissues'},
+            {'name': 'Acupuncture', 'category_slug': 'bodywork', 'description': 'Traditional Chinese medicine using thin needles'},
+            {'name': 'Holistic Life Coaching', 'category_slug': 'coaching', 'description': 'Personal development and goal achievement'},
+            {'name': 'Nutritional Counseling', 'category_slug': 'holistic', 'description': 'Dietary guidance and meal planning'},
+            {'name': 'Reiki', 'category_slug': 'energy', 'description': 'Japanese energy healing technique'},
+            {'name': 'Breathwork', 'category_slug': 'breathwork', 'description': 'Intentional breathing practices for wellness'},
+        ]
+
         for i, data in enumerate(modalities_data):
             Modality.objects.get_or_create(
                 name=data['name'],
                 defaults={
-                    'category': data['category'],
+                    'category': data['category_slug'],
+                    'category_ref': cat_map.get(data['category_slug']),
                     'description': data['description'],
-                    'order': i
+                    'short_description': data['description'],
+                    'order': i,
                 }
             )
 

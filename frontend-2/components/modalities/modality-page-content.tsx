@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
-import { modalitiesListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { modalitiesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { getModalityContent } from "@/lib/modality-content"
 import {
   Breadcrumb,
@@ -25,12 +25,9 @@ interface ModalityPageContentProps {
 }
 
 export default function ModalityPageContent({ slug }: ModalityPageContentProps) {
-  const { data: modalitiesData, isLoading } = useQuery({
-    ...modalitiesListOptions({ query: { page_size: 100 } }),
+  const { data: modality, isLoading } = useQuery({
+    ...modalitiesBySlugRetrieveOptions({ path: { slug } }),
   })
-
-  const modalities = modalitiesData?.results || []
-  const modality = modalities.find((m: any) => m.slug === slug)
 
   if (isLoading) {
     return (
@@ -48,7 +45,19 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
   }
 
   const modalityName = modality?.name || slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-  const content = getModalityContent(slug, modalityName, modality?.description)
+  const editorial = getModalityContent(slug, modalityName, modality?.description)
+
+  // Merge backend data with editorial content — backend data takes precedence when available
+  const apiBenefits = (modality as any)?.benefits
+  const apiFaqs = (modality as any)?.faqs
+  const apiLongDesc = (modality as any)?.long_description
+
+  const benefits = apiBenefits?.length > 0
+    ? apiBenefits.map((b: string) => ({ title: b, description: "" }))
+    : editorial.benefits
+
+  const faqs = apiFaqs?.length > 0 ? apiFaqs : editorial.faqs
+  const longDescription = apiLongDesc || editorial.longDescription
 
   return (
     <main className="bg-cream-50 min-h-screen">
@@ -67,6 +76,18 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
                 <Link href="/modalities">Modalities</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
+            {(modality as any)?.category_name && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href={`/modalities#${(modality as any).category_slug}`}>
+                      {(modality as any).category_name}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>{modalityName}</BreadcrumbPage>
@@ -75,7 +96,7 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
         </Breadcrumb>
       </div>
 
-      <ModalityHeroSection content={content} />
+      <ModalityHeroSection content={editorial} />
 
       <ModalityStatsBar
         practitionerCount={modality?.practitioner_count ?? 0}
@@ -87,8 +108,8 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
 
       <ModalityAboutSection
         modalityName={modalityName}
-        longDescription={content.longDescription}
-        benefits={content.benefits}
+        longDescription={longDescription}
+        benefits={benefits}
       />
 
       <div className="h-px bg-sage-200/60 mx-6" />
@@ -101,13 +122,13 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
 
       <div className="h-px bg-sage-200/60 mx-6" />
 
-      <ModalityFaqSection faqs={content.faqs} />
+      <ModalityFaqSection faqs={faqs} />
 
       <div className="h-px bg-sage-200/60 mx-6" />
 
       <ModalityCtaSection
-        heading={content.ctaHeading}
-        description={content.ctaDescription}
+        heading={editorial.ctaHeading}
+        description={editorial.ctaDescription}
         slug={slug}
       />
     </main>

@@ -2274,6 +2274,29 @@ class TopicViewSet(viewsets.ReadOnlyModelViewSet):
 @extend_schema_view(
     list=extend_schema(tags=['Common']),
     retrieve=extend_schema(tags=['Common']),
+)
+class ModalityCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing modality categories with modality counts"""
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = {'is_active': ['exact']}
+    ordering_fields = ['order', 'name']
+    ordering = ['order', 'name']
+
+    def get_serializer_class(self):
+        from .serializers import ModalityCategorySerializer
+        return ModalityCategorySerializer
+
+    def get_queryset(self):
+        from common.models import ModalityCategory
+        return ModalityCategory.objects.annotate(
+            modality_count=Count('modalities', filter=Q(modalities__is_active=True), distinct=True),
+        ).order_by('order', 'name')
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['Common']),
+    retrieve=extend_schema(tags=['Common']),
     by_slug=extend_schema(tags=['Common'], description='Get a modality by its slug'),
 )
 class ModalityViewSet(viewsets.ReadOnlyModelViewSet):
@@ -2281,13 +2304,20 @@ class ModalityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ModalityDetailSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = {'is_active': ['exact'], 'is_featured': ['exact'], 'category': ['exact']}
+    filterset_fields = {
+        'is_active': ['exact'],
+        'is_featured': ['exact'],
+        'category': ['exact'],
+        'category_ref__slug': ['exact'],
+        'cluster': ['exact'],
+        'gray_zone': ['exact'],
+    }
     ordering_fields = ['order', 'name']
     ordering = ['order', 'name']
 
     def get_queryset(self):
         from common.models import Modality
-        return Modality.objects.annotate(
+        return Modality.objects.select_related('category_ref').annotate(
             practitioner_count=Count(
                 'practitioners',
                 filter=Q(practitioners__is_verified=True, practitioners__practitioner_status='active'),

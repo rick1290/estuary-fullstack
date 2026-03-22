@@ -24,7 +24,14 @@ export interface Topic {
 export interface Modality {
   id: string
   name: string
+  slug?: string
   description: string
+  short_description?: string | null
+  category_name?: string | null
+  category_slug?: string | null
+  category_color?: string | null
+  cluster?: string | null
+  gray_zone?: boolean
 }
 
 export interface Certification {

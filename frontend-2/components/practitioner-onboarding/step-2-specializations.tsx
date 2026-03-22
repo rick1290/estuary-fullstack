@@ -13,7 +13,8 @@ import {
   specializationsListOptions,
   stylesListOptions,
   topicsListOptions,
-  modalitiesListOptions
+  modalitiesListOptions,
+  modalityCategoriesListOptions,
 } from "@/src/client/@tanstack/react-query.gen"
 
 interface Step2Data {
@@ -50,7 +51,8 @@ export default function Step2Specializations({
   const { data: specializationsData, isLoading: specializationsLoading } = useQuery(specializationsListOptions())
   const { data: stylesData, isLoading: stylesLoading } = useQuery(stylesListOptions())
   const { data: topicsData, isLoading: topicsLoading } = useQuery(topicsListOptions())
-  const { data: modalitiesData, isLoading: modalitiesLoading } = useQuery(modalitiesListOptions())
+  const { data: modalitiesData, isLoading: modalitiesLoading } = useQuery(modalitiesListOptions({ query: { page_size: 200 } }))
+  const { data: modalityCategoriesData, isLoading: modalityCategoriesLoading } = useQuery(modalityCategoriesListOptions({ query: { page_size: 50 } }))
 
   // Ensure data is always an array - handle both direct arrays and paginated responses
   const specializations = Array.isArray(specializationsData) ? specializationsData :
@@ -61,8 +63,17 @@ export default function Step2Specializations({
                  (topicsData?.results && Array.isArray(topicsData.results)) ? topicsData.results : []
   const modalities = Array.isArray(modalitiesData) ? modalitiesData :
                      (modalitiesData?.results && Array.isArray(modalitiesData.results)) ? modalitiesData.results : []
+  const modalityCategories = modalityCategoriesData?.results || []
 
-  const isLoading = specializationsLoading || stylesLoading || topicsLoading || modalitiesLoading
+  // Group modalities by category slug
+  const modalitiesByCategory = modalities.reduce<Record<string, typeof modalities>>((acc, mod) => {
+    const catSlug = (mod as any).category_slug || "other"
+    if (!acc[catSlug]) acc[catSlug] = []
+    acc[catSlug].push(mod)
+    return acc
+  }, {})
+
+  const isLoading = specializationsLoading || stylesLoading || topicsLoading || modalitiesLoading || modalityCategoriesLoading
 
   const toggleSelection = (id: string, field: keyof Step2Data) => {
     setFormData(prev => {
@@ -276,47 +287,61 @@ export default function Step2Specializations({
             </p>
           </div>
 
-          {/* Modalities */}
+          {/* Modalities — grouped by category */}
           <div className="space-y-4 pt-6 border-t border-sage-100">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-olive-900 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-sage-600" />
                 Session Modalities
               </label>
-              <span className="text-sm text-olive-500">Optional</span>
+              <span className="text-sm text-olive-500">
+                {formData.modality_ids?.length || 0} selected
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {modalities.map((modality) => {
-                const isSelected = formData.modality_ids?.includes(modality.id.toString()) || false
+            <div className="space-y-5">
+              {modalityCategories.map((cat) => {
+                const catModalities = modalitiesByCategory[(cat as any).slug ?? ""] || []
+                if (catModalities.length === 0) return null
                 return (
-                  <button
-                    key={modality.id}
-                    type="button"
-                    onClick={() => toggleSelection(modality.id.toString(), 'modality_ids')}
-                    className={cn(
-                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
-                      isSelected
-                        ? "border-sage-500 bg-sage-50 text-sage-700"
-                        : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"
-                    )}
-                  >
-                    <div className="text-left">
-                      <div>{modality.name}</div>
-                      {modality.description && (
-                        <div className="text-xs text-olive-500 font-normal mt-0.5">{modality.description}</div>
-                      )}
+                  <div key={cat.id}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: (cat as any).color || "#9CAF88" }}
+                      />
+                      <span className="text-xs font-medium text-olive-700 uppercase tracking-wider">
+                        {cat.name}
+                      </span>
                     </div>
-                    {isSelected && (
-                      <span className="ml-2">✓</span>
-                    )}
-                  </button>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {catModalities.map((modality) => {
+                        const isSelected = formData.modality_ids?.includes(modality.id.toString()) || false
+                        return (
+                          <button
+                            key={modality.id}
+                            type="button"
+                            onClick={() => toggleSelection(modality.id.toString(), 'modality_ids')}
+                            className={cn(
+                              "px-3 py-2 rounded-lg border-2 text-sm transition-all text-left",
+                              isSelected
+                                ? "border-sage-500 bg-sage-50 text-sage-700 font-medium"
+                                : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"
+                            )}
+                          >
+                            {modality.name}
+                            {isSelected && <span className="ml-1">✓</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 )
               })}
             </div>
 
             <p className="text-xs text-olive-500">
-              Select the ways you offer your services.
+              Select the modalities you practice. You can always update these later.
             </p>
           </div>
 
