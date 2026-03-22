@@ -3,17 +3,14 @@
 import type React from "react"
 
 import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useQuery } from "@tanstack/react-query"
 import { streamsListOptions } from "@/src/client/@tanstack/react-query.gen"
-import { Spinner } from "@/components/ui/spinner"
 
 export default function FeaturedPractitioners() {
   const router = useRouter()
-  
+
   // Fetch featured streams
   const { data, isLoading } = useQuery({
     ...streamsListOptions({
@@ -25,19 +22,23 @@ export default function FeaturedPractitioners() {
     })
   })
 
-  const handlePractitionerClick = (stream: any) => {
-    router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)
-  }
-
-  const handleViewStreamClick = (streamId: string | number, event: React.MouseEvent) => {
-    event.stopPropagation()
+  const handleCardClick = (streamId: string | number) => {
     router.push(`/streams/${streamId}`)
   }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-4">
-        <Spinner className="h-6 w-6" />
+      <div
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory"
+        style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+      >
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 w-[140px] flex-shrink-0 snap-start">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-2 w-14" />
+          </div>
+        ))}
       </div>
     )
   }
@@ -45,67 +46,40 @@ export default function FeaturedPractitioners() {
   const streams = data?.results || []
 
   if (streams.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-4">
-        No featured streams available
-      </p>
-    )
+    return null
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3">
+    <div
+      className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2"
+      style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+    >
       {streams.map((stream: any) => (
-        <Card
+        <div
           key={stream.id}
-          className="cursor-pointer rounded-2xl border border-sage-200/60 bg-white transition-all hover:shadow-sm"
-          onClick={() => handlePractitionerClick(stream)}
+          className="flex flex-col items-center gap-1.5 w-[140px] flex-shrink-0 snap-start cursor-pointer rounded-xl border border-transparent p-3 transition-all hover:border-sage-200/60 hover:bg-sage-50/40"
+          onClick={() => handleCardClick(stream.id)}
         >
-          <div
-            className="h-[80px] bg-sage-100 rounded-t-2xl"
-            style={{
-              backgroundImage: stream.cover_image_url ? `url(${stream.cover_image_url})` : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
-          <div className="flex flex-col items-center -mt-5">
-            <div className="h-16 w-16 border-4 border-white rounded-full bg-sage-100 flex items-center justify-center overflow-hidden">
-              {stream.practitioner_image ? (
-                <img
-                  src={stream.practitioner_image}
-                  alt={stream.practitioner_name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-lg font-medium text-olive-800">
-                  {stream.practitioner_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
-                </span>
-              )}
-            </div>
-            <CardContent className="text-center pt-1 px-3">
-              <h3 className="mb-1 font-medium text-sm text-olive-900">{stream.title}</h3>
-              <p className="mb-1 text-xs text-olive-600">{stream.practitioner_name}</p>
-              <div className="mb-2 flex flex-wrap justify-center gap-1">
-                {(stream.tags || []).slice(0, 2).map((tag: string) => (
-                  <Badge key={tag} className="text-xs bg-sage-100 text-olive-700 hover:bg-sage-200">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <div className="text-xs text-muted-foreground mb-2">
-                {stream.subscriber_count || 0} subscribers
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs border-sage-300 text-sage-700 hover:bg-sage-50 rounded-xl"
-                onClick={(e) => handleViewStreamClick(stream.id, e)}
-              >
-                View Stream
-              </Button>
-            </CardContent>
-          </div>
-        </Card>
+          <Avatar className="h-16 w-16 border-2 border-sage-200/40">
+            <AvatarImage
+              src={stream.practitioner_image}
+              alt={stream.practitioner_name}
+              className="object-cover"
+            />
+            <AvatarFallback className="bg-sage-100 text-olive-800 text-sm font-medium">
+              {stream.practitioner_name
+                ?.split(" ")
+                .map((n: string) => n[0])
+                .join("") || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs font-medium text-olive-900 text-center w-full truncate">
+            {stream.practitioner_name || stream.title}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {stream.subscriber_count || 0} subscribers
+          </span>
+        </div>
       ))}
     </div>
   )

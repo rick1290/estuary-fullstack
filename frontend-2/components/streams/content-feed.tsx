@@ -115,6 +115,7 @@ export default function ContentFeed({
       streamId: apiPost.stream || '',
       streamTitle: apiPost.stream_title || '',
       content: apiPost.content || '',
+      teaserText: apiPost.teaser_text || undefined,
       mediaUrls: apiPost.media?.map((m: any) => m.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${m.url}` : '') || [],
       contentType: apiPost.post_type as any || 'article',
       isPremium: apiPost.tier_level !== 'free',
@@ -128,6 +129,15 @@ export default function ContentFeed({
       isSaved: apiPost.is_saved || false,
       hasAccess: hasAccess,
       userSubscriptionTier: apiPost.user_subscription_tier || null,
+      linkedService: apiPost.linked_service_detail ? {
+        id: apiPost.linked_service_detail.id,
+        title: apiPost.linked_service_detail.title,
+        serviceType: apiPost.linked_service_detail.service_type,
+        price: parseFloat(apiPost.linked_service_detail.price),
+        duration: apiPost.linked_service_detail.duration,
+        slug: apiPost.linked_service_detail.slug,
+        practitionerName: apiPost.linked_service_detail.practitioner_name,
+      } : null,
     }
   }
 
