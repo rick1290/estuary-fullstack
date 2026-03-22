@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useQuery } from "@tanstack/react-query"
-import { modalitiesListOptions, publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { modalityCategoriesListOptions, publicPractitionersListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { motion } from "framer-motion"
 
 const stagger = {
@@ -25,9 +25,10 @@ const itemFade = {
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Fetch modalities from API
-  const { data: modalitiesData } = useQuery({
-    ...modalitiesListOptions({}),
+  // Fetch modality categories for hero pills
+  const { data: categoriesData } = useQuery({
+    ...modalityCategoriesListOptions({ query: { page_size: 50 } }),
+    staleTime: 1000 * 60 * 10,
   })
 
   // Fetch a handful of practitioners for the facepile
@@ -42,7 +43,7 @@ export default function HeroSection() {
     staleTime: 1000 * 60 * 10,
   })
 
-  const featuredModalities = (modalitiesData?.results || []).slice(0, 8)
+  const categories = categoriesData?.results || []
 
   const facePractitioners = (() => {
     const raw = Array.isArray(practitionersData?.data?.results) ? practitionersData.data.results :
@@ -164,8 +165,8 @@ export default function HeroSection() {
           </motion.p>
         </motion.div>
 
-        {/* Modality pills */}
-        {featuredModalities.length > 0 && (
+        {/* Category pills */}
+        {categories.length > 0 && (
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -173,15 +174,19 @@ export default function HeroSection() {
             variants={stagger}
             className="flex flex-wrap justify-center gap-2.5 max-w-3xl mx-auto"
           >
-            {featuredModalities.map((modality: any) => (
-              <motion.div key={modality.id} variants={itemFade}>
+            {categories.map((cat: any) => (
+              <motion.div key={cat.id} variants={itemFade}>
                 <Badge
                   variant="outline"
                   className="text-olive-700 bg-white hover:bg-sage-50 border-sage-200/60 px-4 py-2 text-sm font-light transition-colors cursor-pointer"
                   asChild
                 >
-                  <Link href={`/modalities/${modality.slug}`}>
-                    {modality.name}
+                  <Link href={`/modalities#${cat.slug}`}>
+                    <span
+                      className="inline-block w-2 h-2 rounded-full mr-2"
+                      style={{ backgroundColor: cat.color || "#9CAF88" }}
+                    />
+                    {cat.name}
                   </Link>
                 </Badge>
               </motion.div>

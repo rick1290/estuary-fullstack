@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 interface Item {
   id: string
   content: string
@@ -6,6 +8,9 @@ interface Item {
 interface Modality {
   id: string
   name: string
+  slug?: string
+  category_color?: string | null
+  category_name?: string | null
 }
 
 interface SpecialtiesTabProps {
@@ -58,9 +63,19 @@ export default function SpecialtiesTab({ specializations, styles, topics, modali
         <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Modalities</h3>
         <div className="flex flex-wrap gap-2">
           {modalities.map((modality) => (
-            <span key={modality.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
+            <Link
+              key={modality.id}
+              href={`/modalities/${modality.slug || modality.name.toLowerCase().replace(/\s+/g, "-")}`}
+              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light hover:bg-sage-100 hover:text-olive-800 transition-colors"
+            >
+              {modality.category_color && (
+                <span
+                  className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: modality.category_color }}
+                />
+              )}
               {modality.name}
-            </span>
+            </Link>
           ))}
           {modalities.length === 0 && <p className="text-sm font-light text-olive-600">No modalities listed.</p>}
         </div>

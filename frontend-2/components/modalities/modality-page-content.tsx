@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { modalitiesBySlugRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { getModalityContent } from "@/lib/modality-content"
+import type { ModalityDetailReadable } from "@/src/client/types.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,6 +20,7 @@ import ModalityServicesSection from "./modality-services-section"
 import ModalityPractitionersSection from "./modality-practitioners-section"
 import ModalityFaqSection from "./modality-faq-section"
 import ModalityCtaSection from "./modality-cta-section"
+import ModalityRelatedSection from "./modality-related-section"
 
 interface ModalityPageContentProps {
   slug: string
@@ -28,6 +30,9 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
   const { data: modality, isLoading } = useQuery({
     ...modalitiesBySlugRetrieveOptions({ path: { slug } }),
   })
+
+  // Cast once to access all fields cleanly
+  const mod = modality as ModalityDetailReadable | undefined
 
   if (isLoading) {
     return (
@@ -44,20 +49,20 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
     )
   }
 
-  const modalityName = modality?.name || slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-  const editorial = getModalityContent(slug, modalityName, modality?.description)
+  const modalityName = mod?.name || slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+  const editorial = getModalityContent(slug, modalityName, mod?.description)
 
-  // Merge backend data with editorial content — backend data takes precedence when available
-  const apiBenefits = (modality as any)?.benefits
-  const apiFaqs = (modality as any)?.faqs
-  const apiLongDesc = (modality as any)?.long_description
+  // API data takes precedence over editorial content
+  const apiBenefits = mod?.benefits as string[] | undefined
+  const apiFaqs = mod?.faqs as { question: string; answer: string }[] | undefined
 
-  const benefits = apiBenefits?.length > 0
-    ? apiBenefits.map((b: string) => ({ title: b, description: "" }))
+  const benefits = apiBenefits?.length
+    ? apiBenefits.map((b) => ({ title: b, description: "" }))
     : editorial.benefits
 
-  const faqs = apiFaqs?.length > 0 ? apiFaqs : editorial.faqs
-  const longDescription = apiLongDesc || editorial.longDescription
+  const faqs = apiFaqs?.length ? apiFaqs : editorial.faqs
+  const longDescription = mod?.long_description || editorial.longDescription
+  const relatedSlugs = (mod?.related_modality_slugs || []).filter(Boolean) as string[]
 
   return (
     <main className="bg-cream-50 min-h-screen">
@@ -76,13 +81,13 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
                 <Link href="/modalities">Modalities</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            {(modality as any)?.category_name && (
+            {mod?.category_name && (
               <>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link href={`/modalities#${(modality as any).category_slug}`}>
-                      {(modality as any).category_name}
+                    <Link href={`/modalities#${mod.category_slug}`}>
+                      {mod.category_name}
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -99,7 +104,7 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
       <ModalityHeroSection content={editorial} />
 
       {/* Gray zone disclaimer for modalities that overlap with licensed therapy */}
-      {(modality as any)?.gray_zone && (
+      {mod?.gray_zone && (
         <div className="container max-w-3xl px-4 sm:px-6 mt-2">
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800">
             <p className="font-medium mb-1">Important note</p>
@@ -114,8 +119,8 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
       )}
 
       <ModalityStatsBar
-        practitionerCount={modality?.practitioner_count ?? 0}
-        serviceCount={modality?.service_count ?? 0}
+        practitionerCount={mod?.practitioner_count ?? 0}
+        serviceCount={mod?.service_count ?? 0}
         modalityName={modalityName}
       />
 
@@ -138,6 +143,13 @@ export default function ModalityPageContent({ slug }: ModalityPageContentProps) 
       <div className="h-px bg-sage-200/60 mx-6" />
 
       <ModalityFaqSection faqs={faqs} />
+
+      {relatedSlugs.length > 0 && (
+        <>
+          <div className="h-px bg-sage-200/60 mx-6" />
+          <ModalityRelatedSection slugs={relatedSlugs} />
+        </>
+      )}
 
       <div className="h-px bg-sage-200/60 mx-6" />
 

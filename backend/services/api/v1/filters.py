@@ -212,15 +212,16 @@ class ServiceFilter(django_filters.FilterSet):
         return queryset
 
     def filter_search(self, queryset, name, value):
-        """Full text search across multiple fields"""
+        """Full text search across multiple fields including modality names"""
         return queryset.filter(
             Q(name__icontains=value) |
             Q(description__icontains=value) |
             Q(short_description__icontains=value) |
             Q(tags__icontains=value) |
             Q(primary_practitioner__display_name__icontains=value) |
-            Q(category__name__icontains=value)
-        )
+            Q(category__name__icontains=value) |
+            Q(modalities__name__icontains=value)
+        ).distinct()
 
     def filter_uncategorized(self, queryset, name, value):
         """Filter services without a practitioner category"""

@@ -180,7 +180,7 @@ class PractitionerFilter(django_filters.FilterSet):
         ).distinct()
     
     def filter_search(self, queryset, name, value):
-        """Full text search across multiple fields"""
+        """Full text search across multiple fields including modality names"""
         return queryset.filter(
             Q(display_name__icontains=value) |
             Q(professional_title__icontains=value) |
@@ -188,7 +188,8 @@ class PractitionerFilter(django_filters.FilterSet):
             Q(user__first_name__icontains=value) |
             Q(user__last_name__icontains=value) |
             Q(specializations__content__icontains=value) |
-            Q(primary_services__name__icontains=value)
+            Q(primary_services__name__icontains=value) |
+            Q(modalities__name__icontains=value)
         ).distinct()
 
     def filter_modality(self, queryset, name, value):

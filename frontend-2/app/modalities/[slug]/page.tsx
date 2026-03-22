@@ -32,6 +32,18 @@ async function fetchModality(slug: string) {
   }
 }
 
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/modalities/?page_size=200&is_active=true`)
+    if (!res.ok) return []
+    const json = await res.json()
+    const results = json?.data?.results || json?.results || []
+    return results.map((m: any) => ({ slug: m.slug })).filter((p: any) => p.slug)
+  } catch {
+    return []
+  }
+}
+
 interface ModalityPageProps {
   params: Promise<{ slug: string }>
 }
