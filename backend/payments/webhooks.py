@@ -55,10 +55,11 @@ def stripe_webhook(request):
         elif event['type'] == 'payout.failed':
             handle_payout_failed(event['data']['object'])
         # Add more event handlers as needed
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse(status=400)  # Bad signature, don't retry
     except Exception as e:
-        logger.error(f"Error processing webhook {event['type']}: {str(e)}")
-        # Still return 200 to acknowledge receipt (Stripe will retry otherwise)
-        return HttpResponse(status=200)
+        logger.exception(f"Unhandled webhook error for {event.get('type', 'unknown')}: {str(e)}")
+        return HttpResponse(status=500)  # Stripe will retry
     
     # Return a 200 response to acknowledge receipt of the event
     return HttpResponse(status=200)

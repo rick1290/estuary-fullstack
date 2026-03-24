@@ -158,9 +158,11 @@ export default function CheckoutPage() {
   }, [isAuthenticated, serviceId, serviceType, selectedDate, selectedTime, openAuthModal])
 
   // Fetch service data from API using ID
+  const parsedServiceId = parseInt(serviceId || '0')
+  const isValidServiceId = !!serviceId && !isNaN(parsedServiceId) && parsedServiceId > 0
   const { data: serviceData, isLoading: loadingService, error: serviceError } = useQuery({
-    ...servicesRetrieveOptions({ path: { id: parseInt(serviceId || '0') } }),
-    enabled: !!serviceId && !isNaN(parseInt(serviceId)),
+    ...servicesRetrieveOptions({ path: { id: isValidServiceId ? parsedServiceId : 0 } }),
+    enabled: isValidServiceId,
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 

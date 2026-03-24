@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { type ReactNode, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Search, Users, Rss } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,8 @@ export default function StreamsLayout({
 }: StreamsLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeType = searchParams.get("type") || ""
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
 
   const isFollowing = pathname === "/streams/following"
@@ -36,12 +38,6 @@ export default function StreamsLayout({
     e.preventDefault()
     if (!searchQuery.trim()) return
     router.push(`/streams?q=${encodeURIComponent(searchQuery)}`)
-  }
-
-  // Get active content type from URL
-  const getActiveType = () => {
-    if (typeof window === "undefined") return ""
-    return new URLSearchParams(window.location.search).get("type") || ""
   }
 
   const contentTypes = [
@@ -113,7 +109,6 @@ export default function StreamsLayout({
 
             {/* Content type filters */}
             {contentTypes.map((filter) => {
-              const activeType = getActiveType()
               const isActive = activeType === filter.value
 
               return (

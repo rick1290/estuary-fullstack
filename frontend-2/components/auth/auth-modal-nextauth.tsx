@@ -85,16 +85,33 @@ export default function AuthModalNextAuth({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    // For signup, you'll need to call your Django registration endpoint first
-    // Then login with NextAuth
-    
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+
     try {
-      // TODO: Call Django registration endpoint
-      // const response = await authRegister({ body: registrationData })
-      
+      // Call Django registration endpoint
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${baseUrl}/api/v1/auth/register/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || errorData.email?.[0] || 'Registration failed')
+      }
+
       // Then login with the new credentials
-      // await login({ email, password })
-      
+      await login({ email, password })
+
       toast.success("Account created successfully!")
       onClose()
       if (redirectUrl) {

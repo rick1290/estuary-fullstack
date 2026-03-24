@@ -86,7 +86,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
               <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <span className="text-sm text-olive-900">{practitioner.display_name || `${practitioner.user.first_name} ${practitioner.user.last_name}`.trim() || 'Practitioner'}</span>
+              <span className="text-sm text-olive-900">{practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'}</span>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>

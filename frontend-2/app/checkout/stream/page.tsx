@@ -81,7 +81,7 @@ export default function StreamCheckoutPage() {
         description: "Please sign in to complete your subscription"
       })
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, openAuthModal, streamId, selectedTier])
 
   // Create stream subscription mutation
   const streamSubscription = useMutation({
@@ -165,7 +165,11 @@ export default function StreamCheckoutPage() {
   const price = selectedTier === "entry" 
     ? (streamData.entry_tier_price_cents || 0) / 100 
     : (streamData.premium_tier_price_cents || 0) / 100
-  const tax = price * 0.08 // 8% tax
+  // TODO: Replace with real tax calculation based on user's billing address
+  // Note: This tax is displayed but NOT included in the Stripe subscription amount
+  // Stripe Tax or TaxJar integration needed before production
+  const TAX_RATE = 0.0  // Set to 0 until proper tax integration
+  const tax = price * TAX_RATE
   const total = price + tax
 
   const tierFeatures = {

@@ -46,7 +46,16 @@ class BookingService:
             Created booking
         """
         service_type_code = service.service_type.code
-        
+
+        # Check package/bundle expiration
+        if payment_data.get('order'):
+            order = payment_data['order']
+            if hasattr(order, 'package_metadata') and order.package_metadata and order.package_metadata.get('expires_at'):
+                from django.utils.dateparse import parse_datetime
+                expires_at = parse_datetime(order.package_metadata['expires_at'])
+                if expires_at and timezone.now() > expires_at:
+                    raise ValidationError("This package has expired and can no longer be used for bookings")
+
         # Route to appropriate booking creation method
         if service_type_code == 'session':
             booking = self._create_session_booking(user, service, booking_data, payment_data)

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import Image from "next/image"
 import Link from "next/link"
 import { Crown, Calendar, CreditCard, AlertCircle, ChevronRight, Users } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -160,62 +162,45 @@ function SubscriptionCard({ subscription, onUnsubscribe, onChangeTier }: Subscri
   )
 }
 
-// Mock subscription data - replace with API call when available
-const mockSubscriptions = [
-  {
-    id: "sub-1",
-    user: { id: "user-1", name: "John Doe" },
-    stream: {
-      id: "stream-1",
-      title: "Mindful Living Journey",
-      coverImage: null,
-      practitioner: { displayName: "Sarah Johnson" },
-      entryTierPriceCents: 1500,
-      premiumTierPriceCents: 3000,
-    },
-    tier: "entry",
-    status: "active",
-    priceCents: 1500,
-    startedAt: "2024-01-15T00:00:00Z",
-    currentPeriodEnd: "2024-02-15T00:00:00Z",
-    canceledAt: null,
-    endsAt: null,
-  },
-  {
-    id: "sub-2",
-    user: { id: "user-1", name: "John Doe" },
-    stream: {
-      id: "stream-2",
-      title: "Yoga & Wellness",
-      coverImage: null,
-      practitioner: { displayName: "Mike Chen" },
-      entryTierPriceCents: 1000,
-      premiumTierPriceCents: 2000,
-    },
-    tier: "free",
-    status: "active",
-    priceCents: 0,
-    startedAt: "2024-01-10T00:00:00Z",
-    currentPeriodEnd: null,
-    canceledAt: null,
-    endsAt: null,
-  },
-];
-
 export default function UserSubscriptions() {
-  const [subscriptions, setSubscriptions] = useState(mockSubscriptions)
-  const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
   const [selectedSubscription, setSelectedSubscription] = useState<any>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  
-  const refetch = () => {
-    // Mock refetch - in real app would refetch from API
-    setIsLoading(true)
-    setTimeout(() => {
-      setSubscriptions([...mockSubscriptions])
-      setIsLoading(false)
-    }, 500)
-  }
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['user-stream-subscriptions'],
+    queryFn: async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${baseUrl}/api/v1/stream-subscriptions/`, {
+        credentials: 'include',
+      })
+      if (!response.ok) return { results: [] }
+      return response.json()
+    },
+    enabled: !!user,
+  })
+
+  // Map API response to the shape the component expects
+  const subscriptions = (data?.results || []).map((sub: any) => ({
+    id: sub.id,
+    stream: {
+      id: sub.stream?.id || sub.stream,
+      title: sub.stream_title || sub.stream?.title || 'Untitled Stream',
+      coverImage: sub.stream_cover_image_url || sub.stream?.cover_image_url || null,
+      practitioner: {
+        displayName: sub.stream_practitioner_name || sub.stream?.practitioner_name || 'Unknown',
+      },
+      entryTierPriceCents: sub.stream_entry_tier_price_cents || sub.stream?.entry_tier_price_cents || 0,
+      premiumTierPriceCents: sub.stream_premium_tier_price_cents || sub.stream?.premium_tier_price_cents || 0,
+    },
+    tier: sub.tier,
+    status: sub.status,
+    priceCents: sub.price_cents || 0,
+    startedAt: sub.started_at,
+    currentPeriodEnd: sub.current_period_end,
+    canceledAt: sub.canceled_at,
+    endsAt: sub.ends_at,
+  }))
   
   const activeSubscriptions = subscriptions?.filter(sub => sub.status === "active") || []
   const cancelledSubscriptions = subscriptions?.filter(sub => sub.status === "canceled") || []

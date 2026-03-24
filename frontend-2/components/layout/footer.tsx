@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Instagram, Facebook, Twitter, Linkedin, Youtube, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 export default function Footer() {
   const footerLinks = {
@@ -37,14 +37,13 @@ export default function Footer() {
     ],
   }
 
-  // TODO: Replace '#' hrefs with real social media URLs once accounts are created
-  const socialLinks = [
-    { icon: Instagram, href: "#", label: "Instagram" },
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Twitter, href: "#", label: "Twitter" },
-    { icon: Linkedin, href: "#", label: "LinkedIn" },
-    { icon: Youtube, href: "#", label: "YouTube" },
-  ]
+  // Social links - hidden until accounts are created
+  // To re-enable, add URLs here and uncomment the social links section in the footer
+  // const socialLinks = {
+  //   instagram: "https://instagram.com/estuarywellness",
+  //   twitter: "https://twitter.com/estuarywellness",
+  //   facebook: "https://facebook.com/estuarywellness",
+  // }
 
   return (
     <footer className="bg-gradient-to-b from-cream-50 to-cream-100 border-t border-sage-200">
@@ -152,30 +151,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Social links */}
-          <div className="flex gap-2">
-            {socialLinks.map((link) => {
-              const Icon = link.icon
-              return (
-                <Button
-                  key={link.label}
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-olive-600 hover:text-olive-900"
-                  asChild
-                >
-                  <a 
-                    href={link.href} 
-                    target="_blank" rel="noopener noreferrer" 
-                    rel="noopener noreferrer"
-                    aria-label={link.label}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                </Button>
-              )
-            })}
-          </div>
+          {/* Social links - hidden until accounts are created */}
         </div>
       </div>
     </footer>

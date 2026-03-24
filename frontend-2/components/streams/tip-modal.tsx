@@ -86,14 +86,14 @@ export default function TipModal({ open, onOpenChange, streamId, postId, practit
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${document.cookie.split('access_token=')[1]?.split(';')[0] || ''}`,
         },
         credentials: 'include',
         body: JSON.stringify({
           amount_cents: amountCents,
           message: message || undefined,
           is_anonymous: isAnonymous,
-          payment_method_id: 'pm_card_visa', // Placeholder - real implementation needs Stripe Elements
+          // TODO: Replace with real Stripe payment method from Stripe Elements integration
+          payment_method_id: 'pm_card_visa',
         }),
       })
 

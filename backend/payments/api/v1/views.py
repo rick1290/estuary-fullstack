@@ -271,12 +271,18 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                 )
             
             if result.requires_action:
-                return Response({
+                response_data = {
                     'status': 'requires_action',
                     'order_id': str(result.order.public_uuid),
                     'payment_intent_id': result.payment_intent.id,
                     'client_secret': result.client_secret
-                })
+                }
+                # Cache requires_action result for idempotency (1 hour TTL)
+                if idempotency_key:
+                    from django.core.cache import cache
+                    cache_key = f"payment_idempotency:{request.user.id}:{idempotency_key}"
+                    cache.set(cache_key, response_data, timeout=3600)
+                return Response(response_data)
             elif result.success:
                 response_data = {
                     'status': 'success',
@@ -293,22 +299,40 @@ class CheckoutViewSet(viewsets.GenericViewSet):
                     cache.set(cache_key, response_data, timeout=3600)
                 return Response(response_data)
             else:
-                return Response({
+                error_data = {
                     'status': 'error',
                     'message': result.error or 'Payment processing failed'
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
+                }
+                # Cache error result for idempotency (5 min TTL to allow retry)
+                if idempotency_key:
+                    from django.core.cache import cache
+                    cache_key = f"payment_idempotency:{request.user.id}:{idempotency_key}"
+                    cache.set(cache_key, error_data, timeout=300)
+                return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
+
         except stripe.error.CardError as e:
-            return Response({
+            error_data = {
                 'status': 'error',
                 'message': str(e.user_message)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }
+            # Cache card error for idempotency (5 min TTL to allow retry)
+            if idempotency_key:
+                from django.core.cache import cache
+                cache_key = f"payment_idempotency:{request.user.id}:{idempotency_key}"
+                cache.set(cache_key, error_data, timeout=300)
+            return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(f"Payment processing error: {str(e)}")
-            return Response({
+            error_data = {
                 'status': 'error',
                 'message': 'Payment processing failed. Please try again.'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }
+            # Cache generic error for idempotency (5 min TTL to allow retry)
+            if idempotency_key:
+                from django.core.cache import cache
+                cache_key = f"payment_idempotency:{request.user.id}:{idempotency_key}"
+                cache.set(cache_key, error_data, timeout=300)
+            return Response(error_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema_view(

@@ -13,7 +13,9 @@ export default function ReferralPage() {
   const [linkCopied, setLinkCopied] = useState(false)
 
   const referralCode = "ESTUARY25"
-  const referralLink = `https://estuary.com/signup?ref=${referralCode}`
+  const referralLink = typeof window !== 'undefined'
+    ? `${window.location.origin}/signup?ref=${referralCode}`
+    : `/signup?ref=${referralCode}`
 
   const copyToClipboard = (text: string, type: "code" | "link") => {
     navigator.clipboard.writeText(text)
