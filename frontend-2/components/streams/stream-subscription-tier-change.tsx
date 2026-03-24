@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { 
-  subscriptionsPartialUpdateMutation,
-  subscriptionsDestroyMutation
+import {
+  streamsSubscriptionChangeTierCreateMutation,
+  streamsUnsubscribeCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -52,15 +52,16 @@ export default function StreamSubscriptionTierChange({
 
   // Update tier mutation
   const updateTierMutation = useMutation({
-    ...subscriptionsPartialUpdateMutation(),
+    ...streamsSubscriptionChangeTierCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Subscription updated!",
         description: "Your subscription tier has been changed successfully",
       })
-      queryClient.invalidateQueries({ 
-        queryKey: ['streamsRetrieve', { path: { id: stream.id } }] 
+      queryClient.invalidateQueries({
+        queryKey: ['streamsRetrieve', { path: { id: stream.id } }]
       })
+      setIsProcessing(false)
       onClose()
     },
     onError: (error: any) => {
@@ -75,15 +76,16 @@ export default function StreamSubscriptionTierChange({
 
   // Cancel subscription mutation
   const cancelSubscriptionMutation = useMutation({
-    ...subscriptionsDestroyMutation(),
+    ...streamsUnsubscribeCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Subscription cancelled",
         description: "Your subscription has been cancelled",
       })
-      queryClient.invalidateQueries({ 
-        queryKey: ['streamsRetrieve', { path: { id: stream.id } }] 
+      queryClient.invalidateQueries({
+        queryKey: ['streamsRetrieve', { path: { id: stream.id } }]
       })
+      setIsProcessing(false)
       onClose()
     },
     onError: (error: any) => {
@@ -102,26 +104,21 @@ export default function StreamSubscriptionTierChange({
 
     setIsProcessing(true)
 
-    // For now, only handle downgrades to free tier
-    if (selectedTier === "free") {
-      // Downgrade to free tier
+    try {
       await updateTierMutation.mutateAsync({
-        path: { id: currentSubscription.id },
-        body: { tier_level: "free" }
+        path: { id: stream.id },
+        body: { tier: selectedTier } as any
       })
-    } else {
-      // For upgrades, we'd need to handle payment
-      toast({
-        title: "Payment Required",
-        description: "Please use the upgrade button to change to a paid tier",
-      })
+    } catch {
+      // Error handling is in mutation onError
       setIsProcessing(false)
     }
   }
 
   const handleCancelSubscription = async () => {
     await cancelSubscriptionMutation.mutateAsync({
-      path: { id: currentSubscription.id }
+      path: { id: stream.id },
+      body: {} as any
     })
   }
 
@@ -263,7 +260,7 @@ export default function StreamSubscriptionTierChange({
             <Alert>
               <CreditCard className="h-4 w-4" />
               <AlertDescription>
-                Upgrading requires payment. Use the main subscription page to upgrade your tier.
+                Upgrading will prorate the price difference for the remainder of your billing period.
               </AlertDescription>
             </Alert>
           )}
@@ -273,7 +270,7 @@ export default function StreamSubscriptionTierChange({
             {selectedTier !== currentSubscription.tier_level && (
               <Button
                 onClick={handleTierChange}
-                disabled={isProcessing || isUpgrade}
+                disabled={isProcessing}
                 className="w-full"
               >
                 {isProcessing ? (
@@ -281,10 +278,10 @@ export default function StreamSubscriptionTierChange({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
-                ) : isUpgrade ? (
-                  "Use Upgrade Button for Paid Tiers"
+                ) : isDowngrade ? (
+                  "Downgrade to Free Tier"
                 ) : (
-                  "Change to Free Tier"
+                  `Change to ${selectedTier === 'premium' ? 'Premium' : 'Entry'} Tier`
                 )}
               </Button>
             )}

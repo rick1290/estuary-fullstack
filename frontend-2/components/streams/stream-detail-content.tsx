@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Users, Lock, Heart, Zap, Crown, Check } from "lucide-react"
+import { ArrowLeft, Users, Lock, Heart, Zap, Crown, Check, Newspaper } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -481,9 +481,19 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                 <Spinner className="h-6 w-6" />
               </div>
             ) : filteredPosts.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                {activeFilter === "all" ? "No posts yet" : `No ${activeFilter} posts yet`}
-              </p>
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="p-4 bg-sage-50 rounded-full mb-4">
+                  <Newspaper className="h-10 w-10 text-sage-400" strokeWidth="1.5" />
+                </div>
+                <h3 className="font-serif text-xl font-light text-olive-900 mb-2 text-center">
+                  {activeFilter === "all" ? "No posts yet" : `No ${activeFilter} posts yet`}
+                </h3>
+                <p className="text-muted-foreground text-center max-w-sm">
+                  {activeFilter === "all"
+                    ? "This stream doesn't have any posts yet. Check back soon!"
+                    : `No ${activeFilter}-tier posts are available right now.`}
+                </p>
+              </div>
             ) : (
               filteredPosts.map((post) => <ContentCard key={post.id} post={post} />)
             )}

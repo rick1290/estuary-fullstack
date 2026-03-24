@@ -1,5 +1,8 @@
 "use client"
 
+import { useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Newspaper, Heart } from "lucide-react"
 import ContentCard from "./content-card"
 import type { StreamPost } from "@/types/stream"
 import { Spinner } from "@/components/ui/spinner"
@@ -28,6 +31,7 @@ export default function ContentFeed({
   sort = "recent",
 }: ContentFeedProps) {
   const { user } = useAuth()
+  const router = useRouter()
   const pageSize = 10
 
   // Build query parameters
@@ -100,6 +104,26 @@ export default function ContentFeed({
     initialPageParam: 1,
   })
 
+  // Infinite scroll sentinel
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
   // Map API response to StreamPost format
   const mapApiPostToStreamPost = (apiPost: any): StreamPost => {
     // For public users or non-subscribers, we want to show content preview (no full access)
@@ -142,7 +166,7 @@ export default function ContentFeed({
   }
 
   // Flatten pages of results
-  const posts = data?.pages.flatMap(page => page.results?.map(mapApiPostToStreamPost) || []) || []
+  const posts = data?.pages.flatMap(page => (page as any).results?.map(mapApiPostToStreamPost) || []) || []
 
   if (isLoading) {
     return (
@@ -163,13 +187,38 @@ export default function ContentFeed({
 
   if (posts.length === 0) {
     return (
-      <div className="py-8 text-center">
-        <h3 className="mb-2 font-serif text-lg font-light text-muted-foreground">
-          {showSubscribed ? "No posts from practitioners you follow" : "No content found"}
-        </h3>
-        <p className="text-muted-foreground">
-          {showSubscribed ? "Follow some practitioners to see their content here" : "Try adjusting your filters or search query"}
-        </p>
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        {showSubscribed ? (
+          <>
+            <div className="p-4 bg-sage-50 rounded-full mb-4">
+              <Heart className="h-10 w-10 text-sage-400" strokeWidth="1.5" />
+            </div>
+            <h3 className="font-serif text-xl font-light text-olive-900 mb-2 text-center">
+              No posts from your subscriptions
+            </h3>
+            <p className="text-muted-foreground text-center mb-6 max-w-sm">
+              Follow practitioners and subscribe to streams to see their content here
+            </p>
+            <Button onClick={() => router.push('/streams')} variant="outline">
+              Explore Streams
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="p-4 bg-sage-50 rounded-full mb-4">
+              <Newspaper className="h-10 w-10 text-sage-400" strokeWidth="1.5" />
+            </div>
+            <h3 className="font-serif text-xl font-light text-olive-900 mb-2 text-center">
+              No content found
+            </h3>
+            <p className="text-muted-foreground text-center mb-6 max-w-sm">
+              Try adjusting your filters or search query to discover more content
+            </p>
+            <Button onClick={() => router.push('/streams')} variant="outline">
+              Explore Streams
+            </Button>
+          </>
+        )}
       </div>
     )
   }
@@ -182,23 +231,11 @@ export default function ContentFeed({
         ))}
       </div>
 
-      {/* Load more button */}
-      {hasNextPage && (
-        <div className="mt-6 flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-          >
-            {isFetchingNextPage ? (
-              <>
-                <Spinner className="mr-2 h-4 w-4" />
-                Loading...
-              </>
-            ) : (
-              "Load More"
-            )}
-          </Button>
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-1" />
+      {isFetchingNextPage && (
+        <div className="flex justify-center py-6">
+          <Spinner className="h-6 w-6" />
         </div>
       )}
     </div>

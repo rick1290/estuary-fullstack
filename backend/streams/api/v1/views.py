@@ -6,6 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db.models import Q, F, Count, Sum
+from django.db.models.functions import Greatest
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -20,10 +21,19 @@ from streams.models import (
 from .serializers import (
     StreamSerializer, StreamPostSerializer, StreamSubscriptionSerializer,
     StreamCategorySerializer, StreamAnalyticsSerializer,
-    StreamPostCommentSerializer
+    StreamPostCommentSerializer, StreamTipSerializer
 )
 from .permissions import IsPractitionerOwner, IsStreamOwner, CanAccessStream
 from .views_media import StreamPostMediaMixin
+
+
+def _update_subscriber_counts(stream):
+    """Recalculate and update all subscriber count fields from the database."""
+    active_subs = stream.subscriptions.filter(status='active')
+    stream.subscriber_count = active_subs.count()
+    stream.free_subscriber_count = active_subs.filter(tier='free').count()
+    stream.paid_subscriber_count = active_subs.filter(tier__in=['entry', 'premium']).count()
+    stream.save(update_fields=['subscriber_count', 'free_subscriber_count', 'paid_subscriber_count'])
 
 
 class StreamViewSet(viewsets.ModelViewSet):
@@ -259,10 +269,8 @@ class StreamViewSet(viewsets.ModelViewSet):
                 current_period_end=now + timezone.timedelta(days=36500)  # ~100 years
             )
             
-            # Update subscriber counts
-            stream.subscriber_count = stream.subscriptions.filter(status='active').count()
-            stream.save()
-            
+            _update_subscriber_counts(stream)
+
             serializer = StreamSubscriptionSerializer(subscription)
             return Response({
                 'message': 'Successfully subscribed to free tier',
@@ -411,10 +419,8 @@ class StreamViewSet(viewsets.ModelViewSet):
             subscription.ends_at = timezone.now()
             subscription.save()
             
-            # Update subscriber counts
-            stream.subscriber_count = stream.subscriptions.filter(status='active').count()
-            stream.save()
-            
+            _update_subscriber_counts(stream)
+
             return Response({'message': 'Successfully unsubscribed'})
         
         # Handle paid tier cancellation
@@ -513,7 +519,9 @@ class StreamViewSet(viewsets.ModelViewSet):
             subscription.stripe_price_id = None
             subscription.price_cents = 0
             subscription.save()
-            
+
+            _update_subscriber_counts(stream)
+
             return Response({
                 'message': 'Successfully downgraded to free tier',
                 'subscription': StreamSubscriptionSerializer(subscription).data
@@ -572,13 +580,8 @@ class StreamViewSet(viewsets.ModelViewSet):
             subscription.price_cents = new_price_cents
             subscription.save()
             
-            # Update subscriber counts
-            stream.paid_subscriber_count = stream.subscriptions.filter(
-                status='active',
-                tier__in=['entry', 'premium']
-            ).count()
-            stream.save()
-            
+            _update_subscriber_counts(stream)
+
             return Response({
                 'message': f'Successfully changed to {new_tier} tier',
                 'subscription': StreamSubscriptionSerializer(subscription).data
@@ -587,6 +590,123 @@ class StreamViewSet(viewsets.ModelViewSet):
         except stripe.error.StripeError as e:
             return Response(
                 {'error': f'Failed to change subscription: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @extend_schema(
+        tags=['Streams'],
+        description="Send a tip on a stream (without a specific post)",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'amount_cents': {'type': 'integer', 'minimum': 100},
+                    'message': {'type': 'string'},
+                    'is_anonymous': {'type': 'boolean', 'default': False},
+                    'payment_method_id': {'type': 'string'},
+                },
+                'required': ['amount_cents', 'payment_method_id']
+            }
+        }
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def tip(self, request, pk=None):
+        """Send a tip on a stream."""
+        stream = self.get_object()
+
+        if not stream.allow_tips:
+            return Response(
+                {'error': 'Tips are not enabled for this stream'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        amount_cents = request.data.get('amount_cents')
+        payment_method_id = request.data.get('payment_method_id')
+        message = request.data.get('message', '')
+        is_anonymous = request.data.get('is_anonymous', False)
+
+        if not amount_cents or int(amount_cents) < 100:
+            return Response(
+                {'error': 'Minimum tip amount is $1.00'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not payment_method_id:
+            return Response(
+                {'error': 'Payment method is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        amount_cents = int(amount_cents)
+        commission_rate = stream.commission_rate or 15
+        commission_amount = int(amount_cents * commission_rate / 100)
+        net_amount = amount_cents - commission_amount
+
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+        try:
+            from users.models import UserPaymentProfile
+            payment_profile, _ = UserPaymentProfile.objects.get_or_create(user=request.user)
+
+            if not payment_profile.stripe_customer_id:
+                customer = stripe.Customer.create(
+                    email=request.user.email,
+                    name=request.user.get_full_name(),
+                    metadata={'user_id': str(request.user.id)}
+                )
+                payment_profile.stripe_customer_id = customer.id
+                payment_profile.save()
+
+            practitioner_payment = UserPaymentProfile.objects.filter(
+                user=stream.practitioner.user
+            ).first()
+
+            intent_params = {
+                'amount': amount_cents,
+                'currency': 'usd',
+                'customer': payment_profile.stripe_customer_id,
+                'payment_method': payment_method_id,
+                'metadata': {
+                    'type': 'stream_tip',
+                    'stream_id': str(stream.id),
+                    'user_id': str(request.user.id),
+                },
+            }
+
+            if practitioner_payment and practitioner_payment.stripe_account_id:
+                intent_params['application_fee_amount'] = commission_amount
+                intent_params['transfer_data'] = {
+                    'destination': practitioner_payment.stripe_account_id
+                }
+
+            payment_intent = stripe.PaymentIntent.create(**intent_params)
+
+            from streams.models import StreamTip
+            tip_obj = StreamTip.objects.create(
+                user=request.user,
+                stream=stream,
+                post=None,
+                amount_cents=amount_cents,
+                message=message,
+                is_anonymous=is_anonymous,
+                stripe_payment_intent_id=payment_intent.id,
+                status='pending',
+                commission_rate=commission_rate,
+                commission_amount_cents=commission_amount,
+                net_amount_cents=net_amount,
+            )
+
+            from .serializers import StreamTipSerializer
+            return Response({
+                'tip': StreamTipSerializer(tip_obj).data,
+                'client_secret': payment_intent.client_secret,
+            }, status=status.HTTP_201_CREATED)
+
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Payment error: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -861,7 +981,11 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
             serializer = self.get_serializer(data=post_data)
             serializer.is_valid(raise_exception=True)
             post = serializer.save(stream=stream)
-            
+
+            # Increment post count
+            stream.post_count = F('post_count') + 1
+            stream.save(update_fields=['post_count'])
+
             # Handle media uploads
             for idx, (original_idx, file) in enumerate(media_files):
                 # Determine media type
@@ -895,7 +1019,15 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         """Set the stream when creating a post."""
         # This is now handled in the create method above
         pass
-    
+
+    def perform_destroy(self, instance):
+        """Decrement post count when deleting a post."""
+        stream = instance.stream
+        instance.delete()
+        from django.db.models.functions import Greatest
+        stream.post_count = Greatest(F('post_count') - 1, 0)
+        stream.save(update_fields=['post_count'])
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def saved(self, request):
         """Get user's saved posts."""
@@ -1120,7 +1252,127 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         post.save(update_fields=['comment_count'])
         
         return Response({'message': 'Comment deleted successfully'})
-    
+
+    @extend_schema(
+        tags=['Stream Posts'],
+        description="Send a tip on a stream post",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'amount_cents': {'type': 'integer', 'minimum': 100, 'description': 'Tip amount in cents (min $1)'},
+                    'message': {'type': 'string', 'description': 'Optional message'},
+                    'is_anonymous': {'type': 'boolean', 'default': False},
+                    'payment_method_id': {'type': 'string', 'description': 'Stripe payment method ID'},
+                },
+                'required': ['amount_cents', 'payment_method_id']
+            }
+        }
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def tip(self, request, public_uuid=None):
+        """Send a tip on a post."""
+        post = self.get_object()
+        stream = post.stream
+
+        if not stream.allow_tips:
+            return Response(
+                {'error': 'Tips are not enabled for this stream'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        amount_cents = request.data.get('amount_cents')
+        payment_method_id = request.data.get('payment_method_id')
+        message = request.data.get('message', '')
+        is_anonymous = request.data.get('is_anonymous', False)
+
+        if not amount_cents or int(amount_cents) < 100:
+            return Response(
+                {'error': 'Minimum tip amount is $1.00'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not payment_method_id:
+            return Response(
+                {'error': 'Payment method is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        amount_cents = int(amount_cents)
+        commission_rate = stream.commission_rate or 15
+        commission_amount = int(amount_cents * commission_rate / 100)
+        net_amount = amount_cents - commission_amount
+
+        import stripe
+        from django.conf import settings
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+        try:
+            from users.models import UserPaymentProfile
+            payment_profile, _ = UserPaymentProfile.objects.get_or_create(user=request.user)
+
+            if not payment_profile.stripe_customer_id:
+                customer = stripe.Customer.create(
+                    email=request.user.email,
+                    name=request.user.get_full_name(),
+                    metadata={'user_id': str(request.user.id)}
+                )
+                payment_profile.stripe_customer_id = customer.id
+                payment_profile.save()
+
+            # Get practitioner's Stripe Connect account
+            practitioner_payment = UserPaymentProfile.objects.filter(
+                user=stream.practitioner.user
+            ).first()
+
+            intent_params = {
+                'amount': amount_cents,
+                'currency': 'usd',
+                'customer': payment_profile.stripe_customer_id,
+                'payment_method': payment_method_id,
+                'metadata': {
+                    'type': 'stream_tip',
+                    'stream_id': str(stream.id),
+                    'post_id': str(post.id),
+                    'user_id': str(request.user.id),
+                },
+            }
+
+            if practitioner_payment and practitioner_payment.stripe_account_id:
+                intent_params['application_fee_amount'] = commission_amount
+                intent_params['transfer_data'] = {
+                    'destination': practitioner_payment.stripe_account_id
+                }
+
+            payment_intent = stripe.PaymentIntent.create(**intent_params)
+
+            from streams.models import StreamTip
+            tip = StreamTip.objects.create(
+                user=request.user,
+                stream=stream,
+                post=post,
+                amount_cents=amount_cents,
+                message=message,
+                is_anonymous=is_anonymous,
+                stripe_payment_intent_id=payment_intent.id,
+                status='pending',
+                commission_rate=commission_rate,
+                commission_amount_cents=commission_amount,
+                net_amount_cents=net_amount,
+            )
+
+            from .serializers import StreamTipSerializer
+            return Response({
+                'tip': StreamTipSerializer(tip).data,
+                'client_secret': payment_intent.client_secret,
+            }, status=status.HTTP_201_CREATED)
+
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': f'Payment error: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     def _can_access_post(self, user, post):
         """Check if user can access a post based on subscription tier."""
         # Owner can always access

@@ -284,6 +284,30 @@ class StreamPostCommentSerializer(BaseSerializer):
         return []
 
 
+class StreamTipSerializer(BaseSerializer):
+    """Serializer for stream tips."""
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StreamTip
+        fields = [
+            'id', 'public_uuid', 'user', 'user_name', 'stream', 'post',
+            'amount_cents', 'message', 'is_anonymous',
+            'status', 'commission_rate', 'commission_amount_cents', 'net_amount_cents',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'public_uuid', 'user', 'user_name', 'stream', 'post',
+            'status', 'commission_rate', 'commission_amount_cents', 'net_amount_cents',
+            'created_at', 'updated_at'
+        ]
+
+    def get_user_name(self, obj):
+        if obj.is_anonymous:
+            return "Anonymous"
+        return obj.user.get_full_name() or obj.user.email
+
+
 class StreamSubscriptionSerializer(BaseSerializer):
     """Serializer for stream subscriptions."""
     stream_title = serializers.CharField(source='stream.title', read_only=True)

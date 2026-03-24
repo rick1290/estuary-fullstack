@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MessageCircle, Share2, Bookmark, MoreHorizontal, Lock, Play, Heart, DollarSign } from "lucide-react"
 import { useAuthModal } from "@/components/auth/auth-provider"
+import ImageLightbox from "./image-lightbox"
+import TipModal from "./tip-modal"
 
 // Helper function to validate URLs
 function isValidUrl(urlString: string | undefined | null): boolean {
@@ -53,12 +55,23 @@ export default function ContentCard({ post }: ContentCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
   const [likeCount, setLikeCount] = useState(post.likes)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [tipModalOpen, setTipModalOpen] = useState(false)
 
   // Filter out invalid URLs from mediaUrls to prevent Image component errors
   const validMediaUrls = useMemo(() => {
     if (!post.mediaUrls || !Array.isArray(post.mediaUrls)) return []
     return post.mediaUrls.filter(isValidUrl)
   }, [post.mediaUrls])
+
+  const handleImageClick = (index: number) => {
+    if (post.hasAccess || !post.isPremium) {
+      setLightboxIndex(index)
+      setLightboxOpen(true)
+    }
+  }
 
   // Initialize liked state
   useEffect(() => {
@@ -364,6 +377,13 @@ export default function ContentCard({ post }: ContentCardProps) {
                       </Button>
                     </div>
                   </>
+                ) : isPlaying && validMediaUrls[0] ? (
+                  <video
+                    src={validMediaUrls[0]}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain bg-black"
+                  />
                 ) : validMediaUrls[0] ? (
                   <Image
                     src={validMediaUrls[0]}
@@ -377,19 +397,26 @@ export default function ContentCard({ post }: ContentCardProps) {
                     <span className="text-olive-400">No thumbnail</span>
                   </div>
                 )}
-                {(!post.isPremium || post.hasAccess) && (
-                  <div className="absolute inset-0 flex items-center justify-center group cursor-pointer">
+                {(!post.isPremium || post.hasAccess) && !isPlaying && (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center group cursor-pointer"
+                    onClick={() => setIsPlaying(true)}
+                  >
                     <div className="w-16 h-16 bg-black/50 group-hover:bg-black/60 rounded-full flex items-center justify-center transition-colors">
                       <Play className="h-8 w-8 text-white ml-1" fill="white" strokeWidth="1.5" />
                     </div>
                   </div>
                 )}
               </div>
+            ) : post.contentType === "audio" && validMediaUrls[0] && (!post.isPremium || post.hasAccess) ? (
+              <div className="px-4 py-3">
+                <audio controls className="w-full" src={validMediaUrls[0]} />
+              </div>
             ) : (
               <div className="relative">
                 {/* Multi-image gallery layout -- edge-to-edge, no rounding */}
                 {validMediaUrls.length === 1 ? (
-                  <div className="relative">
+                  <div className="relative cursor-pointer" onClick={() => handleImageClick(0)}>
                     <Image
                       src={validMediaUrls[0]}
                       alt="Post media"
@@ -406,7 +433,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 ) : validMediaUrls.length === 2 ? (
                   <div className="grid grid-cols-2 gap-0.5">
                     {validMediaUrls.slice(0, 2).map((url, index) => (
-                      <div key={index} className="relative aspect-square">
+                      <div key={index} className="relative aspect-square cursor-pointer" onClick={() => handleImageClick(index)}>
                         <Image
                           src={url}
                           alt={`Post media ${index + 1}`}
@@ -423,7 +450,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                   </div>
                 ) : validMediaUrls.length === 3 ? (
                   <div className="grid grid-cols-2 gap-0.5">
-                    <div className="relative aspect-square">
+                    <div className="relative aspect-square cursor-pointer" onClick={() => handleImageClick(0)}>
                       <Image
                         src={validMediaUrls[0]}
                         alt="Post media 1"
@@ -438,7 +465,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                     </div>
                     <div className="grid grid-rows-2 gap-0.5">
                       {validMediaUrls.slice(1, 3).map((url, index) => (
-                        <div key={index + 1} className="relative aspect-square overflow-hidden">
+                        <div key={index + 1} className="relative aspect-square overflow-hidden cursor-pointer" onClick={() => handleImageClick(index + 1)}>
                           <Image
                             src={url}
                             alt={`Post media ${index + 2}`}
@@ -457,7 +484,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 ) : (
                   <div className="grid grid-cols-2 gap-0.5">
                     {validMediaUrls.slice(0, 3).map((url, index) => (
-                      <div key={index} className="relative aspect-square overflow-hidden">
+                      <div key={index} className="relative aspect-square overflow-hidden cursor-pointer" onClick={() => handleImageClick(index)}>
                         <Image
                           src={url}
                           alt={`Post media ${index + 1}`}
@@ -471,7 +498,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                         />
                       </div>
                     ))}
-                    <div className="relative aspect-square overflow-hidden">
+                    <div className="relative aspect-square overflow-hidden cursor-pointer" onClick={() => handleImageClick(3)}>
                       <Image
                         src={validMediaUrls[3]}
                         alt="Post media 4"
@@ -665,10 +692,17 @@ export default function ContentCard({ post }: ContentCardProps) {
             size="sm"
             className="flex-1 gap-2 h-11 text-olive-600 hover:text-amber-600 hover:bg-amber-50/50"
             onClick={() => {
-              toast({
-                title: "Tipping coming soon",
-                description: "This feature is under development.",
-              })
+              if (!isAuthenticated) {
+                openAuthModal({
+                  defaultTab: "login",
+                  redirectUrl: window.location.pathname,
+                  serviceType: "stream",
+                  title: "Sign in to Tip",
+                  description: "Please sign in to send a tip"
+                })
+                return
+              }
+              setTipModalOpen(true)
             }}
           >
             <DollarSign className="h-5 w-5" strokeWidth="1.5" />
@@ -754,6 +788,23 @@ export default function ContentCard({ post }: ContentCardProps) {
           </div>
         )}
       </Card>
+
+      {/* Image lightbox */}
+      <ImageLightbox
+        images={validMediaUrls}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
+
+      {/* Tip modal */}
+      <TipModal
+        open={tipModalOpen}
+        onOpenChange={setTipModalOpen}
+        streamId={post.streamId || ''}
+        postId={post.id as string}
+        practitionerName={post.practitionerName}
+      />
     </>
   )
 }
