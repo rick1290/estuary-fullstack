@@ -66,8 +66,8 @@ export default function StreamSubscriptionTierChange({
     },
     onError: (error: any) => {
       toast({
-        title: "Update failed",
-        description: error?.body?.detail || "Failed to update subscription",
+        title: "Couldn't update your subscription. Please try again.",
+        description: error?.body?.detail || "Something went wrong",
         variant: "destructive",
       })
       setIsProcessing(false)
@@ -90,8 +90,8 @@ export default function StreamSubscriptionTierChange({
     },
     onError: (error: any) => {
       toast({
-        title: "Cancellation failed",
-        description: error?.body?.detail || "Failed to cancel subscription",
+        title: "Couldn't cancel your subscription. Please try again.",
+        description: error?.body?.detail || "Something went wrong",
         variant: "destructive",
       })
     }

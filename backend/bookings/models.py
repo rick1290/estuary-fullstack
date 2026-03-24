@@ -135,6 +135,7 @@ class Booking(PublicModel):
             models.Index(fields=['status', 'created_at']),  # Changed from start_time
             models.Index(fields=['payment_status']),
             models.Index(fields=['service_session']),
+            models.Index(fields=['service_session', 'status']),
             models.Index(fields=['order']),  # Added order index
         ]
         constraints = [

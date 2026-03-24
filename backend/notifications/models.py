@@ -59,6 +59,7 @@ class Notification(BaseModel):
     class Meta:
         indexes = [
             models.Index(fields=['user', 'is_read']),
+            models.Index(fields=['user', 'is_read', '-created_at']),
             models.Index(fields=['notification_type', 'status']),
             models.Index(fields=['delivery_channel']),
             models.Index(fields=['scheduled_for']),

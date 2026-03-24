@@ -112,14 +112,14 @@ export default function TipModal({ open, onOpenChange, streamId, postId, practit
       } else {
         const data = await response.json().catch(() => ({}))
         toast({
-          title: "Failed to send tip",
+          title: "Couldn't process your tip. Please try again.",
           description: data.error || "Please try again later",
           variant: "destructive",
         })
       }
     } catch {
       toast({
-        title: "Failed to send tip",
+        title: "Couldn't process your tip. Please try again.",
         description: "Could not connect to the server. Please try again.",
         variant: "destructive",
       })

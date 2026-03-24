@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Upload, Loader2, User, Briefcase, FileText, Award } from "lucide-react"
+import { AlertCircle, Upload, Loader2, User, Briefcase, FileText, Award, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { practitionersApplyCreate, mediaUploadCreate } from "@/src/client/sdk.gen"
 
@@ -210,7 +210,8 @@ export default function Step1BasicProfile({
   }
 
   return (
-    <Card className="border-0 shadow-xl">
+    <>
+    <Card className="border-0 shadow-xl pb-20">
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">Tell Us About Yourself</CardTitle>
         <CardDescription className="text-olive-600">
@@ -219,7 +220,7 @@ export default function Step1BasicProfile({
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="step-1-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Display Name */}
           <div className="space-y-2">
             <Label htmlFor="display_name" className="flex items-center gap-2">
@@ -346,57 +347,56 @@ export default function Step1BasicProfile({
             </div>
           </div>
 
-          {/* Profile Photo */}
+          {/* Profile Photo — compact inline */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Upload className="h-4 w-4 text-sage-600" />
-              Profile Photo *
+              Profile Photo
             </Label>
-            <div className="flex items-start gap-4">
+            <div className="flex items-center gap-4">
               {formData.profile_image_url ? (
-                <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-sage-200">
+                <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-sage-200 flex-shrink-0">
                   <img
                     src={formData.profile_image_url}
                     alt="Profile preview"
                     className="w-full h-full object-cover"
                   />
+                </div>
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-sage-100 border-2 border-dashed border-sage-300 flex items-center justify-center flex-shrink-0">
+                  <User className="h-6 w-6 text-sage-400" />
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="profile_image"
+                  className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-sage-300 bg-white text-sm font-medium text-olive-700 hover:border-sage-400 transition-colors"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {formData.profile_image_url ? "Change Photo" : "Upload Photo"}
+                </label>
+                <span className="text-xs text-olive-500">Optional</span>
+                {formData.profile_image_url && (
                   <button
                     type="button"
                     onClick={() => {
                       setFormData(prev => ({ ...prev, profile_image_url: "" }))
                       setImageFile(null)
                     }}
-                    className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow-sm"
+                    className="text-xs text-terracotta-600 hover:underline"
                   >
-                    <span className="text-xs px-2">Change</span>
+                    Remove
                   </button>
-                </div>
-              ) : (
-                <label
-                  htmlFor="profile_image"
-                  className={cn(
-                    "w-32 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-sage-400 transition-colors",
-                    errors.profile_image_url ? "border-terracotta-300 bg-terracotta-50" : "border-sage-300 bg-sage-50"
-                  )}
-                >
-                  {uploadingImage ? (
-                    <Loader2 className="h-8 w-8 text-sage-600 animate-spin" />
-                  ) : (
-                    <>
-                      <Upload className="h-8 w-8 text-sage-600 mb-2" />
-                      <span className="text-xs text-olive-600">Upload Photo</span>
-                    </>
-                  )}
-                </label>
-              )}
-              <div className="flex-1">
-                <p className="text-sm text-olive-700 mb-1">Professional headshot recommended</p>
-                <p className="text-xs text-olive-500 mb-2">JPG, PNG or GIF. Max 10MB.</p>
-                {errors.profile_image_url && (
-                  <p className="text-sm text-terracotta-600">{errors.profile_image_url}</p>
                 )}
               </div>
             </div>
+            {errors.profile_image_url && (
+              <p className="text-sm text-terracotta-600">{errors.profile_image_url}</p>
+            )}
             <input
               id="profile_image"
               type="file"
@@ -406,34 +406,40 @@ export default function Step1BasicProfile({
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-6 border-t border-sage-100">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => window.history.back()}
-              className="text-olive-600"
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Profile...
-                </>
-              ) : (
-                "Continue to Next Step"
-              )}
-            </Button>
-          </div>
         </form>
       </CardContent>
     </Card>
+
+    {/* Fixed bottom bar — outside the Card */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-sage-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => window.history.back()}
+          className="text-olive-600"
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <Button
+          type="submit"
+          form="step-1-form"
+          disabled={isSubmitting}
+          className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating Profile...
+            </>
+          ) : (
+            "Continue"
+          )}
+        </Button>
+      </div>
+    </div>
+    </>
   )
 }

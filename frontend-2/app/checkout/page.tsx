@@ -446,7 +446,7 @@ export default function CheckoutPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-2">
-              <Card className="sticky top-6">
+              <Card className="lg:sticky lg:top-6">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Order Summary</CardTitle>
                 </CardHeader>
@@ -557,7 +557,7 @@ export default function CheckoutPage() {
                               placeholder="Promo code"
                               value={promoCode}
                               onChange={(e) => setPromoCode(e.target.value)}
-                              className="h-8 text-xs"
+                              className="h-8"
                             />
                             <Button
                               onClick={handleApplyPromo}

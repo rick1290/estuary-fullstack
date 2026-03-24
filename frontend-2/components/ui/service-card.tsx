@@ -116,7 +116,7 @@ export default function ServiceCard({
       <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer overflow-hidden">
         {/* Cover Image with overlaid badges */}
         {hasServiceImage ? (
-          <div className="relative w-full h-52 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
+          <div className="relative w-full h-36 sm:h-44 md:h-52 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
             <img
               src={image}
               alt={title}

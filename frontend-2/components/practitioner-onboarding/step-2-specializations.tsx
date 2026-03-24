@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, ChevronLeft, Sparkles, Users, Lightbulb, BookOpen } from "lucide-react"
+import { Loader2, ChevronLeft, Sparkles, Users, Lightbulb, BookOpen, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { practitionersPartialUpdate } from "@/src/client/sdk.gen"
 import { useQuery } from "@tanstack/react-query"
@@ -46,6 +46,17 @@ export default function Step2Specializations({
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
+  const [categoriesInitialized, setCategoriesInitialized] = useState(false)
+
+  const toggleCategory = (categoryName: string) => {
+    setOpenCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(categoryName)) next.delete(categoryName)
+      else next.add(categoryName)
+      return next
+    })
+  }
 
   // Fetch data from API
   const { data: specializationsData, isLoading: specializationsLoading } = useQuery(specializationsListOptions())
@@ -74,6 +85,15 @@ export default function Step2Specializations({
   }, {})
 
   const isLoading = specializationsLoading || stylesLoading || topicsLoading || modalitiesLoading || modalityCategoriesLoading
+
+  // Initialize first 3 categories as open once data loads
+  useEffect(() => {
+    if (!categoriesInitialized && modalityCategories.length > 0) {
+      const firstThree = modalityCategories.slice(0, 3).map((cat) => cat.name || "")
+      setOpenCategories(new Set(firstThree))
+      setCategoriesInitialized(true)
+    }
+  }, [modalityCategories, categoriesInitialized])
 
   const toggleSelection = (id: string, field: keyof Step2Data) => {
     setFormData(prev => {
@@ -154,7 +174,8 @@ export default function Step2Specializations({
   }
 
   return (
-    <Card className="border-0 shadow-xl">
+    <>
+    <Card className="border-0 shadow-xl pb-20">
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">Your Expertise</CardTitle>
         <CardDescription className="text-olive-600">
@@ -163,7 +184,7 @@ export default function Step2Specializations({
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form id="step-2-form" onSubmit={handleSubmit} className="space-y-8">
           {/* Specializations */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -299,42 +320,60 @@ export default function Step2Specializations({
               </span>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-1">
               {modalityCategories.map((cat) => {
                 const catModalities = modalitiesByCategory[(cat as any).slug ?? ""] || []
                 if (catModalities.length === 0) return null
+                const selectedCount = catModalities.filter(
+                  (m) => formData.modality_ids?.includes(m.id.toString())
+                ).length
+                const isOpen = openCategories.has(cat.name || "")
                 return (
-                  <div key={cat.id}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: (cat as any).color || "#9CAF88" }}
-                      />
-                      <span className="text-xs font-medium text-olive-700 uppercase tracking-wider">
+                  <div key={cat.id} className="border-b border-sage-100 last:border-b-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(cat.name || "")}
+                      className="w-full flex items-center justify-between py-2.5 text-sm font-medium text-olive-800 hover:text-olive-900"
+                    >
+                      <span className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: (cat as any).color || "#9CAF88" }}
+                        />
                         {cat.name}
                       </span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {catModalities.map((modality) => {
-                        const isSelected = formData.modality_ids?.includes(modality.id.toString()) || false
-                        return (
-                          <button
-                            key={modality.id}
-                            type="button"
-                            onClick={() => toggleSelection(modality.id.toString(), 'modality_ids')}
-                            className={cn(
-                              "px-3 py-2 rounded-lg border-2 text-sm transition-all text-left",
-                              isSelected
-                                ? "border-sage-500 bg-sage-50 text-sage-700 font-medium"
-                                : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"
-                            )}
-                          >
-                            {modality.name}
-                            {isSelected && <span className="ml-1">✓</span>}
-                          </button>
-                        )
-                      })}
-                    </div>
+                      <div className="flex items-center gap-2">
+                        {selectedCount > 0 && (
+                          <Badge variant="secondary" className="text-xs bg-sage-100 text-sage-700">
+                            {selectedCount}
+                          </Badge>
+                        )}
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-3">
+                        {catModalities.map((modality) => {
+                          const isSelected = formData.modality_ids?.includes(modality.id.toString()) || false
+                          return (
+                            <button
+                              key={modality.id}
+                              type="button"
+                              onClick={() => toggleSelection(modality.id.toString(), 'modality_ids')}
+                              className={cn(
+                                "px-3 py-2 rounded-lg border-2 text-sm transition-all text-left",
+                                isSelected
+                                  ? "border-sage-500 bg-sage-50 text-sage-700 font-medium"
+                                  : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"
+                              )}
+                            >
+                              {modality.name}
+                              {isSelected && <span className="ml-1">✓</span>}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -352,35 +391,40 @@ export default function Step2Specializations({
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-6 border-t border-sage-100">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onBack}
-              className="text-olive-600"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-
-            <Button
-              type="submit"
-              disabled={isSubmitting || formData.specialization_ids.length === 0}
-              className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Continue"
-              )}
-            </Button>
-          </div>
         </form>
       </CardContent>
     </Card>
+
+    {/* Fixed bottom bar — outside the Card */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-sage-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onBack}
+          className="text-olive-600"
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <Button
+          type="submit"
+          form="step-2-form"
+          disabled={isSubmitting || formData.specialization_ids.length === 0}
+          className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Continue"
+          )}
+        </Button>
+      </div>
+    </div>
+    </>
   )
 }

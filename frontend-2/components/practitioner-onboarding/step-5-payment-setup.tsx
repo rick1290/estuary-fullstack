@@ -63,7 +63,8 @@ export default function Step5PaymentSetup({
   }
 
   return (
-    <Card className="border-0 shadow-xl">
+    <>
+    <Card className="border-0 shadow-xl pb-20">
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">Payment Setup</CardTitle>
         <CardDescription className="text-olive-600">
@@ -74,7 +75,7 @@ export default function Step5PaymentSetup({
           onClick={handleSkipForNow}
           className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
         >
-          Skip this step →
+          Skip →
         </button>
       </CardHeader>
 
@@ -156,27 +157,50 @@ export default function Step5PaymentSetup({
             className="w-full"
             disabled={isLoading}
           >
-            I'll Set This Up Later
+            Skip for Now
           </Button>
           <p className="text-xs text-olive-500 mt-2 text-center">
             You can complete this from your dashboard, but you won't be able to accept bookings until payment setup is complete.
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-sage-100">
+      </CardContent>
+    </Card>
+
+    {/* Fixed bottom bar — outside the Card */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-sage-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onBack}
+          className="text-olive-600"
+          disabled={isLoading}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <div className="flex items-center gap-3">
           <Button
             type="button"
             variant="ghost"
-            onClick={onBack}
-            className="text-olive-600"
+            onClick={handleSkipForNow}
             disabled={isLoading}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back
+            Skip
+          </Button>
+
+          <Button
+            onClick={handleSkipForNow}
+            disabled={isLoading}
+            className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+          >
+            Complete Setup
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+    </>
   )
 }

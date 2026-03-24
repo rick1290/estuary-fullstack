@@ -14,9 +14,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isInPractitionerDashboard = pathname.startsWith("/dashboard/practitioner")
   const isInCheckout = pathname.startsWith("/checkout")
   const isInRoom = pathname.startsWith("/room")
+  const isInOnboarding = pathname.startsWith("/become-practitioner/onboarding")
 
-  const shouldHideNavAndFooter = isInPractitionerDashboard || isInCheckout || isInRoom
-  const shouldHideRoleSwitcher = isInRoom // Hide role switcher in room for immersive experience
+  const shouldHideNavAndFooter = isInPractitionerDashboard || isInCheckout || isInRoom || isInOnboarding
+  const shouldHideRoleSwitcher = isInRoom || isInOnboarding
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">

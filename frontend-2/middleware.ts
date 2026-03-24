@@ -45,6 +45,9 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = "/"
     url.searchParams.set("callbackUrl", pathname)
+    if (pathname.startsWith("/dashboard")) {
+      url.searchParams.set("session", "expired")
+    }
     return NextResponse.redirect(url)
   }
 

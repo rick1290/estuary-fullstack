@@ -61,7 +61,8 @@ export default function Step3SchedulingPreferences({
   }
 
   return (
-    <Card className="border-0 shadow-xl">
+    <>
+    <Card className="border-0 shadow-xl pb-20">
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">Scheduling Preferences</CardTitle>
         <CardDescription className="text-olive-600">
@@ -70,7 +71,7 @@ export default function Step3SchedulingPreferences({
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="step-3-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Buffer Time */}
           <div className="space-y-2">
             <Label htmlFor="buffer_time" className="flex items-center gap-2">
@@ -132,35 +133,40 @@ export default function Step3SchedulingPreferences({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-6 border-t border-sage-100">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onBack}
-              className="text-olive-600"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Continue"
-              )}
-            </Button>
-          </div>
         </form>
       </CardContent>
     </Card>
+
+    {/* Fixed bottom bar — outside the Card */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-sage-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onBack}
+          className="text-olive-600"
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <Button
+          type="submit"
+          form="step-3-form"
+          disabled={isSubmitting}
+          className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Continue"
+          )}
+        </Button>
+      </div>
+    </div>
+    </>
   )
 }

@@ -186,35 +186,51 @@ export default function PractitionerOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream-50 to-white">
-      <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-olive-900 mb-3">
-            Welcome to Estuary
-          </h1>
-          <p className="text-lg text-olive-600">
-            Let's set up your practitioner profile
-          </p>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Minimal top bar — logo + exit */}
+      <div className="border-b border-sage-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+          <span className="font-serif text-lg font-medium text-olive-900 tracking-wide">
+            ESTUARY
+          </span>
+          <button
+            onClick={() => router.push('/')}
+            className="text-sm text-olive-500 hover:text-olive-700 transition-colors"
+          >
+            Save & exit
+          </button>
         </div>
+      </div>
 
-        {/* Progress Stepper */}
-        <div className="mb-12">
+      {/* Progress bar — thin, full width */}
+      <div className="border-b border-sage-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <ProgressStepper
             currentStep={currentStep}
             completedSteps={completedSteps}
           />
         </div>
+      </div>
 
-        {/* Step Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
+      {/* Step content — centered, breathing room */}
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Step title */}
+          <div className="mb-8">
+            <p className="text-xs font-medium text-sage-600 uppercase tracking-wider mb-2">
+              Step {currentStep} of 6
+            </p>
+          </div>
+
+          {/* Step Content */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
             {currentStep === 1 && (
               <Step1BasicProfile
                 initialData={onboardingData.basicProfile}
@@ -270,17 +286,8 @@ export default function PractitionerOnboardingPage() {
                 practitionerId={practitionerId}
               />
             )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Help Text */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-olive-600">
-            Need help? Email us at{" "}
-            <a href="mailto:support@estuary.com" className="text-sage-600 hover:underline">
-              support@estuary.com
-            </a>
-          </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>

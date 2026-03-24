@@ -104,13 +104,22 @@ class PractitionerViewSet(viewsets.ModelViewSet):
             )
         )
         
+        # Add annotations so the serializer doesn't need to query per-practitioner
+        queryset = queryset.annotate(
+            _average_rating=Avg('reviews__rating', filter=Q(reviews__is_published=True)),
+            _total_reviews=Count('reviews', filter=Q(reviews__is_published=True)),
+            _total_services=Count('primary_services', filter=Q(primary_services__is_active=True)),
+            _min_price=Min('primary_services__price_cents', filter=Q(primary_services__is_active=True)),
+            _max_price=Max('primary_services__price_cents', filter=Q(primary_services__is_active=True)),
+        )
+
         # For public views, only show active and verified practitioners
         if self.action in ['list', 'retrieve']:
             queryset = queryset.filter(
                 is_verified=True,
                 practitioner_status='active'
             )
-        
+
         return queryset
     
     def get_serializer_class(self):

@@ -310,7 +310,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
   if (isLoading) {
     return (
       <div className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <Skeleton className="w-full h-48" />
@@ -448,7 +448,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
       </div>
 
       {/* Services grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {filteredServices.map((service, index) => (
           <ServiceCard
             key={service.id}

@@ -33,11 +33,16 @@ from .views_media import StreamPostMediaMixin
 
 
 def _update_subscriber_counts(stream):
-    """Recalculate and update all subscriber count fields from the database."""
-    active_subs = stream.subscriptions.filter(status='active')
-    stream.subscriber_count = active_subs.count()
-    stream.free_subscriber_count = active_subs.filter(tier='free').count()
-    stream.paid_subscriber_count = active_subs.filter(tier__in=['entry', 'premium']).count()
+    """Recalculate and update all subscriber count fields from the database using a single aggregated query."""
+    from django.db.models import Count, Q
+    stats = stream.subscriptions.filter(status='active').aggregate(
+        total=Count('id'),
+        free=Count('id', filter=Q(tier='free')),
+        paid=Count('id', filter=Q(tier__in=['entry', 'premium'])),
+    )
+    stream.subscriber_count = stats['total']
+    stream.free_subscriber_count = stats['free']
+    stream.paid_subscriber_count = stats['paid']
     stream.save(update_fields=['subscriber_count', 'free_subscriber_count', 'paid_subscriber_count'])
 
 
@@ -917,11 +922,28 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
             for tag in tags_param.split(','):
                 queryset = queryset.filter(tags__contains=[tag.strip()])
 
+        # Use filtered Prefetch for subscriptions to only load current user's active subscription
+        if self.request.user.is_authenticated:
+            from django.db.models import Prefetch
+            subscription_prefetch = Prefetch(
+                'stream__subscriptions',
+                queryset=StreamSubscription.objects.filter(
+                    user=self.request.user,
+                    status='active'
+                )
+            )
+        else:
+            from django.db.models import Prefetch
+            subscription_prefetch = Prefetch(
+                'stream__subscriptions',
+                queryset=StreamSubscription.objects.none()
+            )
+
         return queryset.select_related('stream__practitioner').prefetch_related(
             'media',
             'likes',
             'saves',
-            'stream__subscriptions',
+            subscription_prefetch,
         )
 
     def get_permissions(self):

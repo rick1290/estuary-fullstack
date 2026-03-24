@@ -334,17 +334,25 @@ class ConversationViewSet(viewsets.ModelViewSet):
             bookings__user=request.user,
             bookings__status__in=['confirmed', 'completed']
         ).distinct().select_related('user')
-        
-        # Serialize practitioner data
+
+        # Get all conversations for this user at once (batch instead of N+1)
+        user_conversations = Conversation.objects.filter(
+            participants=request.user
+        ).prefetch_related('participants')
+
+        # Build a map of participant_user_id -> conversation
+        conv_map = {}
+        for conv in user_conversations:
+            participant_ids = set(p.id for p in conv.participants.all())
+            for pid in participant_ids:
+                if pid != request.user.id:
+                    conv_map[pid] = conv
+
+        # Serialize practitioner data using the pre-fetched conversation map
         practitioner_data = []
         for practitioner in booked_practitioners:
-            # Check if conversation exists
-            conversation = Conversation.objects.filter(
-                participants=request.user
-            ).filter(
-                participants=practitioner.user
-            ).first()
-            
+            conversation = conv_map.get(practitioner.user.id)
+
             practitioner_data.append({
                 'id': practitioner.id,
                 'user_id': practitioner.user.id,
@@ -356,7 +364,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
                 'conversation_id': conversation.id if conversation else None,
                 'has_conversation': conversation is not None
             })
-        
+
         return Response(practitioner_data)
 
 
