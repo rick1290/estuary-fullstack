@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Plus, Search, BarChart3, Users, DollarSign, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,6 +27,7 @@ import {
 } from "@/src/client/@tanstack/react-query.gen"
 
 export default function StreamsDashboard() {
+  const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()

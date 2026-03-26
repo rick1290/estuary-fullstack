@@ -73,7 +73,9 @@ app.conf.beat_schedule = {
         }
     },
     
-    # DISABLED: Temporal workflows (not using Temporal currently)
+    # NOTE: Temporal workflows are disabled. All scheduling handled by Celery Beat.
+    # Temporal workflow code exists in backend/workflows/ but is not active.
+    # To re-enable, uncomment the check-temporal-workflows task below.
     # 'check-temporal-workflows': {
     #     'task': 'workflows.tasks.check_pending_workflows',
     #     'schedule': 300.0,  # Every 5 minutes

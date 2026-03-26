@@ -371,7 +371,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                   {stream.free_tier_name || "Follow for Free"}
                 </Button>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Entry tier card */}
                   <div className="rounded-lg border border-sage-200/80 bg-white p-4">
                     <div className="flex items-center gap-1.5 mb-1">

@@ -45,7 +45,20 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = "/"
     url.searchParams.set("callbackUrl", pathname)
+    if (pathname.startsWith("/dashboard")) {
+      url.searchParams.set("session", "expired")
+    }
     return NextResponse.redirect(url)
+  }
+
+  // Check practitioner role for practitioner dashboard
+  if (pathname.startsWith("/dashboard/practitioner")) {
+    const user = token?.user as any
+    if (!user?.practitionerId && !user?.is_practitioner) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/dashboard/user"
+      return NextResponse.redirect(url)
+    }
   }
 
   return NextResponse.next()

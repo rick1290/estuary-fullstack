@@ -191,6 +191,7 @@ class Message(BaseModel):
         ordering = ['created_at']
         indexes = [
             models.Index(fields=['conversation', 'created_at']),
+            models.Index(fields=['conversation', 'is_deleted', '-created_at']),
             models.Index(fields=['sender', 'created_at']),
             models.Index(fields=['is_deleted']),
             models.Index(fields=['message_type']),

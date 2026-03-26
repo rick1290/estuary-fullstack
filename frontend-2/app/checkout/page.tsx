@@ -158,9 +158,11 @@ export default function CheckoutPage() {
   }, [isAuthenticated, serviceId, serviceType, selectedDate, selectedTime, openAuthModal])
 
   // Fetch service data from API using ID
+  const parsedServiceId = parseInt(serviceId || '0')
+  const isValidServiceId = !!serviceId && !isNaN(parsedServiceId) && parsedServiceId > 0
   const { data: serviceData, isLoading: loadingService, error: serviceError } = useQuery({
-    ...servicesRetrieveOptions({ path: { id: parseInt(serviceId || '0') } }),
-    enabled: !!serviceId && !isNaN(parseInt(serviceId)),
+    ...servicesRetrieveOptions({ path: { id: isValidServiceId ? parsedServiceId : 0 } }),
+    enabled: isValidServiceId,
     staleTime: 1000 * 60 * 10, // 10 minutes cache
   })
 
@@ -444,7 +446,7 @@ export default function CheckoutPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-2">
-              <Card className="sticky top-6">
+              <Card className="lg:sticky lg:top-6">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Order Summary</CardTitle>
                 </CardHeader>
@@ -555,7 +557,7 @@ export default function CheckoutPage() {
                               placeholder="Promo code"
                               value={promoCode}
                               onChange={(e) => setPromoCode(e.target.value)}
-                              className="h-8 text-xs"
+                              className="h-8"
                             />
                             <Button
                               onClick={handleApplyPromo}

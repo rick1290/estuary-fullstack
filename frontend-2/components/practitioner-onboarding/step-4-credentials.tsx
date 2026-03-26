@@ -120,7 +120,8 @@ export default function Step4Credentials({
   }
 
   return (
-    <Card className="border-0 shadow-xl">
+    <>
+    <Card className="border-0 shadow-xl pb-20">
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">Credentials & Education (Optional)</CardTitle>
         <CardDescription className="text-olive-600">
@@ -131,12 +132,12 @@ export default function Step4Credentials({
           onClick={handleSkip}
           className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
         >
-          Skip this step →
+          Skip →
         </button>
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form id="step-4-form" onSubmit={handleSubmit} className="space-y-8">
           {/* Certifications Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -298,48 +299,52 @@ export default function Step4Credentials({
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-6 border-t border-sage-100">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onBack}
-              className="text-olive-600"
-              disabled={isSubmitting}
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSkip}
-                disabled={isSubmitting}
-                className="px-6"
-              >
-                Skip for Now
-              </Button>
-
-              <Button
-                type="submit"
-                disabled={isSubmitting || (certifications.length === 0 && educations.length === 0)}
-                className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Continue"
-                )}
-              </Button>
-            </div>
-          </div>
         </form>
       </CardContent>
     </Card>
+
+    {/* Fixed bottom bar — outside the Card */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-sage-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onBack}
+          className="text-olive-600"
+          disabled={isSubmitting}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleSkip}
+            disabled={isSubmitting}
+          >
+            Skip
+          </Button>
+
+          <Button
+            type="submit"
+            form="step-4-form"
+            disabled={isSubmitting || (certifications.length === 0 && educations.length === 0)}
+            className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Continue"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+    </>
   )
 }

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { 
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import {
   creditsBalanceRetrieveOptions,
   creditsTransactionsRetrieveOptions
 } from "@/src/client/@tanstack/react-query.gen"
@@ -11,26 +11,82 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { 
-  Wallet, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/use-toast"
+import {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
   Calendar,
   ShoppingBag,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Loader2
 } from "lucide-react"
 import { format, parseISO } from "date-fns"
 
+const CREDIT_AMOUNTS = [
+  { dollars: 10, label: "$10" },
+  { dollars: 25, label: "$25" },
+  { dollars: 50, label: "$50" },
+  { dollars: 100, label: "$100" },
+]
+
 export default function CreditsTab() {
   const [page, setPage] = useState(1)
+  const [buyModalOpen, setBuyModalOpen] = useState(false)
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
+  const [purchasing, setPurchasing] = useState(false)
   const limit = 10
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   // Fetch credit balance
   const { data: balance, isLoading: balanceLoading } = useQuery({
     ...creditsBalanceRetrieveOptions(),
   })
+
+  const handlePurchase = async () => {
+    if (!selectedAmount) return
+    setPurchasing(true)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${baseUrl}/api/v1/credits/purchase/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount_cents: selectedAmount * 100 }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.detail || 'Purchase failed')
+      }
+      toast({
+        title: "Credits purchased",
+        description: `$${selectedAmount} in credits has been added to your account.`,
+      })
+      queryClient.invalidateQueries({ queryKey: creditsBalanceRetrieveOptions().queryKey })
+      queryClient.invalidateQueries({ queryKey: ['credits', 'transactions'] })
+      setBuyModalOpen(false)
+      setSelectedAmount(null)
+    } catch (err: any) {
+      toast({
+        title: "Purchase failed",
+        description: err.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setPurchasing(false)
+    }
+  }
 
   // Fetch credit transactions
   const { data: transactions, isLoading: transactionsLoading, error } = useQuery({
@@ -118,7 +174,16 @@ export default function CreditsTab() {
     <div className="space-y-6">
       {/* Current Balance */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Credit Balance</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium">Credit Balance</h3>
+          <Button
+            onClick={() => setBuyModalOpen(true)}
+            className="bg-olive-800 hover:bg-olive-700 rounded-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Buy Credits
+          </Button>
+        </div>
         <Card className="border border-sage-200/60 bg-cream-50/60">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -140,6 +205,54 @@ export default function CreditsTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Buy Credits Modal */}
+      <Dialog open={buyModalOpen} onOpenChange={setBuyModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Buy Credits</DialogTitle>
+            <DialogDescription>
+              Select an amount to add to your credit balance. Credits are applied 1:1 with dollars.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-4">
+            {CREDIT_AMOUNTS.map((option) => (
+              <Card
+                key={option.dollars}
+                className={`cursor-pointer border-2 transition-all hover:border-olive-600 ${
+                  selectedAmount === option.dollars
+                    ? 'border-olive-800 bg-olive-50'
+                    : 'border-sage-200'
+                }`}
+                onClick={() => setSelectedAmount(option.dollars)}
+              >
+                <CardContent className="p-4 text-center">
+                  <p className="font-serif text-2xl font-light text-olive-900">
+                    {option.label}
+                  </p>
+                  <p className="text-sm text-olive-600 mt-1">
+                    {option.dollars} credits
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Button
+            onClick={handlePurchase}
+            disabled={!selectedAmount || purchasing}
+            className="w-full bg-olive-800 hover:bg-olive-700 rounded-full"
+          >
+            {purchasing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              selectedAmount ? `Purchase $${selectedAmount} in Credits` : 'Select an Amount'
+            )}
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {/* Transaction History */}
       <div>

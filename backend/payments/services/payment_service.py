@@ -269,7 +269,10 @@ class PaymentService:
             if amount_cents is not None:
                 refund_params['amount'] = amount_cents
                 
-            refund = stripe.Refund.create(**refund_params)
+            refund = stripe.Refund.create(
+                **refund_params,
+                idempotency_key=f"refund_{order.id}_{amount_cents or 'full'}"
+            )
             
             # Update order status
             if amount_cents is None or amount_cents >= order.total_amount_cents:

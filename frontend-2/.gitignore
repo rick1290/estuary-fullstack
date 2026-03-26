@@ -30,6 +30,9 @@ next-env.d.ts
 /src/client/*
 !/src/client/hey-api.ts
 
+# log files
+*.log
+
 # OS files
 .DS_Store
 

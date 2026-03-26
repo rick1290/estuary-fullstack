@@ -22,17 +22,13 @@ interface User {
 }
 
 // Helper function to convert API user to our User type
-function convertAPIUser(apiUser: UserProfileReadable): User {
-  // Determine role based on practitioner profile existence and localStorage preference
-  const storedRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null
+function convertAPIUser(apiUser: UserProfileReadable, rolePreference?: UserRole): User {
   const hasPractitionerProfile = !!apiUser.practitioner_id
 
+  // Derive role from server data; use ephemeral preference if available
   let role: UserRole = "user"
   if (hasPractitionerProfile) {
-    // If user has practitioner profile, use stored preference or default to practitioner
-    role = (storedRole as UserRole) || "practitioner"
-  } else {
-    role = "user"
+    role = rolePreference || "practitioner"
   }
 
   return {
@@ -55,6 +51,7 @@ export function useAuth() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [rolePreference, setRolePreference] = useState<UserRole | undefined>(undefined)
   const retryCountRef = useRef(0)
   const maxRetries = 1
 
@@ -66,7 +63,7 @@ export function useAuth() {
     if (isHandlingErrorRef.current) return // Prevent re-entrant calls
     try {
       isHandlingErrorRef.current = true
-      localStorage.removeItem("userRole")
+      setRolePreference(undefined)
       retryCountRef.current = 0
       await signOut({ redirect: false })
       router.push("/")
@@ -97,7 +94,7 @@ export function useAuth() {
       }
 
       // Exhausted retries — logout silently
-      localStorage.removeItem("userRole")
+      setRolePreference(undefined)
       retryCountRef.current = 0
       try {
         await signOut({ redirect: false })
@@ -149,11 +146,11 @@ export function useAuth() {
     }
 
     if (session?.user && typeof session.user === 'object' && 'id' in session.user) {
-      setUser(convertAPIUser(session.user as UserProfileReadable))
+      setUser(convertAPIUser(session.user as UserProfileReadable, rolePreference))
     } else {
       setUser(null)
     }
-  }, [session, handleSessionError])
+  }, [session, handleSessionError, rolePreference])
 
   const login = async (email: string, password: string) => {
     setIsLoading(true)
@@ -173,11 +170,11 @@ export function useAuth() {
         // Reset retry count on successful login
         retryCountRef.current = 0
 
-        // Store role preference based on practitioner profile
+        // Derive role preference from server data
         const updatedSession = await update()
         if (updatedSession?.user && 'practitioner_id' in updatedSession.user) {
           const role = updatedSession.user.practitioner_id ? "practitioner" : "user"
-          localStorage.setItem("userRole", role)
+          setRolePreference(role)
         }
         return
       }
@@ -200,8 +197,8 @@ export function useAuth() {
 
     const newRole = user.role === "user" ? "practitioner" : "user"
 
-    // Update stored role
-    localStorage.setItem("userRole", newRole)
+    // Update ephemeral role preference (React state only — resets on page reload)
+    setRolePreference(newRole)
 
     // Update user state
     setUser({

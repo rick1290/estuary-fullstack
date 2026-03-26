@@ -32,7 +32,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
       <Tabs defaultValue="about" value={activeTab} onValueChange={setActiveTab}>
         {/* Simple Tab Navigation */}
         <TabsList className="w-full h-auto p-1 bg-sage-50/50 border border-sage-200/60 rounded-xl mb-6">
-          <div className="flex flex-wrap justify-start gap-1">
+          <div className="flex overflow-x-auto flex-nowrap gap-2" style={{ scrollbarWidth: 'none' }}>
             {tabItems.map((item) => {
               const Icon = item.icon
               return (
@@ -40,7 +40,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
                   key={item.value}
                   value={item.value}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200",
+                    "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 flex-shrink-0",
                     "data-[state=active]:bg-white data-[state=active]:text-olive-900 data-[state=active]:shadow-sm",
                     "data-[state=inactive]:text-olive-600 hover:text-olive-800"
                   )}

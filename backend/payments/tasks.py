@@ -1,3 +1,4 @@
+import stripe
 from celery import shared_task
 from django.utils import timezone
 from django.db import models
@@ -32,8 +33,8 @@ def update_available_earnings():
     return result
 
 
-@shared_task(name='process-refund-credits')
-def process_refund_credits(booking_uuid, refund_amount_cents, reason='Booking canceled'):
+@shared_task(bind=True, name='process-refund-credits', max_retries=3)
+def process_refund_credits(self, booking_uuid, refund_amount_cents, reason='Booking canceled'):
     """
     Process credit refunds when a booking is canceled.
 
@@ -86,8 +87,8 @@ def process_refund_credits(booking_uuid, refund_amount_cents, reason='Booking ca
         }
 
 
-@shared_task(name='process-stripe-refund')
-def process_stripe_refund(order_id, refund_amount_cents):
+@shared_task(bind=True, name='process-stripe-refund', max_retries=3)
+def process_stripe_refund(self, order_id, refund_amount_cents):
     """
     Refund the Stripe-charged portion of an order.
 
@@ -119,11 +120,12 @@ def process_stripe_refund(order_id, refund_amount_cents):
             'amount_refunded': refund_amount_cents / 100
         }
 
+    except stripe.error.APIError as e:
+        # Transient Stripe error — retry with backoff
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
     except Exception as e:
-        logger.error(
-            f"Error processing Stripe refund for order {order_id}: {str(e)}",
-            exc_info=True
-        )
+        logger.exception(f"Non-retryable error processing refund for order {order_id}: {e}")
+        # Don't retry non-Stripe errors
         return {'success': False, 'error': str(e)}
 
 

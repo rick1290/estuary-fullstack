@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from utils.models import BaseModel, PublicModel
@@ -104,7 +104,7 @@ class Booking(PublicModel):
                                        help_text="Original booking this was rescheduled from")
     
     # Financial relationship - PRIMARY
-    order = models.ForeignKey('payments.Order', on_delete=models.CASCADE,
+    order = models.ForeignKey('payments.Order', on_delete=models.PROTECT,
                             blank=True, null=True, related_name='bookings',
                             help_text="Financial transaction for this booking")
 
@@ -135,12 +135,18 @@ class Booking(PublicModel):
             models.Index(fields=['status', 'created_at']),  # Changed from start_time
             models.Index(fields=['payment_status']),
             models.Index(fields=['service_session']),
+            models.Index(fields=['service_session', 'status']),
             models.Index(fields=['order']),  # Added order index
         ]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(credits_allocated__gte=0),
                 name='booking_non_negative_credits'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'service_session'],
+                condition=models.Q(status__in=['confirmed', 'pending_payment']),
+                name='unique_active_booking_per_user_session'
             ),
         ]
 
@@ -407,40 +413,36 @@ class Booking(PublicModel):
         if not self.can_be_canceled:
             raise ValidationError("This booking cannot be canceled")
 
-        self.transition_to('canceled', reason=reason, canceled_by=canceled_by)
+        # Calculate refund before the atomic block so we have the values
+        refund_amount_cents = 0
+        stripe_refund_cents = 0
+        needs_credit_refund = False
+        needs_stripe_refund = False
 
-        # Decrement workshop participant count
-        if self.service_session and self.service_session.session_type == 'workshop':
-            from django.db.models import F
-            self.service_session.current_participants = F('current_participants') - 1
-            self.service_session.save(update_fields=['current_participants'])
-
-        # Process refund if payment was made
         if self.payment_status == 'paid' and self.credits_allocated > 0:
-            from payments.tasks import process_refund_credits, process_stripe_refund
-            # Calculate refund amount based on cancellation policy
             refund_amount_cents = self.calculate_refund_amount(canceled_by=canceled_by)
             if refund_amount_cents > 0:
-                # Refund credits portion back to user's credit balance
-                process_refund_credits.delay(
-                    str(self.public_uuid),
-                    refund_amount_cents,
-                    reason or 'Booking canceled'
-                )
-
-                # Also refund the Stripe-charged portion if applicable
+                needs_credit_refund = True
                 if self.order and self.order.stripe_payment_intent_id and self.order.total_amount_cents > 0:
-                    # Calculate what proportion of the refund should go to Stripe
-                    # e.g. service=$100, credits_used=$30, stripe_charge=$70
-                    # If full refund: refund $30 credits + $70 to Stripe
-                    # If partial (50%): refund $15 credits + $35 to Stripe
                     refund_ratio = refund_amount_cents / max(self.credits_allocated, 1)
                     stripe_refund_cents = int(self.order.total_amount_cents * refund_ratio)
                     if stripe_refund_cents > 0:
-                        process_stripe_refund.delay(
-                            self.order.id,
-                            stripe_refund_cents
-                        )
+                        needs_stripe_refund = True
+
+        # Capture values needed for Celery tasks before transaction
+        booking_uuid = str(self.public_uuid)
+        refund_reason = reason or 'Booking canceled'
+        order_id = self.order.id if self.order else None
+
+        with transaction.atomic():
+            self.transition_to('canceled', reason=reason, canceled_by=canceled_by)
+
+            # Decrement workshop participant count
+            if self.service_session and self.service_session.session_type == 'workshop':
+                from django.db.models import F
+                self.service_session.current_participants = F('current_participants') - 1
+                self.service_session.save(update_fields=['current_participants'])
+                self.service_session.refresh_from_db(fields=['current_participants'])
 
             # Update payment_status
             if refund_amount_cents and refund_amount_cents > 0:
@@ -450,45 +452,59 @@ class Booking(PublicModel):
                     self.payment_status = 'partially_refunded'
                 self.save(update_fields=['payment_status'])
 
-        # For private/individual sessions, cancel the ServiceSession too (frees practitioner calendar)
-        if self.service_session:
-            if self.service_session.session_type == 'individual' or (
-                self.service_session.max_participants == 1 and
-                self.service_session.visibility == 'private'
-            ):
-                self.service_session.status = 'canceled'
-                self.service_session.save(update_fields=['status'])
+            # For private/individual sessions, cancel the ServiceSession too (frees practitioner calendar)
+            if self.service_session:
+                if self.service_session.session_type == 'individual' or (
+                    self.service_session.max_participants == 1 and
+                    self.service_session.visibility == 'private'
+                ):
+                    self.service_session.status = 'canceled'
+                    self.service_session.save(update_fields=['status'])
 
-        # Cascade cancel related bookings (courses, packages, bundles)
-        if _cascade and self.order and self.order.bookings.count() > 1:
-            # For courses: check 14-day cancellation window
-            if self.service and hasattr(self.service, 'is_course') and self.service.is_course:
-                first_session = self.order.bookings.filter(
-                    service_session__start_time__isnull=False
-                ).order_by('service_session__start_time').first()
+            # Cascade cancel related bookings (courses, packages, bundles)
+            if _cascade and self.order and self.order.bookings.count() > 1:
+                # For courses: check 14-day cancellation window
+                if self.service and hasattr(self.service, 'is_course') and self.service.is_course:
+                    first_session = self.order.bookings.filter(
+                        service_session__start_time__isnull=False
+                    ).order_by('service_session__start_time').first()
 
-                if first_session and first_session.service_session:
-                    days_since_start = (timezone.now() - first_session.service_session.start_time).days
-                    if days_since_start > 14:
-                        raise ValidationError(
-                            "Course cancellation is only allowed within 14 days of the first session. "
-                            "Please contact support for assistance."
-                        )
+                    if first_session and first_session.service_session:
+                        days_since_start = (timezone.now() - first_session.service_session.start_time).days
+                        if days_since_start > 14:
+                            raise ValidationError(
+                                "Course cancellation is only allowed within 14 days of the first session. "
+                                "Please contact support for assistance."
+                            )
 
-            # Cancel siblings, but SKIP completed bookings
-            siblings = self.order.bookings.exclude(
-                status='canceled'
-            ).exclude(
-                service_session__status='completed'
-            ).exclude(
-                public_uuid=self.public_uuid
-            )
-            for sibling in siblings:
-                sibling.cancel(
-                    reason=f"Related booking {self.public_uuid} was canceled",
-                    canceled_by='system',
-                    _cascade=False  # PREVENT RECURSIVE CASCADE
+                # Cancel siblings, but SKIP completed bookings
+                siblings = self.order.bookings.exclude(
+                    status='canceled'
+                ).exclude(
+                    service_session__status='completed'
+                ).exclude(
+                    public_uuid=self.public_uuid
                 )
+                for sibling in siblings:
+                    sibling.cancel(
+                        reason=f"Related booking {self.public_uuid} was canceled",
+                        canceled_by='system',
+                        _cascade=False  # PREVENT RECURSIVE CASCADE
+                    )
+
+        # Queue async tasks AFTER transaction commits
+        if needs_credit_refund:
+            from payments.tasks import process_refund_credits, process_stripe_refund
+            transaction.on_commit(lambda: process_refund_credits.delay(
+                booking_uuid,
+                refund_amount_cents,
+                refund_reason
+            ))
+            if needs_stripe_refund:
+                transaction.on_commit(lambda: process_stripe_refund.delay(
+                    order_id,
+                    stripe_refund_cents
+                ))
 
     def reschedule(self, new_start_time, new_end_time, rescheduled_by_user=None):
         """

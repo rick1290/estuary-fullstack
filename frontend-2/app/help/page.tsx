@@ -22,6 +22,7 @@ import {
   Radio,
   BookOpen,
 } from "lucide-react"
+import { SUPPORT_EMAIL } from "@/lib/constants"
 
 export const metadata = {
   title: "Help Center | Estuary",
@@ -276,7 +277,7 @@ export default function HelpCenterPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="mailto:support@estuary.com"
+              href={`mailto:${SUPPORT_EMAIL}`}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 transition-colors"
             >
               <Mail className="h-4 w-4" />

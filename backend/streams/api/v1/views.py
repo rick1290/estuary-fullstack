@@ -3,6 +3,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.throttling import UserRateThrottle
+
+
+class TipRateThrottle(UserRateThrottle):
+    rate = '30/hour'
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db.models import Q, F, Count, Sum
@@ -28,11 +33,16 @@ from .views_media import StreamPostMediaMixin
 
 
 def _update_subscriber_counts(stream):
-    """Recalculate and update all subscriber count fields from the database."""
-    active_subs = stream.subscriptions.filter(status='active')
-    stream.subscriber_count = active_subs.count()
-    stream.free_subscriber_count = active_subs.filter(tier='free').count()
-    stream.paid_subscriber_count = active_subs.filter(tier__in=['entry', 'premium']).count()
+    """Recalculate and update all subscriber count fields from the database using a single aggregated query."""
+    from django.db.models import Count, Q
+    stats = stream.subscriptions.filter(status='active').aggregate(
+        total=Count('id'),
+        free=Count('id', filter=Q(tier='free')),
+        paid=Count('id', filter=Q(tier__in=['entry', 'premium'])),
+    )
+    stream.subscriber_count = stats['total']
+    stream.free_subscriber_count = stats['free']
+    stream.paid_subscriber_count = stats['paid']
     stream.save(update_fields=['subscriber_count', 'free_subscriber_count', 'paid_subscriber_count'])
 
 
@@ -502,22 +512,23 @@ class StreamViewSet(viewsets.ModelViewSet):
                 import stripe
                 from django.conf import settings
                 stripe.api_key = settings.STRIPE_SECRET_KEY
-                
+
                 try:
                     stripe.Subscription.delete(subscription.stripe_subscription_id)
+                    # Only clear after Stripe confirms deletion
+                    subscription.stripe_subscription_id = None
+                    subscription.stripe_price_id = None
+                    subscription.price_cents = 0
                 except stripe.error.StripeError as e:
                     return Response(
                         {'error': f'Failed to cancel paid subscription: {str(e)}'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-            
+
             # Update subscription
             subscription.previous_tier = previous_tier
             subscription.tier = 'free'
             subscription.tier_changed_at = timezone.now()
-            subscription.stripe_subscription_id = None
-            subscription.stripe_price_id = None
-            subscription.price_cents = 0
             subscription.save()
 
             _update_subscriber_counts(stream)
@@ -609,7 +620,7 @@ class StreamViewSet(viewsets.ModelViewSet):
             }
         }
     )
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], throttle_classes=[TipRateThrottle])
     def tip(self, request, pk=None):
         """Send a tip on a stream."""
         stream = self.get_object()
@@ -634,6 +645,18 @@ class StreamViewSet(viewsets.ModelViewSet):
         if not payment_method_id:
             return Response(
                 {'error': 'Payment method is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate payment method belongs to the user
+        from payments.models import PaymentMethod
+        if not PaymentMethod.objects.filter(
+            user=request.user,
+            stripe_payment_method_id=payment_method_id,
+            is_deleted=False
+        ).exists():
+            return Response(
+                {'error': 'Invalid payment method'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -884,8 +907,45 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
             # Not authenticated, show all published posts (but can_access will be false for premium)
             queryset = queryset.filter(is_published=True)
         
-        return queryset.select_related('stream__practitioner').prefetch_related('media')
-    
+        # Filter to only posts from streams the user is subscribed to
+        subscribed_only = self.request.query_params.get('subscribed_only')
+        if subscribed_only == 'true' and self.request.user.is_authenticated:
+            subscribed_stream_ids = StreamSubscription.objects.filter(
+                user=self.request.user,
+                status='active'
+            ).values_list('stream_id', flat=True)
+            queryset = queryset.filter(stream_id__in=subscribed_stream_ids)
+
+        # Filter by tags (JSONField containing list of strings)
+        tags_param = self.request.query_params.get('tags')
+        if tags_param:
+            for tag in tags_param.split(','):
+                queryset = queryset.filter(tags__contains=[tag.strip()])
+
+        # Use filtered Prefetch for subscriptions to only load current user's active subscription
+        if self.request.user.is_authenticated:
+            from django.db.models import Prefetch
+            subscription_prefetch = Prefetch(
+                'stream__subscriptions',
+                queryset=StreamSubscription.objects.filter(
+                    user=self.request.user,
+                    status='active'
+                )
+            )
+        else:
+            from django.db.models import Prefetch
+            subscription_prefetch = Prefetch(
+                'stream__subscriptions',
+                queryset=StreamSubscription.objects.none()
+            )
+
+        return queryset.select_related('stream__practitioner').prefetch_related(
+            'media',
+            'likes',
+            'saves',
+            subscription_prefetch,
+        )
+
     def get_permissions(self):
         """Set permissions based on action."""
         if self.action in ['list', 'retrieve']:
@@ -1013,6 +1073,39 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         # Return the created post with media
         post.refresh_from_db()
         serializer = self.get_serializer(post)
+
+        # Notify subscribers of new post (after transaction commits)
+        if post.is_published:
+            from django.db import transaction as db_transaction
+            def _notify_subscribers():
+                try:
+                    from notifications.services import get_client_notification_service
+                    notification_service = get_client_notification_service()
+                    subscribers = stream.subscriptions.filter(
+                        status='active'
+                    ).select_related('user')
+                    # Only notify subscribers who have access to this tier
+                    for sub in subscribers:
+                        if post.is_accessible_to_tier(sub.tier) and sub.notify_new_posts:
+                            try:
+                                notification_service.send_notification(
+                                    user=sub.user,
+                                    notification_type='new_stream_post',
+                                    title=f"New post from {stream.practitioner.display_name}",
+                                    message=post.title or post.content[:100],
+                                    metadata={
+                                        'stream_id': str(stream.public_uuid),
+                                        'post_id': str(post.public_uuid),
+                                        'practitioner_name': stream.practitioner.display_name,
+                                    }
+                                )
+                            except Exception:
+                                pass  # Don't fail post creation if notification fails
+                except Exception:
+                    pass  # Notification service may not be configured
+
+            db_transaction.on_commit(_notify_subscribers)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     def perform_create(self, serializer):
@@ -1269,7 +1362,7 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
             }
         }
     )
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], throttle_classes=[TipRateThrottle])
     def tip(self, request, public_uuid=None):
         """Send a tip on a post."""
         post = self.get_object()
@@ -1295,6 +1388,18 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         if not payment_method_id:
             return Response(
                 {'error': 'Payment method is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate payment method belongs to the user
+        from payments.models import PaymentMethod
+        if not PaymentMethod.objects.filter(
+            user=request.user,
+            stripe_payment_method_id=payment_method_id,
+            is_deleted=False
+        ).exists():
+            return Response(
+                {'error': 'Invalid payment method'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

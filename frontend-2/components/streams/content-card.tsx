@@ -104,8 +104,8 @@ export default function ContentCard({ post }: ContentCardProps) {
       setLikeCount(liked ? likeCount + 1 : Math.max(0, likeCount - 1))
 
       toast({
-        title: "Failed to update like",
-        description: error?.body?.detail || "Please try again",
+        title: "Couldn't save your like. Please try again.",
+        description: error?.body?.detail || "Something went wrong",
         variant: "destructive",
       })
     }
@@ -152,8 +152,8 @@ export default function ContentCard({ post }: ContentCardProps) {
       setSaved(!saved)
 
       toast({
-        title: "Failed to save post",
-        description: error?.body?.detail || "Please try again",
+        title: "Couldn't save this post. Please try again.",
+        description: error?.body?.detail || "Something went wrong",
         variant: "destructive",
       })
     }
@@ -228,8 +228,8 @@ export default function ContentCard({ post }: ContentCardProps) {
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to post comment",
-        description: error?.body?.detail || "Please try again",
+        title: "Couldn't post your comment. Please try again.",
+        description: error?.body?.detail || "Something went wrong",
         variant: "destructive",
       })
     }
@@ -661,6 +661,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Like"
             className={`flex-1 gap-2 h-11 ${liked ? "text-rose-500" : "text-olive-600"} hover:text-rose-500 hover:bg-rose-50/50`}
             onClick={handleLike}
           >
@@ -671,6 +672,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Comment"
             className="flex-1 gap-2 h-11 text-olive-600 hover:text-sage-700 hover:bg-sage-50/50"
             onClick={handleCommentToggle}
           >
@@ -681,6 +683,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Share"
             className="flex-1 gap-2 h-11 text-olive-600 hover:text-sage-700 hover:bg-sage-50/50"
             onClick={handleShare}
           >
@@ -690,6 +693,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Send tip"
             className="flex-1 gap-2 h-11 text-olive-600 hover:text-amber-600 hover:bg-amber-50/50"
             onClick={() => {
               if (!isAuthenticated) {
@@ -711,6 +715,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Save"
             className={`flex-1 gap-2 h-11 ${saved ? "text-sage-600" : "text-olive-600"} hover:text-sage-700 hover:bg-sage-50/50`}
             onClick={handleSave}
           >
@@ -771,7 +776,7 @@ export default function ContentCard({ post }: ContentCardProps) {
             {/* Comment input -- always visible at bottom when expanded */}
             <form onSubmit={handleCommentSubmit} className="flex gap-2">
               <Input
-                className="flex-1 border-sage-200 focus:border-sage-400 rounded-full h-9 text-sm px-4 bg-sage-50/50"
+                className="flex-1 border-sage-200 focus:border-sage-400 rounded-full h-11 text-sm px-4 bg-sage-50/50"
                 placeholder="Add a comment..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -780,7 +785,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 type="submit"
                 size="sm"
                 disabled={!comment.trim() || createCommentMutation.isPending}
-                className="bg-olive-800 hover:bg-olive-700 rounded-full h-9 px-4 text-sm"
+                className="bg-olive-800 hover:bg-olive-700 rounded-full h-11 px-4 text-sm"
               >
                 {createCommentMutation.isPending ? "..." : "Post"}
               </Button>

@@ -592,7 +592,15 @@ class StreamPostView(BaseModel):
             models.Index(fields=['post', 'user']),
             models.Index(fields=['created_at']),
         ]
-    
+        # Prevent duplicate view records per user per post
+        constraints = [
+            models.UniqueConstraint(
+                fields=['post', 'user'],
+                condition=models.Q(user__isnull=False),
+                name='unique_view_per_user_per_post'
+            ),
+        ]
+
     def __str__(self):
         return f"View of {self.post} by {self.user or 'Anonymous'}"
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Plus, Search, BarChart3, Users, DollarSign, Eye, SlidersHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +35,7 @@ const STREAM_TABS = [
 ]
 
 export default function StreamsDashboardV2() {
+  const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()

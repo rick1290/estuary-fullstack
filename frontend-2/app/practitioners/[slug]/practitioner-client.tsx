@@ -86,7 +86,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
               <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <span className="text-sm text-olive-900">{practitioner.display_name || `${practitioner.user.first_name} ${practitioner.user.last_name}`.trim() || 'Practitioner'}</span>
+              <span className="text-sm text-olive-900">{practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'}</span>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -101,12 +101,27 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
           </div>
 
           {/* Right Column - Booking Panel (Sticky) */}
-          <div className="w-full">
-            <div className="lg:sticky lg:top-24">
+          <div className="w-full" id="booking-section">
+            <div className="sticky top-24">
               <PractitionerBookingPanel practitioner={practitioner} />
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile floating CTA bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-sm border-t border-sage-200 px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
+        <button
+          onClick={() => {
+            const el = document.getElementById('booking-section')
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          }}
+          className="w-full bg-sage-600 hover:bg-sage-700 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+        >
+          Book Now
+        </button>
       </div>
     </div>
   )

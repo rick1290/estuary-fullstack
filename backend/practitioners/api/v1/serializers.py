@@ -174,26 +174,38 @@ class PractitionerListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
     
     def get_average_rating(self, obj):
-        """Calculate average rating from reviews"""
+        """Calculate average rating from reviews (uses annotation if available)"""
+        if hasattr(obj, '_average_rating'):
+            return round(obj._average_rating or 0, 2)
+        # Fallback for non-annotated querysets
         result = Review.objects.filter(
             practitioner=obj,
             is_published=True
         ).aggregate(avg_rating=Avg('rating'))
         return round(result['avg_rating'] or 0, 2)
-    
+
     def get_total_reviews(self, obj):
-        """Count total published reviews"""
+        """Count total published reviews (uses annotation if available)"""
+        if hasattr(obj, '_total_reviews'):
+            return obj._total_reviews or 0
         return Review.objects.filter(
             practitioner=obj,
             is_published=True
         ).count()
-    
+
     def get_total_services(self, obj):
-        """Count total active services"""
+        """Count total active services (uses annotation if available)"""
+        if hasattr(obj, '_total_services'):
+            return obj._total_services or 0
         return obj.primary_services.filter(is_active=True).count()
-    
+
     def get_price_range(self, obj):
-        """Get min and max price from active services"""
+        """Get min and max price from active services (uses annotation if available)"""
+        if hasattr(obj, '_min_price'):
+            return {
+                'min': Decimal(obj._min_price) / 100 if obj._min_price else None,
+                'max': Decimal(obj._max_price) / 100 if obj._max_price else None,
+            }
         result = obj.primary_services.filter(is_active=True).aggregate(
             min_price=Min('price_cents'),
             max_price=Max('price_cents')

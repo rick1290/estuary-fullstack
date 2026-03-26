@@ -218,36 +218,34 @@ class StreamPostSerializer(BaseSerializer):
         # Free content is accessible to everyone
         if obj.tier_level == 'free':
             return True
-            
+
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        
+
         # Check if user is the stream owner
         if hasattr(request.user, 'practitioner_profile') and obj.stream.practitioner == request.user.practitioner_profile:
             return True
-        
-        subscription = obj.stream.subscriptions.filter(
-            user=request.user,
-            status='active'
-        ).first()
-        
-        if not subscription:
-            return False
-        
-        return obj.is_accessible_to_tier(subscription.tier)
-    
+
+        # Use prefetched subscriptions
+        for sub in obj.stream.subscriptions.all():
+            if sub.user_id == request.user.id and sub.status == 'active':
+                return obj.is_accessible_to_tier(sub.tier)
+        return False
+
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        return obj.likes.filter(user=request.user).exists()
-    
+        # Use prefetched likes instead of querying
+        return any(like.user_id == request.user.id for like in obj.likes.all())
+
     def get_is_saved(self, obj):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        return obj.saves.filter(user=request.user).exists()
+        # Use prefetched saves instead of querying
+        return any(save.user_id == request.user.id for save in obj.saves.all())
 
 
 class StreamPostCommentSerializer(BaseSerializer):
