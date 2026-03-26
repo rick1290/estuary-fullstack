@@ -69,16 +69,17 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
 
   // Fetch practitioner's services for the service picker
   const { data: servicesData } = useQuery({
-    queryKey: ['practitioner-services-for-post'],
+    queryKey: ['practitioner-services-for-post', user?.practitionerId],
     queryFn: async () => {
+      if (!user?.practitionerId) return { results: [] }
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${baseUrl}/api/v1/services/?practitioner=me&is_active=true`, {
+      const response = await fetch(`${baseUrl}/api/v1/services/?practitioner=${user.practitionerId}&is_active=true`, {
         credentials: 'include',
       })
       if (!response.ok) return { results: [] }
       return response.json()
     },
-    enabled: open,
+    enabled: open && !!user?.practitionerId,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
