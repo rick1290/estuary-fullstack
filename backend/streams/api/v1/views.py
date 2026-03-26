@@ -953,7 +953,7 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Set permissions based on action."""
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve', 'popular_tags', 'topics']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsStreamOwner()]
@@ -1183,7 +1183,7 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
                 'slug': m.slug,
                 'name': m.name,
                 'post_count': m.post_count,
-                'category': m.category.name if m.category else None,
+                'category': str(m.category) if m.category else None,
             }
             for m in modalities
         ])
