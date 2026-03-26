@@ -16,13 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+// Select components retained for potential future use
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import {
@@ -34,10 +28,17 @@ import {
   Trash2,
   ChevronRight,
   ChevronDown,
-  GripVertical,
   Library,
   Link as LinkIcon,
   X,
+  AlignLeft,
+  AlignJustify,
+  CircleDot,
+  ListChecks,
+  ToggleLeft,
+  Hash,
+  Calendar,
+  Eye,
 } from "lucide-react"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { PractitionerPageHeader } from "../practitioner-page-header"
@@ -89,22 +90,29 @@ interface PlatformTemplate {
 interface PractitionerService {
   id: number
   name: string
+  service_type?: string
+  price?: string | number
 }
 
 // ─── Question Type Display Helpers ───────────────────────────────────────────
 
 const QUESTION_TYPE_OPTIONS = [
-  { value: "short_text", label: "Short Text" },
-  { value: "long_text", label: "Long Text" },
-  { value: "single_choice", label: "Single Choice" },
-  { value: "multiple_choice", label: "Multiple Choice" },
-  { value: "yes_no", label: "Yes / No" },
-  { value: "scale", label: "Scale (1-10)" },
-  { value: "date", label: "Date" },
+  { value: "short_text", label: "Short Text", icon: AlignLeft },
+  { value: "long_text", label: "Long Text", icon: AlignJustify },
+  { value: "single_choice", label: "Single Choice", icon: CircleDot },
+  { value: "multiple_choice", label: "Multiple Choice", icon: ListChecks },
+  { value: "yes_no", label: "Yes / No", icon: ToggleLeft },
+  { value: "scale", label: "Scale (1-10)", icon: Hash },
+  { value: "date", label: "Date", icon: Calendar },
 ]
 
 function questionTypeLabel(type: string) {
   return QUESTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type
+}
+
+function questionTypeIcon(type: string) {
+  const opt = QUESTION_TYPE_OPTIONS.find((o) => o.value === type)
+  return opt?.icon || AlignLeft
 }
 
 const isChoiceType = (type: string) =>
@@ -125,6 +133,7 @@ export default function IntakeFormsManager() {
   const [attachTemplateId, setAttachTemplateId] = useState<number | null>(null)
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null)
   const [addQuestionOpen, setAddQuestionOpen] = useState(false)
+  const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null)
 
   // Create form state
   const [newTitle, setNewTitle] = useState("")
@@ -141,6 +150,12 @@ export default function IntakeFormsManager() {
   // Consent text state
   const [consentText, setConsentText] = useState("")
   const [consentDirty, setConsentDirty] = useState(false)
+
+  // Consent preview toggle
+  const [consentPreview, setConsentPreview] = useState(false)
+
+  // Create dialog step: "pick-type" | "details"
+  const [createStep, setCreateStep] = useState<"pick-type" | "details">("pick-type")
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -304,6 +319,7 @@ export default function IntakeFormsManager() {
     setNewTitle("")
     setNewType("intake")
     setNewDescription("")
+    setCreateStep("pick-type")
   }
 
   function resetQuestionForm() {
@@ -324,6 +340,12 @@ export default function IntakeFormsManager() {
         setConsentDirty(false)
       }
     }
+  }
+
+  function openCreateWithType(type: "intake" | "consent") {
+    setNewType(type)
+    setCreateStep("details")
+    setCreateDialogOpen(true)
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -366,63 +388,76 @@ export default function IntakeFormsManager() {
             onClick={() => setPlatformBrowserOpen(true)}
           >
             <Library className="mr-2 h-4 w-4" />
-            Browse Platform Templates
+            Browse Templates
           </Button>
         </div>
 
-        {/* ─── Template Cards ─────────────────────────────────────────── */}
+        {/* ─── Empty State: Two side-by-side cards ───────────────────── */}
         {!templates || templates.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <FileText className="h-10 w-10 text-olive-300 mb-4" />
-              <p className="text-olive-700 font-medium mb-1">No form templates yet</p>
-              <p className="text-sm text-olive-500 mb-6 max-w-sm">
-                Create a new intake or consent form template, or browse platform
-                templates to get started.
-              </p>
-              <div className="flex gap-3">
-                <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Template
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPlatformBrowserOpen(true)}
-                >
-                  <Library className="mr-2 h-4 w-4" />
-                  Browse Platform Templates
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Intake card */}
+            <Card
+              className="border-dashed border-2 border-sage-200 rounded-xl cursor-pointer hover:shadow-md hover:border-sage-400 transition-all group"
+              onClick={() => openCreateWithType("intake")}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="rounded-2xl bg-gradient-to-br from-sage-100 to-sage-200/60 p-4 mb-4 group-hover:from-sage-200 group-hover:to-sage-300/60 transition-colors">
+                  <FileText className="h-8 w-8 text-sage-700" />
+                </div>
+                <h3 className="font-medium text-olive-900 mb-1">Create Intake Form</h3>
+                <p className="text-sm text-olive-500 max-w-[220px]">
+                  Ask clients questions before their session
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Consent card */}
+            <Card
+              className="border-dashed border-2 border-terracotta-200 rounded-xl cursor-pointer hover:shadow-md hover:border-terracotta-400 transition-all group"
+              onClick={() => openCreateWithType("consent")}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="rounded-2xl bg-gradient-to-br from-terracotta-100 to-terracotta-200/60 p-4 mb-4 group-hover:from-terracotta-200 group-hover:to-terracotta-300/60 transition-colors">
+                  <Shield className="h-8 w-8 text-terracotta-700" />
+                </div>
+                <h3 className="font-medium text-olive-900 mb-1">Create Consent Form</h3>
+                <p className="text-sm text-olive-500 max-w-[220px]">
+                  Get signed consent before sessions
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
+          /* ─── Template Cards ─────────────────────────────────────────── */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {templates.map((template) => {
+            {templates.map((template: FormTemplate) => {
               const isIntake = template.form_type === "intake"
               const isSelected = selectedTemplateId === template.id
               return (
                 <Card
                   key={template.id}
-                  className={`cursor-pointer transition-shadow hover:shadow-md ${
-                    isSelected ? "ring-2 ring-sage-400" : ""
-                  }`}
+                  className={`cursor-pointer rounded-xl border-l-4 transition-all hover:shadow-md ${
+                    isIntake
+                      ? "border-l-sage-400 hover:border-l-sage-500"
+                      : "border-l-terracotta-400 hover:border-l-terracotta-500"
+                  } ${isSelected ? "ring-2 ring-sage-400 shadow-md" : ""}`}
                   onClick={() => handleSelectTemplate(template)}
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex items-start gap-4 min-w-0">
+                        {/* Bigger icon area with gradient */}
                         <div
-                          className={`mt-0.5 rounded-md p-2 ${
+                          className={`mt-0.5 rounded-xl p-3 shrink-0 ${
                             isIntake
-                              ? "bg-sage-100 text-sage-700"
-                              : "bg-terracotta-100 text-terracotta-700"
+                              ? "bg-gradient-to-br from-sage-100 to-sage-200/60 text-sage-700"
+                              : "bg-gradient-to-br from-terracotta-100 to-terracotta-200/60 text-terracotta-700"
                           }`}
                         >
                           {isIntake ? (
-                            <FileText className="h-4 w-4" />
+                            <FileText className="h-5 w-5" />
                           ) : (
-                            <Shield className="h-4 w-4" />
+                            <Shield className="h-5 w-5" />
                           )}
                         </div>
                         <div className="min-w-0">
@@ -434,8 +469,15 @@ export default function IntakeFormsManager() {
                               {template.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <Badge variant="secondary" className="text-xs">
+                          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                            <Badge
+                              variant="secondary"
+                              className={`text-xs ${
+                                isIntake
+                                  ? "bg-sage-100 text-sage-700"
+                                  : "bg-terracotta-100 text-terracotta-700"
+                              }`}
+                            >
                               {isIntake ? "Intake" : "Consent"}
                             </Badge>
                             <Badge
@@ -452,39 +494,44 @@ export default function IntakeFormsManager() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          title="Attach to service"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setAttachTemplateId(template.id)
-                            setAttachDialogOpen(true)
-                          }}
-                        >
-                          <LinkIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          title="Delete template"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (confirm("Delete this template? This cannot be undone.")) {
-                              deleteMutation.mutate(template.id)
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        {isSelected ? (
-                          <ChevronDown className="h-4 w-4 text-olive-400" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-olive-400" />
-                        )}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs text-olive-600 hover:text-olive-900"
+                            title="Attach to service"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setAttachTemplateId(template.id)
+                              setAttachDialogOpen(true)
+                            }}
+                          >
+                            <LinkIcon className="mr-1.5 h-3.5 w-3.5" />
+                            Attach
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-olive-400 hover:text-destructive"
+                            title="Delete template"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (confirm("Delete this template? This cannot be undone.")) {
+                                deleteMutation.mutate(template.id)
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="pr-1">
+                          {isSelected ? (
+                            <ChevronDown className="h-4 w-4 text-olive-400" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-olive-400" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -494,72 +541,221 @@ export default function IntakeFormsManager() {
           </div>
         )}
 
-        {/* ─── Template Editor (inline below cards) ───────────────────── */}
+        {/* ─── Template Editor (inline slide-down) ───────────────────── */}
         {selectedTemplate && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium text-olive-900">
-                Editing: {selectedTemplate.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <div className="rounded-xl bg-sage-50/50 border border-sage-200/60 overflow-hidden">
+            <div className="px-5 py-4 border-b border-sage-200/60">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`rounded-lg p-2 ${
+                    selectedTemplate.form_type === "intake"
+                      ? "bg-sage-200/60 text-sage-700"
+                      : "bg-terracotta-200/60 text-terracotta-700"
+                  }`}
+                >
+                  <Pencil className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-olive-900">
+                    Editing: {selectedTemplate.title}
+                  </h3>
+                  <p className="text-xs text-olive-500 mt-0.5">
+                    {selectedTemplate.form_type === "intake"
+                      ? "Manage questions below"
+                      : "Edit consent text below"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5">
               {selectedTemplate.form_type === "intake" ? (
                 /* ── Intake Question Editor ──────────────────────────── */
                 <div className="space-y-4">
                   {selectedTemplate.questions && selectedTemplate.questions.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {[...selectedTemplate.questions]
-                        .sort((a, b) => a.order - b.order)
-                        .map((q) => (
-                          <div
-                            key={q.id}
-                            className="flex items-center gap-3 rounded-lg border border-sage-200/60 bg-cream-50 px-4 py-3"
-                          >
-                            <GripVertical className="h-4 w-4 text-olive-300 shrink-0 cursor-grab" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-medium text-sm text-olive-900 truncate">
-                                  {q.label}
-                                </span>
-                                <Badge variant="outline" className="text-xs">
-                                  {questionTypeLabel(q.question_type)}
-                                </Badge>
-                                {q.required && (
-                                  <Badge className="text-xs bg-terracotta-100 text-terracotta-700">
-                                    Required
+                        .sort((a: TemplateQuestion, b: TemplateQuestion) => a.order - b.order)
+                        .map((q: TemplateQuestion, index: number) => {
+                          const QIcon = questionTypeIcon(q.question_type)
+                          return (
+                            <div
+                              key={q.id}
+                              className="flex items-start gap-3 rounded-xl border border-sage-200/60 bg-white px-4 py-3.5"
+                            >
+                              {/* Number circle */}
+                              <div className="flex items-center justify-center h-7 w-7 rounded-full bg-sage-200/70 text-sage-800 text-xs font-semibold shrink-0 mt-0.5">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-sm text-olive-900">
+                                    {q.label}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs gap-1">
+                                    <QIcon className="h-3 w-3" />
+                                    {questionTypeLabel(q.question_type)}
                                   </Badge>
+                                  {q.required && (
+                                    <Badge className="text-xs bg-terracotta-100 text-terracotta-700 border-0">
+                                      Required
+                                    </Badge>
+                                  )}
+                                </div>
+                                {q.help_text && (
+                                  <p className="text-xs text-olive-400 mt-1">
+                                    {q.help_text}
+                                  </p>
+                                )}
+                                {q.options && q.options.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {q.options.map((opt: string, i: number) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs bg-olive-100 text-olive-600 px-2 py-0.5 rounded-full"
+                                      >
+                                        {opt}
+                                      </span>
+                                    ))}
+                                  </div>
                                 )}
                               </div>
-                              {q.help_text && (
-                                <p className="text-xs text-olive-400 mt-0.5 truncate">
-                                  {q.help_text}
-                                </p>
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-olive-400 hover:text-sage-700"
+                                  title="Edit question"
+                                  onClick={() => {
+                                    setEditingQuestionId(editingQuestionId === q.id ? null : q.id)
+                                    if (editingQuestionId !== q.id) {
+                                      setQLabel(q.label)
+                                      setQType(q.question_type)
+                                      setQHelpText(q.help_text || "")
+                                      setQRequired(q.required)
+                                      setQOptions(q.options ? q.options.join(", ") : "")
+                                    }
+                                  }}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-olive-400 hover:text-destructive"
+                                  title="Delete question"
+                                  onClick={() =>
+                                    deleteQuestionMutation.mutate({
+                                      templateId: selectedTemplate.id,
+                                      questionId: q.id,
+                                    })
+                                  }
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                              {/* Inline edit form */}
+                              {editingQuestionId === q.id && (
+                                <div className="mt-3 p-4 rounded-lg bg-sage-50 border border-sage-200/60 space-y-3">
+                                  <div className="space-y-2">
+                                    <Label className="text-xs">Question Label</Label>
+                                    <Input
+                                      value={qLabel}
+                                      onChange={(e) => setQLabel(e.target.value)}
+                                      className="h-9 text-sm"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Help Text</Label>
+                                      <Input
+                                        value={qHelpText}
+                                        onChange={(e) => setQHelpText(e.target.value)}
+                                        className="h-9 text-sm"
+                                        placeholder="Optional"
+                                      />
+                                    </div>
+                                    <div className="flex items-end gap-3 pb-0.5">
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox
+                                          id={`q-req-${q.id}`}
+                                          checked={qRequired}
+                                          onCheckedChange={(v) => setQRequired(v === true)}
+                                        />
+                                        <Label htmlFor={`q-req-${q.id}`} className="text-xs font-normal">Required</Label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {isChoiceType(q.question_type) && (
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Options (comma-separated)</Label>
+                                      <Input
+                                        value={qOptions}
+                                        onChange={(e) => setQOptions(e.target.value)}
+                                        className="h-9 text-sm"
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex gap-2 pt-1">
+                                    <Button
+                                      size="sm"
+                                      className="text-xs h-8"
+                                      disabled={!qLabel.trim() || addQuestionMutation.isPending}
+                                      onClick={() => {
+                                        // Delete old question and re-add with updated data
+                                        deleteQuestionMutation.mutate(
+                                          { templateId: selectedTemplate.id, questionId: q.id },
+                                          {
+                                            onSuccess: () => {
+                                              addQuestionMutation.mutate({
+                                                templateId: selectedTemplate.id,
+                                                label: qLabel.trim(),
+                                                question_type: q.question_type,
+                                                help_text: qHelpText.trim(),
+                                                required: qRequired,
+                                                options: isChoiceType(q.question_type)
+                                                  ? qOptions.split(",").map((s) => s.trim()).filter(Boolean)
+                                                  : [],
+                                              })
+                                              setEditingQuestionId(null)
+                                            },
+                                          }
+                                        )
+                                      }}
+                                    >
+                                      Save Changes
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs h-8"
+                                      onClick={() => setEditingQuestionId(null)}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
                               )}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
-                              onClick={() =>
-                                deleteQuestionMutation.mutate({
-                                  templateId: selectedTemplate.id,
-                                  questionId: q.id,
-                                })
-                              }
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        ))}
+                          )
+                        })}
                     </div>
                   ) : (
-                    <p className="text-sm text-olive-500 py-4 text-center">
-                      No questions yet. Add your first question below.
-                    </p>
+                    <div className="text-center py-8">
+                      <div className="rounded-2xl bg-sage-100/60 p-3 inline-block mb-3">
+                        <FileText className="h-6 w-6 text-sage-500" />
+                      </div>
+                      <p className="text-sm text-olive-500">
+                        No questions yet. Add your first question below.
+                      </p>
+                    </div>
                   )}
 
                   {addQuestionOpen ? (
-                    <Card className="border-sage-300">
+                    <Card className="border-sage-300 rounded-xl overflow-hidden">
+                      <div className="bg-sage-50 px-4 py-3 border-b border-sage-200/60">
+                        <h4 className="text-sm font-medium text-olive-800">New Question</h4>
+                      </div>
                       <CardContent className="p-4 space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="q-label">Question Label</Label>
@@ -571,31 +767,40 @@ export default function IntakeFormsManager() {
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Type</Label>
-                            <Select value={qType} onValueChange={setQType}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {QUESTION_TYPE_OPTIONS.map((opt) => (
-                                  <SelectItem key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        {/* Question type as icon pills */}
+                        <div className="space-y-2">
+                          <Label>Type</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {QUESTION_TYPE_OPTIONS.map((opt) => {
+                              const Icon = opt.icon
+                              const isActive = qType === opt.value
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => setQType(opt.value)}
+                                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all border ${
+                                    isActive
+                                      ? "bg-sage-100 border-sage-400 text-sage-800 shadow-sm"
+                                      : "bg-white border-olive-200 text-olive-600 hover:border-olive-300 hover:bg-olive-50"
+                                  }`}
+                                >
+                                  <Icon className="h-3.5 w-3.5" />
+                                  {opt.label}
+                                </button>
+                              )
+                            })}
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="q-help">Help Text (optional)</Label>
-                            <Input
-                              id="q-help"
-                              value={qHelpText}
-                              onChange={(e) => setQHelpText(e.target.value)}
-                              placeholder="Additional context for the client"
-                            />
-                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="q-help">Help Text (optional)</Label>
+                          <Input
+                            id="q-help"
+                            value={qHelpText}
+                            onChange={(e) => setQHelpText(e.target.value)}
+                            placeholder="Additional context for the client"
+                          />
                         </div>
 
                         {isChoiceType(qType) && (
@@ -664,6 +869,7 @@ export default function IntakeFormsManager() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="rounded-lg"
                       onClick={() => setAddQuestionOpen(true)}
                     >
                       <Plus className="mr-2 h-4 w-4" />
@@ -674,11 +880,47 @@ export default function IntakeFormsManager() {
               ) : (
                 /* ── Consent Text Editor ─────────────────────────────── */
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="consent-text">Legal / Consent Text</Label>
+                  {/* Preview toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="consent-text" className="text-sm font-medium text-olive-800">
+                      Legal / Consent Text
+                    </Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => setConsentPreview(!consentPreview)}
+                    >
+                      {consentPreview ? (
+                        <>
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-3.5 w-3.5" />
+                          Preview
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {consentPreview ? (
+                    <div className="rounded-xl border border-sage-200/60 bg-white p-5 min-h-[200px]">
+                      {consentText ? (
+                        <div className="prose prose-sm prose-olive max-w-none whitespace-pre-wrap">
+                          {consentText}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-olive-400 italic">
+                          No consent text written yet.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
                     <Textarea
                       id="consent-text"
-                      className="min-h-[200px] font-mono text-sm"
+                      className="min-h-[200px] font-mono text-sm rounded-xl"
                       value={consentText}
                       onChange={(e) => {
                         setConsentText(e.target.value)
@@ -686,7 +928,7 @@ export default function IntakeFormsManager() {
                       }}
                       placeholder="Enter the consent or legal agreement text that clients must acknowledge..."
                     />
-                  </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <Button
@@ -716,89 +958,167 @@ export default function IntakeFormsManager() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
 
       {/* ─── Create Template Dialog ─────────────────────────────────────── */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog
+        open={createDialogOpen}
+        onOpenChange={(open) => {
+          setCreateDialogOpen(open)
+          if (!open) resetCreateForm()
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create Form Template</DialogTitle>
+            <DialogTitle>
+              {createStep === "pick-type" ? "What would you like to create?" : "Template Details"}
+            </DialogTitle>
             <DialogDescription>
-              Set up a new intake or consent form template.
+              {createStep === "pick-type"
+                ? "Choose the type of form template."
+                : `Set up your new ${newType === "intake" ? "intake questionnaire" : "consent form"}.`}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="tpl-title">Title</Label>
-              <Input
-                id="tpl-title"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="e.g. New Client Intake Form"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select
-                value={newType}
-                onValueChange={(v) => setNewType(v as "intake" | "consent")}
+          {createStep === "pick-type" ? (
+            /* ── Type picker: two large cards ─── */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewType("intake")
+                  setCreateStep("details")
+                }}
+                className="flex flex-col items-center gap-3 rounded-xl border-2 border-sage-200 bg-white p-6 text-center transition-all hover:border-sage-400 hover:shadow-md hover:bg-sage-50/30 focus:outline-none focus:ring-2 focus:ring-sage-400"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="intake">Intake</SelectItem>
-                  <SelectItem value="consent">Consent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="rounded-2xl bg-gradient-to-br from-sage-100 to-sage-200/60 p-4">
+                  <FileText className="h-7 w-7 text-sage-700" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-olive-900">Intake Questionnaire</h3>
+                  <p className="text-xs text-olive-500 mt-1">
+                    Ask clients questions before their session begins
+                  </p>
+                </div>
+              </button>
 
-            <div className="space-y-2">
-              <Label htmlFor="tpl-desc">Description (optional)</Label>
-              <Textarea
-                id="tpl-desc"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Brief description of what this form collects"
-                rows={3}
-              />
+              <button
+                type="button"
+                onClick={() => {
+                  setNewType("consent")
+                  setCreateStep("details")
+                }}
+                className="flex flex-col items-center gap-3 rounded-xl border-2 border-terracotta-200 bg-white p-6 text-center transition-all hover:border-terracotta-400 hover:shadow-md hover:bg-terracotta-50/30 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              >
+                <div className="rounded-2xl bg-gradient-to-br from-terracotta-100 to-terracotta-200/60 p-4">
+                  <Shield className="h-7 w-7 text-terracotta-700" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-olive-900">Consent Form</h3>
+                  <p className="text-xs text-olive-500 mt-1">
+                    Get signed consent and acknowledgment before sessions
+                  </p>
+                </div>
+              </button>
             </div>
-          </div>
+          ) : (
+            /* ── Detail fields ─── */
+            <div className="space-y-4 py-2">
+              {/* Selected type indicator */}
+              <div className="flex items-center gap-2">
+                <div
+                  className={`rounded-lg p-2 ${
+                    newType === "intake"
+                      ? "bg-sage-100 text-sage-700"
+                      : "bg-terracotta-100 text-terracotta-700"
+                  }`}
+                >
+                  {newType === "intake" ? (
+                    <FileText className="h-4 w-4" />
+                  ) : (
+                    <Shield className="h-4 w-4" />
+                  )}
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={`text-xs ${
+                    newType === "intake"
+                      ? "bg-sage-100 text-sage-700"
+                      : "bg-terracotta-100 text-terracotta-700"
+                  }`}
+                >
+                  {newType === "intake" ? "Intake Questionnaire" : "Consent Form"}
+                </Badge>
+                <button
+                  type="button"
+                  className="text-xs text-olive-500 hover:text-olive-700 underline ml-auto"
+                  onClick={() => setCreateStep("pick-type")}
+                >
+                  Change
+                </button>
+              </div>
 
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreateDialogOpen(false)
-                resetCreateForm()
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={!newTitle.trim() || createMutation.isPending}
-              onClick={() =>
-                createMutation.mutate({
-                  title: newTitle.trim(),
-                  form_type: newType,
-                  description: newDescription.trim(),
-                })
-              }
-            >
-              {createMutation.isPending ? "Creating..." : "Create"}
-            </Button>
-          </DialogFooter>
+              <div className="space-y-2">
+                <Label htmlFor="tpl-title">Title</Label>
+                <Input
+                  id="tpl-title"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder={
+                    newType === "intake"
+                      ? "e.g. New Client Intake Form"
+                      : "e.g. Session Consent Agreement"
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tpl-desc">Description (optional)</Label>
+                <Textarea
+                  id="tpl-desc"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Brief description of what this form collects"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          {createStep === "details" && (
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setCreateDialogOpen(false)
+                  resetCreateForm()
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!newTitle.trim() || createMutation.isPending}
+                onClick={() =>
+                  createMutation.mutate({
+                    title: newTitle.trim(),
+                    form_type: newType,
+                    description: newDescription.trim(),
+                  })
+                }
+              >
+                {createMutation.isPending ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* ─── Platform Templates Browser Dialog ──────────────────────────── */}
       <Dialog open={platformBrowserOpen} onOpenChange={setPlatformBrowserOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Platform Templates</DialogTitle>
             <DialogDescription>
@@ -807,52 +1127,85 @@ export default function IntakeFormsManager() {
           </DialogHeader>
 
           {platformLoading ? (
-            <LoadingSpinner />
-          ) : !platformTemplates || platformTemplates.length === 0 ? (
-            <p className="text-sm text-olive-500 py-8 text-center">
-              No platform templates available yet.
-            </p>
-          ) : (
-            <div className="space-y-3 py-2">
-              {platformTemplates.map((pt) => (
-                <Card key={pt.id}>
-                  <CardContent className="p-4 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        {pt.form_type === "intake" ? (
-                          <FileText className="h-4 w-4 text-sage-600 shrink-0" />
-                        ) : (
-                          <Shield className="h-4 w-4 text-terracotta-600 shrink-0" />
-                        )}
-                        <span className="font-medium text-sm text-olive-900 truncate">
-                          {pt.title}
-                        </span>
-                        <Badge variant="secondary" className="text-xs shrink-0">
-                          {pt.form_type === "intake" ? "Intake" : "Consent"}
-                        </Badge>
-                      </div>
-                      {pt.description && (
-                        <p className="text-xs text-olive-500 mt-1 line-clamp-2">
-                          {pt.description}
-                        </p>
-                      )}
-                      <span className="text-xs text-olive-400 mt-1 block">
-                        {pt.question_count} question
-                        {pt.question_count !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={cloneMutation.isPending}
-                      onClick={() => cloneMutation.mutate(pt.id)}
-                    >
-                      <Copy className="mr-2 h-3.5 w-3.5" />
-                      Use This Template
-                    </Button>
-                  </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-olive-200/60 p-4 space-y-3 animate-pulse"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-olive-200" />
+                    <div className="h-4 w-24 rounded bg-olive-200" />
+                  </div>
+                  <div className="h-3 w-full rounded bg-olive-100" />
+                  <div className="h-3 w-2/3 rounded bg-olive-100" />
+                  <div className="h-8 w-28 rounded bg-olive-100 mt-2" />
+                </div>
               ))}
+            </div>
+          ) : !platformTemplates || platformTemplates.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="rounded-2xl bg-olive-100/60 p-3 inline-block mb-3">
+                <Library className="h-6 w-6 text-olive-400" />
+              </div>
+              <p className="text-sm text-olive-500">
+                No platform templates available yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+              {platformTemplates.map((pt: PlatformTemplate) => {
+                const isIntake = pt.form_type === "intake"
+                return (
+                  <Card key={pt.id} className="rounded-xl hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex flex-col gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <span className="font-medium text-sm text-olive-900 truncate">
+                            {pt.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs ${
+                              isIntake
+                                ? "bg-sage-100 text-sage-700"
+                                : "bg-terracotta-100 text-terracotta-700"
+                            }`}
+                          >
+                            {isIntake ? (
+                              <FileText className="mr-1 h-3 w-3" />
+                            ) : (
+                              <Shield className="mr-1 h-3 w-3" />
+                            )}
+                            {isIntake ? "Intake" : "Consent"}
+                          </Badge>
+                          <span className="text-xs text-olive-400">
+                            {pt.question_count} question
+                            {pt.question_count !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        {pt.description && (
+                          <p className="text-xs text-olive-500 line-clamp-2">
+                            {pt.description}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full rounded-lg mt-auto"
+                        disabled={cloneMutation.isPending}
+                        onClick={() => cloneMutation.mutate(pt.id)}
+                      >
+                        <Copy className="mr-2 h-3.5 w-3.5" />
+                        Use This
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </DialogContent>
@@ -860,7 +1213,7 @@ export default function IntakeFormsManager() {
 
       {/* ─── Attach to Service Dialog ───────────────────────────────────── */}
       <Dialog open={attachDialogOpen} onOpenChange={setAttachDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Attach to Service</DialogTitle>
             <DialogDescription>
@@ -869,28 +1222,56 @@ export default function IntakeFormsManager() {
           </DialogHeader>
 
           {!services || services.length === 0 ? (
-            <p className="text-sm text-olive-500 py-6 text-center">
-              No services found. Create a service first.
-            </p>
+            <div className="text-center py-8">
+              <div className="rounded-2xl bg-olive-100/60 p-3 inline-block mb-3">
+                <LinkIcon className="h-6 w-6 text-olive-400" />
+              </div>
+              <p className="text-sm text-olive-500">
+                No services found. Create a service first.
+              </p>
+            </div>
           ) : (
             <div className="space-y-2 py-2">
-              {services.map((svc) => (
-                <Button
+              {services.map((svc: PractitionerService) => (
+                <div
                   key={svc.id}
-                  variant="outline"
-                  className="w-full justify-start"
-                  disabled={attachMutation.isPending}
-                  onClick={() => {
-                    if (attachTemplateId) {
-                      attachMutation.mutate({
-                        serviceId: svc.id,
-                        templateId: attachTemplateId,
-                      })
-                    }
-                  }}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-olive-200/60 bg-white px-4 py-3 hover:border-sage-300 hover:bg-sage-50/30 transition-all"
                 >
-                  {svc.name}
-                </Button>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-olive-900 truncate">
+                      {svc.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {svc.service_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {svc.service_type}
+                        </Badge>
+                      )}
+                      {svc.price && (
+                        <span className="text-xs text-olive-400">
+                          ${typeof svc.price === "number" ? svc.price.toFixed(2) : svc.price}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 rounded-lg"
+                    disabled={attachMutation.isPending}
+                    onClick={() => {
+                      if (attachTemplateId) {
+                        attachMutation.mutate({
+                          serviceId: svc.id,
+                          templateId: attachTemplateId,
+                        })
+                      }
+                    }}
+                  >
+                    <LinkIcon className="mr-1.5 h-3.5 w-3.5" />
+                    Attach
+                  </Button>
+                </div>
               ))}
             </div>
           )}
