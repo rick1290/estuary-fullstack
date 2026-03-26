@@ -33,6 +33,7 @@ import {
   ChevronUp,
   Lightbulb,
   AlertCircle,
+  FileText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -104,6 +105,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
     { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
     { text: "Client Bookings", icon: <CalendarCheck className="h-4 w-4" />, path: "/dashboard/practitioner/bookings" },
     { text: "Clients", icon: <Users className="h-4 w-4" />, path: "/dashboard/practitioner/clients" },
+    { text: "Intake Forms", icon: <FileText className="h-4 w-4" />, path: "/dashboard/practitioner/intake" },
     { 
       text: "Messages", 
       icon: (

@@ -1137,7 +1137,26 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-    
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def popular_tags(self, request):
+        """Get the most popular tags across published posts."""
+        # Get all tags from published posts, flatten, and count
+        posts_with_tags = StreamPost.objects.filter(
+            is_published=True
+        ).exclude(tags=[]).values_list('tags', flat=True)
+
+        # Count tag frequency
+        tag_counts = {}
+        for tags_list in posts_with_tags:
+            if isinstance(tags_list, list):
+                for tag in tags_list:
+                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+        # Sort by frequency, return top 20
+        sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:20]
+        return Response([{'tag': t, 'count': c} for t, c in sorted_tags])
+
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def like(self, request, public_uuid=None):
         """Like or unlike a post."""

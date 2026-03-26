@@ -9,7 +9,9 @@ import { useRoomToken } from '@/components/video/hooks';
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { EstuaryLogo } from '@/components/ui/estuary-logo';
 
 export default function RoomLobbyPage() {
@@ -26,6 +28,33 @@ export default function RoomLobbyPage() {
 
   // Get room token
   const { token, loading: tokenLoading, error: tokenError } = useRoomToken({ roomId });
+
+  // Check for unsigned required consent
+  const [consentNeeded, setConsentNeeded] = useState(false);
+  const [consentData, setConsentData] = useState<any>(null);
+  const [signingConsent, setSigningConsent] = useState(false);
+  const [consentName, setConsentName] = useState('');
+
+  useEffect(() => {
+    // Only check if we have a booking UUID from the access data
+    const bookingUuid = (accessData as any)?.booking?.public_uuid || (accessData as any)?.my_booking?.public_uuid;
+    if (!bookingUuid) return;
+
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => {
+        const forms = data?.data || data;
+        if (forms?.consent_required && !forms?.consent_signed) {
+          setConsentNeeded(true);
+          const consentForm = forms.forms?.find((f: any) => f.template?.form_type === 'consent' && !f.signed);
+          setConsentData(consentForm);
+        }
+      })
+      .catch(() => {});
+  }, [accessData]);
 
   const handleJoinRoom = (settings: any) => {
     // Store settings in session storage for the room page
@@ -137,12 +166,64 @@ export default function RoomLobbyPage() {
         <span>Exit to Dashboard</span>
       </button>
 
-      <PreJoinScreen
-        sessionDetails={sessionDetails}
-        onJoinRoom={handleJoinRoom}
-        loading={tokenLoading}
-        error={tokenError?.message}
-      />
+      {consentNeeded && consentData && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="max-w-lg mx-auto p-6 bg-white rounded-2xl border border-sage-200/60">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="h-5 w-5 text-sage-600" />
+              <h3 className="font-medium text-olive-900">Consent Required</h3>
+            </div>
+            <p className="text-sm text-olive-600 mb-3">Please review and sign before joining your session.</p>
+            <div className="max-h-48 overflow-y-auto p-4 bg-sage-50 rounded-lg border text-sm text-olive-700 mb-4">
+              {consentData.template?.latest_consent?.legal_text || 'Consent text not available.'}
+            </div>
+            <div className="space-y-3">
+              <Input
+                placeholder="Type your full name to sign"
+                value={consentName}
+                onChange={(e) => setConsentName(e.target.value)}
+              />
+              <Button
+                onClick={async () => {
+                  if (!consentName.trim()) return;
+                  setSigningConsent(true);
+                  try {
+                    const bookingUuid = (accessData as any)?.booking?.public_uuid || (accessData as any)?.my_booking?.public_uuid;
+                    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                    await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/consent/`, {
+                      method: 'POST',
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        consent_document: consentData.template?.latest_consent?.id,
+                        signer_name: consentName.trim(),
+                      }),
+                    });
+                    setConsentNeeded(false);
+                  } catch (err) {
+                    console.error('Failed to sign consent:', err);
+                  } finally {
+                    setSigningConsent(false);
+                  }
+                }}
+                disabled={!consentName.trim() || signingConsent}
+                className="w-full"
+              >
+                {signingConsent ? 'Signing...' : 'Sign & Continue to Session'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!consentNeeded && (
+        <PreJoinScreen
+          sessionDetails={sessionDetails}
+          onJoinRoom={handleJoinRoom}
+          loading={tokenLoading}
+          error={tokenError?.message}
+        />
+      )}
     </>
   );
 }

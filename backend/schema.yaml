@@ -3172,6 +3172,539 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/intake/bookings/{booking_uuid}/forms/:
+    get:
+      operationId: intake_bookings_forms_retrieve
+      description: Get forms for a booking with previous responses.
+      parameters:
+      - in: path
+        name: booking_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/intake/bookings/{booking_uuid}/forms/consent/:
+    post:
+      operationId: intake_bookings_forms_consent_create
+      description: Sign a consent form.
+      parameters:
+      - in: path
+        name: booking_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/intake/bookings/{booking_uuid}/forms/intake/:
+    post:
+      operationId: intake_bookings_forms_intake_create
+      description: Submit intake form responses.
+      parameters:
+      - in: path
+        name: booking_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/intake/bookings/{booking_uuid}/forms/responses/:
+    get:
+      operationId: intake_bookings_forms_responses_retrieve
+      description: View client's form responses for a booking.
+      parameters:
+      - in: path
+        name: booking_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/intake/platform-templates/:
+    get:
+      operationId: intake_platform_templates_list
+      description: Browse platform-provided templates.
+      parameters:
+      - in: query
+        name: form_type
+        schema:
+          type: string
+          enum:
+          - consent
+          - intake
+        description: |-
+          * `intake` - Intake Questionnaire
+          * `consent` - Consent Form
+      - in: query
+        name: modality
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFormTemplateList'
+          description: ''
+  /api/v1/intake/platform-templates/{id}/:
+    get:
+      operationId: intake_platform_templates_retrieve
+      description: Browse platform-provided templates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+  /api/v1/intake/services/{service_pk}/forms/:
+    get:
+      operationId: intake_services_forms_list
+      description: Attach/detach forms from services.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: path
+        name: service_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceFormList'
+          description: ''
+    post:
+      operationId: intake_services_forms_create
+      description: Attach/detach forms from services.
+      parameters:
+      - in: path
+        name: service_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceFormRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceFormRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceFormRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceForm'
+          description: ''
+  /api/v1/intake/services/{service_pk}/forms/{id}/:
+    delete:
+      operationId: intake_services_forms_destroy
+      description: Attach/detach forms from services.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: service_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/intake/templates/:
+    get:
+      operationId: intake_templates_list
+      description: Manage form templates.
+      parameters:
+      - in: query
+        name: form_type
+        schema:
+          type: string
+          enum:
+          - consent
+          - intake
+        description: |-
+          * `intake` - Intake Questionnaire
+          * `consent` - Consent Form
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_platform_template
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFormTemplateList'
+          description: ''
+    post:
+      operationId: intake_templates_create
+      description: Manage form templates.
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+  /api/v1/intake/templates/{id}/:
+    get:
+      operationId: intake_templates_retrieve
+      description: Manage form templates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+    put:
+      operationId: intake_templates_update
+      description: Manage form templates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+    patch:
+      operationId: intake_templates_partial_update
+      description: Manage form templates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFormTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFormTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFormTemplateRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+    delete:
+      operationId: intake_templates_destroy
+      description: Manage form templates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/intake/templates/{id}/add_question/:
+    post:
+      operationId: intake_templates_add_question_create
+      description: Add a question to a template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+  /api/v1/intake/templates/{id}/clone/:
+    post:
+      operationId: intake_templates_clone_create
+      description: Clone a platform template to practitioner's own templates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
+  /api/v1/intake/templates/{id}/update_consent_text/:
+    post:
+      operationId: intake_templates_update_consent_text_create
+      description: Create a new consent document version.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this form template.
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+          description: ''
   /api/v1/journal/:
     get:
       operationId: journal_list
@@ -12620,6 +13153,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/StreamPost'
           description: ''
+  /api/v1/stream-posts/{public_uuid}/tip/:
+    post:
+      operationId: stream_posts_tip_create
+      description: Send a tip on a stream post
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+        required: true
+      tags:
+      - Stream Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount_cents:
+                  type: integer
+                  minimum: 100
+                  description: Tip amount in cents (min $1)
+                message:
+                  type: string
+                  description: Optional message
+                is_anonymous:
+                  type: boolean
+                  default: false
+                payment_method_id:
+                  type: string
+                  description: Stripe payment method ID
+              required:
+              - amount_cents
+              - payment_method_id
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
   /api/v1/stream-posts/{public_uuid}/upload-media/:
     post:
       operationId: stream_posts_upload_media_create
@@ -12725,6 +13304,22 @@ paths:
             schema:
               $ref: '#/components/schemas/StreamPostRequest'
         required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
+  /api/v1/stream-posts/popular_tags/:
+    get:
+      operationId: stream_posts_popular_tags_retrieve
+      description: Get the most popular tags across published posts.
+      tags:
+      - stream-posts
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -13101,6 +13696,48 @@ paths:
             schema:
               $ref: '#/components/schemas/StreamRequest'
         required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stream'
+          description: ''
+  /api/v1/streams/{id}/tip/:
+    post:
+      operationId: streams_tip_create
+      description: Send a tip on a stream (without a specific post)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Stream.
+        required: true
+      tags:
+      - Streams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount_cents:
+                  type: integer
+                  minimum: 100
+                message:
+                  type: string
+                is_anonymous:
+                  type: boolean
+                  default: false
+                payment_method_id:
+                  type: string
+              required:
+              - amount_cents
+              - payment_method_id
       security:
       - cookieAuth: []
       - bearerAuth: []
@@ -15696,6 +16333,143 @@ components:
         * `mp4` - MP4
         * `webm` - WebM
         * `m3u8` - HLS
+    FormQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        question_type:
+          $ref: '#/components/schemas/FormQuestionQuestionTypeEnum'
+        label:
+          type: string
+          maxLength: 500
+        help_text:
+          type: string
+        is_required:
+          type: boolean
+        options:
+          nullable: true
+          description: 'Options for choice questions: [''Option A'', ''Option B'']'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - label
+      - question_type
+    FormQuestionQuestionTypeEnum:
+      enum:
+      - short_text
+      - long_text
+      - single_choice
+      - multiple_choice
+      - yes_no
+      - scale
+      - date
+      - file_upload
+      type: string
+      description: |-
+        * `short_text` - Short Text
+        * `long_text` - Long Text
+        * `single_choice` - Single Choice
+        * `multiple_choice` - Multiple Choice
+        * `yes_no` - Yes/No
+        * `scale` - Scale (1-10)
+        * `date` - Date
+        * `file_upload` - File Upload
+    FormQuestionRequest:
+      type: object
+      properties:
+        question_type:
+          $ref: '#/components/schemas/FormQuestionQuestionTypeEnum'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 500
+        help_text:
+          type: string
+        is_required:
+          type: boolean
+        options:
+          nullable: true
+          description: 'Options for choice questions: [''Option A'', ''Option B'']'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - label
+      - question_type
+    FormTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        form_type:
+          $ref: '#/components/schemas/FormTypeEnum'
+        is_platform_template:
+          type: boolean
+          readOnly: true
+        modality:
+          type: integer
+          nullable: true
+          description: Suggested modality for this template
+        is_active:
+          type: boolean
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormQuestion'
+          readOnly: true
+        latest_consent:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - form_type
+      - title
+    FormTemplateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        form_type:
+          $ref: '#/components/schemas/FormTypeEnum'
+        modality:
+          type: integer
+          nullable: true
+          description: Suggested modality for this template
+        is_active:
+          type: boolean
+      required:
+      - form_type
+      - title
+    FormTypeEnum:
+      enum:
+      - intake
+      - consent
+      type: string
+      description: |-
+        * `intake` - Intake Questionnaire
+        * `consent` - Consent Form
     GenerateImageRequestRequest:
       type: object
       description: Serializer for image generation request
@@ -18013,6 +18787,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FeatureRequest'
+    PaginatedFormTemplateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormTemplate'
     PaginatedGeneratedImageList:
       type: object
       required:
@@ -18611,6 +19408,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceDetail'
+    PaginatedServiceFormList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceForm'
     PaginatedServiceListList:
       type: object
       required:
@@ -19174,6 +19994,23 @@ components:
             * `low` - Low
             * `medium` - Medium
             * `high` - High
+    PatchedFormTemplateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        form_type:
+          $ref: '#/components/schemas/FormTypeEnum'
+        modality:
+          type: integer
+          nullable: true
+          description: Suggested modality for this template
+        is_active:
+          type: boolean
     PatchedJournalEntryRequest:
       type: object
       properties:
@@ -21832,16 +22669,6 @@ components:
         * `low` - Low
         * `medium` - Medium
         * `high` - High
-    QuestionTypeEnum:
-      enum:
-      - rating
-      - text
-      - boolean
-      type: string
-      description: |-
-        * `rating` - Rating
-        * `text` - Text
-        * `boolean` - Yes/No
     RecordingStatusEnum:
       enum:
       - none
@@ -22238,7 +23065,7 @@ components:
         is_required:
           type: boolean
         question_type:
-          $ref: '#/components/schemas/QuestionTypeEnum'
+          $ref: '#/components/schemas/ReviewQuestionQuestionTypeEnum'
         order:
           type: integer
           maximum: 2147483647
@@ -22258,6 +23085,16 @@ components:
       required:
       - question
       - question_type
+    ReviewQuestionQuestionTypeEnum:
+      enum:
+      - rating
+      - text
+      - boolean
+      type: string
+      description: |-
+        * `rating` - Rating
+        * `text` - Text
+        * `boolean` - Yes/No
     ReviewQuestionRequest:
       type: object
       description: Serializer for review questions
@@ -22271,7 +23108,7 @@ components:
         is_required:
           type: boolean
         question_type:
-          $ref: '#/components/schemas/QuestionTypeEnum'
+          $ref: '#/components/schemas/ReviewQuestionQuestionTypeEnum'
         order:
           type: integer
           maximum: 2147483647
@@ -25505,6 +26342,47 @@ components:
       - name
       - price_cents
       - service_type
+    ServiceForm:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        service:
+          type: integer
+        form_template:
+          type: integer
+        form_template_detail:
+          allOf:
+          - $ref: '#/components/schemas/FormTemplate'
+          readOnly: true
+        is_required:
+          type: boolean
+          description: If True and consent form, blocks room entry
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - form_template
+      - service
+    ServiceFormRequest:
+      type: object
+      properties:
+        service:
+          type: integer
+        form_template:
+          type: integer
+        is_required:
+          type: boolean
+          description: If True and consent form, blocks room entry
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - form_template
+      - service
     ServiceList:
       type: object
       description: Serializer for service listing

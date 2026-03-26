@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     "utils",
     "workflows",
     "journal",
+    "intake",
 ]
 
 MIDDLEWARE = [
