@@ -105,7 +105,7 @@ export default function MarketplaceLayout({
                   Sessions
                 </TabsTrigger>
                 <TabsTrigger value="practitioners" className="flex-1 flex-shrink-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-xs sm:text-sm px-2 sm:px-4">
-                  Pros
+                  Practitioners
                 </TabsTrigger>
               </TabsList>
             </Tabs>
