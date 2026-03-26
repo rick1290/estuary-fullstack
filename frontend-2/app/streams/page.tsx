@@ -26,6 +26,7 @@ export default function StreamsPage({
   const showLocked = params.locked === "true"
   const showSubscribed = params.subscribed === "true"
   const sort = (params.sort as string | undefined) || "recent"
+  const modality = params.modality as string | undefined
 
   return (
     <StreamsLayout
@@ -43,6 +44,7 @@ export default function StreamsPage({
           showLocked={showLocked}
           showSubscribed={showSubscribed}
           sort={sort}
+          modality={modality}
         />
       </Suspense>
     </StreamsLayout>

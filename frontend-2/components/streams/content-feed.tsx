@@ -19,6 +19,7 @@ interface ContentFeedProps {
   showLocked?: boolean
   showSubscribed?: boolean
   sort?: string
+  modality?: string
 }
 
 export default function ContentFeed({
@@ -29,6 +30,7 @@ export default function ContentFeed({
   showLocked = false,
   showSubscribed = false,
   sort = "recent",
+  modality,
 }: ContentFeedProps) {
   const { user } = useAuth()
   const router = useRouter()
@@ -54,6 +56,11 @@ export default function ContentFeed({
   // Add tags filter
   if (tags.length > 0) {
     queryParams.tags = tags.join(',')
+  }
+
+  // Add modality filter
+  if (modality) {
+    queryParams.modality = modality
   }
 
   // Add sorting
@@ -84,7 +91,7 @@ export default function ContentFeed({
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['streamPosts', query, contentType, practitionerId, tags, sort, showSubscribed, user?.id],
+    queryKey: ['streamPosts', query, contentType, practitionerId, tags, sort, showSubscribed, modality, user?.id],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await streamPostsList({
         query: {
