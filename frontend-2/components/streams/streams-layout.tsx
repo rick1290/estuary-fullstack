@@ -32,13 +32,14 @@ export default function StreamsLayout({
   const searchParams = useSearchParams()
   const activeType = searchParams.get("type") || ""
   const activeTag = searchParams.get("tag") || null
+  const activeModality = searchParams.get("modality") || null
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
 
-  const { data: popularTags } = useQuery({
-    queryKey: ['stream-popular-tags'],
+  const { data: topics } = useQuery({
+    queryKey: ['stream-topics'],
     queryFn: async () => {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const res = await fetch(`${baseUrl}/api/v1/stream-posts/popular_tags/`)
+      const res = await fetch(`${baseUrl}/api/v1/stream-posts/topics/`)
       if (!res.ok) return []
       const data = await res.json()
       return data?.data || data || []
@@ -147,27 +148,27 @@ export default function StreamsLayout({
             })}
           </div>
 
-          {/* Tags filter row */}
-          {popularTags && popularTags.length > 0 && (
+          {/* Modality topics filter row */}
+          {topics && topics.length > 0 && (
             <div className="py-2 flex items-center gap-2 overflow-x-auto border-b border-gray-100" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as any}>
               <span className="text-xs text-gray-400 shrink-0">Topics:</span>
-              {popularTags.map((t: any) => (
+              {topics.map((t: any) => (
                 <button
-                  key={t.tag}
+                  key={t.slug}
                   onClick={() => {
-                    if (activeTag === t.tag) {
+                    if (activeModality === t.slug) {
                       router.push('/streams')
                     } else {
-                      router.push(`/streams?tag=${encodeURIComponent(t.tag)}`)
+                      router.push(`/streams?modality=${encodeURIComponent(t.slug)}`)
                     }
                   }}
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    activeTag === t.tag
+                    activeModality === t.slug
                       ? 'bg-olive-800 text-white'
                       : 'bg-sage-50 text-olive-600 hover:bg-sage-100'
                   }`}
                 >
-                  #{t.tag}
+                  {t.name} ({t.post_count})
                 </button>
               ))}
             </div>

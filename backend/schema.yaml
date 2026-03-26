@@ -13346,6 +13346,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/StreamPost'
           description: ''
+  /api/v1/stream-posts/topics/:
+    get:
+      operationId: stream_posts_topics_retrieve
+      description: Get modalities that have active stream posts.
+      tags:
+      - stream-posts
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamPost'
+          description: ''
   /api/v1/streams/:
     get:
       operationId: streams_list

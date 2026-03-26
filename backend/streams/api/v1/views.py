@@ -922,6 +922,11 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
             for tag in tags_param.split(','):
                 queryset = queryset.filter(tags__contains=[tag.strip()])
 
+        # Filter by practitioner modality
+        modality_slug = self.request.query_params.get('modality')
+        if modality_slug:
+            queryset = queryset.filter(stream__practitioner__modalities__slug=modality_slug)
+
         # Use filtered Prefetch for subscriptions to only load current user's active subscription
         if self.request.user.is_authenticated:
             from django.db.models import Prefetch
@@ -1156,6 +1161,32 @@ class StreamPostViewSet(StreamPostMediaMixin, viewsets.ModelViewSet):
         # Sort by frequency, return top 20
         sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:20]
         return Response([{'tag': t, 'count': c} for t, c in sorted_tags])
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def topics(self, request):
+        """Get modalities that have active stream posts."""
+        from common.models import Modality
+        from django.db.models import Count, Q
+
+        modalities = Modality.objects.filter(
+            practitioners__stream__posts__is_published=True
+        ).annotate(
+            post_count=Count(
+                'practitioners__stream__posts',
+                filter=Q(practitioners__stream__posts__is_published=True),
+                distinct=True
+            )
+        ).filter(post_count__gt=0).order_by('-post_count')[:20]
+
+        return Response([
+            {
+                'slug': m.slug,
+                'name': m.name,
+                'post_count': m.post_count,
+                'category': m.category.name if m.category else None,
+            }
+            for m in modalities
+        ])
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def like(self, request, public_uuid=None):
