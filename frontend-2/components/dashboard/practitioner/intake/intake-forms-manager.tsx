@@ -41,8 +41,16 @@ import {
 } from "lucide-react"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { PractitionerPageHeader } from "../practitioner-page-header"
-
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+import {
+  intakeTemplatesList,
+  intakeTemplatesCreate,
+  intakeTemplatesDestroy,
+  intakeTemplatesAddQuestionCreate,
+  intakeTemplatesUpdateConsentTextCreate,
+  intakeTemplatesCloneCreate,
+  intakePlatformTemplatesList,
+  intakeServicesFormsCreate,
+} from "@/src/client/sdk.gen"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -103,20 +111,7 @@ const isChoiceType = (type: string) =>
   type === "single_choice" || type === "multiple_choice"
 
 // ─── API Helpers ─────────────────────────────────────────────────────────────
-
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    ...options,
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => "")
-    throw new Error(text || `Request failed (${res.status})`)
-  }
-  if (res.status === 204) return undefined as unknown as T
-  return res.json()
-}
+// Uses generated OpenAPI client (handles auth automatically via interceptors)
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -150,73 +145,87 @@ export default function IntakeFormsManager() {
   // ── Queries ──────────────────────────────────────────────────────────────
 
   const {
-    data: templates,
+    data: templatesData,
     isLoading,
     error,
-  } = useQuery<FormTemplate[]>({
+  } = useQuery({
     queryKey: ["intake-templates"],
-    queryFn: () => apiFetch("/api/v1/intake/templates/"),
+    queryFn: async () => {
+      const res = await intakeTemplatesList()
+      return res.data
+    },
   })
+  const templates = (templatesData as any)?.results || templatesData || []
 
-  const { data: platformTemplates, isLoading: platformLoading } = useQuery<
-    PlatformTemplate[]
-  >({
+  const { data: platformTemplatesData, isLoading: platformLoading } = useQuery({
     queryKey: ["intake-platform-templates"],
-    queryFn: () => apiFetch("/api/v1/intake/platform-templates/"),
+    queryFn: async () => {
+      const res = await intakePlatformTemplatesList()
+      return res.data
+    },
     enabled: platformBrowserOpen,
   })
+  const platformTemplates = (platformTemplatesData as any)?.results || platformTemplatesData || []
 
-  const { data: services } = useQuery<PractitionerService[]>({
+  const { data: servicesData } = useQuery({
     queryKey: ["practitioner-services-for-attach"],
-    queryFn: () => apiFetch("/api/v1/services/?mine=true&fields=id,name"),
+    queryFn: async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const res = await fetch(`${baseUrl}/api/v1/services/?mine=true`, { credentials: "include" })
+      if (!res.ok) return []
+      const data = await res.json()
+      return data?.data?.results || data?.results || []
+    },
     enabled: attachDialogOpen,
   })
+  const services = servicesData || []
 
-  const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId)
+  const selectedTemplate = (templates as any[])?.find((t: any) => t.id === selectedTemplateId)
 
   // ── Mutations ────────────────────────────────────────────────────────────
 
   const createMutation = useMutation({
-    mutationFn: (body: { title: string; form_type: string; description: string }) =>
-      apiFetch<FormTemplate>("/api/v1/intake/templates/", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
+    mutationFn: async (body: { title: string; form_type: string; description: string }) => {
+      const res = await intakeTemplatesCreate({ body: body as any })
+      return res.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
       setCreateDialogOpen(false)
       resetCreateForm()
       toast.success("Template created")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to create template"),
+    onError: (err: Error) => toast.error(err.message || "Couldn't create template"),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiFetch(`/api/v1/intake/templates/${id}/`, { method: "DELETE" }),
+    mutationFn: async (id: number) => {
+      const res = await intakeTemplatesDestroy({ path: { id } })
+      return res.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
       if (selectedTemplateId) setSelectedTemplateId(null)
       toast.success("Template deleted")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to delete template"),
+    onError: (err: Error) => toast.error(err.message || "Couldn't delete template"),
   })
 
   const cloneMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiFetch<FormTemplate>(`/api/v1/intake/templates/${id}/clone/`, {
-        method: "POST",
-      }),
+    mutationFn: async (id: number) => {
+      const res = await intakeTemplatesCloneCreate({ path: { id } })
+      return res.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
       setPlatformBrowserOpen(false)
       toast.success("Template cloned to your library")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to clone template"),
+    onError: (err: Error) => toast.error(err.message || "Couldn't clone template"),
   })
 
   const addQuestionMutation = useMutation({
-    mutationFn: (body: {
+    mutationFn: async (body: {
       templateId: number
       label: string
       question_type: string
@@ -225,10 +234,11 @@ export default function IntakeFormsManager() {
       options: string[]
     }) => {
       const { templateId, ...rest } = body
-      return apiFetch<TemplateQuestion>(
-        `/api/v1/intake/templates/${templateId}/add_question/`,
-        { method: "POST", body: JSON.stringify(rest) }
-      )
+      const res = await intakeTemplatesAddQuestionCreate({
+        path: { id: templateId },
+        body: rest as any,
+      })
+      return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
@@ -236,42 +246,50 @@ export default function IntakeFormsManager() {
       resetQuestionForm()
       toast.success("Question added")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to add question"),
+    onError: (err: Error) => toast.error(err.message || "Couldn't add question"),
   })
 
   const deleteQuestionMutation = useMutation({
-    mutationFn: ({ templateId, questionId }: { templateId: number; questionId: number }) =>
-      apiFetch(
-        `/api/v1/intake/templates/${templateId}/questions/${questionId}/`,
-        { method: "DELETE" }
-      ),
+    mutationFn: async ({ templateId, questionId }: { templateId: number; questionId: number }) => {
+      // Question delete not in generated client yet — use SDK base
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const res = await fetch(`${baseUrl}/api/v1/intake/templates/${templateId}/questions/${questionId}/`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error("Failed to delete question")
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
       toast.success("Question removed")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to remove question"),
+    onError: (err: Error) => toast.error(err.message || "Couldn't remove question"),
   })
 
   const updateConsentMutation = useMutation({
-    mutationFn: ({ templateId, text }: { templateId: number; text: string }) =>
-      apiFetch(`/api/v1/intake/templates/${templateId}/update_consent_text/`, {
-        method: "POST",
-        body: JSON.stringify({ consent_text: text }),
-      }),
+    mutationFn: async ({ templateId, text }: { templateId: number; text: string }) => {
+      const res = await intakeTemplatesUpdateConsentTextCreate({
+        path: { id: templateId },
+        body: { legal_text: text } as any,
+      })
+      return res.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
       setConsentDirty(false)
       toast.success("Consent text saved")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to save consent text"),
+    onError: (err: Error) => toast.error(err.message || "Couldn't save consent text"),
   })
 
   const attachMutation = useMutation({
-    mutationFn: ({ serviceId, templateId }: { serviceId: number; templateId: number }) =>
-      apiFetch(`/api/v1/intake/services/${serviceId}/forms/`, {
-        method: "POST",
-        body: JSON.stringify({ template_id: templateId }),
-      }),
+    mutationFn: async ({ serviceId, templateId }: { serviceId: number; templateId: number }) => {
+      const res = await intakeServicesFormsCreate({
+        path: { service_pk: serviceId } as any,
+        body: { form_template: templateId, service: serviceId } as any,
+      })
+      return res.data
+    },
     onSuccess: () => {
       setAttachDialogOpen(false)
       setAttachTemplateId(null)

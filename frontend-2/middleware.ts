@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
   // Check practitioner role for practitioner dashboard
   if (pathname.startsWith("/dashboard/practitioner")) {
     const user = token?.user as any
-    if (!user?.practitionerId && !user?.is_practitioner) {
+    if (!user?.practitionerId && !user?.practitioner_id && !user?.is_practitioner) {
       const url = request.nextUrl.clone()
       url.pathname = "/dashboard/user"
       return NextResponse.redirect(url)
