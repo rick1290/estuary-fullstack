@@ -41,6 +41,8 @@ import {
   Eye,
 } from "lucide-react"
 import LoadingSpinner from "@/components/ui/loading-spinner"
+import { useAuth } from "@/hooks/use-auth"
+import { servicesList } from "@/src/client/sdk.gen"
 import { PractitionerPageHeader } from "../practitioner-page-header"
 import {
   intakeTemplatesList,
@@ -125,6 +127,7 @@ const isChoiceType = (type: string) =>
 
 export default function IntakeFormsManager() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   // ── State ────────────────────────────────────────────────────────────────
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -183,15 +186,16 @@ export default function IntakeFormsManager() {
   const platformTemplates = (platformTemplatesData as any)?.results || platformTemplatesData || []
 
   const { data: servicesData } = useQuery({
-    queryKey: ["practitioner-services-for-attach"],
+    queryKey: ["practitioner-services-for-attach", user?.practitionerId],
     queryFn: async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      const res = await fetch(`${baseUrl}/api/v1/services/?mine=true`, { credentials: "include" })
-      if (!res.ok) return []
-      const data = await res.json()
-      return data?.data?.results || data?.results || []
+      if (!user?.practitionerId) return []
+      const res = await servicesList({
+        query: { practitioner: user.practitionerId } as any,
+      })
+      const data = res.data as any
+      return data?.results || data || []
     },
-    enabled: attachDialogOpen,
+    enabled: attachDialogOpen && !!user?.practitionerId,
   })
   const services = servicesData || []
 
