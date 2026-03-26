@@ -21,16 +21,8 @@ export default function RoleSwitcherBanner() {
   const isUserDashboard = pathname.startsWith("/dashboard/user")
 
   const handleSwitch = () => {
+    // switchRole() handles state update, cookie persistence, and navigation
     switchRole()
-    
-    // Redirect based on current view
-    if (isPractitioner) {
-      // Switching to user view
-      router.push("/dashboard/user")
-    } else {
-      // Switching to practitioner view
-      router.push("/dashboard/practitioner")
-    }
   }
 
   // Different styles based on current role

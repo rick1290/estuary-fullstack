@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import JournalSection from "@/components/dashboard/user/journeys/journal-section"
+import FormsStatusBanner from "@/components/dashboard/user/journeys/forms-status-banner"
 import {
   ArrowLeft,
   Calendar,
@@ -325,6 +326,9 @@ export default function SessionDelivery({
 
       {/* ── MAIN CONTENT ── */}
       <div className="max-w-5xl mx-auto px-6 py-6">
+        {/* Pre-session forms banner */}
+        <FormsStatusBanner bookingUuid={booking?.public_uuid} />
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-8">

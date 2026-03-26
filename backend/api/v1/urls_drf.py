@@ -189,4 +189,7 @@ urlpatterns = [
     
     # Include room URLs (for booking-specific endpoints)
     path('', include('rooms.api.v1.urls')),
+
+    # Intake & consent forms
+    path('intake/', include('intake.api.v1.urls')),
 ]

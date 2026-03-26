@@ -51,7 +51,11 @@ export function useAuth() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const [rolePreference, setRolePreference] = useState<UserRole | undefined>(undefined)
+  const [rolePreference, setRolePreference] = useState<UserRole | undefined>(() => {
+    if (typeof document === 'undefined') return undefined
+    const match = document.cookie.match(/rolePreference=(user|practitioner)/)
+    return match ? (match[1] as UserRole) : undefined
+  })
   const retryCountRef = useRef(0)
   const maxRetries = 1
 
@@ -64,6 +68,7 @@ export function useAuth() {
     try {
       isHandlingErrorRef.current = true
       setRolePreference(undefined)
+      document.cookie = 'rolePreference=;path=/;max-age=0'
       retryCountRef.current = 0
       await signOut({ redirect: false })
       router.push("/")
@@ -197,14 +202,19 @@ export function useAuth() {
 
     const newRole = user.role === "user" ? "practitioner" : "user"
 
-    // Update ephemeral role preference (React state only — resets on page reload)
-    setRolePreference(newRole)
+    // Persist role preference in a cookie (server-readable, not manipulable like localStorage for access)
+    document.cookie = `rolePreference=${newRole};path=/;max-age=${60 * 60 * 24 * 30};SameSite=Lax`
 
-    // Update user state
-    setUser({
-      ...user,
-      role: newRole,
-    })
+    // Update React state
+    setRolePreference(newRole)
+    setUser({ ...user, role: newRole })
+
+    // Navigate to the appropriate dashboard
+    if (newRole === "practitioner") {
+      router.push("/dashboard/practitioner")
+    } else {
+      router.push("/dashboard/user")
+    }
   }
 
   return {

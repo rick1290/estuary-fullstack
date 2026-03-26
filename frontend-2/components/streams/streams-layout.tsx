@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Search, Users, Rss } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useQuery } from "@tanstack/react-query"
 
 interface StreamsLayoutProps {
   children: ReactNode
@@ -30,7 +31,20 @@ export default function StreamsLayout({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeType = searchParams.get("type") || ""
+  const activeTag = searchParams.get("tag") || null
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
+
+  const { data: popularTags } = useQuery({
+    queryKey: ['stream-popular-tags'],
+    queryFn: async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const res = await fetch(`${baseUrl}/api/v1/stream-posts/popular_tags/`)
+      if (!res.ok) return []
+      const data = await res.json()
+      return data?.data || data || []
+    },
+    staleTime: 1000 * 60 * 10, // 10 min cache
+  })
 
   const isFollowing = pathname === "/streams/following"
 
@@ -132,6 +146,32 @@ export default function StreamsLayout({
               )
             })}
           </div>
+
+          {/* Tags filter row */}
+          {popularTags && popularTags.length > 0 && (
+            <div className="py-2 flex items-center gap-2 overflow-x-auto border-b border-gray-100" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as any}>
+              <span className="text-xs text-gray-400 shrink-0">Topics:</span>
+              {popularTags.map((t: any) => (
+                <button
+                  key={t.tag}
+                  onClick={() => {
+                    if (activeTag === t.tag) {
+                      router.push('/streams')
+                    } else {
+                      router.push(`/streams?tag=${encodeURIComponent(t.tag)}`)
+                    }
+                  }}
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    activeTag === t.tag
+                      ? 'bg-olive-800 text-white'
+                      : 'bg-sage-50 text-olive-600 hover:bg-sage-100'
+                  }`}
+                >
+                  #{t.tag}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
 

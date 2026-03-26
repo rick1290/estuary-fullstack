@@ -4,13 +4,13 @@ import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { bookingsRetrieveOptions, paymentsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import Link from "next/link"
-import { CheckCircle2, Calendar, Clock, MapPin, User, Mail, Download, ArrowRight, Video, Copy, Check } from "lucide-react"
+import { CheckCircle2, Calendar, Clock, MapPin, User, Mail, Download, ArrowRight, Video, Copy, Check, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format, parseISO } from "date-fns"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function ConfirmationPage() {
   const searchParams = useSearchParams()
@@ -283,6 +283,11 @@ export default function ConfirmationPage() {
           </Button>
         </div>
 
+        {/* Pre-session forms prompt — after all existing content */}
+        {booking?.public_uuid && (
+          <FormsPrompt bookingUuid={booking.public_uuid} />
+        )}
+
         {/* Receipt Link */}
         <div className="text-center mt-6">
           <Button variant="link" size="sm" className="text-muted-foreground">
@@ -292,5 +297,54 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function FormsPrompt({ bookingUuid }: { bookingUuid: string }) {
+  const [hasForms, setHasForms] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => {
+        const forms = data?.data || data
+        setHasForms(forms?.has_forms || false)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [bookingUuid])
+
+  if (loading || !hasForms) return null
+
+  return (
+    <Card className="mt-6 border-sage-200/60">
+      <CardContent className="py-5">
+        <div className="flex items-start gap-4">
+          <div className="h-10 w-10 rounded-full bg-sage-50 flex items-center justify-center shrink-0">
+            <FileText className="h-5 w-5 text-sage-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium text-olive-900 mb-1">Pre-session form available</h3>
+            <p className="text-sm text-olive-600 mb-3">
+              Your practitioner has a quick form to help prepare for your session. You can complete it now or anytime before your appointment.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-sage-300 text-sage-700"
+              asChild
+            >
+              <Link href={`/dashboard/user/bookings/${bookingUuid}/forms`}>
+                Complete Form
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
