@@ -122,7 +122,7 @@ export default function ServiceCard({
               alt={title}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+            <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 flex items-start justify-between gap-2">
               <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm text-olive-800 text-[10px] font-medium px-2.5 py-1 shadow-sm">
                 <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
                 {getServiceTypeLabel()}
@@ -153,7 +153,7 @@ export default function ServiceCard({
           </div>
         )}
 
-        <CardContent className="p-5">
+        <CardContent className="p-4 sm:p-5">
           {/* Title */}
           <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors line-clamp-1">
             {title}
@@ -261,14 +261,14 @@ export default function ServiceCard({
           )}
 
           {/* Footer: Price + CTA on same line */}
-          <div className="flex items-center justify-between gap-4 mt-3 pt-3 border-t border-sage-100">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-semibold text-olive-900">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mt-3 pt-3 border-t border-sage-100">
+            <div className="flex items-baseline gap-1 sm:gap-1.5 min-w-0">
+              <span className="text-base sm:text-lg font-semibold text-olive-900 truncate">
                 {typeof price === "number" ? `$${price}` : price}
               </span>
-              <span className="text-[11px] text-olive-400 font-light">investment</span>
+              <span className="text-[10px] sm:text-[11px] text-olive-400 font-light hidden sm:inline">investment</span>
             </div>
-            <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-5 py-2 text-[13px] font-medium flex-shrink-0 transition-colors">
+            <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-[13px] font-medium flex-shrink-0 transition-colors">
               {getCtaText()}
             </span>
           </div>

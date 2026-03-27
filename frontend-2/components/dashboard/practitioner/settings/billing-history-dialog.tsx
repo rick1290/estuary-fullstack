@@ -71,8 +71,8 @@ export function BillingHistoryDialog({ open, onOpenChange }: BillingHistoryDialo
           <DialogDescription>View your subscription billing history and download receipts.</DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4">
-          <Table>
+        <div className="mt-4 overflow-x-auto">
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Invoice</TableHead>

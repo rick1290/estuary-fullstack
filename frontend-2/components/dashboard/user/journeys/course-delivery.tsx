@@ -348,7 +348,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   // ── Loading / Error states ─────────────────────────────────────────────
   if (!hasJourneyData && (isLoadingInitial || (serviceId && isLoadingAll))) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
         <p className="text-olive-400">Loading course...</p>
       </div>
     )
@@ -356,7 +356,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
 
   if (!hasJourneyData && (initialError || !initialBooking)) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
         <p className="text-olive-400 mb-4">Failed to load course details.</p>
         <Button variant="outline" asChild>
           <Link href="/dashboard/user/journeys">
@@ -370,13 +370,13 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
 
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* ── COMPACT HEADER BAR ── */}
       <div className="bg-gradient-to-r from-teal-50/80 to-cream-50 border-b border-teal-200/40">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-teal-700 transition-colors"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-teal-700 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -411,11 +411,11 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {/* Pre-session forms banner */}
         <FormsStatusBanner bookingUuid={bookingUuid} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-8">
             {/* ── Hero Card (teal-tinted) ── */}
@@ -434,15 +434,15 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 }}
               />
 
-              <div className="relative z-10 p-8 pb-5">
+              <div className="relative z-10 p-5 sm:p-8 pb-4 sm:pb-5">
                 <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
                   Course
                 </div>
-                <h1 className="font-serif text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
+                <h1 className="font-serif text-[24px] sm:text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
                   {service?.name ?? "Course"}
                 </h1>
 
-                <div className="flex items-center gap-4 flex-wrap mb-5">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap mb-5">
                   {practitioner && (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7 border border-white/20">
@@ -559,7 +559,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                     <Link
                       key={mod.booking.id ?? mod.sequenceNumber}
                       href={`/dashboard/user/journeys/${journeyUuid}/${mod.booking.public_uuid}`}
-                      className="flex items-center gap-3.5 px-4 py-3.5 bg-white border border-sage-200/60 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
+                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white border border-sage-200/60 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
                     >
                       <CheckCircle className="h-5 w-5 text-teal-600 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -594,7 +594,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                       href={`/dashboard/user/journeys/${journeyUuid}/${upNextModule.booking.public_uuid}`}
                       className="block"
                     >
-                      <div className="bg-white border-2 border-teal-300 rounded-xl shadow-sm p-5 hover:shadow-md transition">
+                      <div className="bg-white border-2 border-teal-300 rounded-xl shadow-sm p-4 sm:p-5 hover:shadow-md transition">
                         <div className="flex items-start gap-3.5">
                           <div className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center bg-teal-600">
                             <span className="w-2 h-2 rounded-full bg-white" />
@@ -608,7 +608,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                             <p className="text-[15px] font-medium text-olive-900 mb-1.5">
                               {upNextModule.title}
                             </p>
-                            <div className="flex items-center gap-3 text-[13px] text-olive-600">
+                            <div className="flex items-center gap-3 text-[13px] text-olive-600 flex-wrap">
                               {upNextModule.startTime && (
                                 <>
                                   <span className="flex items-center gap-1.5">
@@ -656,7 +656,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                     <Link
                       key={mod.booking.id ?? mod.sequenceNumber}
                       href={`/dashboard/user/journeys/${journeyUuid}/${mod.booking.public_uuid}`}
-                      className="flex items-center gap-3.5 px-4 py-3.5 bg-white/60 border border-sage-200/40 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
+                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white/60 border border-sage-200/40 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
                     >
                       <Circle className="h-5 w-5 text-sage-300 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -701,7 +701,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                   {canceled.map((mod) => (
                     <div
                       key={mod.booking.id ?? mod.sequenceNumber}
-                      className="flex items-center gap-3.5 px-4 py-3.5 bg-white/40 border border-sage-200/30 rounded-xl opacity-50"
+                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white/40 border border-sage-200/30 rounded-xl opacity-50"
                     >
                       <XCircle className="h-5 w-5 text-red-400 shrink-0" />
                       <div>
@@ -764,11 +764,11 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                         {(practitioner as any).bio}
                       </p>
                     )}
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2 mt-3 flex-wrap">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
                         asChild
                       >
                         <Link
@@ -781,7 +781,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
                         onClick={handleMessagePractitioner}
                       >
                         <MessageSquare className="h-3 w-3 mr-1.5" />
@@ -955,7 +955,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                         <button
                           onClick={() => setCancelDialogOpen(true)}
                           disabled={!canCancelCourse}
-                          className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-olive-400"
+                          className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-olive-400"
                         >
                           Cancel Enrollment
                         </button>

@@ -89,33 +89,33 @@ export function PreJoinScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50 flex items-center justify-center p-3 sm:p-4">
       <div className="max-w-6xl w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-olive-900 mb-2">Ready to Join?</h1>
-          <p className="text-olive-600">Check your camera and audio, then join when you're ready</p>
+        <div className="text-center mb-5 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-olive-900 mb-2">Ready to Join?</h1>
+          <p className="text-sm sm:text-base text-olive-600">Check your camera and audio, then join when you're ready</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* PreJoin Component - Main Area */}
           <div className="lg:col-span-2">
             <Card className="border-sage-200 shadow-xl overflow-hidden bg-white">
               <CardContent className="p-0">
                 {/* User Welcome Banner */}
-                <div className="bg-gradient-to-r from-sage-600 to-sage-500 p-5">
+                <div className="bg-gradient-to-r from-sage-600 to-sage-500 p-3 sm:p-5">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </div>
-                    <div>
-                      <p className="text-white/80 text-sm">Joining as</p>
-                      <h2 className="text-white text-lg font-semibold">{userName}</h2>
+                    <div className="min-w-0">
+                      <p className="text-white/80 text-xs sm:text-sm">Joining as</p>
+                      <h2 className="text-white text-base sm:text-lg font-semibold truncate">{userName}</h2>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-3 sm:p-6">
                   <style jsx global>{`
                     /* Overall prejoin container */
                     .lk-prejoin {
@@ -126,11 +126,20 @@ export function PreJoinScreen({
                     .lk-prejoin .lk-camera-container,
                     .lk-prejoin [data-lk-theme] video,
                     .lk-prejoin video {
-                      border-radius: 16px !important;
+                      border-radius: 12px !important;
                       overflow: hidden !important;
                       background: #1a1a1a !important;
                       aspect-ratio: 16/9 !important;
                       max-height: 320px !important;
+                    }
+
+                    @media (max-width: 639px) {
+                      .lk-prejoin .lk-camera-container,
+                      .lk-prejoin [data-lk-theme] video,
+                      .lk-prejoin video {
+                        max-height: 220px !important;
+                        border-radius: 10px !important;
+                      }
                     }
 
                     /* Controls container below video */
@@ -156,6 +165,7 @@ export function PreJoinScreen({
                       border: 1.5px solid #e5ebe2 !important;
                       border-radius: 10px !important;
                       padding: 10px 14px !important;
+                      min-height: 44px !important;
                       transition: all 0.15s ease !important;
                       font-size: 13px !important;
                       font-weight: 500 !important;
@@ -241,6 +251,7 @@ export function PreJoinScreen({
                     .lk-prejoin .lk-join-button,
                     .lk-prejoin-container button[type="submit"] {
                       padding: 14px 40px !important;
+                      min-height: 44px !important;
                       font-size: 15px !important;
                       font-weight: 600 !important;
                       background: linear-gradient(135deg, #9CAF88 0%, #8a9d7b 100%) !important;

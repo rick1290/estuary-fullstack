@@ -90,16 +90,16 @@ export default function UserStreamSubscriptions() {
           {subscriptions.map((subscription: any) => (
             <div
               key={subscription.id}
-              className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 rounded-lg border hover:bg-accent/50 transition-colors"
             >
-              <div 
-                className="flex items-center gap-4 flex-1 cursor-pointer"
+              <div
+                className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 cursor-pointer"
                 onClick={() => router.push(`/streams/${subscription.stream?.public_uuid}`)}
               >
-                <div className="h-12 w-12 rounded-full bg-sage-100 flex items-center justify-center overflow-hidden">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-sage-100 flex items-center justify-center overflow-hidden shrink-0">
                   {subscription.stream?.practitioner?.profile_image_url ? (
-                    <img 
-                      src={subscription.stream.practitioner.profile_image_url} 
+                    <img
+                      src={subscription.stream.practitioner.profile_image_url}
                       alt={subscription.stream.practitioner.display_name}
                       className="w-full h-full object-cover"
                     />
@@ -109,38 +109,39 @@ export default function UserStreamSubscriptions() {
                     </span>
                   )}
                 </div>
-                <div>
-                  <h4 className="font-medium">{subscription.stream?.title}</h4>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h4 className="font-medium text-sm sm:text-base truncate">{subscription.stream?.title}</h4>
+                  <p className="text-sm text-muted-foreground truncate">
                     by {subscription.stream?.practitioner?.display_name}
                   </p>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+
+              <div className="flex items-center gap-3 sm:gap-4 ml-13 sm:ml-0">
+                <div className="text-left sm:text-right">
                   <Badge variant={subscription.tier_level === 'free' ? 'secondary' : 'default'}>
                     {subscription.tier_level}
                   </Badge>
                   {subscription.tier_level !== 'free' && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      ${((subscription.tier_level === 'entry' 
-                        ? subscription.stream?.entry_tier_price_cents 
+                      ${((subscription.tier_level === 'entry'
+                        ? subscription.stream?.entry_tier_price_cents
                         : subscription.stream?.premium_tier_price_cents) / 100).toFixed(2)}/mo
                     </p>
                   )}
                 </div>
-                
+
                 {subscription.tier_level !== 'free' && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     {subscription.is_active ? 'Active' : 'Inactive'}
                   </div>
                 )}
-                
+
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="min-w-[44px] min-h-[44px] ml-auto sm:ml-0"
                   onClick={(e) => {
                     e.stopPropagation()
                     setSelectedSubscription(subscription)
@@ -155,13 +156,13 @@ export default function UserStreamSubscriptions() {
         </div>
 
         {subscriptions.some((sub: any) => sub.tier_level !== 'free') && (
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between">
+          <div className="mt-6 p-3 sm:p-4 bg-muted rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
                 <p className="text-sm text-muted-foreground">Manage your subscription billing</p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="min-h-[44px] w-full sm:w-auto">
                 Manage Billing
               </Button>
             </div>

@@ -43,15 +43,15 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
 
   return (
     <div>
-      <div className="flex items-start gap-3 mb-6">
-        <Avatar className="h-24 w-24 rounded-md">
+      <div className="flex flex-col sm:flex-row items-start gap-3 mb-6">
+        <Avatar className="h-20 w-20 sm:h-24 sm:w-24 rounded-md flex-shrink-0">
           <AvatarImage src={service.image_url || "/placeholder.svg"} alt={service.name} className="object-cover" />
           <AvatarFallback className="rounded-md">{service.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <div>
-          <h1 className="text-2xl font-bold mb-2">{service.name}</h1>
+        <div className="min-w-0 w-full">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">{service.name}</h1>
 
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2">
             {service.categories?.map((category, index) => (
               <Badge key={index} variant="outline">
                 {category}
@@ -75,9 +75,9 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
       </div>
 
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList>
+        <TabsList className="w-full sm:w-auto overflow-x-auto">
           {getTabs().map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
+            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center text-xs sm:text-sm">
               {tab.icon}
               {tab.label}
             </TabsTrigger>
@@ -184,10 +184,10 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
       )}
 
       <Card className="mb-6">
-        <CardContent className="pt-6">
-          <h2 className="text-xl font-semibold mb-4">About the Practitioner</h2>
-          <div className="flex items-center gap-4 mb-4">
-            <Avatar className="h-16 w-16">
+        <CardContent className="p-4 sm:pt-6">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">About the Practitioner</h2>
+          <div className="flex items-center gap-3 sm:gap-4 mb-4">
+            <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
               <AvatarImage
                 src={service.primary_practitioner.profile_image || "/placeholder.svg"}
                 alt={service.primary_practitioner.display_name}

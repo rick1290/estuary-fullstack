@@ -461,8 +461,8 @@ export default function IntakeFormsManager() {
                   } ${isSelected ? "ring-2 ring-sage-400 shadow-md" : ""}`}
                   onClick={() => handleSelectTemplate(template)}
                 >
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3">
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <div className="flex items-start gap-4 min-w-0">
                         {/* Bigger icon area with gradient */}
                         <div
@@ -562,7 +562,7 @@ export default function IntakeFormsManager() {
         {/* ─── Template Editor (inline slide-down) ───────────────────── */}
         {selectedTemplate && (
           <div className="rounded-xl bg-sage-50/50 border border-sage-200/60 overflow-hidden">
-            <div className="px-5 py-4 border-b border-sage-200/60">
+            <div className="px-3 sm:px-5 py-4 border-b border-sage-200/60">
               <div className="flex items-center gap-3">
                 <div
                   className={`rounded-lg p-2 ${
@@ -586,7 +586,7 @@ export default function IntakeFormsManager() {
               </div>
             </div>
 
-            <div className="p-5 space-y-5">
+            <div className="p-3 sm:p-5 space-y-5">
               {selectedTemplate.form_type === "intake" ? (
                 /* ── Intake Question Editor ──────────────────────────── */
                 <div className="space-y-4">
@@ -599,7 +599,7 @@ export default function IntakeFormsManager() {
                           return (
                             <div
                               key={q.id}
-                              className="flex items-start gap-3 rounded-xl border border-sage-200/60 bg-white px-4 py-3.5"
+                              className="flex items-start gap-3 rounded-xl border border-sage-200/60 bg-white px-3 sm:px-4 py-3.5 flex-wrap"
                             >
                               {/* Number circle */}
                               <div className="flex items-center justify-center h-7 w-7 rounded-full bg-sage-200/70 text-sage-800 text-xs font-semibold shrink-0 mt-0.5">
@@ -642,7 +642,7 @@ export default function IntakeFormsManager() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7 text-olive-400 hover:text-sage-700"
+                                  className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-400 hover:text-sage-700"
                                   title="Edit question"
                                   onClick={() => {
                                     setEditingQuestionId(editingQuestionId === q.id ? null : q.id)
@@ -660,7 +660,7 @@ export default function IntakeFormsManager() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7 text-olive-400 hover:text-destructive"
+                                  className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-400 hover:text-destructive"
                                   title="Delete question"
                                   onClick={() =>
                                     deleteQuestionMutation.mutate({
@@ -674,7 +674,7 @@ export default function IntakeFormsManager() {
                               </div>
                               {/* Inline edit form */}
                               {editingQuestionId === q.id && (
-                                <div className="mt-3 p-4 rounded-lg bg-sage-50 border border-sage-200/60 space-y-3">
+                                <div className="mt-3 p-3 sm:p-4 rounded-lg bg-sage-50 border border-sage-200/60 space-y-3 w-full">
                                   <div className="space-y-2">
                                     <Label className="text-xs">Question Label</Label>
                                     <Input
@@ -683,7 +683,7 @@ export default function IntakeFormsManager() {
                                       className="h-9 text-sm"
                                     />
                                   </div>
-                                  <div className="grid grid-cols-2 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-2">
                                       <Label className="text-xs">Help Text</Label>
                                       <Input
@@ -774,7 +774,7 @@ export default function IntakeFormsManager() {
                       <div className="bg-sage-50 px-4 py-3 border-b border-sage-200/60">
                         <h4 className="text-sm font-medium text-olive-800">New Question</h4>
                       </div>
-                      <CardContent className="p-4 space-y-4">
+                      <CardContent className="p-3 sm:p-4 space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="q-label">Question Label</Label>
                           <Input
@@ -1136,7 +1136,7 @@ export default function IntakeFormsManager() {
 
       {/* ─── Platform Templates Browser Dialog ──────────────────────────── */}
       <Dialog open={platformBrowserOpen} onOpenChange={setPlatformBrowserOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Platform Templates</DialogTitle>
             <DialogDescription>
@@ -1231,7 +1231,7 @@ export default function IntakeFormsManager() {
 
       {/* ─── Attach to Service Dialog ───────────────────────────────────── */}
       <Dialog open={attachDialogOpen} onOpenChange={setAttachDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Link to Service</DialogTitle>
             <DialogDescription>
@@ -1343,7 +1343,7 @@ export default function IntakeFormsManager() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="shrink-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-sage-50 hover:bg-sage-100 text-sage-700"
+                      className="shrink-0 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-sage-50 hover:bg-sage-100 text-sage-700"
                       disabled={attachMutation.isPending}
                       onClick={(e) => {
                         e.stopPropagation()

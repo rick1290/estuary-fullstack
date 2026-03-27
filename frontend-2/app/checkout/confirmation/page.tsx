@@ -120,27 +120,27 @@ export default function ConfirmationPage() {
         </div>
       </div>
 
-      <div className="container max-w-3xl py-12 px-4 sm:px-6">
+      <div className="container max-w-3xl py-6 sm:py-12 px-4 sm:px-6">
         {/* Success Header - Compact */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-sage-100 rounded-full mb-4">
-            <CheckCircle2 className="h-8 w-8 text-sage-600" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-sage-100 rounded-full mb-3 sm:mb-4">
+            <CheckCircle2 className="h-7 w-7 sm:h-8 sm:w-8 text-sage-600" />
           </div>
-          <h1 className="text-3xl font-bold text-olive-900 mb-2">{getTitle()}</h1>
-          <p className="text-olive-600">Confirmation sent to your email</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-olive-900 mb-2">{getTitle()}</h1>
+          <p className="text-sm sm:text-base text-olive-600">Confirmation sent to your email</p>
         </div>
 
         {/* Main Card */}
         <Card className="mb-6 overflow-hidden">
           <CardContent className="p-0">
             {/* Confirmation Number Bar */}
-            <div className="bg-sage-50 px-6 py-4 border-b border-sage-100">
+            <div className="bg-sage-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-sage-100">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Confirmation Number</p>
-                  <p className="font-mono text-sm font-medium text-olive-900 truncate">{confirmationNumber}</p>
+                  <p className="font-mono text-xs sm:text-sm font-medium text-olive-900 truncate">{confirmationNumber}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={copyConfirmation} className="h-8 px-3 flex-shrink-0">
+                <Button variant="outline" size="sm" onClick={copyConfirmation} className="h-9 min-w-[44px] px-3 flex-shrink-0">
                   {copied ? (
                     <>
                       <Check className="h-3 w-3 mr-1 text-sage-600" />
@@ -157,43 +157,53 @@ export default function ConfirmationPage() {
             </div>
 
             {/* Service + Practitioner */}
-            <div className="p-6">
-              <div className="flex items-start gap-4 mb-6">
-                {/* Service Image */}
-                <div className="h-20 w-20 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 overflow-hidden flex-shrink-0">
-                  {service.image_url ? (
-                    <img src={service.image_url} alt={service.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <span className="text-2xl font-medium text-olive-600">{service.name?.charAt(0)}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-lg text-olive-900 mb-1">{service.name}</h2>
-                  <div className="flex items-center gap-2">
-                    {practitioner?.profile_image_url ? (
-                      <img
-                        src={practitioner.profile_image_url}
-                        alt={practitioner.name || practitioner.display_name}
-                        className="h-6 w-6 rounded-full object-cover"
-                      />
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-6">
+                {/* Service Image + Info */}
+                <div className="flex items-start gap-3 sm:gap-4 w-full sm:flex-1 min-w-0">
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 overflow-hidden flex-shrink-0">
+                    {service.image_url ? (
+                      <img src={service.image_url} alt={service.name} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="h-6 w-6 rounded-full bg-sage-100 flex items-center justify-center">
-                        <User className="h-3 w-3 text-olive-600" />
+                      <div className="h-full w-full flex items-center justify-center">
+                        <span className="text-xl sm:text-2xl font-medium text-olive-600">{service.name?.charAt(0)}</span>
                       </div>
                     )}
-                    <span className="text-sm text-olive-600">{practitioner?.name || practitioner?.display_name}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="font-semibold text-base sm:text-lg text-olive-900 mb-1">{service.name}</h2>
+                      {/* Price inline on mobile, separate column on desktop */}
+                      <div className="text-right sm:hidden flex-shrink-0">
+                        <p className="font-semibold text-olive-900">${totalPaid}</p>
+                        <p className="text-xs text-muted-foreground">paid</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {practitioner?.profile_image_url ? (
+                        <img
+                          src={practitioner.profile_image_url}
+                          alt={practitioner.name || practitioner.display_name}
+                          className="h-6 w-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-sage-100 flex items-center justify-center">
+                          <User className="h-3 w-3 text-olive-600" />
+                        </div>
+                      )}
+                      <span className="text-sm text-olive-600">{practitioner?.name || practitioner?.display_name}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
+                {/* Price - desktop only (shown inline on mobile above) */}
+                <div className="text-right hidden sm:block flex-shrink-0">
                   <p className="font-semibold text-olive-900">${totalPaid}</p>
                   <p className="text-xs text-muted-foreground">paid</p>
                 </div>
               </div>
 
               {/* Session Details Grid */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-sage-50/50 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-sage-50/50 rounded-lg">
                 {sessionTime && (
                   <>
                     <div className="flex items-center gap-3">
@@ -241,7 +251,7 @@ export default function ConfirmationPage() {
 
         {/* Next Steps - Compact */}
         <Card className="mb-6">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <h3 className="font-semibold text-olive-900 mb-4">What's next?</h3>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
@@ -272,13 +282,13 @@ export default function ConfirmationPage() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800">
+          <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 min-h-[44px]">
             <Link href="/dashboard/user/journeys">
               View My Journeys
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </Button>
-          <Button asChild variant="outline" className="flex-1">
+          <Button asChild variant="outline" className="flex-1 min-h-[44px]">
             <Link href="/marketplace">Continue Browsing</Link>
           </Button>
         </div>

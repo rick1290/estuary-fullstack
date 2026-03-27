@@ -26,8 +26,8 @@ export default async function ServicePage({ params }: { params: { id: string } }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-warm-50/30 to-white">
-      <div className="container py-12">
-        <Breadcrumb className="mb-8">
+      <div className="container px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+        <Breadcrumb className="mb-4 sm:mb-8">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -51,7 +51,7 @@ export default async function ServicePage({ params }: { params: { id: string } }
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-12">
           <div className="flex-1 w-full lg:w-2/3">
             <Suspense fallback={<ServiceDetailsSkeleton />}>
               <ServiceDetails service={service} />

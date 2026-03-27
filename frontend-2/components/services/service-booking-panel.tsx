@@ -50,8 +50,8 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
 
   return (
     <Card className="overflow-hidden">
-        <CardContent className="p-6">
-          <p className="text-2xl font-semibold text-primary mb-4">${Number.parseFloat(service.price).toFixed(2)}</p>
+        <CardContent className="p-4 sm:p-6">
+          <p className="text-xl sm:text-2xl font-semibold text-primary mb-3 sm:mb-4">${Number.parseFloat(service.price).toFixed(2)}</p>
 
           <div className="space-y-4 mb-6">
             <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function ServiceBookingPanel({ service }: ServiceBookingPanelProp
 
           <Separator className="my-4" />
 
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
             {service.categories?.map((category, index) => (
               <Badge key={index} variant="outline">
                 {category}

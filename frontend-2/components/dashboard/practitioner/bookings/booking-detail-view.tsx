@@ -248,25 +248,26 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   const endTime = booking.service_session?.end_time ? new Date(booking.service_session?.end_time) : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-3 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
+            className="shrink-0 min-h-[44px] min-w-[44px]"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Button>
-          <div>
-            <h1 className="font-serif text-2xl font-light text-olive-900">{booking.service?.name || booking.title || "Booking"}</h1>
-            <p className="text-muted-foreground">Booking #{booking.public_uuid?.slice(-8) || booking.id}</p>
+          <div className="min-w-0">
+            <h1 className="font-serif text-xl sm:text-2xl font-light text-olive-900 truncate">{booking.service?.name || booking.title || "Booking"}</h1>
+            <p className="text-muted-foreground text-sm">Booking #{booking.public_uuid?.slice(-8) || booking.id}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant={statusVariant as any} className="flex items-center gap-1">
             <StatusIcon className="h-3 w-3" />
             {statusLabel}
@@ -277,7 +278,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             <Button
               onClick={handleComplete}
               disabled={completeMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 min-h-[44px]"
             >
               {completeMutation.isPending ? (
                 <>
@@ -295,7 +296,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">Actions</Button>
+              <Button variant="outline" className="min-h-[44px]">Actions</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {booking.status === "pending_payment" && (
@@ -501,11 +502,12 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                       placeholder="Add your notes here..."
                       className="min-h-[100px]"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button
                         size="sm"
                         onClick={handleSaveNote}
                         disabled={createNoteMutation.isPending || !noteContent.trim()}
+                        className="min-h-[44px]"
                       >
                         {createNoteMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -522,6 +524,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                           setNoteContent("")
                         }}
                         disabled={createNoteMutation.isPending}
+                        className="min-h-[44px]"
                       >
                         <X className="h-4 w-4 mr-2" />
                         Cancel

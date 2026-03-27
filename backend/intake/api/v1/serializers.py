@@ -46,6 +46,9 @@ class ServiceFormSerializer(serializers.ModelSerializer):
         model = ServiceForm
         fields = ['id', 'service', 'form_template', 'form_template_detail', 'is_required', 'order']
         read_only_fields = ['id']
+        extra_kwargs = {
+            'service': {'required': False},  # Auto-set from URL path in perform_create
+        }
 
 
 class IntakeResponseSerializer(serializers.ModelSerializer):

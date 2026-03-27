@@ -160,14 +160,14 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
         </Button>
       </div>
 
-      <CardContent className="p-5">
-        <div className="space-y-4">
+      <CardContent className="p-4 sm:p-5">
+        <div className="space-y-3 sm:space-y-4">
           {/* Name and Title */}
           <div>
-            <h3 className="text-xl font-medium text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">
+            <h3 className="text-lg sm:text-xl font-medium text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">
               {practitioner.display_name}
             </h3>
-            <p className="text-sm text-gray-600 mt-0.5">{practitioner.title}</p>
+            <p className="text-sm text-gray-600 mt-0.5 truncate">{practitioner.title}</p>
           </div>
 
           {/* Rating */}
@@ -228,7 +228,7 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
       </CardContent>
 
       {/* Footer */}
-      <div className="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
+      <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gray-50/50 border-t border-gray-100">
         <Button asChild className="w-full shadow-sm">
           <Link href={`/practitioners/${practitioner.slug || practitioner.id}`}>View Profile</Link>
         </Button>

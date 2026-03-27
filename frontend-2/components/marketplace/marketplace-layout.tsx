@@ -89,22 +89,22 @@ export default function MarketplaceLayout({
           <div className="mx-auto mb-6 sm:mb-8 max-w-3xl">
             <Tabs value={getActiveTab()} onValueChange={handleTabChange} className="w-full">
               <TabsList
-                className="w-full bg-white p-1 rounded-2xl border border-sage-200/60 flex overflow-x-auto"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as any}
+                className="w-full bg-white p-1 rounded-2xl border border-sage-200/60 flex overflow-x-auto no-scrollbar"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as any}
               >
-                <TabsTrigger value="all" className="flex-1 flex-shrink-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-xs sm:text-sm px-2 sm:px-4">
+                <TabsTrigger value="all" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="courses" className="flex-1 flex-shrink-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-xs sm:text-sm px-2 sm:px-4">
+                <TabsTrigger value="courses" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Courses
                 </TabsTrigger>
-                <TabsTrigger value="workshops" className="flex-1 flex-shrink-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-xs sm:text-sm px-2 sm:px-4">
+                <TabsTrigger value="workshops" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Workshops
                 </TabsTrigger>
-                <TabsTrigger value="sessions" className="flex-1 flex-shrink-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-xs sm:text-sm px-2 sm:px-4">
+                <TabsTrigger value="sessions" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Sessions
                 </TabsTrigger>
-                <TabsTrigger value="practitioners" className="flex-1 flex-shrink-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-xs sm:text-sm px-2 sm:px-4">
+                <TabsTrigger value="practitioners" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Practitioners
                 </TabsTrigger>
               </TabsList>
@@ -132,10 +132,10 @@ export default function MarketplaceLayout({
         </div>
       </div>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* Main Content Area */}
-      <div className="container mx-auto mt-8 px-4 pb-16">
+      <div className="container mx-auto mt-6 sm:mt-8 px-4 sm:px-6 lg:px-8 pb-16">
         {/* Mobile Filters Toggle Button */}
         {sidebar && (
           <div className="mb-6 lg:hidden">

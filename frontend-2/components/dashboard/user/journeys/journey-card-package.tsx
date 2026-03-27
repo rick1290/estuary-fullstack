@@ -28,13 +28,13 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
       href={`/dashboard/user/journeys/${journey.journey_id}`}
       className="block group"
     >
-      <div className={`flex gap-4 p-4 bg-white border rounded-xl hover:shadow-md transition-all ${
+      <div className={`flex gap-3 sm:gap-4 p-3 sm:p-4 bg-white border rounded-xl hover:shadow-md transition-all ${
         needs_scheduling > 0 && journey.status === "unscheduled"
           ? "border-amber-200 hover:border-amber-300"
           : "border-sage-200/60 hover:border-sage-300"
       }`}>
         {/* Image */}
-        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
           {journey.service_image_url ? (
             <img src={journey.service_image_url} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -66,9 +66,9 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
           )}
 
           {/* Line 3: Dot progress */}
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 overflow-hidden">
             <div
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 flex-wrap"
               aria-label={`${completed_sessions} of ${total_sessions} complete`}
             >
               {Array.from({ length: Math.min(total_sessions, 12) }).map((_, i) => (
@@ -86,7 +86,7 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
           </div>
 
           {/* Line 4: Next session or scheduling notice */}
-          <div className="flex items-center gap-3 mt-1.5 text-[12px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[12px]">
             {nextSessionTime && (
               <span className="flex items-center gap-1 text-olive-500">
                 <Calendar className="h-3 w-3" />
@@ -103,7 +103,7 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
         </div>
 
         {/* Right: type badge + status + chevron */}
-        <div className="flex flex-col items-end justify-between shrink-0">
+        <div className="hidden sm:flex flex-col items-end justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-50 text-sage-600">
               Package

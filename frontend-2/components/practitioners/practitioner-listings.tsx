@@ -77,14 +77,14 @@ export default function PractitionerListings({
   if (isLoading) {
     return (
       <div className="w-full">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 sm:mb-8">
           <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-full sm:w-48" />
         </div>
         <div className="flex flex-col gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-sm border p-6 flex gap-6">
-              <Skeleton className="w-24 h-24 rounded-full flex-shrink-0" />
+            <div key={i} className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 flex gap-4 sm:gap-6">
+              <Skeleton className="w-16 h-16 sm:w-24 sm:h-24 rounded-full flex-shrink-0" />
               <div className="flex-1">
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2 mb-4" />
@@ -176,13 +176,13 @@ export default function PractitionerListings({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 sm:mb-8">
         <p className="text-sm text-olive-600">
           Showing <span className="font-medium text-olive-900">{startResult}-{endResult}</span> of <span className="font-medium text-olive-900">{totalResults}</span> practitioners
         </p>
 
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[200px] bg-white border-sage-300 rounded-xl">
+          <SelectTrigger className="w-full sm:w-[200px] bg-white border-sage-300 rounded-xl">
             <SelectValue placeholder="Sort By" />
           </SelectTrigger>
           <SelectContent>
@@ -203,22 +203,22 @@ export default function PractitionerListings({
 
       {/* Pagination controls */}
       {totalPages > 1 && (
-        <div className="mt-12 flex items-center justify-center gap-2">
+        <div className="mt-8 sm:mt-12 flex items-center justify-center gap-1 sm:gap-2">
           <Button
             onClick={() => goToPage(page - 1)}
             variant="outline"
             size="icon"
             disabled={page === 1 || isLoading}
-            className="h-10 w-10"
+            className="h-8 w-8 sm:h-10 sm:w-10"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Previous page</span>
           </Button>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {getPageNumbers().map((pageNum, idx) =>
               pageNum === 'ellipsis' ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
+                <span key={`ellipsis-${idx}`} className="px-1 sm:px-2 text-muted-foreground">
                   ...
                 </span>
               ) : (
@@ -228,7 +228,7 @@ export default function PractitionerListings({
                   variant={page === pageNum ? "default" : "outline"}
                   size="icon"
                   disabled={isLoading}
-                  className="h-10 w-10"
+                  className="h-8 w-8 sm:h-10 sm:w-10 text-xs sm:text-sm"
                 >
                   {pageNum}
                 </Button>
@@ -241,7 +241,7 @@ export default function PractitionerListings({
             variant="outline"
             size="icon"
             disabled={!hasMore || isLoading}
-            className="h-10 w-10"
+            className="h-8 w-8 sm:h-10 sm:w-10"
           >
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Next page</span>

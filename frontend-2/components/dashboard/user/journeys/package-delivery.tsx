@@ -76,12 +76,12 @@ function PackageDeliverySkeleton() {
   return (
     <div className="min-h-screen">
       <div className="bg-gradient-to-r from-sage-50/80 to-cream-50 border-b border-sage-200/40">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Skeleton className="h-4 w-28 bg-sage-200/40" />
           <Skeleton className="h-6 w-24 bg-sage-200/40 rounded-full" />
         </div>
       </div>
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
           <div className="space-y-8">
             <Skeleton className="h-56 w-full rounded-2xl bg-sage-200/40" />
@@ -347,7 +347,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
   // ---------------------------------------------------------------------------
   if (bookingError || !booking) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
         <Alert variant="destructive" className="max-w-md mx-auto mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -376,13 +376,13 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* -- COMPACT HEADER BAR -- */}
       <div className="bg-gradient-to-r from-sage-50/80 to-cream-50 border-b border-sage-200/40">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -411,11 +411,11 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
       </div>
 
       {/* -- MAIN CONTENT -- */}
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {/* Pre-session forms banner */}
         <FormsStatusBanner bookingUuid={bookingUuid} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
           {/* -- LEFT COLUMN -- */}
           <div className="space-y-8">
             {/* Hero Card -- sage-tinted with service image */}
@@ -429,15 +429,15 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#1e2e1e] via-[#1e2e1e]/75 to-[#1e2e1e]/40" />
 
-              <div className="relative z-10 p-8 pb-7">
+              <div className="relative z-10 p-5 sm:p-8 pb-5 sm:pb-7">
                 <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
                   Package
                 </div>
-                <h1 className="font-serif text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
+                <h1 className="font-serif text-[24px] sm:text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
                   {service?.name ?? "Package"}
                 </h1>
 
-                <div className="flex items-center gap-4 flex-wrap mb-5">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap mb-5">
                   {/* Practitioner */}
                   {practitioner?.name && (
                     <div className="flex items-center gap-2">
@@ -483,7 +483,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
                 {/* Dot progress at bottom of hero */}
                 {totalCount > 0 && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {Array.from({ length: totalCount }).map((_, i) => (
                       <span
                         key={i}
@@ -528,7 +528,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                     return (
                       <div
                         key={getItemId(b)}
-                        className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-400 transition-colors"
+                        className="flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-5 py-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-400 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="inline-block h-2.5 w-2.5 rounded-full bg-sage-500 flex-shrink-0" />
@@ -590,7 +590,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
                 {/* Prominent CTA card */}
                 {!isPackageComplete && (
-                  <div className="flex items-center gap-3 p-5 rounded-xl bg-sage-50 border border-sage-200 mb-4">
+                  <div className="flex items-center gap-3 p-4 sm:p-5 rounded-xl bg-sage-50 border border-sage-200 mb-4 flex-wrap sm:flex-nowrap">
                     <CalendarPlus className="h-5 w-5 text-sage-600 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-medium text-olive-900">
@@ -623,7 +623,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                     return (
                       <div
                         key={getItemId(b)}
-                        className="flex items-center justify-between gap-4 px-5 py-4 bg-sage-50/50 border border-dashed border-sage-300 rounded-xl hover:border-sage-400 transition-colors"
+                        className="flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-5 py-4 bg-sage-50/50 border border-dashed border-sage-300 rounded-xl hover:border-sage-400 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <span className="inline-block h-2.5 w-2.5 rounded border border-sage-300 flex-shrink-0" />
@@ -666,7 +666,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                     return (
                       <div
                         key={getItemId(b)}
-                        className="flex items-center justify-between gap-4 px-5 py-4 bg-white border border-sage-200/60 rounded-xl"
+                        className="flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-5 py-4 bg-white border border-sage-200/60 rounded-xl"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <CheckCircle className="h-4 w-4 text-sage-500 flex-shrink-0" />
@@ -731,11 +731,11 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                         {practitioner.bio}
                       </p>
                     )}
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2 mt-3 flex-wrap">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
                         asChild
                       >
                         <Link
@@ -748,7 +748,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
                         onClick={handleMessagePractitioner}
                       >
                         <MessageSquare className="h-3 w-3 mr-1.5" />
@@ -879,7 +879,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
               <button
                 onClick={() => setCancelDialogOpen(true)}
-                className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-1 transition-colors"
+                className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors"
               >
                 Cancel Package
               </button>

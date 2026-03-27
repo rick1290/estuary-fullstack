@@ -301,12 +301,24 @@ export default function Navbar() {
                       {item.subItems ? (
                         <>
                           <div className="px-2 py-1 text-sm font-medium">{item.label}</div>
+                          <SheetClose asChild>
+                            <Link
+                              href="/marketplace"
+                              className={cn(
+                                "flex items-center gap-2 rounded-md px-4 min-h-[44px] py-2 text-sm hover:bg-accent",
+                                pathname === "/marketplace" && "bg-accent font-medium",
+                              )}
+                            >
+                              <Layers className="h-4 w-4" />
+                              All Services
+                            </Link>
+                          </SheetClose>
                           {item.subItems.map((subItem) => (
                             <SheetClose asChild key={subItem.label}>
                               <Link
                                 href={subItem.href}
                                 className={cn(
-                                  "flex items-center gap-2 rounded-md px-4 py-2 text-sm hover:bg-accent",
+                                  "flex items-center gap-2 rounded-md px-4 min-h-[44px] py-2 text-sm hover:bg-accent",
                                   pathname === subItem.href && "bg-accent font-medium",
                                 )}
                               >
@@ -321,7 +333,7 @@ export default function Navbar() {
                           <Link
                             href={item.href}
                             className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent",
+                              "flex items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm hover:bg-accent",
                               pathname === item.href && "bg-accent font-medium",
                             )}
                           >
@@ -339,7 +351,7 @@ export default function Navbar() {
                     <SheetClose asChild>
                       <Link
                         href="/dashboard/user/journeys"
-                        className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                        className="flex items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm hover:bg-accent"
                       >
                         <Calendar className="h-4 w-4" />
                         <span>My Journeys</span>
@@ -348,7 +360,7 @@ export default function Navbar() {
                     <SheetClose asChild>
                       <Link
                         href="/dashboard/user/messages"
-                        className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                        className="flex items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm hover:bg-accent"
                       >
                         <MessageSquare className="h-4 w-4" />
                         <span>Messages</span>
@@ -357,7 +369,7 @@ export default function Navbar() {
                     <SheetClose asChild>
                       <Link
                         href="/dashboard/user/profile"
-                        className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                        className="flex items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm hover:bg-accent"
                       >
                         <User className="h-4 w-4" />
                         <span>Profile</span>

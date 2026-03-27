@@ -332,7 +332,7 @@ export default function PractitionerServicesManagerV2() {
         {/* Search and filters bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
-          <div className="flex-1 max-w-md">
+          <div className="flex-1 w-full sm:max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -541,10 +541,11 @@ export default function PractitionerServicesManagerV2() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2">
+          <div className="flex justify-center items-center gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
+              className="min-h-[44px]"
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={!hasPreviousPage || currentPage === 1}
             >
@@ -571,7 +572,7 @@ export default function PractitionerServicesManagerV2() {
                     key={pageNum}
                     variant={currentPage === pageNum ? "default" : "outline"}
                     size="sm"
-                    className="w-10"
+                    className="w-10 min-h-[44px]"
                     onClick={() => setCurrentPage(pageNum)}
                   >
                     {pageNum}
@@ -585,6 +586,7 @@ export default function PractitionerServicesManagerV2() {
               size="sm"
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={!hasNextPage || currentPage === totalPages}
+              className="min-h-[44px]"
             >
               Next
             </Button>
