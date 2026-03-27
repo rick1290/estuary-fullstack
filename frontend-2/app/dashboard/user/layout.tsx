@@ -1,5 +1,6 @@
 import type React from "react"
 import UserDashboardNav from "@/components/dashboard/user/user-dashboard-nav"
+import FeedbackWidget from "@/components/dashboard/feedback-widget"
 
 export default function UserDashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function UserDashboardLayout({
       <main className="pt-4 pb-4 sm:pt-8 sm:pb-8">
         {children}
       </main>
+      <FeedbackWidget />
     </div>
   )
 }
