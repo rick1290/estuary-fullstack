@@ -342,7 +342,7 @@ function ScheduleTable({
 
             const detailsUrl = isServiceSession
               ? `/dashboard/practitioner/sessions/${scheduleEvent.id}`
-              : `/dashboard/practitioner/bookings/${scheduleEvent.id}`
+              : `/dashboard/practitioner/bookings/${calendarEvent?.public_uuid || scheduleEvent.id}`
 
             return (
               <TableRow
@@ -452,7 +452,7 @@ function ScheduleTable({
                               View Details
                             </Link>
                           ) : (
-                            <Link href={`/dashboard/practitioner/bookings/${scheduleEvent.id}`}>
+                            <Link href={`/dashboard/practitioner/bookings/${calendarEvent?.public_uuid || scheduleEvent.id}`}>
                               View Details
                             </Link>
                           )}

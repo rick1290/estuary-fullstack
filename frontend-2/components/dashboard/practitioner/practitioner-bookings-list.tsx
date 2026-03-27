@@ -394,7 +394,7 @@ export default function PractitionerBookingsList() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
+                                <Link href={`/dashboard/practitioner/bookings/${booking.public_uuid || booking.id}`}>
                                   View Details
                                 </Link>
                               </DropdownMenuItem>

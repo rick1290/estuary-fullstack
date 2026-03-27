@@ -1,102 +1,157 @@
 {% extends "emails/base.mjml" %}
 
 {% block content %}
-<!-- Welcome Hero -->
-<mj-section padding="48px 0 32px">
+<!-- Hero (blue-teal for practitioners) -->
+<mj-section background-color="#2d3b3b" border-radius="16px 16px 0 0" padding="56px 48px 48px">
   <mj-column>
-    <mj-text align="center" font-size="36px" font-weight="700" color="#3c412a" line-height="1.2" padding-bottom="16px">
-      Welcome to Estuary!
+    <mj-text align="center" padding-bottom="20px">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(180,210,215,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(180,210,215,0.2);">
+        <span style="font-size:32px;">&#127919;</span>
+      </div>
     </mj-text>
-    <mj-text align="center" font-size="18px" color="#576039" padding-bottom="32px">
-      Hi {{ first_name }}, we're excited to have you join our practitioner community
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="400" letter-spacing="3px" color="#b4d0d7" text-transform="uppercase" padding-bottom="8px">
+      Welcome, Practitioner
+    </mj-text>
+    <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
+      Your Practice<br/><em style="font-weight:400;">Starts Here</em>
+    </mj-text>
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
+      Hi {{ first_name }}, we're excited to have you join our practitioner community.
     </mj-text>
   </mj-column>
 </mj-section>
 
-<!-- Main Message -->
-<mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="40px 32px">
-  <mj-column>
-    <mj-text font-size="16px" line-height="1.7" color="#576039" padding-bottom="20px">
-      Congratulations on taking this step! You're now part of a vibrant community of wellness practitioners who are transforming lives every day.
-    </mj-text>
+<!-- White Body -->
+<mj-wrapper background-color="#ffffff" padding="0">
 
-    <mj-text font-size="16px" line-height="1.7" color="#576039" padding-bottom="32px">
-      Let's get you set up for success:
-    </mj-text>
+  <!-- Intro Text -->
+  <mj-section padding="44px 48px 32px">
+    <mj-column>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="26px" color="#5a5a5a">
+        Congratulations on taking this step! You're now part of a vibrant community of wellness practitioners who are transforming lives every day. Let's get you set up for success.
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-    <!-- Getting Started Steps -->
-    <mj-text padding-bottom="16px">
-      <span style="display: inline-block; width: 40px; height: 40px; background-color: #61704d; border-radius: 50%; text-align: center; line-height: 40px; color: #f6f7f5; font-weight: 700; margin-right: 12px;">1</span>
-      <span style="font-weight: 600; color: #3c412a; font-size: 18px;">Complete Your Profile</span><br/>
-      <span style="margin-left: 52px; color: #576039;">Tell clients about your expertise, certifications, and approach</span>
-    </mj-text>
+  <!-- 3 Steps -->
+  <mj-section padding="0 28px 8px">
+    <mj-column>
+      <mj-text align="center" padding-bottom="14px">
+        <div style="width:56px;height:56px;border-radius:50%;background-color:#e6edf3;margin:0 auto;line-height:56px;text-align:center;">
+          <span style="font-size:24px;">&#128100;</span>
+        </div>
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+        Step 1
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+        Complete Your Profile
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+        Tell clients about your expertise, certifications, and approach.
+      </mj-text>
+    </mj-column>
+    <mj-column>
+      <mj-text align="center" padding-bottom="14px">
+        <div style="width:56px;height:56px;border-radius:50%;background-color:#eef3e6;margin:0 auto;line-height:56px;text-align:center;">
+          <span style="font-size:24px;">&#128218;</span>
+        </div>
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+        Step 2
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+        Create Your Services
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+        Set up sessions, workshops, or courses with your pricing.
+      </mj-text>
+    </mj-column>
+    <mj-column>
+      <mj-text align="center" padding-bottom="14px">
+        <div style="width:56px;height:56px;border-radius:50%;background-color:#f3ede6;margin:0 auto;line-height:56px;text-align:center;">
+          <span style="font-size:24px;">&#128197;</span>
+        </div>
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+        Step 3
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+        Set Your Availability
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+        Let clients know when you're available for bookings.
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-    <mj-text padding-bottom="16px">
-      <span style="display: inline-block; width: 40px; height: 40px; background-color: #61704d; border-radius: 50%; text-align: center; line-height: 40px; color: #f6f7f5; font-weight: 700; margin-right: 12px;">2</span>
-      <span style="font-weight: 600; color: #3c412a; font-size: 18px;">Create Your Services</span><br/>
-      <span style="margin-left: 52px; color: #576039;">Set up sessions, workshops, or courses with your pricing</span>
-    </mj-text>
+  <!-- CTA Button -->
+  <mj-section padding="28px 40px 44px">
+    <mj-column>
+      <mj-button href="{{ WEBSITE_URL }}/dashboard/practitioner/profile">
+        Complete Your Profile
+      </mj-button>
+    </mj-column>
+  </mj-section>
 
-    <mj-text padding-bottom="32px">
-      <span style="display: inline-block; width: 40px; height: 40px; background-color: #61704d; border-radius: 50%; text-align: center; line-height: 40px; color: #f6f7f5; font-weight: 700; margin-right: 12px;">3</span>
-      <span style="font-weight: 600; color: #3c412a; font-size: 18px;">Set Your Availability</span><br/>
-      <span style="margin-left: 52px; color: #576039;">Let clients know when you're available for bookings</span>
-    </mj-text>
+  <!-- Divider -->
+  <mj-section padding="0 48px">
+    <mj-column>
+      <mj-divider border-color="#e8e2db" border-width="1px" padding="0" />
+    </mj-column>
+  </mj-section>
 
-    <!-- CTA -->
-    {% include 'emails/components/button.mjml' with button_text="Complete Your Profile" button_url=WEBSITE_URL|add:"/dashboard/practitioner/profile" %}
-  </mj-column>
-</mj-section>
+  <!-- Commission Info Callout -->
+  <mj-section padding="40px 48px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="28px">
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        Transparent Pricing
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="24px" font-weight="400" color="#2d3b2d" padding-bottom="14px">
+        Simple <em>Commission</em>
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="22px" color="#7a7a7a" padding-bottom="6px">
+        <strong style="color:#2d3b2d;">5% commission</strong> on all bookings (that's it!)
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="22px" color="#7a7a7a" padding-bottom="6px">
+        <strong style="color:#2d3b2d;">Weekly payouts</strong> automatically or request anytime
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="22px" color="#7a7a7a">
+        <strong style="color:#2d3b2d;">Full transparency</strong> - track every booking and earning in real-time
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-<!-- Commission Info -->
-<mj-section background-color="#e8ebe6" border-radius="12px" border="1px solid #d3d9cc" padding="32px">
-  <mj-column>
-    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="16px">
-      Simple, Transparent Pricing
-    </mj-text>
+  <!-- Resources -->
+  <mj-section padding="0 48px 32px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="28px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        Resources
+      </mj-text>
+      <mj-text font-family="'Cormorant Garamond', Georgia, serif" font-size="22px" font-weight="500" color="#2d3b2d" padding-bottom="14px">
+        Helpful Links
+      </mj-text>
+      <mj-text padding-bottom="8px">
+        <a href="{{ WEBSITE_URL }}/practitioner-guide" style="font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:1px;">Practitioner Success Guide &#8594;</a>
+      </mj-text>
+      <mj-text padding-bottom="8px">
+        <a href="{{ WEBSITE_URL }}/help/practitioners" style="font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:1px;">Help Center for Practitioners &#8594;</a>
+      </mj-text>
+      <mj-text>
+        <a href="{{ WEBSITE_URL }}/community" style="font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:1px;">Join Our Practitioner Community &#8594;</a>
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-    <mj-text font-size="14px" line-height="1.7" color="#576039" padding-bottom="12px">
-      <strong>5% commission</strong> on all bookings (that's it!)
-    </mj-text>
+  <!-- Support -->
+  <mj-section padding="0 48px 32px">
+    <mj-column>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" color="#7a7a7a" line-height="21px">
+        Have questions? We're here to help you succeed.<br/>
+        <a href="mailto:{{ SUPPORT_EMAIL }}" style="font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:1px;">Contact Support</a>
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-    <mj-text font-size="14px" line-height="1.7" color="#576039" padding-bottom="12px">
-      <strong>Weekly payouts</strong> automatically or request anytime
-    </mj-text>
-
-    <mj-text font-size="14px" line-height="1.7" color="#576039">
-      <strong>Full transparency</strong> - track every booking and earning in real-time
-    </mj-text>
-  </mj-column>
-</mj-section>
-
-<!-- Resources -->
-<mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="32px">
-  <mj-column>
-    <mj-text font-size="18px" font-weight="700" color="#3c412a" padding-bottom="16px">
-      Helpful Resources
-    </mj-text>
-
-    <mj-text padding-bottom="8px">
-      <a href="{{ WEBSITE_URL }}/practitioner-guide" style="color: #61704d; text-decoration: none; font-weight: 600;">Practitioner Success Guide</a>
-    </mj-text>
-
-    <mj-text padding-bottom="8px">
-      <a href="{{ WEBSITE_URL }}/help/practitioners" style="color: #61704d; text-decoration: none; font-weight: 600;">Help Center for Practitioners</a>
-    </mj-text>
-
-    <mj-text padding-bottom="8px">
-      <a href="{{ WEBSITE_URL }}/community" style="color: #61704d; text-decoration: none; font-weight: 600;">Join Our Practitioner Community</a>
-    </mj-text>
-  </mj-column>
-</mj-section>
-
-<!-- Support -->
-<mj-section padding="32px 0">
-  <mj-column>
-    <mj-text align="center" font-size="14px" color="#95a57f">
-      Have questions? We're here to help you succeed.<br/>
-      <a href="mailto:{{ SUPPORT_EMAIL }}" style="color: #61704d; font-weight: 600;">Contact Support</a>
-    </mj-text>
-  </mj-column>
-</mj-section>
+</mj-wrapper>
 {% endblock %}

@@ -125,7 +125,7 @@ export default function PractitionerFlowTabs() {
 
   const handleJoinSession = (booking: BookingListReadable) => {
     // In the future, this could open a video call or redirect to session details
-    router.push(`/dashboard/practitioner/bookings/${booking.id}`)
+    router.push(`/dashboard/practitioner/bookings/${booking.public_uuid || booking.id}`)
   }
 
   const EmptyState = ({ message }: { message: string }) => (

@@ -1,75 +1,114 @@
 <mjml>
   <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" />
+    <mj-font name="Cormorant Garamond" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
+      <mj-text font-size="15px" line-height="1.6" color="#5a5a5a" />
+      <mj-section background-color="transparent" padding="0" />
+      <mj-button background-color="#2d3b2d" color="#ffffff" font-weight="500" border-radius="50px" padding="14px 36px" font-size="12px" letter-spacing="1.5px" text-transform="uppercase" font-family="'DM Sans', Helvetica, sans-serif" />
     </mj-attributes>
   </mj-head>
 
-  <mj-body background-color="#f5f2ed">
+  <mj-body background-color="#f5f0eb">
     <!-- Header -->
-    <mj-section background-color="#3c412a" padding="16px 36px">
+    <mj-section padding="32px 40px 24px">
       <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="500" letter-spacing="6px" color="#2d3b2d" text-transform="uppercase" padding-bottom="10px">
           ESTUARY
         </mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">
-          Verification
-        </mj-text>
+        <mj-divider border-color="#8fa88f" border-width="1px" width="40px" padding="0" />
       </mj-column>
     </mj-section>
 
     <!-- Hero -->
-    <mj-section background-color="#474e31" padding="40px 36px">
+    <mj-section background-color="#2d3b2d" border-radius="16px 16px 0 0" padding="56px 48px 48px">
       <mj-column>
-        <mj-text align="center" font-size="24px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
-          Verify Your Email
+        <mj-text align="center" padding-bottom="20px">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(200,215,180,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(200,215,180,0.2);">
+            <span style="font-size:32px;">&#9993;</span>
+          </div>
         </mj-text>
-        <mj-text align="center" font-size="14px" color="#95a57f">
-          One quick step to get started
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="400" letter-spacing="3px" color="#c8d7b4" text-transform="uppercase" padding-bottom="8px">
+          Email Verification
+        </mj-text>
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
+          Verify Your<br/><em style="font-weight:400;">Email Address</em>
+        </mj-text>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
+          One quick step to get started on your wellness journey.
         </mj-text>
       </mj-column>
     </mj-section>
 
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="28px 24px">
+    <!-- White Body -->
+    <mj-wrapper background-color="#ffffff" padding="0">
+
+      <!-- Greeting + Message -->
+      <mj-section padding="44px 48px 32px">
         <mj-column>
-          <mj:text font-size="16px" line-height="1.7" padding-bottom="20px">
-            Hi {{ user.first_name }},
-          </mj:text>
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="32px">
-            Thanks for signing up with ESTUARY! Please verify your email address to complete your account setup and start your wellness journey.
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="26px" color="#5a5a5a">
+            Hi {{ user.first_name }}, thanks for signing up with ESTUARY! Please verify your email address to complete your account setup and start your wellness journey.
           </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- CTA Button -->
+      <mj-section padding="8px 40px 20px">
+        <mj-column>
           <mj-button href="{{ verification_url }}">
             Verify Email Address
           </mj-button>
-          <mj-text font-size="14px" color="#95a57f" padding-top="24px" align="center">
+        </mj-column>
+      </mj-section>
+
+      <!-- Expiry Notice -->
+      <mj-section padding="0 48px 32px">
+        <mj-column>
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase">
             This link expires in 24 hours
           </mj-text>
         </mj-column>
       </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="13px 16px">
+      <!-- Divider -->
+      <mj-section padding="0 48px">
         <mj-column>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
+          <mj-divider border-color="#e8e2db" border-width="1px" padding="0" />
+        </mj-column>
+      </mj-section>
+
+      <!-- Disclaimer Callout -->
+      <mj-section padding="32px 48px 40px">
+        <mj-column background-color="#faf8f5" border-radius="12px" border="1px solid #e8e2db" padding="24px">
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="21px" color="#7a7a7a">
             If you didn't create an account, you can safely ignore this email.
           </mj-text>
         </mj-column>
       </mj-section>
+
     </mj-wrapper>
 
     <!-- Footer -->
-    <mj-section background-color="#3c412a" padding="28px 24px 12px">
+    <mj-section background-color="#2d3b2d" border-radius="0 0 16px 16px" padding="36px 40px 28px">
       <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="20px" font-weight="500" letter-spacing="4px" color="#c8d7b4" text-transform="uppercase" padding-bottom="6px">
           ESTUARY
         </mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">
-          © {{ YEAR }} ESTUARY. All rights reserved.
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="rgba(200,215,180,0.6)" line-height="18px" padding-bottom="20px">
+          Your sanctuary for wellness, growth, and meaningful connections.
+        </mj-text>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" letter-spacing="1px" padding-bottom="20px">
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.MARKETPLACE }}" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Marketplace</a><span style="color:rgba(200,215,180,0.3);">&middot;</span>
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">About</a><span style="color:rgba(200,215,180,0.3);">&middot;</span>
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Help</a>
+        </mj-text>
+        <mj-divider border-color="rgba(200,215,180,0.15)" border-width="1px" width="40px" padding="0 0 20px 0" />
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" font-weight="300" color="rgba(200,215,180,0.35)" line-height="18px" padding-bottom="6px">
+          &copy; {{ YEAR }} ESTUARY. All rights reserved.
+        </mj-text>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" font-weight="300" color="rgba(200,215,180,0.35)">
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
         </mj-text>
       </mj-column>
     </mj-section>

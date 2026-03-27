@@ -2,38 +2,35 @@
 <!-- Usage: {% include 'emails/components/practitioner_card.mjml' %} -->
 <!-- Requires: practitioner in context -->
 
-<mj-section background-color="#e8ebe6" border-radius="12px" padding="20px">
-  <mj-column width="80px" vertical-align="middle">
-    {% if practitioner.profile_image_url %}
-    <mj-image
-      src="{{ practitioner.profile_image_url }}"
-      alt="{{ practitioner.display_name }}"
-      width="64px"
-      height="64px"
-      border-radius="32px"
-    />
-    {% else %}
-    <mj-image
-      src="{{ WEBSITE_URL }}/static/default-avatar.png"
-      alt="{{ practitioner.display_name }}"
-      width="64px"
-      height="64px"
-      border-radius="32px"
-    />
-    {% endif %}
-  </mj-column>
-
-  <mj-column width="420px" vertical-align="middle">
-    <mj-text font-size="18px" font-weight="600" color="#3c412a" padding="0">
-      {{ practitioner.display_name }}
+<mj-section padding="0">
+  <mj-column>
+    <mj-text padding="0">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1.5px solid #e8e2db;border-radius:12px;overflow:hidden;">
+        <tr><td style="padding:20px 24px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <!-- Avatar -->
+              <td style="vertical-align:middle;width:56px;">
+                {% if practitioner.profile_image_url %}
+                <img src="{{ practitioner.profile_image_url }}" alt="{{ practitioner.display_name }}" width="48" height="48" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;" />
+                {% else %}
+                <img src="{{ WEBSITE_URL }}/static/default-avatar.png" alt="{{ practitioner.display_name }}" width="48" height="48" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;" />
+                {% endif %}
+              </td>
+              <!-- Name & Specializations -->
+              <td style="vertical-align:middle;padding-left:16px;">
+                <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#8fa88f;text-transform:uppercase;letter-spacing:1px;">Practitioner</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:16px;font-weight:500;color:#2d3b2d;">{{ practitioner.display_name }}</p>
+                {% if practitioner.specializations.all %}
+                <p style="margin:4px 0 0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:300;color:#5a5a5a;">
+                  {% for spec in practitioner.specializations.all|slice:":3" %}{{ spec.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </p>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
     </mj-text>
-
-    {% if practitioner.specializations.all %}
-    <mj-text font-size="14px" color="#576039" padding="4px 0 0 0">
-      {% for spec in practitioner.specializations.all|slice:":3" %}
-        {{ spec.name }}{% if not forloop.last %}, {% endif %}
-      {% endfor %}
-    </mj-text>
-    {% endif %}
   </mj-column>
 </mj-section>
