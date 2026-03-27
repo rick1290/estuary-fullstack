@@ -22,6 +22,7 @@ import {
   CheckCircle,
   MessageSquare,
   Film,
+  FileText,
   Star,
   ExternalLink,
 } from "lucide-react"
@@ -522,6 +523,46 @@ export default function SessionDelivery({
                       </div>
                     )
                   )}
+                </div>
+              )}
+
+            {/* Resources — completed only */}
+            {sessionState === "completed" &&
+              (effectiveBooking as any).resources &&
+              Array.isArray((effectiveBooking as any).resources) &&
+              (effectiveBooking as any).resources.length > 0 && (
+                <div>
+                  <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                    Resources & Materials
+                  </h2>
+                  <div className="space-y-2">
+                    {(effectiveBooking as any).resources.map(
+                      (resource: any, i: number) => (
+                        <div
+                          key={resource?.id ?? i}
+                          className="flex items-center gap-4 p-4 bg-white border border-sage-200/60 rounded-xl hover:border-sage-300 transition cursor-pointer"
+                          onClick={() => {
+                            if (resource?.file_url)
+                              window.open(resource.file_url, "_blank")
+                            else if (resource?.external_url)
+                              window.open(resource.external_url, "_blank")
+                          }}
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-sage-50 flex items-center justify-center text-sage-600">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-[14px] font-medium text-olive-900">
+                              {resource.title ?? "Resource"}
+                            </div>
+                            <div className="text-[12px] text-olive-400">
+                              {resource.description ?? ""}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               )}
 

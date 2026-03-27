@@ -176,6 +176,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     reminders = BookingReminderSerializer(many=True, read_only=True)
     notes = BookingNoteSerializer(many=True, read_only=True)
     recordings = serializers.SerializerMethodField(read_only=True)
+    resources = serializers.SerializerMethodField(read_only=True)
 
     # Computed fields
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -219,7 +220,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'is_individual_session', 'is_group_session', 'is_package_booking', 'is_course_booking',
             'is_parent_booking', 'related_bookings',
             'has_review', 'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
-            'recordings', 'created_at', 'updated_at'
+            'recordings', 'resources', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'public_uuid',
@@ -267,6 +268,20 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         # Return only processed recordings
         recordings = room.recordings.filter(is_processed=True).order_by('-started_at')
         return RoomRecordingSerializer(recordings, many=True).data
+
+    def get_resources(self, obj):
+        """Get resources for this booking's service/session"""
+        from services.models import ServiceResource
+        from django.db.models import Q
+
+        resources = ServiceResource.objects.none()
+        if obj.service:
+            q = Q(service=obj.service, attachment_level='service')
+            if obj.service_session:
+                q |= Q(service_session=obj.service_session, attachment_level='session')
+            resources = ServiceResource.objects.filter(q).order_by('order', 'created_at')
+
+        return list(resources.values('id', 'title', 'description', 'resource_type', 'file_url', 'external_url', 'is_downloadable'))
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
