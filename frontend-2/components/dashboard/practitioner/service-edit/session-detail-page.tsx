@@ -329,14 +329,14 @@ export function SessionDetailPage({
                               <div className="flex items-center gap-3 flex-wrap">
                                 <div className="flex items-center gap-2 text-xs">
                                   <span className="text-muted-foreground">
-                                    {recording.is_visible_to_participants ? 'Visible' : 'Hidden'}
+                                    {recording.is_available ? 'Visible' : 'Hidden'}
                                   </span>
                                   <Switch
-                                    checked={recording.is_visible_to_participants}
+                                    checked={recording.is_available}
                                     onCheckedChange={(checked) => {
                                       updateRecordingMutation.mutate({
                                         path: { id: recording.id },
-                                        body: { is_visible_to_participants: checked }
+                                        body: { is_available: checked }
                                       })
                                     }}
                                   />

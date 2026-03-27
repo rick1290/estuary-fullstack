@@ -883,6 +883,31 @@ class JourneyViewSet(GenericViewSet):
                 continue
             if ss:
                 seen_session_ids.add(ss.id)
+            # Get recordings for this session's room
+            _recordings = []
+            _room = None
+            if hasattr(b, 'livekit_room') and b.livekit_room:
+                _room = b.livekit_room
+            elif ss and hasattr(ss, 'livekit_room') and ss.livekit_room:
+                _room = ss.livekit_room
+            if _room:
+                from rooms.api.v1.serializers import RoomRecordingSerializer
+                _recs = _room.recordings.filter(is_processed=True, is_available=True).order_by('-started_at')
+                _recordings = RoomRecordingSerializer(_recs, many=True).data
+
+            # Get resources for this session
+            _resources = []
+            if ss:
+                from services.models import ServiceResource
+                _res_qs = ServiceResource.objects.filter(
+                    Q(service=service, attachment_level='service') |
+                    Q(service_session=ss, attachment_level='session')
+                ).filter(
+                    Q(access_level__in=['public', 'enrolled']) |
+                    Q(access_level='completed', service_session__status='completed')
+                ).order_by('order', 'created_at')
+                _resources = list(_res_qs.values('id', 'title', 'description', 'resource_type', 'file_url', 'external_url', 'is_downloadable'))
+
             sessions.append({
                 'booking_uuid': str(b.public_uuid),
                 'booking_status': b.status,
@@ -901,6 +926,8 @@ class JourneyViewSet(GenericViewSet):
                 'what_youll_learn': getattr(ss, 'what_youll_learn', None) if ss else None,
                 'max_participants': ss.max_participants if ss else None,
                 'current_participants': ss.current_participants if ss else None,
+                'recordings': _recordings,
+                'resources': _resources,
             })
 
         total = len(sessions)
