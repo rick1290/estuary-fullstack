@@ -1,84 +1,115 @@
 {% extends "emails/base.mjml" %}
 
 {% block content %}
-<!-- Confirmation Hero -->
-<mj-section padding="48px 0 32px">
+<!-- Hero -->
+<mj-section background-color="#2d3b2d" border-radius="16px 16px 0 0" padding="56px 48px 48px">
   <mj-column>
-    <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="16px">
-      Booking Confirmed!
+    <mj-text align="center" padding-bottom="20px">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(200,215,180,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(200,215,180,0.2);">
+        <span style="font-size:32px;">&#9989;</span>
+      </div>
     </mj-text>
-    <mj-text align="center" font-size="16px" color="#576039">
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="400" letter-spacing="3px" color="#c8d7b4" text-transform="uppercase" padding-bottom="8px">
+      Booking Confirmed
+    </mj-text>
+    <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
+      You're All Set
+    </mj-text>
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
       We've sent your booking details to {{ practitioner.display_name }}
     </mj-text>
   </mj-column>
 </mj-section>
 
-<!-- Practitioner Info -->
-{% include 'emails/components/practitioner_card.mjml' %}
+<!-- White Body -->
+<mj-wrapper background-color="#ffffff" padding="0">
 
-<!-- Spacing -->
-<mj-section padding="16px 0">
-  <mj-column></mj-column>
-</mj-section>
+  <!-- Practitioner Info -->
+  <mj-section padding="32px 48px 0">
+    <mj-column>
+      {% include 'emails/components/practitioner_card.mjml' %}
+    </mj-column>
+  </mj-section>
 
-<!-- Booking Details Card -->
-{% include 'emails/components/booking_card.mjml' %}
+  <!-- Booking Details Card -->
+  <mj-section padding="24px 48px 0">
+    <mj-column>
+      {% include 'emails/components/booking_card.mjml' %}
+    </mj-column>
+  </mj-section>
 
-<!-- What's Next Section -->
-<mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="32px" css-class="card">
-  <mj-column>
-    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="20px">
-      What's Next?
-    </mj-text>
+  <!-- What's Next Section -->
+  <mj-section padding="24px 48px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="28px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        What Happens Next
+      </mj-text>
+      <mj-text font-family="'Cormorant Garamond', Georgia, serif" font-size="22px" font-weight="500" color="#2d3b2d" padding-bottom="16px">
+        Preparing for Your Session
+      </mj-text>
 
-    <mj-text font-size="14px" line-height="1.6" color="#576039" padding-bottom="12px">
-      <strong>24-hour reminder:</strong> We'll send you a reminder the day before your session
-    </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="10px">
+        <strong style="color:#2d3b2d;">24-hour reminder:</strong> We'll send you a reminder the day before your session
+      </mj-text>
 
-    <mj-text font-size="14px" line-height="1.6" color="#576039" padding-bottom="12px">
-      <strong>30-minute reminder:</strong> You'll get another reminder 30 minutes before
-    </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="10px">
+        <strong style="color:#2d3b2d;">30-minute reminder:</strong> You'll get another reminder 30 minutes before
+      </mj-text>
 
-    {% if service.location_type == 'virtual' %}
-    <mj-text font-size="14px" line-height="1.6" color="#576039" padding-bottom="20px">
-      <strong>Join link:</strong> You'll receive the video call link in your reminder emails
-    </mj-text>
-    {% else %}
-    <mj-text font-size="14px" line-height="1.6" color="#576039" padding-bottom="20px">
-      <strong>Location details:</strong> Please arrive 5 minutes early
-    </mj-text>
-    {% endif %}
+      {% if service.location_type == 'virtual' %}
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="10px">
+        <strong style="color:#2d3b2d;">Join link:</strong> You'll receive the video call link in your reminder emails
+      </mj-text>
+      {% else %}
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="10px">
+        <strong style="color:#2d3b2d;">Location details:</strong> Please arrive 5 minutes early
+      </mj-text>
+      {% endif %}
+    </mj-column>
+  </mj-section>
 
-    <!-- CTA Buttons -->
-    {% include 'emails/components/button.mjml' with button_text="View Booking" button_url=WEBSITE_URL|add:"/dashboard/bookings/"|add:booking.id %}
+  <!-- CTA -->
+  <mj-section padding="8px 40px 20px">
+    <mj-column>
+      <mj-button href="{{ WEBSITE_URL }}/dashboard/user/bookings/{{ booking.public_uuid }}">
+        View Booking
+      </mj-button>
+      <mj-text align="center" padding-top="14px">
+        <a href="{{ WEBSITE_URL }}/dashboard/user/bookings/{{ booking.public_uuid }}/reschedule" style="font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:2px;">Need to reschedule? &#8594;</a>
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-    <mj-text align="center" padding-top="16px">
-      <a href="{{ WEBSITE_URL }}/dashboard/bookings/{{ booking.id }}/reschedule" style="color: #61704d; font-size: 14px;">Need to reschedule?</a>
-    </mj-text>
-  </mj-column>
-</mj-section>
+  <!-- Client Note (if any) -->
+  {% if booking.special_requests %}
+  <mj-section padding="0 48px 32px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="24px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        Your Note to Practitioner
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a">
+        {{ booking.special_requests }}
+      </mj-text>
+    </mj-column>
+  </mj-section>
+  {% endif %}
 
-<!-- Preparation Tip -->
-{% if booking.special_requests %}
-<mj-section background-color="#e8ebe6" border-radius="12px" border="1px solid #d3d9cc" padding="24px 28px">
-  <mj-column>
-    <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">
-      Your Note to Practitioner
-    </mj-text>
-    <mj-text font-size="14px" line-height="1.6" color="#576039">
-      {{ booking.special_requests }}
-    </mj-text>
-  </mj-column>
-</mj-section>
-{% endif %}
+  <!-- Divider -->
+  <mj-section padding="0 48px">
+    <mj-column>
+      <mj-divider border-color="#e8e2db" border-width="1px" padding="0" />
+    </mj-column>
+  </mj-section>
 
-<!-- Support -->
-<mj-section padding="32px 0">
-  <mj-column>
-    <mj-text align="center" font-size="14px" color="#95a57f">
-      Questions about your booking?<br/>
-      <a href="mailto:{{ SUPPORT_EMAIL }}" style="color: #61704d; font-weight: 600;">Contact Support</a>
-    </mj-text>
-  </mj-column>
-</mj-section>
+  <!-- Support -->
+  <mj-section padding="32px 48px">
+    <mj-column>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" color="#7a7a7a" line-height="21px">
+        Questions about your booking?<br/>
+        <a href="mailto:{{ SUPPORT_EMAIL }}" style="font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:1px;">Contact Support</a>
+      </mj-text>
+    </mj-column>
+  </mj-section>
+
+</mj-wrapper>
 {% endblock %}

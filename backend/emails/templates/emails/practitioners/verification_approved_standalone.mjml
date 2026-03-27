@@ -1,75 +1,181 @@
 <mjml>
   <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" />
+    <mj-font name="Cormorant Garamond" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
+      <mj-text font-size="14px" line-height="1.6" color="#5a5a5a" />
+      <mj-button background-color="#2d3b2d" color="#ffffff" font-weight="500" border-radius="50px" padding="14px 36px" font-size="13px" letter-spacing="1.5px" text-transform="uppercase" />
     </mj-attributes>
+    <mj-style>
+      .hero-section td { background: linear-gradient(160deg, #1a2a3a 0%, #2a4a5a 40%, #3a6070 70%, #4a7585 100%) !important; }
+    </mj-style>
   </mj-head>
 
-  <mj-body background-color="#f5f2ed">
-    <mj-section background-color="#3c412a" padding="16px 36px">
+  <mj-body background-color="#f5f0eb">
+    <!-- HEADER -->
+    <mj-section padding="32px 40px 24px">
       <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">ESTUARY</mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">Approved</mj-text>
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="500" letter-spacing="6px" color="#2d3b2d" text-transform="uppercase" padding-bottom="0">ESTUARY</mj-text>
+        <mj-divider border-width="1px" border-color="#8fa88f" width="40px" padding-top="10px" padding-bottom="0" />
       </mj-column>
     </mj-section>
 
-    <mj-section background-color="#474e31" padding="40px 36px">
+    <!-- HERO -->
+    <mj-section css-class="hero-section" background-color="#1a2a3a" border-radius="16px 16px 0 0" padding="56px 48px 48px">
       <mj-column>
-        <mj-text align="center" font-size="22px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
-          Congratulations!
+        <mj-text align="center" padding-bottom="20px">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(180,210,220,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(180,210,220,0.2);">
+            <span style="font-size:32px;">&#x2705;</span>
+          </div>
         </mj-text>
-        <mj-text align="center" font-size="13px" color="#95a57f">Your practitioner profile has been approved</mj-text>
+        <mj-text align="center" font-size="12px" font-weight="400" letter-spacing="3px" color="#b4d0d7" text-transform="uppercase" padding-bottom="8px">Profile Approved</mj-text>
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
+          Congratulations,<br/><em style="font-weight:400;">{{ user.first_name }}</em>
+        </mj-text>
+        <mj-text align="center" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
+          Your practitioner profile has been approved
+        </mj-text>
       </mj-column>
     </mj-section>
 
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="28px 24px">
-        <mj-column>
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
-            Hi {{ user.first_name }},
-          </mj-text>
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
-            Great news! Your practitioner profile has been reviewed and <strong style="color: #e8ebe6;">approved</strong>. You're now officially part of the ESTUARY community and can start accepting bookings!
-          </mj-text>
-
-          <mj-text font-size="17px" font-weight="600" color="#576039" padding-bottom="14px">Next Steps:</mj-text>
-
-          <mj-text padding-bottom="12px"><strong>Create your first service</strong> to start receiving bookings</mj-text>
-          <mj-text padding-bottom="12px"><strong>Set your availability</strong> so clients know when to book</mj-text>
-          <mj-text padding-bottom="12px"><strong>Share your profile</strong> with your network</mj-text>
-          <mj-text padding-bottom="32px"><strong>Explore marketing tools</strong> to grow your practice</mj-text>
-
-          <mj-button href="{{ WEBSITE_URL }}/practitioner/dashboard">Go to Dashboard</mj-button>
-        </mj-column>
-      </mj-section>
-
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 28px">
-        <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">Pro Tip</mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
-            Practitioners who create at least 3 services in their first week get 2x more bookings. Diversify your offerings to attract more clients!
-          </mj-text>
-        </mj-column>
-      </mj-section>
-
-      <mj-section padding="32px 0">
-        <mj-column>
-          <mj-text align="center" font-size="14px" color="#95a57f">
-            Need help getting started? <a href="{{ WEBSITE_URL }}/practitioner/help" style="color: #61704d; font-weight: 600;">Visit Help Center</a>
-          </mj-text>
-        </mj-column>
-      </mj-section>
-    </mj-wrapper>
-
-    <mj-section background-color="#3c412a" padding="24px 36px">
+    <!-- WHITE BODY -->
+    <mj-section background-color="#ffffff" padding="44px 48px 8px">
       <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">ESTUARY</mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">© {{ YEAR }} ESTUARY. All rights reserved.</mj-text>
+        <mj-text align="center" font-size="11px" font-weight="500" letter-spacing="3px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">Welcome Aboard</mj-text>
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="28px" font-weight="400" color="#2d3b2d" padding-bottom="28px">You're Officially <em>Part of Estuary</em></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="0 48px 12px">
+      <mj-column>
+        <mj-text font-size="14px" font-weight="300" line-height="24px" color="#5a5a5a" padding-bottom="24px">
+          Great news! Your practitioner profile has been reviewed and <strong style="color:#2d3b2d;">approved</strong>. You're now officially part of the Estuary community and can start accepting bookings.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Next Steps Section Header -->
+    <mj-section background-color="#ffffff" padding="0 48px 16px">
+      <mj-column>
+        <mj-text align="center" font-size="11px" font-weight="500" letter-spacing="3px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">Next Steps</mj-text>
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="24px" font-weight="400" color="#2d3b2d" padding-bottom="20px">Get <em>Started</em></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Step 1 -->
+    <mj-section background-color="#ffffff" padding="0 48px 16px">
+      <mj-column>
+        <mj-text padding="0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#faf8f5;border-radius:10px;">
+            <tr>
+              <td style="padding:20px;width:44px;vertical-align:top;">
+                <div style="width:44px;height:44px;border-radius:10px;background-color:#eef3e6;text-align:center;line-height:44px;font-family:'DM Sans',Helvetica,sans-serif;font-size:16px;font-weight:500;color:#2d3b2d;">1</div>
+              </td>
+              <td style="padding:20px 20px 20px 0;vertical-align:top;">
+                <p style="margin:0 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:500;color:#2d3b2d;">Create Your First Service</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:300;color:#7a7a7a;line-height:20px;">Start receiving bookings by adding a session, workshop, or course</p>
+              </td>
+            </tr>
+          </table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Step 2 -->
+    <mj-section background-color="#ffffff" padding="0 48px 16px">
+      <mj-column>
+        <mj-text padding="0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#faf8f5;border-radius:10px;">
+            <tr>
+              <td style="padding:20px;width:44px;vertical-align:top;">
+                <div style="width:44px;height:44px;border-radius:10px;background-color:#e6edf3;text-align:center;line-height:44px;font-family:'DM Sans',Helvetica,sans-serif;font-size:16px;font-weight:500;color:#2d3b2d;">2</div>
+              </td>
+              <td style="padding:20px 20px 20px 0;vertical-align:top;">
+                <p style="margin:0 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:500;color:#2d3b2d;">Set Your Availability</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:300;color:#7a7a7a;line-height:20px;">Let clients know when they can book with you</p>
+              </td>
+            </tr>
+          </table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Step 3 -->
+    <mj-section background-color="#ffffff" padding="0 48px 16px">
+      <mj-column>
+        <mj-text padding="0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#faf8f5;border-radius:10px;">
+            <tr>
+              <td style="padding:20px;width:44px;vertical-align:top;">
+                <div style="width:44px;height:44px;border-radius:10px;background-color:#f3ede6;text-align:center;line-height:44px;font-family:'DM Sans',Helvetica,sans-serif;font-size:16px;font-weight:500;color:#2d3b2d;">3</div>
+              </td>
+              <td style="padding:20px 20px 20px 0;vertical-align:top;">
+                <p style="margin:0 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:500;color:#2d3b2d;">Share Your Profile</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:300;color:#7a7a7a;line-height:20px;">Spread the word with your network and start growing your practice</p>
+              </td>
+            </tr>
+          </table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- CTA Button -->
+    <mj-section background-color="#ffffff" padding="28px 40px 44px">
+      <mj-column>
+        <mj-button href="{{ WEBSITE_URL }}/practitioner/dashboard">Go to Dashboard</mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Divider -->
+    <mj-section background-color="#ffffff" padding="0 48px">
+      <mj-column>
+        <mj-divider border-width="1px" border-color="#e8e2db" padding="0" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Pro Tip Card -->
+    <mj-section background-color="#ffffff" padding="32px 48px 40px">
+      <mj-column>
+        <mj-text padding="0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1px solid #e8e2db;border-radius:12px;">
+            <tr><td style="padding:24px;">
+              <p style="margin:0 0 4px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:500;letter-spacing:2px;color:#8fa88f;text-transform:uppercase;">Pro Tip</p>
+              <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;color:#5a5a5a;line-height:22px;">Practitioners who create at least 3 services in their first week get 2x more bookings. Diversify your offerings to attract more clients!</p>
+            </td></tr>
+          </table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Help Link -->
+    <mj-section background-color="#ffffff" padding="0 48px 40px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" font-weight="300" color="#5a5a5a">
+          Need help getting started? <a href="{{ WEBSITE_URL }}/practitioner/help" style="color:#2d3b2d;font-weight:500;text-decoration:underline;">Visit Help Center</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- FOOTER -->
+    <mj-section background-color="#2d3b2d" border-radius="0 0 16px 16px" padding="36px 40px 28px">
+      <mj-column>
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="20px" font-weight="500" letter-spacing="4px" color="#c8d7b4" text-transform="uppercase" padding-bottom="6px">ESTUARY</mj-text>
+        <mj-text align="center" font-size="12px" font-weight="300" color="rgba(200,215,180,0.6)" line-height="18px" padding-bottom="20px">Your sanctuary for wellness, growth, and meaningful connections.</mj-text>
+        <mj-text align="center" padding-bottom="0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+            <tr><td style="font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;letter-spacing:1px;">
+              <a href="{{ WEBSITE_URL }}/marketplace" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Marketplace</a><span style="color:rgba(200,215,180,0.3);">&middot;</span>
+              <a href="{{ WEBSITE_URL }}/practitioner/dashboard" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Dashboard</a><span style="color:rgba(200,215,180,0.3);">&middot;</span>
+              <a href="{{ WEBSITE_URL }}/practitioner/help" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Help</a>
+            </td></tr>
+          </table>
+        </mj-text>
+        <mj-divider border-width="1px" border-color="rgba(200,215,180,0.15)" width="40px" padding="20px 0" />
+        <mj-text align="center" font-size="11px" font-weight="300" color="rgba(200,215,180,0.35)" padding-bottom="6px">&copy; {{ YEAR }} Estuary. All rights reserved.</mj-text>
+        <mj-text align="center" font-size="11px" font-weight="300" color="rgba(200,215,180,0.35)" padding="0">
+          <a href="{{ WEBSITE_URL }}/unsubscribe" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="{{ WEBSITE_URL }}/privacy" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
+        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>

@@ -1,133 +1,218 @@
 <mjml>
   <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-font name="Cormorant Garamond" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" />
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-section background-color="#fdfcf8" padding="20px 0" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
+      <mj-text font-size="15px" line-height="1.6" color="#2d3b2d" />
+      <mj-section background-color="transparent" padding="0" />
+      <mj-button background-color="#2d3b2d" color="#ffffff" font-weight="500" border-radius="50px" padding="12px 28px" font-size="12px" letter-spacing="1px" text-transform="uppercase" />
     </mj-attributes>
+    <mj-style>
+      .label { font-family: 'DM Sans', Helvetica, sans-serif; font-size: 11px; font-weight: 400; color: #999; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 1px; }
+      .value { font-family: 'DM Sans', Helvetica, sans-serif; font-size: 15px; font-weight: 500; color: #2d3b2d; margin: 0; }
+    </mj-style>
+    <mj-style inline="inline">
+      .cormorant { font-family: 'Cormorant Garamond', Georgia, serif; }
+    </mj-style>
   </mj-head>
 
-  <mj-body background-color="#f5f2ed">
-    <!-- Header -->
-    <mj-section background-color="#3c412a" padding="16px 36px">
+  <mj-body background-color="#f5f0eb" width="600px">
+
+    <!-- HEADER: Centered wordmark + sage divider -->
+    <mj-section padding="32px 40px 24px">
       <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="500" letter-spacing="6px" color="#2d3b2d" text-transform="uppercase" padding="0">
           ESTUARY
         </mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">
-          Booking confirmation
-        </mj-text>
+        <mj-divider border-width="1px" border-color="#8fa88f" width="40px" padding="10px 0 0" />
       </mj-column>
     </mj-section>
 
-    <!-- Hero -->
-    <mj-section background-color="#474e31" padding="40px 36px">
+    <!-- HERO: Gradient with icon circle -->
+    <mj-section background-color="#2d3b2d" border-radius="16px 16px 0 0" padding="48px 48px 40px" css-class="hero-section">
       <mj-column>
-        <mj-text align="center" font-size="24px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
+        <mj-text align="center" padding="0 0 18px">
+          <div style="width:64px;height:64px;border-radius:50%;background:rgba(200,215,180,0.15);margin:0 auto;line-height:64px;text-align:center;border:2px solid rgba(200,215,180,0.25);">
+            <span style="font-size:28px;">&#10024;</span>
+          </div>
+        </mj-text>
+        <mj-text align="center" font-size="12px" font-weight="400" letter-spacing="3px" color="#c8d7b4" text-transform="uppercase" padding="0 0 6px">
           Booking Confirmed
         </mj-text>
-        <mj-text align="center" font-size="14px" color="#95a57f">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="38px" font-weight="300" line-height="42px" color="#ffffff" padding="0 0 12px">
+          You're All <em style="font-weight:400;">Set</em>
+        </mj-text>
+        <mj-text align="center" font-size="14px" font-weight="300" line-height="22px" color="rgba(255,255,255,0.75)" padding="0">
           Your session is scheduled
         </mj-text>
       </mj-column>
     </mj-section>
 
-    <!-- Content -->
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
+    <!-- WHITE BODY -->
+    <mj-wrapper background-color="#ffffff" padding="0">
+
       <!-- Booking Details Card -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 20px">
+      <mj-section padding="40px 40px 0">
         <mj-column>
-          <mj-text font-size="16px" font-weight="600" color="#576039" padding-bottom="16px">
-            Session Details
+          <mj-text padding="0">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1.5px solid #e8e2db;border-radius:12px;overflow:hidden;">
+              <!-- Card Header -->
+              <tr><td style="background-color:#faf8f5;padding:20px 24px;border-bottom:1px solid #e8e2db;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:500;letter-spacing:2px;color:#8fa88f;text-transform:uppercase;">Session</p>
+                      <p style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:500;color:#2d3b2d;">{{ service_name }}</p>
+                    </td>
+                    <td style="vertical-align:middle;text-align:right;">
+                      <span style="display:inline-block;padding:6px 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:500;letter-spacing:1px;color:#2d6b2d;background-color:#e0f0da;border-radius:50px;text-transform:uppercase;">Confirmed</span>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+
+              <!-- Practitioner -->
+              <tr><td style="padding:20px 24px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                      <span style="font-size:16px;">&#128100;</span>
+                    </td>
+                    <td style="padding:0 0 16px 12px;vertical-align:top;">
+                      <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Practitioner</p>
+                      <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ practitioner_name }}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+              <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
+
+              <!-- Date & Time -->
+              <tr><td style="padding:16px 24px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                      <span style="font-size:16px;">&#128197;</span>
+                    </td>
+                    <td style="padding:0 0 16px 12px;vertical-align:top;">
+                      <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Date &amp; Time</p>
+                      <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ booking_date }} &middot; {{ booking_time }}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+              <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
+
+              <!-- Location -->
+              <tr><td style="padding:16px 24px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                      <span style="font-size:16px;">&#128205;</span>
+                    </td>
+                    <td style="padding:0 0 16px 12px;vertical-align:top;">
+                      <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Location</p>
+                      <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ location }}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+              <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
+
+              <!-- Duration -->
+              <tr><td style="padding:16px 24px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                      <span style="font-size:16px;">&#9201;</span>
+                    </td>
+                    <td style="padding:0 0 16px 12px;vertical-align:top;">
+                      <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Duration</p>
+                      <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ duration_minutes }} min</p>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
           </mj-text>
-
-          <!-- Service Name -->
-          <mj-text font-size="18px" font-weight="600" color="#61704d" padding-bottom="12px">
-            {{ service_name }}
-          </mj-text>
-
-          <!-- Date & Time -->
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Date:</span> {{ booking_date }}
-          </mj-text>
-
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Time:</span> {{ booking_time }} ({{ duration_minutes }} min)
-          </mj-text>
-
-          <!-- Location -->
-          <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #576039;">Location:</span> {{ location }}
-          </mj-text>
-
-          <mj-divider border-color="#d3d9cc" padding="16px 0" />
-
-          <!-- Practitioner -->
-          <mj-text font-size="16px" font-weight="600" color="#576039" padding-bottom="12px">
-            Your Practitioner
-          </mj-text>
-
-          <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #61704d;">{{ practitioner_name }}</span>
-          </mj-text>
-
-          <!-- CTA Button -->
-          {% if has_video_room %}
-          <mj-button href="{{ join_url }}">
-            Join Session
-          </mj-button>
-          {% else %}
-          <mj-button href="{{ booking_url }}">
-            View Booking Details
-          </mj-button>
-          {% endif %}
         </mj-column>
       </mj-section>
 
-      <!-- What to Expect -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="13px 16px">
+      <!-- Action Buttons -->
+      <mj-section padding="28px 40px 0">
         <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">
-            What to Expect
-          </mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
-            Join 5 minutes early to test your connection. You'll receive a reminder 24 hours and 30 minutes before your session.
+          <mj-text align="center" padding="0">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+              <tr>
+                {% if has_video_room %}
+                <td style="padding:0 6px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr><td style="border-radius:50px;background-color:#2d3b2d;">
+                      <a href="{{ join_url }}" style="display:inline-block;padding:12px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#ffffff;text-decoration:none;text-transform:uppercase;">Join Session</a>
+                    </td></tr>
+                  </table>
+                </td>
+                {% endif %}
+                <td style="padding:0 6px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr><td style="border-radius:50px;{% if has_video_room %}border:1.5px solid #2d3b2d;{% else %}background-color:#2d3b2d;{% endif %}">
+                      <a href="{{ WEBSITE_URL }}/dashboard/user/bookings/{{ booking.public_uuid }}" style="display:inline-block;padding:{% if has_video_room %}11px{% else %}12px{% endif %} 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:{% if has_video_room %}#2d3b2d{% else %}#ffffff{% endif %};text-decoration:none;text-transform:uppercase;">View Booking</a>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
           </mj-text>
         </mj-column>
       </mj-section>
 
-      <!-- Calendar Links -->
-      <mj-section padding="32px 0">
+      <!-- Before Your Session Note -->
+      <mj-section padding="32px 48px 40px">
         <mj-column>
-          <mj-text align="center" font-size="14px" color="#95a57f">
-            Add to calendar:
-            <a href="#" style="color: #61704d; font-weight: 600;">Google</a> ·
-            <a href="#" style="color: #61704d; font-weight: 600;">Apple</a> ·
-            <a href="#" style="color: #61704d; font-weight: 600;">Outlook</a>
+          <mj-text padding="0">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#faf8f5;border-radius:12px;border-left:4px solid #c8d7b4;">
+              <tr><td style="padding:20px 24px;">
+                <p style="margin:0 0 6px;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:500;color:#2d3b2d;">Before Your Session</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:300;color:#7a7a7a;line-height:21px;">Join 5 minutes early to test your connection. You'll receive a reminder 24 hours and 30 minutes before your session.</p>
+              </td></tr>
+            </table>
           </mj-text>
         </mj-column>
       </mj-section>
+
+      <!-- Cancellation / Manage -->
+      <mj-section padding="0 48px 40px">
+        <mj-column>
+          <mj-text align="center" font-size="12px" font-weight="300" color="#aaa" line-height="18px" padding="0">
+            Need to reschedule? You can modify your booking up to 24 hours before your session.<br />
+            <a href="{{ WEBSITE_URL }}/dashboard/user/bookings/{{ booking.public_uuid }}" style="color:#8fa88f;text-decoration:underline;">Manage booking</a> &middot; <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:#8fa88f;text-decoration:underline;">Cancellation policy</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
     </mj-wrapper>
 
-    <!-- Footer -->
-    <mj-section background-color="#3c412a" padding="28px 24px 12px">
+    <!-- FOOTER -->
+    <mj-section background-color="#2d3b2d" border-radius="0 0 16px 16px" padding="36px 40px 28px">
       <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="20px" font-weight="500" letter-spacing="4px" color="#c8d7b4" text-transform="uppercase" padding="0 0 6px">
           ESTUARY
         </mj-text>
-        <mj-text align="center" font-size="12px" padding-bottom="12px">
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color: #7a8b63;">About</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #7a8b63;">Help</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color: #7a8b63;">Privacy</a>
+        <mj-text align="center" font-size="12px" font-weight="300" color="rgba(200,215,180,0.6)" line-height="18px" padding="0 0 20px">
+          Your sanctuary for wellness, growth, and meaningful connections.
         </mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">
-          © {{ YEAR }} ESTUARY. All rights reserved.
+        <mj-divider border-width="1px" border-color="rgba(200,215,180,0.15)" width="40px" padding="0 0 20px" />
+        <mj-text align="center" font-size="12px" padding="0 0 12px">
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">About</a> &nbsp;&middot;&nbsp;
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Help</a> &nbsp;&middot;&nbsp;
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
+        </mj-text>
+        <mj-text align="center" color="rgba(200,215,180,0.35)" font-size="11px" font-weight="300" padding="0">
+          &copy; {{ YEAR }} Estuary. All rights reserved.
         </mj-text>
       </mj-column>
     </mj-section>
+
   </mj-body>
 </mjml>

@@ -2,42 +2,99 @@
 <!-- Usage: {% include 'emails/components/booking_card.mjml' %} -->
 <!-- Requires: booking, service in context -->
 
-<mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px">
+<mj-section padding="0">
   <mj-column>
-    <!-- Service Name -->
-    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="16px">
-      {{ service.title }}
-    </mj-text>
+    <mj-text padding="0">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1.5px solid #e8e2db;border-radius:12px;overflow:hidden;">
 
-    <!-- Booking Details -->
-    <mj-text padding-bottom="12px">
-      <span style="color: #576039; font-weight: 600;">📅 Date:</span><br/>
-      <span style="color: #576039;">{{ booking.booking_date|date:"F d, Y" }}</span>
-    </mj-text>
+        <!-- Card Header -->
+        <tr><td style="background-color:#faf8f5;padding:20px 24px;border-bottom:1px solid #e8e2db;">
+          <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:500;letter-spacing:2px;color:#8fa88f;text-transform:uppercase;">{{ service.get_service_type_display|default:"Session" }}</p>
+          <p style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:500;color:#2d3b2d;">{{ service.title }}</p>
+        </td></tr>
 
-    <mj-text padding-bottom="12px">
-      <span style="color: #576039; font-weight: 600;">⏰ Time:</span><br/>
-      <span style="color: #576039;">{{ booking.start_time|time:"g:i A" }} - {{ booking.end_time|time:"g:i A" }}</span>
-    </mj-text>
+        <!-- Date -->
+        <tr><td style="padding:20px 24px 0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                <span style="font-size:16px;">&#128197;</span>
+              </td>
+              <td style="padding:0 0 16px 12px;vertical-align:top;">
+                <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Date</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ booking.booking_date|date:"F d, Y" }}</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
 
-    {% if service.location_type == 'virtual' %}
-    <mj-text padding-bottom="12px">
-      <span style="color: #576039; font-weight: 600;">📍 Location:</span><br/>
-      <span style="color: #576039;">Virtual Session</span>
-    </mj-text>
-    {% elif service.location %}
-    <mj-text padding-bottom="12px">
-      <span style="color: #576039; font-weight: 600;">📍 Location:</span><br/>
-      <span style="color: #576039;">{{ service.location }}</span>
-    </mj-text>
-    {% endif %}
+        <!-- Time -->
+        <tr><td style="padding:16px 24px 0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                <span style="font-size:16px;">&#9201;</span>
+              </td>
+              <td style="padding:0 0 16px 12px;vertical-align:top;">
+                <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Time</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ booking.start_time|time:"g:i A" }} - {{ booking.end_time|time:"g:i A" }}</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
 
-    {% if booking.total_amount %}
-    <mj-divider border-color="#d3d9cc" padding="16px 0" />
-    <mj-text padding-top="8px">
-      <span style="color: #576039; font-weight: 600;">Total:</span>
-      <span style="color: #3c412a; font-size: 18px; font-weight: 700; float: right;">${{ booking.total_amount|floatformat:2 }}</span>
+        <!-- Location -->
+        {% if service.location_type == 'virtual' %}
+        <tr><td style="padding:16px 24px 0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                <span style="font-size:16px;">&#128205;</span>
+              </td>
+              <td style="padding:0 0 16px 12px;vertical-align:top;">
+                <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Location</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">Virtual Session</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
+        {% elif service.location %}
+        <tr><td style="padding:16px 24px 0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding:0 0 16px;vertical-align:top;width:24px;">
+                <span style="font-size:16px;">&#128205;</span>
+              </td>
+              <td style="padding:0 0 16px 12px;vertical-align:top;">
+                <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Location</p>
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ service.location }}</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 24px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
+        {% endif %}
+
+        <!-- Total -->
+        {% if booking.total_amount %}
+        <tr><td style="padding:16px 24px 20px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="vertical-align:middle;">
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Total</p>
+              </td>
+              <td style="vertical-align:middle;text-align:right;">
+                <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:18px;font-weight:500;color:#2d3b2d;">${{ booking.total_amount|floatformat:2 }}</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        {% endif %}
+
+      </table>
     </mj-text>
-    {% endif %}
   </mj-column>
 </mj-section>

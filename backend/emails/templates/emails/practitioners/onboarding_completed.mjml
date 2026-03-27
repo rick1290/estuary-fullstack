@@ -1,110 +1,149 @@
-<mjml>
-  <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
-    <mj-attributes>
-      <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
-    </mj-attributes>
-  </mj-head>
+{% extends "emails/base.mjml" %}
 
-  <mj-body background-color="#f5f2ed">
-    <mj-section background-color="#3c412a" padding="16px 36px">
-      <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">ESTUARY</mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">Onboarding</mj-text>
-      </mj-column>
-    </mj-section>
+{% block content %}
+<!-- Hero (blue-teal for practitioners) -->
+<mj-section background-color="#2d3b3b" border-radius="16px 16px 0 0" padding="56px 48px 48px">
+  <mj-column>
+    <mj-text align="center" padding-bottom="20px">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(180,210,215,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(180,210,215,0.2);">
+        <span style="font-size:32px;">&#127881;</span>
+      </div>
+    </mj-text>
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="400" letter-spacing="3px" color="#b4d0d7" text-transform="uppercase" padding-bottom="8px">
+      Onboarding Complete
+    </mj-text>
+    <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
+      You're All Set,<br/><em style="font-weight:400;">{{ practitioner.user.first_name }}</em>
+    </mj-text>
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
+      Great job completing your practitioner onboarding! Here's what happens next.
+    </mj-text>
+  </mj-column>
+</mj-section>
 
-    <mj-section background-color="#474e31" padding="40px 36px">
-      <mj-column>
-        <mj-text align="center" font-size="22px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
-          Onboarding Complete!
-        </mj-text>
-        <mj-text align="center" font-size="13px" color="#95a57f">
-          You're all set, {{ practitioner.user.first_name }}! Here's what happens next.
-        </mj-text>
-      </mj-column>
-    </mj-section>
+<!-- White Body -->
+<mj-wrapper background-color="#ffffff" padding="0">
 
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="28px 24px">
-        <mj-column>
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="24px">
-            Great job completing your practitioner onboarding! Your profile has been submitted and is now under review by our team.
-          </mj-text>
+  <!-- Intro Text -->
+  <mj-section padding="44px 48px 32px">
+    <mj-column>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="26px" color="#5a5a5a">
+        Your profile has been submitted and is now under review by our team. We'll have you up and running in no time.
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-          <mj-text font-size="17px" font-weight="600" color="#576039" padding-bottom="14px">What Happens Next:</mj-text>
+  <!-- What Happens Next -->
+  <mj-section padding="0 48px 8px">
+    <mj-column>
+      <mj-text align="center" padding-bottom="14px">
+        <div style="width:56px;height:56px;border-radius:50%;background-color:#e6edf3;margin:0 auto;line-height:56px;text-align:center;">
+          <span style="font-size:24px;">&#128269;</span>
+        </div>
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+        Step 1
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+        Profile Review
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+        Our team will review your profile within 24-48 hours.
+      </mj-text>
+    </mj-column>
+    <mj-column>
+      <mj-text align="center" padding-bottom="14px">
+        <div style="width:56px;height:56px;border-radius:50%;background-color:#eef3e6;margin:0 auto;line-height:56px;text-align:center;">
+          <span style="font-size:24px;">&#128231;</span>
+        </div>
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+        Step 2
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+        Email Notification
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+        You'll receive an email once your profile is approved.
+      </mj-text>
+    </mj-column>
+    <mj-column>
+      <mj-text align="center" padding-bottom="14px">
+        <div style="width:56px;height:56px;border-radius:50%;background-color:#f3ede6;margin:0 auto;line-height:56px;text-align:center;">
+          <span style="font-size:24px;">&#10024;</span>
+        </div>
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+        Step 3
+      </mj-text>
+      <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+        Start Accepting Bookings
+      </mj-text>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+        Your profile will be visible and you can start your practice.
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-          <mj-text padding-bottom="16px">
-            <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: #f6f7f5; margin-right: 12px; font-weight: 700;">1</span>
-            <span style="font-weight: 600; color: #576039;">Profile Review</span><br/>
-            <span style="padding-left: 44px; display: block; color: #95a57f; font-size: 14px; padding-top: 4px;">Our team will review your profile within 24-48 hours</span>
-          </mj-text>
+  <!-- CTA Button -->
+  <mj-section padding="28px 40px 44px">
+    <mj-column>
+      <mj-button href="{{ WEBSITE_URL }}/dashboard/practitioner">
+        Go to Dashboard
+      </mj-button>
+    </mj-column>
+  </mj-section>
 
-          <mj-text padding-bottom="16px">
-            <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: #f6f7f5; margin-right: 12px; font-weight: 700;">2</span>
-            <span style="font-weight: 600; color: #576039;">Email Notification</span><br/>
-            <span style="padding-left: 44px; display: block; color: #95a57f; font-size: 14px; padding-top: 4px;">You'll receive an email once your profile is approved</span>
-          </mj-text>
+  <!-- Divider -->
+  <mj-section padding="0 48px">
+    <mj-column>
+      <mj-divider border-color="#e8e2db" border-width="1px" padding="0" />
+    </mj-column>
+  </mj-section>
 
-          <mj-text padding-bottom="32px">
-            <span style="display: inline-block; width: 32px; height: 32px; background-color: #7a8b63; border-radius: 50%; text-align: center; line-height: 32px; color: #f6f7f5; margin-right: 12px; font-weight: 700;">3</span>
-            <span style="font-weight: 600; color: #576039;">Start Accepting Bookings!</span><br/>
-            <span style="padding-left: 44px; display: block; color: #95a57f; font-size: 14px; padding-top: 4px;">Your profile will be visible to clients and you can start your practice</span>
-          </mj-text>
+  <!-- While You Wait -->
+  <mj-section padding="40px 48px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="28px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        While You Wait
+      </mj-text>
+      <mj-text font-family="'Cormorant Garamond', Georgia, serif" font-size="22px" font-weight="500" color="#2d3b2d" padding-bottom="16px">
+        Complete Your <em>Profile</em>
+      </mj-text>
 
-          <mj-button href="{{ WEBSITE_URL }}/dashboard/practitioner">Go to Dashboard</mj-button>
-        </mj-column>
-      </mj-section>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="10px">
+        <strong style="color:#2d3b2d;">Create Services</strong> — Add sessions, workshops, or courses you want to offer
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="10px">
+        <strong style="color:#2d3b2d;">Set Your Schedule</strong> — Configure your weekly availability and time slots
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="22px" color="#5a5a5a">
+        <strong style="color:#2d3b2d;">Add Credentials</strong> — Upload certifications and education to build trust
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="28px 24px" padding-top="20px">
-        <mj-column>
-          <mj-text font-size="17px" font-weight="600" color="#576039" padding-bottom="14px">While You Wait, Complete Your Profile:</mj-text>
+  <!-- Pro Tip -->
+  <mj-section padding="0 48px 32px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="24px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        Pro Tip
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a">
+        Practitioners with complete profiles (services, schedule, and credentials) receive <strong style="color:#2d3b2d;">3x more bookings</strong> than those with incomplete profiles.
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Create Services</span><br/>
-            <span style="color: #95a57f; font-size: 14px; padding-top: 4px;">Add sessions, workshops, or courses you want to offer</span>
-          </mj-text>
+  <!-- Support -->
+  <mj-section padding="0 48px 32px">
+    <mj-column>
+      <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" color="#7a7a7a" line-height="21px">
+        Questions? We're here to help.<br/>
+        <a href="mailto:{{ SUPPORT_EMAIL }}" style="font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:1px;">Contact Support</a>
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Set Your Schedule</span><br/>
-            <span style="color: #95a57f; font-size: 14px; padding-top: 4px;">Configure your weekly availability and time slots</span>
-          </mj-text>
-
-          <mj-text padding-bottom="24px">
-            <span style="font-weight: 600; color: #576039;">Add Credentials</span><br/>
-            <span style="color: #95a57f; font-size: 14px; padding-top: 4px;">Upload certifications and education to build trust</span>
-          </mj-text>
-        </mj-column>
-      </mj-section>
-
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 28px">
-        <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">Pro Tip</mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
-            Practitioners with complete profiles (services, schedule, and credentials) receive <strong>3x more bookings</strong> than those with incomplete profiles.
-          </mj-text>
-        </mj-column>
-      </mj-section>
-
-      <mj-section padding="32px 0">
-        <mj-column>
-          <mj-text align="center" font-size="14px" color="#95a57f">
-            Questions? We're here to help.<br/>
-            <a href="mailto:support@estuary.com" style="color: #61704d; font-weight: 600;">Contact Support</a>
-          </mj-text>
-        </mj-column>
-      </mj-section>
-    </mj-wrapper>
-
-    <mj-section background-color="#3c412a" padding="24px 36px">
-      <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">ESTUARY</mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">© {{ YEAR }} ESTUARY. All rights reserved.</mj-text>
-      </mj-column>
-    </mj-section>
-  </mj-body>
-</mjml>
+</mj-wrapper>
+{% endblock %}

@@ -169,12 +169,13 @@ class LiveKitWebhookHandler:
 
                 room.save(update_fields=['status', 'actual_end', 'total_duration_seconds', 'updated_at'])
 
-                # Update ServiceSession status to completed
+                # NOTE: Do NOT mark ServiceSession as completed here.
+                # Session completion is an explicit action by the practitioner
+                # from their dashboard, not an automatic side effect of the
+                # room closing. This prevents accidental completion and gives
+                # the practitioner time to review before finalizing.
                 if room.service_session:
-                    room.service_session.status = 'completed'
-                    room.service_session.actual_end_time = now
-                    room.service_session.save(update_fields=['status', 'actual_end_time', 'updated_at'])
-                    logger.info(f"[ROOM_FINISHED] Marked ServiceSession {room.service_session.id} as completed")
+                    logger.info(f"[ROOM_FINISHED] Room ended for ServiceSession {room.service_session.id} — session stays '{room.service_session.status}' until practitioner marks complete")
 
                 # End all active participant sessions
                 active_participants = room.participants.filter(left_at__isnull=True)

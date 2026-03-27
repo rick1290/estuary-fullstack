@@ -1,112 +1,166 @@
 <mjml>
   <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" />
+    <mj-font name="Cormorant Garamond" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-section background-color="#fdfcf8" padding="20px 0" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
+      <mj-text font-size="15px" line-height="1.6" color="#5a5a5a" />
+      <mj-section background-color="transparent" padding="0" />
+      <mj-button background-color="#2d3b2d" color="#ffffff" font-weight="500" border-radius="50px" padding="14px 36px" font-size="12px" letter-spacing="1.5px" text-transform="uppercase" font-family="'DM Sans', Helvetica, sans-serif" />
     </mj-attributes>
   </mj-head>
 
-  <mj-body background-color="#f5f2ed">
+  <mj-body background-color="#f5f0eb">
     <!-- Header -->
-    <mj-section background-color="#3c412a" padding="16px 36px">
+    <mj-section padding="32px 40px 24px">
       <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="500" letter-spacing="6px" color="#2d3b2d" text-transform="uppercase" padding-bottom="10px">
           ESTUARY
         </mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">
-          Welcome
-        </mj-text>
+        <mj-divider border-color="#8fa88f" border-width="1px" width="40px" padding="0" />
       </mj-column>
     </mj-section>
 
     <!-- Hero -->
-    <mj-section background-color="#474e31" padding="40px 36px">
+    <mj-section background-color="#2d3b2d" border-radius="16px 16px 0 0" padding="56px 48px 48px" css-class="hero-section">
       <mj-column>
-        <mj-text align="center" font-size="24px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
+        <mj-text align="center" padding-bottom="20px">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(200,215,180,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(200,215,180,0.2);">
+            <span style="font-size:32px;">&#127807;</span>
+          </div>
+        </mj-text>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="400" letter-spacing="3px" color="#c8d7b4" text-transform="uppercase" padding-bottom="8px">
           Welcome to Estuary
         </mj-text>
-        <mj-text align="center" font-size="14px" color="#95a57f">
-          Hi {{ user.first_name }}, we're so glad you're here
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
+          Your Wellness Journey<br/><em style="font-weight:400;">Starts Here</em>
+        </mj-text>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
+          Hi {{ user.first_name }}, welcome to a community of thousands discovering balance and transformation.
         </mj-text>
       </mj-column>
     </mj-section>
 
-    <!-- Content -->
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <!-- Main Message -->
-      <mj-section background-color="#ffffff" border-radius="12px" css-class="card" padding="28px 24px" border="1px solid #d3d9cc">
+    <!-- White Body -->
+    <mj-wrapper background-color="#ffffff" padding="0">
+
+      <!-- Intro Text -->
+      <mj-section padding="44px 48px 32px">
         <mj-column>
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="20px">
-            You've just taken the first step toward transformation. ESTUARY connects you with experienced wellness practitioners who are ready to support your journey.
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="26px" color="#5a5a5a">
+            You've just taken the first step toward transformation. ESTUARY connects you with experienced wellness practitioners who are ready to support your journey. Here's how to get started.
           </mj-text>
+        </mj-column>
+      </mj-section>
 
-          <mj-text font-size="16px" line-height="1.7" padding-bottom="32px">
-            Here's what you can do on ESTUARY:
+      <!-- 3 Steps -->
+      <mj-section padding="0 28px 8px">
+        <mj-column>
+          <mj-text align="center" padding-bottom="14px">
+            <div style="width:56px;height:56px;border-radius:50%;background-color:#eef3e6;margin:0 auto;line-height:56px;text-align:center;">
+              <span style="font-size:24px;">&#128269;</span>
+            </div>
           </mj-text>
-
-          <mj-text padding-bottom="12px">
-            <strong>Book 1-on-1 sessions</strong> with certified practitioners
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+            Step 1
           </mj-text>
-
-          <mj-text padding-bottom="12px">
-            <strong>Join workshops</strong> and learn with others
+          <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+            Explore
           </mj-text>
-
-          <mj-text padding-bottom="12px">
-            <strong>Enroll in courses</strong> for deeper transformation
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+            Browse sessions, workshops, and courses across dozens of modalities.
           </mj-text>
-
-          <mj-text padding-bottom="32px">
-            <strong>Access content streams</strong> for inspiration
+        </mj-column>
+        <mj-column>
+          <mj-text align="center" padding-bottom="14px">
+            <div style="width:56px;height:56px;border-radius:50%;background-color:#f3ede6;margin:0 auto;line-height:56px;text-align:center;">
+              <span style="font-size:24px;">&#129309;</span>
+            </div>
           </mj-text>
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+            Step 2
+          </mj-text>
+          <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+            Connect
+          </mj-text>
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+            Find your practitioner and book a time that fits your schedule.
+          </mj-text>
+        </mj-column>
+        <mj-column>
+          <mj-text align="center" padding-bottom="14px">
+            <div style="width:56px;height:56px;border-radius:50%;background-color:#e6edf3;margin:0 auto;line-height:56px;text-align:center;">
+              <span style="font-size:24px;">&#10024;</span>
+            </div>
+          </mj-text>
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="2px">
+            Step 3
+          </mj-text>
+          <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="18px" font-weight="500" color="#2d3b2d" padding-bottom="6px">
+            Transform
+          </mj-text>
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="#7a7a7a" line-height="18px">
+            Experience healing — online or in-person — and share your journey.
+          </mj-text>
+        </mj-column>
+      </mj-section>
 
+      <!-- CTA Button -->
+      <mj-section padding="28px 40px 44px">
+        <mj-column>
           <mj-button href="{{ WEBSITE_URL }}{{ URL_PATHS.MARKETPLACE }}">
-            Explore Practitioners
+            Browse the Marketplace
           </mj-button>
         </mj-column>
       </mj-section>
 
-      <!-- Tip -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="13px 16px">
+      <!-- Divider -->
+      <mj-section padding="0 48px">
         <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">
-            Getting Started Tip
+          <mj-divider border-color="#e8e2db" border-width="1px" padding="0" />
+        </mj-column>
+      </mj-section>
+
+      <!-- Streams Callout -->
+      <mj-section padding="40px 48px">
+        <mj-column background-color="#faf8f5" border-radius="12px" padding="28px">
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" font-weight="500" letter-spacing="3px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+            Don't Miss
           </mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
-            Complete your profile to help practitioners understand your goals and personalize your experience.
+          <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="24px" font-weight="400" color="#2d3b2d" padding-bottom="10px">
+            Discover <em>Streams</em>
+          </mj-text>
+          <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="21px" color="#7a7a7a" padding-bottom="16px">
+            Follow your favorite practitioners for articles, videos, audio guides, and community polls — all in your personalized feed.
+          </mj-text>
+          <mj-text align="center">
+            <a href="{{ WEBSITE_URL }}{{ URL_PATHS.STREAMS }}" style="font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:500;color:#2d3b2d;text-decoration:none;border-bottom:1px solid #2d3b2d;padding-bottom:2px;">Explore Streams &#8594;</a>
           </mj-text>
         </mj-column>
       </mj-section>
 
-      <!-- Support -->
-      <mj-section padding="32px 0">
-        <mj-column>
-          <mj-text align="center" font-size="14px" color="#95a57f">
-            Have questions? Our team is here to help.<br/>
-            <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #61704d; text-decoration: none; font-weight: 600;">Visit Help Center</a>
-          </mj-text>
-        </mj-column>
-      </mj-section>
     </mj-wrapper>
 
     <!-- Footer -->
-    <mj-section background-color="#3c412a" padding="28px 24px 12px">
+    <mj-section background-color="#2d3b2d" border-radius="0 0 16px 16px" padding="36px 40px 28px">
       <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="20px" font-weight="500" letter-spacing="4px" color="#c8d7b4" text-transform="uppercase" padding-bottom="6px">
           ESTUARY
         </mj-text>
-        <mj-text align="center" font-size="12px" padding-bottom="12px">
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color: #7a8b63;">About</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #7a8b63;">Help</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color: #7a8b63;">Privacy</a>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="300" color="rgba(200,215,180,0.6)" line-height="18px" padding-bottom="20px">
+          Your sanctuary for wellness, growth, and meaningful connections.
         </mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">
-          © {{ YEAR }} ESTUARY. All rights reserved.
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" letter-spacing="1px" padding-bottom="20px">
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.MARKETPLACE }}" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Marketplace</a><span style="color:rgba(200,215,180,0.3);">&middot;</span>
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">About</a><span style="color:rgba(200,215,180,0.3);">&middot;</span>
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:rgba(200,215,180,0.7);text-decoration:none;padding:0 8px;">Help</a>
+        </mj-text>
+        <mj-divider border-color="rgba(200,215,180,0.15)" border-width="1px" width="40px" padding="0 0 20px 0" />
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" font-weight="300" color="rgba(200,215,180,0.35)" line-height="18px" padding-bottom="6px">
+          &copy; {{ YEAR }} ESTUARY. All rights reserved.
+        </mj-text>
+        <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="11px" font-weight="300" color="rgba(200,215,180,0.35)">
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
         </mj-text>
       </mj-column>
     </mj-section>

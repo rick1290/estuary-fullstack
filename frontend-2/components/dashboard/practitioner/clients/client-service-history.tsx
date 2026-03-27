@@ -198,7 +198,7 @@ export default function ClientServiceHistory({ clientId }: ClientServiceHistoryP
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                              <Link href={`/dashboard/practitioner/bookings/${booking.id}`}>
+                              <Link href={`/dashboard/practitioner/bookings/${booking.public_uuid || booking.id}`}>
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>

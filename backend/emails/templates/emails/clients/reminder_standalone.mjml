@@ -1,113 +1,236 @@
 <mjml>
   <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-font name="Cormorant Garamond" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" />
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-section background-color="#fdfcf8" padding="20px 0" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
+      <mj-text font-size="15px" line-height="1.6" color="#2d3b2d" />
+      <mj-section background-color="transparent" padding="0" />
+      <mj-button background-color="#2d3b2d" color="#ffffff" font-weight="500" border-radius="50px" padding="12px 28px" font-size="12px" letter-spacing="1px" text-transform="uppercase" />
     </mj-attributes>
+    <mj-style>
+      .label { font-family: 'DM Sans', Helvetica, sans-serif; font-size: 10px; font-weight: 400; color: #999; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 2px; }
+      .value { font-family: 'DM Sans', Helvetica, sans-serif; font-size: 14px; font-weight: 500; color: #2d3b2d; margin: 0; }
+    </mj-style>
+    <mj-style inline="inline">
+      .cormorant { font-family: 'Cormorant Garamond', Georgia, serif; }
+    </mj-style>
   </mj-head>
 
-  <mj-body background-color="#f5f2ed">
-    <!-- Header -->
-    <mj-section background-color="#3c412a" padding="16px 36px">
+  <mj-body background-color="#f5f0eb" width="600px">
+
+    <!-- HEADER: Centered wordmark + sage divider -->
+    <mj-section padding="32px 40px 24px">
       <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="500" letter-spacing="6px" color="#2d3b2d" text-transform="uppercase" padding="0">
           ESTUARY
         </mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">
-          Session reminder
-        </mj-text>
+        <mj-divider border-width="1px" border-color="#8fa88f" width="40px" padding="10px 0 0" />
       </mj-column>
     </mj-section>
 
-    <!-- Hero -->
-    <mj-section background-color="#474e31" padding="40px 36px">
+    <!-- HERO: Warm earth gradient with bell icon -->
+    <mj-section background-color="#5c4a3e" border-radius="16px 16px 0 0" padding="48px 48px 40px">
       <mj-column>
-        <mj-text align="center" font-size="24px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
-          Session Tomorrow
+        <!-- Bell emoji icon circle -->
+        <mj-text align="center" padding="0 0 18px">
+          <div style="width:64px;height:64px;border-radius:50%;background:rgba(212,196,168,0.15);margin:0 auto;line-height:64px;text-align:center;border:2px solid rgba(212,196,168,0.2);">
+            <span style="font-size:28px;">&#128276;</span>
+          </div>
         </mj-text>
-        <mj-text align="center" font-size="14px" color="#95a57f">
-          Your session starts in 24 hours
+        <mj-text align="center" font-size="12px" font-weight="400" letter-spacing="3px" color="#d4c4a8" text-transform="uppercase" padding="0 0 6px">
+          Gentle Reminder
         </mj-text>
+        {% if hours_until == 24 %}
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="36px" font-weight="300" line-height="40px" color="#ffffff" padding="0 0 12px">
+          Your Session Is<br /><em style="font-weight:400;">Tomorrow</em>
+        </mj-text>
+        <mj-text align="center" font-size="14px" font-weight="300" color="rgba(255,255,255,0.75)" padding="0">
+          Hi {{ first_name }}, just a heads up &mdash; you're all set for tomorrow.
+        </mj-text>
+        {% else %}
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="36px" font-weight="300" line-height="40px" color="#ffffff" padding="0 0 12px">
+          Starting <em style="font-weight:400;">Soon</em>
+        </mj-text>
+        <mj-text align="center" font-size="14px" font-weight="300" color="rgba(255,255,255,0.75)" padding="0">
+          Hi {{ first_name }}, your session begins in {{ time_until }}.
+        </mj-text>
+        {% endif %}
       </mj-column>
     </mj-section>
 
-    <!-- Content -->
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <!-- Session Details -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 20px">
+    <!-- WHITE BODY -->
+    <mj-wrapper background-color="#ffffff" padding="0">
+
+      <!-- Booking Details Card -->
+      <mj-section padding="36px 40px 0">
         <mj-column>
-          <!-- Service Name -->
-          <mj-text font-size="18px" font-weight="600" color="#61704d" padding-bottom="12px">
-            {{ service_name }}
-          </mj-text>
+          <mj-text padding="0">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1.5px solid #e8e2db;border-radius:12px;overflow:hidden;">
 
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">With:</span> {{ practitioner_name }}
-          </mj-text>
+              <!-- Service Name -->
+              <tr><td style="padding:24px 28px 16px;">
+                <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:500;letter-spacing:2px;color:#8fa88f;text-transform:uppercase;">Session</p>
+                <p style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:500;color:#2d3b2d;">{{ service_name }}</p>
+              </td></tr>
 
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Date:</span> {{ booking_date }}
-          </mj-text>
+              <!-- Divider -->
+              <tr><td style="padding:0 28px;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
 
-          <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #576039;">Time:</span> {{ booking_time }} ({{ duration_minutes }} min)
-          </mj-text>
+              <!-- Details Grid -->
+              <tr><td style="padding:16px 28px 24px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td style="width:50%;vertical-align:top;padding-right:12px;">
+                      <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Practitioner</p>
+                      <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ practitioner_name }}</p>
+                      <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Duration</p>
+                      <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ duration_minutes }} min</p>
+                    </td>
+                    <td style="width:50%;vertical-align:top;padding-left:12px;">
+                      <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Date</p>
+                      <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ booking_date }}</p>
+                      <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Time</p>
+                      <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ booking_time }}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
 
-          <!-- CTA Button -->
-          {% if has_video_room %}
-          <mj-button href="{{ join_url }}">
-            Join Session
-          </mj-button>
-          {% else %}
-          <mj-button href="{{ booking_url }}">
-            View Session Details
-          </mj-button>
-          {% endif %}
-        </mj-column>
-      </mj-section>
-
-      <!-- Preparation Tip -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="13px 16px">
-        <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">
-            Preparation Tip
-          </mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
-            Find a quiet space and have your camera and microphone ready. You'll receive another reminder 30 minutes before the session starts.
+            </table>
           </mj-text>
         </mj-column>
       </mj-section>
 
-      <!-- Quick Actions -->
-      <mj-section padding="32px 0">
+      <!-- Preparation Checklist -->
+      <mj-section padding="32px 48px 8px">
         <mj-column>
-          <mj-text align="center" font-size="14px" color="#95a57f">
-            Need to reschedule? <a href="{{ WEBSITE_URL }}{{ URL_PATHS.USER_BOOKINGS }}" style="color: #61704d; font-weight: 600;">Manage Booking</a>
+          <mj-text align="center" font-size="11px" font-weight="500" letter-spacing="3px" color="#8fa88f" text-transform="uppercase" padding="0 0 4px">
+            Prepare
+          </mj-text>
+          <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="400" color="#2d3b2d" padding="0 0 20px">
+            Quick <em>Checklist</em>
           </mj-text>
         </mj-column>
       </mj-section>
+
+      <mj-section padding="0 48px">
+        <mj-column>
+          <mj-text padding="0">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="width:28px;vertical-align:top;padding:0 0 14px;">
+                  <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid #c8d7b4;text-align:center;line-height:22px;font-size:11px;color:#8fa88f;">&#10003;</div>
+                </td>
+                <td style="vertical-align:top;padding:0 0 14px 10px;">
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:400;color:#5a5a5a;line-height:22px;">Find a quiet, comfortable space free from distractions</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="width:28px;vertical-align:top;padding:0 0 14px;">
+                  <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid #c8d7b4;text-align:center;line-height:22px;font-size:11px;color:#8fa88f;">&#10003;</div>
+                </td>
+                <td style="vertical-align:top;padding:0 0 14px 10px;">
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:400;color:#5a5a5a;line-height:22px;">Have water and a journal nearby</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="width:28px;vertical-align:top;padding:0 0 14px;">
+                  <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid #c8d7b4;text-align:center;line-height:22px;font-size:11px;color:#8fa88f;">&#10003;</div>
+                </td>
+                <td style="vertical-align:top;padding:0 0 14px 10px;">
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:400;color:#5a5a5a;line-height:22px;">Wear comfortable, loose-fitting clothing</p>
+                </td>
+              </tr>
+              {% if has_video_room %}
+              <tr>
+                <td style="width:28px;vertical-align:top;padding:0 0 4px;">
+                  <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid #c8d7b4;text-align:center;line-height:22px;font-size:11px;color:#8fa88f;">&#10003;</div>
+                </td>
+                <td style="vertical-align:top;padding:0 0 4px 10px;">
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:400;color:#5a5a5a;line-height:22px;">Test your video and audio before joining online</p>
+                </td>
+              </tr>
+              {% endif %}
+            </table>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Action Buttons -->
+      <mj-section padding="32px 40px 40px">
+        <mj-column>
+          <mj-text align="center" padding="0">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+              <tr>
+                {% if has_video_room %}
+                <td style="padding:0 6px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr><td style="border-radius:50px;background-color:#2d3b2d;">
+                      <a href="{{ video_room_url }}" style="display:inline-block;padding:12px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#ffffff;text-decoration:none;text-transform:uppercase;">Join Session</a>
+                    </td></tr>
+                  </table>
+                </td>
+                <td style="padding:0 6px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr><td style="border-radius:50px;border:1.5px solid #aaa;">
+                      <a href="{{ booking_url }}" style="display:inline-block;padding:11px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#7a7a7a;text-decoration:none;text-transform:uppercase;">View Booking</a>
+                    </td></tr>
+                  </table>
+                </td>
+                {% else %}
+                <td style="padding:0 6px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr><td style="border-radius:50px;background-color:#2d3b2d;">
+                      <a href="{{ booking_url }}" style="display:inline-block;padding:12px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#ffffff;text-decoration:none;text-transform:uppercase;">View Booking</a>
+                    </td></tr>
+                  </table>
+                </td>
+                <td style="padding:0 6px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr><td style="border-radius:50px;border:1.5px solid #aaa;">
+                      <a href="{{ reschedule_url }}" style="display:inline-block;padding:11px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#7a7a7a;text-decoration:none;text-transform:uppercase;">Reschedule</a>
+                    </td></tr>
+                  </table>
+                </td>
+                {% endif %}
+              </tr>
+            </table>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Manage Booking Link -->
+      <mj-section padding="0 48px 40px">
+        <mj-column>
+          <mj-text align="center" font-size="12px" font-weight="300" color="#aaa" line-height="18px" padding="0">
+            Need to make changes? <a href="{{ WEBSITE_URL }}/dashboard/user/bookings/" style="color:#8fa88f;text-decoration:underline;">Manage your bookings</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
     </mj-wrapper>
 
-    <!-- Footer -->
-    <mj-section background-color="#3c412a" padding="28px 24px 12px">
+    <!-- FOOTER -->
+    <mj-section background-color="#2d3b2d" border-radius="0 0 16px 16px" padding="36px 40px 28px">
       <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="20px" font-weight="500" letter-spacing="4px" color="#c8d7b4" text-transform="uppercase" padding="0 0 6px">
           ESTUARY
         </mj-text>
-        <mj-text align="center" font-size="12px" padding-bottom="12px">
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color: #7a8b63;">About</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #7a8b63;">Help</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color: #7a8b63;">Privacy</a>
+        <mj-text align="center" font-size="12px" font-weight="300" color="rgba(200,215,180,0.6)" line-height="18px" padding="0 0 20px">
+          Your sanctuary for wellness, growth, and meaningful connections.
         </mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">
-          © {{ YEAR }} ESTUARY. All rights reserved.
+        <mj-divider border-width="1px" border-color="rgba(200,215,180,0.15)" width="40px" padding="0 0 20px" />
+        <mj-text align="center" font-size="12px" padding="0 0 12px">
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">About</a> &nbsp;&middot;&nbsp;
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Help</a> &nbsp;&middot;&nbsp;
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
+        </mj-text>
+        <mj-text align="center" color="rgba(200,215,180,0.35)" font-size="11px" font-weight="300" padding="0">
+          &copy; {{ YEAR }} Estuary. All rights reserved.
         </mj-text>
       </mj-column>
     </mj-section>
+
   </mj-body>
 </mjml>

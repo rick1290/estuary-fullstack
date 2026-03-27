@@ -25,6 +25,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import JournalSection from "@/components/dashboard/user/journeys/journal-section"
+import FormsStatusBanner from "@/components/dashboard/user/journeys/forms-status-banner"
 import { CancelBookingDialog } from "@/components/dashboard/user/bookings/cancel-booking-dialog"
 import { ReviewBookingDialog } from "@/components/dashboard/user/bookings/review-booking-dialog"
 import {
@@ -411,6 +412,9 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
 
       {/* ── MAIN CONTENT ── */}
       <div className="max-w-5xl mx-auto px-6 py-6">
+        {/* Pre-session forms banner */}
+        <FormsStatusBanner bookingUuid={bookingUuid} />
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-8">

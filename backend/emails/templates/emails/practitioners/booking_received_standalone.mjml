@@ -1,116 +1,177 @@
 <mjml>
   <mj-head>
-    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <mj-font name="Cormorant Garamond" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" />
+    <mj-font name="DM Sans" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" />
     <mj-attributes>
       <mj-all font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#576039" />
-      <mj-section background-color="#fdfcf8" padding="20px 0" />
-      <mj-button background-color="#61704d" color="#f6f7f5" font-weight="600" border-radius="12px" padding="11px 24px" font-size="14px" />
+      <mj-text font-size="14px" line-height="1.6" color="#2d3b2d" />
+      <mj-section background-color="#ffffff" padding="0" />
+      <mj-button background-color="#2d3b2d" color="#ffffff" font-weight="500" border-radius="50px" font-size="12px" letter-spacing="1px" text-transform="uppercase" inner-padding="12px 28px" />
     </mj-attributes>
+    <mj-style>
+      @media screen and (max-width: 600px) {
+        .hero-title { font-size: 32px !important; line-height: 36px !important; }
+        .mobile-padding { padding-left: 24px !important; padding-right: 24px !important; }
+      }
+    </mj-style>
   </mj-head>
 
-  <mj-body background-color="#f5f2ed">
-    <!-- Header -->
-    <mj-section background-color="#3c412a" padding="16px 36px">
+  <mj-body background-color="#f5f0eb">
+    <!-- Header: Centered Wordmark + Sage Divider -->
+    <mj-section background-color="transparent" padding="32px 40px 24px">
       <mj-column>
-        <mj-text font-size="14px" font-weight="700" color="#e8ebe6" letter-spacing="0.18em">ESTUARY</mj-text>
-      </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="11px" color="#95a57f" letter-spacing="0.06em">New booking</mj-text>
-      </mj-column>
-    </mj-section>
-
-    <!-- Hero -->
-    <mj-section background-color="#474e31" padding="40px 36px">
-      <mj-column>
-        <mj-text align="center" font-size="22px" font-weight="700" color="#e8ebe6" line-height="1.2" padding-bottom="8px">
-          New Booking!
-        </mj-text>
-        <mj-text align="center" font-size="13px" color="#95a57f">
-          You have a new client session scheduled
-        </mj-text>
-      </mj-column>
-    </mj-section>
-
-    <!-- Content -->
-    <mj-wrapper background-color="#fdfcf8" padding="0 24px">
-      <!-- Booking Details Card -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 20px">
-        <mj-column>
-          <mj-text font-size="16px" font-weight="600" color="#576039" padding-bottom="16px">
-            Booking Details
-          </mj-text>
-
-          <!-- Client Info -->
-          <mj-text font-size="15px" font-weight="600" color="#576039" padding-bottom="10px">
-            Client
-          </mj-text>
-          <mj-text padding-bottom="16px">
-            <span style="font-weight: 600; color: #61704d;">{{ client_name }}</span><br/>
-            <span style="color: #95a57f; font-size: 14px;">{{ client_email }}</span>
-          </mj-text>
-
-          <mj-divider border-color="#d3d9cc" padding="12px 0" />
-
-          <!-- Service -->
-          <mj-text font-size="18px" font-weight="600" color="#61704d" padding-bottom="12px">
-            {{ service_name }}
-          </mj-text>
-
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Date:</span> {{ booking_date }}
-          </mj-text>
-
-          <mj-text padding-bottom="12px">
-            <span style="font-weight: 600; color: #576039;">Time:</span> {{ booking_time }} ({{ duration_minutes }} min)
-          </mj-text>
-
-          <mj-text padding-bottom="20px">
-            <span style="font-weight: 600; color: #576039;">Earnings:</span> {{ net_earnings }} (after {{ commission_rate }}% commission)
-          </mj-text>
-
-          <!-- CTA Button -->
-          <mj-button href="{{ booking_url }}">
-            View Booking
-          </mj-button>
-        </mj-column>
-      </mj-section>
-
-      <!-- Tip Box -->
-      <mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="24px 28px">
-        <mj-column>
-          <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">
-            Booking Tip
-          </mj-text>
-          <mj-text font-size="14px" line-height="1.6" color="#576039">
-            Respond to client messages within 24 hours to maintain your response rating and improve client satisfaction.
-          </mj-text>
-        </mj-column>
-      </mj-section>
-
-      <!-- Support -->
-      <mj-section padding="32px 0">
-        <mj-column>
-          <mj-text align="center" font-size="14px" color="#95a57f">
-            Questions? <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #61704d; font-weight: 600;">Visit Help Center</a>
-          </mj-text>
-        </mj-column>
-      </mj-section>
-    </mj-wrapper>
-
-    <!-- Footer -->
-    <mj-section background-color="#3c412a" padding="24px 36px">
-      <mj-column>
-        <mj-text align="center" color="#b5c0a5" font-size="13px" font-weight="700" letter-spacing="0.16em" padding-bottom="12px">
+        <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="26px" font-weight="500" letter-spacing="6px" color="#2d3b2d" text-transform="uppercase" padding="0">
           ESTUARY
         </mj-text>
-        <mj-text align="center" color="#7a8b63" font-size="12px" padding-bottom="8px">
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color: #7a8b63;">About</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color: #7a8b63;">Help</a> ·
-          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color: #7a8b63;">Privacy</a>
+        <mj-divider border-width="1px" border-color="#8fa88f" width="40px" padding="10px 0 0" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Hero: Practitioner Blue-Green Gradient -->
+    <mj-section background-color="#1a2a3a" padding="0">
+      <mj-column padding="0">
+        <mj-text padding="0">
+          <div style="background:linear-gradient(160deg,#1a2a3a 0%,#2a4a5a 50%,#3a6070 100%);border-radius:16px 16px 0 0;padding:48px 48px 40px;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(180,210,220,0.15);margin:0 auto 18px;line-height:64px;text-align:center;border:2px solid rgba(180,210,220,0.25);">
+              <span style="font-size:28px;">📋</span>
+            </div>
+            <p style="margin:0 0 6px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:400;letter-spacing:3px;color:#b4d0d7;text-transform:uppercase;">New Booking</p>
+            <h1 style="margin:0 0 12px;font-family:'Cormorant Garamond',Georgia,serif;font-size:36px;font-weight:300;line-height:40px;color:#ffffff;">You Have a New<br><em style="font-weight:400;">Client</em>, {{ first_name }}</h1>
+            <p style="margin:0 auto;max-width:380px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:300;line-height:22px;color:rgba(255,255,255,0.75);">
+              Someone just booked a session with you. Here are the details.
+            </p>
+          </div>
         </mj-text>
-        <mj-text align="center" color="#4d5a3e" font-size="11px">
-          © {{ YEAR }} ESTUARY. All rights reserved.
+      </mj-column>
+    </mj-section>
+
+    <!-- White Body -->
+    <mj-section background-color="#ffffff" padding="0">
+      <mj-column padding="0">
+
+        <!-- Booking Detail Card -->
+        <mj-text padding="36px 40px 0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border:1.5px solid #e8e2db;border-radius:12px;overflow:hidden;">
+            <!-- Card Header -->
+            <tr><td style="background-color:#faf8f5;padding:18px 24px;border-bottom:1px solid #e8e2db;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:500;letter-spacing:2px;color:#8fa88f;text-transform:uppercase;">{{ service_type }}</p>
+                    <p style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:500;color:#2d3b2d;">{{ service_name }}</p>
+                  </td>
+                  <td style="text-align:right;">
+                    <span style="display:inline-block;padding:6px 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:500;letter-spacing:1px;color:#1a4a5a;background-color:#daeef3;border-radius:50px;text-transform:uppercase;">New</span>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+
+            <!-- Client Info -->
+            <tr><td style="padding:20px 24px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="vertical-align:middle;padding-left:14px;">
+                    <p style="margin:0 0 1px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Client</p>
+                    <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:15px;font-weight:500;color:#2d3b2d;">{{ client_name }}</p>
+                    <p style="margin:2px 0 0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:400;color:#999;">{{ client_email }}</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+            <tr><td style="padding:16px 24px 0;"><div style="height:1px;background-color:#f0ebe5;"></div></td></tr>
+
+            <!-- Details Grid -->
+            <tr><td style="padding:16px 24px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="width:50%;vertical-align:top;padding-right:12px;">
+                    <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Date</p>
+                    <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ booking_date }}</p>
+                  </td>
+                  <td style="width:50%;vertical-align:top;padding-left:12px;">
+                    <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Time</p>
+                    <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ booking_time }} ({{ duration_minutes }} min)</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="width:50%;vertical-align:top;padding-right:12px;">
+                    <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Location</p>
+                    <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ location }}</p>
+                  </td>
+                  <td style="width:50%;vertical-align:top;padding-left:12px;">
+                    <p style="margin:0 0 2px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:400;color:#999;text-transform:uppercase;letter-spacing:1px;">Earnings</p>
+                    <p style="margin:0 0 14px;font-family:'DM Sans',Helvetica,sans-serif;font-size:14px;font-weight:500;color:#2d3b2d;">{{ net_earnings }} (after {{ commission_rate }}% commission)</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+
+            <!-- Client Notes (if any) -->
+            {% if client_notes %}
+            <tr><td style="padding:0 24px 20px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8f6f2;border-radius:8px;border-left:3px solid #d4c4a8;">
+                <tr><td style="padding:14px 16px;">
+                  <p style="margin:0 0 4px;font-family:'DM Sans',Helvetica,sans-serif;font-size:10px;font-weight:500;letter-spacing:1.5px;color:#999;text-transform:uppercase;">Client Note</p>
+                  <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:300;color:#5a5a5a;line-height:20px;font-style:italic;">{{ client_notes }}</p>
+                </td></tr>
+              </table>
+            </td></tr>
+            {% endif %}
+
+          </table>
+        </mj-text>
+
+        <!-- Action Buttons -->
+        <mj-text align="center" padding="28px 40px 0">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+            <tr>
+              <td style="padding:0 6px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr><td style="border-radius:50px;background-color:#2d3b2d;">
+                    <a href="{{ booking_url }}" style="display:inline-block;padding:12px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#ffffff;text-decoration:none;text-transform:uppercase;">View Booking</a>
+                  </td></tr>
+                </table>
+              </td>
+              <td style="padding:0 6px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr><td style="border-radius:50px;border:1.5px solid #2d3b2d;">
+                    <a href="{{ message_client_url }}" style="display:inline-block;padding:11px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#2d3b2d;text-decoration:none;text-transform:uppercase;">Message Client</a>
+                  </td></tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </mj-text>
+
+        <!-- Tip -->
+        <mj-text align="center" padding="32px 48px 40px" font-size="12px" font-weight="300" color="#aaa" line-height="18px">
+          💡 Tip: Respond to client messages within 24 hours to maintain your response rating and improve client satisfaction.
+          <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:#8fa88f;text-decoration:underline;">More practitioner tips</a>
+        </mj-text>
+
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#2d3b2d" padding="0">
+      <mj-column padding="0">
+        <mj-text padding="0">
+          <div style="background-color:#2d3b2d;border-radius:0 0 16px 16px;padding:36px 40px 28px;text-align:center;">
+            <p style="margin:0 0 6px;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:500;letter-spacing:4px;color:#c8d7b4;text-transform:uppercase;">ESTUARY</p>
+            <p style="margin:0 0 20px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:300;color:rgba(200,215,180,0.6);line-height:18px;">Your sanctuary for wellness, growth, and meaningful connections.</p>
+            <div style="width:40px;height:1px;background-color:rgba(200,215,180,0.15);margin:0 auto 20px;"></div>
+            <p style="margin:0 0 8px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:300;">
+              <a href="{{ WEBSITE_URL }}{{ URL_PATHS.ABOUT }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">About</a> &nbsp;&middot;&nbsp;
+              <a href="{{ WEBSITE_URL }}{{ URL_PATHS.HELP }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Help</a> &nbsp;&middot;&nbsp;
+              <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
+            </p>
+            <p style="margin:0 0 6px;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:300;color:rgba(200,215,180,0.35);">&copy; {{ YEAR }} Estuary. All rights reserved.</p>
+            <p style="margin:0;font-family:'DM Sans',Helvetica,sans-serif;font-size:11px;font-weight:300;color:rgba(200,215,180,0.35);">
+              <a href="{{ WEBSITE_URL }}/unsubscribe" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp;
+              <a href="{{ WEBSITE_URL }}{{ URL_PATHS.PRIVACY }}" style="color:rgba(200,215,180,0.5);text-decoration:underline;">Privacy</a>
+            </p>
+          </div>
         </mj-text>
       </mj-column>
     </mj-section>

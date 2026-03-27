@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,17 +22,30 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { 
+import { toast } from "sonner"
+import {
   Calendar as CalendarIcon,
   Users,
   AlertCircle,
   Award,
   FileText,
-  Clock
+  Clock,
+  ClipboardList,
+  Plus,
+  Trash2,
+  Shield,
+  ExternalLink,
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
+import {
+  intakeServicesFormsListOptions,
+  intakeServicesFormsCreateMutation,
+  intakeServicesFormsDestroyMutation,
+  intakeTemplatesListOptions,
+} from "@/src/client/@tanstack/react-query.gen"
 
 interface AdvancedSectionProps {
   service: ServiceReadable
@@ -305,6 +320,9 @@ export function AdvancedSection({
         </Card>
       )}
 
+      {/* Intake Forms */}
+      <IntakeFormsCard serviceId={service.id} />
+
       {/* Terms & Conditions */}
       <Card className="p-6">
         <div className="space-y-4">
@@ -358,5 +376,223 @@ export function AdvancedSection({
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Intake Forms Sub-Component ──────────────────────────────────────────────
+
+function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
+  const queryClient = useQueryClient()
+  const [showAdd, setShowAdd] = useState(false)
+
+  const numericId = typeof serviceId === 'string' ? parseInt(serviceId) : serviceId
+
+  // Fetch linked forms for this service
+  const { data: linkedFormsData, isLoading } = useQuery({
+    ...intakeServicesFormsListOptions({ path: { service_pk: numericId } }),
+    enabled: !!numericId,
+  })
+  const linkedForms = (linkedFormsData as any)?.data?.results
+    || (linkedFormsData as any)?.results
+    || (linkedFormsData as any)?.data
+    || linkedFormsData
+    || []
+  const formsList = Array.isArray(linkedForms) ? linkedForms : []
+
+  // Fetch all practitioner templates (for the "add" dropdown)
+  const { data: templatesData } = useQuery({
+    ...intakeTemplatesListOptions(),
+    enabled: showAdd,
+  })
+  const allTemplates = (() => {
+    const raw = templatesData as any
+    const items = raw?.data?.results || raw?.results || raw?.data || raw || []
+    return Array.isArray(items) ? items : []
+  })()
+
+  // Filter out already-linked templates
+  const linkedTemplateIds = new Set(formsList.map((f: any) => f.form_template || f.form_template_detail?.id))
+  const availableTemplates = allTemplates.filter((t: any) => !linkedTemplateIds.has(t.id))
+
+  // Mutations
+  const attachMutation = useMutation({
+    ...intakeServicesFormsCreateMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: intakeServicesFormsListOptions({ path: { service_pk: numericId } }).queryKey })
+      toast.success("Form linked to service")
+      setShowAdd(false)
+    },
+    onError: () => toast.error("Failed to link form"),
+  })
+
+  const detachMutation = useMutation({
+    ...intakeServicesFormsDestroyMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: intakeServicesFormsListOptions({ path: { service_pk: numericId } }).queryKey })
+      toast.success("Form removed from service")
+    },
+    onError: () => toast.error("Failed to remove form"),
+  })
+
+  return (
+    <Card className="p-6">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5" />
+            <h3 className="font-medium">Intake Forms</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/practitioner/intake">
+              <Button variant="ghost" size="sm" className="text-xs text-olive-500 h-7">
+                Manage Templates
+                <ExternalLink className="ml-1 h-3 w-3" />
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setShowAdd(!showAdd)}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add Form
+            </Button>
+          </div>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          Clients will be asked to complete these forms when they book this service.
+        </p>
+
+        {/* Linked Forms List */}
+        {isLoading ? (
+          <p className="text-sm text-olive-400 py-3">Loading forms...</p>
+        ) : formsList.length === 0 ? (
+          <div className="text-center py-6 border border-dashed border-sage-200 rounded-xl">
+            <ClipboardList className="h-6 w-6 text-sage-300 mx-auto mb-2" />
+            <p className="text-sm text-olive-400">No intake forms linked yet</p>
+            <p className="text-xs text-olive-300 mt-0.5">Add a form to collect info from clients before their session</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {formsList.map((sf: any) => {
+              const template = sf.form_template_detail || sf.template || {}
+              const formType = template.form_type || 'intake'
+              return (
+                <div
+                  key={sf.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded-xl border border-sage-200/60 bg-white"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={cn(
+                      "shrink-0 rounded-lg p-2",
+                      formType === 'consent' ? "bg-amber-100" : "bg-sage-100"
+                    )}>
+                      {formType === 'consent' ? (
+                        <Shield className="h-4 w-4 text-amber-600" />
+                      ) : (
+                        <ClipboardList className="h-4 w-4 text-sage-600" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-olive-900 truncate">
+                        {template.title || 'Untitled Form'}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "text-[10px] px-1.5 py-0 h-4",
+                            formType === 'consent'
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-sage-100 text-sage-700"
+                          )}
+                        >
+                          {formType === 'consent' ? 'Consent' : 'Intake'}
+                        </Badge>
+                        {sf.is_required && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-terracotta-100 text-terracotta-700">
+                            Required
+                          </Badge>
+                        )}
+                        {template.questions_count > 0 && (
+                          <span className="text-[11px] text-olive-400">
+                            {template.questions_count} question{template.questions_count !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 h-7 w-7 p-0 text-olive-400 hover:text-terracotta-600 hover:bg-terracotta-50"
+                    disabled={detachMutation.isPending}
+                    onClick={() => {
+                      detachMutation.mutate({
+                        path: { service_pk: numericId, id: sf.id },
+                      })
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Add Form Dropdown */}
+        {showAdd && (
+          <div className="border border-sage-200 rounded-xl p-3 bg-sage-50/30 space-y-2">
+            <p className="text-xs font-medium text-olive-600 mb-2">Select a template to link:</p>
+            {availableTemplates.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-olive-400">
+                  {allTemplates.length === 0 ? 'No templates created yet.' : 'All templates are already linked.'}
+                </p>
+                <Link href="/dashboard/practitioner/intake">
+                  <Button variant="outline" size="sm" className="mt-2 text-xs">
+                    {allTemplates.length === 0 ? 'Create a Template' : 'Manage Templates'}
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              availableTemplates.map((template: any) => (
+                <div
+                  key={template.id}
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-sage-200/60 bg-white hover:border-sage-300 hover:shadow-sm transition-all cursor-pointer"
+                  onClick={() => {
+                    attachMutation.mutate({
+                      path: { service_pk: numericId },
+                      body: { form_template: template.id, is_required: false } as any,
+                    })
+                  }}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={cn(
+                      "shrink-0 rounded-lg p-1.5",
+                      template.form_type === 'consent' ? "bg-amber-100" : "bg-sage-100"
+                    )}>
+                      {template.form_type === 'consent' ? (
+                        <Shield className="h-3.5 w-3.5 text-amber-600" />
+                      ) : (
+                        <ClipboardList className="h-3.5 w-3.5 text-sage-600" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-olive-900 truncate">{template.title}</p>
+                      <span className="text-[11px] text-olive-400">{template.form_type}</span>
+                    </div>
+                  </div>
+                  <Plus className="h-4 w-4 text-sage-400 shrink-0" />
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }

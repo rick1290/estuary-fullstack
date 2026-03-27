@@ -1,17 +1,25 @@
 {% extends "emails/base.mjml" %}
 
 {% block content %}
-<!-- Reminder Hero -->
-<mj-section padding="48px 0 32px">
+<!-- Hero (warm gradient for reminders) -->
+<mj-section background-color="#6b5a4e" border-radius="16px 16px 0 0" padding="56px 48px 48px">
   <mj-column>
-    <mj-text align="center" font-size="32px" font-weight="700" color="#3c412a" padding-bottom="16px">
+    <mj-text align="center" padding-bottom="20px">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(232,214,196,0.15);margin:0 auto;line-height:72px;text-align:center;border:2px solid rgba(232,214,196,0.2);">
+        <span style="font-size:32px;">{% if is_30m %}&#128248;{% else %}&#128276;{% endif %}</span>
+      </div>
+    </mj-text>
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="12px" font-weight="400" letter-spacing="3px" color="#e0cfc2" text-transform="uppercase" padding-bottom="8px">
+      {% if is_24h %}Session Tomorrow{% else %}Starting Soon{% endif %}
+    </mj-text>
+    <mj-text align="center" font-family="'Cormorant Garamond', Georgia, serif" font-size="40px" font-weight="300" line-height="44px" color="#ffffff" padding-bottom="16px">
       {% if is_24h %}
-        Your Session is Tomorrow
+        Your Session is<br/><em style="font-weight:400;">Tomorrow</em>
       {% else %}
-        Your Session Starts Soon
+        Your Session Starts<br/><em style="font-weight:400;">In 30 Minutes</em>
       {% endif %}
     </mj-text>
-    <mj-text align="center" font-size="16px" color="#576039">
+    <mj-text align="center" font-family="'DM Sans', Helvetica, sans-serif" font-size="15px" font-weight="300" line-height="24px" color="rgba(255,255,255,0.8)">
       {% if is_24h %}
         Reminder: You have a session with {{ practitioner.display_name }} tomorrow
       {% else %}
@@ -21,75 +29,101 @@
   </mj-column>
 </mj-section>
 
-<!-- Practitioner Info -->
-{% include 'emails/components/practitioner_card.mjml' %}
+<!-- White Body -->
+<mj-wrapper background-color="#ffffff" padding="0">
 
-<!-- Spacing -->
-<mj-section padding="16px 0">
-  <mj-column></mj-column>
-</mj-section>
+  <!-- Practitioner Info -->
+  <mj-section padding="32px 48px 0">
+    <mj-column>
+      {% include 'emails/components/practitioner_card.mjml' %}
+    </mj-column>
+  </mj-section>
 
-<!-- Booking Details -->
-{% include 'emails/components/booking_card.mjml' %}
+  <!-- Booking Details -->
+  <mj-section padding="24px 48px 0">
+    <mj-column>
+      {% include 'emails/components/booking_card.mjml' %}
+    </mj-column>
+  </mj-section>
 
-<!-- Join Session (for virtual) -->
-{% if service.location_type == 'virtual' %}
-<mj-section background-color="#ffffff" border-radius="12px" border="1px solid #d3d9cc" padding="32px" css-class="card">
-  <mj-column>
-    <mj-text font-size="20px" font-weight="700" color="#3c412a" padding-bottom="16px">
+  <!-- Join Session (for virtual) -->
+  {% if service.location_type == 'virtual' %}
+  <mj-section padding="24px 48px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="28px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        {% if is_30m %}Ready to Join{% else %}How to Join{% endif %}
+      </mj-text>
+      <mj-text font-family="'Cormorant Garamond', Georgia, serif" font-size="22px" font-weight="500" color="#2d3b2d" padding-bottom="12px">
+        {% if is_30m %}
+          Your Session Awaits
+        {% else %}
+          Joining Your Session
+        {% endif %}
+      </mj-text>
+
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a" padding-bottom="16px">
+        {% if is_30m %}
+          Click the button below to join your virtual session. Your practitioner is preparing for you now.
+        {% else %}
+          You'll receive another reminder 30 minutes before your session with a link to join the video call.
+        {% endif %}
+      </mj-text>
+
       {% if is_30m %}
-        Ready to Join?
-      {% else %}
-        How to Join
+      <mj-button href="{{ WEBSITE_URL }}/room/booking/{{ booking.public_uuid }}">
+        Join Video Session
+      </mj-button>
       {% endif %}
-    </mj-text>
 
-    <mj-text font-size="14px" line-height="1.6" color="#576039" padding-bottom="20px">
-      {% if is_30m %}
-        Click the button below to join your virtual session. Your practitioner is preparing for you now.
-      {% else %}
-        You'll receive another reminder 30 minutes before your session with a link to join the video call.
+      {% if is_24h %}
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="13px" font-weight="300" line-height="21px" color="#7a7a7a">
+        <strong style="color:#2d3b2d;">Tip:</strong> Test your camera and microphone before the session to ensure a smooth experience.
+      </mj-text>
       {% endif %}
-    </mj-text>
+    </mj-column>
+  </mj-section>
+  {% else %}
+  <!-- In-person location reminder -->
+  <mj-section padding="24px 48px">
+    <mj-column background-color="#faf8f5" border="1px solid #e8e2db" border-radius="12px" padding="24px">
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="10px" font-weight="500" letter-spacing="2px" color="#8fa88f" text-transform="uppercase" padding-bottom="4px">
+        Location Reminder
+      </mj-text>
+      <mj-text font-family="'DM Sans', Helvetica, sans-serif" font-size="14px" font-weight="300" line-height="22px" color="#5a5a5a">
+        {{ service.location }}<br/>
+        {% if is_30m %}
+          <strong style="color:#2d3b2d;">Please head over now!</strong> Your session starts in 30 minutes.
+        {% else %}
+          Plan to arrive 5 minutes early.
+        {% endif %}
+      </mj-text>
+    </mj-column>
+  </mj-section>
+  {% endif %}
 
-    {% if is_30m %}
-    {% include 'emails/components/button.mjml' with button_text="Join Video Session" button_url=WEBSITE_URL|add:"/room/booking/"|add:booking.id %}
-    {% endif %}
+  <!-- CTA -->
+  <mj-section padding="8px 40px 20px">
+    <mj-column>
+      <mj-button href="{{ WEBSITE_URL }}/dashboard/user/bookings/{{ booking.public_uuid }}">
+        View Full Details
+      </mj-button>
+      <mj-text align="center" padding-top="14px">
+        <a href="{{ WEBSITE_URL }}/dashboard/user/bookings/{{ booking.public_uuid }}/cancel" style="font-family:'DM Sans',Helvetica,sans-serif;font-size:13px;font-weight:400;color:#7a7a7a;text-decoration:none;">Need to cancel?</a>
+      </mj-text>
+    </mj-column>
+  </mj-section>
 
-    {% if is_24h %}
-    <mj-text font-size="14px" line-height="1.6" color="#576039">
-      <strong>Tip:</strong> Test your camera and microphone before the session to ensure a smooth experience.
-    </mj-text>
-    {% endif %}
-  </mj-column>
-</mj-section>
-{% else %}
-<!-- In-person location reminder -->
-<mj-section background-color="#e8ebe6" border-radius="12px" border="1px solid #d3d9cc" padding="24px 28px">
-  <mj-column>
-    <mj-text font-size="14px" font-weight="600" color="#576039" padding-bottom="8px">
-      Location Reminder
-    </mj-text>
-    <mj-text font-size="14px" line-height="1.6" color="#576039">
-      {{ service.location }}<br/>
-      {% if is_30m %}
-        <strong>Please head over now!</strong> Your session starts in 30 minutes.
-      {% else %}
-        Plan to arrive 5 minutes early.
-      {% endif %}
-    </mj-text>
-  </mj-column>
-</mj-section>
-{% endif %}
+  <!-- Divider -->
+  <mj-section padding="0 48px">
+    <mj-column>
+      <mj-divider border-color="#e8e2db" border-width="1px" padding="0" />
+    </mj-column>
+  </mj-section>
 
-<!-- Quick Actions -->
-<mj-section padding="32px 0">
-  <mj-column>
-    {% include 'emails/components/button.mjml' with button_text="View Full Details" button_url=WEBSITE_URL|add:"/dashboard/bookings/"|add:booking.id %}
+  <!-- Spacer -->
+  <mj-section padding="24px 0">
+    <mj-column></mj-column>
+  </mj-section>
 
-    <mj-text align="center" padding-top="16px">
-      <a href="{{ WEBSITE_URL }}/dashboard/bookings/{{ booking.id }}/cancel" style="color: #95a57f; font-size: 14px;">Need to cancel?</a>
-    </mj-text>
-  </mj-column>
-</mj-section>
+</mj-wrapper>
 {% endblock %}

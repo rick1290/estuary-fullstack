@@ -234,7 +234,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'commission_amount': f"${commission_amount:.2f}",
             'net_earnings': f"${net_earnings:.2f}",
             'commission_rate': float(commission_rate),
-            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.public_uuid}",
             'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar",
             'message_client_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/messages/new?recipient={client.id}",
@@ -476,7 +476,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'rescheduled_by': rescheduled_by_name,
             'is_practitioner': True,
             'other_party_name': client.get_full_name(),
-            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.public_uuid}",
             'calendar_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/calendar"
         }
 
@@ -604,7 +604,7 @@ class PractitionerNotificationService(BaseNotificationService):
             'location': self._get_booking_location(booking),
             'hours_until': hours_before,
             'time_until_human': self._format_time_until(time_until),
-            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.id}",
+            'booking_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/bookings/{booking.public_uuid}",
             'client_profile_url': f"{settings.FRONTEND_URL}/dashboard/practitioner/clients/{client.id}",
             'is_aggregated': False,  # Individual reminder
             'video_room_url': video_room_url,

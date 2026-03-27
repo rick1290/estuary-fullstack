@@ -1,14 +1,21 @@
 <!-- Reusable CTA Button Component -->
-<!-- Usage: {% include 'emails/components/button.mjml' with button_text="View Booking" button_url="https://..." button_color="#61704d" %} -->
+<!-- Usage: {% include 'emails/components/button.mjml' with button_text="View Booking" button_url="https://..." %} -->
+<!-- Optional: button_style="outline" for outlined variant (default is filled) -->
 
-<mj-button
-  href="{{ button_url }}"
-  background-color="{{ button_color|default:'#61704d' }}"
-  color="#f6f7f5"
-  font-weight="600"
-  border-radius="12px"
-  padding="14px 32px"
-  font-size="16px"
->
-  {{ button_text }}
-</mj-button>
+{% if button_style == "outline" %}
+<mj-text align="center" padding="0">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+    <tr><td style="border-radius:50px;border:1.5px solid #2d3b2d;">
+      <a href="{{ button_url }}" style="display:inline-block;padding:11px 28px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;color:#2d3b2d;text-decoration:none;text-transform:uppercase;">{{ button_text }}</a>
+    </td></tr>
+  </table>
+</mj-text>
+{% else %}
+<mj-text align="center" padding="0">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+    <tr><td style="border-radius:50px;background-color:#2d3b2d;">
+      <a href="{{ button_url }}" style="display:inline-block;padding:13px 32px;font-family:'DM Sans',Helvetica,sans-serif;font-size:12px;font-weight:500;letter-spacing:1.5px;color:#ffffff;text-decoration:none;text-transform:uppercase;">{{ button_text }}</a>
+    </td></tr>
+  </table>
+</mj-text>
+{% endif %}

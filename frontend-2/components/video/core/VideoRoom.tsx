@@ -49,10 +49,13 @@ interface VideoRoomProps {
   onLeaveRoom: () => void;
   onEndSession?: () => Promise<void>;
   onError?: (error: Error) => void;
+  onConnected?: () => void;
   // Recording props
   isRecording?: boolean;
   onStartRecording?: (options: RecordingOptions) => Promise<void>;
   onStopRecording?: () => Promise<void>;
+  // Session settings
+  showTimer?: boolean;
 }
 
 export function VideoRoom({
@@ -65,9 +68,11 @@ export function VideoRoom({
   onLeaveRoom,
   onEndSession,
   onError,
+  onConnected,
   isRecording = false,
   onStartRecording,
-  onStopRecording
+  onStopRecording,
+  showTimer = true
 }: VideoRoomProps) {
   const [showChat, setShowChat] = useState(roomType !== 'individual');
   const [showSettings, setShowSettings] = useState(false);
@@ -148,6 +153,7 @@ export function VideoRoom({
       connect={true}
       onConnected={() => {
         console.log('Connected to LiveKit room successfully!');
+        onConnected?.();
       }}
       onDisconnected={(reason) => {
         console.log('Disconnected:', reason);
@@ -159,6 +165,87 @@ export function VideoRoom({
       }}
     >
       <LayoutContextProvider>
+        <style jsx global>{`
+          /* Ensure LiveKit participant tiles fill their containers and round properly */
+          .lk-participant-tile {
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            height: 100% !important;
+            width: 100% !important;
+          }
+          .lk-participant-tile video {
+            border-radius: 16px !important;
+            object-fit: cover !important;
+            height: 100% !important;
+            width: 100% !important;
+          }
+          .lk-participant-tile .lk-participant-placeholder {
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            height: 100% !important;
+            width: 100% !important;
+          }
+          .lk-participant-tile .lk-participant-metadata {
+            border-radius: 0 0 16px 16px !important;
+          }
+
+          /* Control bar device selector dropdowns */
+          .lk-control-bar .lk-button-group {
+            position: relative !important;
+          }
+          .lk-control-bar .lk-button-group-menu {
+            position: relative !important;
+          }
+          .lk-control-bar .lk-button-group-menu .lk-device-menu {
+            position: absolute !important;
+            bottom: 100% !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 50 !important;
+            min-width: 200px !important;
+            background: white !important;
+            border: 1px solid #e5ebe2 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+            padding: 8px !important;
+            margin-bottom: 8px !important;
+          }
+          .lk-control-bar .lk-button-group-menu .lk-device-menu ul {
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .lk-control-bar .lk-button-group-menu .lk-device-menu li {
+            padding: 8px 12px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            font-size: 13px !important;
+            color: #4a5548 !important;
+            transition: background 0.15s ease !important;
+          }
+          .lk-control-bar .lk-button-group-menu .lk-device-menu li:hover {
+            background: rgba(156, 175, 136, 0.15) !important;
+          }
+          .lk-control-bar .lk-button-group-menu .lk-device-menu li[data-lk-active="true"] {
+            background: rgba(156, 175, 136, 0.2) !important;
+            font-weight: 500 !important;
+          }
+          /* Ensure the menu trigger button (dropdown arrow) is visible */
+          .lk-control-bar .lk-button-group-menu button {
+            background: rgba(156, 175, 136, 0.15) !important;
+            border: 1px solid rgba(156, 175, 136, 0.3) !important;
+            border-radius: 8px !important;
+            padding: 6px !important;
+            color: #4a5548 !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .lk-control-bar .lk-button-group-menu button:hover {
+            background: rgba(156, 175, 136, 0.25) !important;
+          }
+        `}</style>
         <div className="h-screen flex flex-col bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50" style={{
           '--lk-fg': '#4a5548',
           '--lk-bg': 'transparent',
@@ -215,10 +302,12 @@ export function VideoRoom({
                       {getRoomTypeLabel()}
                     </Badge>
                     <span>•</span>
-                    <div className="flex items-center gap-1 text-olive-600">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatDuration(sessionDuration)}</span>
-                    </div>
+                    {showTimer && (
+                      <div className="flex items-center gap-1 text-olive-600">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatDuration(sessionDuration)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -396,8 +485,8 @@ export function VideoRoom({
           </div>
 
           {/* Control Bar */}
-          <div className="bg-white/80 backdrop-blur-md border-t border-sage-200 p-4 shadow-sm">
-            <div className="max-w-4xl mx-auto">
+          <div className="bg-white/80 backdrop-blur-md border-t border-sage-200 p-4 shadow-sm relative overflow-visible">
+            <div className="max-w-4xl mx-auto overflow-visible">
               <div className="lk-control-bar" style={{
                 '--lk-control-bg': 'rgba(156, 175, 136, 0.15)',
                 '--lk-control-hover-bg': 'rgba(156, 175, 136, 0.25)',
@@ -629,7 +718,7 @@ function IndividualLayout() {
   return (
     <div className="h-full flex gap-4 p-6">
       {tracks.map((track) => (
-        <div key={track.participant.identity + track.source} className="flex-1 rounded-2xl overflow-hidden shadow-xl border border-sage-200">
+        <div key={track.participant.identity + track.source} className="flex-1 h-full rounded-2xl overflow-hidden shadow-xl border border-sage-200">
           <ParticipantTile trackRef={track} />
         </div>
       ))}
@@ -817,6 +906,20 @@ function EndSessionButton({ onEndSession }: { onEndSession: () => Promise<void> 
     setIsEnding(true);
 
     try {
+      // Notify all participants to disconnect before calling the API
+      if (connectionState === ConnectionState.Connected) {
+        try {
+          room.localParticipant.publishData(
+            new TextEncoder().encode(JSON.stringify({ type: 'session_ended' })),
+            { reliable: true }
+          );
+          // Small delay to let the message propagate
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (e) {
+          console.warn('Failed to send session_ended message:', e);
+        }
+      }
+
       // Call the end session API
       await onEndSession();
 
@@ -876,7 +979,7 @@ function EndSessionButton({ onEndSession }: { onEndSession: () => Promise<void> 
   );
 }
 
-// Handles incoming data channel messages from host (mute/unmute requests)
+// Handles incoming data channel messages from host (mute/unmute, session ended)
 function HostControlHandler() {
   const room = useRoomContext();
 
@@ -885,6 +988,13 @@ function HostControlHandler() {
       try {
         const message = JSON.parse(new TextDecoder().decode(payload));
         const localIdentity = room.localParticipant.identity;
+
+        // session_ended is broadcast to all participants (no participantId filter)
+        if (message.type === 'session_ended') {
+          console.log('Session ended by host, disconnecting...');
+          room.disconnect(true);
+          return;
+        }
 
         // Only act on messages targeted at this participant
         if (message.participantId !== localIdentity) return;
