@@ -67,17 +67,17 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
   return (
     <div className="bg-white rounded-2xl border border-sage-200/60 overflow-hidden">
       {/* Compact Header Section */}
-      <div className="p-5">
-        <div className="flex flex-col sm:flex-row gap-6">
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           {/* Avatar */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 self-center sm:self-start">
             <div className="relative">
-              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-sage-100">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-sage-100">
                 {practitioner.profile_image_url ? (
                   <img
                     src={practitioner.profile_image_url}
                     alt={practitioner.display_name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover max-w-full"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -99,10 +99,10 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           </div>
 
           {/* Main Info */}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-1 leading-[1.15]">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+              <div className="text-center sm:text-left w-full sm:w-auto">
+                <h1 className="font-serif text-xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-1 leading-[1.15]">
                   {practitioner.display_name}
                 </h1>
                 {(practitioner.professional_title || practitioner.title) && (
@@ -110,7 +110,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 )}
                 
                 {/* Key Stats - Horizontal */}
-                <div className="flex flex-wrap items-center gap-4 text-xs font-light">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs font-light">
                   <div className="flex items-center gap-1.5">
                     <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" />
                     <span className="font-medium text-olive-900">{practitioner.average_rating_float}</span>
@@ -140,11 +140,11 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
               </div>
 
               {/* Action Buttons - Top Right */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full text-olive-500 hover:text-olive-700 hover:bg-sage-50"
+                  className="rounded-full text-olive-500 hover:text-olive-700 hover:bg-sage-50 h-11 w-11"
                   onClick={() => {
                     navigator.share({
                       title: practitioner.display_name,
@@ -161,7 +161,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full text-olive-500 hover:text-olive-700 hover:bg-sage-50"
+                  className="rounded-full text-olive-500 hover:text-olive-700 hover:bg-sage-50 h-11 w-11"
                   onClick={handleLikeToggle}
                   disabled={isLoading}
                   aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
@@ -173,7 +173,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
 
             {/* Specialties - Compact */}
             <div className="mt-4">
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap justify-center sm:justify-start gap-1.5">
                 {practitioner.specializations.slice(0, 4).map((spec) => (
                   <span
                     key={spec.id}
@@ -202,11 +202,11 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
         )}
 
         {/* Primary Actions - Message Button */}
-        <div className="mt-6 flex gap-3">
+        <div className="mt-5 sm:mt-6 flex gap-3">
           <Button
             variant="outline"
             size="default"
-            className="flex-1 sm:flex-none rounded-full"
+            className="flex-1 sm:flex-none rounded-full min-h-[44px]"
             onClick={onMessageClick}
           >
             <MessageCircle className="h-4 w-4 mr-2" />

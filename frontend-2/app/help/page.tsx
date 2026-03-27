@@ -153,9 +153,9 @@ export default function HelpCenterPage() {
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Hero */}
-      <div className="bg-gradient-to-b from-sage-100/60 to-cream-50 pt-16 pb-12">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h1 className="font-serif text-4xl font-light text-olive-900 mb-3">
+      <div className="bg-gradient-to-b from-sage-100/60 to-cream-50 pt-12 sm:pt-16 pb-10 sm:pb-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="font-serif text-3xl sm:text-4xl font-light text-olive-900 mb-3">
             How can we help?
           </h1>
           <p className="text-olive-500 mb-8 text-lg">
@@ -166,13 +166,13 @@ export default function HelpCenterPage() {
             <input
               type="text"
               placeholder="Search for help articles..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sage-200/80 bg-white text-olive-700 placeholder:text-olive-400 focus:outline-none focus:ring-2 focus:ring-sage-300/50 text-[15px]"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sage-200/80 bg-white text-olive-700 placeholder:text-olive-400 focus:outline-none focus:ring-2 focus:ring-sage-300/50 text-[15px] min-h-[44px]"
             />
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 space-y-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-12 sm:space-y-16">
         {/* For Clients */}
         <section>
           <h2 className="text-xl font-serif font-medium text-olive-800 mb-6">For Clients</h2>
@@ -183,7 +183,7 @@ export default function HelpCenterPage() {
                 <Link
                   key={cat.title}
                   href={cat.href}
-                  className="group bg-white border border-sage-200/60 rounded-xl p-5 hover:border-sage-300 hover:shadow-sm transition-all"
+                  className="group bg-white border border-sage-200/60 rounded-xl p-4 sm:p-5 hover:border-sage-300 hover:shadow-sm transition-all min-h-[44px]"
                 >
                   <div className="flex items-start gap-3">
                     <div className="bg-sage-100/80 rounded-lg p-2 text-sage-600 mt-0.5">
@@ -214,7 +214,7 @@ export default function HelpCenterPage() {
                 <Link
                   key={cat.title}
                   href={cat.href}
-                  className="group bg-white border border-sage-200/60 rounded-xl p-5 hover:border-sage-300 hover:shadow-sm transition-all"
+                  className="group bg-white border border-sage-200/60 rounded-xl p-4 sm:p-5 hover:border-sage-300 hover:shadow-sm transition-all min-h-[44px]"
                 >
                   <div className="flex items-start gap-3">
                     <div className="bg-olive-100/80 rounded-lg p-2 text-olive-600 mt-0.5">
@@ -268,7 +268,7 @@ export default function HelpCenterPage() {
         </section>
 
         {/* Contact */}
-        <section className="bg-white border border-sage-200/60 rounded-xl p-8 text-center">
+        <section className="bg-white border border-sage-200/60 rounded-xl p-5 sm:p-8 text-center">
           <h2 className="font-serif text-xl font-medium text-olive-800 mb-2">
             Can't find what you're looking for?
           </h2>
@@ -278,14 +278,14 @@ export default function HelpCenterPage() {
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-sage-600 text-white text-sm font-medium rounded-xl hover:bg-sage-700 transition-colors min-h-[44px]"
             >
               <Mail className="h-4 w-4" />
               Contact Support
             </a>
             <Link
               href="/help/getting-started"
-              className="inline-flex items-center gap-2 px-5 py-2.5 border border-sage-200 text-olive-700 text-sm font-medium rounded-xl hover:bg-sage-50 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-sage-200 text-olive-700 text-sm font-medium rounded-xl hover:bg-sage-50 transition-colors min-h-[44px]"
             >
               Browse All Articles
               <ArrowRight className="h-4 w-4" />

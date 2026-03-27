@@ -92,9 +92,9 @@ export default function AboutPage() {
   return (
     <div className="bg-cream-50">
       {/* ── Hero ── */}
-      <section className="py-20 md:py-28">
+      <section className="py-14 sm:py-20 md:py-28">
         <motion.div
-          className="container max-w-2xl px-6 text-center mx-auto"
+          className="container max-w-2xl px-4 sm:px-6 lg:px-8 text-center mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
@@ -128,7 +128,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Image band placeholder ── */}
-      <div className="mx-4 sm:mx-8 h-64 sm:h-80 rounded-3xl bg-gradient-to-br from-sage-200/60 via-cream-100 to-terracotta-200/40 flex items-center justify-center">
+      <div className="mx-4 sm:mx-8 h-48 sm:h-64 md:h-80 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-sage-200/60 via-cream-100 to-terracotta-200/40 flex items-center justify-center">
         <span className="text-xs tracking-widest uppercase text-olive-400 font-medium">
           Founder / Team Photograph
         </span>
@@ -136,7 +136,7 @@ export default function AboutPage() {
 
       {/* ── Origin story ── */}
       <section className="py-16 md:py-20">
-        <div className="container max-w-3xl px-6 mx-auto">
+        <div className="container max-w-3xl px-4 sm:px-6 lg:px-8 mx-auto">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -217,7 +217,7 @@ export default function AboutPage() {
             {/* Aside quote */}
             <motion.aside
               variants={itemFade}
-              className="sm:max-w-[240px] flex-shrink-0 bg-cream-100/60 border border-sage-200/60 rounded-2xl p-6"
+              className="sm:max-w-[240px] flex-shrink-0 bg-cream-100/60 border border-sage-200/60 rounded-2xl p-5 sm:p-6"
             >
               <p className="font-serif text-lg italic font-light leading-relaxed text-olive-800">
                 &ldquo;We didn&rsquo;t want to build another tool. We wanted to
@@ -232,11 +232,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ── Values ── */}
       <section className="py-16 md:py-20">
-        <div className="container max-w-3xl px-6 mx-auto">
+        <div className="container max-w-3xl px-4 sm:px-6 lg:px-8 mx-auto">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -296,11 +296,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ── Who we serve ── */}
       <section className="py-16 md:py-20">
-        <div className="container max-w-3xl px-6 mx-auto">
+        <div className="container max-w-3xl px-4 sm:px-6 lg:px-8 mx-auto">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -358,9 +358,9 @@ export default function AboutPage() {
       </section>
 
       {/* ── Our promise (dark section) ── */}
-      <section className="py-16 md:py-20 px-4 sm:px-8">
+      <section className="py-16 md:py-20 px-4 sm:px-6 lg:px-8">
         <motion.div
-          className="max-w-3xl mx-auto bg-olive-800 rounded-3xl px-7 py-14 sm:px-12 sm:py-16"
+          className="max-w-3xl mx-auto bg-olive-800 rounded-2xl sm:rounded-3xl px-5 py-10 sm:px-12 sm:py-16"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
@@ -425,9 +425,9 @@ export default function AboutPage() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="py-20 md:py-24">
+      <section className="py-14 sm:py-20 md:py-24">
         <motion.div
-          className="max-w-3xl mx-auto bg-gradient-to-br from-terracotta-100/60 via-cream-100 to-sage-200/60 rounded-3xl px-8 py-16 sm:px-14 sm:py-20 text-center mx-4 sm:mx-auto"
+          className="max-w-3xl mx-4 sm:mx-auto bg-gradient-to-br from-terracotta-100/60 via-cream-100 to-sage-200/60 rounded-3xl px-6 py-12 sm:px-14 sm:py-20 text-center"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}

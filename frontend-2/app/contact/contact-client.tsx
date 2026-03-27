@@ -24,9 +24,9 @@ export default function ContactPage() {
   return (
     <div className="bg-cream-50">
       {/* Hero */}
-      <section className="py-20 md:py-24">
+      <section className="py-14 sm:py-20 md:py-24">
         <motion.div
-          className="container max-w-2xl px-6 text-center mx-auto"
+          className="container max-w-2xl px-4 sm:px-6 lg:px-8 text-center mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
@@ -57,11 +57,11 @@ export default function ContactPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* Form + sidebar */}
       <section className="py-16 md:py-20">
-        <div className="container max-w-4xl px-6 mx-auto">
+        <div className="container max-w-4xl px-4 sm:px-6 lg:px-8 mx-auto">
           <motion.div
             className="grid md:grid-cols-5 gap-10"
             initial="hidden"
@@ -71,7 +71,7 @@ export default function ContactPage() {
           >
             {/* Form */}
             <motion.div variants={itemFade} className="md:col-span-3">
-              <div className="bg-white rounded-2xl border border-sage-200/60 p-8">
+              <div className="bg-white rounded-2xl border border-sage-200/60 p-5 sm:p-8">
                 <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">
                   Send a Message
                 </h2>
