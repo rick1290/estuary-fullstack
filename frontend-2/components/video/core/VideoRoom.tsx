@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Loader2, MessageSquare, Settings, X, Users,
   PhoneOff, Maximize2, Minimize2, Clock,
-  Mic, MicOff, Video, VideoOff, Power
+  Mic, MicOff, Video, VideoOff, Power, Volume2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EstuaryLogo } from '@/components/ui/estuary-logo';
@@ -246,6 +246,53 @@ export function VideoRoom({
             background: rgba(156, 175, 136, 0.25) !important;
           }
 
+          /* Speaker selector styling */
+          .lk-speaker-select .lk-device-menu {
+            position: static !important;
+          }
+          .lk-speaker-select .lk-device-menu button {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 13px !important;
+            color: #4a5548 !important;
+            cursor: pointer !important;
+            min-height: 32px !important;
+          }
+          .lk-speaker-select .lk-device-menu button:hover {
+            color: #3d4a38 !important;
+          }
+          .lk-speaker-select .lk-device-menu ul {
+            position: absolute !important;
+            bottom: 100% !important;
+            right: 0 !important;
+            z-index: 50 !important;
+            min-width: 220px !important;
+            background: white !important;
+            border: 1px solid #e5ebe2 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+            padding: 6px !important;
+            margin-bottom: 8px !important;
+            list-style: none !important;
+          }
+          .lk-speaker-select .lk-device-menu li {
+            padding: 8px 12px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            font-size: 13px !important;
+            color: #4a5548 !important;
+            transition: background 0.15s ease !important;
+          }
+          .lk-speaker-select .lk-device-menu li:hover {
+            background: rgba(156, 175, 136, 0.15) !important;
+          }
+          .lk-speaker-select .lk-device-menu li[data-lk-active="true"] {
+            background: rgba(156, 175, 136, 0.2) !important;
+            font-weight: 500 !important;
+          }
+
           /* Control bar button touch targets */
           .lk-control-bar button {
             min-height: 44px !important;
@@ -365,13 +412,13 @@ export function VideoRoom({
                   </Button>
                 )}
 
-                {/* Settings Toggle */}
+                {/* Settings Toggle — hidden, device selection is in the ControlBar dropdown arrows */}
                 <Button
                   variant={showSettings ? "secondary" : "ghost"}
                   size="sm"
                   onClick={() => setShowSettings(!showSettings)}
                   className={cn(
-                    "text-olive-700 border-sage-300 h-9 w-9 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-1.5",
+                    "text-olive-700 border-sage-300 h-9 w-9 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-1.5 hidden",
                     showSettings ? "bg-sage-100" : "hover:bg-sage-50"
                   )}
                 >
@@ -497,32 +544,44 @@ export function VideoRoom({
           {/* Control Bar */}
           <div className="bg-white/80 backdrop-blur-md border-t border-sage-200 p-2.5 sm:p-4 shadow-sm relative overflow-visible">
             <div className="max-w-4xl mx-auto overflow-visible">
-              <div className="lk-control-bar" style={{
-                '--lk-control-bg': 'rgba(156, 175, 136, 0.15)',
-                '--lk-control-hover-bg': 'rgba(156, 175, 136, 0.25)',
-                '--lk-control-active-bg': 'rgba(156, 175, 136, 0.35)',
-                '--lk-control-fg': '#4a5548',
-                '--lk-control-active-fg': '#3d4a38',
-                '--lk-button-bg': 'rgba(156, 175, 136, 0.15)',
-                '--lk-button-hover-bg': 'rgba(156, 175, 136, 0.25)',
-                '--lk-button-fg': '#4a5548',
-                '--lk-button-active-fg': '#3d4a38',
-                '--lk-danger-bg': 'rgb(220, 38, 38)',
-                '--lk-danger-hover-bg': 'rgb(185, 28, 28)',
-                '--lk-fg': '#4a5548',
-                '--lk-bg': 'transparent',
-              } as React.CSSProperties}>
-                <ControlBar
-                  variation={isHost ? "verbose" : "minimal"}
-                  controls={{
-                    microphone: true,
-                    camera: true,
-                    chat: false, // We handle chat with our own button
-                    screenShare: isHost || roomType === 'individual',
-                    leave: false // We handle this with our own button
-                  }}
-                  saveUserChoices={true}
-                />
+              <div className="flex items-center justify-center gap-2">
+                <div className="lk-control-bar" style={{
+                  '--lk-control-bg': 'rgba(156, 175, 136, 0.15)',
+                  '--lk-control-hover-bg': 'rgba(156, 175, 136, 0.25)',
+                  '--lk-control-active-bg': 'rgba(156, 175, 136, 0.35)',
+                  '--lk-control-fg': '#4a5548',
+                  '--lk-control-active-fg': '#3d4a38',
+                  '--lk-button-bg': 'rgba(156, 175, 136, 0.15)',
+                  '--lk-button-hover-bg': 'rgba(156, 175, 136, 0.25)',
+                  '--lk-button-fg': '#4a5548',
+                  '--lk-button-active-fg': '#3d4a38',
+                  '--lk-danger-bg': 'rgb(220, 38, 38)',
+                  '--lk-danger-hover-bg': 'rgb(185, 28, 28)',
+                  '--lk-fg': '#4a5548',
+                  '--lk-bg': 'transparent',
+                } as React.CSSProperties}>
+                  <ControlBar
+                    variation={isHost ? "verbose" : "minimal"}
+                    controls={{
+                      microphone: true,
+                      camera: true,
+                      chat: false,
+                      screenShare: isHost || roomType === 'individual',
+                      leave: false
+                    }}
+                    saveUserChoices={true}
+                  />
+                </div>
+
+                {/* Speaker Selector */}
+                <div className="relative flex items-center">
+                  <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-sage-100/50 hover:bg-sage-100 transition-colors">
+                    <Volume2 className="h-4 w-4 text-olive-600 shrink-0" />
+                    <div className="lk-speaker-select">
+                      <MediaDeviceMenu kind="audiooutput" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
