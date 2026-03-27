@@ -720,29 +720,48 @@ class ClientNoteSerializer(serializers.ModelSerializer):
 
 
 class FeatureRequestSerializer(serializers.ModelSerializer):
-    """Serializer for feature requests submitted by practitioners"""
-    practitioner_name = serializers.CharField(source='practitioner.display_name', read_only=True)
+    """Serializer for feedback/feature requests from any authenticated user"""
+    practitioner_name = serializers.SerializerMethodField()
+    submitter_name = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = FeatureRequest
         fields = [
             'id', 'title', 'description', 'category', 'priority', 'status',
-            'votes', 'created_at', 'updated_at', 'practitioner_name', 'can_edit'
+            'feedback_type', 'votes', 'created_at', 'updated_at',
+            'practitioner_name', 'submitter_name', 'can_edit'
         ]
-        read_only_fields = ['id', 'status', 'votes', 'created_at', 'updated_at', 'practitioner_name', 'can_edit']
+        read_only_fields = [
+            'id', 'status', 'votes', 'created_at', 'updated_at',
+            'practitioner_name', 'submitter_name', 'can_edit'
+        ]
+
+    def get_practitioner_name(self, obj):
+        if obj.practitioner:
+            return obj.practitioner.display_name
+        return None
+
+    def get_submitter_name(self, obj):
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.email
+        if obj.practitioner:
+            return obj.practitioner.display_name
+        return None
 
     def get_can_edit(self, obj):
         """Check if the request can be edited (only submitted status can be edited)"""
         return obj.status == 'submitted'
 
     def create(self, validated_data):
-        """Create a new feature request"""
+        """Create a new feedback request from any authenticated user"""
         request = self.context.get('request')
-        if not request or not hasattr(request.user, 'practitioner_profile'):
-            raise serializers.ValidationError("You must be a practitioner to submit feature requests")
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("You must be logged in to submit feedback")
 
-        validated_data['practitioner'] = request.user.practitioner_profile
+        validated_data['user'] = request.user
+        if hasattr(request.user, 'practitioner_profile'):
+            validated_data['practitioner'] = request.user.practitioner_profile
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

@@ -62,7 +62,7 @@ export default function FeedbackWidget() {
   // Determine if user is a practitioner
   const isPractitioner = user?.hasPractitionerAccount && pathname?.startsWith("/dashboard/practitioner")
 
-  // Feature request mutation (practitioner only)
+  // Feedback mutation — works for both practitioners and regular users
   const createMutation = useMutation({
     ...featureRequestsCreateMutation(),
     onSuccess: () => {
@@ -97,32 +97,15 @@ export default function FeedbackWidget() {
       return
     }
 
-    if (isPractitioner) {
-      // Submit via API
-      createMutation.mutate({
-        body: {
-          title: feedbackType === "bug" ? `[Bug] ${title}` : title,
-          description: `${description}\n\n---\nPage: ${pathname}\nType: ${feedbackType}`,
-          category: category as any,
-          priority: priority as any,
-        },
-      })
-    } else {
-      // For regular users — mailto fallback (or could POST to a generic endpoint)
-      const subject = encodeURIComponent(
-        feedbackType === "bug" ? `[Bug Report] ${title}` : `[Feedback] ${title}`
-      )
-      const body = encodeURIComponent(
-        `${description}\n\n---\nPage: ${pathname}\nType: ${feedbackType}\nUser: ${user?.email || "unknown"}`
-      )
-      window.open(`mailto:support@estuarywellness.com?subject=${subject}&body=${body}`)
-      setSubmitted(true)
-      setTimeout(() => {
-        resetForm()
-        setIsOpen(false)
-        setSubmitted(false)
-      }, 2500)
-    }
+    createMutation.mutate({
+      body: {
+        title: feedbackType === "bug" ? `[Bug] ${title}` : title,
+        description: `${description}\n\n---\nPage: ${pathname}\nType: ${feedbackType}`,
+        category: category as any,
+        priority: priority as any,
+        feedback_type: feedbackType === "bug" ? "bug" : "feature",
+      } as any,
+    })
   }
 
   // Close on escape
