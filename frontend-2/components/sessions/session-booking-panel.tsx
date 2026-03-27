@@ -164,7 +164,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
   }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateVisibleDates = (startIndex: number) => {
-    const visibleCount = typeof window !== 'undefined' && window.innerWidth < 600 ? 3 : 5
+    const visibleCount = typeof window !== 'undefined' && window.innerWidth < 600 ? 2 : 3
     const endIndex = Math.min(startIndex + visibleCount, allDates.length)
     setVisibleDates(allDates.slice(startIndex, endIndex))
   }
@@ -273,28 +273,26 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
     return (
       <div
         onClick={() => handleDateSelect(label)}
-        className={`${isMobile ? 'flex-shrink-0 w-[52px]' : 'flex-1'} py-2 pb-3 rounded-lg cursor-pointer text-center border-[1.5px] transition-all relative ${
+        className={`${isMobile ? 'flex-shrink-0 w-[52px]' : 'flex-1'} py-2 rounded-lg cursor-pointer text-center border-[1.5px] transition-all relative ${
           isSelected
             ? "border-olive-900 bg-olive-900 text-white"
-            : datesLoaded && available
-              ? "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
-              : datesLoaded && !available
-                ? "border-sage-200/40 bg-sage-50/30 text-olive-300 hover:border-sage-300 hover:bg-sage-50"
-                : "border-sage-200 bg-white text-olive-700"
+            : datesLoaded && !available
+              ? "border-sage-200/60 bg-sage-50/50 text-olive-400 opacity-50"
+              : "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
         }`}
       >
         <p className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} font-medium uppercase tracking-wide leading-none ${
-          isSelected ? 'text-white/60' : datesLoaded && !available ? 'text-olive-300' : 'text-olive-400'
+          isSelected ? 'text-white/60' : 'text-olive-400'
         }`}>{date.day}</p>
         <p className={`text-sm font-medium mt-1 leading-none ${
-          isSelected ? 'text-white' : datesLoaded && !available ? 'text-olive-300' : 'text-olive-800'
+          isSelected ? 'text-white' : datesLoaded && !available ? 'text-olive-400' : 'text-olive-800'
         }`}>{date.date.split(' ')[1]}</p>
         {/* Availability dot indicator */}
         {datesLoaded && available && !isSelected && (
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-400" />
         )}
         {datesLoaded && available && isSelected && (
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-emerald-300" />
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-300" />
         )}
       </div>
     )
@@ -350,14 +348,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
 
           {/* Date selector */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-[10px] font-medium tracking-widest uppercase text-olive-500">Choose Your Date</label>
-              {!isLoadingDates && totalAvailableDates > 0 && (
-                <span className="text-[10px] text-emerald-600 font-medium">
-                  {totalAvailableDates} date{totalAvailableDates !== 1 ? 's' : ''} available
-                </span>
-              )}
-            </div>
+            <label className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-3 block">Choose Your Date</label>
 
             {/* Desktop: arrows + visible chips */}
             <div className="hidden sm:block mb-5">
@@ -393,7 +384,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
             {/* Mobile: horizontal scrollable chips */}
             <div className="sm:hidden mb-5">
               <div ref={mobileScrollRef} className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-                {allDates.slice(0, 21).map((date) => (
+                {allDates.slice(0, 14).map((date) => (
                   <DateChip key={date.date} date={date} isMobile />
                 ))}
               </div>

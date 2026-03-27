@@ -15,7 +15,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from bookings.models import (
     Booking, BookingNote, BookingFactory
 )
-from datetime import timedelta
+from datetime import timedelta, date
 
 from bookings.api.v1.serializers import (
     BookingListSerializer, BookingDetailSerializer,
@@ -434,10 +434,13 @@ class BookingViewSet(viewsets.ModelViewSet):
             end_date=end_date,
         )
 
-        # Group by date, return just date + slot count
+        # Group by the original schedule date (not UTC-converted date)
         dates_with_slots = {}
         for slot in slots:
-            d = slot['start_datetime'].date().isoformat()
+            # Use 'date' field (original schedule date) not start_datetime.date() (UTC)
+            d = slot.get('date', slot['start_datetime'].date())
+            if isinstance(d, date):
+                d = d.isoformat()
             dates_with_slots[d] = dates_with_slots.get(d, 0) + 1
 
         return Response({
