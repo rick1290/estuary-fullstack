@@ -5,7 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   serviceResourcesListOptions,
   serviceResourcesCreateMutation,
-  serviceResourcesDestroyMutation
+  serviceResourcesDestroyMutation,
+  serviceResourcesPartialUpdateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -32,7 +33,9 @@ import {
   File,
   ExternalLink,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  Pencil,
+  Check
 } from "lucide-react"
 
 interface SessionResourcesSectionProps {
@@ -67,6 +70,8 @@ export function SessionResourcesSection({ sessionId }: SessionResourcesSectionPr
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editData, setEditData] = useState({ title: "", description: "", resource_type: "", access_level: "" })
 
   const listOptions = serviceResourcesListOptions({
     query: { session_id: sessionId.toString() } as any
@@ -100,6 +105,36 @@ export function SessionResourcesSection({ sessionId }: SessionResourcesSectionPr
       toast({ title: "Error", description: error.message || "Failed to delete resource", variant: "destructive" })
     }
   })
+
+  const updateResourceMutation = useMutation({
+    ...serviceResourcesPartialUpdateMutation(),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Resource updated" })
+      queryClient.invalidateQueries({ queryKey: listOptions.queryKey })
+      setEditingId(null)
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update resource", variant: "destructive" })
+    }
+  })
+
+  const startEditing = (resource: any) => {
+    setEditingId(resource.id)
+    setEditData({
+      title: resource.title || "",
+      description: resource.description || "",
+      resource_type: resource.resource_type || "document",
+      access_level: resource.access_level || "enrolled",
+    })
+  }
+
+  const saveEdit = () => {
+    if (!editingId || !editData.title) return
+    updateResourceMutation.mutate({
+      path: { id: editingId },
+      body: editData as any,
+    })
+  }
 
   const resetForm = () => {
     setNewResource({ title: "", description: "", resource_type: "document", access_level: "enrolled", external_url: "" })
@@ -179,46 +214,113 @@ export function SessionResourcesSection({ sessionId }: SessionResourcesSectionPr
         <div className="space-y-3">
           {resources.map((resource: any) => (
             <Card key={resource.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex gap-3 flex-1">
-                  <div className="mt-1">{getResourceIcon(resource.resource_type)}</div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-sm">{resource.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {resourceTypes.find(rt => rt.value === resource.resource_type)?.label}
-                      </Badge>
+              {editingId === resource.id ? (
+                /* ── Inline Edit Mode ── */
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">Title</Label>
+                    <Input value={editData.title}
+                      onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                      className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Description</Label>
+                    <Textarea value={editData.description}
+                      onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                      rows={2} className="mt-1" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Type</Label>
+                      <Select value={editData.resource_type}
+                        onValueChange={(v) => setEditData({ ...editData, resource_type: v })}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {resourceTypes.map((t) => (
+                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    {resource.description && (
-                      <p className="text-xs text-muted-foreground">{resource.description}</p>
-                    )}
-                    {resource.external_url && (
-                      <a href={resource.external_url} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                        <Link2 className="h-3 w-3" />{resource.external_url}
-                      </a>
-                    )}
-                    {resource.file_url && (
-                      <div className="flex items-center gap-2">
-                        <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${resource.file_url}`}
-                          target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                          <Download className="h-3 w-3" />{resource.file_name || 'Download'}
-                        </a>
-                        {resource.file_size && (
-                          <span className="text-xs text-muted-foreground">
-                            ({(resource.file_size / 1024 / 1024).toFixed(1)} MB)
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div>
+                      <Label className="text-xs">Access Level</Label>
+                      <Select value={editData.access_level}
+                        onValueChange={(v) => setEditData({ ...editData, access_level: v })}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {accessLevels.map((l) => (
+                            <SelectItem key={l.value} value={l.value}>{l.label.split(' - ')[0]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>Cancel</Button>
+                    <Button size="sm" onClick={saveEdit}
+                      disabled={updateResourceMutation.isPending || !editData.title}>
+                      {updateResourceMutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5 mr-1.5" />
+                      )}
+                      Save
+                    </Button>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => removeResource(resource.id)}
-                  disabled={deleteResourceMutation.isPending}>
-                  {deleteResourceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                </Button>
-              </div>
+              ) : (
+                /* ── Read Mode ── */
+                <div className="flex items-start justify-between">
+                  <div className="flex gap-3 flex-1">
+                    <div className="mt-1">{getResourceIcon(resource.resource_type)}</div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-medium text-sm">{resource.title}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {resourceTypes.find(rt => rt.value === resource.resource_type)?.label}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {accessLevels.find(l => l.value === resource.access_level)?.label.split(' - ')[0] || resource.access_level}
+                        </Badge>
+                      </div>
+                      {resource.description && (
+                        <p className="text-xs text-muted-foreground">{resource.description}</p>
+                      )}
+                      {resource.external_url && (
+                        <a href={resource.external_url} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                          <Link2 className="h-3 w-3" />{resource.external_url}
+                        </a>
+                      )}
+                      {resource.file_url && (
+                        <div className="flex items-center gap-2">
+                          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${resource.file_url}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                            <Download className="h-3 w-3" />{resource.file_name || 'Download'}
+                          </a>
+                          {resource.file_size && (
+                            <span className="text-xs text-muted-foreground">
+                              ({(resource.file_size / 1024 / 1024).toFixed(1)} MB)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0"
+                      onClick={() => startEditing(resource)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeResource(resource.id)}
+                      disabled={deleteResourceMutation.isPending}>
+                      {deleteResourceMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card>
           ))}
         </div>
