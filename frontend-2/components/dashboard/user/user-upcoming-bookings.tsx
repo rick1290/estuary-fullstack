@@ -124,9 +124,15 @@ export default function UserUpcomingBookings() {
                 <Card className="border border-sage-200/60 bg-white hover:border-sage-300 hover:shadow-sm transition-all cursor-pointer">
                   <CardContent className="p-3 sm:p-5">
                     <div className="flex gap-3 sm:gap-4 items-center">
-                      {/* Type icon */}
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 bg-cream-50 ${config.color}`}>
-                        <TypeIcon className="h-5 w-5" />
+                      {/* Service image */}
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden shrink-0 bg-sage-50">
+                        {journey.service_image_url ? (
+                          <img src={journey.service_image_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center ${config.color}`}>
+                            <TypeIcon className="h-5 w-5" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Details */}
@@ -141,7 +147,16 @@ export default function UserUpcomingBookings() {
                         </div>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] sm:text-[13px] text-olive-500">
                           {journey.practitioner?.name && (
-                            <span>with {journey.practitioner.name}</span>
+                            <span className="flex items-center gap-1.5">
+                              {journey.practitioner.profile_image_url ? (
+                                <img src={journey.practitioner.profile_image_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-4 h-4 rounded-full bg-sage-200 flex items-center justify-center">
+                                  <span className="text-[8px] text-olive-600">{journey.practitioner.name.charAt(0)}</span>
+                                </div>
+                              )}
+                              with {journey.practitioner.name}
+                            </span>
                           )}
                           {nextTime && (
                             <>
