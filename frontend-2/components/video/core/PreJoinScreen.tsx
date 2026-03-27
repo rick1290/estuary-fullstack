@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, AlertCircle, Video, Mic, Headphones, Calendar, Clock, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertCircle, Video, Mic, Headphones, Calendar, Clock, CheckCircle2, CircleDot, Timer, MicOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -26,6 +27,13 @@ interface PreJoinScreenProps {
   onExit?: () => void;
   loading?: boolean;
   error?: string;
+  isHost?: boolean;
+  recordingOptIn?: boolean;
+  onRecordingOptInChange?: (optIn: boolean) => void;
+  showTimer?: boolean;
+  onShowTimerChange?: (show: boolean) => void;
+  joinMuted?: boolean;
+  onJoinMutedChange?: (muted: boolean) => void;
 }
 
 export function PreJoinScreen({
@@ -34,7 +42,14 @@ export function PreJoinScreen({
   onJoinRoom,
   onExit,
   loading = false,
-  error
+  error,
+  isHost = false,
+  recordingOptIn = false,
+  onRecordingOptInChange,
+  showTimer = true,
+  onShowTimerChange,
+  joinMuted = false,
+  onJoinMutedChange
 }: PreJoinScreenProps) {
   const { user } = useAuth();
 
@@ -44,7 +59,7 @@ export function PreJoinScreen({
   const handlePreJoinSubmit = (userChoices: any) => {
     const settings: JoinSettings = {
       videoEnabled: userChoices.videoEnabled ?? true,
-      audioEnabled: userChoices.audioEnabled ?? true,
+      audioEnabled: joinMuted ? false : (userChoices.audioEnabled ?? true),
       cameraDeviceId: userChoices.videoDeviceId || '',
       microphoneDeviceId: userChoices.audioDeviceId || ''
     };
@@ -379,10 +394,12 @@ export function PreJoinScreen({
               </CardContent>
             </Card>
 
-            {/* Pre-Join Tips */}
+            {/* Host: Session Settings / Participant: Quick Tips */}
             <Card className="border-sage-200 shadow-xl bg-white">
               <CardHeader className="bg-gradient-to-r from-olive-50 to-sage-50 pb-3">
-                <CardTitle className="text-base text-olive-900">Quick Tips</CardTitle>
+                <CardTitle className="text-base text-olive-900">
+                  {isHost ? 'Session Settings' : 'Quick Tips'}
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 {/* Error Display */}
@@ -393,37 +410,104 @@ export function PreJoinScreen({
                   </Alert>
                 )}
 
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
-                      <Video className="h-4 w-4 text-sage-700" />
+                {isHost ? (
+                  <div className="space-y-4">
+                    {/* Recording Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-sage-50 border border-sage-100">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
+                          <CircleDot className="h-4 w-4 text-sage-700" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-olive-900">Start Recording on Join</p>
+                          <p className="text-xs text-olive-600">
+                            {recordingOptIn
+                              ? 'Recording will begin automatically'
+                              : 'You can start recording manually in the room'}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={recordingOptIn}
+                        onCheckedChange={(checked) => onRecordingOptInChange?.(checked)}
+                      />
                     </div>
-                    <div>
-                      <p className="font-medium text-sm text-olive-900">Camera</p>
-                      <p className="text-xs text-olive-600">Good lighting helps you look your best</p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
-                      <Mic className="h-4 w-4 text-sage-700" />
+                    {/* Join Muted Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-sage-50 border border-sage-100">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
+                          <MicOff className="h-4 w-4 text-sage-700" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-olive-900">Join Muted</p>
+                          <p className="text-xs text-olive-600">
+                            {joinMuted
+                              ? 'Microphone will be off when you join'
+                              : 'Microphone will be on when you join'}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={joinMuted}
+                        onCheckedChange={(checked) => onJoinMutedChange?.(checked)}
+                      />
                     </div>
-                    <div>
-                      <p className="font-medium text-sm text-olive-900">Microphone</p>
-                      <p className="text-xs text-olive-600">Find a quiet space for clear audio</p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
-                      <Headphones className="h-4 w-4 text-sage-700" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm text-olive-900">Headphones</p>
-                      <p className="text-xs text-olive-600">Recommended to prevent echo</p>
+                    {/* Session Timer Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-sage-50 border border-sage-100">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
+                          <Timer className="h-4 w-4 text-sage-700" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-olive-900">Session Timer</p>
+                          <p className="text-xs text-olive-600">
+                            {showTimer
+                              ? 'Timer visible during the session'
+                              : 'Timer hidden during the session'}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={showTimer}
+                        onCheckedChange={(checked) => onShowTimerChange?.(checked)}
+                      />
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
+                        <Video className="h-4 w-4 text-sage-700" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-olive-900">Camera</p>
+                        <p className="text-xs text-olive-600">Good lighting helps you look your best</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
+                        <Mic className="h-4 w-4 text-sage-700" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-olive-900">Microphone</p>
+                        <p className="text-xs text-olive-600">Find a quiet space for clear audio</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl bg-sage-100 p-2.5 mt-0.5">
+                        <Headphones className="h-4 w-4 text-sage-700" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-olive-900">Headphones</p>
+                        <p className="text-xs text-olive-600">Recommended to prevent echo</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {loading && (
                   <div className="flex items-center justify-center py-4 mt-4 border-t border-sage-100">

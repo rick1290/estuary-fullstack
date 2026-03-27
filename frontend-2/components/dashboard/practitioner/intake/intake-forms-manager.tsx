@@ -39,6 +39,11 @@ import {
   Hash,
   Calendar,
   Eye,
+  Clock,
+  MapPin,
+  Monitor,
+  Users,
+  Search,
 } from "lucide-react"
 import LoadingSpinner from "@/components/ui/loading-spinner"
 import { useAuth } from "@/hooks/use-auth"
@@ -92,8 +97,17 @@ interface PlatformTemplate {
 interface PractitionerService {
   id: number
   name: string
-  service_type?: string
+  service_type?: any
   price?: string | number
+  price_cents?: number
+  duration_minutes?: number
+  status?: string
+  location_type?: string
+  image_url?: string
+  image?: string
+  short_description?: string
+  description?: string
+  is_active?: boolean
 }
 
 // ─── Question Type Display Helpers ───────────────────────────────────────────
@@ -1217,16 +1231,16 @@ export default function IntakeFormsManager() {
 
       {/* ─── Attach to Service Dialog ───────────────────────────────────── */}
       <Dialog open={attachDialogOpen} onOpenChange={setAttachDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Attach to Service</DialogTitle>
+            <DialogTitle>Link to Service</DialogTitle>
             <DialogDescription>
-              Choose a service to attach this form template to.
+              Choose a service to attach this intake form to. Clients will fill it out when booking.
             </DialogDescription>
           </DialogHeader>
 
           {!services || services.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-10">
               <div className="rounded-2xl bg-olive-100/60 p-3 inline-block mb-3">
                 <LinkIcon className="h-6 w-6 text-olive-400" />
               </div>
@@ -1235,34 +1249,30 @@ export default function IntakeFormsManager() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2 py-2">
-              {services.map((svc: PractitionerService) => (
-                <div
-                  key={svc.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-olive-200/60 bg-white px-4 py-3 hover:border-sage-300 hover:bg-sage-50/30 transition-all"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-olive-900 truncate">
-                      {svc.name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {svc.service_type && (
-                        <Badge variant="outline" className="text-xs">
-                          {svc.service_type}
-                        </Badge>
-                      )}
-                      {svc.price && (
-                        <span className="text-xs text-olive-400">
-                          ${typeof svc.price === "number" ? svc.price.toFixed(2) : svc.price}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0 rounded-lg"
-                    disabled={attachMutation.isPending}
+            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-2 py-1">
+              {services.map((svc: PractitionerService) => {
+                const serviceTypeName = typeof svc.service_type === 'object'
+                  ? svc.service_type?.name || svc.service_type?.code
+                  : svc.service_type
+                const priceDisplay = svc.price_cents
+                  ? `$${(svc.price_cents / 100).toFixed(0)}`
+                  : svc.price
+                    ? `$${typeof svc.price === "number" ? svc.price.toFixed(0) : svc.price}`
+                    : null
+                const imageUrl = svc.image_url || svc.image
+                const locationIcon = svc.location_type === 'virtual'
+                  ? Monitor
+                  : svc.location_type === 'in_person'
+                    ? MapPin
+                    : svc.location_type === 'hybrid'
+                      ? Users
+                      : null
+                const LocationIcon = locationIcon
+
+                return (
+                  <div
+                    key={svc.id}
+                    className="group flex items-center gap-3 rounded-xl border border-sage-200/60 bg-white p-3 hover:border-sage-300 hover:shadow-sm transition-all cursor-pointer"
                     onClick={() => {
                       if (attachTemplateId) {
                         attachMutation.mutate({
@@ -1272,15 +1282,89 @@ export default function IntakeFormsManager() {
                       }
                     }}
                   >
-                    <LinkIcon className="mr-1.5 h-3.5 w-3.5" />
-                    Attach
-                  </Button>
-                </div>
-              ))}
+                    {/* Service Image or Placeholder */}
+                    <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-sage-100 border border-sage-200/60">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={svc.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-sage-400" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Service Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-olive-900 truncate">
+                        {svc.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {serviceTypeName && (
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] px-1.5 py-0 h-5 font-medium ${
+                              serviceTypeName === 'session' || serviceTypeName === 'Session'
+                                ? 'bg-sage-100 text-sage-700'
+                                : serviceTypeName === 'workshop' || serviceTypeName === 'Workshop'
+                                  ? 'bg-terracotta-100 text-terracotta-700'
+                                  : serviceTypeName === 'course' || serviceTypeName === 'Course'
+                                    ? 'bg-olive-100 text-olive-700'
+                                    : 'bg-sage-100 text-sage-600'
+                            }`}
+                          >
+                            {serviceTypeName}
+                          </Badge>
+                        )}
+                        {svc.duration_minutes && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] text-olive-400">
+                            <Clock className="h-3 w-3" />
+                            {svc.duration_minutes}m
+                          </span>
+                        )}
+                        {LocationIcon && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] text-olive-400">
+                            <LocationIcon className="h-3 w-3" />
+                            {svc.location_type === 'in_person' ? 'In-person' : svc.location_type}
+                          </span>
+                        )}
+                        {priceDisplay && (
+                          <span className="text-[11px] font-medium text-olive-500">
+                            {priceDisplay}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Attach Button */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-sage-50 hover:bg-sage-100 text-sage-700"
+                      disabled={attachMutation.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (attachTemplateId) {
+                          attachMutation.mutate({
+                            serviceId: svc.id,
+                            templateId: attachTemplateId,
+                          })
+                        }
+                      }}
+                    >
+                      <LinkIcon className="mr-1.5 h-3.5 w-3.5" />
+                      Link
+                    </Button>
+                  </div>
+                )
+              })}
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="border-t border-sage-100 pt-3 mt-2">
             <Button
               variant="ghost"
               onClick={() => {

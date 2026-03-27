@@ -476,12 +476,18 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'])
     def end_session(self, request, public_uuid=None):
         """
-        End the session for everyone (host only).
+        End the call for everyone (host only).
         This will:
         1. Stop any active recording
-        2. Disconnect all participants from LiveKit
-        3. Mark the ServiceSession as completed
-        4. Mark the Room as ended
+        2. Remove all participants from the LiveKit room (kicks them gracefully)
+        3. Mark the Room as ended
+        4. Mark all participants as left
+
+        NOTE: This does NOT mark the ServiceSession as completed.
+        The practitioner must explicitly mark the session as completed
+        from their dashboard after reviewing the session.
+        The LiveKit room is NOT deleted — it will expire naturally
+        via empty_timeout, allowing rejoin within ~5 minutes if needed.
         """
         room = self.get_object()
         user = request.user
@@ -517,14 +523,21 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                 except Exception as e:
                     logger.warning(f"Failed to stop recording during end_session: {e}")
 
-            # 2. Delete the LiveKit room (kicks all participants)
+            # 2. Remove all participants from LiveKit (kicks them gracefully)
+            # Do NOT delete the room — let it expire via empty_timeout
+            # so participants can rejoin if the end was accidental.
             try:
                 import asyncio
                 livekit_client = LiveKitClient()
-                asyncio.run(livekit_client.delete_room(room.livekit_room_name))
-                logger.info(f"Deleted LiveKit room {room.livekit_room_name}")
+                participants = asyncio.run(livekit_client.list_participants(room.livekit_room_name))
+                for p in participants:
+                    try:
+                        asyncio.run(livekit_client.remove_participant(room.livekit_room_name, p.identity))
+                        logger.info(f"Removed participant {p.identity} from room {room.livekit_room_name}")
+                    except Exception as e:
+                        logger.warning(f"Failed to remove participant {p.identity}: {e}")
             except Exception as e:
-                logger.warning(f"Failed to delete LiveKit room: {e}")
+                logger.warning(f"Failed to remove participants from LiveKit room: {e}")
 
             # 3. Update Room status
             room.status = 'ended'
@@ -533,22 +546,31 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
                 room.total_duration_seconds = int((now - room.actual_start).total_seconds())
             room.save(update_fields=['status', 'actual_end', 'total_duration_seconds', 'updated_at'])
 
-            # 4. Mark ServiceSession as completed
-            if room.service_session:
-                room.service_session.status = 'completed'
-                room.service_session.actual_end_time = now
-                room.service_session.save(update_fields=['status', 'actual_end_time', 'updated_at'])
-                logger.info(f"Marked ServiceSession {room.service_session.id} as completed")
-
-            # 5. Mark all active participants as left
+            # 4. Mark all active participants as left
             active_participants = room.participants.filter(left_at__isnull=True)
             active_participants.update(left_at=now)
 
+            # Build redirect info for the frontend
+            redirect_info = {}
+            if room.service_session:
+                redirect_info['service_session_id'] = room.service_session.id
+                redirect_info['service_id'] = room.service_session.service.id
+                redirect_info['service_public_uuid'] = str(room.service_session.service.public_uuid)
+                # Find the user's booking for journey redirect
+                from bookings.models import Booking
+                user_booking = Booking.objects.filter(
+                    service_session=room.service_session,
+                    status__in=['confirmed', 'in_progress']
+                ).first()
+                if user_booking:
+                    redirect_info['booking_public_uuid'] = str(user_booking.public_uuid)
+
             return Response({
                 'status': 'success',
-                'message': 'Session ended successfully.',
+                'message': 'Call ended for everyone.',
                 'room_status': room.status,
-                'session_status': room.service_session.status if room.service_session else None
+                'session_status': room.service_session.status if room.service_session else None,
+                'redirect': redirect_info,
             })
 
         except Exception as e:

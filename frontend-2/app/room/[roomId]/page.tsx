@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { roomsCheckAccessRetrieveOptions, roomsStartRecordingCreateMutation, roomsStopRecordingCreateMutation, roomsEndSessionCreateMutation, bookingsRetrieveOptions } from '@/src/client/@tanstack/react-query.gen';
@@ -19,6 +19,16 @@ export default function RoomPage() {
   const { user, isAuthenticated } = useAuth();
   
   const [isRecording, setIsRecording] = useState(false);
+  const autoRecordTriggered = useRef(false);
+
+  // Read practitioner session settings from lobby
+  const roomSettings = useRef<Record<string, any>>({});
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('roomSettings');
+      if (stored) roomSettings.current = JSON.parse(stored);
+    } catch {}
+  }, []);
 
   // Check room access using the new endpoint
   const { data: accessData, isLoading: loadingAccess, error: accessError } = useQuery({
@@ -59,11 +69,19 @@ export default function RoomPage() {
   const endSessionMutation = useMutation(roomsEndSessionCreateMutation());
 
   const handleLeaveRoom = () => {
-    // Clean up and redirect
+    // Clean up and redirect to session detail pages
     sessionStorage.removeItem('roomSettings');
-    
-    // Redirect based on user role
-    if (accessData?.role === 'host') {
+
+    const sessionId = accessData?.service_session?.id;
+    const bookingUuid = (accessData as any)?.my_booking?.public_uuid;
+
+    if (accessData?.role === 'host' && sessionId) {
+      // Practitioner → session detail page where they can review & mark complete
+      router.push(`/dashboard/practitioner/sessions/${sessionId}`);
+    } else if (bookingUuid) {
+      // Client → journey detail page where they can review & leave feedback
+      router.push(`/dashboard/user/journeys/${bookingUuid}`);
+    } else if (accessData?.role === 'host') {
       router.push('/dashboard/practitioner');
     } else {
       router.push('/dashboard/user');
@@ -129,16 +147,42 @@ export default function RoomPage() {
     if (!roomId || accessData?.role !== 'host') return;
 
     try {
-      await endSessionMutation.mutateAsync({
+      const result = await endSessionMutation.mutateAsync({
         path: { public_uuid: roomId }
       });
-      // The VideoRoom component will handle disconnection and redirect
-      console.log('Session ended successfully');
+      console.log('Call ended for everyone', result);
+      // The VideoRoom component will handle disconnection via onDisconnected → handleLeaveRoom
     } catch (error) {
       console.error('Failed to end session:', error);
       throw error;
     }
   };
+
+  // Auto-start recording if opted in from lobby
+  const handleRoomConnected = useCallback(() => {
+    if (autoRecordTriggered.current) return;
+    try {
+      const stored = sessionStorage.getItem('roomSettings');
+      if (!stored) return;
+      const settings = JSON.parse(stored);
+      if (settings.recordingOptIn && accessData?.role === 'host') {
+        autoRecordTriggered.current = true;
+        // Small delay to let the room fully initialize
+        setTimeout(() => {
+          handleStartRecording({
+            audioOnly: false,
+            outputFormat: 'mp4',
+            includeScreenShare: true,
+            notifyParticipants: true,
+          }).catch((err) => {
+            console.error('Auto-start recording failed:', err);
+          });
+        }, 2000);
+      }
+    } catch (e) {
+      console.error('Error reading room settings:', e);
+    }
+  }, [accessData?.role, roomId]);
 
   // Determine room type
   const getRoomType = () => {
@@ -248,6 +292,7 @@ export default function RoomPage() {
       isHost={accessData?.role === 'host'}
       sessionDetails={sessionDetails}
       onLeaveRoom={handleLeaveRoom}
+      onConnected={handleRoomConnected}
       onError={(error) => {
         console.error('Room error:', error);
         // Could show a toast notification here
@@ -258,6 +303,8 @@ export default function RoomPage() {
       onStopRecording={handleStopRecording}
       // End session props (host only)
       onEndSession={accessData?.role === 'host' ? handleEndSession : undefined}
+      // Practitioner session settings from lobby
+      showTimer={roomSettings.current.showTimer !== false}
     />
   );
 }

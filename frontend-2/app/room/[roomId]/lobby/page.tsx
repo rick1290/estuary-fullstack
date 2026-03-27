@@ -29,6 +29,11 @@ export default function RoomLobbyPage() {
   // Get room token
   const { token, loading: tokenLoading, error: tokenError } = useRoomToken({ roomId });
 
+  // Practitioner session settings
+  const [recordingOptIn, setRecordingOptIn] = useState(false);
+  const [showTimer, setShowTimer] = useState(true);
+  const [joinMuted, setJoinMuted] = useState(false);
+
   // Check for unsigned required consent
   const [consentNeeded, setConsentNeeded] = useState(false);
   const [consentData, setConsentData] = useState<any>(null);
@@ -58,7 +63,12 @@ export default function RoomLobbyPage() {
 
   const handleJoinRoom = (settings: any) => {
     // Store settings in session storage for the room page
-    sessionStorage.setItem('roomSettings', JSON.stringify(settings));
+    sessionStorage.setItem('roomSettings', JSON.stringify({
+      ...settings,
+      recordingOptIn,
+      showTimer,
+      joinMuted,
+    }));
     router.push(`/room/${roomId}`);
   };
 
@@ -222,6 +232,13 @@ export default function RoomLobbyPage() {
           onJoinRoom={handleJoinRoom}
           loading={tokenLoading}
           error={tokenError?.message}
+          isHost={accessData?.role === 'host'}
+          recordingOptIn={recordingOptIn}
+          onRecordingOptInChange={setRecordingOptIn}
+          showTimer={showTimer}
+          onShowTimerChange={setShowTimer}
+          joinMuted={joinMuted}
+          onJoinMutedChange={setJoinMuted}
         />
       )}
     </>

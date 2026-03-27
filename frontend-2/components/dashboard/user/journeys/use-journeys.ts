@@ -70,7 +70,14 @@ export function useJourneys() {
   )
 
   const completedJourneys = useMemo(
-    () => journeys.filter((j) => j.status === "completed"),
+    () =>
+      journeys
+        .filter((j) => j.status === "completed")
+        .sort((a, b) => {
+          const dateA = a.next_session_time ? new Date(a.next_session_time).getTime() : 0
+          const dateB = b.next_session_time ? new Date(b.next_session_time).getTime() : 0
+          return dateB - dateA // most recent first
+        }),
     [journeys]
   )
 

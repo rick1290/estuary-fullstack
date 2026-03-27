@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { useJourneys, type FilterType, type JourneyListItem } from "./use-journeys"
 import JourneyCard from "./journey-card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -36,6 +36,15 @@ export default function JourneysList() {
     isLoading,
     error,
   } = useJourneys()
+
+  // Auto-switch to Completed tab when a new journey completes
+  const prevCompletedCount = useRef(completedJourneys.length)
+  useEffect(() => {
+    if (completedJourneys.length > prevCompletedCount.current) {
+      setActiveTab("completed")
+    }
+    prevCompletedCount.current = completedJourneys.length
+  }, [completedJourneys.length])
 
   const filteredAll = useMemo(
     () => filterJourneys(journeys, activeFilter),
