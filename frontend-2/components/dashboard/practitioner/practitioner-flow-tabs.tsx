@@ -189,7 +189,7 @@ export default function PractitionerFlowTabs() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0 mb-4 overflow-x-auto scrollbar-hide">
+      <TabsList className="inline-flex w-auto h-auto gap-1 bg-transparent p-0 py-1 mb-4 overflow-x-auto scrollbar-hide">
         <TabsTrigger
           value="today"
           className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-2 min-h-[44px] text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"

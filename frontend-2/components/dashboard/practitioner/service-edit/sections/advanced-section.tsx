@@ -566,7 +566,7 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
                   onClick={() => {
                     attachMutation.mutate({
                       path: { service_pk: numericId },
-                      body: { form_template: template.id, is_required: false } as any,
+                      body: { form_template: template.id, is_required: false, service: numericId } as any,
                     })
                   }}
                 >
