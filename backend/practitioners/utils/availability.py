@@ -37,18 +37,21 @@ def get_practitioner_availability(
     try:
         # Get the service and associated practitioner
         service = Service.objects.get(id=service_id)
-        
-        # Get the primary practitioner for this service using the M2M relationship
-        practitioner_relationship = service.practitioner_relationships.filter(is_primary=True).first()
-        
-        # If no primary practitioner is set, get the first practitioner
-        if not practitioner_relationship:
-            practitioner_relationship = service.practitioner_relationships.first()
-            
-        if not practitioner_relationship:
+
+        # Get the primary practitioner — try direct FK first, then M2M relationship
+        practitioner = None
+        if service.primary_practitioner:
+            practitioner = service.primary_practitioner
+        else:
+            # Fall back to M2M relationship
+            practitioner_relationship = service.practitioner_relationships.filter(is_primary=True).first()
+            if not practitioner_relationship:
+                practitioner_relationship = service.practitioner_relationships.first()
+            if practitioner_relationship:
+                practitioner = practitioner_relationship.practitioner
+
+        if not practitioner:
             raise ValueError(f"No practitioners associated with service {service_id}")
-            
-        practitioner = practitioner_relationship.practitioner
         
         # Set default dates if not provided
         if not start_date:
@@ -107,7 +110,7 @@ def get_practitioner_availability(
             end_date = buffer_end_date
             
         # Get service duration in minutes (with fallback)
-        service_duration = getattr(service, 'duration', 60) or 60
+        service_duration = getattr(service, 'duration_minutes', None) or getattr(service, 'duration', None) or 60
         
         # Get practitioner's buffer time in minutes (with fallback)
         buffer_time = getattr(practitioner, 'buffer_time', 0) or 0
