@@ -13,19 +13,19 @@ export default function Home() {
   return (
     <main className="bg-cream-50">
       <HeroSection />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <FeaturedPractitionersSection />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <UpcomingWorkshopsSection />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <TestimonialsStrip />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <ExploreFormatsSection />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <BrowseModalitiesSection />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <StreamsTeaserSection />
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
       <BecomePractitionerSection />
     </main>
   )

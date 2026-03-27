@@ -319,8 +319,8 @@ function ScheduleTable({
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-x-auto">
+      <Table className="min-w-[540px]">
         <TableHeader>
           <TableRow>
             <TableHead>Service</TableHead>

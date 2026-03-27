@@ -81,12 +81,12 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-3">
             <div>
               <h3 className="text-sm font-medium text-olive-900 mb-4">Explore</h3>
-              <ul className="space-y-3">
+              <ul className="space-y-1">
                 {footerLinks.explore.map((link) => (
                   <li key={link.name}>
-                    <Link 
-                      href={link.href} 
-                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
+                    <Link
+                      href={link.href}
+                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors inline-flex items-center min-h-[44px] md:min-h-0"
                     >
                       {link.name}
                     </Link>
@@ -97,12 +97,12 @@ export default function Footer() {
 
             <div>
               <h3 className="text-sm font-medium text-olive-900 mb-4">Company</h3>
-              <ul className="space-y-3">
+              <ul className="space-y-1">
                 {footerLinks.company.map((link) => (
                   <li key={link.name}>
-                    <Link 
-                      href={link.href} 
-                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
+                    <Link
+                      href={link.href}
+                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors inline-flex items-center min-h-[44px] md:min-h-0"
                     >
                       {link.name}
                     </Link>
@@ -113,12 +113,12 @@ export default function Footer() {
 
             <div>
               <h3 className="text-sm font-medium text-olive-900 mb-4">Support</h3>
-              <ul className="space-y-3">
+              <ul className="space-y-1">
                 {footerLinks.support.map((link) => (
                   <li key={link.name}>
-                    <Link 
-                      href={link.href} 
-                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
+                    <Link
+                      href={link.href}
+                      className="text-sm text-olive-600 hover:text-olive-900 transition-colors inline-flex items-center min-h-[44px] md:min-h-0"
                     >
                       {link.name}
                     </Link>
@@ -138,12 +138,12 @@ export default function Footer() {
             <p className="text-sm text-olive-600">
               © {new Date().getFullYear()} <span className="font-bold tracking-widest">ESTUARY</span>
             </p>
-            <div className="flex gap-4">
-              {footerLinks.legal.map((link, index) => (
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {footerLinks.legal.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-sm text-olive-600 hover:text-olive-900 transition-colors"
+                  className="text-sm text-olive-600 hover:text-olive-900 transition-colors inline-flex items-center min-h-[44px] md:min-h-0"
                 >
                   {link.name}
                 </Link>

@@ -25,7 +25,7 @@ function filterJourneys(journeys: JourneyListItem[], filter: FilterType): Journe
 }
 
 export default function JourneysList() {
-  const [activeTab, setActiveTab] = useState<TabValue>("all")
+  const [activeTab, setActiveTab] = useState<TabValue>("upcoming")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
 
   const {
@@ -37,10 +37,10 @@ export default function JourneysList() {
     error,
   } = useJourneys()
 
-  // Auto-switch to Completed tab when a new journey completes
-  const prevCompletedCount = useRef(completedJourneys.length)
+  // Auto-switch to Completed tab when a new journey completes (not on initial load)
+  const prevCompletedCount = useRef<number | null>(null)
   useEffect(() => {
-    if (completedJourneys.length > prevCompletedCount.current) {
+    if (prevCompletedCount.current !== null && completedJourneys.length > prevCompletedCount.current) {
       setActiveTab("completed")
     }
     prevCompletedCount.current = completedJourneys.length
@@ -116,10 +116,10 @@ export default function JourneysList() {
         onValueChange={(v) => setActiveTab(v as TabValue)}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0">
+          <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0 overflow-x-auto scrollbar-hide max-w-full">
             <TabsTrigger
               value="all"
-              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors"
+              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-3 sm:px-4 py-2 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors whitespace-nowrap min-h-[44px] flex items-center"
             >
               All
               {journeys.length > 0 && (
@@ -130,7 +130,7 @@ export default function JourneysList() {
             </TabsTrigger>
             <TabsTrigger
               value="upcoming"
-              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors"
+              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-3 sm:px-4 py-2 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors whitespace-nowrap min-h-[44px] flex items-center"
             >
               Upcoming
               {upcomingJourneys.length > 0 && (
@@ -141,7 +141,7 @@ export default function JourneysList() {
             </TabsTrigger>
             <TabsTrigger
               value="unscheduled"
-              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:border-amber-500 transition-colors"
+              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-3 sm:px-4 py-2 text-xs font-medium text-olive-500 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:border-amber-500 transition-colors whitespace-nowrap min-h-[44px] inline-flex items-center"
             >
               {unscheduledJourneys.length > 0 && (
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5 data-[state=active]:bg-white" />
@@ -155,7 +155,7 @@ export default function JourneysList() {
             </TabsTrigger>
             <TabsTrigger
               value="completed"
-              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-4 py-1.5 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors"
+              className="rounded-full border border-sage-200/60 bg-cream-50/80 px-3 sm:px-4 py-2 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors whitespace-nowrap min-h-[44px] flex items-center"
             >
               Completed
             </TabsTrigger>
@@ -167,7 +167,7 @@ export default function JourneysList() {
               <button
                 key={opt.value}
                 onClick={() => setActiveFilter(opt.value)}
-                className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+                className={`rounded-full px-3 py-2 text-[11px] font-medium transition-colors min-h-[44px] inline-flex items-center ${
                   activeFilter === opt.value
                     ? "bg-sage-100 text-sage-700 border border-sage-300"
                     : "text-olive-400 border border-transparent hover:border-sage-200 hover:text-olive-600"
@@ -279,7 +279,7 @@ function EmptyState({
   subtext: string
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 bg-white border border-sage-200/60 rounded-xl">
+    <div className="flex flex-col items-center justify-center py-10 sm:py-16 px-4 bg-white border border-sage-200/60 rounded-xl">
       <CalendarPlus className="h-10 w-10 text-sage-300 mb-4" />
       <h3 className="text-lg font-medium text-olive-900">{message}</h3>
       <p className="text-sm text-olive-400 mt-1.5 max-w-sm text-center">
@@ -287,7 +287,7 @@ function EmptyState({
       </p>
       <Link
         href="/marketplace"
-        className="mt-5 inline-flex items-center px-5 py-2 rounded-full bg-sage-600 text-white text-sm font-medium hover:bg-sage-700 transition-colors"
+        className="mt-5 inline-flex items-center px-5 py-2.5 min-h-[44px] rounded-full bg-sage-600 text-white text-sm font-medium hover:bg-sage-700 transition-colors"
       >
         Explore Services
       </Link>

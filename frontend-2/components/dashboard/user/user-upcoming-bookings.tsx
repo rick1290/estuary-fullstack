@@ -122,24 +122,24 @@ export default function UserUpcomingBookings() {
                 className="block"
               >
                 <Card className="border border-sage-200/60 bg-white hover:border-sage-300 hover:shadow-sm transition-all cursor-pointer">
-                  <CardContent className="p-5">
-                    <div className="flex gap-4 items-center">
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex gap-3 sm:gap-4 items-center">
                       {/* Type icon */}
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-cream-50 ${config.color}`}>
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 bg-cream-50 ${config.color}`}>
                         <TypeIcon className="h-5 w-5" />
                       </div>
 
                       {/* Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-[15px] font-medium text-olive-900 truncate">
+                          <h3 className="text-sm sm:text-[15px] font-medium text-olive-900 truncate">
                             {journey.service_name}
                           </h3>
-                          <Badge className={`${config.badge} text-[10px] px-2 py-0 rounded-full shrink-0`}>
+                          <Badge className={`${config.badge} text-[10px] px-2 py-0 rounded-full shrink-0 hidden sm:inline-flex`}>
                             {config.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-[13px] text-olive-500">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] sm:text-[13px] text-olive-500">
                           {journey.practitioner?.name && (
                             <span>with {journey.practitioner.name}</span>
                           )}

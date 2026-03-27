@@ -95,11 +95,11 @@ export default function PractitionerDashboardPage() {
       description=""
     >
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-light text-olive-900 mb-2">
+      <div className="mb-6 lg:mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl font-light text-olive-900 mb-2">
           Welcome back, <em className="italic text-terracotta-600">{firstName}</em>
         </h1>
-        <p className="text-base font-light text-olive-600">
+        <p className="text-sm sm:text-base font-light text-olive-600">
           Your practice is flowing beautifully. Here's what's rippling through your waters today.
         </p>
       </div>
@@ -149,7 +149,7 @@ export default function PractitionerDashboardPage() {
       )}
 
       {/* Main Dashboard Grid */}
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-12">
         {/* Left Column - Flow Tabs */}
         <div className="lg:col-span-7">
           <Card className="border border-sage-200/60 bg-white h-full flex flex-col">
@@ -197,17 +197,17 @@ export default function PractitionerDashboardPage() {
       </div>
 
       {/* Apps Section - Quick Navigation */}
-      <div className="mt-8">
-        <span className="text-xs font-medium tracking-widest uppercase text-olive-500 mb-4 block">Quick Navigation</span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="mt-6 lg:mt-8">
+        <span className="text-xs font-medium tracking-widest uppercase text-olive-500 mb-3 sm:mb-4 block">Quick Navigation</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
           {appShortcuts.map((app) => {
             const Icon = app.icon
             return (
               <Link key={app.href} href={app.href}>
                 <Card className="border border-sage-200/60 bg-white hover:bg-sage-50 hover:border-sage-300/60 transition-colors cursor-pointer h-full">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center text-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-cream-100 flex items-center justify-center">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col items-center text-center gap-2 min-h-[44px] justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-cream-100 flex items-center justify-center flex-shrink-0">
                         <Icon className="h-4 w-4 text-olive-700" />
                       </div>
                       <div>

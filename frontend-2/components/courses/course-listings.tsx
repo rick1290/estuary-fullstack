@@ -112,7 +112,7 @@ export default function CourseListings({ query, location, categories = [] }: Cou
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
         {filteredCourses.map((course, index) => (
           <ServiceCard
             key={course.id}

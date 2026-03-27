@@ -173,7 +173,7 @@ export default function SessionDelivery({
 
   if (!effectiveBooking) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
         <p className="text-olive-400">Loading session...</p>
       </div>
     )
@@ -272,13 +272,13 @@ export default function SessionDelivery({
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* ── COMPACT HEADER ── */}
       <div className="bg-gradient-to-r from-sage-50/80 to-cream-50 border-b border-sage-200/40">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -325,11 +325,11 @@ export default function SessionDelivery({
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {/* Pre-session forms banner */}
         <FormsStatusBanner bookingUuid={booking?.public_uuid} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-8">
             {/* Hero Card — service image + title + key info */}
@@ -343,15 +343,15 @@ export default function SessionDelivery({
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#2a2218] via-[#2a2218]/70 to-[#2a2218]/40" />
 
-              <div className="relative z-10 p-8 pb-7">
+              <div className="relative z-10 p-5 sm:p-8 pb-5 sm:pb-7">
                 <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
                   {isVirtual ? "Virtual Session" : "In-Person Session"}
                 </div>
-                <h1 className="font-serif text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
+                <h1 className="font-serif text-[24px] sm:text-[28px] md:text-[34px] font-medium text-white/95 leading-tight mb-4">
                   {service?.name ?? "Session"}
                 </h1>
 
-                <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                   {/* Practitioner */}
                   {practitioner && (
                     <div className="flex items-center gap-2">
@@ -554,11 +554,11 @@ export default function SessionDelivery({
                         {(practitioner as any).bio}
                       </p>
                     )}
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2 mt-3 flex-wrap">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
                         asChild
                       >
                         <Link
@@ -571,7 +571,7 @@ export default function SessionDelivery({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
                         onClick={handleMessagePractitioner}
                       >
                         <MessageSquare className="h-3 w-3 mr-1.5" />
@@ -784,7 +784,7 @@ export default function SessionDelivery({
                     Reschedule
                   </Button>
                   <button
-                    className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-1 transition-colors"
+                    className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors"
                     disabled={!isModifiable}
                     onClick={() => setCancelDialogOpen(true)}
                   >

@@ -145,15 +145,15 @@ export default function PractitionerBookingsList() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-96" />
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-10 w-40" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <Skeleton className="h-10 w-full sm:w-96" />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Skeleton className="h-10 w-full sm:w-40" />
+            <Skeleton className="h-10 w-full sm:w-40" />
           </div>
         </div>
-        <div className="rounded-md border">
-          <Table>
+        <div className="rounded-md border overflow-x-auto">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
@@ -208,7 +208,7 @@ export default function PractitionerBookingsList() {
       {/* Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <TabsList className="h-auto p-0 bg-transparent border-0 rounded-none justify-start">
+          <TabsList className="h-auto p-0 bg-transparent border-0 rounded-none justify-start overflow-x-auto scrollbar-none">
             <TabsTrigger value="all" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground">
               All
             </TabsTrigger>
@@ -224,21 +224,21 @@ export default function PractitionerBookingsList() {
           </TabsList>
 
           {/* Filters */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-[200px]"
+                className="pl-9 w-full sm:w-[200px]"
               />
             </div>
 
             {/* Service Type Filter */}
             <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[140px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Service Type" />
               </SelectTrigger>
@@ -253,7 +253,7 @@ export default function PractitionerBookingsList() {
             {/* Status Filter */}
             {!["upcoming", "canceled", "past"].includes(selectedTab) && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[140px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -292,8 +292,8 @@ export default function PractitionerBookingsList() {
               </div>
             )
           ) : (
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Client</TableHead>
@@ -308,7 +308,7 @@ export default function PractitionerBookingsList() {
                     <TableRow key={booking.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
+                          <Avatar className="h-10 w-10 shrink-0">
                             <AvatarImage src={booking.user?.avatar_url || ""} alt={booking.user?.full_name || ""} />
                             <AvatarFallback>
                               {(booking.user?.full_name || booking.user?.email || "U")
@@ -318,16 +318,16 @@ export default function PractitionerBookingsList() {
                                 .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-medium">{booking.user?.full_name || booking.user?.email || "Unknown"}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{booking.user?.full_name || booking.user?.email || "Unknown"}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {getServiceTypeIcon(booking.service?.service_type_code || "session")}
-                          <div>
-                            <p className="font-medium">{booking.service?.name || "Unknown Service"}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{booking.service?.name || "Unknown Service"}</p>
                             <p className="text-sm text-muted-foreground capitalize">
                               {booking.service?.service_type_code?.replace(/_/g, " ") || "Session"}
                             </p>
@@ -336,7 +336,7 @@ export default function PractitionerBookingsList() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                           <div>
                             <p>{booking.service_session?.start_time ? format(parseISO(booking.service_session.start_time), "MMM d, yyyy") : "Not scheduled"}</p>
                             <p className="text-sm text-muted-foreground">
@@ -370,7 +370,7 @@ export default function PractitionerBookingsList() {
                                         }
                                       }}
                                       disabled={!isSessionJoinable(booking)}
-                                      className={isSessionJoinable(booking) ? "bg-olive-800 hover:bg-olive-700" : ""}
+                                      className={`min-h-[44px] min-w-[44px] ${isSessionJoinable(booking) ? "bg-olive-800 hover:bg-olive-700" : ""}`}
                                     >
                                       <Play className="h-4 w-4 mr-1" />
                                       Join
@@ -388,7 +388,7 @@ export default function PractitionerBookingsList() {
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px]">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>

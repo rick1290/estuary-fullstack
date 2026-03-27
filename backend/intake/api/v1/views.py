@@ -128,6 +128,10 @@ class ServiceFormViewSet(viewsets.ModelViewSet):
             service_id=service_id
         ).select_related('form_template').prefetch_related('form_template__questions', 'form_template__versions')
 
+    def perform_create(self, serializer):
+        """Auto-set service from the URL path parameter."""
+        serializer.save(service_id=self.kwargs['service_pk'])
+
 
 class BookingFormsViewSet(viewsets.ViewSet):
     """Handle form submission for bookings."""

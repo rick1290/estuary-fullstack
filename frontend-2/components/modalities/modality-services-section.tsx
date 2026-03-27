@@ -50,14 +50,14 @@ export default function ModalityServicesSection({ slug, modalityName }: Modality
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white rounded-2xl border border-sage-200/60 h-80 animate-pulse" />
             ))}
           </div>
         ) : services.length > 0 ? (
           <>
-            <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <motion.div variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {services.map((service: any, index: number) => {
                 const serviceType = service.service_type?.name?.toLowerCase() || "session"
                 const typeMap: Record<string, string> = {

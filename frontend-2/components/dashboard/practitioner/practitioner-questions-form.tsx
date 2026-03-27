@@ -219,7 +219,8 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
         </CardHeader>
         <CardContent>
           {questions.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[500px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">Order</TableHead>
@@ -266,6 +267,7 @@ export default function PractitionerQuestionsForm({ isOnboarding = false }: Prac
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : (
             <div className="text-center py-4 text-muted-foreground">No questions added yet.</div>
           )}

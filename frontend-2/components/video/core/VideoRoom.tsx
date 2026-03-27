@@ -245,6 +245,20 @@ export function VideoRoom({
           .lk-control-bar .lk-button-group-menu button:hover {
             background: rgba(156, 175, 136, 0.25) !important;
           }
+
+          /* Control bar button touch targets */
+          .lk-control-bar button {
+            min-height: 44px !important;
+            min-width: 44px !important;
+          }
+
+          /* Mobile: reduce grid padding in layouts */
+          @media (max-width: 639px) {
+            .lk-grid-layout {
+              gap: 4px !important;
+              padding: 4px !important;
+            }
+          }
         `}</style>
         <div className="h-screen flex flex-col bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50" style={{
           '--lk-fg': '#4a5548',
@@ -271,12 +285,12 @@ export function VideoRoom({
           <RecordingIndicator isRecording={isRecording} />
 
           {/* Header */}
-          <div className="bg-white/80 backdrop-blur-md border-b border-sage-200 px-6 py-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {/* Practitioner Avatar */}
+          <div className="bg-white/80 backdrop-blur-md border-b border-sage-200 px-3 sm:px-6 py-2.5 sm:py-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                {/* Practitioner Avatar - hidden on very small screens */}
                 {practitioner && (
-                  <Avatar className="h-11 w-11 border-2 border-sage-300 ring-2 ring-sage-200/50">
+                  <Avatar className="h-9 w-9 sm:h-11 sm:w-11 border-2 border-sage-300 ring-2 ring-sage-200/50 hidden xs:flex flex-shrink-0">
                     <AvatarImage src={practitioner.profile_photo} alt={practitioner.name} />
                     <AvatarFallback className="bg-sage-100 text-sage-700">
                       {practitioner.name?.split(' ').map((n: string) => n[0]).join('')}
@@ -284,35 +298,31 @@ export function VideoRoom({
                   </Avatar>
                 )}
 
-                <div>
-                  <h2 className="text-lg font-semibold text-olive-900">
+                <div className="min-w-0">
+                  <h2 className="text-sm sm:text-lg font-semibold text-olive-900 truncate">
                     {sessionTitle}
                   </h2>
-                  <div className="flex items-center gap-3 text-sm text-olive-600">
+                  <div className="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm text-olive-600 flex-wrap">
                     {practitioner && (
-                      <>
-                        <span className="text-olive-700">with {practitioner.name}</span>
-                        <span>•</span>
-                      </>
+                      <span className="text-olive-700 truncate hidden sm:inline">with {practitioner.name}</span>
                     )}
-                    <Badge variant="secondary" className="bg-sage-100 text-sage-700 border-sage-200">
+                    <Badge variant="secondary" className="bg-sage-100 text-sage-700 border-sage-200 text-[10px] sm:text-xs px-1.5 py-0">
                       {isHost ? 'Host' : 'Participant'}
                     </Badge>
-                    <Badge variant="outline" className="border-sage-300 text-olive-600">
+                    <Badge variant="outline" className="border-sage-300 text-olive-600 text-[10px] sm:text-xs px-1.5 py-0 hidden sm:inline-flex">
                       {getRoomTypeLabel()}
                     </Badge>
-                    <span>•</span>
                     {showTimer && (
                       <div className="flex items-center gap-1 text-olive-600">
                         <Clock className="h-3 w-3" />
-                        <span>{formatDuration(sessionDuration)}</span>
+                        <span className="tabular-nums">{formatDuration(sessionDuration)}</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 {/* Recording Controls - Host only */}
                 {onStartRecording && onStopRecording && (
                   <RecordingControls
@@ -330,12 +340,12 @@ export function VideoRoom({
                     size="sm"
                     onClick={() => setShowParticipants(!showParticipants)}
                     className={cn(
-                      "text-olive-700 border-sage-300",
+                      "text-olive-700 border-sage-300 h-9 w-9 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-1.5",
                       showParticipants ? "bg-sage-100" : "hover:bg-sage-50"
                     )}
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Participants
+                    <Users className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Participants</span>
                   </Button>
                 )}
 
@@ -346,12 +356,12 @@ export function VideoRoom({
                     size="sm"
                     onClick={() => setShowChat(!showChat)}
                     className={cn(
-                      "text-olive-700 border-sage-300",
+                      "text-olive-700 border-sage-300 h-9 w-9 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-1.5",
                       showChat ? "bg-sage-100" : "hover:bg-sage-50"
                     )}
                   >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Chat
+                    <MessageSquare className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Chat</span>
                   </Button>
                 )}
 
@@ -361,20 +371,20 @@ export function VideoRoom({
                   size="sm"
                   onClick={() => setShowSettings(!showSettings)}
                   className={cn(
-                    "text-olive-700 border-sage-300",
+                    "text-olive-700 border-sage-300 h-9 w-9 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-1.5",
                     showSettings ? "bg-sage-100" : "hover:bg-sage-50"
                   )}
                 >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  <Settings className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Settings</span>
                 </Button>
 
-                {/* Fullscreen Toggle */}
+                {/* Fullscreen Toggle - hidden on mobile (not useful) */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={toggleFullscreen}
-                  className="text-olive-700 hover:bg-sage-50"
+                  className="text-olive-700 hover:bg-sage-50 h-9 w-9 p-0 hidden sm:flex items-center justify-center"
                 >
                   {isFullscreen ? (
                     <Minimize2 className="h-4 w-4" />
@@ -395,7 +405,7 @@ export function VideoRoom({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden relative">
             {/* Video Area */}
             <div className="flex-1 relative overflow-hidden">
               {roomType === 'individual' ? (
@@ -417,14 +427,14 @@ export function VideoRoom({
 
             {/* Chat Sidebar */}
             {showChat && roomType !== 'individual' && (
-              <div className="w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg">
-                <div className="p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
+              <div className="absolute inset-0 sm:relative sm:inset-auto w-full sm:w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg z-20">
+                <div className="p-3 sm:p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
                   <h3 className="text-olive-900 font-medium">Chat</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowChat(false)}
-                    className="text-olive-600 hover:text-olive-900 hover:bg-sage-100"
+                    className="text-olive-600 hover:text-olive-900 hover:bg-sage-100 h-9 w-9 p-0"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -448,14 +458,14 @@ export function VideoRoom({
 
             {/* Settings Sidebar */}
             {showSettings && (
-              <div className="w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg">
-                <div className="p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
+              <div className="absolute inset-0 sm:relative sm:inset-auto w-full sm:w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg z-20">
+                <div className="p-3 sm:p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
                   <h3 className="text-olive-900 font-medium">Settings</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowSettings(false)}
-                    className="text-olive-600 hover:text-olive-900 hover:bg-sage-100"
+                    className="text-olive-600 hover:text-olive-900 hover:bg-sage-100 h-9 w-9 p-0"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -485,7 +495,7 @@ export function VideoRoom({
           </div>
 
           {/* Control Bar */}
-          <div className="bg-white/80 backdrop-blur-md border-t border-sage-200 p-4 shadow-sm relative overflow-visible">
+          <div className="bg-white/80 backdrop-blur-md border-t border-sage-200 p-2.5 sm:p-4 shadow-sm relative overflow-visible">
             <div className="max-w-4xl mx-auto overflow-visible">
               <div className="lk-control-bar" style={{
                 '--lk-control-bg': 'rgba(156, 175, 136, 0.15)',
@@ -518,7 +528,7 @@ export function VideoRoom({
           </div>
 
           {/* Powered by Estuary - Below controls */}
-          <div className="bg-sage-50/50 px-4 py-2 flex items-center justify-end gap-2 text-olive-600 text-sm border-t border-sage-100">
+          <div className="bg-sage-50/50 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-end gap-2 text-olive-600 text-xs sm:text-sm border-t border-sage-100">
             <span>Powered by</span>
             <EstuaryLogo size="sm" className="text-sage-700" />
           </div>
@@ -577,8 +587,8 @@ function ParticipantsSidebar({ isHost, onClose }: { isHost: boolean; onClose: ()
   };
 
   return (
-    <div className="w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg">
-      <div className="p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
+    <div className="absolute inset-0 sm:relative sm:inset-auto w-full sm:w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg z-20">
+      <div className="p-3 sm:p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-sage-600" />
           <h3 className="text-olive-900 font-medium">Participants ({participants.length})</h3>
@@ -587,7 +597,7 @@ function ParticipantsSidebar({ isHost, onClose }: { isHost: boolean; onClose: ()
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="text-olive-600 hover:text-olive-900 hover:bg-sage-100"
+          className="text-olive-600 hover:text-olive-900 hover:bg-sage-100 h-9 w-9 p-0"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -647,19 +657,19 @@ function ParticipantsSidebar({ isHost, onClose }: { isHost: boolean; onClose: ()
                       variant="ghost"
                       size="sm"
                       onClick={() => handleMuteParticipant(participant, hasAudio)}
-                      className="h-7 w-7 p-0 text-olive-500 hover:text-olive-900 hover:bg-sage-100"
+                      className="h-9 w-9 p-0 text-olive-500 hover:text-olive-900 hover:bg-sage-100"
                       title={hasAudio ? "Request mute" : "Request unmute"}
                     >
-                      {hasAudio ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                      {hasAudio ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDisableVideo(participant, hasVideo)}
-                      className="h-7 w-7 p-0 text-olive-500 hover:text-olive-900 hover:bg-sage-100"
+                      className="h-9 w-9 p-0 text-olive-500 hover:text-olive-900 hover:bg-sage-100"
                       title={hasVideo ? "Request disable video" : "Request enable video"}
                     >
-                      {hasVideo ? <VideoOff className="h-3.5 w-3.5" /> : <Video className="h-3.5 w-3.5" />}
+                      {hasVideo ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
                     </Button>
                   </div>
                 )}
@@ -696,16 +706,16 @@ function IndividualLayout() {
   if (screenShareTrack) {
     // Screen share layout
     return (
-      <div className="relative h-full p-4">
+      <div className="relative h-full p-2 sm:p-4">
         {/* Main screen share */}
-        <div className="h-full rounded-2xl overflow-hidden shadow-xl border border-sage-200">
+        <div className="h-full rounded-xl sm:rounded-2xl overflow-hidden shadow-xl border border-sage-200">
           <ParticipantTile trackRef={screenShareTrack} />
         </div>
 
         {/* Small camera feeds */}
-        <div className="absolute bottom-8 right-8 flex gap-3">
+        <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 flex gap-2 sm:gap-3">
           {cameraTracks.map((track) => (
-            <div key={track.participant.identity} className="w-48 h-36 rounded-xl overflow-hidden shadow-xl ring-2 ring-sage-300/50 border border-sage-200">
+            <div key={track.participant.identity} className="w-28 h-20 sm:w-48 sm:h-36 rounded-lg sm:rounded-xl overflow-hidden shadow-xl ring-2 ring-sage-300/50 border border-sage-200">
               <ParticipantTile trackRef={track} />
             </div>
           ))}
@@ -716,7 +726,7 @@ function IndividualLayout() {
 
   // Regular 1-on-1 layout
   return (
-    <div className="h-full flex gap-4 p-6">
+    <div className="h-full flex flex-col sm:flex-row gap-2 sm:gap-4 p-2 sm:p-6">
       {tracks.map((track) => (
         <div key={track.participant.identity + track.source} className="flex-1 h-full rounded-2xl overflow-hidden shadow-xl border border-sage-200">
           <ParticipantTile trackRef={track} />
@@ -742,16 +752,16 @@ function GroupLayout() {
   if (screenShareTrack) {
     // Screen share + grid layout
     return (
-      <div className="h-full flex flex-col p-4 gap-4">
+      <div className="h-full flex flex-col p-2 sm:p-4 gap-2 sm:gap-4">
         {/* Main screen share */}
-        <div className="flex-1 rounded-2xl overflow-hidden shadow-xl border border-sage-200">
+        <div className="flex-1 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl border border-sage-200">
           <ParticipantTile trackRef={screenShareTrack} />
         </div>
 
         {/* Camera grid at bottom */}
-        <div className="h-32 flex gap-3 overflow-x-auto">
+        <div className="h-24 sm:h-32 flex gap-2 sm:gap-3 overflow-x-auto">
           {cameraTracks.map((track) => (
-            <div key={track.participant.identity} className="h-full aspect-video rounded-xl overflow-hidden shadow-xl ring-2 ring-sage-300/50 border border-sage-200 flex-shrink-0">
+            <div key={track.participant.identity} className="h-full aspect-video rounded-lg sm:rounded-xl overflow-hidden shadow-xl ring-2 ring-sage-300/50 border border-sage-200 flex-shrink-0">
               <ParticipantTile trackRef={track} />
             </div>
           ))}
@@ -761,7 +771,7 @@ function GroupLayout() {
   }
 
   return (
-    <div className="h-full p-6">
+    <div className="h-full p-2 sm:p-6">
       <GridLayout tracks={cameraTracks}>
         <ParticipantTile />
       </GridLayout>
@@ -788,16 +798,16 @@ function WebinarLayout({ isHost }: { isHost: boolean }) {
   // If there's a screen share, show it prominently
   if (screenShareTrack) {
     return (
-      <div className="h-full flex flex-col p-4 gap-4">
+      <div className="h-full flex flex-col p-2 sm:p-4 gap-2 sm:gap-4">
         {/* Main screen share */}
-        <div className="flex-1 rounded-2xl overflow-hidden shadow-xl border border-sage-200">
+        <div className="flex-1 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl border border-sage-200">
           <ParticipantTile trackRef={screenShareTrack} />
         </div>
 
         {/* All cameras at bottom */}
-        <div className="h-32 flex gap-3 overflow-x-auto">
+        <div className="h-24 sm:h-32 flex gap-2 sm:gap-3 overflow-x-auto">
           {cameraTracks.map((track) => (
-            <div key={track.participant.identity} className="h-full aspect-video rounded-xl overflow-hidden shadow-xl ring-2 ring-sage-300/50 border border-sage-200 flex-shrink-0">
+            <div key={track.participant.identity} className="h-full aspect-video rounded-lg sm:rounded-xl overflow-hidden shadow-xl ring-2 ring-sage-300/50 border border-sage-200 flex-shrink-0">
               <ParticipantTile trackRef={track} />
             </div>
           ))}
@@ -807,9 +817,9 @@ function WebinarLayout({ isHost }: { isHost: boolean }) {
   }
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex flex-col sm:flex-row">
       {/* Main speaker area */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-2 sm:p-6">
         {hostTrack ? (
           <div className="h-full rounded-2xl overflow-hidden shadow-xl border border-sage-200">
             <ParticipantTile trackRef={hostTrack} />
@@ -824,9 +834,9 @@ function WebinarLayout({ isHost }: { isHost: boolean }) {
         )}
       </div>
 
-      {/* Viewers sidebar */}
+      {/* Viewers sidebar - horizontal scroll on mobile, vertical sidebar on desktop */}
       {viewerTracks.length > 0 && (
-        <div className="w-64 bg-white/50 backdrop-blur-sm border-l border-sage-200 p-4 overflow-y-auto">
+        <div className="w-full sm:w-64 bg-white/50 backdrop-blur-sm border-t sm:border-t-0 sm:border-l border-sage-200 p-2 sm:p-4 overflow-x-auto sm:overflow-y-auto flex sm:flex-col gap-2 sm:gap-0">
           <div className="flex items-center gap-2 mb-4 text-olive-700">
             <Users className="h-4 w-4" />
             <h3 className="text-sm font-medium">
@@ -876,17 +886,17 @@ function LeaveButton({ onLeaveRoom }: { onLeaveRoom: () => void }) {
       onClick={handleLeave}
       disabled={isLeaving}
       size="sm"
-      className="bg-red-600 hover:bg-red-700 border-red-500"
+      className="bg-red-600 hover:bg-red-700 border-red-500 h-9 min-w-[44px] px-2 sm:px-3"
     >
       {isLeaving ? (
         <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          Leaving...
+          <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+          <span className="hidden sm:inline">Leaving...</span>
         </>
       ) : (
         <>
-          <PhoneOff className="h-4 w-4 mr-2" />
-          Leave
+          <PhoneOff className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Leave</span>
         </>
       )}
     </Button>
@@ -971,10 +981,10 @@ function EndSessionButton({ onEndSession }: { onEndSession: () => Promise<void> 
       variant="outline"
       onClick={() => setShowConfirm(true)}
       size="sm"
-      className="border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+      className="border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 h-9 min-w-[44px] px-2 sm:px-3"
     >
-      <Power className="h-4 w-4 mr-2" />
-      End Session
+      <Power className="h-4 w-4 sm:mr-2" />
+      <span className="hidden sm:inline">End Session</span>
     </Button>
   );
 }

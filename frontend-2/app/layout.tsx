@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { DM_Sans } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import ClientLayout from "./client-layout"
@@ -13,6 +13,12 @@ const dmSans = DM_Sans({
   display: "swap",
   variable: "--font-dm-sans",
 })
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

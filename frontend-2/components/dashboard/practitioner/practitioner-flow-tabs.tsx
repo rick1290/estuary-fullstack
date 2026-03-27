@@ -164,7 +164,7 @@ export default function PractitionerFlowTabs() {
         </div>
         <button
           onClick={() => handleJoinSession(booking)}
-          className="text-xs font-normal text-olive-700 bg-cream-50 border border-sage-200/60 px-3.5 py-1.5 rounded-full whitespace-nowrap hover:bg-terracotta-50 hover:border-terracotta-300 hover:text-terracotta-700 transition-colors flex-shrink-0"
+          className="text-xs font-normal text-olive-700 bg-cream-50 border border-sage-200/60 px-3.5 py-2 min-h-[44px] rounded-full whitespace-nowrap hover:bg-terracotta-50 hover:border-terracotta-300 hover:text-terracotta-700 transition-colors flex-shrink-0 inline-flex items-center"
         >
           View Details
         </button>
@@ -189,22 +189,22 @@ export default function PractitionerFlowTabs() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0 mb-4">
+      <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0 mb-4 overflow-x-auto scrollbar-hide">
         <TabsTrigger
           value="today"
-          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
+          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-2 min-h-[44px] text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
         >
           Today's Flow
         </TabsTrigger>
         <TabsTrigger
           value="week"
-          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
+          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-2 min-h-[44px] text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
         >
           This Week
         </TabsTrigger>
         <TabsTrigger
           value="ahead"
-          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-1.5 text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
+          className="rounded-full border border-sage-200/60 bg-cream-50 px-4 py-2 min-h-[44px] text-xs font-normal text-olive-600 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:border-olive-800"
         >
           Looking Downstream
         </TabsTrigger>

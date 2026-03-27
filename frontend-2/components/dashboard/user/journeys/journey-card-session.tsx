@@ -29,13 +29,13 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
       href={`/dashboard/user/journeys/${journey.journey_id}`}
       className="block group"
     >
-      <div className={`flex gap-4 p-4 bg-white border rounded-xl hover:shadow-md transition-all ${
+      <div className={`flex gap-3 sm:gap-4 p-3 sm:p-4 bg-white border rounded-xl hover:shadow-md transition-all ${
         isUnscheduled
           ? "border-amber-200 hover:border-amber-300"
           : "border-sage-200/60 hover:border-sage-300"
       }`}>
         {/* Image */}
-        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 bg-sage-50">
           {journey.service_image_url ? (
             <img src={journey.service_image_url} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -67,7 +67,7 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
           )}
 
           {/* Line 3: Date + meta OR scheduling prompt */}
-          <div className="flex items-center gap-2 mt-2 text-[12px]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[12px]">
             {isUnscheduled ? (
               <span className="flex items-center gap-1 text-amber-600 font-medium">
                 <CalendarClock className="h-3 w-3" />
@@ -103,7 +103,7 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
         </div>
 
         {/* Right: type badge + status + chevron */}
-        <div className="flex flex-col items-end justify-between shrink-0">
+        <div className="hidden sm:flex flex-col items-end justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-50 text-sage-600">
               Session

@@ -115,8 +115,8 @@ export function PayoutDetails({ payout }: PayoutDetailsProps) {
           <CardDescription>Transactions included in this payout</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Session</TableHead>

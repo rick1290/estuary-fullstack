@@ -167,7 +167,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
           <button
             onClick={() => toggleSubmenu(item.text)}
             className={cn(
-              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-50 hover:text-sage-700 text-olive-700",
+              "flex w-full items-center justify-between rounded-lg px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-sage-50 hover:text-sage-700 text-olive-700",
               isActive && "bg-sage-100 text-sage-700",
             )}
           >
@@ -185,7 +185,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   key={subItem.text}
                   href={subItem.path}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                    "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                     (pathname === subItem.path || pathname.startsWith(subItem.path)) && "text-sage-700 font-semibold",
                   )}
                 >
@@ -204,7 +204,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       return (
         <div
           key={item.text}
-          className="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
+          className="flex items-center justify-between gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
         >
           <div className="flex items-center gap-3">
             {item.icon}
@@ -220,7 +220,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         key={item.text}
         href={item.path}
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+          "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
           isActive && "bg-sage-100 text-sage-700",
         )}
       >
@@ -235,8 +235,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-sage-200/60 bg-cream-50 transition-transform md:flex",
-          !sidebarOpen && "md:-translate-x-full",
+          "fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-sage-200/60 bg-cream-50 transition-transform lg:flex",
+          !sidebarOpen && "lg:-translate-x-full",
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-sage-200/60 px-4">
@@ -362,7 +362,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       {/* Mobile Sidebar */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="absolute left-4 top-3 z-50 md:hidden">
+          <Button variant="ghost" size="icon" className="absolute left-4 top-3 z-50 lg:hidden min-h-[44px] min-w-[44px]">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </Button>
@@ -383,14 +383,14 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                 <nav className="space-y-1">
                   <Link
                     href={`/practitioners/${user?.practitioner_slug || user?.practitionerPublicId}`}
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <ExternalLink className="h-4 w-4" />
                     View Public Profile Page
                   </Link>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 px-3 py-2 h-auto font-medium"
+                    className="w-full justify-start gap-3 px-3 py-2.5 min-h-[44px] h-auto font-medium"
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/practitioners/${user?.practitioner_slug || user?.practitionerPublicId}`)
                       toast.success("Profile link copied to clipboard!")
@@ -401,7 +401,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   </Button>
                   <Link
                     href="/dashboard/practitioner/referrals"
-                    className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <Gift className="h-4 w-4" />
                     Earn 20% Referral
@@ -409,7 +409,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   <Link
                     href="/dashboard/practitioner/feature-requests"
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors",
                       pathname === "/dashboard/practitioner/feature-requests"
                         ? "bg-terracotta-50 text-terracotta-700"
                         : "hover:bg-sage-50 hover:text-sage-700"
@@ -422,7 +422,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   <Link
                     href="/dashboard/practitioner/settings"
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                      "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                       showStripeWarning && "text-amber-700"
                     )}
                   >
@@ -441,7 +441,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                   {/* Account Menu Button */}
                   <button
                     onClick={() => setAccountMenuOpen(!accountMenuOpen)}
-                    className="w-full flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="w-full flex items-center justify-between rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <div className="flex items-center gap-3">
                       <User className="h-4 w-4" />
@@ -474,14 +474,14 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                       <div className="p-1">
                         <Link
                           href="/dashboard/practitioner/profile"
-                          className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                          className="flex w-full items-center gap-2 rounded-sm px-3 py-2.5 min-h-[44px] text-sm hover:bg-accent hover:text-accent-foreground"
                         >
                           <User className="h-4 w-4" />
                           Profile
                         </Link>
                         <button
                           onClick={handleLogout}
-                          className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                          className="flex w-full items-center gap-2 rounded-sm px-3 py-2.5 min-h-[44px] text-sm hover:bg-accent hover:text-accent-foreground"
                         >
                           <LogOut className="h-4 w-4" />
                           Sign out
@@ -497,15 +497,15 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       </Sheet>
 
       {/* Main Content */}
-      <div className={cn("flex-1 transition-all overflow-x-hidden min-w-0", sidebarOpen ? "md:ml-64" : "md:ml-0")}>
+      <div className={cn("flex-1 transition-all overflow-x-hidden min-w-0", sidebarOpen ? "lg:ml-64" : "lg:ml-0")}>
         {/* Top Navigation */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sage-200/60 bg-cream-50/95 backdrop-blur-sm px-4 md:px-6 relative">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sage-200/60 bg-cream-50/95 backdrop-blur-sm px-4 lg:px-6 relative">
+          <div className="flex items-center gap-2 pl-10 lg:pl-0">
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden lg:flex">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle sidebar</span>
             </Button>
-            <h1 className="text-lg font-medium text-olive-900">Practitioner Dashboard</h1>
+            <h1 className="text-base lg:text-lg font-medium text-olive-900 truncate">Practitioner Dashboard</h1>
           </div>
           <div className="flex items-center gap-2">
             {/* Home button */}

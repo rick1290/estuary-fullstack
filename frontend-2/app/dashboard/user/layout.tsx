@@ -9,7 +9,7 @@ export default function UserDashboardLayout({
   return (
     <div className="min-h-screen bg-cream-50">
       <UserDashboardNav />
-      <main className="pt-8 pb-8">
+      <main className="pt-4 pb-4 sm:pt-8 sm:pb-8">
         {children}
       </main>
     </div>

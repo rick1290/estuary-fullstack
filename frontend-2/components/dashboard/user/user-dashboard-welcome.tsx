@@ -8,7 +8,7 @@ export default function UserDashboardWelcome() {
 
   return (
     <div>
-      <h1 className="font-serif text-3xl font-light text-olive-900 mb-1">
+      <h1 className="font-serif text-2xl sm:text-3xl font-light text-olive-900 mb-1">
         Welcome back, <em className="italic text-terracotta-600">{firstName}</em>
       </h1>
       <p className="text-base font-light text-olive-600">

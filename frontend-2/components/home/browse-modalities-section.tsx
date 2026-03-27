@@ -79,7 +79,7 @@ export default function BrowseModalitiesSection() {
 
         {/* Category cards — horizontal scroll on mobile, grid on desktop */}
         <motion.div
-          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:pb-0"
+          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:pb-0"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-40px" }}

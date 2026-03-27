@@ -150,8 +150,8 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
         {practitioner.is_featured && (
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-terracotta-400 to-sage-400 rounded-t-xl" />
         )}
-        <CardContent className="p-5">
-          <div className="flex gap-4">
+        <CardContent className="p-3 sm:p-5">
+          <div className="flex gap-3 sm:gap-4">
             {/* Left: Avatar */}
             <div className="relative flex-shrink-0">
               <div className={`w-24 h-24 max-sm:w-18 max-sm:h-18 rounded-2xl overflow-hidden bg-gradient-to-br ${avatarGradient}`}>
@@ -234,7 +234,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
               </div>
 
               {/* Specialty tags + View Profile */}
-              <div className="flex items-center justify-between gap-3 mt-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mt-2.5">
                 {practitioner.specializations && practitioner.specializations.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
                     {practitioner.specializations.slice(0, 4).map((specialization) => (
@@ -258,7 +258,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                 ) : (
                   <div className="flex-1" />
                 )}
-                <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-4 py-1.5 text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap">
+                <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-4 py-1.5 text-[11px] sm:text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap self-start sm:self-auto">
                   View Profile
                 </span>
               </div>

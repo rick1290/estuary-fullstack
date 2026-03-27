@@ -375,7 +375,8 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
         </CardHeader>
         <CardContent>
           {certifications.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Order</TableHead>
@@ -417,6 +418,7 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : (
             <div className="text-center py-4 text-muted-foreground">No certifications added yet.</div>
           )}
@@ -482,7 +484,8 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
         </CardHeader>
         <CardContent>
           {educations.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Order</TableHead>
@@ -524,6 +527,7 @@ export default function PractitionerCredentialsForm({ isOnboarding = false }: Pr
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : (
             <div className="text-center py-4 text-muted-foreground">No education entries added yet.</div>
           )}

@@ -310,11 +310,11 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
   if (isLoading) {
     return (
       <div className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <Skeleton className="w-full h-48" />
-              <div className="p-6">
+              <Skeleton className="w-full h-36 sm:h-48" />
+              <div className="p-4 sm:p-6">
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2 mb-4" />
                 <Skeleton className="h-4 w-full mb-2" />
@@ -448,7 +448,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
       </div>
 
       {/* Services grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {filteredServices.map((service, index) => (
           <ServiceCard
             key={service.id}
@@ -461,24 +461,24 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
 
       {/* Pagination controls */}
       {totalPages > 1 && (
-        <div className="mt-12 flex items-center justify-center gap-2">
+        <div className="mt-8 sm:mt-12 flex items-center justify-center gap-1 sm:gap-2">
           {/* Previous button */}
           <Button
             onClick={() => goToPage(page - 1)}
             variant="outline"
             size="icon"
             disabled={page === 1 || isLoading}
-            className="h-10 w-10"
+            className="h-8 w-8 sm:h-10 sm:w-10"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Previous page</span>
           </Button>
 
           {/* Page numbers */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {getPageNumbers().map((pageNum, idx) =>
               pageNum === 'ellipsis' ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
+                <span key={`ellipsis-${idx}`} className="px-1 sm:px-2 text-muted-foreground">
                   ...
                 </span>
               ) : (
@@ -488,7 +488,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
                   variant={page === pageNum ? "default" : "outline"}
                   size="icon"
                   disabled={isLoading}
-                  className="h-10 w-10"
+                  className="h-8 w-8 sm:h-10 sm:w-10 text-xs sm:text-sm"
                 >
                   {pageNum}
                 </Button>
@@ -502,7 +502,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
             variant="outline"
             size="icon"
             disabled={!hasMore || isLoading}
-            className="h-10 w-10"
+            className="h-8 w-8 sm:h-10 sm:w-10"
           >
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Next page</span>

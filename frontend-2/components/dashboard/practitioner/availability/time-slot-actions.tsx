@@ -59,8 +59,8 @@ export function TimeSlotActions({ timeSlots, onEdit, onDelete, onToggleActive }:
   return (
     <>
       <Card>
-        <CardContent className="p-0">
-          <Table>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[480px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Day</TableHead>

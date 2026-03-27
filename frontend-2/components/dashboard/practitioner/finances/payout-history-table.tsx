@@ -51,7 +51,7 @@ export function PayoutHistoryTable({ payouts }: PayoutHistoryTableProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <CardTitle className="text-xl">Payout History</CardTitle>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
@@ -66,8 +66,8 @@ export function PayoutHistoryTable({ payouts }: PayoutHistoryTableProps) {
         </Select>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <Table>
+        <div className="rounded-md border overflow-x-auto -mx-2 sm:mx-0">
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Payout ID</TableHead>
