@@ -265,7 +265,7 @@ export default function BecomePractitionerPage() {
             <img
               src="/become-practitioner-hero-top.png"
               alt="Practitioners connecting online and in-person"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover max-w-full"
             />
           </div>
         </div>
@@ -357,7 +357,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ─── FEATURES ─── */}
       <section id="features" className="py-16 md:py-20 px-4 sm:px-6 scroll-mt-20">
@@ -444,7 +444,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ─── PLATFORM COMPARISON ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -538,7 +538,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ─── PRICING ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -710,7 +710,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ─── TESTIMONIALS ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -785,7 +785,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-6" />
+      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
 
       {/* ─── MISSION ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -816,7 +816,7 @@ export default function BecomePractitionerPage() {
             <img
               src="/benefit-3-community.png"
               alt="Practitioner leading a healing circle"
-              className="w-full h-56 sm:h-72 object-cover"
+              className="w-full h-48 sm:h-56 md:h-72 object-cover max-w-full"
             />
           </motion.div>
 

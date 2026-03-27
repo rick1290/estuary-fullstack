@@ -313,7 +313,7 @@ export default function ContentCard({ post }: ContentCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-olive-500 hover:text-olive-800 hover:bg-sage-50 ml-1 shrink-0">
+              <Button variant="ghost" size="icon" className="h-11 w-11 text-olive-500 hover:text-olive-800 hover:bg-sage-50 ml-1 shrink-0">
                 <MoreHorizontal className="h-4 w-4" strokeWidth="1.5" />
                 <span className="sr-only">More options</span>
               </Button>
@@ -612,8 +612,8 @@ export default function ContentCard({ post }: ContentCardProps) {
 
           {/* Linked Service Booking Card */}
           {post.linkedService && (
-            <div className="mt-3 p-4 rounded-xl border border-sage-200/60 bg-sage-50/50">
-              <div className="flex items-center justify-between">
+            <div className="mt-3 p-3 sm:p-4 rounded-xl border border-sage-200/60 bg-sage-50/50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-sage-600 font-medium uppercase tracking-wide mb-1">
                     {post.linkedService.serviceType === 'session' ? 'Book a Session' :
@@ -630,7 +630,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 </div>
                 <Button
                   size="sm"
-                  className="bg-sage-700 hover:bg-sage-800 text-white ml-4"
+                  className="bg-sage-700 hover:bg-sage-800 text-white w-full sm:w-auto min-h-[44px]"
                   onClick={() => router.push(`/services/${post.linkedService!.slug || post.linkedService!.id}`)}
                 >
                   Book Now

@@ -116,7 +116,7 @@ export default function JourneysList() {
         onValueChange={(v) => setActiveTab(v as TabValue)}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <TabsList className="inline-flex w-auto gap-1 bg-transparent p-0 overflow-x-auto scrollbar-hide max-w-full">
+          <TabsList className="inline-flex w-auto h-auto gap-1 bg-transparent p-0 py-1 overflow-x-auto scrollbar-hide max-w-full">
             <TabsTrigger
               value="all"
               className="rounded-full border border-sage-200/60 bg-cream-50/80 px-3 sm:px-4 py-2 text-xs font-medium text-olive-500 data-[state=active]:bg-sage-600 data-[state=active]:text-white data-[state=active]:border-sage-600 transition-colors whitespace-nowrap min-h-[44px] flex items-center"

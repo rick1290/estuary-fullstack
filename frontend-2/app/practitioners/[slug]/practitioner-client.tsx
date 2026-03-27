@@ -30,8 +30,8 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50">
-        <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
-          <Skeleton className="h-6 w-96 mb-6" />
+        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 lg:pt-12 pb-16">
+          <Skeleton className="h-6 w-96 max-w-full mb-6" />
           <div className="grid lg:grid-cols-[1fr,340px] gap-8 lg:gap-10">
             <div className="w-full min-w-0">
               <ProfileSkeleton />
@@ -65,7 +65,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="min-h-screen bg-cream-50">
-      <div className="container max-w-7xl pt-8 lg:pt-12 pb-16">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 lg:pt-12 pb-20 lg:pb-16">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>

@@ -85,7 +85,7 @@ export default function StreamsLayout({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  className="w-full pl-10 pr-4 h-10 rounded-full bg-gray-100 border-0 text-sm focus-visible:ring-1 focus-visible:ring-sage-300 placeholder:text-gray-400"
+                  className="w-full pl-10 pr-4 h-11 rounded-full bg-gray-100 border-0 text-sm focus-visible:ring-1 focus-visible:ring-sage-300 placeholder:text-gray-400"
                   placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -99,7 +99,7 @@ export default function StreamsLayout({
             {/* Navigation pills */}
             <button
               onClick={() => router.push("/streams")}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors min-h-[44px] ${
                 !isFollowing
                   ? "bg-olive-900 text-white"
                   : "text-olive-600 hover:bg-gray-100"
@@ -109,7 +109,7 @@ export default function StreamsLayout({
             </button>
             <button
               onClick={() => router.push("/streams/following")}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 min-h-[44px] ${
                 isFollowing
                   ? "bg-olive-900 text-white"
                   : "text-olive-600 hover:bg-gray-100"
@@ -136,7 +136,7 @@ export default function StreamsLayout({
                       router.push("/streams")
                     }
                   }}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`shrink-0 rounded-full px-3 py-2 text-xs font-medium transition-colors min-h-[44px] ${
                     isActive
                       ? "bg-sage-100 text-sage-800 border border-sage-300"
                       : "text-gray-500 hover:bg-gray-100 border border-transparent"
@@ -162,7 +162,7 @@ export default function StreamsLayout({
                       router.push(`/streams?modality=${encodeURIComponent(t.slug)}`)
                     }
                   }}
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors min-h-[36px] ${
                     activeModality === t.slug
                       ? 'bg-olive-800 text-white'
                       : 'bg-sage-50 text-olive-600 hover:bg-sage-100'
