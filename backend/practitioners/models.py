@@ -769,7 +769,23 @@ class FeatureRequest(BaseModel):
         Practitioner,
         on_delete=models.CASCADE,
         related_name='feature_requests',
-        help_text='Practitioner who submitted the request'
+        null=True,
+        blank=True,
+        help_text='Practitioner who submitted the request (null for regular users)'
+    )
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='feedback_requests',
+        null=True,
+        blank=True,
+        help_text='User who submitted the request (set for all submissions)'
+    )
+    feedback_type = models.CharField(
+        max_length=20,
+        choices=[('bug', 'Bug Report'), ('feature', 'Feature Request'), ('other', 'Other')],
+        default='feature',
+        help_text='Type of feedback'
     )
     title = models.CharField(
         max_length=255,

@@ -2361,24 +2361,26 @@ class ModalityViewSet(viewsets.ReadOnlyModelViewSet):
 )
 class FeatureRequestViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for practitioners to submit and manage feature requests.
-    Practitioners can only view and edit their own requests.
+    ViewSet for any authenticated user to submit feedback, bug reports, and feature requests.
+    Users can only view and edit their own submissions.
     Only requests with 'submitted' status can be edited or deleted.
     """
     serializer_class = FeatureRequestSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['category', 'priority', 'status']
+    filterset_fields = ['category', 'priority', 'status', 'feedback_type']
     ordering_fields = ['created_at', 'priority', 'votes']
     ordering = ['-created_at']
 
     def get_queryset(self):
-        """Return only the authenticated practitioner's feature requests"""
-        if not hasattr(self.request.user, 'practitioner_profile'):
-            return FeatureRequest.objects.none()
-        return FeatureRequest.objects.filter(
-            practitioner=self.request.user.practitioner_profile
-        )
+        """Return the authenticated user's feedback submissions"""
+        user = self.request.user
+        from django.db.models import Q
+        # Show feedback submitted by this user (via user FK or practitioner FK)
+        q = Q(user=user)
+        if hasattr(user, 'practitioner_profile'):
+            q |= Q(practitioner=user.practitioner_profile)
+        return FeatureRequest.objects.filter(q).distinct()
 
     def perform_destroy(self, instance):
         """Only allow deletion if status is 'submitted'"""
