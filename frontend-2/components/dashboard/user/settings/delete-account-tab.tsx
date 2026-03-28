@@ -54,7 +54,6 @@ export default function DeleteAccountTab() {
     }
 
     // Simulate account deletion process
-    console.log("Account deletion initiated")
     handleCloseDialog()
     // In a real app, you would redirect to a confirmation page or log the user out
   }

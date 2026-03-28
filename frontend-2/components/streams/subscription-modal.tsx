@@ -160,7 +160,7 @@ export default function SubscriptionModal({
                   className={`relative cursor-pointer rounded-xl border-2 p-6 transition-all hover:border-sage-400 ${
                     selectedTier === tier.value
                       ? "border-sage-600 bg-sage-50"
-                      : "border-gray-200"
+                      : "border-sage-200"
                   }`}
                 >
                   <RadioGroupItem
@@ -185,7 +185,7 @@ export default function SubscriptionModal({
                       <div className={`p-2 rounded-lg ${
                         selectedTier === tier.value
                           ? "bg-olive-800 text-white"
-                          : "bg-gray-100 text-gray-600"
+                          : "bg-sage-100 text-olive-600"
                       }`}>
                         {tier.icon}
                       </div>
@@ -206,7 +206,7 @@ export default function SubscriptionModal({
                     {tier.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm">
                         <Check className="h-4 w-4 text-sage-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-600">{feature}</span>
+                        <span className="text-olive-600">{feature}</span>
                       </li>
                     ))}
                   </ul>

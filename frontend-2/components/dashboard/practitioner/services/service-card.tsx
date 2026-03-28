@@ -114,7 +114,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
       {/* Card content */}
       <CardContent className="flex-grow p-4">
         <Link href={`/dashboard/practitioner/services/${service.id}`} className="block">
-          <h3 className="font-serif font-light text-lg line-clamp-1 mb-1 text-olive-900 hover:text-terracotta-600 transition-colors">{service.name}</h3>
+          <h3 className="font-serif font-normal text-lg line-clamp-1 mb-1 text-olive-900 hover:text-terracotta-600 transition-colors">{service.name}</h3>
         </Link>
 
         {/* Category badge */}

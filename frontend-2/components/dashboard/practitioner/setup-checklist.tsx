@@ -119,7 +119,7 @@ export default function SetupChecklist() {
       <Card className="mb-6 border border-sage-200/60 bg-white">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-serif text-lg font-light text-olive-900">
+            <CardTitle className="font-serif text-lg font-normal text-olive-900">
               Get your practice flowing
             </CardTitle>
             <Badge variant="secondary" className="bg-sage-100 text-sage-700">

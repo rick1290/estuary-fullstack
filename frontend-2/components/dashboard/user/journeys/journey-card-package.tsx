@@ -61,7 +61,7 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
                   <span className="text-[8px] text-olive-600">{practitioner.name?.charAt(0)}</span>
                 </div>
               )}
-              <span className="text-[12px] text-olive-400">with {practitioner.name}</span>
+              <span className="text-[12px] text-olive-500">with {practitioner.name}</span>
             </div>
           )}
 
@@ -80,7 +80,7 @@ export default function JourneyCardPackage({ journey }: JourneyCardPackageProps)
                 />
               ))}
             </div>
-            <span className="text-[11px] text-olive-400">
+            <span className="text-[11px] text-olive-500">
               {completed_sessions} of {total_sessions} used
             </span>
           </div>

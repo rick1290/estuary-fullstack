@@ -217,7 +217,7 @@ export default function BecomePractitionerPage() {
 
             <motion.h1
               variants={itemFade}
-              className="font-serif text-4xl sm:text-5xl md:text-[56px] font-light leading-[1.15] tracking-tight text-olive-900 mb-5"
+              className="font-serif text-4xl sm:text-5xl md:text-[56px] font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
             >
               You&apos;re Holding Space
               <br />
@@ -326,7 +326,7 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5"
           >
             You Became a Practitioner
             <br />
@@ -376,7 +376,7 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5"
           >
             One Home for{" "}
             <em className="italic text-terracotta-600">Everything You Do</em>
@@ -459,7 +459,7 @@ export default function BecomePractitionerPage() {
             <span className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4">
               Why Estuary
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] mb-5">
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5">
               Compare Estuary{" "}
               <em className="italic text-terracotta-600">With Others</em>
             </h2>
@@ -475,7 +475,7 @@ export default function BecomePractitionerPage() {
             className="bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-sage-200/60 shadow-sm"
           >
             {/* Swipe hint on mobile */}
-            <div className="md:hidden flex items-center justify-end gap-1.5 px-4 pt-3 pb-0 text-olive-400">
+            <div className="md:hidden flex items-center justify-end gap-1.5 px-4 pt-3 pb-0 text-olive-500">
               <span className="text-[11px] tracking-wide">Swipe to compare</span>
               <ArrowRight className="h-3 w-3" />
             </div>
@@ -557,7 +557,7 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-cream-50 mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-cream-50 mb-5"
           >
             You Only Pay
             <br />
@@ -653,7 +653,7 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5"
           >
             Built for Where You&apos;re Going &mdash;
             <br />
@@ -677,7 +677,7 @@ export default function BecomePractitionerPage() {
               <span className="block text-[10px] font-medium tracking-widest uppercase text-sage-600 mb-3.5">
                 Today
               </span>
-              <h3 className="font-serif text-xl font-light leading-snug text-olive-900 mb-3">
+              <h3 className="font-serif text-xl font-normal leading-snug text-olive-900 mb-3">
                 Running private sessions and local workshops.
               </h3>
               <p className="text-sm text-olive-500 font-light leading-relaxed">
@@ -692,7 +692,7 @@ export default function BecomePractitionerPage() {
               <span className="block text-[10px] font-medium tracking-widest uppercase text-terracotta-600 mb-3.5">
                 Tomorrow
               </span>
-              <h3 className="font-serif text-xl font-light leading-snug text-olive-900 mb-3">
+              <h3 className="font-serif text-xl font-normal leading-snug text-olive-900 mb-3">
                 Leading sold-out events. Launching courses. Building community.
               </h3>
               <p className="text-sm text-olive-500 font-light leading-relaxed">
@@ -729,7 +729,7 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] mb-8"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-8"
           >
             Real Practitioners.
             <br />
@@ -765,7 +765,7 @@ export default function BecomePractitionerPage() {
                 variants={itemFade}
                 className="bg-white rounded-2xl border border-sage-200/60 p-6"
               >
-                <blockquote className="font-serif text-lg italic font-light leading-relaxed text-olive-800 mb-4">
+                <blockquote className="font-serif text-lg italic font-normal leading-relaxed text-olive-800 mb-4">
                   {t.quote}
                 </blockquote>
                 <div className="flex items-center gap-3">
@@ -804,7 +804,7 @@ export default function BecomePractitionerPage() {
           </motion.span>
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800 mb-8"
+            className="font-serif text-2xl sm:text-3xl font-normal leading-relaxed text-olive-800 mb-8"
           >
             Healing is{" "}
             <em className="italic text-terracotta-600">relational</em>. It&apos;s
@@ -838,7 +838,7 @@ export default function BecomePractitionerPage() {
         >
           <motion.h2
             variants={itemFade}
-            className="font-serif text-4xl sm:text-5xl font-light leading-[1.15] mb-4"
+            className="font-serif text-4xl sm:text-5xl font-normal leading-[1.15] mb-4"
           >
             Your Practice
             <br />
@@ -871,7 +871,7 @@ export default function BecomePractitionerPage() {
           </motion.div>
           <motion.p
             variants={itemFade}
-            className="text-xs text-olive-400 mt-5 tracking-wide"
+            className="text-xs text-olive-500 mt-5 tracking-wide"
           >
             Setup takes 15 minutes &middot; Cancel anytime
           </motion.p>

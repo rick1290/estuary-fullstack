@@ -69,7 +69,7 @@ export default function WorkshopHeader({ workshop }: WorkshopHeaderProps) {
                       ? "text-yellow-400 fill-yellow-400"
                       : i < workshop.rating
                         ? "text-yellow-400 fill-yellow-400 opacity-50"
-                        : "text-gray-300"
+                        : "text-olive-500"
                   }`}
                 />
               ))}

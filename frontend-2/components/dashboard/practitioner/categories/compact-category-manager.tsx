@@ -84,7 +84,6 @@ export default function CompactCategoryManager({ onCategoryChange }: CompactCate
   const createMutation = useMutation({
     ...practitionerCategoriesCreateMutation(),
     onSuccess: (data) => {
-      console.log('Category created:', data)
       queryClient.invalidateQueries({ queryKey: ['practitionerCategoriesList'] })
       refetch() // Force immediate refetch
       onCategoryChange?.() // Notify parent

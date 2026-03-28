@@ -259,7 +259,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
             )}
 
             {/* Title */}
-            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-olive-900 mb-3 leading-[1.15]">
               {workshop.title}
             </h1>
 
@@ -273,7 +273,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
                   <img src={workshop.practitioners[0].image} alt={workshop.practitioners[0].name} className="w-8 h-8 rounded-full object-cover border border-sage-200/60" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-100 flex items-center justify-center">
-                    <span className="text-[10px] font-serif font-light text-olive-700/50">
+                    <span className="text-[10px] font-serif font-normal text-olive-700/50">
                       {workshop.practitioners[0].name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                     </span>
                   </div>
@@ -329,7 +329,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* Workshop Overview */}
               <section>
                 <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Transformation <em className="italic text-terracotta-600">Awaits</em></h2>
+                <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Your Transformation <em className="italic text-terracotta-600">Awaits</em></h2>
                 <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                   {transformedWorkshop.longDescription}
                 </p>
@@ -339,7 +339,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {workshop.benefits && workshop.benefits.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {workshop.benefits.map((benefit: any, index: number) => (
                       <div key={benefit.id || index} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
@@ -358,7 +358,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {workshop.agendaItems && workshop.agendaItems.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Schedule</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Workshop <em className="italic text-terracotta-600">Agenda</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Workshop <em className="italic text-terracotta-600">Agenda</em></h2>
                   <div className="border border-sage-200 rounded-xl overflow-hidden">
                     <div className="p-6 bg-cream-50">
                       <div className="space-y-4">
@@ -389,7 +389,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               {/* What's Included */}
               {workshop.includes && workshop.includes.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
                   <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
                     <div className="grid md:grid-cols-2 gap-3">
                       {workshop.includes.map((item: string, index: number) => (
@@ -419,7 +419,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
               <section className="pt-12 border-t border-sage-200/40">
                 <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-6 py-8 sm:px-8 sm:py-10 text-center">
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-3">
                     Start your <em className="italic text-terracotta-600">transformation</em> today
                   </h2>
                   <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
@@ -485,7 +485,7 @@ export default function WorkshopPage({ params }: { params: Promise<{ slug: strin
       <Drawer open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="pb-2">
-            <DrawerTitle className="font-serif text-lg font-light text-olive-900">Reserve Your Spot</DrawerTitle>
+            <DrawerTitle className="font-serif text-lg font-normal text-olive-900">Reserve Your Spot</DrawerTitle>
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
             <WorkshopBookingPanel workshop={transformedWorkshop} serviceData={serviceData} compact />

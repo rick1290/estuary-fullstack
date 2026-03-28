@@ -63,7 +63,7 @@ export default function BrowseModalitiesSection() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900 mb-4"
+            className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900 mb-4"
           >
             Browse by{" "}
             <em className="italic text-terracotta-600">Modality</em>
@@ -110,7 +110,7 @@ export default function BrowseModalitiesSection() {
                     <div className="flex items-center justify-between mb-3 mt-1">
                       <span className="text-2xl">{icon}</span>
                       {count > 0 && (
-                        <span className="text-[11px] font-medium text-olive-400 bg-sage-50 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-medium text-olive-500 bg-sage-50 px-2 py-0.5 rounded-full">
                           {count} {count === 1 ? "modality" : "modalities"}
                         </span>
                       )}

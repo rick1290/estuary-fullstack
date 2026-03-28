@@ -175,7 +175,7 @@ export default function SessionDelivery({
   if (!effectiveBooking) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
-        <p className="text-olive-400">Loading session...</p>
+        <p className="text-olive-500">Loading session...</p>
       </div>
     )
   }
@@ -279,7 +279,7 @@ export default function SessionDelivery({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -430,7 +430,7 @@ export default function SessionDelivery({
             {/* About */}
             {service?.description && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   About This Session
                 </h2>
                 <p className="text-[15px] font-light leading-relaxed text-olive-600">
@@ -442,7 +442,7 @@ export default function SessionDelivery({
             {/* Prep Checklist — upcoming only */}
             {sessionState === "upcoming" && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   Prepare for Your Session
                 </h2>
                 <div className="space-y-2">
@@ -487,7 +487,7 @@ export default function SessionDelivery({
               effectiveBooking.recordings &&
               (effectiveBooking.recordings as unknown as any[]).length > 0 && (
                 <div>
-                  <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                     Session Recording
                   </h2>
                   {(effectiveBooking.recordings as unknown as any[]).map(
@@ -510,7 +510,7 @@ export default function SessionDelivery({
                           <div className="text-[14px] font-medium text-olive-900">
                             Watch Recording
                           </div>
-                          <div className="text-[12px] text-olive-400">
+                          <div className="text-[12px] text-olive-500">
                             {rec.duration_formatted ||
                               (rec.duration_seconds
                                 ? formatDuration(
@@ -532,7 +532,7 @@ export default function SessionDelivery({
               Array.isArray((effectiveBooking as any).resources) &&
               (effectiveBooking as any).resources.length > 0 && (
                 <div>
-                  <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                  <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                     Resources & Materials
                   </h2>
                   <div className="space-y-2">
@@ -555,7 +555,7 @@ export default function SessionDelivery({
                             <div className="text-[14px] font-medium text-olive-900">
                               {resource.title ?? "Resource"}
                             </div>
-                            <div className="text-[12px] text-olive-400">
+                            <div className="text-[12px] text-olive-500">
                               {resource.description ?? ""}
                             </div>
                           </div>
@@ -572,7 +572,7 @@ export default function SessionDelivery({
             {/* Practitioner Card */}
             {practitioner && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   Your Practitioner
                 </h2>
                 <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
@@ -634,7 +634,7 @@ export default function SessionDelivery({
                   <div className="font-serif text-2xl font-medium text-sage-700 leading-none">
                     {fmt(countdown.days)}
                   </div>
-                  <div className="text-[9px] tracking-widest uppercase text-olive-400 mt-0.5">
+                  <div className="text-[9px] tracking-widest uppercase text-olive-500 mt-0.5">
                     Days
                   </div>
                 </div>
@@ -643,7 +643,7 @@ export default function SessionDelivery({
                   <div className="font-serif text-2xl font-medium text-sage-700 leading-none">
                     {fmt(countdown.hours)}
                   </div>
-                  <div className="text-[9px] tracking-widest uppercase text-olive-400 mt-0.5">
+                  <div className="text-[9px] tracking-widest uppercase text-olive-500 mt-0.5">
                     Hrs
                   </div>
                 </div>
@@ -652,7 +652,7 @@ export default function SessionDelivery({
                   <div className="font-serif text-2xl font-medium text-sage-700 leading-none">
                     {fmt(countdown.mins)}
                   </div>
-                  <div className="text-[9px] tracking-widest uppercase text-olive-400 mt-0.5">
+                  <div className="text-[9px] tracking-widest uppercase text-olive-500 mt-0.5">
                     Min
                   </div>
                 </div>
@@ -677,7 +677,7 @@ export default function SessionDelivery({
             <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
               {/* Card header */}
               <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
-                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-1">
                   Session Details
                 </div>
               </div>
@@ -685,7 +685,7 @@ export default function SessionDelivery({
               <div className="px-5 py-3">
                 {/* Date */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     <Calendar className="h-3.5 w-3.5 text-sage-500" />
                     Date
                   </span>
@@ -698,7 +698,7 @@ export default function SessionDelivery({
 
                 {/* Time */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     <Clock className="h-3.5 w-3.5 text-sage-500" />
                     Time
                   </span>
@@ -712,7 +712,7 @@ export default function SessionDelivery({
                 {/* Duration */}
                 {duration && (
                   <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                    <span className="text-olive-400">Duration</span>
+                    <span className="text-olive-500">Duration</span>
                     <span className="font-medium text-olive-800">
                       {formatDuration(duration)}
                     </span>
@@ -721,7 +721,7 @@ export default function SessionDelivery({
 
                 {/* Location */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     {isVirtual ? (
                       <Video className="h-3.5 w-3.5 text-sage-500" />
                     ) : (
@@ -736,7 +736,7 @@ export default function SessionDelivery({
 
                 {/* Confirmation */}
                 <div className="flex justify-between py-2.5 text-[13px]">
-                  <span className="text-olive-400">Confirmation</span>
+                  <span className="text-olive-500">Confirmation</span>
                   <span className="font-mono text-[11px] text-sage-600 tracking-wide">
                     {bookingUuid.slice(0, 8).toUpperCase()}
                   </span>
@@ -758,7 +758,7 @@ export default function SessionDelivery({
                       Schedule Session
                     </Link>
                   </Button>
-                  <p className="text-center text-[12px] text-olive-400 px-2">
+                  <p className="text-center text-[12px] text-olive-500 px-2">
                     Pick a time from your practitioner's available slots
                   </p>
                 </>
@@ -825,7 +825,7 @@ export default function SessionDelivery({
                     Reschedule
                   </Button>
                   <button
-                    className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors"
+                    className="w-full text-center text-[12px] text-olive-500 hover:text-red-500 py-2 min-h-[44px] transition-colors"
                     disabled={!isModifiable}
                     onClick={() => setCancelDialogOpen(true)}
                   >

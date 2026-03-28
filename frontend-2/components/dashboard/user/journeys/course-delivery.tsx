@@ -349,7 +349,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   if (!hasJourneyData && (isLoadingInitial || (serviceId && isLoadingAll))) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
-        <p className="text-olive-400">Loading course...</p>
+        <p className="text-olive-500">Loading course...</p>
       </div>
     )
   }
@@ -357,7 +357,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   if (!hasJourneyData && (initialError || !initialBooking)) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 text-center">
-        <p className="text-olive-400 mb-4">Failed to load course details.</p>
+        <p className="text-olive-500 mb-4">Failed to load course details.</p>
         <Button variant="outline" asChild>
           <Link href="/dashboard/user/journeys">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -376,7 +376,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-olive-700 transition-colors min-h-[44px] min-w-[44px]"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-olive-700 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -529,7 +529,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
             {/* ── CURRICULUM (the star of this page) ── */}
             {!isCanceled && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-4 pb-2 border-b border-olive-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-4 pb-2 border-b border-olive-200/50">
                   Curriculum
                 </h2>
 
@@ -659,7 +659,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                           {mod.title}
                         </p>
                         {mod.startTime && (
-                          <p className="text-[12px] text-olive-400 mt-0.5">
+                          <p className="text-[12px] text-olive-500 mt-0.5">
                             {format(mod.startTime, "MMM d")} &middot;{" "}
                             {format(mod.startTime, "h:mm a")}
                           </p>
@@ -704,7 +704,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                           {mod.title}
                         </p>
                         {mod.startTime && (
-                          <p className="text-[12px] text-olive-400 mt-0.5">
+                          <p className="text-[12px] text-olive-500 mt-0.5">
                             {format(mod.startTime, "MMM d")}
                           </p>
                         )}
@@ -730,7 +730,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
             {/* ── Your Instructor ── */}
             {practitioner && !isCanceled && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-olive-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-olive-200/50">
                   Your Instructor
                 </h2>
                 <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
@@ -824,7 +824,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
             {/* Course Details Card */}
             <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
               <div className="px-5 py-4 border-b border-sage-200/40 bg-olive-50/50">
-                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-1">
                   Course Details
                 </div>
               </div>
@@ -832,7 +832,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
               <div className="px-5 py-3">
                 {/* Total sessions */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     <BookOpen className="h-3.5 w-3.5 text-olive-500" />
                     Sessions
                   </span>
@@ -844,7 +844,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 {/* Duration per session */}
                 {avgDuration && avgDuration > 0 && (
                   <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                    <span className="flex items-center gap-2 text-olive-400">
+                    <span className="flex items-center gap-2 text-olive-500">
                       <Clock className="h-3.5 w-3.5 text-olive-500" />
                       Per Session
                     </span>
@@ -857,7 +857,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 {/* Date range */}
                 {firstDate && lastDate && (
                   <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                    <span className="flex items-center gap-2 text-olive-400">
+                    <span className="flex items-center gap-2 text-olive-500">
                       <Calendar className="h-3.5 w-3.5 text-olive-500" />
                       Dates
                     </span>
@@ -870,7 +870,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
 
                 {/* Location */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     {isVirtual ? (
                       <Video className="h-3.5 w-3.5 text-olive-500" />
                     ) : (
@@ -885,7 +885,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
 
                 {/* Confirmation */}
                 <div className="flex justify-between py-2.5 text-[13px]">
-                  <span className="text-olive-400">Enrollment</span>
+                  <span className="text-olive-500">Enrollment</span>
                   <span className="font-mono text-[11px] text-olive-600 tracking-wide">
                     {bookingUuid.slice(0, 8).toUpperCase()}
                   </span>
@@ -945,7 +945,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                         <button
                           onClick={() => setCancelDialogOpen(true)}
                           disabled={!canCancelCourse}
-                          className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-olive-400"
+                          className="w-full text-center text-[12px] text-olive-500 hover:text-red-500 py-2 min-h-[44px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-olive-500"
                         >
                           Cancel Enrollment
                         </button>

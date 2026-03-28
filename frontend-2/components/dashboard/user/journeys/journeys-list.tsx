@@ -106,7 +106,7 @@ export default function JourneysList() {
   return (
     <div className="space-y-5">
       {/* Page header */}
-      <h1 className="font-serif text-2xl font-light text-olive-900">
+      <h1 className="font-serif text-2xl font-normal text-olive-900">
         My Journeys
       </h1>
 
@@ -170,7 +170,7 @@ export default function JourneysList() {
                 className={`rounded-full px-3 py-2 text-[11px] font-medium transition-colors min-h-[44px] inline-flex items-center ${
                   activeFilter === opt.value
                     ? "bg-sage-100 text-sage-700 border border-sage-300"
-                    : "text-olive-400 border border-transparent hover:border-sage-200 hover:text-olive-600"
+                    : "text-olive-500 border border-transparent hover:border-sage-200 hover:text-olive-600"
                 }`}
               >
                 {opt.label}
@@ -282,7 +282,7 @@ function EmptyState({
     <div className="flex flex-col items-center justify-center py-10 sm:py-16 px-4 bg-white border border-sage-200/60 rounded-xl">
       <CalendarPlus className="h-10 w-10 text-sage-300 mb-4" />
       <h3 className="text-lg font-medium text-olive-900">{message}</h3>
-      <p className="text-sm text-olive-400 mt-1.5 max-w-sm text-center">
+      <p className="text-sm text-olive-500 mt-1.5 max-w-sm text-center">
         {subtext}
       </p>
       <Link

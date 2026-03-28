@@ -69,7 +69,7 @@ const TestimonialsSection = () => {
                       {[...Array(5)].map((_, i) => (
                         <svg
                           key={i}
-                          className={`h-4 w-4 ${i < Number(review.rating || 0) ? "text-yellow-400" : "text-gray-300"}`}
+                          className={`h-4 w-4 ${i < Number(review.rating || 0) ? "text-yellow-400" : "text-olive-500"}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                           xmlns="http://www.w3.org/2000/svg"

@@ -50,11 +50,6 @@ export function CancelBookingDialog({
   const [reasonCategory, setReasonCategory] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
 
-  // Debug log
-  React.useEffect(() => {
-    console.log('CancelBookingDialog state:', { open, step, isLoading })
-  }, [open, step, isLoading])
-
   const handleContinue = () => {
     setStep("reason")
   }

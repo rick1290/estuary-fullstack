@@ -504,7 +504,7 @@ export default function IntakeFormsManager() {
                             >
                               {template.is_active ? "Active" : "Inactive"}
                             </Badge>
-                            <span className="text-xs text-olive-400">
+                            <span className="text-xs text-olive-500">
                               {template.question_count} question
                               {template.question_count !== 1 ? "s" : ""}
                             </span>
@@ -531,7 +531,7 @@ export default function IntakeFormsManager() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-olive-400 hover:text-destructive"
+                            className="h-8 w-8 text-olive-500 hover:text-destructive"
                             title="Delete template"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -545,9 +545,9 @@ export default function IntakeFormsManager() {
                         </div>
                         <div className="pr-1">
                           {isSelected ? (
-                            <ChevronDown className="h-4 w-4 text-olive-400" />
+                            <ChevronDown className="h-4 w-4 text-olive-500" />
                           ) : (
-                            <ChevronRight className="h-4 w-4 text-olive-400" />
+                            <ChevronRight className="h-4 w-4 text-olive-500" />
                           )}
                         </div>
                       </div>
@@ -621,7 +621,7 @@ export default function IntakeFormsManager() {
                                   )}
                                 </div>
                                 {q.help_text && (
-                                  <p className="text-xs text-olive-400 mt-1">
+                                  <p className="text-xs text-olive-500 mt-1">
                                     {q.help_text}
                                   </p>
                                 )}
@@ -642,7 +642,7 @@ export default function IntakeFormsManager() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-400 hover:text-sage-700"
+                                  className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-500 hover:text-sage-700"
                                   title="Edit question"
                                   onClick={() => {
                                     setEditingQuestionId(editingQuestionId === q.id ? null : q.id)
@@ -660,7 +660,7 @@ export default function IntakeFormsManager() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-400 hover:text-destructive"
+                                  className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-500 hover:text-destructive"
                                   title="Delete question"
                                   onClick={() =>
                                     deleteQuestionMutation.mutate({
@@ -930,7 +930,7 @@ export default function IntakeFormsManager() {
                           {consentText}
                         </div>
                       ) : (
-                        <p className="text-sm text-olive-400 italic">
+                        <p className="text-sm text-olive-500 italic">
                           No consent text written yet.
                         </p>
                       )}
@@ -966,7 +966,7 @@ export default function IntakeFormsManager() {
 
                     {selectedTemplate.consent_versions &&
                       selectedTemplate.consent_versions.length > 0 && (
-                        <div className="text-xs text-olive-400">
+                        <div className="text-xs text-olive-500">
                           {selectedTemplate.consent_versions.length} version
                           {selectedTemplate.consent_versions.length !== 1 ? "s" : ""}{" "}
                           &mdash; latest: v
@@ -1164,7 +1164,7 @@ export default function IntakeFormsManager() {
           ) : !platformTemplates || platformTemplates.length === 0 ? (
             <div className="text-center py-12">
               <div className="rounded-2xl bg-olive-100/60 p-3 inline-block mb-3">
-                <Library className="h-6 w-6 text-olive-400" />
+                <Library className="h-6 w-6 text-olive-500" />
               </div>
               <p className="text-sm text-olive-500">
                 No platform templates available yet.
@@ -1199,7 +1199,7 @@ export default function IntakeFormsManager() {
                             )}
                             {isIntake ? "Intake" : "Consent"}
                           </Badge>
-                          <span className="text-xs text-olive-400">
+                          <span className="text-xs text-olive-500">
                             {pt.question_count} question
                             {pt.question_count !== 1 ? "s" : ""}
                           </span>
@@ -1242,7 +1242,7 @@ export default function IntakeFormsManager() {
           {!services || services.length === 0 ? (
             <div className="text-center py-10">
               <div className="rounded-2xl bg-olive-100/60 p-3 inline-block mb-3">
-                <LinkIcon className="h-6 w-6 text-olive-400" />
+                <LinkIcon className="h-6 w-6 text-olive-500" />
               </div>
               <p className="text-sm text-olive-500">
                 No services found. Create a service first.
@@ -1320,13 +1320,13 @@ export default function IntakeFormsManager() {
                           </Badge>
                         )}
                         {svc.duration_minutes && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] text-olive-400">
+                          <span className="inline-flex items-center gap-0.5 text-[11px] text-olive-500">
                             <Clock className="h-3 w-3" />
                             {svc.duration_minutes}m
                           </span>
                         )}
                         {LocationIcon && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] text-olive-400">
+                          <span className="inline-flex items-center gap-0.5 text-[11px] text-olive-500">
                             <LocationIcon className="h-3 w-3" />
                             {svc.location_type === 'in_person' ? 'In-person' : svc.location_type}
                           </span>

@@ -238,7 +238,7 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
                       "flex flex-col items-center gap-1 p-2 rounded-lg border transition-all text-center",
                       isSelected
                         ? "border-sage-500 bg-sage-50 text-sage-800"
-                        : "border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-700"
+                        : "border-sage-200 hover:border-sage-300 text-olive-500 hover:text-olive-700"
                     )}
                   >
                     <Icon className="h-5 w-5" strokeWidth={1.5} />

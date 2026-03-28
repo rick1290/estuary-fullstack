@@ -302,7 +302,7 @@ function ServiceWizardContent({ serviceId }: ServiceWizardProps) {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <CardTitle className="font-serif text-2xl md:text-3xl font-light text-olive-900">
+              <CardTitle className="font-serif text-2xl md:text-3xl font-normal text-olive-900">
                 {isEditMode ? serviceData?.name || "Edit Service" : "Create New Service"}
               </CardTitle>
               {isEditMode && serviceData && (

@@ -144,7 +144,7 @@ export default function JournalSection({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   newType === type.value
                     ? type.color + " ring-1 ring-current/20"
-                    : "text-olive-400 bg-cream-50 hover:bg-sage-50"
+                    : "text-olive-500 bg-cream-50 hover:bg-sage-50"
                 }`}
               >
                 <type.icon className="h-3 w-3" />
@@ -181,7 +181,7 @@ export default function JournalSection({
             <Button
               size="sm"
               variant="ghost"
-              className="text-olive-400 rounded-full"
+              className="text-olive-500 rounded-full"
               onClick={() => {
                 setIsAdding(false)
                 setNewContent("")
@@ -219,7 +219,7 @@ export default function JournalSection({
                       >
                         {typeConfig.label}
                       </Badge>
-                      <span className="text-[11px] text-olive-400">
+                      <span className="text-[11px] text-olive-500">
                         {entry.created_at
                           ? format(toDate(entry.created_at), "MMM d, yyyy · h:mm a")
                           : ""}
@@ -245,7 +245,7 @@ export default function JournalSection({
       ) : !isAdding ? (
         <div className="text-center py-8">
           <BookOpen className="h-8 w-8 text-olive-300 mx-auto mb-3" />
-          <p className="text-sm text-olive-400 mb-1">No journal entries yet</p>
+          <p className="text-sm text-olive-500 mb-1">No journal entries yet</p>
           <p className="text-xs text-olive-300 mb-4">
             Record your intentions, reflections, and takeaways
           </p>

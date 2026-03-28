@@ -189,7 +189,7 @@ export default function CreditsTab() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-olive-600 mb-1">Available Credits</p>
-                <p className="font-serif text-3xl font-light text-olive-900">
+                <p className="font-serif text-3xl font-normal text-olive-900">
                   ${balance?.balance?.toFixed(2) || '0.00'}
                 </p>
                 {balance?.last_transaction_date && (
@@ -227,7 +227,7 @@ export default function CreditsTab() {
                 onClick={() => setSelectedAmount(option.dollars)}
               >
                 <CardContent className="p-4 text-center">
-                  <p className="font-serif text-2xl font-light text-olive-900">
+                  <p className="font-serif text-2xl font-normal text-olive-900">
                     {option.label}
                   </p>
                   <p className="text-sm text-olive-600 mt-1">
@@ -289,7 +289,7 @@ export default function CreditsTab() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-serif text-lg font-light ${
+                        <p className={`font-serif text-lg font-normal ${
                           transaction.amount_cents >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {formatAmount(transaction.amount_cents)}

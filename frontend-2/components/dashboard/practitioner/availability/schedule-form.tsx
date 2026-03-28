@@ -549,7 +549,7 @@ export function ScheduleForm({ schedule, isCreating, onSave, onCancel, isLoading
                 className={`p-2 text-sm font-medium rounded-md transition-colors ${
                   activeDays[day.value]
                     ? "bg-primary text-primary-foreground"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    : "bg-sage-100 text-olive-600 hover:bg-sage-200"
                 }`}
               >
                 {day.label.slice(0, 3)}

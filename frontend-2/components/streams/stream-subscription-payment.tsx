@@ -221,7 +221,7 @@ export default function StreamSubscriptionPayment({
                     "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
                     selectedPaymentMethodId === method.id.toString() 
                       ? "border-primary bg-primary/5" 
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-sage-200 hover:border-sage-300"
                   )}
                   onClick={() => setSelectedPaymentMethodId(method.id.toString())}
                 >

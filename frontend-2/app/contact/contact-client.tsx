@@ -41,7 +41,7 @@ export default function ContactPage() {
 
           <motion.h1
             variants={itemFade}
-            className="font-serif text-4xl sm:text-5xl md:text-[56px] font-light leading-[1.12] tracking-tight text-olive-900 mb-5"
+            className="font-serif text-4xl sm:text-5xl md:text-[56px] font-normal leading-[1.12] tracking-tight text-olive-900 mb-5"
           >
             We&rsquo;d Love to{" "}
             <em className="italic text-terracotta-600">Hear From You</em>
@@ -72,7 +72,7 @@ export default function ContactPage() {
             {/* Form */}
             <motion.div variants={itemFade} className="md:col-span-3">
               <div className="bg-white rounded-2xl border border-sage-200/60 p-5 sm:p-8">
-                <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">
+                <h2 className="font-serif text-2xl font-normal text-olive-900 mb-6">
                   Send a Message
                 </h2>
                 <form className="space-y-5">
@@ -188,7 +188,7 @@ export default function ContactPage() {
               </div>
 
               <div className="bg-cream-100/60 rounded-2xl border border-sage-200/60 p-6">
-                <p className="font-serif text-[15px] italic font-light leading-relaxed text-olive-800 mb-3">
+                <p className="font-serif text-[15px] italic font-normal leading-relaxed text-olive-800 mb-3">
                   &ldquo;We&rsquo;re a small team that reads every message.
                   Expect a real reply, not a ticket number.&rdquo;
                 </p>

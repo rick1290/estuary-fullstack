@@ -77,7 +77,7 @@ export default function UserStats() {
             <span className="text-xs font-medium text-olive-600">Sessions</span>
             <Calendar className="h-4 w-4 text-sage-500" />
           </div>
-          <p className="font-serif text-xl sm:text-2xl font-light text-olive-900">{stats.totalSessions}</p>
+          <p className="font-serif text-xl sm:text-2xl font-normal text-olive-900">{stats.totalSessions}</p>
           <p className="text-xs text-muted-foreground">{stats.upcomingSessions} upcoming</p>
         </CardContent>
       </Card>
@@ -88,7 +88,7 @@ export default function UserStats() {
             <span className="text-xs font-medium text-olive-600">Favorites</span>
             <Heart className="h-4 w-4 text-terracotta-500" />
           </div>
-          <p className="font-serif text-xl sm:text-2xl font-light text-olive-900">{stats.favoriteServices}</p>
+          <p className="font-serif text-xl sm:text-2xl font-normal text-olive-900">{stats.favoriteServices}</p>
           <p className="text-xs text-muted-foreground">Saved</p>
         </CardContent>
       </Card>
@@ -99,7 +99,7 @@ export default function UserStats() {
             <span className="text-xs font-medium text-olive-600">Goals</span>
             <Star className="h-4 w-4 text-terracotta-500" />
           </div>
-          <p className="font-serif text-xl sm:text-2xl font-light text-olive-900">{stats.completedGoals}/{stats.totalGoals}</p>
+          <p className="font-serif text-xl sm:text-2xl font-normal text-olive-900">{stats.completedGoals}/{stats.totalGoals}</p>
           <p className="text-xs text-muted-foreground">Completed</p>
         </CardContent>
       </Card>
@@ -110,7 +110,7 @@ export default function UserStats() {
             <span className="text-xs font-medium text-olive-600">Wellness</span>
             <TrendingUp className="h-4 w-4 text-olive-500" />
           </div>
-          <p className="font-serif text-xl sm:text-2xl font-light text-olive-900">{stats.wellnessScore}</p>
+          <p className="font-serif text-xl sm:text-2xl font-normal text-olive-900">{stats.wellnessScore}</p>
           <Progress value={stats.wellnessScore} className="h-1.5 mt-1" />
         </CardContent>
       </Card>
@@ -121,7 +121,7 @@ export default function UserStats() {
             <span className="text-xs font-medium text-olive-600">Credits</span>
             <Wallet className="h-4 w-4 text-olive-500" />
           </div>
-          <p className="font-serif text-xl sm:text-2xl font-light text-olive-900 truncate">${stats.creditBalance.toFixed(2)}</p>
+          <p className="font-serif text-xl sm:text-2xl font-normal text-olive-900 truncate">${stats.creditBalance.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground">Balance</p>
         </CardContent>
       </Card>

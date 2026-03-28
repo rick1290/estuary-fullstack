@@ -47,7 +47,7 @@ export default function UserStreamSubscriptions() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif text-lg font-light text-olive-900">My Stream Subscriptions</CardTitle>
+          <CardTitle className="font-serif text-lg font-normal text-olive-900">My Stream Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center py-8">
@@ -64,7 +64,7 @@ export default function UserStreamSubscriptions() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif text-lg font-light text-olive-900">My Stream Subscriptions</CardTitle>
+          <CardTitle className="font-serif text-lg font-normal text-olive-900">My Stream Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -83,7 +83,7 @@ export default function UserStreamSubscriptions() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif text-lg font-light text-olive-900">My Stream Subscriptions</CardTitle>
+          <CardTitle className="font-serif text-lg font-normal text-olive-900">My Stream Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
         <div className="space-y-4">

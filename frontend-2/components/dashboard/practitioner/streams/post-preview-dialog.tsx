@@ -25,7 +25,7 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
       case "premium":
         return "bg-purple-100 text-purple-800 border-purple-200"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-sage-100 text-olive-800 border-sage-200"
     }
   }
 
@@ -68,7 +68,7 @@ export default function PostPreviewDialog({ open, onOpenChange, post }: PostPrev
             <h2 className="text-xl font-bold">{post.title}</h2>
 
             <div className="relative">
-              <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
+              <p className="text-olive-700 whitespace-pre-wrap">{post.content}</p>
 
               {/* Blur overlay for premium content preview */}
               {isContentLocked && (

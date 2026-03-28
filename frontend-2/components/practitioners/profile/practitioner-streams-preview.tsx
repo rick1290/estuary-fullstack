@@ -199,7 +199,7 @@ export default function PractitionerStreamsPreview({
           <div className="mx-auto w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center mb-4">
             <FileText className="h-6 w-6 text-sage-500" />
           </div>
-          <h3 className="font-serif text-xl font-light text-olive-900 mb-5">No Streams Yet</h3>
+          <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">No Streams Yet</h3>
           <p className="text-[15px] font-light text-olive-600 leading-relaxed max-w-sm mx-auto">
             {practitionerName.split(' ')[0]} hasn&apos;t published any stream content yet.
             Check back soon for updates, insights, and exclusive content.
@@ -215,7 +215,7 @@ export default function PractitionerStreamsPreview({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Rss className="h-5 w-5 text-sage-600" />
-          <h2 className="font-serif text-xl font-light text-olive-900">Estuary Streams</h2>
+          <h2 className="font-serif text-xl font-normal text-olive-900">Estuary Streams</h2>
           {totalCount > 0 && (
             <span className="text-xs font-light text-olive-600">({totalCount} posts)</span>
           )}

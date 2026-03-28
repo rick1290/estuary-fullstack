@@ -34,7 +34,7 @@ export default function EmailTab() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h2 className="font-serif text-2xl font-light text-olive-900 mb-4">Email Settings</h2>
+      <h2 className="font-serif text-2xl font-normal text-olive-900 mb-4">Email Settings</h2>
 
       {error && (
         <Alert variant="destructive" className="mb-4">

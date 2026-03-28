@@ -53,7 +53,7 @@ export default function CourseBookingPanel({ course, serviceData, compact }: Cou
                 <span className="text-xl font-semibold text-olive-900">${course.price}</span>
                 <span className="text-[11px] font-light text-olive-500">complete course</span>
               </div>
-              <p className="text-[10px] font-light text-olive-400 mt-0.5">{course.sessionCount} sessions included</p>
+              <p className="text-[10px] font-light text-olive-500 mt-0.5">{course.sessionCount} sessions included</p>
             </div>
           </div>
         </div>

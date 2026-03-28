@@ -60,7 +60,7 @@ export default function ExploreFormatsSection() {
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900 mb-4"
+            className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900 mb-4"
           >
             Explore by{" "}
             <em className="italic text-terracotta-600">Format</em>

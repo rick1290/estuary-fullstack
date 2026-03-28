@@ -115,7 +115,7 @@ export default function MissionPage() {
 
           <motion.h1
             variants={itemFade}
-            className="font-serif text-4xl sm:text-5xl md:text-[62px] font-light leading-[1.1] tracking-tight text-cream-50 mb-7"
+            className="font-serif text-4xl sm:text-5xl md:text-[62px] font-normal leading-[1.1] tracking-tight text-cream-50 mb-7"
           >
             To Make Space
             <br />
@@ -146,21 +146,21 @@ export default function MissionPage() {
         >
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800"
+            className="font-serif text-2xl sm:text-3xl font-normal leading-relaxed text-olive-800"
           >
             Somewhere in your city, a somatic coach is helping someone live in
             their body for the first time in years.
           </motion.p>
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800"
+            className="font-serif text-2xl sm:text-3xl font-normal leading-relaxed text-olive-800"
           >
             A breathwork facilitator is guiding someone through grief
             they&rsquo;ve carried for a decade.
           </motion.p>
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800"
+            className="font-serif text-2xl sm:text-3xl font-normal leading-relaxed text-olive-800"
           >
             A meditation teacher is showing a burned-out parent how to find five
             minutes of{" "}
@@ -168,7 +168,7 @@ export default function MissionPage() {
           </motion.p>
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-olive-800"
+            className="font-serif text-2xl sm:text-3xl font-normal leading-relaxed text-olive-800"
           >
             This work is <span className="font-normal">not peripheral</span>.
             It is essential. And the people doing it deserve to be supported —
@@ -196,7 +196,7 @@ export default function MissionPage() {
             </motion.span>
             <motion.h2
               variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-olive-900 mb-10"
+              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-olive-900 mb-10"
             >
               Two Worlds —
               <br />
@@ -218,10 +218,10 @@ export default function MissionPage() {
               variants={itemFade}
               className="bg-white rounded-2xl border border-sage-200/60 p-7"
             >
-              <span className="block text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-5">
+              <span className="block text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-5">
                 The world as it is
               </span>
-              <h3 className="font-serif text-lg font-light leading-snug text-olive-900 mb-4">
+              <h3 className="font-serif text-lg font-normal leading-snug text-olive-900 mb-4">
                 Practitioners are underserved by the tools they&rsquo;re given
               </h3>
               <ul className="space-y-2.5">
@@ -247,7 +247,7 @@ export default function MissionPage() {
               <span className="block text-[10px] font-medium tracking-widest uppercase text-terracotta-300 mb-5">
                 The world we&rsquo;re building
               </span>
-              <h3 className="font-serif text-lg font-light leading-snug text-cream-50 mb-4">
+              <h3 className="font-serif text-lg font-normal leading-snug text-cream-50 mb-4">
                 Practitioners have a home that honors the work
               </h3>
               <ul className="space-y-2.5">
@@ -287,7 +287,7 @@ export default function MissionPage() {
             </motion.span>
             <motion.h2
               variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-olive-900 mb-4"
+              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-olive-900 mb-4"
             >
               Mission Isn&rsquo;t a Poster —
               <br />
@@ -318,7 +318,7 @@ export default function MissionPage() {
                 variants={itemFade}
                 className="flex gap-5 items-start px-6 py-6 bg-white border-b border-sage-200/60 last:border-b-0 hover:bg-cream-50 transition-colors"
               >
-                <span className="font-serif text-3xl font-light text-sage-200 leading-none flex-shrink-0 w-8 mt-0.5">
+                <span className="font-serif text-3xl font-normal text-sage-200 leading-none flex-shrink-0 w-8 mt-0.5">
                   {pillar.num}
                 </span>
                 <div>
@@ -362,7 +362,7 @@ export default function MissionPage() {
                 variants={itemFade}
                 className="pb-10 mb-10 border-b border-sage-200/60 last:border-b-0 last:mb-0 last:pb-0"
               >
-                <h3 className="font-serif text-xl sm:text-2xl italic font-light leading-snug text-terracotta-600 mb-4">
+                <h3 className="font-serif text-xl sm:text-2xl italic font-normal leading-snug text-terracotta-600 mb-4">
                   {block.heading}
                 </h3>
                 <p className="text-[15px] font-light leading-[1.85] text-olive-500">
@@ -392,7 +392,7 @@ export default function MissionPage() {
 
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-cream-50 mb-4"
+            className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-cream-50 mb-4"
           >
             Every Practice
             <br />
@@ -413,7 +413,7 @@ export default function MissionPage() {
             className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-0"
           >
             <div className="flex-1 flex flex-col items-center gap-2">
-              <span className="font-serif text-5xl font-light text-cream-50 leading-none">
+              <span className="font-serif text-5xl font-normal text-cream-50 leading-none">
                 1
               </span>
               <span className="text-xs font-light tracking-wide uppercase text-cream-50/55 max-w-[140px]">
@@ -422,7 +422,7 @@ export default function MissionPage() {
             </div>
             <div className="hidden sm:block w-px h-10 bg-cream-50/20" />
             <div className="flex-1 flex flex-col items-center gap-2">
-              <span className="font-serif text-5xl font-light text-cream-50 leading-none">
+              <span className="font-serif text-5xl font-normal text-cream-50 leading-none">
                 0
               </span>
               <span className="text-xs font-light tracking-wide uppercase text-cream-50/55 max-w-[140px]">
@@ -431,7 +431,7 @@ export default function MissionPage() {
             </div>
             <div className="hidden sm:block w-px h-10 bg-cream-50/20" />
             <div className="flex-1 flex flex-col items-center gap-2">
-              <span className="font-serif text-5xl font-light text-cream-50 leading-none">
+              <span className="font-serif text-5xl font-normal text-cream-50 leading-none">
                 &infin;
               </span>
               <span className="text-xs font-light tracking-wide uppercase text-cream-50/55 max-w-[140px]">
@@ -453,7 +453,7 @@ export default function MissionPage() {
         >
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[50px] font-light leading-[1.2] text-olive-900 mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[50px] font-normal leading-[1.2] text-olive-900 mb-5"
           >
             Be Part of
             <br />
@@ -495,7 +495,7 @@ export default function MissionPage() {
 
           <motion.p
             variants={itemFade}
-            className="text-xs text-olive-400 font-light mt-5 tracking-wide"
+            className="text-xs text-olive-500 font-light mt-5 tracking-wide"
           >
             Setup takes 15 minutes &middot; Cancel anytime
           </motion.p>

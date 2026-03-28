@@ -138,7 +138,7 @@ export default function AuthModalNextAuth({
               ESTUARY
             </span>
           </div>
-          <h2 className="text-2xl font-serif font-light text-olive-900 mb-1">
+          <h2 className="text-2xl font-serif font-normal text-olive-900 mb-1">
             {title || (activeTab === "login" ? "Welcome back" : "Join Estuary")}
           </h2>
           <p className="text-sm text-olive-600">
@@ -157,7 +157,7 @@ export default function AuthModalNextAuth({
             className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
               activeTab === "login"
                 ? "text-olive-900"
-                : "text-olive-400 hover:text-olive-600"
+                : "text-olive-500 hover:text-olive-600"
             }`}
           >
             Sign In
@@ -170,7 +170,7 @@ export default function AuthModalNextAuth({
             className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
               activeTab === "signup"
                 ? "text-olive-900"
-                : "text-olive-400 hover:text-olive-600"
+                : "text-olive-500 hover:text-olive-600"
             }`}
           >
             Create Account
@@ -213,7 +213,7 @@ export default function AuthModalNextAuth({
                   <div className="w-full border-t border-sage-100" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-white px-3 text-xs text-olive-400">or</span>
+                  <span className="bg-white px-3 text-xs text-olive-500">or</span>
                 </div>
               </div>
 
@@ -250,7 +250,7 @@ export default function AuthModalNextAuth({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-olive-400 hover:text-olive-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-olive-500 hover:text-olive-600"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -306,7 +306,7 @@ export default function AuthModalNextAuth({
                   <div className="w-full border-t border-sage-100" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-white px-3 text-xs text-olive-400">or</span>
+                  <span className="bg-white px-3 text-xs text-olive-500">or</span>
                 </div>
               </div>
 
@@ -374,7 +374,7 @@ export default function AuthModalNextAuth({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-olive-400 hover:text-olive-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-olive-500 hover:text-olive-600"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -412,7 +412,7 @@ export default function AuthModalNextAuth({
                 </Button>
               </form>
 
-              <p className="mt-4 text-center text-[11px] text-olive-400 leading-relaxed">
+              <p className="mt-4 text-center text-[11px] text-olive-500 leading-relaxed">
                 By creating an account, you agree to our{" "}
                 <a href="/terms" className="text-olive-600 hover:underline">Terms</a>
                 {" "}and{" "}

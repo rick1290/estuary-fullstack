@@ -103,7 +103,7 @@ export default function ModalityIndexContent() {
 
           <motion.h1
             variants={itemFade}
-            className="font-serif text-4xl sm:text-5xl font-light leading-[1.15] tracking-tight text-olive-900 mb-5"
+            className="font-serif text-4xl sm:text-5xl font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
           >
             Explore Wellness{" "}
             <em className="italic text-terracotta-600">Modalities</em>
@@ -164,10 +164,10 @@ export default function ModalityIndexContent() {
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: category.color || "#9CAF88" }}
                         />
-                        <h2 className="font-serif text-2xl sm:text-3xl font-light text-olive-900">
+                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-olive-900">
                           {category.name}
                         </h2>
-                        <span className="text-sm text-olive-400 font-light">
+                        <span className="text-sm text-olive-500 font-light">
                           {catModalities.length} {catModalities.length === 1 ? "modality" : "modalities"}
                         </span>
                       </div>
@@ -208,7 +208,7 @@ export default function ModalityIndexContent() {
                                 </p>
                               )}
                               {((modality.practitioner_count ?? 0) > 0 || (modality.service_count ?? 0) > 0) && (
-                                <div className="flex items-center gap-2 text-[11px] text-olive-400 mt-2 pt-2 border-t border-sage-100">
+                                <div className="flex items-center gap-2 text-[11px] text-olive-500 mt-2 pt-2 border-t border-sage-100">
                                   {(modality.practitioner_count ?? 0) > 0 && (
                                     <span>{modality.practitioner_count} practitioners</span>
                                   )}

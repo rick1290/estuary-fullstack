@@ -70,7 +70,7 @@ export default function PractitionerSpotlight({
 
   return (
     <section className={cn(className)}>
-      <h2 className="font-serif text-xl font-light text-olive-900 mb-5">{headingText}</h2>
+      <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">{headingText}</h2>
       <div className="grid gap-4">
         {practitioners.map((practitioner) => (
           <PractitionerCard key={practitioner.id} practitioner={practitioner} />
@@ -117,7 +117,7 @@ function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
             </div>
           ) : (
             <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-              <span className="text-xl font-serif font-light text-olive-700/40">
+              <span className="text-xl font-serif font-normal text-olive-700/40">
                 {initials}
               </span>
             </div>

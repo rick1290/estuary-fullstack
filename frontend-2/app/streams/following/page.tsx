@@ -49,7 +49,7 @@ export default function StreamsFollowingPage({
               />
             </svg>
           </div>
-          <h2 className="mb-2 font-serif text-2xl font-light text-olive-900">Sign in to see your feed</h2>
+          <h2 className="mb-2 font-serif text-2xl font-normal text-olive-900">Sign in to see your feed</h2>
           <p className="mb-6 max-w-md text-muted-foreground">
             Follow practitioners to see their latest content, updates, and exclusive streams in your personalized feed.
           </p>
@@ -80,14 +80,14 @@ export default function StreamsFollowingPage({
       rightSidebar={
         <div className="space-y-6">
           <div>
-            <h2 className="mb-4 font-serif text-xl font-light text-olive-900">Discover More</h2>
+            <h2 className="mb-4 font-serif text-xl font-normal text-olive-900">Discover More</h2>
             <FeaturedPractitioners />
           </div>
         </div>
       }
     >
       <div className="w-full">
-        <h2 className="mb-4 font-serif text-xl font-light text-olive-900">
+        <h2 className="mb-4 font-serif text-xl font-normal text-olive-900">
           {query ? `Search Results for "${query}"` : "Latest from Your Subscriptions"}
         </h2>
 

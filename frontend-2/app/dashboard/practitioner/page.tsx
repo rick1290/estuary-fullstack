@@ -96,7 +96,7 @@ export default function PractitionerDashboardPage() {
     >
       {/* Welcome Header */}
       <div className="mb-6 lg:mb-8">
-        <h1 className="font-serif text-2xl sm:text-3xl font-light text-olive-900 mb-2">
+        <h1 className="font-serif text-2xl sm:text-3xl font-normal text-olive-900 mb-2">
           Welcome back, <em className="italic text-terracotta-600">{firstName}</em>
         </h1>
         <p className="text-sm sm:text-base font-light text-olive-600">
@@ -157,7 +157,7 @@ export default function PractitionerDashboardPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <span className="text-xs font-medium tracking-widest uppercase text-sage-600">Schedule</span>
-                  <CardTitle className="font-serif text-xl font-light text-olive-900">Your <em className="italic text-terracotta-600">Flow</em></CardTitle>
+                  <CardTitle className="font-serif text-xl font-normal text-olive-900">Your <em className="italic text-terracotta-600">Flow</em></CardTitle>
                   <CardDescription className="text-sm font-light text-olive-600">This week's schedule</CardDescription>
                 </div>
                 <Link href="/dashboard/practitioner/schedule" className="text-xs font-normal text-olive-500 border-b border-sage-200/60 pb-px hover:text-terracotta-600 hover:border-terracotta-400 transition-colors whitespace-nowrap">
@@ -181,7 +181,7 @@ export default function PractitionerDashboardPage() {
           <Card className="border border-sage-200/60 bg-white h-full flex flex-col">
             <CardHeader className="pb-4">
               <span className="text-xs font-medium tracking-widest uppercase text-sage-600">New Energy</span>
-              <CardTitle className="font-serif text-xl font-light text-olive-900">Recent <em className="italic text-terracotta-600">Ripples</em></CardTitle>
+              <CardTitle className="font-serif text-xl font-normal text-olive-900">Recent <em className="italic text-terracotta-600">Ripples</em></CardTitle>
               <CardDescription className="text-sm font-light text-olive-600">New bookings & activity</CardDescription>
             </CardHeader>
             <CardContent className="flex-1">

@@ -233,7 +233,7 @@ export default function MarketplaceFilters({
                           )}
                         </div>
                         <ChevronDown className={cn(
-                          "h-3.5 w-3.5 text-olive-400 transition-transform",
+                          "h-3.5 w-3.5 text-olive-500 transition-transform",
                           isExpanded && "rotate-180"
                         )} />
                       </button>

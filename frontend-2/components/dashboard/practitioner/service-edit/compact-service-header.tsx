@@ -96,7 +96,7 @@ export function CompactServiceHeader({
         <div className="h-4 w-px bg-border shrink-0" />
 
         {/* Service name */}
-        <h1 className="font-serif text-lg font-light text-olive-900 truncate min-w-0">
+        <h1 className="font-serif text-lg font-normal text-olive-900 truncate min-w-0">
           {displayTitle}
         </h1>
 

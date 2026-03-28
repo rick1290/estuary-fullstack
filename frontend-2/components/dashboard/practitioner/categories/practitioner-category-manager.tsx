@@ -226,7 +226,7 @@ export default function PractitionerCategoryManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="font-serif text-2xl font-light text-olive-900">Service Categories</h2>
+          <h2 className="font-serif text-2xl font-normal text-olive-900">Service Categories</h2>
           <p className="text-muted-foreground">
             Organize your services with custom categories
           </p>

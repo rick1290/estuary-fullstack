@@ -210,9 +210,6 @@ export function ResourcesSection({ service }: ResourcesSectionProps) {
         body.file = selectedFile
       }
       
-      console.log('Creating resource with body keys:', Object.keys(body))
-      console.log('File being uploaded:', selectedFile?.name)
-      
       await createResourceMutation.mutateAsync({
         body: body
       })

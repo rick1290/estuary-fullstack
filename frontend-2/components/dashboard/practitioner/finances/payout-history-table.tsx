@@ -32,7 +32,7 @@ export function PayoutHistoryTable({ payouts }: PayoutHistoryTableProps) {
       case "failed":
         return "bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-400"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400"
+        return "bg-sage-100 text-olive-800 dark:bg-olive-800/20 dark:text-olive-500"
     }
   }
 

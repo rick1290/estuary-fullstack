@@ -17,7 +17,7 @@ export default function ServicePreview({ data = {} }: ServicePreviewProps) {
         <Badge variant="outline" className="mb-2">
           {serviceType.charAt(0).toUpperCase() + serviceType.slice(1)}
         </Badge>
-        <h2 className="font-serif text-2xl font-light text-olive-900">{data?.title || "Untitled Service"}</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900">{data?.title || "Untitled Service"}</h2>
         <p className="text-muted-foreground">{data?.tagline || "No tagline provided"}</p>
       </div>
 

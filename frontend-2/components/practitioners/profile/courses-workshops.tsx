@@ -79,7 +79,7 @@ export default function CoursesWorkshops({ coursesAndWorkshops }: CoursesWorksho
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Explore</p>
-          <h2 className="font-serif text-xl font-light text-olive-900 mb-2">Upcoming Transformations</h2>
+          <h2 className="font-serif text-xl font-normal text-olive-900 mb-2">Upcoming Transformations</h2>
           <p className="text-[15px] font-light text-olive-600 leading-relaxed">Group experiences and learning journeys</p>
         </div>
 

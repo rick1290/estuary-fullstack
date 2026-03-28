@@ -271,7 +271,7 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-4 w-4 text-olive-500" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -279,7 +279,7 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-4 w-4 text-olive-500" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild className="text-olive-700 hover:text-olive-900">
@@ -287,7 +287,7 @@ export default function PackageDetailsPage({ params }: { params: Promise<{ slug:
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                <ChevronRight className="h-4 w-4 text-olive-500" strokeWidth="1.5" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <span className="text-olive-900 font-medium">{packageData.name || 'Package'}</span>

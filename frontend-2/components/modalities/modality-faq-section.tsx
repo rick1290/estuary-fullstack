@@ -37,7 +37,7 @@ export default function ModalityFaqSection({ faqs }: ModalityFaqSectionProps) {
           <span className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3 block">
             Common Questions
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-light text-olive-900">
+          <h2 className="font-serif text-3xl sm:text-4xl font-normal text-olive-900">
             Frequently Asked Questions
           </h2>
         </motion.div>
@@ -56,7 +56,7 @@ export default function ModalityFaqSection({ faqs }: ModalityFaqSectionProps) {
                 <span className="font-medium text-olive-900 pr-4">{faq.question}</span>
                 <ChevronDown
                   className={cn(
-                    "h-5 w-5 text-olive-400 flex-shrink-0 transition-transform duration-200",
+                    "h-5 w-5 text-olive-500 flex-shrink-0 transition-transform duration-200",
                     openIndex === index && "rotate-180"
                   )}
                 />

@@ -336,7 +336,7 @@ export function PractitionerTransactionsTable() {
             {isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="font-serif text-2xl font-light text-olive-900">${totalGross.toFixed(2)}</div>
+              <div className="font-serif text-2xl font-normal text-olive-900">${totalGross.toFixed(2)}</div>
             )}
           </CardContent>
         </Card>
@@ -348,7 +348,7 @@ export function PractitionerTransactionsTable() {
             {isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="font-serif text-2xl font-light text-orange-600">-${totalCommission.toFixed(2)}</div>
+              <div className="font-serif text-2xl font-normal text-orange-600">-${totalCommission.toFixed(2)}</div>
             )}
           </CardContent>
         </Card>
@@ -360,7 +360,7 @@ export function PractitionerTransactionsTable() {
             {isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="font-serif text-2xl font-light text-green-600">${totalEarnings.toFixed(2)}</div>
+              <div className="font-serif text-2xl font-normal text-green-600">${totalEarnings.toFixed(2)}</div>
             )}
           </CardContent>
         </Card>

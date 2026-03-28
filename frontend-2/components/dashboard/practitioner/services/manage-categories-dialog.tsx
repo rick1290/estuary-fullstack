@@ -208,7 +208,7 @@ export function ManageCategoriesDialog({ open, onOpenChange }: ManageCategoriesD
                               key={color.value}
                               type="button"
                               className={`w-6 h-6 rounded-full border-2 ${
-                                formData.color === color.value ? "border-gray-800" : "border-transparent"
+                                formData.color === color.value ? "border-sage-800" : "border-transparent"
                               }`}
                               style={{ backgroundColor: color.value }}
                               onClick={() => setFormData({ ...formData, color: color.value })}
@@ -308,7 +308,7 @@ export function ManageCategoriesDialog({ open, onOpenChange }: ManageCategoriesD
                       key={color.value}
                       type="button"
                       className={`w-6 h-6 rounded-full border-2 ${
-                        formData.color === color.value ? "border-gray-800" : "border-transparent"
+                        formData.color === color.value ? "border-sage-800" : "border-transparent"
                       }`}
                       style={{ backgroundColor: color.value }}
                       onClick={() => setFormData({ ...formData, color: color.value })}

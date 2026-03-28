@@ -272,12 +272,12 @@ export default function AuthModal({
         <div className="bg-gradient-to-br from-sage-50 via-cream-50 to-terracotta-50/30 px-8 pt-7 pb-5 relative">
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 h-8 w-8 rounded-full flex items-center justify-center text-olive-400 hover:text-olive-600 hover:bg-white/60 transition-colors"
+            className="absolute right-4 top-4 h-8 w-8 rounded-full flex items-center justify-center text-olive-500 hover:text-olive-600 hover:bg-white/60 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
           <span className="font-serif text-base font-medium text-olive-900 tracking-wide">ESTUARY</span>
-          <h2 className="text-xl font-serif font-light text-olive-900 mt-3 mb-1">
+          <h2 className="text-xl font-serif font-normal text-olive-900 mt-3 mb-1">
             {title || (activeTab === "login" ? "Welcome back" : "Join Estuary")}
           </h2>
           <p className="text-sm text-olive-600">
@@ -292,7 +292,7 @@ export default function AuthModal({
           <button
             onClick={() => { setActiveTab("login"); setError(null); setSignupRole(null) }}
             className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
-              activeTab === "login" ? "text-olive-900" : "text-olive-400 hover:text-olive-600"
+              activeTab === "login" ? "text-olive-900" : "text-olive-500 hover:text-olive-600"
             }`}
           >
             Sign In
@@ -301,7 +301,7 @@ export default function AuthModal({
           <button
             onClick={() => { setActiveTab("signup"); setError(null) }}
             className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
-              activeTab === "signup" ? "text-olive-900" : "text-olive-400 hover:text-olive-600"
+              activeTab === "signup" ? "text-olive-900" : "text-olive-500 hover:text-olive-600"
             }`}
           >
             Create Account
@@ -607,7 +607,7 @@ export default function AuthModal({
                       <div className="w-full border-t border-sage-100" />
                     </div>
                     <div className="relative flex justify-center">
-                      <span className="bg-background px-3 text-xs text-olive-400">or</span>
+                      <span className="bg-background px-3 text-xs text-olive-500">or</span>
                     </div>
                   </div>
 

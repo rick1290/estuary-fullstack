@@ -191,7 +191,7 @@ export default function StreamSubscriptionTierChange({
                   onChange={() => setSelectedTier("free")}
                   className="sr-only peer"
                 />
-                <div className="p-4 rounded-lg border-2 cursor-pointer transition-all peer-checked:border-sage-600 peer-checked:bg-sage-50 hover:border-gray-300">
+                <div className="p-4 rounded-lg border-2 cursor-pointer transition-all peer-checked:border-sage-600 peer-checked:bg-sage-50 hover:border-sage-300">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="font-medium">Free</h5>
                     <span className="text-lg font-bold">$0/mo</span>
@@ -212,7 +212,7 @@ export default function StreamSubscriptionTierChange({
                   onChange={() => setSelectedTier("entry")}
                   className="sr-only peer"
                 />
-                <div className="p-4 rounded-lg border-2 cursor-pointer transition-all peer-checked:border-sage-600 peer-checked:bg-sage-50 hover:border-gray-300">
+                <div className="p-4 rounded-lg border-2 cursor-pointer transition-all peer-checked:border-sage-600 peer-checked:bg-sage-50 hover:border-sage-300">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="font-medium">Entry</h5>
                     <span className="text-lg font-bold">${tierPrices.entry}/mo</span>
@@ -233,7 +233,7 @@ export default function StreamSubscriptionTierChange({
                   onChange={() => setSelectedTier("premium")}
                   className="sr-only peer"
                 />
-                <div className="p-4 rounded-lg border-2 cursor-pointer transition-all peer-checked:border-sage-600 peer-checked:bg-sage-50 hover:border-gray-300">
+                <div className="p-4 rounded-lg border-2 cursor-pointer transition-all peer-checked:border-sage-600 peer-checked:bg-sage-50 hover:border-sage-300">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="font-medium">Premium</h5>
                     <span className="text-lg font-bold">${tierPrices.premium}/mo</span>

@@ -21,7 +21,7 @@ export default function ClientReviews({ practitioner }: ClientReviewsProps) {
   return (
     <div className="mb-10">
       <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Feedback</p>
-      <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Client Reviews</h2>
+      <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Client Reviews</h2>
 
       {/* Overall Rating Summary */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">

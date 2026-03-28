@@ -59,7 +59,7 @@ export default function DashboardBreadcrumb() {
                 </BreadcrumbLink>
                 {index < breadcrumbItems.length - 1 && (
                   <BreadcrumbSeparator>
-                    <ChevronRight className="h-4 w-4 text-olive-400" strokeWidth="1.5" />
+                    <ChevronRight className="h-4 w-4 text-olive-500" strokeWidth="1.5" />
                   </BreadcrumbSeparator>
                 )}
               </>

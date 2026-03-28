@@ -78,7 +78,7 @@ export default function BookingPage() {
           Help Center
         </Link>
 
-        <h1 className="font-serif text-3xl font-light text-olive-900 mb-2">
+        <h1 className="font-serif text-3xl font-normal text-olive-900 mb-2">
           Booking & Payments
         </h1>
         <p className="text-olive-500 mb-10">
@@ -105,7 +105,7 @@ export default function BookingPage() {
                         <h3 className="text-[15px] font-medium text-olive-800">
                           {service.title}
                         </h3>
-                        <p className="text-xs text-olive-400">{service.subtitle}</p>
+                        <p className="text-xs text-olive-500">{service.subtitle}</p>
                       </div>
                     </div>
                     <p className="text-sm text-olive-600 leading-relaxed">
@@ -225,7 +225,7 @@ export default function BookingPage() {
             </Link>
           </div>
           <div className="text-center">
-            <p className="text-sm text-olive-400">Still need help?</p>
+            <p className="text-sm text-olive-500">Still need help?</p>
             <a
               href="mailto:support@estuary.com"
               className="text-sm text-sage-600 hover:text-sage-700"

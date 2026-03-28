@@ -72,7 +72,7 @@ export default function ModalityStatsBar({
                 <span className="text-sm font-medium text-olive-700 mt-1">
                   {stat.label}
                 </span>
-                <span className="text-xs text-olive-400 font-light hidden sm:block">
+                <span className="text-xs text-olive-500 font-light hidden sm:block">
                   {stat.sublabel}
                 </span>
               </motion.div>

@@ -27,7 +27,7 @@ export default function SubscriberManagement({ streamId }: SubscriberManagementP
       case "entry":
         return <Star className="h-4 w-4 text-blue-600" />
       default:
-        return <Users className="h-4 w-4 text-gray-600" />
+        return <Users className="h-4 w-4 text-olive-600" />
     }
   }
 
@@ -38,7 +38,7 @@ export default function SubscriberManagement({ streamId }: SubscriberManagementP
       case "entry":
         return "bg-blue-100 text-blue-800 border-blue-200"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-sage-100 text-olive-800 border-sage-200"
     }
   }
 
@@ -116,7 +116,7 @@ export default function SubscriberManagement({ streamId }: SubscriberManagementP
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-serif text-2xl font-light text-olive-900">0</div>
+            <div className="font-serif text-2xl font-normal text-olive-900">0</div>
             <p className="text-xs text-muted-foreground">Start sharing to grow</p>
           </CardContent>
         </Card>
@@ -127,7 +127,7 @@ export default function SubscriberManagement({ streamId }: SubscriberManagementP
             <Star className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="font-serif text-2xl font-light text-olive-900">0</div>
+            <div className="font-serif text-2xl font-normal text-olive-900">0</div>
             <p className="text-xs text-muted-foreground">0% of total subscribers</p>
           </CardContent>
         </Card>
@@ -138,7 +138,7 @@ export default function SubscriberManagement({ streamId }: SubscriberManagementP
             <Crown className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="font-serif text-2xl font-light text-olive-900">0</div>
+            <div className="font-serif text-2xl font-normal text-olive-900">0</div>
             <p className="text-xs text-muted-foreground">0% of total subscribers</p>
           </CardContent>
         </Card>
@@ -149,7 +149,7 @@ export default function SubscriberManagement({ streamId }: SubscriberManagementP
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-serif text-2xl font-light text-olive-900">-</div>
+            <div className="font-serif text-2xl font-normal text-olive-900">-</div>
             <p className="text-xs text-muted-foreground">No data yet</p>
           </CardContent>
         </Card>

@@ -34,7 +34,7 @@ export default function EstuaryPromise() {
         {/* Header */}
         <div className="text-center mb-10">
           <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Our Commitment to You</p>
-          <h2 className="font-serif text-xl sm:text-2xl font-light text-olive-900 mb-3">
+          <h2 className="font-serif text-xl sm:text-2xl font-normal text-olive-900 mb-3">
             The Estuary <em className="italic text-terracotta-600">Promise</em>
           </h2>
           <p className="text-[15px] font-light text-olive-600 leading-relaxed max-w-lg mx-auto">

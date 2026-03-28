@@ -50,10 +50,10 @@ const brandColors: Record<string, string> = {
   'mastercard': 'text-orange-600',
   'amex': 'text-blue-500',
   'discover': 'text-orange-500',
-  'diners': 'text-gray-600',
+  'diners': 'text-olive-600',
   'jcb': 'text-red-600',
   'unionpay': 'text-red-500',
-  'unknown': 'text-gray-600'
+  'unknown': 'text-olive-600'
 }
 
 export default function PaymentMethodSelector({

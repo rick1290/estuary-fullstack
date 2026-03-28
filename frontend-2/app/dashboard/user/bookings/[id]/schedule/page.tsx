@@ -249,7 +249,7 @@ export default function ScheduleBookingPage({ params }: { params: Promise<{ id: 
             {/* Scheduling Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif text-xl font-light text-olive-900">Select Date & Time</CardTitle>
+                <CardTitle className="font-serif text-xl font-normal text-olive-900">Select Date & Time</CardTitle>
                 <CardDescription>Choose an available slot for your session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

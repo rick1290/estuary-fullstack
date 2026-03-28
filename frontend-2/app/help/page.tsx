@@ -155,18 +155,18 @@ export default function HelpCenterPage() {
       {/* Hero */}
       <div className="bg-gradient-to-b from-sage-100/60 to-cream-50 pt-12 sm:pt-16 pb-10 sm:pb-12">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="font-serif text-3xl sm:text-4xl font-light text-olive-900 mb-3">
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal text-olive-900 mb-3">
             How can we help?
           </h1>
           <p className="text-olive-500 mb-8 text-lg">
             Guides, answers, and resources for getting the most out of Estuary.
           </p>
           <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-olive-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-olive-500" />
             <input
               type="text"
               placeholder="Search for help articles..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sage-200/80 bg-white text-olive-700 placeholder:text-olive-400 focus:outline-none focus:ring-2 focus:ring-sage-300/50 text-[15px] min-h-[44px]"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sage-200/80 bg-white text-olive-700 placeholder:text-olive-500 focus:outline-none focus:ring-2 focus:ring-sage-300/50 text-[15px] min-h-[44px]"
             />
           </div>
         </div>

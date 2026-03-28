@@ -83,7 +83,7 @@ export default function TestimonialsStrip() {
                 variants={itemFade}
                 className="bg-white rounded-2xl border border-sage-200/60 p-6"
               >
-                <blockquote className="font-serif text-[15px] italic font-light leading-relaxed text-olive-800 mb-5">
+                <blockquote className="font-serif text-[15px] italic font-normal leading-relaxed text-olive-800 mb-5">
                   &ldquo;{review.comment}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">

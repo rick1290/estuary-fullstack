@@ -35,7 +35,7 @@ export default function UserRecommendations() {
   if (isLoading) {
     return (
       <div>
-        <h2 className="font-serif text-xl font-light text-olive-900 mb-4">Recommended For You</h2>
+        <h2 className="font-serif text-xl font-normal text-olive-900 mb-4">Recommended For You</h2>
         <div className="space-y-4">
           <Skeleton className="h-10 w-48" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -54,7 +54,7 @@ export default function UserRecommendations() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="font-serif text-xl font-light text-olive-900">Recommended For You</h2>
+        <h2 className="font-serif text-xl font-normal text-olive-900">Recommended For You</h2>
         {recommendationReason === 'personalized' && userModalities.length > 0 && (
           <Badge variant="secondary" className="text-xs">
             Based on your interests

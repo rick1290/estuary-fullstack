@@ -102,7 +102,7 @@ export default function UpcomingWorkshopsSection() {
               </motion.span>
               <motion.h2
                 variants={itemFade}
-                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
+                className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900"
               >
                 Upcoming{" "}
                 <em className="italic text-terracotta-600">Workshops</em>

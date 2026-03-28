@@ -39,7 +39,7 @@ export default function RecordingViewerPage() {
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
               <Film className="h-12 w-12 text-muted-foreground mx-auto" />
-              <h2 className="font-serif text-xl font-light text-olive-900">Recording Not Found</h2>
+              <h2 className="font-serif text-xl font-normal text-olive-900">Recording Not Found</h2>
               <p className="text-muted-foreground">
                 This recording may have been deleted or is not yet available.
               </p>
@@ -106,7 +106,7 @@ export default function RecordingViewerPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="font-serif text-xl font-light text-olive-900">
+                      <CardTitle className="font-serif text-xl font-normal text-olive-900">
                         {booking?.service?.name || 'Session Recording'}
                       </CardTitle>
                       <Badge variant="outline" className="text-xs">
@@ -179,7 +179,7 @@ export default function RecordingViewerPage() {
             {/* Booking Details */}
             <Card className="border border-sage-200/60 bg-white">
               <CardHeader>
-                <CardTitle className="font-serif text-sm font-light text-olive-900">Session Details</CardTitle>
+                <CardTitle className="font-serif text-sm font-normal text-olive-900">Session Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
@@ -213,7 +213,7 @@ export default function RecordingViewerPage() {
             {practitioner && (
               <Card className="border border-sage-200/60 bg-white">
                 <CardHeader>
-                  <CardTitle className="font-serif text-sm font-light text-olive-900">Practitioner</CardTitle>
+                  <CardTitle className="font-serif text-sm font-normal text-olive-900">Practitioner</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-start gap-3">

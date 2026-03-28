@@ -44,7 +44,7 @@ export default function ModalityServicesSection({ slug, modalityName }: Modality
           <span className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3 block">
             Available Services
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-light text-olive-900">
+          <h2 className="font-serif text-3xl sm:text-4xl font-normal text-olive-900">
             {modalityName} Services
           </h2>
         </motion.div>

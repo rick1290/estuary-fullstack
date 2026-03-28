@@ -104,7 +104,7 @@ export default function ModalityCategoryPageContent({ slug }: ModalityCategoryPa
           )}
           <motion.h1
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[48px] font-light leading-[1.15] tracking-tight text-olive-900 mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[48px] font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
           >
             {categoryName}
           </motion.h1>
@@ -116,7 +116,7 @@ export default function ModalityCategoryPageContent({ slug }: ModalityCategoryPa
               {category.short_description}
             </motion.p>
           )}
-          <motion.p variants={itemFade} className="text-sm text-olive-400">
+          <motion.p variants={itemFade} className="text-sm text-olive-500">
             {modalities.length} {modalities.length === 1 ? "modality" : "modalities"} in this category
           </motion.p>
         </motion.div>
@@ -152,7 +152,7 @@ export default function ModalityCategoryPageContent({ slug }: ModalityCategoryPa
                       )}
                       <div className="flex items-center justify-between">
                         {((mod.practitioner_count ?? 0) > 0 || (mod.service_count ?? 0) > 0) && (
-                          <div className="flex items-center gap-2 text-[11px] text-olive-400">
+                          <div className="flex items-center gap-2 text-[11px] text-olive-500">
                             {(mod.practitioner_count ?? 0) > 0 && (
                               <span>{mod.practitioner_count} practitioners</span>
                             )}
@@ -185,7 +185,7 @@ export default function ModalityCategoryPageContent({ slug }: ModalityCategoryPa
       <div className="h-px bg-sage-200/60 mx-6" />
       <section className="py-16 px-4 sm:px-6">
         <div className="max-w-xl mx-auto text-center">
-          <h2 className="font-serif text-2xl font-light text-olive-900 mb-4">
+          <h2 className="font-serif text-2xl font-normal text-olive-900 mb-4">
             Explore All Modalities
           </h2>
           <p className="text-sm font-light text-olive-600 mb-6">

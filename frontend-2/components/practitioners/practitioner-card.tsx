@@ -156,7 +156,7 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
           disabled={isLoading}
           aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
         >
-          <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-gray-600"}`} />
+          <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-olive-600"}`} />
         </Button>
       </div>
 
@@ -164,10 +164,10 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
         <div className="space-y-3 sm:space-y-4">
           {/* Name and Title */}
           <div>
-            <h3 className="text-lg sm:text-xl font-medium text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">
+            <h3 className="text-lg sm:text-xl font-medium text-olive-900 line-clamp-1 group-hover:text-primary transition-colors">
               {practitioner.display_name}
             </h3>
-            <p className="text-sm text-gray-600 mt-0.5 truncate">{practitioner.title}</p>
+            <p className="text-sm text-olive-600 mt-0.5 truncate">{practitioner.title}</p>
           </div>
 
           {/* Rating */}
@@ -176,19 +176,19 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
               <span className="ml-1 font-medium text-sm">{practitioner.average_rating_float}</span>
             </div>
-            <span className="text-sm text-gray-500">({practitioner.total_reviews} reviews)</span>
+            <span className="text-sm text-olive-500">({practitioner.total_reviews} reviews)</span>
           </div>
 
           {/* Specializations */}
           {(practitioner.specializations?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {practitioner.specializations!.slice(0, 3).map((specialization) => (
-                <span key={specialization.id} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full">
+                <span key={specialization.id} className="text-xs px-2.5 py-1 bg-sage-100 text-olive-700 rounded-full">
                   {specialization.content}
                 </span>
               ))}
               {practitioner.specializations!.length > 3 && (
-                <span className="text-xs px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
+                <span className="text-xs px-2.5 py-1 bg-sage-100 text-olive-500 rounded-full">
                   +{practitioner.specializations!.length - 3}
                 </span>
               )}
@@ -196,7 +196,7 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
           )}
 
           {/* Location and Experience */}
-          <div className="space-y-2 text-sm text-gray-600">
+          <div className="space-y-2 text-sm text-olive-600">
             <div className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5" />
               <span className="line-clamp-1">
@@ -212,14 +212,14 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
           </div>
 
           {/* Short Bio */}
-          <p className="text-sm text-gray-600 line-clamp-2">
+          <p className="text-sm text-olive-600 line-clamp-2">
             {practitioner.bio_short ||
               "Experienced practitioner dedicated to helping clients achieve their wellness goals through personalized approaches and evidence-based techniques."}
           </p>
 
           {/* Modalities */}
           {(practitioner.modalities?.length ?? 0) > 0 && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-olive-600">
               <Globe className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="line-clamp-1">{practitioner.modalities!.map((m) => m.name).join(", ")}</span>
             </div>
@@ -228,7 +228,7 @@ export default function PractitionerCard({ practitioner, initialLiked = false }:
       </CardContent>
 
       {/* Footer */}
-      <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gray-50/50 border-t border-gray-100">
+      <div className="px-4 sm:px-5 py-3 sm:py-4 bg-sage-50/50 border-t border-sage-100">
         <Button asChild className="w-full shadow-sm">
           <Link href={`/practitioners/${practitioner.slug || practitioner.id}`}>View Profile</Link>
         </Button>

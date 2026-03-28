@@ -85,7 +85,7 @@ export default function HeroSection() {
           {/* Heading */}
           <motion.h1
             variants={itemFade}
-            className="font-serif text-3xl sm:text-5xl md:text-[56px] font-light leading-[1.15] tracking-tight text-olive-900 mb-5"
+            className="font-serif text-3xl sm:text-5xl md:text-[56px] font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
           >
             Find Your Path to{" "}
             <em className="italic text-terracotta-600">
@@ -138,7 +138,7 @@ export default function HeroSection() {
                 <SearchIcon className="h-4 w-4 sm:h-5 sm:w-5 text-sage-500" strokeWidth="1.5" />
               </div>
               <Input
-                className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1 text-sm sm:text-base text-olive-800 placeholder:text-olive-400/70 bg-transparent"
+                className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1 text-sm sm:text-base text-olive-800 placeholder:text-olive-500/70 bg-transparent"
                 placeholder="Search practitioners, workshops, courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

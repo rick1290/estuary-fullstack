@@ -58,7 +58,7 @@ export function PractitionerPageHeader({
         {/* Title row with action - compact spacing */}
         <div className={cn("flex items-center justify-between gap-3 py-4", backLink && "pt-2")}>
           <div className="flex items-center gap-3 min-w-0">
-            <h1 className="font-serif text-xl sm:text-2xl font-light text-olive-900 truncate">{title}</h1>
+            <h1 className="font-serif text-xl sm:text-2xl font-normal text-olive-900 truncate">{title}</h1>
             {helpLink && (
               <Link
                 href={helpLink}

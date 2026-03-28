@@ -58,7 +58,6 @@ export function VideoConferenceRoom({
       options={roomOptions}
       connect={true}
       onDisconnected={(reason) => {
-        console.log('Disconnected:', reason);
         onLeaveRoom();
       }}
       onError={(error) => {
@@ -66,7 +65,7 @@ export function VideoConferenceRoom({
         onError?.(error);
       }}
     >
-      <div className="h-screen flex flex-col bg-gray-900">
+      <div className="h-screen flex flex-col bg-olive-900">
         {/* Room Audio - Important for audio to work */}
         <RoomAudioRenderer />
         
@@ -74,12 +73,12 @@ export function VideoConferenceRoom({
         <ConnectionStateToast />
         
         {/* Header */}
-        <div className="bg-gray-800 p-4 flex items-center justify-between">
+        <div className="bg-olive-800 p-4 flex items-center justify-between">
           <div className="text-white">
             <h2 className="text-lg font-semibold">
               {bookingDetails?.service?.title || sessionDetails?.service?.title || 'Video Session'}
             </h2>
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-olive-400">
               {isHost ? 'Host' : 'Participant'} • {roomType === 'individual' ? '1-on-1' : 'Group'} Session
             </p>
           </div>

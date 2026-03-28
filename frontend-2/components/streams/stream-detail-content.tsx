@@ -195,7 +195,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="font-serif text-2xl font-light text-olive-900 mb-2">Stream not found</h2>
+          <h2 className="font-serif text-2xl font-normal text-olive-900 mb-2">Stream not found</h2>
           <p className="text-muted-foreground mb-4">This stream may have been removed or doesn&apos;t exist.</p>
           <Button onClick={() => router.push('/streams')}>
             Back to Streams
@@ -305,7 +305,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
 
             {/* Name and meta */}
             <div className="mb-4">
-              <h1 className="font-serif text-2xl font-light text-olive-900 mb-0.5">{stream.title}</h1>
+              <h1 className="font-serif text-2xl font-normal text-olive-900 mb-0.5">{stream.title}</h1>
               <p
                 className="text-muted-foreground text-sm cursor-pointer hover:text-sage-700 transition-colors mb-2"
                 onClick={() => router.push(`/practitioners/${stream.practitioner_slug || stream.practitioner_id}`)}
@@ -314,7 +314,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
               </p>
 
               {stream.tagline && (
-                <p className="text-olive-800 font-serif font-light italic mb-2">{stream.tagline}</p>
+                <p className="text-olive-800 font-serif font-normal italic mb-2">{stream.tagline}</p>
               )}
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
@@ -485,7 +485,7 @@ export default function StreamDetailContent({ streamId }: StreamDetailContentPro
                 <div className="p-4 bg-sage-50 rounded-full mb-4">
                   <Newspaper className="h-10 w-10 text-sage-400" strokeWidth="1.5" />
                 </div>
-                <h3 className="font-serif text-xl font-light text-olive-900 mb-2 text-center">
+                <h3 className="font-serif text-xl font-normal text-olive-900 mb-2 text-center">
                   {activeFilter === "all" ? "No posts yet" : `No ${activeFilter} posts yet`}
                 </h3>
                 <p className="text-muted-foreground text-center max-w-sm">

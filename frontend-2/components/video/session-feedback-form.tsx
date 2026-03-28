@@ -29,12 +29,6 @@ export function SessionFeedbackForm({ sessionId, practitionerId }: SessionFeedba
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // In a real app, you would send the feedback to your API
-    console.log({
-      sessionId,
-      practitionerId,
-      rating,
-      feedback,
-    })
 
     setIsSubmitting(false)
     setIsSubmitted(true)
