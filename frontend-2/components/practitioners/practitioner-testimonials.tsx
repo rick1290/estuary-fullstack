@@ -1,69 +1,56 @@
 "use client"
 
 import { useState } from "react"
-import { Box, Typography, Avatar, Rating, IconButton, Paper, useTheme, useMediaQuery } from "@mui/material"
+import { Box, Typography, Avatar, Rating, IconButton, Paper, useTheme, useMediaQuery, CircularProgress } from "@mui/material"
 import { ArrowBack as ArrowBackIcon, ArrowForward as ArrowForwardIcon } from "@mui/icons-material"
-
-// Mock data for testimonials
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    title: "Holistic Therapist",
-    image: "/practitioner-1.jpg",
-    rating: 5,
-    testimonial:
-      "Joining Sanctuary Marketplace transformed my practice. I've connected with clients who truly value my approach to holistic therapy, and the platform makes it easy to manage bookings and payments. My client base has grown by 40% in just three months!",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    title: "Yoga Instructor",
-    image: "/practitioner-2.jpg",
-    rating: 5,
-    testimonial:
-      "As a yoga instructor who offers both in-person and virtual classes, I needed a platform that could handle both formats seamlessly. Sanctuary Marketplace delivers exactly that, plus their marketing support has helped me fill my workshops consistently.",
-  },
-  {
-    id: 3,
-    name: "Aisha Patel",
-    title: "Life Coach",
-    image: "/practitioner-3.jpg",
-    rating: 4,
-    testimonial:
-      "The dashboard tools make it so easy to track client progress and manage my coaching packages. I appreciate how the platform handles all the administrative details so I can focus on what I do best - helping my clients transform their lives.",
-  },
-  {
-    id: 4,
-    name: "James Wilson",
-    title: "Nutritional Therapist",
-    image: "/practitioner-4.jpg",
-    rating: 5,
-    testimonial:
-      "The verification process gives my practice credibility, and clients often mention that it was a factor in choosing me. The platform's focus on wellness practitioners means I'm connecting with clients who are specifically looking for nutrition guidance.",
-  },
-]
+import { useQuery } from "@tanstack/react-query"
+import { reviewsListOptions } from "@/src/client/@tanstack/react-query.gen"
 
 export default function PractitionerTestimonials() {
   const [activeIndex, setActiveIndex] = useState(0)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
+  const { data, isLoading, isError } = useQuery(
+    reviewsListOptions({
+      query: {
+        min_rating: 4,
+        is_published: true,
+        ordering: "-created_at",
+        page_size: 6,
+      },
+    })
+  )
+
+  const reviews = data?.results ?? []
+
+  // Hide section if no reviews, error, or still loading with no data
+  if (isError) return null
+  if (!isLoading && reviews.length === 0) return null
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress size={32} />
+      </Box>
+    )
+  }
+
   const handlePrev = () => {
-    setActiveIndex((prev) => (prev === 0 ? TESTIMONIALS.length - 1 : prev - 1))
+    setActiveIndex((prev) => (prev === 0 ? reviews.length - 1 : prev - 1))
   }
 
   const handleNext = () => {
-    setActiveIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1))
+    setActiveIndex((prev) => (prev === reviews.length - 1 ? 0 : prev + 1))
   }
 
-  const visibleTestimonials = isMobile
-    ? [TESTIMONIALS[activeIndex]]
+  const visibleReviews = isMobile
+    ? [reviews[activeIndex]]
     : [
-        TESTIMONIALS[activeIndex],
-        TESTIMONIALS[(activeIndex + 1) % TESTIMONIALS.length],
-        TESTIMONIALS[(activeIndex + 2) % TESTIMONIALS.length],
-      ]
+        reviews[activeIndex],
+        reviews[(activeIndex + 1) % reviews.length],
+        reviews[(activeIndex + 2) % reviews.length],
+      ].filter(Boolean)
 
   return (
     <Box>
@@ -77,9 +64,9 @@ export default function PractitionerTestimonials() {
       </Box>
 
       <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" } }}>
-        {visibleTestimonials.map((testimonial) => (
+        {visibleReviews.map((review) => (
           <Paper
-            key={testimonial.id}
+            key={review.public_uuid}
             elevation={2}
             sx={{
               p: 3,
@@ -101,16 +88,20 @@ export default function PractitionerTestimonials() {
           >
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <Avatar
-                src={testimonial.image}
-                alt={testimonial.name}
+                src={review.user_avatar_url || undefined}
+                alt={review.display_name || "Reviewer"}
                 sx={{ width: 60, height: 60, mr: 2, border: "2px solid", borderColor: "primary.main" }}
               />
               <Box>
-                <Typography variant="h6">{testimonial.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {testimonial.title}
+                <Typography variant="h6">
+                  {review.is_anonymous ? "Anonymous" : (review.display_name || "Community Member")}
                 </Typography>
-                <Rating value={testimonial.rating} readOnly size="small" sx={{ mt: 0.5 }} />
+                {review.service_name && (
+                  <Typography variant="body2" color="text.secondary">
+                    {review.service_name}
+                  </Typography>
+                )}
+                <Rating value={Number(review.rating) || 5} readOnly size="small" sx={{ mt: 0.5 }} />
               </Box>
             </Box>
             <Typography
@@ -122,7 +113,7 @@ export default function PractitionerTestimonials() {
                 borderColor: "primary.light",
               }}
             >
-              "{testimonial.testimonial}"
+              "{review.comment}"
             </Typography>
           </Paper>
         ))}

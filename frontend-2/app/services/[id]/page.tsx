@@ -1,11 +1,11 @@
 import { Suspense } from "react"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import ServiceDetails from "@/components/services/service-details"
 import ServiceBookingPanel from "@/components/services/service-booking-panel"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getServiceById } from "@/lib/services"
+import { publicServicesRetrieve } from "@/src/client/sdk.gen"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,11 +14,42 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-// Update the page component to handle string IDs
 export default async function ServicePage({ params }: { params: { id: string } }) {
   const serviceId = params.id
 
-  const service = await getServiceById(serviceId)
+  // Try fetching by numeric ID from the real API
+  let service: any = null
+  try {
+    const numericId = parseInt(serviceId)
+    if (!isNaN(numericId)) {
+      const response = await publicServicesRetrieve({ path: { public_uuid: serviceId } })
+      service = response.data
+    }
+  } catch {
+    // If UUID lookup fails, try as numeric PK via fetch
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const res = await fetch(`${baseUrl}/api/v1/public-services/${serviceId}/`, { next: { revalidate: 60 } })
+      if (res.ok) {
+        service = await res.json()
+      }
+    } catch {
+      // Service not found
+    }
+  }
+
+  // If the service has a slug, redirect to the canonical URL
+  if (service?.slug && service?.service_type_code) {
+    const typeMap: Record<string, string> = {
+      session: 'sessions',
+      workshop: 'workshops',
+      course: 'courses',
+    }
+    const typePath = typeMap[service.service_type_code]
+    if (typePath) {
+      redirect(`/${typePath}/${service.slug}`)
+    }
+  }
 
   if (!service) {
     notFound()
@@ -63,6 +94,17 @@ export default async function ServicePage({ params }: { params: { id: string } }
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ServiceDetailsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-8 w-3/4" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
+      <Skeleton className="h-64 w-full rounded-xl" />
     </div>
   )
 }

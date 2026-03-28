@@ -1,5 +1,7 @@
 "use client"
 import { motion } from "framer-motion"
+import { useQuery } from "@tanstack/react-query"
+import { reviewsListOptions } from "@/src/client/@tanstack/react-query.gen"
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -14,28 +16,49 @@ const itemFade = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 }
 
-const TESTIMONIALS = [
-  {
-    quote:
-      "Estuary gave me a home for my practice. Booking, payments, content — it just works.",
-    name: "Sarah K.",
-    role: "Breathwork Facilitator",
-  },
-  {
-    quote:
-      "I found my meditation teacher here and it changed everything. The experience feels so personal.",
-    name: "James L.",
-    role: "Client",
-  },
-  {
-    quote:
-      "I went from juggling five tools to one calm space. My clients notice the difference.",
-    name: "Priya M.",
-    role: "Yoga & Sound Healer",
-  },
-]
-
 export default function TestimonialsStrip() {
+  const { data, isLoading, isError } = useQuery(
+    reviewsListOptions({
+      query: {
+        min_rating: 4,
+        is_published: true,
+        ordering: "-created_at",
+        page_size: 3,
+      },
+    })
+  )
+
+  const reviews = data?.results ?? []
+
+  // Hide section entirely if error or no data
+  if (isError) return null
+  if (!isLoading && reviews.length === 0) return null
+
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-cream-50">
+        <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl border border-sage-200/60 p-6 animate-pulse">
+                  <div className="h-20 bg-muted rounded mb-5" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-muted" />
+                    <div>
+                      <div className="h-4 w-20 bg-muted rounded mb-1" />
+                      <div className="h-3 w-16 bg-muted rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-16 bg-cream-50">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -54,24 +77,34 @@ export default function TestimonialsStrip() {
           </motion.span>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
+            {reviews.map((review, i) => (
               <motion.div
-                key={i}
+                key={review.public_uuid || i}
                 variants={itemFade}
                 className="bg-white rounded-2xl border border-sage-200/60 p-6"
               >
                 <blockquote className="font-serif text-[15px] italic font-light leading-relaxed text-olive-800 mb-5">
-                  &ldquo;{t.quote}&rdquo;
+                  &ldquo;{review.comment}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex-shrink-0" />
+                  {review.user_avatar_url ? (
+                    <img
+                      src={review.user_avatar_url}
+                      alt={review.display_name || "Reviewer"}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-200 flex-shrink-0" />
+                  )}
                   <div>
                     <p className="text-sm font-medium text-olive-900">
-                      {t.name}
+                      {review.is_anonymous ? "Anonymous" : (review.display_name || "Community Member")}
                     </p>
-                    <p className="text-xs text-sage-600 font-light">
-                      {t.role}
-                    </p>
+                    {review.service_name && (
+                      <p className="text-xs text-sage-600 font-light">
+                        {review.service_name}
+                      </p>
+                    )}
                   </div>
                 </div>
               </motion.div>

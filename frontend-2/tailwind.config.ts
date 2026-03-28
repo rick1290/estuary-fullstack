@@ -27,6 +27,7 @@ const config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-dm-sans)", "DM Sans", "system-ui", "sans-serif"],
+        serif: ["var(--font-cormorant)", "Cormorant Garamond", "Georgia", "serif"],
       },
       spacing: {
         '18': '4.5rem',

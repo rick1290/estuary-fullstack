@@ -443,6 +443,45 @@ class BookingViewSet(viewsets.ModelViewSet):
                 d = d.isoformat()
             dates_with_slots[d] = dates_with_slots.get(d, 0) + 1
 
+        # Include debug info to help diagnose availability issues
+        debug = {}
+        try:
+            practitioner = service.primary_practitioner
+            if practitioner:
+                debug['practitioner'] = practitioner.display_name
+                debug['practitioner_id'] = practitioner.id
+                # Check schedule
+                from practitioners.models import Schedule, SchedulePreference
+                default_schedule = Schedule.objects.filter(
+                    practitioner=practitioner, is_default=True, is_active=True
+                ).first()
+                debug['has_default_schedule'] = default_schedule is not None
+                if default_schedule:
+                    debug['schedule_name'] = default_schedule.name
+                    debug['schedule_timezone'] = getattr(default_schedule, 'timezone', 'N/A')
+                    slot_count = default_schedule.time_slots.filter(is_active=True).count()
+                    debug['active_time_slots'] = slot_count
+                    days_with_slots = list(
+                        default_schedule.time_slots.filter(is_active=True)
+                        .values_list('day', flat=True).distinct()
+                    )
+                    day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    debug['days_with_availability'] = [day_names[d] for d in days_with_slots]
+                # Check linked schedule on service
+                debug['service_has_linked_schedule'] = hasattr(service, 'schedule') and bool(service.schedule_id)
+                # Check preferences
+                try:
+                    pref = SchedulePreference.objects.get(practitioner=practitioner)
+                    debug['advance_booking_min_hours'] = pref.advance_booking_min_hours
+                    debug['advance_booking_max_days'] = pref.advance_booking_max_days
+                    debug['preference_timezone'] = pref.timezone
+                except SchedulePreference.DoesNotExist:
+                    debug['schedule_preference'] = 'NOT SET (using defaults)'
+            else:
+                debug['error'] = 'No primary_practitioner on service'
+        except Exception as e:
+            debug['debug_error'] = str(e)
+
         return Response({
             'service_id': service.id,
             'available_dates': [
@@ -451,6 +490,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             ],
             'start_date': start_date.isoformat(),
             'end_date': end_date.isoformat(),
+            'total_slots_found': len(slots),
+            'debug': debug,
         })
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
