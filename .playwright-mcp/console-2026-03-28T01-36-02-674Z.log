@@ -1,0 +1,4 @@
+[    1516ms] [WARNING] [scrollToCenter] container is undefined @ https://www.upwork.com/static/assets/Brontes/pages/index.9fb4adce.js:0
+[    1912ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:80
+[    1916ms] [ERROR] Not signed in with the identity provider. @ https://www.upwork.com/:0
+[    2993ms] [ERROR] Failed to load resource: net::ERR_FAILED @ chrome-extension://invalid/:0

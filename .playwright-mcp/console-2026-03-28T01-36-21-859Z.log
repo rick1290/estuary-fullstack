@@ -1,0 +1,9 @@
+[    1159ms] [WARNING] [OPTIMIZELY] - WARN  2026-03-28T01:36:23.017Z Invalid eventBatchSize undefined, defaulting to 10 @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45
+[    1159ms] [WARNING] [OPTIMIZELY] - WARN  2026-03-28T01:36:23.017Z Invalid eventFlushInterval undefined, defaulting to 1000 @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45
+[    2070ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 352432244948718. @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45
+[    2324ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://classpass.com/:0
+[    3013ms] [ERROR] Attestation check for Attribution Reporting on https://ara.paa-reporting-advertising.amazon failed. @ https://classpass.com/:0
+[    3014ms] [ERROR] Attestation check for Shared Storage on https://ara.paa-reporting-advertising.amazon failed. @ https://classpass.com/:0
+[    3507ms] [WARNING] [TikTok Pixel] - Invalid currency code
+Issue: The currency code for one or more of your events isn't supported. This can affect the accuracy of reporting for your ROAS.
+Suggestion: Go to your source code and update the 'currency' parameters with a supported currency code. See https://ads.tiktok.com/help/article/standard-events-parameters?redirected=2 for more information. @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45

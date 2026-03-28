@@ -125,7 +125,7 @@ export default function Navbar() {
     }`}>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center font-serif text-2xl font-semibold tracking-[0.25em] mr-6">
+        <Link href="/" className="flex items-center font-serif text-xl font-semibold tracking-[0.25em] mr-6">
           ESTUARY
         </Link>
 

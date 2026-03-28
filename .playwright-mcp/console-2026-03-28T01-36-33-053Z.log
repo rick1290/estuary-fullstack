@@ -1,0 +1,41 @@
+[     405ms] [WARNING] A parser-blocking, cross site (i.e. different eTLD+1) script, https://cdn.optimizely.com/js/17462770603.js, is invoked via document.write. The network request for this script MAY be blocked by the browser in this or a future page load due to poor network connectivity. If blocked in this page load, it will be confirmed in a subsequent console message. See https://www.chromestatus.com/feature/5718547946799104 for more details. @ https://tags.mindbodyonline.com/main/prod/utag.sync.js:1
+[     406ms] [WARNING] A parser-blocking, cross site (i.e. different eTLD+1) script, https://cdn.optimizely.com/js/17462770603.js, is invoked via document.write. The network request for this script MAY be blocked by the browser in this or a future page load due to poor network connectivity. If blocked in this page load, it will be confirmed in a subsequent console message. See https://www.chromestatus.com/feature/5718547946799104 for more details. @ https://tags.mindbodyonline.com/main/prod/utag.sync.js:1
+[    2154ms] [WARNING] SPARA EMBED: gtag timeout for client_id @ https://www.mindbodyonline.com/:10
+[    2154ms] [WARNING] SPARA EMBED: gtag timeout for session_id @ https://www.mindbodyonline.com/:10
+[    2349ms] [ERROR] Access to fetch at 'https://app-sj13.marketo.com/js/forms2/css/forms2.css' from origin 'https://www.mindbodyonline.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.mindbodyonline.com/:0
+[    2350ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://app-sj13.marketo.com/js/forms2/css/forms2.css:0
+[    2350ms] [ERROR] Access to fetch at 'https://app-sj13.marketo.com/js/forms2/css/forms2-theme-simple.css' from origin 'https://www.mindbodyonline.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.mindbodyonline.com/:0
+[    2350ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://app-sj13.marketo.com/js/forms2/css/forms2-theme-simple.css:0
+[    2350ms] [ERROR] Access to fetch at 'https://sdk.inbenta.io/search/1.50/inbenta-search-sdk-space-cowboy.css' from origin 'https://www.mindbodyonline.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.mindbodyonline.com/:0
+[    2350ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://sdk.inbenta.io/search/1.50/inbenta-search-sdk-space-cowboy.css:0
+[    2350ms] [ERROR] Access to fetch at 'https://sdk.inbenta.io/search/1.50/inbenta-search-sdk-space-cowboy.css' from origin 'https://www.mindbodyonline.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.mindbodyonline.com/:0
+[    2350ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://sdk.inbenta.io/search/1.50/inbenta-search-sdk-space-cowboy.css:0
+[  194868ms] [WARNING] [OPTIMIZELY] - WARN  2026-03-28T01:39:47.919Z Invalid eventBatchSize undefined, defaulting to 10 @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45
+[  194868ms] [WARNING] [OPTIMIZELY] - WARN  2026-03-28T01:39:47.921Z Invalid eventFlushInterval undefined, defaulting to 1000 @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45
+[  195193ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 352432244948718. @ https://cdn9.classpass.com/dist/gfe-v2/_next/static/chunks/pages/_app-6c6fe2c1c1b18359.js:45
+[  195299ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://classpass.com/:0
+[  195503ms] TypeError: Cannot set properties of null (setting 'textContent')
+    at HTMLDocument.<anonymous> (https://www.teachable.com/:1029:24)
+[  195600ms] [ERROR] [marquee] waitForImages(): no marquee elements found, exiting early @ https://cdn.jsdelivr.net/npm/@finsweet/fs-components@2/dist/src-VJY2QRSC.js:0
+[  195600ms] [ERROR] [marquee] No marquee instances found on the page when initializing Marquee component {} @ https://cdn.jsdelivr.net/npm/@finsweet/fs-components@2/dist/chunk-3DAWYDAI.js:8
+[  195646ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.omappapi.com/v2/embed/79813?d=teachable.com&device=desktop:0
+[  195647ms] [ERROR] [OptinMonster] This account is not currently active. It is either expired, paused, archived, cancelled or temporarily suspended. @ https://a.omappapi.com/app/js/api.min.js:0
+[  198757ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:80
+[  198758ms] [ERROR] Not signed in with the identity provider. @ https://www.upwork.com/:0
+[  199194ms] [WARNING] [scrollToCenter] container is undefined @ https://www.upwork.com/static/assets/Brontes/pages/index.9fb4adce.js:0
+[  199927ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.fiverr.com/:0
+[  200020ms] [ERROR] Unable to download payment manifest "https://cdn2.forter.com/manifest.json". @ https://www.fiverr.com/:0
+[  200020ms] [ERROR] Unable to download payment manifest "https://cdn2.forter.com/manifest.json". @ https://www.fiverr.com/:0
+[  204690ms] [WARNING] The resource https://npm-assets.fiverrcdn.com/assets/uploads/macan-bold.woff2 was preloaded using link preload in Early Hints but not used within a few seconds from the window's load event. @ https://www.fiverr.com/:0
+[  204691ms] [WARNING] The resource https://npm-assets.fiverrcdn.com/assets/uploads/macan-semibold.woff2 was preloaded using link preload in Early Hints but not used within a few seconds from the window's load event. @ https://www.fiverr.com/:0
+[  204691ms] [WARNING] The resource https://npm-assets.fiverrcdn.com/assets/uploads/macan-light.woff2 was preloaded using link preload in Early Hints but not used within a few seconds from the window's load event. @ https://www.fiverr.com/:0
+[  204691ms] [WARNING] The resource https://npm-assets.fiverrcdn.com/assets/uploads/macan-regular.woff2 was preloaded using link preload in Early Hints but not used within a few seconds from the window's load event. @ https://www.fiverr.com/:0
+[  325709ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:80
+[  325709ms] [ERROR] Not signed in with the identity provider. @ https://www.upwork.com/:0
+[  326114ms] [WARNING] [scrollToCenter] container is undefined @ https://www.upwork.com/static/assets/Brontes/pages/index.9fb4adce.js:0
+[  330396ms] TypeError: Cannot set properties of null (setting 'textContent')
+    at HTMLDocument.<anonymous> (https://www.teachable.com/:1029:24)
+[  330444ms] [ERROR] [marquee] waitForImages(): no marquee elements found, exiting early @ https://cdn.jsdelivr.net/npm/@finsweet/fs-components@2/dist/src-VJY2QRSC.js:0
+[  330444ms] [ERROR] [marquee] No marquee instances found on the page when initializing Marquee component {} @ https://cdn.jsdelivr.net/npm/@finsweet/fs-components@2/dist/chunk-3DAWYDAI.js:8
+[  330541ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.omappapi.com/v2/embed/79813?d=teachable.com&device=desktop:0
+[  330541ms] [ERROR] [OptinMonster] This account is not currently active. It is either expired, paused, archived, cancelled or temporarily suspended. @ https://a.omappapi.com/app/js/api.min.js:0

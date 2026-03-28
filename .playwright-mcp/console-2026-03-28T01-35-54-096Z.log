@@ -1,0 +1,18 @@
+[     912ms] [WARNING] A preload for 'https://fiverr-res.cloudinary.com/image/upload/f_auto,q_auto/v1/attachments/generic_asset/asset/044630cc230d81edf3cc226212308295-1744042923926/hero.png' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://www.fiverr.com/:34
+[    2327ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:80
+[    2376ms] [ERROR] Not signed in with the identity provider. @ https://www.fiverr.com/:0
+[    3051ms] [WARNING] Invalid tag id provided: 479672ac-3610-9fe5-57f9-9b1f9612c41d @ https://c.amazon-adsystem.com/aat/amzn.js:1
+[    3139ms] [WARNING] [TikTok Pixel] - Missing "value" parameter
+Issue: Events shared are missing a 'value' parameter'. This is used calculate ROAS for people and the bid for your highest value customers. 
+Suggestion: Go to your source code and include the "value" parameter. See https://ads.tiktok.com/help/article/standard-events-parameters?redirected=2 for more information. @ https://analytics.tiktok.com/i18n/pixel/static/main.MTJlMjhkNzMyMQ.js:0
+[    3139ms] [WARNING] [TikTok Pixel] - Missing "value" parameter
+Issue: Events shared are missing a 'value' parameter'. This is used calculate ROAS for people and the bid for your highest value customers. 
+Suggestion: Go to your source code and include the "value" parameter. See https://ads.tiktok.com/help/article/standard-events-parameters?redirected=2 for more information. @ https://analytics.tiktok.com/i18n/pixel/static/main.MTJlMjhkNzMyMQ.js:0
+[    3140ms] [WARNING] [TikTok Pixel] - Missing "value" parameter
+Issue: Events shared are missing a 'value' parameter'. This is used calculate ROAS for people and the bid for your highest value customers. 
+Suggestion: Go to your source code and include the "value" parameter. See https://ads.tiktok.com/help/article/standard-events-parameters?redirected=2 for more information. @ https://analytics.tiktok.com/i18n/pixel/static/main.MTJlMjhkNzMyMQ.js:0
+[    3141ms] [WARNING] [TikTok Pixel] - Missing "value" parameter
+Issue: Events shared are missing a 'value' parameter'. This is used calculate ROAS for people and the bid for your highest value customers. 
+Suggestion: Go to your source code and include the "value" parameter. See https://ads.tiktok.com/help/article/standard-events-parameters?redirected=2 for more information. @ https://analytics.tiktok.com/i18n/pixel/static/main.MTJlMjhkNzMyMQ.js:0
+[    3264ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.fiverr.com/:0
+[    3322ms] [ERROR] Attestation check for Attribution Reporting on https://q.quora.com failed. @ https://www.fiverr.com/:0
