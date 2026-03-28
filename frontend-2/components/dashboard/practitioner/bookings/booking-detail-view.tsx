@@ -9,7 +9,8 @@ import {
   bookingsCompleteCreateMutation,
   bookingsConfirmCreateMutation,
   bookingsNotesRetrieveOptions,
-  bookingsNotesCreateMutation
+  bookingsNotesCreateMutation,
+  bookingsRequestRescheduleCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
 import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -92,6 +93,8 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [noteContent, setNoteContent] = useState("")
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
+  const [rescheduleReason, setRescheduleReason] = useState("")
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
@@ -139,6 +142,26 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
     onError: (error: any) => {
       toast({
         title: "Failed to complete booking",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const rescheduleMutation = useMutation({
+    ...bookingsRequestRescheduleCreateMutation(),
+    onSuccess: () => {
+      toast({
+        title: "Reschedule requested",
+        description: "The time slot has been released and the client will be notified to pick a new time.",
+      })
+      invalidateAll()
+      setShowRescheduleDialog(false)
+      setRescheduleReason("")
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to request reschedule",
         description: error.message || "An error occurred",
         variant: "destructive",
       })
@@ -237,7 +260,16 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   }
 
   const handleReschedule = () => {
-    router.push(`/dashboard/user/bookings/${bookingId}/reschedule`)
+    setShowRescheduleDialog(true)
+  }
+
+  const confirmReschedule = () => {
+    rescheduleMutation.mutate({
+      path: { public_uuid: bookingId },
+      body: {
+        reason: rescheduleReason || "Practitioner requested reschedule"
+      } as any,
+    })
   }
 
   const handleComplete = () => {
@@ -718,6 +750,64 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                 </>
               ) : (
                 "Cancel & Refund Client"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-olive-900">Request Reschedule?</DialogTitle>
+            <DialogDescription className="text-olive-600">
+              This will release the current time slot and notify the client to pick a new time at their convenience.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-olive-600">Client</span>
+              <span className="font-medium text-olive-900">{booking.user?.full_name || booking.user?.email || "Unknown"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-olive-600">Service</span>
+              <span className="font-medium text-olive-900">{booking.service?.name}</span>
+            </div>
+            {startTime && (
+              <div className="flex justify-between text-sm">
+                <span className="text-olive-600">Current time</span>
+                <span className="font-medium text-olive-900">{format(startTime, "MMM d, h:mm a")}</span>
+              </div>
+            )}
+            <Separator />
+            <div>
+              <label className="text-sm font-medium text-olive-700 mb-1.5 block">Reason (optional)</label>
+              <Textarea
+                value={rescheduleReason}
+                onChange={(e) => setRescheduleReason(e.target.value)}
+                placeholder="e.g., Schedule conflict, need to move to a different day..."
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => { setShowRescheduleDialog(false); setRescheduleReason("") }}>
+              Keep Current Time
+            </Button>
+            <Button
+              onClick={confirmReschedule}
+              disabled={rescheduleMutation.isPending}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {rescheduleMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Requesting...
+                </>
+              ) : (
+                "Release Slot & Notify Client"
               )}
             </Button>
           </DialogFooter>

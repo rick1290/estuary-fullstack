@@ -380,6 +380,59 @@ class BookingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    @action(detail=True, methods=['post'], url_path='request-reschedule')
+    def request_reschedule(self, request, public_uuid=None):
+        """
+        Practitioner requests a reschedule — clears the session time and
+        notifies the client to pick a new slot.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        booking = self.get_object()
+        reason = request.data.get('reason', '')
+
+        # Only the practitioner can request a reschedule
+        if not booking.service or not booking.service.primary_practitioner:
+            return Response(
+                {'detail': 'No practitioner associated with this booking.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if booking.service.primary_practitioner.user != request.user:
+            return Response(
+                {'detail': 'Only the practitioner can request a reschedule.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if booking.status not in ('confirmed', 'pending_payment'):
+            return Response(
+                {'detail': f'Cannot reschedule a booking with status "{booking.status}".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Clear the session times
+        session = booking.service_session
+        if session:
+            session.start_time = None
+            session.end_time = None
+            session.status = 'draft'
+            session.save(update_fields=['start_time', 'end_time', 'status', 'updated_at'])
+            logger.info(f"Cleared session times for booking {booking.id} (session {session.id})")
+
+        # Send reschedule notification to client
+        try:
+            from notifications.services import NotificationService
+            notification_service = NotificationService()
+            notification_service.send_booking_rescheduled(booking, request.user)
+        except Exception as e:
+            logger.error(f"Failed to send reschedule notification: {e}")
+
+        response_serializer = BookingDetailSerializer(
+            booking,
+            context={'request': request}
+        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post', 'get'])
     def notes(self, request, public_uuid=None):
         """Get or add notes to booking"""
