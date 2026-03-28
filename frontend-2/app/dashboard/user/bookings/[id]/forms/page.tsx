@@ -132,8 +132,52 @@ export default function BookingFormsPage({
       }
       const raw = await res.json()
       // Handle wrapped response
-      const data: BookingFormsData =
-        raw && typeof raw === "object" && "data" in raw ? raw.data : raw
+      const apiData = raw && typeof raw === "object" && "data" in raw ? raw.data : raw
+
+      // Transform API response (forms array) into the shape the page expects
+      let data: BookingFormsData
+      if (apiData.forms && Array.isArray(apiData.forms)) {
+        // New API format: { has_forms, forms: [...] }
+        let consentForm: ConsentForm | undefined
+        const intakeQuestions: IntakeQuestion[] = []
+
+        for (const f of apiData.forms) {
+          const tpl = f.template || {}
+          if (tpl.form_type === 'consent') {
+            consentForm = {
+              id: tpl.id?.toString() || '',
+              title: tpl.title || 'Consent Form',
+              legal_text: tpl.latest_consent?.legal_text || tpl.description || '',
+              is_signed: f.signed || false,
+              signer_name: f.signature?.signer_name || '',
+            }
+          } else if (tpl.form_type === 'intake' && tpl.questions) {
+            for (const q of tpl.questions) {
+              intakeQuestions.push({
+                id: q.id?.toString() || q.text,
+                question_text: q.text || q.label || q.question_text || '',
+                question_type: q.question_type || 'short_text',
+                is_required: q.is_required ?? false,
+                options: q.options?.map((o: any) => typeof o === 'string' ? { id: o, label: o, value: o } : { id: o.id || o.value, label: o.label || o.text, value: o.value || o.id }),
+                scale_min: q.scale_min,
+                scale_max: q.scale_max,
+                previous_response: f.previous_responses?.[q.id?.toString()] ?? undefined,
+              })
+            }
+          }
+        }
+
+        data = {
+          consent_form: consentForm,
+          intake_questions: intakeQuestions,
+          booking_id: apiData.booking_id || id,
+          service_name: apiData.service_name,
+          practitioner_name: apiData.practitioner_name,
+        }
+      } else {
+        // Already in expected format
+        data = apiData as BookingFormsData
+      }
 
       setFormsData(data)
 
@@ -542,25 +586,25 @@ export default function BookingFormsPage({
             className="flex items-center gap-2 pl-0 hover:pl-2 transition-all"
             asChild
           >
-            <Link href={`/dashboard/user/bookings/${id}`}>
+            <Link href={`/dashboard/user/journeys/${id}`}>
               <ArrowLeft className="h-4 w-4" />
-              Back to Booking
+              Back to Journey
             </Link>
           </Button>
 
           <Card className="border border-sage-200/60 bg-white text-center">
             <CardContent className="py-12">
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <CheckCircle className="h-12 w-12 text-sage-400 mx-auto mb-4" />
               <h2 className="font-serif text-xl font-normal text-olive-900 mb-2">
-                No Forms Required
+                No Pre-Session Forms
               </h2>
               <p className="text-muted-foreground mb-6">
-                Your practitioner has not set up any pre-session forms for this
-                booking. You&apos;re all set!
+                Your practitioner hasn&apos;t set up any forms for this session.
+                No action needed — you&apos;re all set!
               </p>
               <Button asChild>
-                <Link href={`/dashboard/user/bookings/${id}`}>
-                  Return to Booking
+                <Link href={`/dashboard/user/journeys/${id}`}>
+                  Back to Journey
                 </Link>
               </Button>
             </CardContent>

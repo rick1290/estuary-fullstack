@@ -3361,6 +3361,43 @@ paths:
                 $ref: '#/components/schemas/ServiceForm'
           description: ''
   /api/v1/intake/services/{service_pk}/forms/{id}/:
+    patch:
+      operationId: intake_services_forms_partial_update
+      description: Attach/detach forms from services.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: service_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceFormRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceFormRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceFormRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceForm'
+          description: ''
     delete:
       operationId: intake_services_forms_destroy
       description: Attach/detach forms from services.
@@ -14744,6 +14781,9 @@ components:
         has_review:
           type: string
           readOnly: true
+        intake_forms_status:
+          type: string
+          readOnly: true
         rescheduled_from_id:
           type: integer
           readOnly: true
@@ -14855,6 +14895,9 @@ components:
           type: boolean
           readOnly: true
         location_type:
+          type: string
+          readOnly: true
+        has_pending_intake_forms:
           type: string
           readOnly: true
         created_at:
@@ -16792,6 +16835,9 @@ components:
           format: double
         status:
           $ref: '#/components/schemas/JourneyListItemStatusEnum'
+        has_pending_intake_forms:
+          type: boolean
+          default: false
       required:
       - completed_sessions
       - journey_id
@@ -21206,6 +21252,20 @@ components:
             additionalProperties: {}
           description: List of dicts with child_service_id, quantity, discount_percentage,
             etc.
+    PatchedServiceFormRequest:
+      type: object
+      properties:
+        service:
+          type: integer
+        form_template:
+          type: integer
+        is_required:
+          type: boolean
+          description: If True and consent form, blocks room entry
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
     PatchedServiceResourceRequest:
       type: object
       description: Serializer for service resources

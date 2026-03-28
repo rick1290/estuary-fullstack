@@ -669,7 +669,8 @@ export default function AuthModal({
                   )}
                 </TabsContent>
 
-                {/* Google Auth — below both tabs */}
+                {/* Google Auth — below both tabs (hidden when practitioner fast-track shows its own) */}
+                {!(serviceType === 'practitioner-application' && activeTab === 'signup' && signupRole === 'practitioner' && !showEmailForm) && (
                 <div className="mt-5">
                   <div className="relative mb-4">
                     <div className="absolute inset-0 flex items-center">
@@ -695,6 +696,7 @@ export default function AuthModal({
                     Continue with Google
                   </Button>
                 </div>
+                )}
               </Tabs>
             </div>
           </div>
