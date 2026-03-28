@@ -119,24 +119,24 @@ export default function FeedbackWidget() {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button — compact circle, doesn't block content */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full shadow-lg transition-all duration-200",
-          "bg-olive-800 text-white hover:bg-olive-900 hover:shadow-xl",
-          "px-4 py-3 min-h-[48px]",
+          "fixed bottom-4 right-4 z-40 flex items-center justify-center rounded-full shadow-md transition-all duration-200 group",
+          "bg-olive-700/80 text-white hover:bg-olive-800 hover:shadow-lg backdrop-blur-sm",
+          "h-10 w-10 hover:w-auto hover:px-3.5 hover:gap-2",
           isOpen && "scale-0 opacity-0 pointer-events-none"
         )}
       >
-        <MessageCircle className="h-5 w-5" />
-        <span className="text-sm font-medium hidden sm:inline">Feedback</span>
+        <MessageCircle className="h-4 w-4 shrink-0" />
+        <span className="text-xs font-medium hidden group-hover:inline whitespace-nowrap">Feedback</span>
       </button>
 
       {/* Widget Panel */}
       <div
         className={cn(
-          "fixed bottom-5 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] transition-all duration-200 origin-bottom-right",
+          "fixed bottom-4 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] transition-all duration-200 origin-bottom-right",
           isOpen
             ? "scale-100 opacity-100 translate-y-0"
             : "scale-95 opacity-0 translate-y-2 pointer-events-none"
