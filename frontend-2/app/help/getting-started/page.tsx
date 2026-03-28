@@ -66,7 +66,7 @@ export default function GettingStartedPage() {
           Help Center
         </Link>
 
-        <h1 className="font-serif text-3xl font-light text-olive-900 mb-2">
+        <h1 className="font-serif text-3xl font-normal text-olive-900 mb-2">
           Welcome to Estuary
         </h1>
         <p className="text-olive-500 mb-10">
@@ -124,7 +124,7 @@ export default function GettingStartedPage() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-sage-200/60">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-olive-400">Ready to explore?</p>
+            <p className="text-sm text-olive-500">Ready to explore?</p>
             <div className="flex gap-4">
               <Link
                 href="/marketplace"
@@ -142,7 +142,7 @@ export default function GettingStartedPage() {
             </div>
           </div>
           <div className="mt-6 text-center">
-            <p className="text-sm text-olive-400">Still need help?</p>
+            <p className="text-sm text-olive-500">Still need help?</p>
             <a
               href="mailto:support@estuary.com"
               className="text-sm text-sage-600 hover:text-sage-700"

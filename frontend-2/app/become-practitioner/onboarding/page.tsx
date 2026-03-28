@@ -77,7 +77,6 @@ export default function PractitionerOnboardingPage() {
           }
         } catch (err) {
           // No existing profile - that's fine, they'll create one in step 1
-          console.log('No existing practitioner profile found')
         }
         setIsLoading(false)
       }

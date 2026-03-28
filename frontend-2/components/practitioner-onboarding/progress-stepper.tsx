@@ -106,7 +106,7 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                       className={cn(
                         "text-sm font-bold",
                         (isCurrent || isPast) && "text-white",
-                        isFuture && "text-olive-400"
+                        isFuture && "text-olive-500"
                       )}
                     >
                       {step.number}
@@ -171,7 +171,7 @@ export default function ProgressStepper({ currentStep, completedSteps }: Progres
                     className={cn(
                       "text-sm font-bold",
                       (isCurrent || isPast) && "text-white",
-                      isFuture && "text-olive-400"
+                      isFuture && "text-olive-500"
                     )}
                   >
                     {step.number}

@@ -235,7 +235,7 @@ export default function StreamCheckoutPage() {
                             className={`flex flex-col p-6 rounded-lg border-2 cursor-pointer transition-all
                               ${selectedTier === 'entry' 
                                 ? 'border-sage-600 bg-sage-50/50' 
-                                : 'border-gray-200 hover:border-gray-300'
+                                : 'border-sage-200 hover:border-sage-300'
                               }
                             `}
                           >
@@ -277,7 +277,7 @@ export default function StreamCheckoutPage() {
                             className={`flex flex-col p-6 rounded-lg border-2 cursor-pointer transition-all relative
                               ${selectedTier === 'premium' 
                                 ? 'border-sage-600 bg-sage-50/50' 
-                                : 'border-gray-200 hover:border-gray-300'
+                                : 'border-sage-200 hover:border-sage-300'
                               }
                             `}
                           >

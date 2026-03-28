@@ -62,22 +62,22 @@ export default async function ServicePage({ params }: { params: { id: string } }
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/" className="text-gray-600 hover:text-gray-900">Home</Link>
+                <Link href="/" className="text-olive-600 hover:text-olive-900">Home</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-olive-500" />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/marketplace" className="text-gray-600 hover:text-gray-900">Marketplace</Link>
+                <Link href="/marketplace" className="text-olive-600 hover:text-olive-900">Marketplace</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-olive-500" />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <span className="text-gray-900 font-medium">{service.name}</span>
+              <span className="text-olive-900 font-medium">{service.name}</span>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>

@@ -846,7 +846,7 @@ export function ServiceEditSplitView({ serviceId }: ServiceEditSplitViewProps) {
             </Button>
 
             {/* Service name + badges */}
-            <h1 className="font-serif text-2xl font-light text-olive-900 mb-2">{service.name}</h1>
+            <h1 className="font-serif text-2xl font-normal text-olive-900 mb-2">{service.name}</h1>
             <div className="flex items-center gap-2">
               <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
                 {service.status}

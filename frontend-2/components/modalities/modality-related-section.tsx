@@ -46,7 +46,7 @@ export default function ModalityRelatedSection({ slugs }: ModalityRelatedSection
           <span className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3 block">
             You Might Also Like
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-light text-olive-900">
+          <h2 className="font-serif text-3xl sm:text-4xl font-normal text-olive-900">
             Related Modalities
           </h2>
         </motion.div>

@@ -65,7 +65,7 @@ export default function ServiceDetails({ service }: ServiceDetailsProps) {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-4 w-4 ${i < Math.floor(service.rating || 4.5) ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                  className={`h-4 w-4 ${i < Math.floor(service.rating || 4.5) ? "text-yellow-500 fill-yellow-500" : "text-olive-500"}`}
                 />
               ))}
             </div>

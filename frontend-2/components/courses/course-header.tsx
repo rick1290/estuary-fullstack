@@ -67,7 +67,7 @@ export default function CourseHeader({ course }: CourseHeaderProps) {
                       ? "text-yellow-400 fill-yellow-400"
                       : i < course.rating
                         ? "text-yellow-400 fill-yellow-400 opacity-50"
-                        : "text-gray-300"
+                        : "text-olive-500"
                   }`}
                 />
               ))}

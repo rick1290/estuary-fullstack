@@ -72,7 +72,7 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
       case "premium":
         return "bg-purple-100 text-purple-800 border-purple-200"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-sage-100 text-olive-800 border-sage-200"
     }
   }
 
@@ -83,9 +83,9 @@ export default function StreamPostsList({ posts, onDeletePost, onUpdatePost }: S
       case "scheduled":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       case "draft":
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-sage-100 text-olive-800 border-sage-200"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-sage-100 text-olive-800 border-sage-200"
     }
   }
 

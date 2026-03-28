@@ -50,14 +50,12 @@ function ParticipantItem({ participant }: ParticipantItemProps) {
   const audioTrack = participant.getTrack(Track.Source.Microphone);
 
   return (
-    <div className="relative rounded-lg overflow-hidden bg-gray-800">
+    <div className="relative rounded-lg overflow-hidden bg-olive-800">
       <TrackRefContext.Provider value={{ participant, source: Track.Source.Camera }}>
         <ParticipantTile 
           participant={participant}
           source={Track.Source.Camera}
-          onParticipantClick={() => {
-            console.log('Participant clicked:', participant.identity);
-          }}
+          onParticipantClick={() => {}}
         />
       </TrackRefContext.Provider>
       

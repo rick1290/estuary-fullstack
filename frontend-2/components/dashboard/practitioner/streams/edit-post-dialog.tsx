@@ -189,9 +189,6 @@ export default function EditPostDialog({ open, onOpenChange, post, onUpdatePost 
         }
       })
 
-      console.log('Upload body keys:', Object.keys(body))
-      console.log('Files being uploaded:', newMediaFiles.map(f => f.name))
-
       // Use the properly generated OpenAPI client
       await uploadMediaMutation.mutateAsync({
         path: { public_uuid: post.public_uuid },

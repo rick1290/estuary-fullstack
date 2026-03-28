@@ -20,7 +20,6 @@ export default function PractitionerApplicationPage() {
   useEffect(() => {
     const checkAuth = () => {
       const isLoggedInFromStorage = localStorage.getItem("isLoggedIn") === "true"
-      console.log("Checking auth from localStorage:", isLoggedInFromStorage)
       setIsLoggedIn(isLoggedInFromStorage)
       setIsLoading(false)
 

@@ -394,7 +394,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                   />
                 ) : (
                   <div className="w-full h-full bg-sage-100 flex items-center justify-center">
-                    <span className="text-olive-400">No thumbnail</span>
+                    <span className="text-olive-500">No thumbnail</span>
                   </div>
                 )}
                 {(!post.isPremium || post.hasAccess) && !isPlaying && (
@@ -738,7 +738,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
                         <span className="font-semibold text-sm text-olive-900">{comment.user_name}</span>
-                        <span className="text-[11px] text-olive-400">
+                        <span className="text-[11px] text-olive-500">
                           {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                         </span>
                       </div>
@@ -755,7 +755,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                               <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
                                   <span className="font-semibold text-xs text-olive-900">{reply.user_name}</span>
-                                  <span className="text-[10px] text-olive-400">
+                                  <span className="text-[10px] text-olive-500">
                                     {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
                                   </span>
                                 </div>
@@ -770,7 +770,7 @@ export default function ContentCard({ post }: ContentCardProps) {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-xs text-olive-400 py-3">No comments yet. Be the first to comment!</p>
+              <p className="text-center text-xs text-olive-500 py-3">No comments yet. Be the first to comment!</p>
             )}
 
             {/* Comment input -- always visible at bottom when expanded */}

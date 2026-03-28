@@ -21,7 +21,7 @@ export default function CredentialsTab({ educations, certifications }: Credentia
   return (
     <div className="px-1 space-y-8">
       <div>
-        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Education</h3>
+        <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Education</h3>
         {educations.length > 0 ? (
           <ul className="space-y-4">
             {educations.map((education) => (
@@ -42,7 +42,7 @@ export default function CredentialsTab({ educations, certifications }: Credentia
       </div>
 
       <div>
-        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Certifications</h3>
+        <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Certifications</h3>
         {certifications.length > 0 ? (
           <ul className="space-y-4">
             {certifications.map((certification) => (

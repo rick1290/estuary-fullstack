@@ -24,7 +24,7 @@ export default function SpecialtiesTab({ specializations, styles, topics, modali
   return (
     <div className="px-1 space-y-6">
       <div>
-        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Specializations</h3>
+        <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Specializations</h3>
         <div className="flex flex-wrap gap-2">
           {specializations.map((specialization) => (
             <span key={specialization.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
@@ -36,7 +36,7 @@ export default function SpecialtiesTab({ specializations, styles, topics, modali
       </div>
 
       <div>
-        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Styles</h3>
+        <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Styles</h3>
         <div className="flex flex-wrap gap-2">
           {styles.map((style) => (
             <span key={style.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
@@ -48,7 +48,7 @@ export default function SpecialtiesTab({ specializations, styles, topics, modali
       </div>
 
       <div>
-        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Topics</h3>
+        <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Topics</h3>
         <div className="flex flex-wrap gap-2">
           {topics.map((topic) => (
             <span key={topic.id} className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light">
@@ -60,7 +60,7 @@ export default function SpecialtiesTab({ specializations, styles, topics, modali
       </div>
 
       <div>
-        <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Modalities</h3>
+        <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Modalities</h3>
         <div className="flex flex-wrap gap-2">
           {modalities.map((modality) => (
             <Link

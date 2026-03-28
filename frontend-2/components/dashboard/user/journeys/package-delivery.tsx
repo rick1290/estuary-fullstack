@@ -356,7 +356,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
         </Alert>
         <Link
           href="/dashboard/user/journeys"
-          className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors"
+          className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-sage-600 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Journeys
@@ -382,7 +382,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -514,7 +514,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {/* ── SCHEDULED SESSIONS ── */}
             {scheduled.length > 0 && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   Scheduled Sessions
                 </h2>
                 <div className="flex flex-col gap-2.5">
@@ -584,7 +584,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {/* ── READY TO SCHEDULE ── */}
             {needsScheduling.length > 0 && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   Ready to Schedule
                 </h2>
 
@@ -653,7 +653,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {/* ── COMPLETED SESSIONS ── */}
             {completed.length > 0 && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   Completed Sessions
                 </h2>
                 <div className="flex flex-col gap-2.5">
@@ -707,7 +707,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {/* ── YOUR PRACTITIONER ── */}
             {practitioner && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-sage-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-500 mb-3 pb-2 border-b border-sage-200/50">
                   Your Practitioner
                 </h2>
                 <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
@@ -767,7 +767,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {totalCount > 0 && (
               <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
-                  <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                  <div className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-1">
                     Package Progress
                   </div>
                 </div>
@@ -795,7 +795,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                     sessions used
                   </p>
                   {expirationDate && (
-                    <p className={`text-[12px] mt-1 ${isNearingExpiration ? "text-amber-700 font-medium" : "text-olive-400"}`}>
+                    <p className={`text-[12px] mt-1 ${isNearingExpiration ? "text-amber-700 font-medium" : "text-olive-500"}`}>
                       Expires {format(expirationDate, "MMM d, yyyy")}
                     </p>
                   )}
@@ -806,7 +806,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             {/* Package Details Card */}
             <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
               <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
-                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
+                <div className="text-[10px] font-medium tracking-widest uppercase text-olive-500 mb-1">
                   Package Details
                 </div>
               </div>
@@ -814,7 +814,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
               <div className="px-5 py-3">
                 {/* Total sessions */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     <Calendar className="h-3.5 w-3.5 text-sage-500" />
                     Total Sessions
                   </span>
@@ -823,7 +823,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
                 {/* Remaining */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     <Clock className="h-3.5 w-3.5 text-sage-500" />
                     Remaining
                   </span>
@@ -832,7 +832,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
                 {/* Location */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
-                  <span className="flex items-center gap-2 text-olive-400">
+                  <span className="flex items-center gap-2 text-olive-500">
                     <Video className="h-3.5 w-3.5 text-sage-500" />
                     Location
                   </span>
@@ -843,7 +843,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
                 {/* Confirmation */}
                 <div className="flex justify-between py-2.5 text-[13px]">
-                  <span className="text-olive-400">Confirmation</span>
+                  <span className="text-olive-500">Confirmation</span>
                   <span className="font-mono text-[11px] text-sage-600 tracking-wide">
                     {bookingUuid.slice(0, 8).toUpperCase()}
                   </span>
@@ -879,7 +879,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
 
               <button
                 onClick={() => setCancelDialogOpen(true)}
-                className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors"
+                className="w-full text-center text-[12px] text-olive-500 hover:text-red-500 py-2 min-h-[44px] transition-colors"
               >
                 Cancel Package
               </button>

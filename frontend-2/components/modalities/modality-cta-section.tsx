@@ -32,7 +32,7 @@ export default function ModalityCtaSection({ heading, description, slug }: Modal
       >
         <motion.h2
           variants={itemFade}
-          className="font-serif text-3xl sm:text-4xl font-light text-olive-900 mb-4"
+          className="font-serif text-3xl sm:text-4xl font-normal text-olive-900 mb-4"
         >
           {heading}
         </motion.h2>

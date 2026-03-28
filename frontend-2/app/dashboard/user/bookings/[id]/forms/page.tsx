@@ -551,7 +551,7 @@ export default function BookingFormsPage({
           <Card className="border border-sage-200/60 bg-white text-center">
             <CardContent className="py-12">
               <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-              <h2 className="font-serif text-xl font-light text-olive-900 mb-2">
+              <h2 className="font-serif text-xl font-normal text-olive-900 mb-2">
                 No Forms Required
               </h2>
               <p className="text-muted-foreground mb-6">
@@ -589,7 +589,7 @@ export default function BookingFormsPage({
 
         {/* Page header */}
         <div>
-          <h1 className="font-serif text-2xl font-light text-olive-900">
+          <h1 className="font-serif text-2xl font-normal text-olive-900">
             Pre-Session Forms
           </h1>
           {(formsData?.service_name || formsData?.practitioner_name) && (
@@ -617,7 +617,7 @@ export default function BookingFormsPage({
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-primary" />
-                <CardTitle className="font-serif text-lg font-light text-olive-900">
+                <CardTitle className="font-serif text-lg font-normal text-olive-900">
                   {formsData.consent_form.title || "Consent Form"}
                 </CardTitle>
                 {consentSigned && (
@@ -721,7 +721,7 @@ export default function BookingFormsPage({
             <CardHeader>
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                <CardTitle className="font-serif text-lg font-light text-olive-900">
+                <CardTitle className="font-serif text-lg font-normal text-olive-900">
                   Intake Questionnaire
                 </CardTitle>
                 {intakeSubmitted && (

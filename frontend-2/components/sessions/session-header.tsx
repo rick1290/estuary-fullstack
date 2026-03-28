@@ -50,7 +50,7 @@ export default function SessionHeader({ session }: SessionHeaderProps) {
                       ? "text-yellow-400 fill-yellow-400"
                       : i < session.rating
                         ? "text-yellow-400 fill-yellow-400 opacity-50"
-                        : "text-gray-300"
+                        : "text-olive-500"
                   }`}
                 />
               ))}

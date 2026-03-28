@@ -176,10 +176,10 @@ export default function PractitionerFlowTabs() {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
-          <div className="h-10 bg-gray-200 rounded-lg mb-4"></div>
+          <div className="h-10 bg-sage-200 rounded-lg mb-4"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>
+              <div key={i} className="h-16 bg-sage-100 rounded-lg"></div>
             ))}
           </div>
         </div>

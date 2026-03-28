@@ -37,7 +37,7 @@ export default function ModalityHeroSection({ content }: ModalityHeroSectionProp
 
         <motion.h1
           variants={itemFade}
-          className="font-serif text-3xl sm:text-4xl md:text-[48px] font-light leading-[1.15] tracking-tight text-olive-900 mb-5"
+          className="font-serif text-3xl sm:text-4xl md:text-[48px] font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
         >
           {content.heroTitle}{" "}
           <em className="italic text-terracotta-600">{content.heroTitleAccent}</em>

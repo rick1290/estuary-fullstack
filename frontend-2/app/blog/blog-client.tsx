@@ -36,7 +36,7 @@ export default function BlogPage() {
 
         <motion.h1
           variants={itemFade}
-          className="font-serif text-4xl sm:text-5xl font-light leading-[1.15] tracking-tight text-olive-900 mb-5"
+          className="font-serif text-4xl sm:text-5xl font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
         >
           Stories &amp; Wisdom —{" "}
           <em className="italic text-terracotta-600">Coming Soon</em>

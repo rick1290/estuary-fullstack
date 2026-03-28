@@ -41,14 +41,14 @@ ESTUARY
 All major headings follow this pattern:
 
 ```tsx
-<h1 className="font-serif text-3xl sm:text-5xl md:text-[56px] font-light leading-[1.15] tracking-tight text-olive-900">
+<h1 className="font-serif text-3xl sm:text-5xl md:text-[56px] font-normal leading-[1.15] tracking-tight text-olive-900">
   Main Statement
   <em className="italic text-terracotta-600">Accent Phrase</em>
 </h1>
 ```
 
 Rules:
-- **font-serif** + **font-light** (weight 300) for all display headings
+- **font-serif** + **font-normal** (weight 400) for all display headings
 - **Terracotta italic** for the emotional/accent phrase
 - **leading-[1.15]** or **leading-[1.2]** for tight, premium line-height
 - **tracking-tight** (-0.025em) for headings

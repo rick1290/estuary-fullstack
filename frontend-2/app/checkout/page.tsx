@@ -538,7 +538,7 @@ export default function CheckoutPage() {
                     <summary className="text-olive-500 cursor-pointer hover:text-olive-700 transition-colors">
                       Cancellation Policy
                     </summary>
-                    <p className="mt-2 text-olive-400 leading-relaxed pl-4 border-l-2 border-sage-200">
+                    <p className="mt-2 text-olive-500 leading-relaxed pl-4 border-l-2 border-sage-200">
                       Full refund if canceled 24+ hours before your session. No refund within 24 hours.
                       Practitioner cancellations always receive a full refund.
                     </p>

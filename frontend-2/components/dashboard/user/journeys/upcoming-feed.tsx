@@ -109,7 +109,7 @@ export default function UpcomingFeed({ journeys }: UpcomingFeedProps) {
         <h3 className="text-lg font-medium text-olive-900">
           Nothing coming up
         </h3>
-        <p className="text-sm text-olive-400 mt-1.5 max-w-sm text-center">
+        <p className="text-sm text-olive-500 mt-1.5 max-w-sm text-center">
           You don&apos;t have any upcoming sessions. Browse the marketplace to
           find your next experience.
         </p>
@@ -143,7 +143,7 @@ export default function UpcomingFeed({ journeys }: UpcomingFeedProps) {
 
         return (
           <div key={groupName}>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-olive-400 mb-3 pl-1">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-olive-500 mb-3 pl-1">
               {groupName}
             </h3>
             <div className="space-y-2">
@@ -214,7 +214,7 @@ function FeedItemCard({ item }: { item: FeedItem }) {
                   <span className="text-[8px] text-olive-600">{journey.practitioner.name?.charAt(0)}</span>
                 </div>
               )}
-              <span className="text-[12px] text-olive-400">with {journey.practitioner.name}</span>
+              <span className="text-[12px] text-olive-500">with {journey.practitioner.name}</span>
             </div>
           )}
 
@@ -232,7 +232,7 @@ function FeedItemCard({ item }: { item: FeedItem }) {
             {isCourseOrPackage && (
               <>
                 <span>·</span>
-                <span className="text-olive-400">
+                <span className="text-olive-500">
                   {journey.next_session_title && (
                     <>{journey.next_session_title} · </>
                   )}

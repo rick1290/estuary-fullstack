@@ -289,7 +289,7 @@ export default function AddResourceDialog({ onAddResource, trigger }: AddResourc
               id="share-with-clients"
               checked={resource.sharedWithClients}
               onChange={(e) => setResource({ ...resource, sharedWithClients: e.target.checked })}
-              className="rounded border-gray-300"
+              className="rounded border-sage-300"
             />
             <Label htmlFor="share-with-clients">Share with clients</Label>
           </div>

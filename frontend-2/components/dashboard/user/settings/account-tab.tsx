@@ -76,10 +76,8 @@ export default function AccountTab() {
 
   // Load user's modality preferences when data is available
   useEffect(() => {
-    console.log("User modality preferences response:", userModalityPrefs)
     if (userModalityPrefs?.results) {
       const modalityIds = userModalityPrefs.results.map((pref: any) => pref.id)
-      console.log("Setting selected modality IDs:", modalityIds)
       setSelectedModalities(modalityIds)
     }
   }, [userModalityPrefs])
@@ -96,9 +94,6 @@ export default function AccountTab() {
   }
 
   const handleModalityToggle = (modalityId: number) => {
-    console.log("Toggling modality:", modalityId)
-    console.log("Current selected:", selectedModalities)
-    
     if (selectedModalities.includes(modalityId)) {
       setSelectedModalities(selectedModalities.filter((id) => id !== modalityId))
     } else {
@@ -146,7 +141,7 @@ export default function AccountTab() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-serif text-2xl font-light text-olive-900">Account Settings</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900">Account Settings</h2>
         <p className="mt-1 text-sm text-olive-600">Update your personal information and preferences</p>
       </div>
 
@@ -154,7 +149,7 @@ export default function AccountTab() {
       <div>
         <h3 className="text-sm font-medium text-olive-900 mb-4">Profile Photo</h3>
         <div className="flex items-center gap-6">
-          <Avatar className="h-24 w-24 ring-4 ring-gray-100">
+          <Avatar className="h-24 w-24 ring-4 ring-sage-100">
             <AvatarImage src={profileImage || undefined} alt="Profile" />
             <AvatarFallback className="bg-warm-100 text-warm-600 text-2xl font-medium">
               {firstName.charAt(0) || userProfile?.email?.charAt(0)?.toUpperCase() || "U"}
@@ -266,7 +261,6 @@ export default function AccountTab() {
         
         <div className="flex flex-wrap gap-2">
           {modalitiesData?.results?.map((modality) => {
-            console.log("Modality:", modality.id, modality.name, "Selected:", selectedModalities.includes(modality.id))
             return (
               <Badge
                 key={modality.id}

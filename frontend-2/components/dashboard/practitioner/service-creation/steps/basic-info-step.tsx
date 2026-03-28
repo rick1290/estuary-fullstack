@@ -28,19 +28,6 @@ export function BasicInfoStep() {
   const { data: globalCategories = [], isLoading: isLoadingGlobal, error: globalError } = useServiceCategories()
   const { data: practitionerCategories = [], isLoading: isLoadingPractitioner, error: practitionerError } = usePractitionerCategories()
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
-  
-  console.log('BasicInfoStep - Categories Debug:', {
-    globalCategories,
-    practitionerCategories,
-    isLoadingGlobal,
-    isLoadingPractitioner,
-    globalError,
-    practitionerError,
-    formState_category_id: formState.category_id,
-    formState_practitioner_category_id: formState.practitioner_category_id,
-    globalCategoriesLength: globalCategories?.length,
-    practitionerCategoriesLength: practitionerCategories?.length
-  })
 
   const handleChange = (field: string, value: string) => {
     updateFormField(field, value)
@@ -100,14 +87,11 @@ export function BasicInfoStep() {
                   ) : (
                     <>
                       <SelectItem value="none">No category</SelectItem>
-                      {globalCategories.map((category) => {
-                        console.log('Rendering global category:', category)
-                        return (
+                      {globalCategories.map((category) => (
                           <SelectItem key={category.id} value={category.id.toString()}>
                             {category.name}
                           </SelectItem>
-                        )
-                      })}
+                      ))}
                     </>
                   )}
                 </SelectContent>
@@ -151,7 +135,6 @@ export function BasicInfoStep() {
                     <>
                       <SelectItem value="none">No category</SelectItem>
                       {practitionerCategories.map((category) => {
-                        console.log('Rendering practitioner category:', category)
                         return (
                           <SelectItem key={category.id} value={category.id.toString()}>
                             <div className="flex items-center gap-2">

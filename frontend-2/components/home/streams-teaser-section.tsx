@@ -40,7 +40,7 @@ export default function StreamsTeaserSection() {
 
               <motion.h2
                 variants={itemFade}
-                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900 mb-5"
+                className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900 mb-5"
               >
                 Explore{" "}
                 <em className="italic text-terracotta-600">Living Streams</em>

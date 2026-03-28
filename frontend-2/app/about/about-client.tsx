@@ -109,7 +109,7 @@ export default function AboutPage() {
 
           <motion.h1
             variants={itemFade}
-            className="font-serif text-4xl sm:text-5xl md:text-[56px] font-light leading-[1.12] tracking-tight text-olive-900 mb-6"
+            className="font-serif text-4xl sm:text-5xl md:text-[56px] font-normal leading-[1.12] tracking-tight text-olive-900 mb-6"
           >
             We Built the Home
             <br />
@@ -129,7 +129,7 @@ export default function AboutPage() {
 
       {/* ── Image band placeholder ── */}
       <div className="mx-4 sm:mx-8 h-48 sm:h-64 md:h-80 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-sage-200/60 via-cream-100 to-terracotta-200/40 flex items-center justify-center">
-        <span className="text-xs tracking-widest uppercase text-olive-400 font-medium">
+        <span className="text-xs tracking-widest uppercase text-olive-500 font-medium">
           Founder / Team Photograph
         </span>
       </div>
@@ -152,7 +152,7 @@ export default function AboutPage() {
 
             <motion.h2
               variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-olive-900 mb-10"
+              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-olive-900 mb-10"
             >
               It Started With
               <br />a{" "}
@@ -201,7 +201,7 @@ export default function AboutPage() {
               </motion.p>
               <motion.blockquote
                 variants={itemFade}
-                className="font-serif text-xl italic font-light leading-snug text-olive-800 pl-5 border-l-2 border-terracotta-400 my-8"
+                className="font-serif text-xl italic font-normal leading-snug text-olive-800 pl-5 border-l-2 border-terracotta-400 my-8"
               >
                 What if the platform understood the work — and was built to
                 honor it?
@@ -219,7 +219,7 @@ export default function AboutPage() {
               variants={itemFade}
               className="sm:max-w-[240px] flex-shrink-0 bg-cream-100/60 border border-sage-200/60 rounded-2xl p-5 sm:p-6"
             >
-              <p className="font-serif text-lg italic font-light leading-relaxed text-olive-800">
+              <p className="font-serif text-lg italic font-normal leading-relaxed text-olive-800">
                 &ldquo;We didn&rsquo;t want to build another tool. We wanted to
                 build a home — somewhere practitioners could do their best work
                 without the overhead stealing from it.&rdquo;
@@ -252,7 +252,7 @@ export default function AboutPage() {
 
             <motion.h2
               variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-olive-900 mb-4"
+              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-olive-900 mb-4"
             >
               The Values That
               <br />
@@ -281,7 +281,7 @@ export default function AboutPage() {
                 variants={itemFade}
                 className={`relative rounded-2xl border p-6 overflow-hidden ${v.bg}`}
               >
-                <span className="absolute -top-2 right-4 font-serif text-[72px] font-light leading-none text-sage-200/50 pointer-events-none select-none">
+                <span className="absolute -top-2 right-4 font-serif text-[72px] font-normal leading-none text-sage-200/50 pointer-events-none select-none">
                   {v.num}
                 </span>
                 <h3 className="font-serif text-lg font-normal text-olive-900 mb-2 relative z-10">
@@ -316,7 +316,7 @@ export default function AboutPage() {
 
             <motion.h2
               variants={itemFade}
-              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-olive-900 mb-4"
+              className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-olive-900 mb-4"
             >
               Built for the Full
               <br />
@@ -375,7 +375,7 @@ export default function AboutPage() {
 
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-cream-50 mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-cream-50 mb-5"
           >
             We&rsquo;re In This
             <br />
@@ -393,7 +393,7 @@ export default function AboutPage() {
 
           <motion.blockquote
             variants={itemFade}
-            className="font-serif text-xl italic font-light leading-snug text-cream-100/90 pl-5 border-l-2 border-terracotta-400 my-8"
+            className="font-serif text-xl italic font-normal leading-snug text-cream-100/90 pl-5 border-l-2 border-terracotta-400 my-8"
           >
             When your practice thrives, Estuary thrives. That&rsquo;s not a
             tagline. It&rsquo;s the business model.
@@ -435,7 +435,7 @@ export default function AboutPage() {
         >
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[50px] font-light leading-[1.2] text-olive-900 mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[50px] font-normal leading-[1.2] text-olive-900 mb-5"
           >
             Ready to Come{" "}
             <em className="italic text-terracotta-600">Home?</em>
@@ -473,7 +473,7 @@ export default function AboutPage() {
 
           <motion.p
             variants={itemFade}
-            className="text-xs text-olive-400 font-light mt-5 tracking-wide"
+            className="text-xs text-olive-500 font-light mt-5 tracking-wide"
           >
             Setup takes 15 minutes · Cancel anytime
           </motion.p>

@@ -35,11 +35,6 @@ export default function BookingRoomPage() {
     if (recordingStatus) {
       const isActive = ['starting', 'active'].includes(recordingStatus);
       setIsRecording(isActive);
-      console.log('Initialized recording state:', {
-        recording_status: recordingStatus,
-        source: (roomInfo as { recording_status?: string })?.recording_status ? 'roomInfo' : 'bookingDetails',
-        isRecording: isActive
-      });
     }
   }, [(roomInfo as { recording_status?: string })?.recording_status, bookingDetails?.room?.recording_status]);
 
@@ -94,12 +89,12 @@ export default function BookingRoomPage() {
   // Loading state
   if (tokenLoading || permissionsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <Card className="bg-gray-800 border-gray-700">
+      <div className="min-h-screen flex items-center justify-center bg-olive-900">
+        <Card className="bg-olive-800 border-sage-700">
           <CardContent className="p-8">
             <div className="flex flex-col items-center">
               <Loader2 className="h-8 w-8 animate-spin text-white mb-4" />
-              <p className="text-gray-300">Connecting to session...</p>
+              <p className="text-olive-400">Connecting to session...</p>
             </div>
           </CardContent>
         </Card>
@@ -110,8 +105,8 @@ export default function BookingRoomPage() {
   // Error state
   if (tokenError || !token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-        <Card className="max-w-md w-full bg-gray-800 border-gray-700">
+      <div className="min-h-screen flex items-center justify-center bg-olive-900 p-4">
+        <Card className="max-w-md w-full bg-olive-800 border-sage-700">
           <CardContent className="p-6">
             <Alert variant="destructive" className="bg-red-900/20 border-red-800">
               <AlertCircle className="h-4 w-4" />
@@ -135,8 +130,8 @@ export default function BookingRoomPage() {
   // Permission check
   if (!permissions.canJoin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-        <Card className="max-w-md w-full bg-gray-800 border-gray-700">
+      <div className="min-h-screen flex items-center justify-center bg-olive-900 p-4">
+        <Card className="max-w-md w-full bg-olive-800 border-sage-700">
           <CardContent className="p-6">
             <Alert variant="destructive" className="bg-red-900/20 border-red-800">
               <AlertCircle className="h-4 w-4" />

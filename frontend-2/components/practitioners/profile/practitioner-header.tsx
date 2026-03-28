@@ -102,7 +102,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
               <div className="text-center sm:text-left w-full sm:w-auto">
-                <h1 className="font-serif text-xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-1 leading-[1.15]">
+                <h1 className="font-serif text-xl sm:text-3xl lg:text-4xl font-normal text-olive-900 mb-1 leading-[1.15]">
                   {practitioner.display_name}
                 </h1>
                 {(practitioner.professional_title || practitioner.title) && (

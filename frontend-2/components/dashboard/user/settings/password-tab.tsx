@@ -19,12 +19,11 @@ export default function PasswordTab() {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     // Password update logic would go here
-    console.log("Password update submitted")
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <h2 className="font-serif text-2xl font-light text-olive-900 mb-4">Change Password</h2>
+      <h2 className="font-serif text-2xl font-normal text-olive-900 mb-4">Change Password</h2>
       <p className="text-muted-foreground mb-6">Update your password to keep your account secure.</p>
 
       <div className="space-y-6">

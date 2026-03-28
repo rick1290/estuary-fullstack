@@ -49,9 +49,6 @@ export default function PractitionerUpcomingBookings() {
     })
   )
 
-  // Debug logging
-  console.log('Bookings Response:', bookingsResponse)
-
   const bookings = useMemo(() => {
     if (!bookingsResponse?.results) return []
     

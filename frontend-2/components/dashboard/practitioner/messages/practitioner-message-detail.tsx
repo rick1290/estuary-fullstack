@@ -78,8 +78,6 @@ export default function PractitionerMessageDetail() {
   } = useWebSocketMessaging({
     conversationId: conversationId || undefined,
     onMessage: (message) => {
-      console.log('PractitionerMessageDetail received WebSocket message:', message)
-      
       // Force a complete refetch of messages
       refetchMessages()
       

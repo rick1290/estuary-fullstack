@@ -55,7 +55,7 @@ export default function DashboardEmptyState({
       <div className={cn("rounded-full p-3 mb-4", iconBgClass)}>
         <Icon className={cn("h-6 w-6", iconColorClass)} />
       </div>
-      <h3 className="font-serif text-lg font-light text-olive-900 mb-2">{title}</h3>
+      <h3 className="font-serif text-lg font-normal text-olive-900 mb-2">{title}</h3>
       <p className="text-muted-foreground mb-6 max-w-md">{description}</p>
       {(cta || secondaryCta) && (
         <div className="flex items-center gap-3">

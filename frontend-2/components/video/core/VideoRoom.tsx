@@ -152,11 +152,9 @@ export function VideoRoom({
       options={roomOptions}
       connect={true}
       onConnected={() => {
-        console.log('Connected to LiveKit room successfully!');
         onConnected?.();
       }}
       onDisconnected={(reason) => {
-        console.log('Disconnected:', reason);
         onLeaveRoom();
       }}
       onError={(error) => {
@@ -622,7 +620,6 @@ function ParticipantsSidebar({ isHost, onClose }: { isHost: boolean; onClose: ()
           );
         }
       });
-      console.log(`Sent ${mute ? 'mute' : 'unmute'} request to ${participant.identity}`);
     } catch (error) {
       console.error('Failed to mute participant:', error);
     }
@@ -639,7 +636,6 @@ function ParticipantsSidebar({ isHost, onClose }: { isHost: boolean; onClose: ()
         })),
         { reliable: true }
       );
-      console.log(`Sent ${disable ? 'disable' : 'enable'} video request to ${participant.identity}`);
     } catch (error) {
       console.error('Failed to toggle participant video:', error);
     }
@@ -928,9 +924,7 @@ function LeaveButton({ onLeaveRoom }: { onLeaveRoom: () => void }) {
 
     try {
       if (connectionState === ConnectionState.Connected) {
-        console.log('Disconnecting from LiveKit room...');
         await room.disconnect(true);
-        console.log('Successfully disconnected from LiveKit room');
       }
     } catch (error) {
       console.error('Error disconnecting from room:', error);
@@ -1060,7 +1054,6 @@ function HostControlHandler() {
 
         // session_ended is broadcast to all participants (no participantId filter)
         if (message.type === 'session_ended') {
-          console.log('Session ended by host, disconnecting...');
           room.disconnect(true);
           return;
         }

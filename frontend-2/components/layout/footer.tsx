@@ -52,15 +52,15 @@ export default function Footer() {
         <div className="grid gap-8 lg:grid-cols-5">
           {/* Brand section */}
           <div className="lg:col-span-2 max-w-md">
-            <h3 className="text-2xl font-serif font-medium mb-4 tracking-[0.25em]">ESTUARY</h3>
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            <h3 className="text-2xl font-serif font-semibold mb-4 tracking-[0.25em]">ESTUARY</h3>
+            <p className="text-sm text-olive-600 mb-6 leading-relaxed">
               Your sanctuary for wellness, growth, and meaningful connections. 
               Join thousands discovering balance and transformation.
             </p>
             
             {/* Newsletter */}
             <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Stay connected</h4>
+              <h4 className="text-sm font-medium text-olive-900 mb-3">Stay connected</h4>
               <form className="flex gap-2">
                 <Input 
                   type="email"
@@ -71,7 +71,7 @@ export default function Footer() {
                   <ArrowRight className="h-4 w-4" strokeWidth="1.5" />
                 </Button>
               </form>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-olive-500 mt-2">
                 Monthly wellness insights. Unsubscribe anytime.
               </p>
             </div>
@@ -136,7 +136,7 @@ export default function Footer() {
           {/* Legal links and copyright */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <p className="text-sm text-olive-600">
-              © {new Date().getFullYear()} <span className="font-serif font-medium tracking-[0.25em]">ESTUARY</span>
+              © {new Date().getFullYear()} <span className="font-serif font-semibold tracking-[0.25em]">ESTUARY</span>
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {footerLinks.legal.map((link) => (

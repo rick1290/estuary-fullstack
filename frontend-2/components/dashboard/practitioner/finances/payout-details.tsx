@@ -19,7 +19,7 @@ export function PayoutDetails({ payout }: PayoutDetailsProps) {
       case "failed":
         return "bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-400"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800/20 dark:text-gray-400"
+        return "bg-sage-100 text-olive-800 dark:bg-olive-800/20 dark:text-olive-500"
     }
   }
 
@@ -46,7 +46,7 @@ export function PayoutDetails({ payout }: PayoutDetailsProps) {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <p className="font-serif text-3xl font-light text-olive-900">{formatCurrency(payout.amount)}</p>
+              <p className="font-serif text-3xl font-normal text-olive-900">{formatCurrency(payout.amount)}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

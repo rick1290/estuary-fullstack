@@ -164,7 +164,7 @@ export default function PostPageContent({ uuid }: PostPageContentProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream-50">
         <div className="text-center">
-          <h2 className="font-serif text-2xl font-light text-olive-900 mb-2">
+          <h2 className="font-serif text-2xl font-normal text-olive-900 mb-2">
             Post not found
           </h2>
           <p className="text-muted-foreground mb-4">
@@ -183,7 +183,7 @@ export default function PostPageContent({ uuid }: PostPageContentProps) {
   const premiumPrice = ((stream?.premium_tier_price_cents || 0) / 100).toFixed(0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-sage-50">
       {/* Top bar */}
       <div className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">

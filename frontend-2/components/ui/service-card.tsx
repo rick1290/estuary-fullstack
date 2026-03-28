@@ -253,7 +253,7 @@ export default function ServiceCard({
                 </span>
               ))}
               {categories.length > 3 && (
-                <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-400 rounded-full">
+                <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-500 rounded-full">
                   +{categories.length - 3}
                 </span>
               )}
@@ -266,7 +266,7 @@ export default function ServiceCard({
               <span className="text-base sm:text-lg font-semibold text-olive-900 truncate">
                 {typeof price === "number" ? `$${price}` : price}
               </span>
-              <span className="text-[10px] sm:text-[11px] text-olive-400 font-light hidden sm:inline">investment</span>
+              <span className="text-[10px] sm:text-[11px] text-olive-500 font-light hidden sm:inline">investment</span>
             </div>
             <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-[13px] font-medium flex-shrink-0 transition-colors">
               {getCtaText()}

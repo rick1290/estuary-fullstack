@@ -50,7 +50,7 @@ export default function FormsStatusBanner({ bookingUuid }: FormsStatusBannerProp
             {consentNeeded ? 'Consent form required before session' : 'Pre-session form available'}
           </span>
         </div>
-        <ChevronRight className="h-4 w-4 text-olive-400" />
+        <ChevronRight className="h-4 w-4 text-olive-500" />
       </div>
     </Link>
   )

@@ -52,8 +52,6 @@ export function DailyVideoRoom({
 
     // Only create the call frame once
     if (!callFrameRef.current) {
-      console.log("Creating Daily.co call frame for room:", roomUrl)
-
       // @ts-ignore - Daily is loaded via script
       callFrameRef.current = window.DailyIframe.createFrame(containerRef.current, {
         iframeStyle: {
@@ -69,14 +67,11 @@ export function DailyVideoRoom({
       // Set up event listeners
       callFrameRef.current
         .on("joining-meeting", () => {
-          console.log("Joining meeting...")
         })
         .on("joined-meeting", () => {
-          console.log("Joined meeting!")
           setIsCallActive(true)
         })
         .on("left-meeting", (event: any) => {
-          console.log("Left meeting", event)
           setIsCallActive(false)
 
           // Determine why the session ended
@@ -101,8 +96,6 @@ export function DailyVideoRoom({
         })
 
       // Join the call - FIX: Only include token if it's a string
-      console.log("Joining room:", roomUrl)
-
       // Create join options object
       const joinOptions: any = {
         url: roomUrl,
@@ -194,7 +187,6 @@ export function DailyVideoRoom({
       <Script
         src="https://unpkg.com/@daily-co/daily-js"
         onLoad={() => {
-          console.log("Daily.co script loaded")
           setIsScriptLoaded(true)
         }}
       />

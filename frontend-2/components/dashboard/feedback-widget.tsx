@@ -252,7 +252,7 @@ export default function FeedbackWidget() {
                         <p className="text-xs text-olive-500">Browse guides and FAQs</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-olive-400" />
+                    <ExternalLink className="h-4 w-4 text-olive-500" />
                   </Link>
 
                   <Link
@@ -267,7 +267,7 @@ export default function FeedbackWidget() {
                         <p className="text-xs text-olive-500">Step-by-step setup guide</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-olive-400" />
+                    <ExternalLink className="h-4 w-4 text-olive-500" />
                   </Link>
 
                   <a
@@ -281,12 +281,12 @@ export default function FeedbackWidget() {
                         <p className="text-xs text-olive-500">support@estuarywellness.com</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-olive-400" />
+                    <ExternalLink className="h-4 w-4 text-olive-500" />
                   </a>
                 </div>
 
                 <div className="pt-2 border-t border-sage-100">
-                  <p className="text-xs text-olive-400 text-center">
+                  <p className="text-xs text-olive-500 text-center">
                     Can't find what you need?{" "}
                     <button
                       onClick={() => setFeedbackType("bug")}
@@ -368,7 +368,7 @@ export default function FeedbackWidget() {
                 {/* Auto-captured context */}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-sage-50/50 border border-sage-100">
                   <div className="w-1.5 h-1.5 rounded-full bg-sage-400 shrink-0" />
-                  <p className="text-[11px] text-olive-400 truncate">
+                  <p className="text-[11px] text-olive-500 truncate">
                     Page: {pathname}
                   </p>
                 </div>

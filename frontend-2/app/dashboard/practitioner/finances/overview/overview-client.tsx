@@ -75,7 +75,7 @@ export default function FinancialOverviewClient() {
                 </>
               ) : (
                 <>
-                  <div className="font-serif text-2xl font-light text-olive-900">
+                  <div className="font-serif text-2xl font-normal text-olive-900">
                     {earningsData?.totals?.gross_amount_display || "$0.00"}
                   </div>
                   <p className="text-xs text-muted-foreground">Lifetime earnings</p>
@@ -96,7 +96,7 @@ export default function FinancialOverviewClient() {
                 </>
               ) : (
                 <>
-                  <div className="font-serif text-2xl font-light text-olive-900">
+                  <div className="font-serif text-2xl font-normal text-olive-900">
                     {balanceData?.available_balance_display || "$0.00"}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -119,7 +119,7 @@ export default function FinancialOverviewClient() {
                 </>
               ) : (
                 <>
-                  <div className="font-serif text-2xl font-light text-olive-900">
+                  <div className="font-serif text-2xl font-normal text-olive-900">
                     {balanceData?.pending_balance_display || "$0.00"}
                   </div>
                   <p className="text-xs text-muted-foreground">48-hour hold period</p>
@@ -140,7 +140,7 @@ export default function FinancialOverviewClient() {
                 </>
               ) : (
                 <>
-                  <div className="font-serif text-2xl font-light text-olive-900">
+                  <div className="font-serif text-2xl font-normal text-olive-900">
                     {balanceData?.next_payout_date ? format(parseISO(balanceData.next_payout_date), 'MMM d') : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">Weekly automatic payout</p>

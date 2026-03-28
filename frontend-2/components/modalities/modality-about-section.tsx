@@ -36,7 +36,7 @@ export default function ModalityAboutSection({
           <span className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3 block">
             About This Modality
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-light text-olive-900">
+          <h2 className="font-serif text-3xl sm:text-4xl font-normal text-olive-900">
             What Is {modalityName}?
           </h2>
         </motion.div>
@@ -51,7 +51,7 @@ export default function ModalityAboutSection({
           <>
             <motion.h3
               variants={itemFade}
-              className="font-serif text-2xl font-light text-olive-900 text-center mb-8"
+              className="font-serif text-2xl font-normal text-olive-900 text-center mb-8"
             >
               Benefits of {modalityName}
             </motion.h3>

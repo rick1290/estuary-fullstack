@@ -186,7 +186,7 @@ export default function ContentFeed({
   if (isError) {
     return (
       <div className="py-8 text-center">
-        <h3 className="mb-2 font-serif text-lg font-light text-muted-foreground">Error loading content</h3>
+        <h3 className="mb-2 font-serif text-lg font-normal text-muted-foreground">Error loading content</h3>
         <p className="text-muted-foreground">Please try again later</p>
       </div>
     )
@@ -200,7 +200,7 @@ export default function ContentFeed({
             <div className="p-4 bg-sage-50 rounded-full mb-4">
               <Heart className="h-10 w-10 text-sage-400" strokeWidth="1.5" />
             </div>
-            <h3 className="font-serif text-xl font-light text-olive-900 mb-2 text-center">
+            <h3 className="font-serif text-xl font-normal text-olive-900 mb-2 text-center">
               No posts from your subscriptions
             </h3>
             <p className="text-muted-foreground text-center mb-6 max-w-sm">
@@ -215,7 +215,7 @@ export default function ContentFeed({
             <div className="p-4 bg-sage-50 rounded-full mb-4">
               <Newspaper className="h-10 w-10 text-sage-400" strokeWidth="1.5" />
             </div>
-            <h3 className="font-serif text-xl font-light text-olive-900 mb-2 text-center">
+            <h3 className="font-serif text-xl font-normal text-olive-900 mb-2 text-center">
               No content found
             </h3>
             <p className="text-muted-foreground text-center mb-6 max-w-sm">

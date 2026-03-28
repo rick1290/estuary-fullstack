@@ -31,7 +31,7 @@ export default function UserDashboardFavorites() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif text-lg font-light text-olive-900 flex items-center gap-2">
+          <CardTitle className="font-serif text-lg font-normal text-olive-900 flex items-center gap-2">
             <Heart className="h-5 w-5" />
             My Favorites
           </CardTitle>
@@ -55,7 +55,7 @@ export default function UserDashboardFavorites() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif text-lg font-light text-olive-900 flex items-center gap-2">
+          <CardTitle className="font-serif text-lg font-normal text-olive-900 flex items-center gap-2">
             <Heart className="h-5 w-5" />
             My Favorites
           </CardTitle>
@@ -78,7 +78,7 @@ export default function UserDashboardFavorites() {
   return (
     <Card className="border border-sage-200/60 bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="font-serif text-lg font-light text-olive-900 flex items-center gap-2">
+        <CardTitle className="font-serif text-lg font-normal text-olive-900 flex items-center gap-2">
           <Heart className="h-4 w-4 text-terracotta-500" />
           My Favorites
         </CardTitle>
@@ -121,7 +121,7 @@ export default function UserDashboardFavorites() {
                       </div>
                       {practitioner.primary_location && (
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-olive-400" />
+                          <MapPin className="h-3 w-3 text-olive-500" />
                           <span className="text-xs text-muted-foreground">
                             {practitioner.primary_location.city}
                           </span>
@@ -175,7 +175,7 @@ export default function UserDashboardFavorites() {
                           </Badge>
                           {service.duration_minutes && (
                             <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3 text-olive-400" />
+                              <Clock className="h-3 w-3 text-olive-500" />
                               <span className="text-xs text-muted-foreground">
                                 {service.duration_minutes} min
                               </span>

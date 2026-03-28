@@ -62,7 +62,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
           <TabsContent value="experience" className="p-5 m-0">
             <div className="space-y-6">
               <div>
-                <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Professional Background</h3>
+                <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Professional Background</h3>
                 <ExperienceTab
                   years_of_experience={practitioner.years_of_experience}
                   completed_sessions={practitioner.completed_sessions}
@@ -71,7 +71,7 @@ export default function ProfileTabs({ practitioner }: ProfileTabsProps) {
                 />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-light text-olive-900 mb-5">Education & Certifications</h3>
+                <h3 className="font-serif text-xl font-normal text-olive-900 mb-5">Education & Certifications</h3>
                 <CredentialsTab
                   educations={practitioner.educations || []}
                   certifications={practitioner.certifications || []}

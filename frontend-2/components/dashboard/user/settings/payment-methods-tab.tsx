@@ -111,7 +111,7 @@ export default function PaymentMethodsTab() {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="font-serif text-2xl font-light text-olive-900">Payment Methods</h2>
+          <h2 className="font-serif text-2xl font-normal text-olive-900">Payment Methods</h2>
           <Skeleton className="h-10 w-40" />
         </div>
         <div className="space-y-4">
@@ -126,7 +126,7 @@ export default function PaymentMethodsTab() {
   if (error) {
     return (
       <div>
-        <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Payment Methods</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900 mb-6">Payment Methods</h2>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -143,7 +143,7 @@ export default function PaymentMethodsTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-serif text-2xl font-light text-olive-900">Payment Methods</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900">Payment Methods</h2>
         <Button onClick={handleAddCard} className="flex items-center gap-1">
           <Plus className="h-4 w-4" />
           Add Payment Method

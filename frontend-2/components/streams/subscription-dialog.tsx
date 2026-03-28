@@ -149,7 +149,7 @@ export default function SubscriptionDialog({
                     className={`flex flex-col p-4 rounded-lg border-2 cursor-pointer transition-all
                       ${selectedTier === tier.value 
                         ? 'border-sage-600 bg-sage-50/50' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-sage-200 hover:border-sage-300'
                       }
                     `}
                   >

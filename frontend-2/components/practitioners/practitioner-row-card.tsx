@@ -163,7 +163,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-2xl max-sm:text-lg font-serif font-light text-olive-700/30">
+                    <span className="text-2xl max-sm:text-lg font-serif font-normal text-olive-700/30">
                       {getInitials(displayName)}
                     </span>
                   </div>
@@ -192,7 +192,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                   disabled={isLoading}
                   aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
                 >
-                  <Heart className={`h-3.5 w-3.5 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-olive-400 hover:text-rose-500"}`} strokeWidth="1.5" />
+                  <Heart className={`h-3.5 w-3.5 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : "text-olive-500 hover:text-rose-500"}`} strokeWidth="1.5" />
                 </Button>
               </div>
 
@@ -207,7 +207,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                 <span className="inline-flex items-center gap-1 text-xs text-olive-500">
                   <Star className="h-3 w-3 text-terracotta-400 fill-terracotta-400" strokeWidth="1.5" />
                   <span className="font-medium text-olive-800">{practitioner.average_rating || practitioner.average_rating_float || "–"}</span>
-                  <span className="text-olive-400">({practitioner.total_reviews || 0} reviews)</span>
+                  <span className="text-olive-500">({practitioner.total_reviews || 0} reviews)</span>
                 </span>
 
                 {/* Location */}
@@ -246,13 +246,13 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                       </span>
                     ))}
                     {practitioner.specializations.length > 4 && (
-                      <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-400 rounded-full">
+                      <span className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-500 rounded-full">
                         +{practitioner.specializations.length - 4}
                       </span>
                     )}
                   </div>
                 ) : (practitioner.bio_short || practitioner.bio) ? (
-                  <p className="text-xs italic font-light text-olive-400 line-clamp-1 flex-1 min-w-0">
+                  <p className="text-xs italic font-light text-olive-500 line-clamp-1 flex-1 min-w-0">
                     {practitioner.bio_short || practitioner.bio}
                   </p>
                 ) : (

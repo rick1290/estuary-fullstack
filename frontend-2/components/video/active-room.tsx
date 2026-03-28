@@ -77,7 +77,6 @@ export function ActiveRoom({ sessionId, sessionType, title, practitioner, schedu
   }
 
   const handleConfirmExit = (reason?: string) => {
-    console.log("Exit reason:", reason)
     setSessionEnded(true)
     setShowExitDialog(false)
   }

@@ -384,12 +384,6 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
       if (!Array.isArray(updates.child_service_configs)) {
         updates.child_service_configs = [updates.child_service_configs]
       }
-      console.log('Saving bundle with child_service_configs:', updates.child_service_configs)
-    }
-
-    // Debug logging for package and bundle sections
-    if (sectionId === 'package-composition' || sectionId === 'bundle-configuration') {
-      console.log(`Saving ${sectionId}:`, updates)
     }
 
     // For package, bundle, and service sessions, the data is already properly formatted
@@ -611,7 +605,7 @@ export function ServiceEditAccordion({ serviceId }: ServiceEditAccordionProps) {
           {/* Main Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h1 className="font-serif text-2xl font-light text-olive-900">{service.name}</h1>
+              <h1 className="font-serif text-2xl font-normal text-olive-900">{service.name}</h1>
               <div className="flex items-center gap-2">
                 <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
                   {service.status}

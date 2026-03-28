@@ -135,7 +135,7 @@ export function ControlBar({
       </Button>
 
       {/* Divider */}
-      <div className="w-px h-8 bg-gray-600 mx-2" />
+      <div className="w-px h-8 bg-sage-600 mx-2" />
 
       {/* Recording (Host Only) */}
       {isHost && onStartRecording && (
@@ -175,7 +175,7 @@ export function ControlBar({
       </Button>
 
       {/* Divider */}
-      <div className="w-px h-8 bg-gray-600 mx-2" />
+      <div className="w-px h-8 bg-sage-600 mx-2" />
 
       {/* Leave Call */}
       <Button

@@ -85,7 +85,7 @@ export default function RoomLobbyPage() {
           <CardContent className="p-8">
             <div className="flex flex-col items-center">
               <Loader2 className="h-8 w-8 animate-spin text-sage-600 mb-4" />
-              <p className="text-gray-600">Loading room details...</p>
+              <p className="text-olive-600">Loading room details...</p>
             </div>
           </CardContent>
         </Card>

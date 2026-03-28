@@ -138,7 +138,7 @@ export default function ServiceListItem({ service, onDelete, onToggleStatus, onD
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex-grow space-y-2">
                 <Link href={`/dashboard/practitioner/services/${service.id}`}>
-                  <h3 className="font-serif font-light text-lg text-olive-900 hover:text-terracotta-600 transition-colors">{service.name}</h3>
+                  <h3 className="font-serif font-normal text-lg text-olive-900 hover:text-terracotta-600 transition-colors">{service.name}</h3>
                 </Link>
 
                 <p className="text-sm text-muted-foreground line-clamp-1 hidden sm:block">{service.description}</p>

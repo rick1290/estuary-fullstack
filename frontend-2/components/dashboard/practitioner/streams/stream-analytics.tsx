@@ -122,15 +122,15 @@ export default function StreamAnalyticsComponent({ analytics }: StreamAnalyticsP
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="text-center p-4 border rounded-lg">
-              <div className="font-serif text-2xl font-light text-green-600">${analytics.revenue.monthly}</div>
+              <div className="font-serif text-2xl font-normal text-green-600">${analytics.revenue.monthly}</div>
               <p className="text-sm text-muted-foreground">This Month</p>
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <div className="font-serif text-2xl font-light text-green-600">${analytics.revenue.total}</div>
+              <div className="font-serif text-2xl font-normal text-green-600">${analytics.revenue.total}</div>
               <p className="text-sm text-muted-foreground">Total Revenue</p>
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <div className="font-serif text-2xl font-light text-green-600">
+              <div className="font-serif text-2xl font-normal text-green-600">
                 ${(analytics.revenue.total / analytics.totalSubscribers).toFixed(2)}
               </div>
               <p className="text-sm text-muted-foreground">Avg. per Subscriber</p>

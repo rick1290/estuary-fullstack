@@ -445,7 +445,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               )}
             </div>
 
-            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-olive-900 mb-3 leading-[1.15]">
               {course.title}
             </h1>
 
@@ -459,7 +459,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                   <img src={course.practitioners[0].image} alt={course.practitioners[0].name} className="w-8 h-8 rounded-full object-cover border border-sage-200/60" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-100 flex items-center justify-center">
-                    <span className="text-[10px] font-serif font-light text-olive-700/50">
+                    <span className="text-[10px] font-serif font-normal text-olive-700/50">
                       {course.practitioners[0].name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                     </span>
                   </div>
@@ -493,7 +493,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
                 <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                   <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
                   <span className="font-medium text-olive-800">{course.rating}</span>
-                  <span className="text-olive-400">({course.reviewCount})</span>
+                  <span className="text-olive-500">({course.reviewCount})</span>
                 </span>
               )}
             </div>
@@ -506,7 +506,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* Course Overview */}
               <section>
                 <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Begin Your <em className="italic text-terracotta-600">Transformation</em></h2>
+                <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Begin Your <em className="italic text-terracotta-600">Transformation</em></h2>
                 <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line break-words">
                   {course.longDescription}
                 </p>
@@ -516,7 +516,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {course.whatYoullLearn && course.whatYoullLearn.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Master</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Master</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {course.whatYoullLearn.map((item, index) => (
                       <div key={index} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-sm transition-all">
@@ -537,7 +537,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* What's Included */}
               {course.includes && course.includes.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
                   <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
                     <div className="grid md:grid-cols-2 gap-3">
                       {course.includes.map((item, index) => (
@@ -556,7 +556,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {/* Prerequisites */}
               {course.prerequisites && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5"><em className="italic text-terracotta-600">Prerequisites</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5"><em className="italic text-terracotta-600">Prerequisites</em></h2>
                   <div className="bg-cream-100 rounded-xl p-6">
                     <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">{course.prerequisites}</p>
                   </div>
@@ -565,7 +565,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
 
               {/* Your Learning Journey */}
               <section>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Your Learning <em className="italic text-terracotta-600">Journey</em></h2>
+                <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Your Learning <em className="italic text-terracotta-600">Journey</em></h2>
                 <div className="flex items-center gap-2 text-sm text-olive-600 bg-sage-50/50 rounded-lg p-3 mb-6">
                   <Clock className="h-4 w-4" />
                   <span>
@@ -649,7 +649,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               {course.benefits && course.benefits.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {course.benefits.map((benefit, index) => (
                       <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
@@ -678,7 +678,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
               <section className="pt-12 border-t border-sage-200/40">
                 <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-6 py-8 sm:px-8 sm:py-10 text-center">
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-3">
                     Start your <em className="italic text-terracotta-600">learning journey</em> today
                   </h2>
                   <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
@@ -734,7 +734,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ slug: 
       <Drawer open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="pb-2">
-            <DrawerTitle className="font-serif text-lg font-light text-olive-900">Enroll in Course</DrawerTitle>
+            <DrawerTitle className="font-serif text-lg font-normal text-olive-900">Enroll in Course</DrawerTitle>
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
             <CourseBookingPanel course={course} serviceData={serviceData} compact />

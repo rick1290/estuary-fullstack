@@ -36,7 +36,7 @@ export default function EmptyState({ selectedType, hasFilters, onClearFilters }:
           <div className="bg-sage-100 rounded-full p-3 mb-4">
             <FilterX className="h-6 w-6 text-sage-600" />
           </div>
-          <h3 className="font-serif text-lg font-light text-olive-900 mb-2">No matching services found</h3>
+          <h3 className="font-serif text-lg font-normal text-olive-900 mb-2">No matching services found</h3>
           <p className="text-muted-foreground mb-6 max-w-md">
             We couldn't find any {getServiceTypeLabel()} that match your current filters. Try adjusting your search or
             filters to see more results.
@@ -50,7 +50,7 @@ export default function EmptyState({ selectedType, hasFilters, onClearFilters }:
           <div className="bg-sage-100 rounded-full p-3 mb-4">
             <Sparkles className="h-6 w-6 text-sage-600" />
           </div>
-          <h3 className="font-serif text-lg font-light text-olive-900 mb-2">No services yet</h3>
+          <h3 className="font-serif text-lg font-normal text-olive-900 mb-2">No services yet</h3>
           <p className="text-muted-foreground mb-6 max-w-md">
             Services are how clients find and book with you. Create a session, workshop, or course to start building your practice.
           </p>

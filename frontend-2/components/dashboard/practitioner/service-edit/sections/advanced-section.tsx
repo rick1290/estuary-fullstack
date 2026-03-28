@@ -467,11 +467,11 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
 
         {/* Linked Forms List */}
         {isLoading ? (
-          <p className="text-sm text-olive-400 py-3">Loading forms...</p>
+          <p className="text-sm text-olive-500 py-3">Loading forms...</p>
         ) : formsList.length === 0 ? (
           <div className="text-center py-6 border border-dashed border-sage-200 rounded-xl">
             <ClipboardList className="h-6 w-6 text-sage-300 mx-auto mb-2" />
-            <p className="text-sm text-olive-400">No intake forms linked yet</p>
+            <p className="text-sm text-olive-500">No intake forms linked yet</p>
             <p className="text-xs text-olive-300 mt-0.5">Add a form to collect info from clients before their session</p>
           </div>
         ) : (
@@ -517,7 +517,7 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
                           </Badge>
                         )}
                         {template.questions_count > 0 && (
-                          <span className="text-[11px] text-olive-400">
+                          <span className="text-[11px] text-olive-500">
                             {template.questions_count} question{template.questions_count !== 1 ? 's' : ''}
                           </span>
                         )}
@@ -527,7 +527,7 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="shrink-0 h-7 w-7 p-0 text-olive-400 hover:text-terracotta-600 hover:bg-terracotta-50"
+                    className="shrink-0 h-7 w-7 p-0 text-olive-500 hover:text-terracotta-600 hover:bg-terracotta-50"
                     disabled={detachMutation.isPending}
                     onClick={() => {
                       detachMutation.mutate({
@@ -549,7 +549,7 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
             <p className="text-xs font-medium text-olive-600 mb-2">Select a template to link:</p>
             {availableTemplates.length === 0 ? (
               <div className="text-center py-4">
-                <p className="text-sm text-olive-400">
+                <p className="text-sm text-olive-500">
                   {allTemplates.length === 0 ? 'No templates created yet.' : 'All templates are already linked.'}
                 </p>
                 <Link href="/dashboard/practitioner/intake">
@@ -583,7 +583,7 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-olive-900 truncate">{template.title}</p>
-                      <span className="text-[11px] text-olive-400">{template.form_type}</span>
+                      <span className="text-[11px] text-olive-500">{template.form_type}</span>
                     </div>
                   </div>
                   <Plus className="h-4 w-4 text-sage-400 shrink-0" />

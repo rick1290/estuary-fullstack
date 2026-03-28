@@ -78,16 +78,16 @@ export function WaitingRoom({
             <div className="text-center">
               <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-sage-600" />
               <p className="text-lg font-medium mb-2">You're in the waiting room</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-olive-600">
                 The host will let you in soon
               </p>
             </div>
             
             {getTimeUntilStart() && (
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <Clock className="h-5 w-5 mx-auto mb-2 text-gray-500" />
-                <p className="text-sm text-gray-600">Session starts in</p>
-                <p className="text-2xl font-bold text-gray-900">{getTimeUntilStart()}</p>
+              <div className="bg-sage-50 rounded-lg p-4 text-center">
+                <Clock className="h-5 w-5 mx-auto mb-2 text-olive-500" />
+                <p className="text-sm text-olive-600">Session starts in</p>
+                <p className="text-2xl font-bold text-olive-900">{getTimeUntilStart()}</p>
               </div>
             )}
             
@@ -104,7 +104,7 @@ export function WaitingRoom({
 
   // Host view
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="min-h-screen bg-olive-900 flex">
       {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="max-w-6xl mx-auto">
@@ -112,7 +112,7 @@ export function WaitingRoom({
             <h1 className="text-2xl font-bold text-white mb-2">
               {sessionDetails?.service?.title || 'Group Session'} - Waiting Room
             </h1>
-            <div className="flex items-center gap-4 text-gray-300">
+            <div className="flex items-center gap-4 text-olive-400">
               <Badge variant="secondary" className="gap-1">
                 <Users className="h-3 w-3" />
                 {participants.length} Total
@@ -149,17 +149,17 @@ export function WaitingRoom({
           {/* Participants Grid */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Waiting List */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className="bg-olive-800 border-sage-700">
               <CardHeader>
                 <CardTitle className="text-white">Waiting Room</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-olive-500">
                   Participants waiting to join
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">
                   {waitingParticipants.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-olive-500 text-center py-8">
                       No participants waiting
                     </p>
                   ) : (
@@ -180,17 +180,17 @@ export function WaitingRoom({
             </Card>
             
             {/* Admitted List */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className="bg-olive-800 border-sage-700">
               <CardHeader>
                 <CardTitle className="text-white">Admitted</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-olive-500">
                   Participants ready to join
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">
                   {admittedParticipants.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-olive-500 text-center py-8">
                       No participants admitted yet
                     </p>
                   ) : (
@@ -211,12 +211,12 @@ export function WaitingRoom({
       </div>
       
       {/* Sidebar */}
-      <div className="w-80 bg-gray-800 border-l border-gray-700 p-6">
+      <div className="w-80 bg-olive-800 border-l border-sage-700 p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Session Info</h2>
         
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-gray-400">Start Time</p>
+            <p className="text-sm text-olive-500">Start Time</p>
             <p className="text-white">
               {sessionDetails?.start_time 
                 ? new Date(sessionDetails.start_time).toLocaleTimeString()
@@ -225,19 +225,19 @@ export function WaitingRoom({
           </div>
           
           <div>
-            <p className="text-sm text-gray-400">Duration</p>
+            <p className="text-sm text-olive-500">Duration</p>
             <p className="text-white">{sessionDetails?.duration_minutes || 60} minutes</p>
           </div>
           
           <div>
-            <p className="text-sm text-gray-400">Max Participants</p>
+            <p className="text-sm text-olive-500">Max Participants</p>
             <p className="text-white">{sessionDetails?.max_participants || 20}</p>
           </div>
         </div>
         
         {getTimeUntilStart() && (
-          <div className="mt-6 bg-gray-700 rounded-lg p-4 text-center">
-            <p className="text-sm text-gray-300 mb-1">Starts in</p>
+          <div className="mt-6 bg-olive-700 rounded-lg p-4 text-center">
+            <p className="text-sm text-olive-400 mb-1">Starts in</p>
             <p className="text-2xl font-bold text-white">{getTimeUntilStart()}</p>
           </div>
         )}
@@ -271,7 +271,7 @@ function ParticipantItem({
   return (
     <div className={cn(
       "flex items-center justify-between p-3 rounded-lg",
-      participant.status === 'waiting' ? "bg-gray-700" : "bg-gray-700/50"
+      participant.status === 'waiting' ? "bg-olive-700" : "bg-olive-700/50"
     )}>
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
@@ -281,7 +281,7 @@ function ParticipantItem({
         </Avatar>
         <div>
           <p className="font-medium text-white">{participant.name}</p>
-          <p className="text-sm text-gray-400">{participant.email}</p>
+          <p className="text-sm text-olive-500">{participant.email}</p>
         </div>
       </div>
       

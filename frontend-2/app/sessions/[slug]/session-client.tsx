@@ -221,7 +221,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               </div>
 
               {/* Title */}
-              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light text-olive-900 mb-3 leading-[1.15]">
+              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-olive-900 mb-3 leading-[1.15]">
                 {service?.name || 'Session'}
               </h1>
 
@@ -239,7 +239,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage-200 to-terracotta-100 flex items-center justify-center">
-                      <span className="text-[10px] font-serif font-light text-olive-700/50">
+                      <span className="text-[10px] font-serif font-normal text-olive-700/50">
                         {(service.primary_practitioner.display_name || service.primary_practitioner.name || 'P').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                       </span>
                     </div>
@@ -289,7 +289,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
                   <span className="inline-flex items-center gap-1.5 text-xs font-light text-olive-600 bg-white border border-sage-200/60 rounded-full px-3.5 py-1.5">
                     <Star className="h-3.5 w-3.5 text-terracotta-500 fill-terracotta-500" strokeWidth="1.5" />
                     <span className="font-medium text-olive-800">{service.average_rating?.toFixed(1)}</span>
-                    <span className="text-olive-400">({service.total_reviews})</span>
+                    <span className="text-olive-500">({service.total_reviews})</span>
                   </span>
                 )}
               </div>
@@ -305,7 +305,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {service?.description && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Overview</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">About This <em className="italic text-terracotta-600">Session</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">About This <em className="italic text-terracotta-600">Session</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.description}
                   </p>
@@ -315,7 +315,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* Session Details */}
               <section className="pb-12 border-b border-sage-200/40">
                 <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Logistics</p>
-                <h2 className="font-serif text-xl font-light text-olive-900 mb-5">Session <em className="italic text-terracotta-600">Details</em></h2>
+                <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Session <em className="italic text-terracotta-600">Details</em></h2>
                 <div className="bg-white rounded-2xl border border-sage-200/60 divide-y divide-sage-200/60">
                   {service?.price != null && (
                     <div className="flex justify-between items-center px-5 py-3.5">
@@ -388,7 +388,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {service?.what_youll_learn && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Discover</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Learn</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Learn</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.what_youll_learn}
                   </p>
@@ -399,7 +399,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {service?.benefits && service.benefits.length > 0 && (
                 <section>
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Benefits</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What You'll <em className="italic text-terracotta-600">Gain</em></h2>
                   <div className="grid md:grid-cols-2 gap-4">
                     {service.benefits.map((benefit, index) => (
                       <div key={benefit.id} className="bg-white rounded-2xl border border-sage-200/60 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
@@ -417,7 +417,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* What's Included */}
               {service?.includes && service.includes.length > 0 && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">What's <em className="italic text-terracotta-600">Included</em></h2>
                   <div className="bg-white rounded-2xl border border-sage-200/60 p-5">
                     <div className="grid md:grid-cols-2 gap-3">
                       {service.includes.map((item, index) => (
@@ -436,7 +436,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* Prerequisites */}
               {service?.prerequisites && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5"><em className="italic text-terracotta-600">Prerequisites</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5"><em className="italic text-terracotta-600">Prerequisites</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.prerequisites}
                   </p>
@@ -446,7 +446,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               {/* Requirements */}
               {service?.requirements && (
                 <section>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-5"><em className="italic text-terracotta-600">Requirements</em></h2>
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-5"><em className="italic text-terracotta-600">Requirements</em></h2>
                   <p className="text-[15px] font-light text-olive-600 leading-relaxed whitespace-pre-line">
                     {service.requirements}
                   </p>
@@ -468,7 +468,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
               <section className="pt-12 border-t border-sage-200/40">
                 <div className="bg-gradient-to-br from-terracotta-100/40 via-sage-100/30 to-sage-200/40 rounded-2xl px-6 py-8 sm:px-8 sm:py-10 text-center">
                   <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-3">Ready to Begin?</p>
-                  <h2 className="font-serif text-xl font-light text-olive-900 mb-3">
+                  <h2 className="font-serif text-xl font-normal text-olive-900 mb-3">
                     Start your <em className="italic text-terracotta-600">transformation</em> today
                   </h2>
                   <p className="text-sm font-light text-olive-600 mb-6 max-w-md mx-auto">
@@ -538,7 +538,7 @@ export default function SessionDetailsPage({ params }: { params: Promise<{ slug:
       <Drawer open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="pb-2">
-            <DrawerTitle className="font-serif text-lg font-light text-olive-900">Book Your Session</DrawerTitle>
+            <DrawerTitle className="font-serif text-lg font-normal text-olive-900">Book Your Session</DrawerTitle>
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
             {service && (

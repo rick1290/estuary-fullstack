@@ -46,11 +46,6 @@ export default function RoomPage() {
     if (recordingStatus) {
       const isActive = ['starting', 'active'].includes(recordingStatus);
       setIsRecording(isActive);
-      console.log('Initialized recording state:', {
-        recording_status: recordingStatus,
-        source: (roomInfo as { recording_status?: string })?.recording_status ? 'roomInfo' : 'accessData',
-        isRecording: isActive
-      });
     }
   }, [(roomInfo as { recording_status?: string })?.recording_status, accessData?.room?.recording_status]);
   
@@ -94,8 +89,6 @@ export default function RoomPage() {
     includeScreenShare: boolean;
     notifyParticipants: boolean;
   }) => {
-    console.log('PAGE: handleStartRecording called', { options, roomId, accessData });
-
     if (!roomId || accessData?.role !== 'host') {
       console.error('Cannot start recording - missing data or not host', {
         hasRoomId: !!roomId,
@@ -105,13 +98,6 @@ export default function RoomPage() {
     }
 
     try {
-      console.log('PAGE: Starting mutation with:', {
-        public_uuid: roomId,
-        layout: getRoomType() === 'individual' ? 'speaker' : 'grid',
-        file_format: options.outputFormat === 'hls' ? 'mp4' : options.outputFormat,
-        audio_only: options.audioOnly
-      });
-
       await startRecordingMutation.mutateAsync({
         path: { public_uuid: roomId },
         body: {
@@ -121,7 +107,6 @@ export default function RoomPage() {
         }
       });
 
-      console.log('PAGE: Recording started successfully!');
       setIsRecording(true);
     } catch (error) {
       console.error('PAGE: Failed to start recording:', error);
@@ -150,7 +135,6 @@ export default function RoomPage() {
       const result = await endSessionMutation.mutateAsync({
         path: { public_uuid: roomId }
       });
-      console.log('Call ended for everyone', result);
       // The VideoRoom component will handle disconnection via onDisconnected → handleLeaveRoom
     } catch (error) {
       console.error('Failed to end session:', error);

@@ -110,7 +110,6 @@ export default function PractitionerMessagesContent() {
   const handleSendMessage = () => {
     if (messageText.trim()) {
       // In a real app, this would send the message to the API
-      console.log("Sending message:", messageText)
       setMessageText("")
     }
   }

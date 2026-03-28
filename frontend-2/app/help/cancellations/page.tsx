@@ -27,7 +27,7 @@ export default function CancellationsPage() {
           Help Center
         </Link>
 
-        <h1 className="font-serif text-3xl font-light text-olive-900 mb-2">
+        <h1 className="font-serif text-3xl font-normal text-olive-900 mb-2">
           Cancellations & Refunds
         </h1>
         <p className="text-olive-500 mb-10">
@@ -172,7 +172,7 @@ export default function CancellationsPage() {
             </Link>
           </div>
           <div className="text-center">
-            <p className="text-sm text-olive-400">Still need help?</p>
+            <p className="text-sm text-olive-500">Still need help?</p>
             <a
               href="mailto:support@estuary.com"
               className="text-sm text-sage-600 hover:text-sage-700"

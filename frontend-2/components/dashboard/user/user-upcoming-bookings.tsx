@@ -50,7 +50,7 @@ export default function UserUpcomingBookings() {
   if (isLoading) {
     return (
       <div>
-        <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Upcoming</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900 mb-6">Upcoming</h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border border-sage-200/60">
@@ -74,7 +74,7 @@ export default function UserUpcomingBookings() {
   if (error) {
     return (
       <div>
-        <h2 className="font-serif text-2xl font-light text-olive-900 mb-6">Upcoming</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900 mb-6">Upcoming</h2>
         <Card className="border border-red-200 bg-red-50">
           <CardContent className="p-6">
             <p className="text-red-800">Failed to load upcoming sessions. Please try again later.</p>
@@ -87,7 +87,7 @@ export default function UserUpcomingBookings() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-serif text-2xl font-light text-olive-900">Upcoming</h2>
+        <h2 className="font-serif text-2xl font-normal text-olive-900">Upcoming</h2>
         {allJourneys.length > 0 && (
           <Link
             href="/dashboard/user/journeys"
@@ -181,7 +181,7 @@ export default function UserUpcomingBookings() {
                                 style={{ width: `${journey.progress_percentage || 0}%` }}
                               />
                             </div>
-                            <span className="text-[11px] text-olive-400">
+                            <span className="text-[11px] text-olive-500">
                               {journey.completed_sessions}/{journey.total_sessions}
                             </span>
                           </div>
@@ -191,7 +191,7 @@ export default function UserUpcomingBookings() {
                       {/* Next session info */}
                       {journey.next_session_title && (
                         <div className="hidden md:block text-right shrink-0 max-w-[160px]">
-                          <p className="text-[12px] text-olive-400 truncate">
+                          <p className="text-[12px] text-olive-500 truncate">
                             Next: {journey.next_session_title}
                           </p>
                         </div>

@@ -226,24 +226,6 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   const joinable = isSessionJoinable()
   const modifiable = isModifiable()
   
-  // Debug logging
-  const sessionStartTime = booking.service_session?.start_time
-  const sessionEndTime = booking.service_session?.end_time
-  console.log('Booking details:', {
-    id: booking.id,
-    status: booking.status,
-    start_time: sessionStartTime,
-    end_time: sessionEndTime,
-    service_location_type: service?.location_type,
-    has_room: !!booking.room,
-    room_uuid: booking.room?.public_uuid,
-    has_video_url: !!booking.video_url,
-    joinable,
-    modifiable,
-    minutesUntilStart: sessionStartTime ? differenceInMinutes(parseISO(sessionStartTime), new Date()) : null,
-    minutesUntilEnd: sessionEndTime ? differenceInMinutes(parseISO(sessionEndTime), new Date()) : null
-  })
-
   return (
     <UserDashboardLayout title="Booking Details">
       <div className="space-y-6">
@@ -266,7 +248,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="font-serif text-2xl font-light text-olive-900">
+                    <CardTitle className="font-serif text-2xl font-normal text-olive-900">
                       {service?.name || "Service"}
                     </CardTitle>
                     <CardDescription className="text-base mt-1">
@@ -468,7 +450,6 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                           <Button 
                             variant="destructive" 
                             onClick={() => {
-                              console.log('Cancel button clicked', { cancelDialogOpen, modifiable })
                               setCancelDialogOpen(true)
                             }} 
                             disabled={!modifiable}
@@ -492,7 +473,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
             {booking.status === "confirmed" && (
               <Card className="border-sage-100">
                 <CardHeader>
-                  <CardTitle className="font-serif text-lg font-light text-olive-900">Booking Policies</CardTitle>
+                  <CardTitle className="font-serif text-lg font-normal text-olive-900">Booking Policies</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground space-y-2">
                   <p>
@@ -549,7 +530,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Film className="h-5 w-5 text-primary" />
-                    <CardTitle className="font-serif text-lg font-light text-olive-900">Session Recordings</CardTitle>
+                    <CardTitle className="font-serif text-lg font-normal text-olive-900">Session Recordings</CardTitle>
                   </div>
                   <CardDescription>
                     {booking.recordings.length} {booking.recordings.length === 1 ? 'recording' : 'recordings'} available
@@ -634,7 +615,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
             {practitioner && (
               <Card className="border border-sage-200/60 bg-white">
                 <CardHeader>
-                  <CardTitle className="font-serif text-lg font-light text-olive-900">Your Practitioner</CardTitle>
+                  <CardTitle className="font-serif text-lg font-normal text-olive-900">Your Practitioner</CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
@@ -690,7 +671,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
             {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif text-lg font-light text-olive-900">Need Help?</CardTitle>
+                <CardTitle className="font-serif text-lg font-normal text-olive-900">Need Help?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button variant="link" className="p-0 h-auto justify-start text-sm" asChild>
@@ -783,7 +764,7 @@ function FormsStatusBanner({ bookingUuid }: { bookingUuid: string }) {
             {consentNeeded ? 'Consent form required before session' : 'Pre-session form available'}
           </span>
         </div>
-        <ChevronRight className="h-4 w-4 text-olive-400" />
+        <ChevronRight className="h-4 w-4 text-olive-500" />
       </div>
     </Link>
   )

@@ -277,15 +277,15 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
           isSelected
             ? "border-olive-900 bg-olive-900 text-white"
             : datesLoaded && !available
-              ? "border-sage-200/60 bg-sage-50/50 text-olive-400 opacity-50"
+              ? "border-sage-200/60 bg-sage-50/50 text-olive-500 opacity-50"
               : "border-sage-200 hover:border-terracotta-300 hover:bg-terracotta-50/30 bg-white text-olive-700"
         }`}
       >
         <p className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} font-medium uppercase tracking-wide leading-none ${
-          isSelected ? 'text-white/60' : 'text-olive-400'
+          isSelected ? 'text-white/60' : 'text-olive-500'
         }`}>{date.day}</p>
         <p className={`text-sm font-medium mt-1 leading-none ${
-          isSelected ? 'text-white' : datesLoaded && !available ? 'text-olive-400' : 'text-olive-800'
+          isSelected ? 'text-white' : datesLoaded && !available ? 'text-olive-500' : 'text-olive-800'
         }`}>{date.date.split(' ')[1]}</p>
         {/* Availability dot indicator */}
         {datesLoaded && available && !isSelected && (
@@ -322,7 +322,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
                   <span className="text-xl font-semibold text-olive-900">${session.price}</span>
                   <span className="text-[11px] font-light text-olive-500">per session</span>
                 </div>
-                <p className="text-[10px] font-light text-olive-400 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
+                <p className="text-[10px] font-light text-olive-500 mt-0.5">{session.duration_display || `${session.duration} minutes`} · 1-on-1</p>
               </div>
             </div>
           </div>
@@ -358,7 +358,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
                   size="sm"
                   onClick={handlePrevDates}
                   disabled={visibleDates.length === 0 || (visibleDates[0]?.day === allDates[0].day && visibleDates[0]?.date === allDates[0].date)}
-                  className="text-olive-400 hover:text-olive-600 hover:bg-sage-50 flex-shrink-0 h-7 w-7 rounded-lg border border-sage-200/60"
+                  className="text-olive-500 hover:text-olive-600 hover:bg-sage-50 flex-shrink-0 h-7 w-7 rounded-lg border border-sage-200/60"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" strokeWidth="1.5" />
                 </Button>
@@ -374,7 +374,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
                   size="sm"
                   onClick={handleNextDates}
                   disabled={visibleDates.length === 0 || (visibleDates[visibleDates.length - 1]?.day === allDates[allDates.length - 1].day && visibleDates[visibleDates.length - 1]?.date === allDates[allDates.length - 1].date)}
-                  className="text-olive-400 hover:text-olive-600 hover:bg-sage-50 flex-shrink-0 h-7 w-7 rounded-lg border border-sage-200/60"
+                  className="text-olive-500 hover:text-olive-600 hover:bg-sage-50 flex-shrink-0 h-7 w-7 rounded-lg border border-sage-200/60"
                 >
                   <ChevronRight className="h-3.5 w-3.5" strokeWidth="1.5" />
                 </Button>

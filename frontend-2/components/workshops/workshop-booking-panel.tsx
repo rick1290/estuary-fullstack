@@ -105,7 +105,7 @@ export default function WorkshopBookingPanel({ workshop, serviceData, compact }:
                   <span className="text-xl font-semibold text-olive-900">${workshop.price}</span>
                   <span className="text-[11px] font-light text-olive-500">per person</span>
                 </div>
-                <p className="text-[10px] font-light text-olive-400 mt-0.5">{Math.floor(workshop.duration / 60)} hours experience</p>
+                <p className="text-[10px] font-light text-olive-500 mt-0.5">{Math.floor(workshop.duration / 60)} hours experience</p>
               </div>
             </div>
           </div>

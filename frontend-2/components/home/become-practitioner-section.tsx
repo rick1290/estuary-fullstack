@@ -37,7 +37,7 @@ export default function BecomePractitionerSection() {
 
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-olive-900 mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] text-olive-900 mb-5"
           >
             Are You a{" "}
             <em className="italic text-terracotta-600">Practitioner?</em>

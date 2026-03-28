@@ -36,7 +36,7 @@ const statusOptions = [
     label: "Draft", 
     description: "Not visible to customers",
     icon: FileText,
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-sage-100 text-olive-700"
   },
   { 
     value: "active", 
@@ -165,7 +165,7 @@ export function StatusVisibilitySection({
                   className={`relative flex items-start gap-3 rounded-lg border p-4 cursor-pointer transition-all ${
                     isSelected 
                       ? 'border-primary bg-primary/5' 
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      : 'border-sage-200 hover:border-sage-300 hover:bg-sage-50'
                   }`}
                   onClick={() => handleChange("status", option.value)}
                 >
@@ -224,20 +224,20 @@ export function StatusVisibilitySection({
         </div>
 
         {/* Visibility Summary */}
-        <div className="border rounded-lg p-4 bg-gray-50">
+        <div className="border rounded-lg p-4 bg-sage-50">
           <h4 className="font-medium mb-3 flex items-center gap-2">
             <Globe className="h-4 w-4" />
             Visibility Summary
           </h4>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${localData.is_public ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <div className={`h-2 w-2 rounded-full ${localData.is_public ? 'bg-green-500' : 'bg-sage-400'}`} />
               <span>
                 {localData.is_public ? 'Visible in marketplace' : 'Hidden from marketplace'}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${localData.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <div className={`h-2 w-2 rounded-full ${localData.is_active ? 'bg-green-500' : 'bg-sage-400'}`} />
               <span>
                 {localData.is_active ? 'Available for booking' : 'Not available for booking'}
               </span>

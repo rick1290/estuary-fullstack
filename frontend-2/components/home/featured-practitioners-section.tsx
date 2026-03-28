@@ -108,7 +108,7 @@ export default function FeaturedPractitionersSection() {
               </motion.span>
               <motion.h2
                 variants={itemFade}
-                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-olive-900"
+                className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900"
               >
                 Featured{" "}
                 <em className="italic text-terracotta-600">Practitioners</em>
@@ -223,7 +223,7 @@ export default function FeaturedPractitionersSection() {
                         <p className="text-olive-500 text-sm font-light mt-0.5">{practitioner.specialty}</p>
 
                         {/* Location - shows on hover */}
-                        <div className="flex items-center justify-center gap-1 text-sm text-olive-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-5">
+                        <div className="flex items-center justify-center gap-1 text-sm text-olive-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-5">
                           <MapPin className="h-3.5 w-3.5" />
                           <span className="font-light">{practitioner.location}</span>
                         </div>
@@ -239,7 +239,7 @@ export default function FeaturedPractitionersSection() {
                             </span>
                           ))}
                           {practitioner.modalities.length > 2 && (
-                            <span className="text-xs text-olive-400 self-center">
+                            <span className="text-xs text-olive-500 self-center">
                               +{practitioner.modalities.length - 2}
                             </span>
                           )}

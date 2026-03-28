@@ -121,19 +121,6 @@ export default function UserBookingsList() {
     const endIndex = startIndex + limit
     const paginated = filteredBookings.slice(startIndex, endIndex)
     
-    // Debug log the first booking to see data structure
-    if (paginated.length > 0) {
-      console.log('First booking data:', {
-        id: paginated[0].id,
-        location_type: paginated[0].location_type,
-        service_location_type: paginated[0].service?.location_type,
-        room: paginated[0].room,
-        status: paginated[0].status,
-        start_time: paginated[0].start_time,
-        end_time: paginated[0].end_time
-      })
-    }
-    
     return paginated
   }, [filteredBookings, page, limit])
 
@@ -248,7 +235,7 @@ export default function UserBookingsList() {
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-olive-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-olive-500 h-4 w-4" />
           <Input
             placeholder="Search bookings..."
             value={searchQuery}
@@ -258,7 +245,7 @@ export default function UserBookingsList() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-olive-400 hover:text-olive-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-olive-500 hover:text-olive-600"
             >
               <X className="h-4 w-4" />
             </button>

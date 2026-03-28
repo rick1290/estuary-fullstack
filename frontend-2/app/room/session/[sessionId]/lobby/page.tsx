@@ -38,7 +38,7 @@ export default function SessionLobbyPage() {
           <CardContent className="p-8">
             <div className="flex flex-col items-center">
               <Loader2 className="h-8 w-8 animate-spin text-sage-600 mb-4" />
-              <p className="text-gray-600">Loading session details...</p>
+              <p className="text-olive-600">Loading session details...</p>
             </div>
           </CardContent>
         </Card>
@@ -100,7 +100,7 @@ export default function SessionLobbyPage() {
               <p className="font-medium text-sm">
                 {sessionDetails.current_participants || 0} / {sessionDetails.max_participants || 20} participants
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-olive-500">
                 Session starts at {new Date(sessionDetails.start_time).toLocaleTimeString()}
               </p>
             </div>

@@ -140,7 +140,6 @@ export default function PractitionerApplicationForm({
 
   const handleSubmit = () => {
     // In a real app, this would submit to an API
-    console.log("Form submitted:", formData)
     setSuccess(true)
   }
 

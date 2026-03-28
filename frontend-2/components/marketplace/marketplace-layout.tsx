@@ -75,7 +75,7 @@ export default function MarketplaceLayout({
             <span className="block text-[10px] sm:text-xs font-medium tracking-wide sm:tracking-widest uppercase text-sage-600 mb-3 sm:mb-4">
               {eyebrow}
             </span>
-            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-olive-900 mb-3 sm:mb-4">
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight text-olive-900 mb-3 sm:mb-4">
               {title}
             </h1>
             {description && (
@@ -120,7 +120,7 @@ export default function MarketplaceLayout({
               <Search className="h-4 w-4 sm:h-5 sm:w-5 text-sage-500" strokeWidth="1.5" />
             </div>
             <Input
-              className="flex-1 border-0 bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-olive-800 placeholder:text-olive-400/70"
+              className="flex-1 border-0 bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-olive-800 placeholder:text-olive-500/70"
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -148,7 +148,7 @@ export default function MarketplaceLayout({
               </SheetTrigger>
               <SheetContent side="left" className="w-[85%] max-w-[350px] p-6">
                 <SheetHeader className="mb-6">
-                  <SheetTitle className="text-xl font-light font-serif">Filters</SheetTitle>
+                  <SheetTitle className="text-xl font-normal font-serif">Filters</SheetTitle>
                 </SheetHeader>
                 <Separator className="mb-6" />
                 {sidebar}
