@@ -67,16 +67,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """User profile serializer"""
     full_name = serializers.ReadOnlyField()
     display_name = serializers.ReadOnlyField()
+    has_password = serializers.SerializerMethodField()
     practitioner_public_id = serializers.SerializerMethodField()
     practitioner_id = serializers.SerializerMethodField()
     practitioner_slug = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
         fields = (
             'id', 'uuid', 'email', 'first_name', 'last_name', 'full_name', 'display_name',
             'phone_number', 'phone_number_verified', 'timezone', 'is_practitioner',
-            'practitioner_public_id', 'practitioner_id', 'practitioner_slug',
+            'has_password', 'practitioner_public_id', 'practitioner_id', 'practitioner_slug',
             'account_status', 'last_login', 'date_joined', 'is_active'
         )
         read_only_fields = (
@@ -102,6 +103,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'practitioner_profile') and obj.practitioner_profile:
             return obj.practitioner_profile.slug
         return None
+
+    def get_has_password(self, obj):
+        """Check if user has a usable password (False for SSO-only users)"""
+        return obj.has_usable_password()
 
 
 class TokenResponseSerializer(serializers.Serializer):
@@ -136,33 +141,42 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class PasswordChangeSerializer(serializers.Serializer):
-    """Password change serializer"""
-    current_password = serializers.CharField(style={'input_type': 'password'})
+    """Password change serializer. current_password is optional for SSO users who have no password set."""
+    current_password = serializers.CharField(style={'input_type': 'password'}, required=False, allow_blank=True)
     new_password = serializers.CharField(
         min_length=8,
         style={'input_type': 'password'}
     )
     new_password_confirm = serializers.CharField(style={'input_type': 'password'})
-    
+
     def validate(self, attrs):
         """Validate passwords"""
+        user = self.context['request'].user
         new_password = attrs.get('new_password')
         new_password_confirm = attrs.get('new_password_confirm')
-        
+
         if new_password != new_password_confirm:
             raise serializers.ValidationError({"new_password": "Passwords do not match."})
-        
+
+        # Require current_password only if user has a password set
+        if user.has_usable_password() and not attrs.get('current_password'):
+            raise serializers.ValidationError({"current_password": "Current password is required."})
+
         # Validate password strength
         try:
             validate_password(new_password)
         except ValidationError as e:
             raise serializers.ValidationError({"new_password": e.messages})
-        
+
         return attrs
-    
+
     def validate_current_password(self, value):
-        """Validate current password"""
+        """Validate current password — skip for SSO users without a password"""
         user = self.context['request'].user
+        if not user.has_usable_password():
+            return value  # SSO user, no current password to check
+        if not value:
+            raise serializers.ValidationError("Current password is required.")
         if not user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect.")
         return value

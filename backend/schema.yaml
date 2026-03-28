@@ -1419,6 +1419,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingDetail'
           description: ''
+  /api/v1/bookings/{public_uuid}/request-reschedule/:
+    post:
+      operationId: bookings_request_reschedule_create
+      description: |-
+        Practitioner requests a reschedule — clears the session time and
+        notifies the client to pick a new slot.
+      parameters:
+      - in: path
+        name: public_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingDetailRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
   /api/v1/bookings/{public_uuid}/reschedule/:
     post:
       operationId: bookings_reschedule_create
@@ -2921,32 +2956,6 @@ paths:
       operationId: feature_requests_list
       description: List all feature requests for the authenticated practitioner
       parameters:
-      - in: query
-        name: category
-        schema:
-          type: string
-          enum:
-          - analytics
-          - client_management
-          - integrations
-          - messaging
-          - mobile
-          - other
-          - payments
-          - scheduling
-          - ui_ux
-        description: |-
-          Category of the feature request
-
-          * `scheduling` - Scheduling
-          * `payments` - Payments & Billing
-          * `analytics` - Analytics & Reports
-          * `client_management` - Client Management
-          * `messaging` - Messaging
-          * `ui_ux` - UI/UX
-          * `mobile` - Mobile App
-          * `integrations` - Integrations
-          * `other` - Other
       - name: ordering
         required: false
         in: query
@@ -2965,40 +2974,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - in: query
-        name: priority
-        schema:
-          type: string
-          enum:
-          - high
-          - low
-          - medium
-        description: |-
-          Practitioner's perceived priority
-
-          * `low` - Low
-          * `medium` - Medium
-          * `high` - High
-      - in: query
-        name: status
-        schema:
-          type: string
-          enum:
-          - completed
-          - declined
-          - in_progress
-          - planned
-          - submitted
-          - under_review
-        description: |-
-          Current status of the request
-
-          * `submitted` - Submitted
-          * `under_review` - Under Review
-          * `planned` - Planned
-          * `in_progress` - In Progress
-          * `completed` - Completed
-          * `declined` - Declined
       tags:
       - Practitioners
       security:
@@ -3046,8 +3021,7 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
-        description: A unique integer value identifying this Feature Request.
+          type: string
         required: true
       tags:
       - Practitioners
@@ -3068,8 +3042,7 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
-        description: A unique integer value identifying this Feature Request.
+          type: string
         required: true
       tags:
       - Practitioners
@@ -3102,8 +3075,7 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
-        description: A unique integer value identifying this Feature Request.
+          type: string
         required: true
       tags:
       - Practitioners
@@ -3135,8 +3107,7 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
-        description: A unique integer value identifying this Feature Request.
+          type: string
         required: true
       tags:
       - Practitioners
@@ -9167,12 +9138,18 @@ paths:
     post:
       operationId: rooms_end_session_create
       description: |-
-        End the session for everyone (host only).
+        End the call for everyone (host only).
         This will:
         1. Stop any active recording
-        2. Disconnect all participants from LiveKit
-        3. Mark the ServiceSession as completed
-        4. Mark the Room as ended
+        2. Remove all participants from the LiveKit room (kicks them gracefully)
+        3. Mark the Room as ended
+        4. Mark all participants as left
+
+        NOTE: This does NOT mark the ServiceSession as completed.
+        The practitioner must explicitly mark the session as completed
+        from their dashboard after reviewing the session.
+        The LiveKit room is NOT deleted — it will expire naturally
+        via empty_timeout, allowing rejoin within ~5 minutes if needed.
       parameters:
       - in: path
         name: public_uuid
@@ -13323,6 +13300,7 @@ paths:
       security:
       - cookieAuth: []
       - bearerAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -13355,6 +13333,7 @@ paths:
       security:
       - cookieAuth: []
       - bearerAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -14782,6 +14761,9 @@ components:
             $ref: '#/components/schemas/BookingNote'
           readOnly: true
         recordings:
+          type: string
+          readOnly: true
+        resources:
           type: string
           readOnly: true
         created_at:
@@ -16213,7 +16195,8 @@ components:
         * `all_levels` - All Levels
     FeatureRequest:
       type: object
-      description: Serializer for feature requests submitted by practitioners
+      description: Serializer for feedback/feature requests from any authenticated
+        user
       properties:
         id:
           type: integer
@@ -16262,6 +16245,9 @@ components:
             * `in_progress` - In Progress
             * `completed` - Completed
             * `declined` - Declined
+        feedback_type:
+          type: string
+          default: feature
         votes:
           type: integer
           readOnly: true
@@ -16277,6 +16263,9 @@ components:
         practitioner_name:
           type: string
           readOnly: true
+        submitter_name:
+          type: string
+          readOnly: true
         can_edit:
           type: string
           readOnly: true
@@ -16285,7 +16274,8 @@ components:
       - title
     FeatureRequestRequest:
       type: object
-      description: Serializer for feature requests submitted by practitioners
+      description: Serializer for feedback/feature requests from any authenticated
+        user
       properties:
         title:
           type: string
@@ -16320,6 +16310,10 @@ components:
             * `low` - Low
             * `medium` - Medium
             * `high` - High
+        feedback_type:
+          type: string
+          minLength: 1
+          default: feature
       required:
       - description
       - title
@@ -19748,11 +19742,11 @@ components:
             $ref: '#/components/schemas/ZipCode'
     PasswordChangeRequest:
       type: object
-      description: Password change serializer
+      description: Password change serializer. current_password is optional for SSO
+        users who have no password set.
       properties:
         current_password:
           type: string
-          minLength: 1
         new_password:
           type: string
           minLength: 8
@@ -19760,7 +19754,6 @@ components:
           type: string
           minLength: 1
       required:
-      - current_password
       - new_password
       - new_password_confirm
     PatchedBookingUpdateRequest:
@@ -19975,7 +19968,8 @@ components:
           minimum: -2147483648
     PatchedFeatureRequestRequest:
       type: object
-      description: Serializer for feature requests submitted by practitioners
+      description: Serializer for feedback/feature requests from any authenticated
+        user
       properties:
         title:
           type: string
@@ -20010,6 +20004,10 @@ components:
             * `low` - Low
             * `medium` - Medium
             * `high` - High
+        feedback_type:
+          type: string
+          minLength: 1
+          default: feature
     PatchedFormTemplateRequest:
       type: object
       properties:
@@ -26381,7 +26379,6 @@ components:
           minimum: 0
       required:
       - form_template
-      - service
     ServiceFormRequest:
       type: object
       properties:
@@ -26398,7 +26395,6 @@ components:
           minimum: 0
       required:
       - form_template
-      - service
     ServiceList:
       type: object
       description: Serializer for service listing
@@ -30303,6 +30299,9 @@ components:
           maxLength: 50
         is_practitioner:
           type: boolean
+          readOnly: true
+        has_password:
+          type: string
           readOnly: true
         practitioner_public_id:
           type: string
