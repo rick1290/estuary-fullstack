@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { DM_Sans } from "next/font/google"
+import { DM_Sans, Cormorant_Garamond } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import ClientLayout from "./client-layout"
 import { Providers } from "./providers"
@@ -12,6 +12,14 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--font-dm-sans",
+})
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-cormorant",
 })
 
 export const viewport: Viewport = {
@@ -48,7 +56,7 @@ export default function RootLayout({
       <head>
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly site description" />
       </head>
-      <body className={`${dmSans.className} ${dmSans.variable} font-sans`}>
+      <body className={`${dmSans.className} ${dmSans.variable} ${cormorantGaramond.variable} font-sans`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-olive-900">
           Skip to main content
         </a>

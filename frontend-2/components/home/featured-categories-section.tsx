@@ -3,47 +3,27 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-
-const categories = [
-  {
-    title: "Mindfulness & Meditation",
-    description: "Cultivate presence and inner peace through guided practices.",
-    image: "/mindful-meditation.png",
-    link: "/marketplace?category=mindfulness",
-  },
-  {
-    title: "Holistic Healing",
-    description: "Experience traditional and alternative approaches to wellness.",
-    image: "/serene-massage.png",
-    link: "/marketplace?category=holistic-healing",
-  },
-  {
-    title: "Life Coaching",
-    description: "Navigate life's challenges with expert guidance and support.",
-    image: "/guiding-light-path.png",
-    link: "/marketplace?category=life-coaching",
-  },
-  {
-    title: "Movement & Yoga",
-    description: "Connect with your body through mindful movement practices.",
-    image: "/mindful-yoga-community.png",
-    link: "/marketplace?category=movement",
-  },
-  {
-    title: "Creative Expression",
-    description: "Unlock your creative potential through artistic exploration.",
-    image: "/woodworking-workshop.png",
-    link: "/marketplace?category=creative-expression",
-  },
-  {
-    title: "Nature Connection",
-    description: "Reconnect with the natural world for healing and inspiration.",
-    image: "/serene-forest-meditation.png",
-    link: "/marketplace?category=nature-connection",
-  },
-]
+import { Skeleton } from "@/components/ui/skeleton"
+import { useQuery } from "@tanstack/react-query"
+import { modalityCategoriesListOptions } from "@/src/client/@tanstack/react-query.gen"
 
 const FeaturedCategoriesSection = () => {
+  const { data, isLoading, isError } = useQuery(
+    modalityCategoriesListOptions({
+      query: {
+        is_active: true,
+        ordering: "order",
+        page_size: 6,
+      },
+    })
+  )
+
+  const categories = data?.results ?? []
+
+  // Hide section entirely if error or no data
+  if (isError) return null
+  if (!isLoading && categories.length === 0) return null
+
   return (
     <section className="py-12 md:py-16 bg-background relative overflow-hidden">
       {/* Decorative elements */}
@@ -59,35 +39,50 @@ const FeaturedCategoriesSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {categories.map((category, index) => (
-            <Card
-              key={index}
-              className="h-full flex flex-col rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-8px] hover:shadow-md"
-            >
-              <div className="h-[180px] relative">
-                <img
-                  src={category.image || "/placeholder.svg"}
-                  alt={category.title || "Category image"}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg"
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-[280px] rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {categories.map((category) => (
+              <Card
+                key={category.id}
+                className="h-full flex flex-col rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-8px] hover:shadow-md"
+              >
+                <div
+                  className="h-[180px] relative flex items-center justify-center"
+                  style={{
+                    backgroundColor: category.color ? `${category.color}20` : "#f0f0f0",
                   }}
-                />
-              </div>
-              <CardContent className="flex-grow p-6">
-                <h3 className="text-lg font-semibold mb-3">{category.title}</h3>
-                <p className="text-muted-foreground mb-4">{category.description}</p>
-                <Button variant="ghost" className="mt-auto text-primary hover:bg-primary/10" asChild>
-                  <Link href={category.link || "#"}>
-                    Explore
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                >
+                  {category.icon && (
+                    <span className="text-6xl">{category.icon}</span>
+                  )}
+                </div>
+                <CardContent className="flex-grow p-6">
+                  <h3 className="text-lg font-semibold mb-3">{category.name}</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {category.short_description || `Explore ${category.name.toLowerCase()} practices and services.`}
+                  </p>
+                  {category.modality_count != null && category.modality_count > 0 && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {category.modality_count} {category.modality_count === 1 ? "modality" : "modalities"}
+                    </p>
+                  )}
+                  <Button variant="ghost" className="mt-auto text-primary hover:bg-primary/10" asChild>
+                    <Link href={`/marketplace?modality_category=${category.slug || category.name.toLowerCase().replace(/\s+/g, "-")}`}>
+                      Explore
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

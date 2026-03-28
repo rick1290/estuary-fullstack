@@ -60,7 +60,7 @@ export default function ConfirmationPage() {
       <div className="min-h-screen bg-gradient-to-b from-sage-50/30 to-white">
         <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
           <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-            <Link href="/" className="flex items-center font-bold text-xl tracking-widest">ESTUARY</Link>
+            <Link href="/" className="flex items-center font-serif text-2xl font-medium tracking-[0.25em]">ESTUARY</Link>
           </div>
         </div>
         <div className="container max-w-3xl py-12 px-4">
@@ -121,7 +121,7 @@ export default function ConfirmationPage() {
       {/* Header */}
       <div className="w-full py-6 border-b border-sage-200 bg-gradient-to-r from-sage-50 to-terracotta-50">
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center font-bold text-xl tracking-widest">ESTUARY</Link>
+          <Link href="/" className="flex items-center font-serif text-2xl font-medium tracking-[0.25em]">ESTUARY</Link>
         </div>
       </div>
 

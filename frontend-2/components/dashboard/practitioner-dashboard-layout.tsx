@@ -240,7 +240,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-sage-200/60 px-4">
-          <Link href="/" className="flex items-center font-bold text-xl tracking-widest text-olive-900">
+          <Link href="/" className="flex items-center font-serif text-2xl font-medium tracking-[0.25em] text-olive-900">
             ESTUARY
           </Link>
         </div>
@@ -369,7 +369,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <SheetHeader className="h-16 border-b px-4">
-            <SheetTitle className="flex items-center justify-start text-left font-bold tracking-widest">ESTUARY</SheetTitle>
+            <SheetTitle className="flex items-center justify-start text-left font-serif text-2xl font-medium tracking-[0.25em]">ESTUARY</SheetTitle>
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-4rem)]">
             <div className="flex flex-col h-[calc(100vh-4rem)]">
