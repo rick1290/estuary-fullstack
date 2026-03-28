@@ -122,7 +122,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5 text-sage-500" />
-                    <span className="text-olive-700">{practitioner.total_services} services</span>
+                    <span className="text-olive-700">{practitioner.total_services} {practitioner.total_services === 1 ? 'service' : 'services'}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 text-sage-500" />

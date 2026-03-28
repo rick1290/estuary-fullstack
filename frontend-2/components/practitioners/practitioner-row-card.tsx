@@ -137,7 +137,9 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
   // Price range display string
   const priceDisplay = practitioner.price_range && (practitioner.price_range.min || practitioner.price_range.max)
     ? practitioner.price_range.min && practitioner.price_range.max
-      ? `$${practitioner.price_range.min} – $${practitioner.price_range.max}`
+      ? practitioner.price_range.min === practitioner.price_range.max
+        ? `$${practitioner.price_range.min}`
+        : `$${practitioner.price_range.min} – $${practitioner.price_range.max}`
       : practitioner.price_range.min
         ? `From $${practitioner.price_range.min}`
         : `Up to $${practitioner.price_range.max}`

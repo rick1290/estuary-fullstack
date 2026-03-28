@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
   if (!post) {
     return {
-      title: "Post Not Found | Estuary",
+      title: "Post Not Found",
       description: "This post could not be found.",
     }
   }

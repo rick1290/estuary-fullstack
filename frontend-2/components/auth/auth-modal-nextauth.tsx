@@ -134,7 +134,7 @@ export default function AuthModalNextAuth({
         {/* Header — branded gradient */}
         <div className="bg-gradient-to-br from-sage-50 via-cream-50 to-terracotta-50/30 px-8 pt-8 pb-6">
           <div className="flex items-center gap-2 mb-4">
-            <span className="font-serif text-lg font-medium text-olive-900 tracking-wide">
+            <span className="font-serif text-lg font-semibold text-olive-900 tracking-[0.25em]">
               ESTUARY
             </span>
           </div>

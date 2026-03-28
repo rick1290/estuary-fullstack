@@ -25,7 +25,7 @@ import {
 import { SUPPORT_EMAIL } from "@/lib/constants"
 
 export const metadata = {
-  title: "Help Center | Estuary",
+  title: "Help Center",
   description: "Find answers, guides, and support for using the Estuary wellness marketplace.",
 }
 

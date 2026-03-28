@@ -1,0 +1,24 @@
+[    1779ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/community?_rsc=av1uf:0
+[    2062ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/resources?_rsc=av1uf:0
+[   18862ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://estuary-backend.onrender.com/api/v1/payment-methods/:0
+[   18867ms] 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+</body>
+</html>
+
+[   32553ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-backend.onrender.com/api/v1/payments/472/:0
+[   33742ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-backend.onrender.com/api/v1/payments/472/:0
+[   33837ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://estuary-backend.onrender.com/api/v1/intake/bookings/9853aa72-2ce5-493d-bec0-8c5965fca06e/forms/:0
+[   43018ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-backend.onrender.com/api/v1/users/me/stream-subscriptions/:0
+[   76085ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/profile?_rsc=1m2v0:0
+[   81000ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/availability?_rsc=1i2il:0
+[   85149ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/schedule?_rsc=1yme1:0
+[   85929ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/bookings?_rsc=ko8iu:0
+[   87057ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/clients?_rsc=dko5c:0
+[   90205ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/messages?_rsc=rxt4c:0

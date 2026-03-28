@@ -189,7 +189,7 @@ export default function PractitionerOnboardingPage() {
       {/* Minimal top bar — logo + exit */}
       <div className="border-b border-sage-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-          <span className="font-serif text-lg font-medium text-olive-900 tracking-wide">
+          <span className="font-serif text-xl font-semibold text-olive-900 tracking-[0.25em]">
             ESTUARY
           </span>
           <button
