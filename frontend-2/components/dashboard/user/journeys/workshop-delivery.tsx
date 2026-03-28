@@ -262,7 +262,7 @@ export default function WorkshopDelivery({
                 : workshopState === "canceled"
                 ? "bg-red-50 border border-red-200 text-red-600"
                 : workshopState === "joinable" || workshopState === "live"
-                ? "bg-amber-50 border border-amber-300 text-amber-700"
+                ? "bg-emerald-100 border border-emerald-300 text-emerald-700"
                 : "bg-amber-100 border border-amber-300 text-amber-700"
             }`}
           >
@@ -273,7 +273,7 @@ export default function WorkshopDelivery({
                   : workshopState === "canceled"
                   ? "bg-red-400"
                   : workshopState === "joinable" || workshopState === "live"
-                  ? "bg-amber-500 animate-pulse"
+                  ? "bg-emerald-500 animate-pulse"
                   : "bg-amber-500 animate-pulse"
               }`}
             />
@@ -299,7 +299,7 @@ export default function WorkshopDelivery({
           {/* -- LEFT COLUMN -- */}
           <div className="space-y-8">
             {/* Hero Card — service image + title + key info */}
-            <div className="relative rounded-2xl overflow-hidden bg-[#2a1f0e]">
+            <div className="relative rounded-2xl overflow-hidden bg-[#2a2a20]">
               {/* Background image */}
               {imageUrl && (
                 <div
@@ -307,7 +307,7 @@ export default function WorkshopDelivery({
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2a1f0e] via-[#2a1f0e]/70 to-[#2a1f0e]/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2a2a20] via-[#2a2a20]/70 to-[#2a2a20]/40" />
 
               <div className="relative z-10 p-5 sm:p-8 pb-5 sm:pb-7">
                 <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
@@ -328,7 +328,7 @@ export default function WorkshopDelivery({
                             alt={practitioner.name ?? "Facilitator"}
                           />
                         ) : null}
-                        <AvatarFallback className="bg-white/10 text-white/70 text-xs font-serif italic">
+                        <AvatarFallback className="bg-gradient-to-br from-amber-200 to-amber-300 text-white/70 text-xs font-serif italic">
                           {practitioner?.name?.charAt(0) || "P"}
                         </AvatarFallback>
                       </Avatar>
@@ -787,7 +787,7 @@ export default function WorkshopDelivery({
                     Add to Calendar
                   </Button>
                   <button
-                    className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] transition-colors"
+                    className="w-full text-center text-[12px] text-olive-400 hover:text-red-500 py-2 min-h-[44px] min-w-[44px] transition-colors"
                     onClick={() => setCancelDialogOpen(true)}
                   >
                     Cancel Workshop

@@ -287,13 +287,13 @@ export default function SessionDelivery({
           <span
             className={`inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase px-3 py-1 rounded-full ${
               sessionState === "unscheduled"
-                ? "bg-amber-50 border border-amber-200 text-amber-700"
+                ? "bg-amber-50 border border-amber-200 text-amber-600"
                 : sessionState === "completed"
                 ? "bg-sage-100 border border-sage-200 text-sage-600"
                 : sessionState === "canceled"
                 ? "bg-red-50 border border-red-200 text-red-600"
                 : sessionState === "joinable" || sessionState === "in_progress"
-                ? "bg-amber-50 border border-amber-300 text-amber-700"
+                ? "bg-emerald-100 border border-emerald-300 text-emerald-700"
                 : "bg-sage-100 border border-sage-300 text-sage-700"
             }`}
           >
@@ -306,7 +306,7 @@ export default function SessionDelivery({
                   : sessionState === "canceled"
                   ? "bg-red-400"
                   : sessionState === "joinable" || sessionState === "in_progress"
-                  ? "bg-amber-500 animate-pulse"
+                  ? "bg-emerald-500 animate-pulse"
                   : "bg-sage-500 animate-pulse"
               }`}
             />
@@ -334,7 +334,7 @@ export default function SessionDelivery({
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-8">
             {/* Hero Card — service image + title + key info */}
-            <div className="relative rounded-2xl overflow-hidden bg-[#2a2218]">
+            <div className="relative rounded-2xl overflow-hidden bg-[#2a2a20]">
               {/* Background image */}
               {imageUrl && (
                 <div
@@ -342,7 +342,7 @@ export default function SessionDelivery({
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2a2218] via-[#2a2218]/70 to-[#2a2218]/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2a2a20] via-[#2a2a20]/70 to-[#2a2a20]/40" />
 
               <div className="relative z-10 p-5 sm:p-8 pb-5 sm:pb-7">
                 <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
@@ -360,7 +360,7 @@ export default function SessionDelivery({
                         {(practitioner as any)?.profile_image_url && (
                           <AvatarImage src={(practitioner as any).profile_image_url} alt={(practitioner as any)?.display_name || ""} />
                         )}
-                        <AvatarFallback className="bg-white/10 text-white/70 text-xs font-serif italic">
+                        <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-white/70 text-xs font-serif italic">
                           {(practitioner as any)?.display_name?.charAt(0) ||
                             practitioner?.name?.charAt(0) ||
                             "P"}
@@ -599,7 +599,7 @@ export default function SessionDelivery({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 hover:border-sage-300 min-h-[44px] sm:min-h-0"
                         asChild
                       >
                         <Link
@@ -612,7 +612,7 @@ export default function SessionDelivery({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 hover:border-sage-300 min-h-[44px] sm:min-h-0"
                         onClick={handleMessagePractitioner}
                       >
                         <MessageSquare className="h-3 w-3 mr-1.5" />
@@ -661,9 +661,9 @@ export default function SessionDelivery({
 
             {/* Live banner — joinable */}
             {(sessionState === "joinable" || sessionState === "in_progress") && (
-              <div className="flex items-center gap-3 px-5 py-3.5 bg-amber-50 border border-amber-200 rounded-xl">
-                <Clock className="h-5 w-5 text-amber-600 shrink-0" />
-                <div className="text-[13px] text-olive-700">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-sage-50 border border-sage-200 rounded-xl">
+                <Clock className="h-5 w-5 text-sage-600 shrink-0" />
+                <div className="text-[13px] text-sage-700">
                   <strong>
                     {sessionState === "in_progress"
                       ? "Session in progress"
@@ -750,7 +750,7 @@ export default function SessionDelivery({
               {sessionState === "unscheduled" && (
                 <>
                   <Button
-                    className="w-full h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-medium"
+                    className="w-full h-12 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium"
                     asChild
                   >
                     <Link href={`/dashboard/user/bookings/${bookingUuid}/schedule`}>
@@ -789,7 +789,7 @@ export default function SessionDelivery({
                   )}
                   <Button
                     variant="outline"
-                    className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                    className="w-full h-10 rounded-full border-sage-200 text-olive-600 hover:border-sage-300 text-[13px]"
                     onClick={() => {
                       if (!startTime) return
                       const start = toDate(startTime)
@@ -813,7 +813,7 @@ export default function SessionDelivery({
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                    className="w-full h-10 rounded-full border-sage-200 text-olive-600 hover:border-sage-300 text-[13px]"
                     disabled={!isModifiable}
                     onClick={() =>
                       router.push(
@@ -875,7 +875,7 @@ export default function SessionDelivery({
                   {!(effectiveBooking as any).has_review && (
                     <Button
                       variant="outline"
-                      className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                      className="w-full h-10 rounded-full border-sage-200 text-olive-600 hover:border-sage-300 text-[13px]"
                       onClick={() => setReviewDialogOpen(true)}
                     >
                       <Star className="h-3.5 w-3.5 mr-2" />

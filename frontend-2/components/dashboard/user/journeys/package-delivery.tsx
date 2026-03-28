@@ -419,7 +419,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
           {/* -- LEFT COLUMN -- */}
           <div className="space-y-8">
             {/* Hero Card -- sage-tinted with service image */}
-            <div className="relative rounded-2xl overflow-hidden bg-[#1e2e1e]">
+            <div className="relative rounded-2xl overflow-hidden bg-[#2a2a20]">
               {/* Background image */}
               {imageUrl && (
                 <div
@@ -427,7 +427,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1e2e1e] via-[#1e2e1e]/75 to-[#1e2e1e]/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2a2a20] via-[#2a2a20]/70 to-[#2a2a20]/40" />
 
               <div className="relative z-10 p-5 sm:p-8 pb-5 sm:pb-7">
                 <div className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">
@@ -448,7 +448,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                             alt={practitioner.name}
                           />
                         ) : null}
-                        <AvatarFallback className="bg-white/10 text-white/70 text-xs font-serif italic">
+                        <AvatarFallback className="bg-gradient-to-br from-sage-200 to-sage-300 text-white/70 text-xs font-serif italic">
                           {practitioner.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
@@ -489,9 +489,9 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                         key={i}
                         className={`inline-block h-2.5 w-2.5 rounded-full ${
                           i < completedCount
-                            ? "bg-[#6b8f6b] border border-[#8aaf8a]"
+                            ? "bg-sage-500 border border-sage-400"
                             : i < usedCount
-                              ? "bg-[#6b8f6b]/40 border border-[#6b8f6b]/50"
+                              ? "bg-sage-500/40 border border-sage-400/50"
                               : "bg-transparent border border-white/20"
                         }`}
                       />
@@ -561,7 +561,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                             variant="outline"
                             size="sm"
                             asChild
-                            className="rounded-full border-sage-200 text-olive-600 hover:border-sage-400 hover:text-olive-800"
+                            className="rounded-full border-sage-200 text-olive-600 hover:border-sage-300 hover:text-olive-800"
                           >
                             <Link
                               href={
@@ -735,7 +735,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 hover:border-sage-300 min-h-[44px] sm:min-h-0"
                         asChild
                       >
                         <Link
@@ -748,7 +748,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-[12px] border-sage-200 text-olive-600 min-h-[44px] sm:min-h-0"
+                        className="rounded-full text-[12px] border-sage-200 text-olive-600 hover:border-sage-300 min-h-[44px] sm:min-h-0"
                         onClick={handleMessagePractitioner}
                       >
                         <MessageSquare className="h-3 w-3 mr-1.5" />

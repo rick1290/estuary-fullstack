@@ -78,12 +78,12 @@ interface ModuleBooking {
 }
 
 // ---------------------------------------------------------------------------
-// Teal accent constants
+// Olive accent constants
 // ---------------------------------------------------------------------------
 
-const TEAL = "#2d6a6a"
-const TEAL_LIGHT = "#3a8585"
-const TEAL_DARK = "#1e4a4a"
+const OLIVE = "#6b7a2f"
+const OLIVE_LIGHT = "#8a9a45"
+const OLIVE_DARK = "#4a5a1e"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -372,11 +372,11 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
   return (
     <div className="min-h-screen overflow-x-hidden">
       {/* ── COMPACT HEADER BAR ── */}
-      <div className="bg-gradient-to-r from-teal-50/80 to-cream-50 border-b border-teal-200/40">
+      <div className="bg-gradient-to-r from-olive-50/80 to-cream-50 border-b border-olive-200/40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
             href="/dashboard/user/journeys"
-            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-teal-700 transition-colors min-h-[44px] min-w-[44px]"
+            className="inline-flex items-center gap-2 text-[13px] text-olive-400 hover:text-olive-700 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Journeys
@@ -386,8 +386,8 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
               isCanceled
                 ? "bg-red-50 border border-red-200 text-red-600"
                 : allCompleted
-                  ? "bg-teal-50 border border-teal-200 text-teal-700"
-                  : "bg-teal-50 border border-teal-200 text-teal-700"
+                  ? "bg-olive-50 border border-olive-200 text-olive-700"
+                  : "bg-olive-50 border border-olive-200 text-olive-700"
             }`}
           >
             <span
@@ -395,8 +395,8 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 isCanceled
                   ? "bg-red-400"
                   : allCompleted
-                    ? "bg-teal-500"
-                    : "bg-teal-500 animate-pulse"
+                    ? "bg-olive-500"
+                    : "bg-olive-500 animate-pulse"
               }`}
             />
             {isCanceled
@@ -418,19 +418,19 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-8">
-            {/* ── Hero Card (teal-tinted) ── */}
-            <div className="relative rounded-2xl overflow-hidden bg-[#1a3a3a]">
+            {/* ── Hero Card (olive-tinted) ── */}
+            <div className="relative rounded-2xl overflow-hidden bg-[#2a2a20]">
               {imageUrl && (
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-35"
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1a3a3a] via-[#1a3a3a]/70 to-[#1a3a3a]/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2a2a20] via-[#2a2a20]/70 to-[#2a2a20]/40" />
               <div
                 className="absolute inset-0"
                 style={{
-                  background: `radial-gradient(ellipse at 80% 20%, ${TEAL}44 0%, transparent 60%)`,
+                  background: `radial-gradient(ellipse at 80% 20%, ${OLIVE}44 0%, transparent 60%)`,
                 }}
               />
 
@@ -452,12 +452,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                             alt={(practitioner as any)?.name ?? "Instructor"}
                           />
                         )}
-                        <AvatarFallback
-                          className="text-white/80 text-xs font-serif italic"
-                          style={{
-                            background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DARK})`,
-                          }}
-                        >
+                        <AvatarFallback className="bg-gradient-to-br from-olive-200 to-olive-300 text-white/80 text-xs font-serif italic">
                           {(practitioner as any)?.name?.charAt(0) || "P"}
                         </AvatarFallback>
                       </Avatar>
@@ -504,8 +499,8 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                         style={{
                           width: `${progressPercent}%`,
                           background: allCompleted
-                            ? "linear-gradient(90deg, #4a8a8a, #6aabab)"
-                            : `linear-gradient(90deg, ${TEAL_DARK}, ${TEAL_LIGHT})`,
+                            ? "linear-gradient(90deg, #7a9a35, #9ab855)"
+                            : `linear-gradient(90deg, ${OLIVE_DARK}, ${OLIVE_LIGHT})`,
                         }}
                       />
                     </div>
@@ -534,14 +529,14 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
             {/* ── CURRICULUM (the star of this page) ── */}
             {!isCanceled && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-4 pb-2 border-b border-teal-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-4 pb-2 border-b border-olive-200/50">
                   Curriculum
                 </h2>
 
                 {/* All completed banner */}
                 {allCompleted && (
-                  <div className="flex items-center gap-3 p-4 mb-4 rounded-xl border border-teal-200/60 bg-teal-50/50">
-                    <Award className="h-6 w-6 shrink-0 text-teal-600" />
+                  <div className="flex items-center gap-3 p-4 mb-4 rounded-xl border border-olive-200/60 bg-olive-50/50">
+                    <Award className="h-6 w-6 shrink-0 text-olive-600" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-olive-900">
                         Course Complete
@@ -559,9 +554,9 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                     <Link
                       key={mod.booking.id ?? mod.sequenceNumber}
                       href={`/dashboard/user/journeys/${journeyUuid}/${mod.booking.public_uuid}`}
-                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white border border-sage-200/60 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
+                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white border border-sage-200/60 rounded-xl hover:border-olive-200 hover:shadow-sm transition group"
                     >
-                      <CheckCircle className="h-5 w-5 text-teal-600 shrink-0" />
+                      <CheckCircle className="h-5 w-5 text-olive-600 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-olive-900">
                           {mod.title}
@@ -579,7 +574,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                         </div>
                       </div>
                       {(mod.booking as any).recordings && (
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-olive-100 text-olive-700 shrink-0">
                           <Film className="w-3 h-3" />
                           Recording
                         </span>
@@ -594,14 +589,14 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                       href={`/dashboard/user/journeys/${journeyUuid}/${upNextModule.booking.public_uuid}`}
                       className="block"
                     >
-                      <div className="bg-white border-2 border-teal-300 rounded-xl shadow-sm p-4 sm:p-5 hover:shadow-md transition">
+                      <div className="bg-olive-50/30 border-2 border-olive-300 rounded-xl shadow-sm p-4 sm:p-5 hover:shadow-md transition">
                         <div className="flex items-start gap-3.5">
-                          <div className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center bg-teal-600">
+                          <div className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center bg-olive-600">
                             <span className="w-2 h-2 rounded-full bg-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="mb-1">
-                              <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">
+                              <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-olive-100 text-olive-700">
                                 Up Next
                               </span>
                             </div>
@@ -612,11 +607,11 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                               {upNextModule.startTime && (
                                 <>
                                   <span className="flex items-center gap-1.5">
-                                    <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                                    <Calendar className="w-3.5 h-3.5 text-olive-500" />
                                     {format(upNextModule.startTime, "EEE, MMM d")}
                                   </span>
                                   <span className="flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5 text-teal-600" />
+                                    <Clock className="w-3.5 h-3.5 text-olive-500" />
                                     {format(upNextModule.startTime, "h:mm a")}
                                   </span>
                                 </>
@@ -632,7 +627,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                                 <div className="mt-3">
                                   <Button
                                     size="sm"
-                                    className="rounded-full bg-teal-600 hover:bg-teal-700 text-white text-[13px] gap-1.5"
+                                    className="rounded-full bg-olive-700 hover:bg-olive-800 text-white text-[13px] gap-1.5"
                                     asChild
                                     onClick={(e) => e.stopPropagation()}
                                   >
@@ -656,7 +651,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                     <Link
                       key={mod.booking.id ?? mod.sequenceNumber}
                       href={`/dashboard/user/journeys/${journeyUuid}/${mod.booking.public_uuid}`}
-                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white/60 border border-sage-200/40 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
+                      className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3.5 bg-white/60 border border-sage-200/40 rounded-xl hover:border-olive-200 hover:shadow-sm transition group"
                     >
                       <Circle className="h-5 w-5 text-sage-300 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -677,7 +672,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                   {/* Show more / Show less */}
                   {hiddenUpcomingCount > 0 && !showAllUpcoming && (
                     <button
-                      className="flex items-center gap-1.5 text-[13px] mt-1 ml-8 text-teal-700 transition-colors hover:opacity-75"
+                      className="flex items-center gap-1.5 text-[13px] mt-1 ml-8 text-olive-700 transition-colors hover:opacity-75"
                       onClick={() => setShowAllUpcoming(true)}
                     >
                       <ChevronDown className="h-4 w-4" />
@@ -689,7 +684,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                   )}
                   {showAllUpcoming && hiddenUpcomingCount > 0 && (
                     <button
-                      className="flex items-center gap-1.5 text-[13px] mt-1 ml-8 text-teal-700 transition-colors hover:opacity-75"
+                      className="flex items-center gap-1.5 text-[13px] mt-1 ml-8 text-olive-700 transition-colors hover:opacity-75"
                       onClick={() => setShowAllUpcoming(false)}
                     >
                       <ChevronUp className="h-4 w-4" />
@@ -728,14 +723,14 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                   journeyData?.service_uuid ||
                   String((service as any)?.public_uuid || "")
                 }
-                accentColor="teal"
+                accentColor="olive"
               />
             )}
 
             {/* ── Your Instructor ── */}
             {practitioner && !isCanceled && (
               <div>
-                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-teal-200/50">
+                <h2 className="text-[11px] font-medium tracking-widest uppercase text-olive-400 mb-3 pb-2 border-b border-olive-200/50">
                   Your Instructor
                 </h2>
                 <div className="flex items-start gap-4 p-5 bg-white border border-sage-200/60 rounded-xl">
@@ -746,12 +741,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                         alt={(practitioner as any)?.name ?? "Instructor"}
                       />
                     ) : null}
-                    <AvatarFallback
-                      className="text-white/80 font-serif text-xl italic"
-                      style={{
-                        background: `linear-gradient(135deg, ${TEAL}, ${TEAL_DARK})`,
-                      }}
-                    >
+                    <AvatarFallback className="bg-gradient-to-br from-olive-200 to-olive-300 text-white/80 font-serif text-xl italic">
                       {(practitioner as any)?.name?.charAt(0) || "P"}
                     </AvatarFallback>
                   </Avatar>
@@ -798,23 +788,23 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
           <aside className="lg:sticky lg:top-20 self-start space-y-4">
             {/* Progress Card */}
             {totalCount > 0 && (
-              <div className="bg-teal-50 border border-teal-200 rounded-xl px-5 py-4">
+              <div className="bg-olive-50 border border-olive-200 rounded-xl px-5 py-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[13px] font-medium text-teal-800">
+                  <span className="text-[13px] font-medium text-olive-800">
                     {allCompleted ? "Course Complete!" : "Your Progress"}
                   </span>
-                  <span className="text-[13px] font-medium text-teal-700">
+                  <span className="text-[13px] font-medium text-olive-700">
                     {progressPercent}%
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-teal-100 overflow-hidden mb-3">
+                <div className="w-full h-2 rounded-full bg-olive-100 overflow-hidden mb-3">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${progressPercent}%`,
                       background: allCompleted
-                        ? "linear-gradient(90deg, #4a8a8a, #6aabab)"
-                        : `linear-gradient(90deg, ${TEAL_DARK}, ${TEAL_LIGHT})`,
+                        ? "linear-gradient(90deg, #7a9a35, #9ab855)"
+                        : `linear-gradient(90deg, ${OLIVE_DARK}, ${OLIVE_LIGHT})`,
                     }}
                   />
                 </div>
@@ -822,7 +812,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                   {completedCount} of {totalCount} sessions complete
                 </div>
                 {upNext?.startTime && (
-                  <div className="flex items-center gap-1.5 text-[12px] text-teal-700 mt-2 pt-2 border-t border-teal-200/60">
+                  <div className="flex items-center gap-1.5 text-[12px] text-olive-700 mt-2 pt-2 border-t border-olive-200/60">
                     <Calendar className="w-3 h-3" />
                     Next: {format(upNext.startTime, "EEE, MMM d")} at{" "}
                     {format(upNext.startTime, "h:mm a")}
@@ -833,7 +823,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
 
             {/* Course Details Card */}
             <div className="bg-white border border-sage-200/60 rounded-xl overflow-hidden shadow-sm">
-              <div className="px-5 py-4 border-b border-sage-200/40 bg-sage-50/50">
+              <div className="px-5 py-4 border-b border-sage-200/40 bg-olive-50/50">
                 <div className="text-[10px] font-medium tracking-widest uppercase text-olive-400 mb-1">
                   Course Details
                 </div>
@@ -843,7 +833,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 {/* Total sessions */}
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
                   <span className="flex items-center gap-2 text-olive-400">
-                    <BookOpen className="h-3.5 w-3.5 text-teal-600" />
+                    <BookOpen className="h-3.5 w-3.5 text-olive-500" />
                     Sessions
                   </span>
                   <span className="font-medium text-olive-800">
@@ -855,7 +845,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 {avgDuration && avgDuration > 0 && (
                   <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
                     <span className="flex items-center gap-2 text-olive-400">
-                      <Clock className="h-3.5 w-3.5 text-teal-600" />
+                      <Clock className="h-3.5 w-3.5 text-olive-500" />
                       Per Session
                     </span>
                     <span className="font-medium text-olive-800">
@@ -868,7 +858,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 {firstDate && lastDate && (
                   <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
                     <span className="flex items-center gap-2 text-olive-400">
-                      <Calendar className="h-3.5 w-3.5 text-teal-600" />
+                      <Calendar className="h-3.5 w-3.5 text-olive-500" />
                       Dates
                     </span>
                     <span className="font-medium text-olive-800">
@@ -882,9 +872,9 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 <div className="flex justify-between py-2.5 border-b border-sage-100 text-[13px]">
                   <span className="flex items-center gap-2 text-olive-400">
                     {isVirtual ? (
-                      <Video className="h-3.5 w-3.5 text-teal-600" />
+                      <Video className="h-3.5 w-3.5 text-olive-500" />
                     ) : (
-                      <MapPin className="h-3.5 w-3.5 text-teal-600" />
+                      <MapPin className="h-3.5 w-3.5 text-olive-500" />
                     )}
                     Location
                   </span>
@@ -896,7 +886,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
                 {/* Confirmation */}
                 <div className="flex justify-between py-2.5 text-[13px]">
                   <span className="text-olive-400">Enrollment</span>
-                  <span className="font-mono text-[11px] text-teal-600 tracking-wide">
+                  <span className="font-mono text-[11px] text-olive-600 tracking-wide">
                     {bookingUuid.slice(0, 8).toUpperCase()}
                   </span>
                 </div>
@@ -904,13 +894,13 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
             </div>
 
             {/* Action Buttons */}
-            <div className="space-y-2">
+            <div className="space-y-2 flex flex-col flex-wrap">
               {/* Join Next Session — if joinable */}
               {upNext &&
                 isModuleJoinable(upNext) &&
                 (upNext.roomUuid || upNext.booking.room) && (
                   <Button
-                    className="w-full h-12 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-[15px] font-medium"
+                    className="w-full h-12 rounded-full bg-olive-700 hover:bg-olive-800 text-white text-[15px] font-medium"
                     asChild
                   >
                     <a
@@ -926,7 +916,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
               {practitioner && (
                 <Button
                   variant="outline"
-                  className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                  className="w-full min-h-[44px] rounded-full border-sage-200 text-olive-600 text-[13px]"
                   onClick={handleMessagePractitioner}
                 >
                   <MessageSquare className="h-3.5 w-3.5 mr-2" />
@@ -938,7 +928,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
               {allCompleted && (
                 <Button
                   variant="outline"
-                  className="w-full h-10 rounded-full border-sage-200 text-olive-600 text-[13px]"
+                  className="w-full min-h-[44px] rounded-full border-sage-200 text-olive-600 text-[13px]"
                   onClick={() => setReviewDialogOpen(true)}
                 >
                   <Star className="h-3.5 w-3.5 mr-2" />
