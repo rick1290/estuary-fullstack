@@ -833,4 +833,10 @@ class FeatureRequest(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.title} - {self.practitioner.display_name or self.practitioner.user.email}"
+        if self.practitioner:
+            name = self.practitioner.display_name or self.practitioner.user.email
+        elif self.user:
+            name = self.user.get_full_name() or self.user.email
+        else:
+            name = "Unknown"
+        return f"{self.title} - {name}"
