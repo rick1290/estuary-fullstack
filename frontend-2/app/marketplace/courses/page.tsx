@@ -23,7 +23,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       eyebrow="Learning Journeys"
       description="Discover comprehensive courses designed to guide your personal growth journey"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters />}
+      sidebar={<MarketplaceFilters showServiceTypeFilter={false} />}
       patternType="leaf"
     >
       <ServiceListings serviceType="course" />

@@ -17,10 +17,14 @@ import { cn } from "@/lib/utils"
 
 interface MarketplaceFiltersProps {
   showServiceTypeFilter?: boolean
+  showPriceFilter?: boolean
+  showRatingFilter?: boolean
 }
 
 export default function MarketplaceFilters({
   showServiceTypeFilter = true,
+  showPriceFilter = true,
+  showRatingFilter = true,
 }: MarketplaceFiltersProps) {
   const { filters, updateFilter, resetFilters, toggleArrayFilter } = useMarketplaceFilters()
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
@@ -294,46 +298,50 @@ export default function MarketplaceFilters({
           )}
 
           {/* Price Range */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium text-olive-900">Price Range</Label>
-            <div className="space-y-4">
-              <Slider
-                value={[filters.minPrice, filters.maxPrice]}
-                onValueChange={([min, max]) => updateFilter('minPrice', min) || updateFilter('maxPrice', max)}
-                min={0}
-                max={500}
-                step={10}
-                className="mt-2"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-olive-600">${filters.minPrice}</span>
-                <span className="text-sm text-olive-600">${filters.maxPrice}+</span>
+          {showPriceFilter && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-olive-900">Price Range</Label>
+              <div className="space-y-4">
+                <Slider
+                  value={[filters.minPrice, filters.maxPrice]}
+                  onValueChange={([min, max]) => updateFilter('minPrice', min) || updateFilter('maxPrice', max)}
+                  min={0}
+                  max={2000}
+                  step={10}
+                  className="mt-2"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-olive-600">${filters.minPrice}</span>
+                  <span className="text-sm text-olive-600">${filters.maxPrice}+</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Minimum Rating */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium text-olive-900">Minimum Rating</Label>
-            <RadioGroup
-              value={filters.rating}
-              onValueChange={(value) => updateFilter('rating', value)}
-              className="space-y-2.5"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="any" id="any-rating" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
-                <Label htmlFor="any-rating" className="text-sm font-normal text-olive-700 cursor-pointer">Any Rating</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="4+" id="four-plus" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
-                <Label htmlFor="four-plus" className="text-sm font-normal text-olive-700 cursor-pointer">4+ Stars</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="4.5+" id="four-five-plus" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
-                <Label htmlFor="four-five-plus" className="text-sm font-normal text-olive-700 cursor-pointer">4.5+ Stars</Label>
-              </div>
-            </RadioGroup>
-          </div>
+          {showRatingFilter && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-olive-900">Minimum Rating</Label>
+              <RadioGroup
+                value={filters.rating}
+                onValueChange={(value) => updateFilter('rating', value)}
+                className="space-y-2.5"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="any" id="any-rating" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                  <Label htmlFor="any-rating" className="text-sm font-normal text-olive-700 cursor-pointer">Any Rating</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="4+" id="four-plus" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                  <Label htmlFor="four-plus" className="text-sm font-normal text-olive-700 cursor-pointer">4+ Stars</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="4.5+" id="four-five-plus" className="border-sage-300 text-sage-600 data-[state=checked]:border-sage-600" />
+                  <Label htmlFor="four-five-plus" className="text-sm font-normal text-olive-700 cursor-pointer">4.5+ Stars</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
 
           <Separator className="my-6 bg-sage-200" />
 

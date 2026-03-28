@@ -29,7 +29,7 @@ export default async function PractitionersPage({ searchParams }: PractitionersP
       eyebrow="Wellness Guides"
       description="Connect with practitioners who can support your personal growth journey"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters />}
+      sidebar={<MarketplaceFilters showServiceTypeFilter={false} showPriceFilter={false} showRatingFilter={false} />}
       patternType="leaf"
     >
       <PractitionerListings query={query} location={location} categories={categories} />

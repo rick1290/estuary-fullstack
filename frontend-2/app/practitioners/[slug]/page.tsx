@@ -16,11 +16,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const { data } = await publicPractitionersBySlugRetrieve({ path: { slug } })
     const name = data?.display_name || data?.full_name || "Practitioner"
+    const title = data?.professional_title || ""
     const bio = data?.bio || ""
+    const location = data?.primary_location || ""
+    const specializations = data?.specializations?.map((s: any) => s.name || s).slice(0, 3).join(", ") || ""
+
+    const pageTitle = title ? `${name} — ${title}` : name
+
+    const fallbackDescription = [
+      `Book a session with ${name}`,
+      title ? `, a ${title}` : "",
+      specializations ? ` specializing in ${specializations}` : "",
+      location ? ` in ${location}` : "",
+      ". Find availability, services, and reviews on Estuary.",
+    ].join("")
 
     return createMetadata({
-      title: name,
-      description: bio || `View ${name}'s profile, services, and availability on Estuary.`,
+      title: pageTitle,
+      description: bio || fallbackDescription,
       path: `/practitioners/${slug}`,
       type: "profile",
     })

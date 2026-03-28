@@ -15,9 +15,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const { data } = await publicServicesBySlugRetrieve({ path: { slug } })
+    const title = data?.title || "Course"
+    const sessionCount = data?.sessions_count || data?.total_sessions || ""
+    const practitioner = data?.practitioner_name || ""
+    const suffix = sessionCount ? `${sessionCount}-Session Course` : "Course"
+
+    const fallbackDesc = [
+      `Enroll in this ${suffix.toLowerCase()}`,
+      practitioner ? ` with ${practitioner}` : "",
+      ". View curriculum, schedule, and pricing on Estuary.",
+    ].join("")
+
     return createMetadata({
-      title: data?.title || "Course",
-      description: data?.description || "",
+      title: `${title} · ${suffix}`,
+      description: data?.short_description || data?.description || fallbackDesc,
       path: `/courses/${slug}`,
       ogImage: data?.cover_image_url || undefined,
     })

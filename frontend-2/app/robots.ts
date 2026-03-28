@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard/", "/checkout/", "/room/", "/test-*", "/api/"],
+        disallow: ["/dashboard/", "/checkout/", "/room/", "/streams/following", "/test-*", "/api/"],
       },
       // Explicitly allow AI crawlers to access public content
       {
