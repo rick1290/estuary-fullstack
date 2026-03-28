@@ -148,7 +148,6 @@ export default function Navbar() {
                   {item.subItems ? (
                     <>
                       <NavigationMenuTrigger className="flex items-center gap-1">
-                        {item.icon}
                         <span>{item.label}</span>
                       </NavigationMenuTrigger>
                       <NavigationMenuContent>
@@ -162,7 +161,6 @@ export default function Navbar() {
                                   pathname === "/marketplace" && "bg-sage-100 font-medium",
                                 )}
                               >
-                                <Layers className="h-4 w-4" />
                                 All Services
                               </Link>
                             </NavigationMenuLink>
@@ -177,7 +175,6 @@ export default function Navbar() {
                                     pathname === subItem.href && "bg-sage-100 font-medium",
                                   )}
                                 >
-                                  {subItem.icon}
                                   {subItem.label}
                                 </Link>
                               </NavigationMenuLink>
@@ -192,10 +189,8 @@ export default function Navbar() {
                       className={cn(
                         "px-3.5 py-1.5 rounded-full text-[13.5px] font-normal transition-colors hover:bg-[#f0ede8] hover:text-[#2a2218]",
                         pathname === item.href ? "bg-[#f0ede8] text-[#2a2218] font-medium" : "text-[#6b6258]",
-                        "flex items-center gap-2",
                       )}
                     >
-                      {item.icon}
                       <span>{item.label}</span>
                     </Link>
                   )}
@@ -310,7 +305,6 @@ export default function Navbar() {
                                 pathname === "/marketplace" && "bg-accent font-medium",
                               )}
                             >
-                              <Layers className="h-4 w-4" />
                               All Services
                             </Link>
                           </SheetClose>
@@ -323,7 +317,6 @@ export default function Navbar() {
                                   pathname === subItem.href && "bg-accent font-medium",
                                 )}
                               >
-                                {subItem.icon}
                                 {subItem.label}
                               </Link>
                             </SheetClose>
@@ -338,7 +331,6 @@ export default function Navbar() {
                               pathname === item.href && "bg-accent font-medium",
                             )}
                           >
-                            {item.icon}
                             {item.label}
                           </Link>
                         </SheetClose>
