@@ -149,6 +149,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     duration_minutes = serializers.IntegerField(read_only=True)
     is_upcoming = serializers.BooleanField(read_only=True)
     location_type = serializers.CharField(source='service.location_type', read_only=True)
+    has_pending_intake_forms = serializers.SerializerMethodField(read_only=True)
 
     def get_room(self, obj):
         """Get room using property (works for both direct and service_session rooms)"""
@@ -156,13 +157,22 @@ class BookingListSerializer(serializers.ModelSerializer):
             return BookingRoomSerializer(obj.room).data
         return None
 
+    def get_has_pending_intake_forms(self, obj):
+        """Check if booking has intake forms not yet completed.
+        Uses annotations from viewset queryset for efficiency (no extra queries)."""
+        has_forms = getattr(obj, '_has_intake_forms', False)
+        has_completed = getattr(obj, '_has_completed_intake', False)
+        if not has_forms:
+            return False
+        return not has_completed
+
     class Meta:
         model = Booking
         fields = [
             'id', 'public_uuid', 'user', 'practitioner', 'service', 'service_session', 'room',
             'status', 'status_display', 'payment_status', 'payment_status_display',
             'price_charged', 'final_amount', 'duration_minutes', 'is_upcoming',
-            'location_type', 'created_at', 'updated_at'
+            'location_type', 'has_pending_intake_forms', 'created_at', 'updated_at'
         ]
 
 
@@ -201,6 +211,9 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     # Review status
     has_review = serializers.SerializerMethodField()
 
+    # Intake forms status
+    intake_forms_status = serializers.SerializerMethodField()
+
     # Rescheduling info
     rescheduled_from_id = serializers.IntegerField(source='rescheduled_from.id', read_only=True)
     rescheduled_from_uuid = serializers.CharField(source='rescheduled_from.public_uuid', read_only=True)
@@ -219,7 +232,8 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'duration_minutes', 'is_upcoming', 'is_active', 'can_be_canceled', 'can_be_rescheduled',
             'is_individual_session', 'is_group_session', 'is_package_booking', 'is_course_booking',
             'is_parent_booking', 'related_bookings',
-            'has_review', 'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
+            'has_review', 'intake_forms_status',
+            'rescheduled_from_id', 'rescheduled_from_uuid', 'reminders', 'notes',
             'recordings', 'resources', 'created_at', 'updated_at'
         ]
         read_only_fields = [
@@ -249,6 +263,27 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     def get_has_review(self, obj):
         """Check if this booking has been reviewed by the user"""
         return obj.reviews.filter(user=obj.user).exists()
+
+    def get_intake_forms_status(self, obj):
+        """Check intake form status for this booking"""
+        try:
+            from intake.models import IntakeFormLink, IntakeResponse
+            form_links = IntakeFormLink.objects.filter(service=obj.service)
+            if not form_links.exists():
+                return {'has_forms': False}
+
+            responses = IntakeResponse.objects.filter(booking=obj)
+            total_forms = form_links.count()
+            completed_forms = responses.count()
+
+            return {
+                'has_forms': True,
+                'total_forms': total_forms,
+                'completed_forms': completed_forms,
+                'all_completed': completed_forms >= total_forms,
+            }
+        except Exception:
+            return {'has_forms': False}
 
     def get_recordings(self, obj):
         """Get all processed recordings for this booking's room"""
@@ -660,6 +695,7 @@ class JourneyListItemSerializer(serializers.Serializer):
     next_session_title = serializers.CharField(allow_null=True, allow_blank=True)
     progress_percentage = serializers.FloatField()
     status = serializers.ChoiceField(choices=['unscheduled', 'upcoming', 'active', 'completed'])
+    has_pending_intake_forms = serializers.BooleanField(default=False)
 
 
 class JourneyListResponseSerializer(serializers.Serializer):

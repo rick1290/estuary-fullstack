@@ -39,7 +39,8 @@ import {
   Edit,
   Copy,
   Save,
-  X
+  X,
+  FileText
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -616,6 +617,11 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
               </div>
             </CardContent>
           </Card>
+
+          {/* Intake Form Responses */}
+          {booking.intake_forms_status?.has_forms && (
+            <IntakeResponsesSection bookingId={bookingId} status={booking.intake_forms_status} />
+          )}
         </div>
 
         {/* Sidebar */}
@@ -814,5 +820,88 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+/** Inline component to fetch and display client intake form responses */
+function IntakeResponsesSection({ bookingId, status }: { bookingId: string; status: any }) {
+  const [responses, setResponses] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchResponses = async () => {
+      try {
+        const { getSession } = await import("next-auth/react")
+        const session = await getSession()
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        const res = await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingId}/forms/responses/`, {
+          headers: {
+            ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+          },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setResponses(data)
+        }
+      } catch {
+        // Silently fail
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchResponses()
+  }, [bookingId])
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Client Intake Forms
+        </CardTitle>
+        <CardDescription>
+          {status.all_completed
+            ? `${status.completed_forms}/${status.total_forms} forms completed`
+            : `${status.completed_forms}/${status.total_forms} forms completed — waiting on client`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="space-y-3">
+            <div className="h-4 w-3/4 bg-sage-100 rounded animate-pulse" />
+            <div className="h-4 w-1/2 bg-sage-100 rounded animate-pulse" />
+          </div>
+        ) : responses?.intake_responses?.length > 0 ? (
+          <div className="space-y-4">
+            {responses.intake_responses.map((response: any) => (
+              <div key={response.id} className="border border-sage-200/60 rounded-lg p-4">
+                <h4 className="font-medium text-sm text-olive-900 mb-3">
+                  {response.form_template_name || response.form_template?.title || "Intake Form"}
+                </h4>
+                {response.responses && typeof response.responses === 'object' ? (
+                  <dl className="space-y-2">
+                    {Object.entries(response.responses).map(([key, value]: [string, any]) => (
+                      <div key={key}>
+                        <dt className="text-xs font-medium text-olive-500">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</dt>
+                        <dd className="text-sm text-olive-800 mt-0.5">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value || '—')}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p className="text-sm text-olive-500">No response data available</p>
+                )}
+                <p className="text-xs text-olive-500 mt-3">
+                  Submitted {response.submitted_at ? new Date(response.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'N/A'}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-olive-500">
+            {status.all_completed ? "Forms completed but no response data to display." : "Client has not yet completed the intake forms."}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Calendar, CalendarClock, ChevronRight, User } from "lucide-react"
+import { Calendar, CalendarClock, ChevronRight, User, FileText } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 
@@ -108,6 +108,12 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
             <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-50 text-sage-600">
               Session
             </span>
+            {(journey as any).has_pending_intake_forms && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
+                <FileText className="h-3 w-3" />
+                Form
+              </span>
+            )}
             {isUnscheduled ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
@@ -125,6 +131,14 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
           </div>
           <ChevronRight className="h-4 w-4 text-olive-300 group-hover:text-sage-500 transition-colors" />
         </div>
+
+        {/* Mobile form badge */}
+        {(journey as any).has_pending_intake_forms && (
+          <div className="flex sm:hidden items-center gap-1 mt-1 ml-[60px]">
+            <FileText className="h-3 w-3 text-amber-600" />
+            <span className="text-[11px] font-medium text-amber-700">Form required</span>
+          </div>
+        )}
       </div>
     </Link>
   )

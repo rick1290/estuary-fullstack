@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { getSession } from "next-auth/react"
 import { CheckCircle, FileText, ChevronRight } from "lucide-react"
 
 interface FormsStatusBannerProps {
@@ -14,13 +15,24 @@ export default function FormsStatusBanner({ bookingUuid }: FormsStatusBannerProp
   useEffect(() => {
     if (!bookingUuid) return
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-    fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
-      credentials: 'include',
-    })
-      .then(res => res.json())
-      .then(data => setFormsStatus(data?.data || data))
-      .catch(() => {})
+    const fetchForms = async () => {
+      try {
+        const session = await getSession()
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const res = await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
+          headers: {
+            ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}),
+          },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setFormsStatus(data?.data || data)
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+    fetchForms()
   }, [bookingUuid])
 
   if (!formsStatus?.has_forms) return null
@@ -30,9 +42,9 @@ export default function FormsStatusBanner({ bookingUuid }: FormsStatusBannerProp
 
   if (allDone) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200 mb-4">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <span className="text-sm text-green-800">All pre-session forms completed</span>
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-sage-50 border border-sage-200 mb-4">
+        <CheckCircle className="h-4 w-4 text-sage-600" />
+        <span className="text-sm text-sage-800">All pre-session forms completed</span>
       </div>
     )
   }

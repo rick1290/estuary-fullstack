@@ -305,7 +305,11 @@ export default function PractitionerBookingsList() {
                 </TableHeader>
                 <TableBody>
                   {filteredBookings.map((booking) => (
-                    <TableRow key={booking.id}>
+                    <TableRow
+                      key={booking.id}
+                      className="cursor-pointer hover:bg-sage-50/50"
+                      onClick={() => router.push(`/dashboard/practitioner/bookings/${booking.public_uuid || booking.id}`)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 shrink-0">
