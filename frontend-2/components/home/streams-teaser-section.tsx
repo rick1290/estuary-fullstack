@@ -20,7 +20,7 @@ const itemFade = {
 
 export default function StreamsTeaserSection() {
   return (
-    <section className="py-20 bg-cream-50">
+    <section className="py-20 bg-[#f0ede8] border-y border-[#e0d8ce]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -33,22 +33,22 @@ export default function StreamsTeaserSection() {
             >
               <motion.span
                 variants={itemFade}
-                className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+                className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
               >
                 Streams
               </motion.span>
 
               <motion.h2
                 variants={itemFade}
-                className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900 mb-5"
+                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-[#2a2218] mb-5"
               >
                 Explore{" "}
-                <em className="italic text-terracotta-600">Living Streams</em>
+                <em className="italic text-[#c4856a]">Living Streams</em>
               </motion.h2>
 
               <motion.p
                 variants={itemFade}
-                className="text-base font-light leading-relaxed text-olive-600 mb-8"
+                className="text-base font-light leading-relaxed text-[#6b6258] mb-8"
               >
                 Discover articles, videos, and audio from practitioners in our
                 community. A living library of wellness wisdom — free to browse,

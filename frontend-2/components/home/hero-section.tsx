@@ -65,7 +65,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="bg-cream-50 py-20 md:py-28">
+    <section className="bg-[#f8f5f0] py-20 md:py-28">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           className="max-w-2xl mx-auto text-center"
@@ -85,10 +85,10 @@ export default function HeroSection() {
           {/* Heading */}
           <motion.h1
             variants={itemFade}
-            className="font-serif text-3xl sm:text-5xl md:text-[56px] font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
+            className="font-serif text-3xl sm:text-5xl md:text-[56px] font-light leading-[1.15] tracking-tight text-[#2a2218] mb-5"
           >
             Find Your Path to{" "}
-            <em className="italic text-terracotta-600">
+            <em className="italic text-[#c4856a]">
               Wellness &amp; Growth
             </em>
           </motion.h1>
@@ -96,7 +96,7 @@ export default function HeroSection() {
           {/* Subtext */}
           <motion.p
             variants={itemFade}
-            className={`text-base sm:text-lg font-light leading-relaxed text-olive-600 ${facePractitioners.length > 0 ? 'mb-8' : 'mb-6'}`}
+            className={`text-base sm:text-lg font-light leading-relaxed text-[#6b6258] ${facePractitioners.length > 0 ? 'mb-8' : 'mb-6'}`}
           >
             Connect with expert practitioners, join transformative workshops,
             and discover your path — all in one place.
