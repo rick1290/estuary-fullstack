@@ -67,19 +67,19 @@ export default function MarketplaceLayout({
   }
 
   return (
-    <div className="w-full bg-cream-50 pb-8">
+    <div className="w-full bg-[#f8f5f0] pb-8">
       {/* Header Section */}
       <div className="w-full pt-10 sm:pt-16 pb-16 sm:pb-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-6 sm:mb-8">
-            <span className="block text-[10px] sm:text-xs font-medium tracking-wide sm:tracking-widest uppercase text-sage-600 mb-3 sm:mb-4">
+            <span className="block text-[10px] sm:text-xs font-medium tracking-wide sm:tracking-widest uppercase text-[#7c9a7e] mb-3 sm:mb-4">
               {eyebrow}
             </span>
-            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight text-olive-900 mb-3 sm:mb-4">
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-[#2a2218] mb-3 sm:mb-4">
               {title}
             </h1>
             {description && (
-              <p className="mx-auto max-w-2xl text-sm sm:text-base font-light text-olive-600 leading-relaxed mb-6 sm:mb-8">
+              <p className="mx-auto max-w-2xl text-sm sm:text-base font-light text-[#6b6258] leading-relaxed mb-6 sm:mb-8">
                 {description}
               </p>
             )}
@@ -92,19 +92,19 @@ export default function MarketplaceLayout({
                 className="w-full bg-white p-1 rounded-2xl border border-sage-200/60 flex overflow-x-auto no-scrollbar"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as any}
               >
-                <TabsTrigger value="all" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
+                <TabsTrigger value="all" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="courses" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
+                <TabsTrigger value="courses" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Courses
                 </TabsTrigger>
-                <TabsTrigger value="workshops" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
+                <TabsTrigger value="workshops" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Workshops
                 </TabsTrigger>
-                <TabsTrigger value="sessions" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
+                <TabsTrigger value="sessions" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Sessions
                 </TabsTrigger>
-                <TabsTrigger value="practitioners" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-olive-800 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
+                <TabsTrigger value="practitioners" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
                   Practitioners
                 </TabsTrigger>
               </TabsList>
@@ -120,19 +120,19 @@ export default function MarketplaceLayout({
               <Search className="h-4 w-4 sm:h-5 sm:w-5 text-sage-500" strokeWidth="1.5" />
             </div>
             <Input
-              className="flex-1 border-0 bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-olive-800 placeholder:text-olive-500/70"
+              className="flex-1 border-0 bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-[#2a2218] placeholder:text-[#9b9088]"
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button type="submit" size="sm" className="m-1.5 sm:m-2 bg-olive-800 hover:bg-olive-700 text-white rounded-full px-4 sm:px-6 text-xs sm:text-sm">
+            <Button type="submit" size="sm" className="m-1.5 sm:m-2 bg-[#3d2e1e] hover:bg-[#5c4435] text-white rounded-full px-4 sm:px-6 text-xs sm:text-sm">
               Search
             </Button>
           </form>
         </div>
       </div>
 
-      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
+      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
 
       {/* Main Content Area */}
       <div className="container mx-auto mt-6 sm:mt-8 px-4 sm:px-6 lg:px-8 pb-16">

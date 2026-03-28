@@ -19,7 +19,7 @@ export default async function WorkshopsPage({ searchParams }: WorkshopsPageProps
 
   return (
     <MarketplaceLayout
-      title={<>Immersive <em className="italic text-terracotta-600">Workshops</em></>}
+      title={<>Immersive <em className="italic text-[#c4856a]">Workshops</em></>}
       eyebrow="Group Experiences"
       description="Join transformative group experiences led by expert practitioners"
       initialSearchQuery={query}

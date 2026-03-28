@@ -116,10 +116,20 @@ export default function Navbar() {
 
   // Check if we're on the homepage for transparent navbar
   const isHomepage = pathname === '/'
-  
+
+  // Track scroll position so homepage nav becomes opaque after scrolling
+  const [scrolled, setScrolled] = React.useState(false)
+  React.useEffect(() => {
+    if (!isHomepage) return
+    const onScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [isHomepage])
+
   return (
     <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
-      isHomepage 
+      isHomepage && !scrolled
         ? 'bg-white/10 backdrop-blur-lg border-white/20'
         : 'bg-[#f8f5f0]/95 backdrop-blur-md border-[#e0d8ce]'
     }`}>
