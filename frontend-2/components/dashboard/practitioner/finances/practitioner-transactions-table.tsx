@@ -111,8 +111,8 @@ function PurchaseRow({ purchase }: { purchase: Purchase }) {
         {/* Main Purchase Row */}
         <CollapsibleTrigger asChild>
           <div className={cn(
-            "flex items-center gap-4 p-4 cursor-pointer hover:bg-muted/50 transition-colors",
-            isOpen && "bg-muted/30"
+            "flex items-center gap-4 p-4 cursor-pointer hover:bg-sage-50/50 transition-colors",
+            isOpen && "bg-sage-50/30"
           )}>
             {/* Expand/Collapse Icon */}
             <div className="w-5">

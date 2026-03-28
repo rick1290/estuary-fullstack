@@ -1,7 +1,7 @@
 "use client"
 
 import type { JourneyListItem } from "./use-journeys"
-import { Calendar, ChevronRight, Users } from "lucide-react"
+import { Calendar, ChevronRight, Users , FileText } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 

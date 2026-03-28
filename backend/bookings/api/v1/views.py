@@ -85,7 +85,21 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Get bookings based on user role"""
+        from django.db.models import Exists, OuterRef
         user = self.request.user
+
+        # Annotate with intake form status (efficient — single subquery, no N+1)
+        try:
+            from intake.models import IntakeFormLink, IntakeResponse
+            has_intake_forms = Exists(
+                IntakeFormLink.objects.filter(service_id=OuterRef('service_id'))
+            )
+            has_completed_intake = Exists(
+                IntakeResponse.objects.filter(booking_id=OuterRef('pk'))
+            )
+        except Exception:
+            has_intake_forms = None
+            has_completed_intake = None
 
         # Base queryset with optimized relations
         queryset = Booking.objects.select_related(
@@ -94,6 +108,12 @@ class BookingViewSet(viewsets.ModelViewSet):
         ).prefetch_related(
             'reminders', 'notes__author'
         )
+
+        if has_intake_forms is not None:
+            queryset = queryset.annotate(
+                _has_intake_forms=has_intake_forms,
+                _has_completed_intake=has_completed_intake,
+            )
 
         # Check if filtering by practitioner
         practitioner_filter = self.request.query_params.get('practitioner') or \
@@ -829,6 +849,21 @@ class JourneyViewSet(GenericViewSet):
             'service_session', 'order'
         ).order_by('service_session__start_time')
 
+        # Pre-fetch intake form status for all bookings in one query
+        try:
+            from intake.models import IntakeFormLink, IntakeResponse
+            service_ids = set(b.service_id for b in bookings if b.service_id)
+            booking_ids = set(b.id for b in bookings)
+            services_with_forms = set(
+                IntakeFormLink.objects.filter(service_id__in=service_ids).values_list('service_id', flat=True).distinct()
+            )
+            bookings_with_responses = set(
+                IntakeResponse.objects.filter(booking_id__in=booking_ids).values_list('booking_id', flat=True).distinct()
+            )
+        except Exception:
+            services_with_forms = set()
+            bookings_with_responses = set()
+
         # Group bookings into journeys
         # Sessions/workshops: each booking = its own journey (separate purchases)
         # Courses/packages/bundles: group by service (one enrollment = one journey)
@@ -874,10 +909,16 @@ class JourneyViewSet(GenericViewSet):
                     'next_session_title': None,
                     'progress_percentage': 0.0,
                     'status': 'upcoming',
+                    'has_pending_intake_forms': False,
+                    '_booking_id': booking.id,
                 }
 
             journey = journeys_map[group_key]
             journey['total_sessions'] += 1
+
+            # Check intake forms: service has forms AND this booking hasn't responded
+            if service.id in services_with_forms and booking.id not in bookings_with_responses:
+                journey['has_pending_intake_forms'] = True
 
             ss = booking.service_session
             if ss:
@@ -926,6 +967,7 @@ class JourneyViewSet(GenericViewSet):
             # Clean up internal tracking fields
             j.pop('_last_session_time', None)
             j.pop('_last_session_title', None)
+            j.pop('_booking_id', None)
 
             results.append(j)
 

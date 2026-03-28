@@ -22,6 +22,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/blog") ||
     pathname.startsWith("/modalities") ||
     pathname.startsWith("/become-practitioner") ||
+    pathname.startsWith("/for") ||
     pathname.startsWith("/waitlist") ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/privacy") ||

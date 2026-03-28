@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { Star, Eye, Users as UsersIcon, FilterX } from "lucide-react"
@@ -41,6 +42,7 @@ interface PaginatedClientResponse {
 }
 
 export default function ClientsList() {
+  const router = useRouter()
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [filters, setFilters] = useState<ClientFiltersType>({
@@ -227,7 +229,11 @@ export default function ClientsList() {
               </TableHeader>
               <TableBody>
                 {filteredClients.map((client) => (
-                  <TableRow key={client.id} className="hover:bg-muted/50">
+                  <TableRow
+                    key={client.id}
+                    className="cursor-pointer hover:bg-sage-50/50"
+                    onClick={() => router.push(`/dashboard/practitioner/clients/${client.id}`)}
+                  >
                     <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleFavorite(client.id)}>
                         {client.isFavorite ? (

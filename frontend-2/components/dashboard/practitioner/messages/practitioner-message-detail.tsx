@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,7 @@ import {
   MessageSquare,
   Wifi,
   WifiOff,
+  ChevronLeft,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -53,6 +54,7 @@ import { toast } from "sonner"
 
 export default function PractitionerMessageDetail() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const conversationId = searchParams.get("conversationId")
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -384,6 +386,15 @@ export default function PractitionerMessageDetail() {
       {/* Header - Fixed */}
       <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center">
+          {/* Mobile back button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden mr-2 shrink-0"
+            onClick={() => router.push("/dashboard/practitioner/messages")}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
           <div className="relative">
             <Avatar>
               <AvatarImage 
