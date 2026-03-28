@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.db.models import Q, Count, Avg, F, Prefetch, Max
+from django.db.models import Q, Count, Avg, F, Prefetch, Max, Exists, OuterRef
 from django.utils import timezone
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,6 +19,7 @@ from services.models import (
     ServicePractitioner, ServiceRelationship, ServiceBenefit,
     SessionAgendaItem
 )
+from services.enums import ServiceStatusEnum
 from media.models import Media, MediaEntityType
 from reviews.models import Review
 from .serializers import (
@@ -1301,10 +1302,33 @@ class PublicServiceViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_url_kwarg = 'public_uuid'
     
     def get_queryset(self):
-        """Get active, public services with optimized queries"""
-        return Service.objects.filter(
+        """Get active, public, purchasable services with optimized queries.
+
+        Workshops and courses are only shown if they have at least one
+        future session (i.e., they haven't ended). Sessions, bundles, and
+        packages are always shown since they're bookable on demand.
+        """
+        now = timezone.now()
+
+        # Subquery: True if service has at least one upcoming session
+        has_upcoming_session = Exists(
+            ServiceSession.objects.filter(
+                service_id=OuterRef('pk'),
+                start_time__gte=now,
+                status__in=['scheduled', 'draft'],
+            )
+        )
+
+        return Service.objects.annotate(
+            _has_upcoming=has_upcoming_session,
+        ).filter(
             is_active=True,
-            is_public=True
+            is_public=True,
+            status=ServiceStatusEnum.ACTIVE,
+        ).exclude(
+            # Exclude workshops/courses that have no upcoming sessions
+            service_type__code__in=['workshop', 'course'],
+            _has_upcoming=False,
         ).select_related(
             'service_type', 'category', 'practitioner_category',
             'primary_practitioner', 'primary_practitioner__user', 'practitioner_location',

@@ -15,9 +15,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const { data } = await publicServicesBySlugRetrieve({ path: { slug } })
+    const title = data?.title || "Workshop"
+    const practitioner = data?.practitioner_name || ""
+    const locationType = data?.location_type === "virtual" ? "Virtual" : data?.location_type === "in_person" ? "In-Person" : ""
+    const titleParts = [title, locationType ? `${locationType} Workshop` : "Workshop"].filter(Boolean)
+
+    const fallbackDesc = [
+      `Join this workshop`,
+      practitioner ? ` with ${practitioner}` : "",
+      ". View dates, pricing, and details on Estuary.",
+    ].join("")
+
     return createMetadata({
-      title: data?.title || "Workshop",
-      description: data?.description || "",
+      title: titleParts[0],
+      description: data?.short_description || data?.description || fallbackDesc,
       path: `/workshops/${slug}`,
       ogImage: data?.cover_image_url || undefined,
     })

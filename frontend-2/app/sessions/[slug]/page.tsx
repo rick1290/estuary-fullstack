@@ -15,9 +15,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const { data } = await publicServicesBySlugRetrieve({ path: { slug } })
+    const title = data?.title || "Session"
+    const duration = data?.duration_minutes ? `${data.duration_minutes} min` : ""
+    const locationType = data?.location_type === "virtual" ? "Virtual" : data?.location_type === "in_person" ? "In-Person" : ""
+    const practitioner = data?.practitioner_name || ""
+    const titleParts = [title, duration, locationType].filter(Boolean).join(" · ")
+
+    const fallbackDesc = [
+      `Book this ${duration || ""} session`,
+      practitioner ? ` with ${practitioner}` : "",
+      ". View availability, pricing, and reviews on Estuary.",
+    ].join("")
+
     return createMetadata({
-      title: data?.title || "Session",
-      description: data?.description || "",
+      title: titleParts,
+      description: data?.short_description || data?.description || fallbackDesc,
       path: `/sessions/${slug}`,
       ogImage: data?.cover_image_url || undefined,
     })

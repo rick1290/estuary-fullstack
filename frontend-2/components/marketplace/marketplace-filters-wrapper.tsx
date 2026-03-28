@@ -7,6 +7,8 @@ interface MarketplaceFiltersWrapperProps {
   initialLocation?: string
   initialType?: string
   showServiceTypeFilter?: boolean
+  showPriceFilter?: boolean
+  showRatingFilter?: boolean
 }
 
 function MarketplaceFiltersSkeleton() {
