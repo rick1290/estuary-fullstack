@@ -89,7 +89,12 @@ export default function ConfirmationPage() {
   }
 
   const sessionTime = booking.service_session?.start_time
-  const totalPaid = ((booking.final_amount_cents || order?.total_amount_cents || 0) / 100).toFixed(2)
+  // Price: try credits_allocated (what this booking cost), then service price, then order total
+  const priceCents = (booking as any).credits_allocated
+    || (service as any)?.price_cents
+    || (order as any)?.total_amount_cents
+    || 0
+  const totalPaid = (priceCents / 100).toFixed(2)
 
   // Format session time in the booking's timezone if available, otherwise user's local timezone
   const bookingTimezone = (booking as any).timezone as string | undefined
@@ -223,7 +228,7 @@ export default function ConfirmationPage() {
                   </>
                 )}
                 <div className="flex items-center gap-3">
-                  {booking.location_type === "virtual" ? (
+                  {(service?.location_type || (booking as any).location_type) === "virtual" ? (
                     <Video className="h-4 w-4 text-sage-600" />
                   ) : (
                     <MapPin className="h-4 w-4 text-sage-600" />
@@ -231,7 +236,7 @@ export default function ConfirmationPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Location</p>
                     <p className="font-medium text-olive-900">
-                      {booking.location_type === "virtual" ? "Virtual Session" : "In-person"}
+                      {(service?.location_type || (booking as any).location_type) === "virtual" ? "Virtual Session" : "In-person"}
                     </p>
                   </div>
                 </div>
@@ -261,7 +266,7 @@ export default function ConfirmationPage() {
                 <div>
                   <p className="font-medium text-sm text-olive-900">Check your email</p>
                   <p className="text-sm text-muted-foreground">
-                    {booking.location_type === "virtual"
+                    {(service?.location_type || (booking as any).location_type) === "virtual"
                       ? "Join link and calendar invite sent"
                       : "Address and details sent"}
                   </p>

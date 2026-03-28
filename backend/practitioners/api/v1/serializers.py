@@ -724,6 +724,7 @@ class FeatureRequestSerializer(serializers.ModelSerializer):
     practitioner_name = serializers.SerializerMethodField()
     submitter_name = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
+    feedback_type = serializers.CharField(required=False, default='feature')
 
     class Meta:
         model = FeatureRequest
@@ -738,19 +739,18 @@ class FeatureRequestSerializer(serializers.ModelSerializer):
         ]
 
     def get_practitioner_name(self, obj):
-        if obj.practitioner:
+        if hasattr(obj, 'practitioner') and obj.practitioner:
             return obj.practitioner.display_name
         return None
 
     def get_submitter_name(self, obj):
-        if obj.user:
+        if hasattr(obj, 'user') and obj.user:
             return obj.user.get_full_name() or obj.user.email
-        if obj.practitioner:
+        if hasattr(obj, 'practitioner') and obj.practitioner:
             return obj.practitioner.display_name
         return None
 
     def get_can_edit(self, obj):
-        """Check if the request can be edited (only submitted status can be edited)"""
         return obj.status == 'submitted'
 
     def create(self, validated_data):
@@ -759,13 +759,31 @@ class FeatureRequestSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             raise serializers.ValidationError("You must be logged in to submit feedback")
 
-        validated_data['user'] = request.user
+        # Pop feedback_type — set on model only if column exists
+        feedback_type = validated_data.pop('feedback_type', 'feature')
+
+        # Always set practitioner (required until migration makes it nullable)
         if hasattr(request.user, 'practitioner_profile'):
             validated_data['practitioner'] = request.user.practitioner_profile
+        elif not hasattr(FeatureRequest, 'user'):
+            # Pre-migration: practitioner is required, user field doesn't exist yet
+            raise serializers.ValidationError(
+                "Feature requests require a practitioner account until the next migration runs."
+            )
+
+        # Set new fields only if they exist on the model (post-migration)
+        if hasattr(FeatureRequest, 'user'):
+            validated_data['user'] = request.user
+        if hasattr(FeatureRequest, 'feedback_type'):
+            validated_data['feedback_type'] = feedback_type
+
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         """Only allow updates if status is 'submitted'"""
         if instance.status != 'submitted':
             raise serializers.ValidationError("You can only edit feature requests that are in 'submitted' status")
+        # Remove feedback_type from update if column doesn't exist
+        if not hasattr(FeatureRequest, 'feedback_type'):
+            validated_data.pop('feedback_type', None)
         return super().update(instance, validated_data)

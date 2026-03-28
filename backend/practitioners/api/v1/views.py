@@ -2368,7 +2368,7 @@ class FeatureRequestViewSet(viewsets.ModelViewSet):
     serializer_class = FeatureRequestSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['category', 'priority', 'status', 'feedback_type']
+    filterset_fields = ['category', 'priority', 'status']
     ordering_fields = ['created_at', 'priority', 'votes']
     ordering = ['-created_at']
 
@@ -2376,11 +2376,20 @@ class FeatureRequestViewSet(viewsets.ModelViewSet):
         """Return the authenticated user's feedback submissions"""
         user = self.request.user
         from django.db.models import Q
-        # Show feedback submitted by this user (via user FK or practitioner FK)
-        q = Q(user=user)
+
+        # Post-migration: query by user FK or practitioner FK
+        if hasattr(FeatureRequest, 'user'):
+            q = Q(user=user)
+            if hasattr(user, 'practitioner_profile'):
+                q |= Q(practitioner=user.practitioner_profile)
+            return FeatureRequest.objects.filter(q).distinct()
+
+        # Pre-migration: practitioner only
         if hasattr(user, 'practitioner_profile'):
-            q |= Q(practitioner=user.practitioner_profile)
-        return FeatureRequest.objects.filter(q).distinct()
+            return FeatureRequest.objects.filter(
+                practitioner=user.practitioner_profile
+            )
+        return FeatureRequest.objects.none()
 
     def perform_destroy(self, instance):
         """Only allow deletion if status is 'submitted'"""
