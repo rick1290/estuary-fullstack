@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format, parseISO } from "date-fns"
 import { useState, useEffect } from "react"
+import { getSession } from "next-auth/react"
 
 export default function ConfirmationPage() {
   const searchParams = useSearchParams()
@@ -320,17 +321,25 @@ function FormsPrompt({ bookingUuid }: { bookingUuid: string }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-    fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
-      credentials: 'include',
-    })
-      .then(res => res.json())
-      .then(data => {
+    const checkForms = async () => {
+      try {
+        const session = await getSession()
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const res = await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
+          headers: {
+            ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}),
+          },
+        })
+        const data = await res.json()
         const forms = data?.data || data
         setHasForms(forms?.has_forms || false)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+      } catch {
+        // Silently fail — form prompt is optional
+      } finally {
+        setLoading(false)
+      }
+    }
+    checkForms()
   }, [bookingUuid])
 
   if (loading || !hasForms) return null

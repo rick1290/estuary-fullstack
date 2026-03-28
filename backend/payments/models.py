@@ -194,6 +194,7 @@ class UserCreditTransaction(BaseModel):
     TRANSACTION_TYPES = (
         ('purchase', 'Purchase'),  # User bought credits
         ('usage', 'Usage'),  # User spent credits on service
+        ('credit_applied', 'Credit Applied'),  # Credits deducted from balance for a booking
         ('refund', 'Refund'),  # Credits returned to user
         ('adjustment', 'Adjustment'),  # Manual adjustment
         ('bonus', 'Bonus'),  # Free credits given

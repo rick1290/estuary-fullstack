@@ -49,12 +49,16 @@ export default function RescheduleBookingPage({ params }: { params: Promise<{ id
       toast.success("Booking rescheduled successfully!")
       queryClient.invalidateQueries({ queryKey: ["journeys"] })
       queryClient.invalidateQueries({ queryKey: ["bookings"] })
+      queryClient.invalidateQueries({ queryKey: ["bookingsRetrieve"] })
+      queryClient.invalidateQueries({ queryKey: ["bookingsList"] })
+      queryClient.invalidateQueries({ queryKey: ["practitioner"] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
+      queryClient.invalidateQueries({ queryKey: ["services"] })
       setTimeout(() => {
         router.push(`/dashboard/user/journeys/${id}`)
       }, 2000)
     },
     onError: (error: any) => {
-      console.error('Reschedule error:', error)
       toast.error(error?.response?.data?.message || error?.response?.data?.detail || "Failed to reschedule booking")
     },
   })

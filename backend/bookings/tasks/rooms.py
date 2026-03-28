@@ -50,10 +50,8 @@ def create_missing_booking_rooms():
         service__location_type__in=['virtual', 'online', 'hybrid'],
         created_at__gte=cutoff_date  # Last 7 days only
     ).exclude(
-        # Exclude package/bundle parents
-        is_package_purchase=True
-    ).exclude(
-        is_bundle_purchase=True
+        # Exclude package/bundle parent bookings
+        order__order_type__in=['package', 'bundle']
     ).select_related('service', 'service__service_type')
 
     rooms_created = 0
