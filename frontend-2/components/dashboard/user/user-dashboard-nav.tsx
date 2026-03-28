@@ -52,7 +52,7 @@ export default function UserDashboardNav() {
     <div className="sticky top-0 z-30 w-full border-b border-sage-200/60 bg-cream-50/95 backdrop-blur-sm">
       <div className="container px-2 sm:px-4">
         <div className="flex h-12 sm:h-14 items-center justify-between">
-          <Tabs value={activeTab} className="w-full overflow-hidden">
+          <Tabs value={activeTab} className="flex-1 overflow-hidden">
             <TabsList className="h-12 sm:h-14 bg-transparent p-0 overflow-x-auto scrollbar-hide flex w-full">
               {visibleItems.map((item) => (
                 <TabsTrigger
@@ -101,6 +101,17 @@ export default function UserDashboardNav() {
               )}
             </TabsList>
           </Tabs>
+
+          {/* Switch to Practitioner — only if user has practitioner account */}
+          {user?.hasPractitionerAccount && (
+            <button
+              onClick={handleSwitchToPractitioner}
+              className="hidden sm:flex items-center gap-1.5 shrink-0 ml-2 px-3 py-1.5 min-h-[36px] rounded-full border border-sage-300/60 bg-white text-xs font-medium text-olive-600 hover:bg-sage-50 hover:border-sage-400 transition-colors whitespace-nowrap"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Practitioner
+            </button>
+          )}
         </div>
       </div>
     </div>
