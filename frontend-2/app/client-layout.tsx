@@ -5,7 +5,6 @@ import type React from "react"
 import { usePathname } from "next/navigation"
 import Navbar from "@/components/layout/navbar"
 import Footer from "@/components/layout/footer"
-import RoleSwitcherBanner from "@/components/shared/role-switcher-banner"
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -17,11 +16,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isInOnboarding = pathname.startsWith("/become-practitioner/onboarding")
 
   const shouldHideNavAndFooter = isInPractitionerDashboard || isInCheckout || isInRoom || isInOnboarding
-  const shouldHideRoleSwitcher = isInRoom || isInOnboarding
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">
-      {!shouldHideRoleSwitcher && <RoleSwitcherBanner />}
       {!shouldHideNavAndFooter && <Navbar />}
       <main className="flex-1">{children}</main>
       {!shouldHideNavAndFooter && <Footer />}

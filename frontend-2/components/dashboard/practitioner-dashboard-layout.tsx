@@ -380,6 +380,14 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               </div>
 
               <div className="mt-auto px-3 py-4 border-t border-sage-200/60">
+                {/* Role Switch — always visible */}
+                <button
+                  onClick={handleSwitchToUser}
+                  className="w-full flex items-center justify-center gap-2 mb-3 px-3 py-2.5 min-h-[44px] rounded-xl border border-sage-300/60 bg-cream-50 text-sm font-medium text-olive-700 hover:bg-sage-50 hover:border-sage-400 transition-colors"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Switch to Client View
+                </button>
                 <nav className="space-y-1">
                   <Link
                     href={`/practitioners/${user?.practitioner_slug || user?.practitionerPublicId}`}

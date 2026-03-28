@@ -2,14 +2,15 @@
 
 import type React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Calendar, Heart, Home, MessageSquare, MoreHorizontal, RssIcon, Settings } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Calendar, Heart, Home, MessageSquare, MoreHorizontal, RssIcon, Settings, RefreshCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { useAuth } from "@/hooks/use-auth"
 
 interface NavItem {
   label: string
@@ -19,7 +20,14 @@ interface NavItem {
 
 export default function UserDashboardNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const { user, switchRole } = useAuth()
+
+  const handleSwitchToPractitioner = () => {
+    switchRole()
+    router.push("/dashboard/practitioner")
+  }
 
   const navItems: NavItem[] = [
     { label: "Home", path: "/dashboard/user", icon: <Home className="h-4 w-4 shrink-0" /> },

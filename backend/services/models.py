@@ -363,8 +363,10 @@ class Service(PublicModel):
 
     @property
     def total_bookings(self):
-        """Count total bookings for this service."""
-        return self.bookings.count()
+        """Count unique enrolled users for this service."""
+        return self.bookings.filter(
+            status__in=['confirmed', 'pending_payment', 'completed']
+        ).values('user').distinct().count()
 
     @property
     def duration_display(self):
