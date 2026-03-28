@@ -13,7 +13,7 @@ import type { UserRegisterRequest } from "@/src/client/types.gen"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -276,10 +276,10 @@ export default function AuthModal({
           >
             <X className="h-4 w-4" />
           </button>
-          <span className="font-serif text-base font-medium text-olive-900 tracking-wide">ESTUARY</span>
-          <h2 className="text-xl font-serif font-normal text-olive-900 mt-3 mb-1">
+          <span className="font-serif text-lg font-semibold text-olive-900 tracking-[0.25em]">ESTUARY</span>
+          <DialogTitle className="text-xl font-serif font-normal text-olive-900 mt-3 mb-1">
             {title || (activeTab === "login" ? "Welcome back" : "Join Estuary")}
-          </h2>
+          </DialogTitle>
           <p className="text-sm text-olive-600">
             {description || (activeTab === "login"
               ? `Sign in to ${getActionText()}`

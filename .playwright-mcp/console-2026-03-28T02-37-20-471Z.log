@@ -1,0 +1,7 @@
+[    8698ms] [WARNING] Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. @ https://estuary-frontend.onrender.com/_next/static/chunks/7263-c320d1506cd20e8c.js:0
+[  275299ms] [ERROR] [next-auth][error][CLIENT_FETCH_ERROR] 
+https://next-auth.js.org/errors#client_fetch_error Failed to fetch {error: Object, url: /api/auth/session, message: Failed to fetch} @ https://estuary-frontend.onrender.com/_next/static/chunks/245-553725e9a4eb87e8.js:0
+[  275931ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-backend.onrender.com/api/v1/practitioners/my_profile/:0
+[  392821ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/profile?_rsc=1m2v0:0
+[  397567ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/availability?_rsc=1i2il:0
+[  410307ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://estuary-frontend.onrender.com/help/practitioner/services?_rsc=ca9ga:0

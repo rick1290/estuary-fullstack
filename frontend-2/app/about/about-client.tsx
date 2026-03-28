@@ -127,12 +127,8 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      {/* ── Image band placeholder ── */}
-      <div className="mx-4 sm:mx-8 h-48 sm:h-64 md:h-80 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-sage-200/60 via-cream-100 to-terracotta-200/40 flex items-center justify-center">
-        <span className="text-xs tracking-widest uppercase text-olive-500 font-medium">
-          Founder / Team Photograph
-        </span>
-      </div>
+      {/* ── Image band — replace with team photo when ready ── */}
+      <div className="mx-4 sm:mx-8 h-48 sm:h-64 md:h-80 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-sage-200/60 via-cream-100 to-terracotta-200/40" />
 
       {/* ── Origin story ── */}
       <section className="py-16 md:py-20">

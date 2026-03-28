@@ -96,7 +96,7 @@ export default function HeroSection() {
           {/* Subtext */}
           <motion.p
             variants={itemFade}
-            className="text-base sm:text-lg font-light leading-relaxed text-olive-600 mb-8"
+            className={`text-base sm:text-lg font-light leading-relaxed text-olive-600 ${facePractitioners.length > 0 ? 'mb-8' : 'mb-6'}`}
           >
             Connect with expert practitioners, join transformative workshops,
             and discover your path — all in one place.

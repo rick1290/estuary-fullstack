@@ -261,23 +261,18 @@ export default function Navbar() {
               </DropdownMenu>
             </div>
           ) : (
-            <div className="hidden md:flex md:items-center md:gap-3">
-              <Button 
-                variant="ghost" 
-                size="default" 
+            <div className="hidden md:flex md:items-center md:gap-4">
+              <button
                 onClick={() => openAuthModal({ defaultTab: "login" })}
-                className="flex items-center gap-2"
+                className="text-sm font-medium text-olive-600 hover:text-olive-900 transition-colors"
               >
-                <LogIn className="h-4 w-4" />
-                <span>Login</span>
-              </Button>
-              <Button 
-                size="default" 
+                Log in
+              </button>
+              <Button
+                size="default"
                 onClick={() => openAuthModal({ defaultTab: "signup" })}
-                className="flex items-center gap-2"
               >
-                <UserPlus className="h-4 w-4" />
-                <span>Sign Up</span>
+                Sign Up
               </Button>
             </div>
           )}
