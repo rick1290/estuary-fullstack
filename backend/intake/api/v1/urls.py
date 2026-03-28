@@ -12,7 +12,7 @@ urlpatterns = [
         'get': 'list', 'post': 'create'
     }), name='service-forms-list'),
     path('services/<int:service_pk>/forms/<int:pk>/', views.ServiceFormViewSet.as_view({
-        'delete': 'destroy'
+        'delete': 'destroy', 'patch': 'partial_update'
     }), name='service-forms-detail'),
     path('bookings/<str:booking_uuid>/forms/', views.BookingFormsViewSet.as_view({
         'get': 'list'

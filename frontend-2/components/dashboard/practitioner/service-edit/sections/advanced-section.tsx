@@ -44,6 +44,7 @@ import {
   intakeServicesFormsListOptions,
   intakeServicesFormsCreateMutation,
   intakeServicesFormsDestroyMutation,
+  intakeServicesFormsPartialUpdateMutation,
   intakeTemplatesListOptions,
 } from "@/src/client/@tanstack/react-query.gen"
 
@@ -434,6 +435,14 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
     onError: () => toast.error("Failed to remove form"),
   })
 
+  const toggleRequiredMutation = useMutation({
+    ...intakeServicesFormsPartialUpdateMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: intakeServicesFormsListOptions({ path: { service_pk: numericId } }).queryKey })
+    },
+    onError: () => toast.error("Failed to update form"),
+  })
+
   return (
     <Card className="p-6">
       <div className="space-y-4">
@@ -524,19 +533,33 @@ function IntakeFormsCard({ serviceId }: { serviceId: number | string }) {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="shrink-0 h-7 w-7 p-0 text-olive-500 hover:text-terracotta-600 hover:bg-terracotta-50"
-                    disabled={detachMutation.isPending}
-                    onClick={() => {
-                      detachMutation.mutate({
-                        path: { service_pk: numericId, id: sf.id },
-                      })
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-olive-400">Required</span>
+                      <Switch
+                        checked={sf.is_required || false}
+                        onCheckedChange={(checked) => {
+                          toggleRequiredMutation.mutate({
+                            path: { service_pk: numericId, id: sf.id },
+                            body: { is_required: checked } as any,
+                          })
+                        }}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 h-7 w-7 p-0 text-olive-500 hover:text-terracotta-600 hover:bg-terracotta-50"
+                      disabled={detachMutation.isPending}
+                      onClick={() => {
+                        detachMutation.mutate({
+                          path: { service_pk: numericId, id: sf.id },
+                        })
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               )
             })}

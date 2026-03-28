@@ -45,17 +45,19 @@ export default function PractitionerLandingClient({ modality }: PractitionerLand
   }
 
   const relatedModalities = [
-    { name: "Breathwork", slug: "breathwork-facilitators" },
-    { name: "Sound Healing", slug: "sound-healing-practitioners" },
-    { name: "Crystal Healing", slug: "crystal-healing-practitioners" },
-    { name: "Somatic Coaching", slug: "somatic-coaches" },
-    { name: "Meditation", slug: "meditation-teachers" },
-    { name: "Yoga", slug: "yoga-teachers" },
-    { name: "Shamanic Healing", slug: "shamanic-practitioners" },
-    { name: "Human Design", slug: "human-design-practitioners" },
-    { name: "Chakra Balancing", slug: "chakra-balancing-practitioners" },
-    { name: "Pranic Healing", slug: "pranic-healing-practitioners" },
-    { name: "Healing Touch", slug: "healing-touch-practitioners" },
+    { name: "Breathwork", slug: "breathwork" },
+    { name: "Sound Healing", slug: "sound-healing" },
+    { name: "Crystal Healing", slug: "crystal-healing" },
+    { name: "Somatic Coaching", slug: "somatic-coaching" },
+    { name: "Meditation", slug: "meditation" },
+    { name: "Yoga", slug: "yoga" },
+    { name: "Shamanic Healing", slug: "shamanic-healing" },
+    { name: "Human Design", slug: "human-design" },
+    { name: "Chakra Balancing", slug: "chakra-balancing" },
+    { name: "Pranic Healing", slug: "pranic-healing" },
+    { name: "Healing Touch", slug: "healing-touch" },
+    { name: "Reiki", slug: "reiki" },
+    { name: "Energy Healing", slug: "energy-healing" },
   ].filter((m) => m.slug !== modality.slug)
 
   const faqItems = [
