@@ -29,7 +29,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream-50">
+      <div className="min-h-screen bg-[#f8f5f0]">
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 lg:pt-12 pb-16">
           <Skeleton className="h-6 w-96 max-w-full mb-6" />
           <div className="grid lg:grid-cols-[1fr,340px] gap-8 lg:gap-10">
@@ -48,7 +48,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8f5f0] flex items-center justify-center">
         <Alert className="border-red-200 bg-red-50 max-w-md">
           <AlertCircle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
@@ -64,29 +64,29 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <div className="min-h-screen bg-cream-50">
+    <div className="min-h-screen bg-[#f8f5f0]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 lg:pt-12 pb-20 lg:pb-16">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+              <BreadcrumbLink asChild className="text-sm font-light text-[#9b9088] hover:text-[#6b6258]">
                 <Link href="/">Home</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
-              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#e0d8ce]" strokeWidth="1.5" />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <BreadcrumbLink asChild className="text-sm font-light text-olive-500 hover:text-olive-700">
+              <BreadcrumbLink asChild className="text-sm font-light text-[#9b9088] hover:text-[#6b6258]">
                 <Link href="/marketplace/practitioners">Practitioners</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
-              <ChevronRight className="h-3.5 w-3.5 text-olive-300" strokeWidth="1.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#e0d8ce]" strokeWidth="1.5" />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <span className="text-sm text-olive-900">{practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'}</span>
+              <span className="text-sm text-[#2a2218]">{practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || 'Practitioner'}</span>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -110,7 +110,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
       </div>
 
       {/* Mobile floating CTA bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-sm border-t border-sage-200 px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#f8f5f0]/95 backdrop-blur-sm border-t border-[#e0d8ce] px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
         <button
           onClick={() => {
             const el = document.getElementById('booking-section')
@@ -118,7 +118,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
               el.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
           }}
-          className="w-full bg-sage-600 hover:bg-sage-700 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+          className="w-full bg-[#4a5e4a] hover:bg-[#6b7f6b] text-white font-medium py-3 px-6 rounded-full transition-colors"
         >
           Book Now
         </button>

@@ -45,7 +45,7 @@ export default function BrowseModalitiesSection() {
   if (categories.length === 0) return null
 
   return (
-    <section className="py-20 bg-cream-50">
+    <section className="py-20 bg-[#f8f5f0]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -57,20 +57,20 @@ export default function BrowseModalitiesSection() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             Discover What Resonates
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900 mb-4"
+            className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-[#2a2218] mb-4"
           >
             Browse by{" "}
-            <em className="italic text-terracotta-600">Modality</em>
+            <em className="italic text-[#c4856a]">Modality</em>
           </motion.h2>
           <motion.p
             variants={itemFade}
-            className="text-base font-light text-olive-600 max-w-2xl mx-auto"
+            className="text-base font-light text-[#6b6258] max-w-2xl mx-auto"
           >
             From ancient healing traditions to modern mind-body practices — explore
             the modalities that call to you

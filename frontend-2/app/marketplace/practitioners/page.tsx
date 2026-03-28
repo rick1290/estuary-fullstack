@@ -25,7 +25,7 @@ export default async function PractitionersPage({ searchParams }: PractitionersP
 
   return (
     <MarketplaceLayout
-      title={<>Expert <em className="italic text-terracotta-600">Guides</em></>}
+      title={<>Expert <em className="italic text-[#c4856a]">Guides</em></>}
       eyebrow="Wellness Guides"
       description="Connect with practitioners who can support your personal growth journey"
       initialSearchQuery={query}

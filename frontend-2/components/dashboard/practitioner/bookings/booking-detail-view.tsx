@@ -47,6 +47,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 // Check if a session can be joined
 const isSessionJoinable = (booking: any) => {
@@ -83,6 +91,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   const queryClient = useQueryClient()
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [noteContent, setNoteContent] = useState("")
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
@@ -90,16 +99,24 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   })
 
   // Mutations
+  // Invalidate all related queries so dashboard, schedule, and lists update in real time
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+    queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+    queryClient.invalidateQueries({ queryKey: ['bookings'] })
+    queryClient.invalidateQueries({ queryKey: ['practitioner'] })
+    queryClient.invalidateQueries({ queryKey: ['services'] })
+    queryClient.invalidateQueries({ queryKey: ['calendar'] })
+  }
+
   const cancelMutation = useMutation({
     ...bookingsCancelCreateMutation(),
     onSuccess: () => {
       toast({
         title: "Booking canceled",
-        description: "The booking has been canceled successfully.",
+        description: `The booking has been canceled and the client will be refunded.`,
       })
-      // Invalidate all booking queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
-      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      invalidateAll()
     },
     onError: (error: any) => {
       toast({
@@ -117,9 +134,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         title: "Booking completed",
         description: "The booking has been marked as completed.",
       })
-      // Invalidate all booking queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
-      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      invalidateAll()
     },
     onError: (error: any) => {
       toast({
@@ -137,9 +152,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
         title: "Booking confirmed",
         description: "The booking has been confirmed.",
       })
-      // Invalidate all booking queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
-      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      invalidateAll()
     },
   })
 
@@ -209,15 +222,22 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
   const statusLabel = statusConfig[derivedStatus as keyof typeof statusConfig]?.label || booking.status_display
 
   const handleCancel = () => {
-    if (confirm("Are you sure you want to cancel this booking?")) {
-      cancelMutation.mutate({
-        path: { public_uuid: bookingId },
-        body: {
-          reason: "Canceled by practitioner",
-          canceled_by: "practitioner"
-        }
-      })
-    }
+    setShowCancelDialog(true)
+  }
+
+  const confirmCancel = () => {
+    cancelMutation.mutate({
+      path: { public_uuid: bookingId },
+      body: {
+        reason: "Canceled by practitioner",
+        canceled_by: "practitioner"
+      }
+    })
+    setShowCancelDialog(false)
+  }
+
+  const handleReschedule = () => {
+    router.push(`/dashboard/user/bookings/${bookingId}/reschedule`)
   }
 
   const handleComplete = () => {
@@ -315,7 +335,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                     Mark as Completed
                   </DropdownMenuItem>
                   {booking.status === "confirmed" && (
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleReschedule}>
                       <Edit className="h-4 w-4 mr-2" />
                       Reschedule
                     </DropdownMenuItem>
@@ -651,6 +671,58 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
           </Card>
         </div>
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-olive-900">Cancel This Booking?</DialogTitle>
+            <DialogDescription className="text-olive-600">
+              This will cancel the session and refund the client. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-olive-600">Client</span>
+              <span className="font-medium text-olive-900">{booking.user?.full_name || booking.user?.email || "Unknown"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-olive-600">Service</span>
+              <span className="font-medium text-olive-900">{booking.service?.name}</span>
+            </div>
+            {startTime && (
+              <div className="flex justify-between text-sm">
+                <span className="text-olive-600">Scheduled</span>
+                <span className="font-medium text-olive-900">{format(startTime, "MMM d, h:mm a")}</span>
+              </div>
+            )}
+            <Separator />
+            <div className="flex justify-between text-sm">
+              <span className="text-olive-600">Refund to client</span>
+              <span className="font-medium text-olive-900">${booking.price_charged || booking.final_amount || "0.00"}</span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              Keep Booking
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancel}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Canceling...
+                </>
+              ) : (
+                "Cancel & Refund Client"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

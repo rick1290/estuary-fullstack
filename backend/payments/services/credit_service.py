@@ -40,9 +40,14 @@ class CreditService:
         booking: Any = None
     ) -> None:
         """
-        Create paired credit transactions for a service booking.
-        This creates both a purchase (positive) and usage (negative) transaction.
-        
+        Create credit ledger entries for a service booking.
+
+        Always creates a paired purchase/usage at the full service price (nets to zero —
+        this is the ledger record of the transaction).
+
+        If credits were applied (order.credits_applied_cents > 0), also creates a third
+        debit transaction that actually reduces the user's credit balance.
+
         Args:
             user: User making the booking
             service: Service being booked
@@ -50,8 +55,8 @@ class CreditService:
             booking: Associated booking (optional)
         """
         service_price_cents = int(service.price * 100)
-        
-        # 1. Purchase transaction (money in)
+
+        # 1. Purchase transaction — ledger entry (money in)
         UserCreditTransaction.objects.create(
             user=user,
             amount_cents=service_price_cents,
@@ -62,8 +67,8 @@ class CreditService:
             booking=booking,
             description=f"Purchase: {service.name}"
         )
-        
-        # 2. Usage transaction (service booked)
+
+        # 2. Usage transaction — ledger entry (nets to zero with purchase)
         UserCreditTransaction.objects.create(
             user=user,
             amount_cents=-service_price_cents,
@@ -74,6 +79,21 @@ class CreditService:
             booking=booking,
             description=f"Booking: {service.name}"
         )
+
+        # 3. Credit debit — only when credits were actually applied
+        credits_applied_cents = getattr(order, 'credits_applied_cents', 0) or 0
+        if credits_applied_cents > 0:
+            UserCreditTransaction.objects.create(
+                user=user,
+                amount_cents=-credits_applied_cents,
+                transaction_type='credit_applied',
+                service=service,
+                practitioner=service.primary_practitioner,
+                order=order,
+                booking=booking,
+                description=f"Credits applied: {service.name}"
+            )
+            logger.info(f"Deducted {credits_applied_cents} credit cents from user {user.id} for {service.name}")
     
     @transaction.atomic
     def refund_credits(

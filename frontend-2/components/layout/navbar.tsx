@@ -116,16 +116,26 @@ export default function Navbar() {
 
   // Check if we're on the homepage for transparent navbar
   const isHomepage = pathname === '/'
-  
+
+  // Track scroll position so homepage nav becomes opaque after scrolling
+  const [scrolled, setScrolled] = React.useState(false)
+  React.useEffect(() => {
+    if (!isHomepage) return
+    const onScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [isHomepage])
+
   return (
     <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
-      isHomepage 
-        ? 'bg-white/10 backdrop-blur-lg border-white/20' 
-        : 'bg-white/95 backdrop-blur-md border-sage-200/60'
+      isHomepage && !scrolled
+        ? 'bg-white/10 backdrop-blur-lg border-white/20'
+        : 'bg-[#f8f5f0]/95 backdrop-blur-md border-[#e0d8ce]'
     }`}>
-      <div className="container flex h-16 items-center justify-between">
+      <div className="flex h-16 items-center justify-between px-6 sm:px-8 lg:px-10">
         {/* Logo */}
-        <Link href="/" className="flex items-center font-serif text-xl font-semibold tracking-[0.25em] mr-6">
+        <Link href="/" className="flex items-center font-serif text-xl font-semibold tracking-[0.25em] mr-6 text-[#3d2e1e]">
           ESTUARY
         </Link>
 
@@ -180,8 +190,8 @@ export default function Navbar() {
                     <Link
                       href={item.href}
                       className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-normal transition-colors hover:bg-sage-50",
-                        pathname === item.href ? "bg-sage-100 text-olive-900 font-medium" : "text-olive-600",
+                        "px-3.5 py-1.5 rounded-full text-[13.5px] font-normal transition-colors hover:bg-[#f0ede8] hover:text-[#2a2218]",
+                        pathname === item.href ? "bg-[#f0ede8] text-[#2a2218] font-medium" : "text-[#6b6258]",
                         "flex items-center gap-2",
                       )}
                     >
@@ -198,19 +208,15 @@ export default function Navbar() {
         {/* User Actions */}
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
-            <div className="hidden md:flex md:items-center md:gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/user/journeys" className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>My Journeys</span>
-                </Link>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/user/messages" className="flex items-center gap-1">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Messages</span>
-                </Link>
-              </Button>
+            <div className="hidden md:flex md:items-center md:gap-1">
+              <Link href="/dashboard/user/journeys" className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13.5px] font-medium text-[#6b6258] hover:bg-[#f0ede8] hover:text-[#2a2218] transition-colors">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>My Journeys</span>
+              </Link>
+              <Link href="/dashboard/user/messages" className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13.5px] font-medium text-[#6b6258] hover:bg-[#f0ede8] hover:text-[#2a2218] transition-colors">
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>Messages</span>
+              </Link>
 
               {/* Notifications */}
               <NotificationsDropdown />
@@ -261,19 +267,19 @@ export default function Navbar() {
               </DropdownMenu>
             </div>
           ) : (
-            <div className="hidden md:flex md:items-center md:gap-4">
+            <div className="hidden md:flex md:items-center md:gap-2.5">
               <button
                 onClick={() => openAuthModal({ defaultTab: "login" })}
-                className="text-sm font-medium text-olive-600 hover:text-olive-900 transition-colors"
+                className="px-3.5 py-1.5 rounded-full text-[13.5px] font-medium text-[#6b6258] hover:bg-[#f0ede8] hover:text-[#2a2218] transition-colors"
               >
                 Log in
               </button>
-              <Button
-                size="default"
+              <button
                 onClick={() => openAuthModal({ defaultTab: "signup" })}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3d2e1e] text-[#f8f5f0] text-[13px] font-medium hover:bg-[#5c4435] transition-colors"
               >
-                Sign Up
-              </Button>
+                Sign Up <span aria-hidden="true">→</span>
+              </button>
             </div>
           )}
 

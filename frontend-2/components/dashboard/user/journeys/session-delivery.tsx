@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { conversationsCreate, conversationsList } from "@/src/client"
 import type { BookingDetailReadable, JourneyDetail } from "@/src/client/types.gen"
 import { Button } from "@/components/ui/button"
@@ -117,6 +117,7 @@ export default function SessionDelivery({
   journeyData,
 }: SessionDeliveryProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
   const [checkedPrep, setCheckedPrep] = useState<Set<string>>(new Set())
@@ -241,6 +242,11 @@ export default function SessionDelivery({
     onSuccess: () => {
       toast.success("Session canceled")
       refetch()
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      queryClient.invalidateQueries({ queryKey: ['journeys'] })
+      queryClient.invalidateQueries({ queryKey: ['services'] })
     },
     onError: () => {
       toast.error("Failed to cancel. Please try again.")

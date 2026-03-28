@@ -299,6 +299,11 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
     onSuccess: () => {
       toast.success("Course enrollment canceled")
       router.push("/dashboard/user/journeys")
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      queryClient.invalidateQueries({ queryKey: ['journeys'] })
+      queryClient.invalidateQueries({ queryKey: ['services'] })
     },
     onError: () => {
       toast.error("Failed to cancel enrollment")

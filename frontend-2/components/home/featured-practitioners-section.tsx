@@ -90,7 +90,7 @@ export default function FeaturedPractitionersSection() {
   }, [featuredPractitioners])
 
   return (
-    <section className="py-20 bg-cream-50">
+    <section className="py-20 bg-[#f8f5f0]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
@@ -102,20 +102,20 @@ export default function FeaturedPractitionersSection() {
             >
               <motion.span
                 variants={itemFade}
-                className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+                className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
               >
                 Meet Your Guides
               </motion.span>
               <motion.h2
                 variants={itemFade}
-                className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900"
+                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-[#2a2218]"
               >
                 Featured{" "}
-                <em className="italic text-terracotta-600">Practitioners</em>
+                <em className="italic text-[#c4856a]">Practitioners</em>
               </motion.h2>
               <motion.p
                 variants={itemFade}
-                className="text-base font-light text-olive-600 mt-2"
+                className="text-base font-light text-[#6b6258] mt-2"
               >
                 Expert guides ready to support your transformation
               </motion.p>

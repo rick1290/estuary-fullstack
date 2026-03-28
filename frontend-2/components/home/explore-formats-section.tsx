@@ -43,7 +43,7 @@ const FORMAT_OPTIONS = [
 
 export default function ExploreFormatsSection() {
   return (
-    <section className="py-20 bg-cream-50">
+    <section className="py-20 bg-[#f0ede8]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           className="text-center mb-14"
@@ -54,20 +54,20 @@ export default function ExploreFormatsSection() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             Choose Your Path
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900 mb-4"
+            className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-[#2a2218] mb-4"
           >
             Explore by{" "}
-            <em className="italic text-terracotta-600">Format</em>
+            <em className="italic text-[#c4856a]">Format</em>
           </motion.h2>
           <motion.p
             variants={itemFade}
-            className="text-base font-light text-olive-600 max-w-2xl mx-auto"
+            className="text-base font-light text-[#6b6258] max-w-2xl mx-auto"
           >
             Whether you thrive in community, prefer structured learning, or seek personal guidance — find the perfect way to begin your transformation
           </motion.p>

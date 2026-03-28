@@ -19,7 +19,7 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
 
   return (
     <MarketplaceLayout
-      title={<>Wellness <em className="italic text-terracotta-600">Marketplace</em></>}
+      title={<>Wellness <em className="italic text-[#c4856a]">Marketplace</em></>}
       description="Discover transformative experiences to nurture your mind, body, and spirit"
       initialSearchQuery={query}
       sidebar={<MarketplaceFilters />}

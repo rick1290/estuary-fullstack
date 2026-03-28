@@ -37,7 +37,7 @@ django-celery-results==2.5.1
 flower==2.0.1
 trycourier==6.2.1
 resend==2.4.0
-mjml==0.9.0
+mjml[css_inlining]==0.9.0
 google-genai==0.3.0
 google-auth==2.29.0
 whitenoise==6.7.0

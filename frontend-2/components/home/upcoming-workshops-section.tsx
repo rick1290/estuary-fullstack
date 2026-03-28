@@ -84,7 +84,7 @@ export default function UpcomingWorkshopsSection() {
   }
 
   return (
-    <section className="py-16 bg-cream-50">
+    <section className="py-16 bg-[#f8f5f0]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
@@ -96,20 +96,20 @@ export default function UpcomingWorkshopsSection() {
             >
               <motion.span
                 variants={itemFade}
-                className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+                className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
               >
                 Upcoming
               </motion.span>
               <motion.h2
                 variants={itemFade}
-                className="font-serif text-3xl sm:text-4xl font-normal leading-[1.2] text-olive-900"
+                className="font-serif text-3xl sm:text-4xl font-light leading-[1.2] text-[#2a2218]"
               >
                 Upcoming{" "}
-                <em className="italic text-terracotta-600">Workshops</em>
+                <em className="italic text-[#c4856a]">Workshops</em>
               </motion.h2>
               <motion.p
                 variants={itemFade}
-                className="text-base font-light text-olive-600 mt-2"
+                className="text-base font-light text-[#6b6258] mt-2"
               >
                 Join our community for these transformative experiences
               </motion.p>

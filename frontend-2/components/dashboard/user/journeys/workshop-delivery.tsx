@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { conversationsCreate } from "@/src/client"
 import { bookingsRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import type {
@@ -118,6 +118,7 @@ export default function WorkshopDelivery({
   journeyData,
 }: WorkshopDeliveryProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0 })
@@ -212,6 +213,11 @@ export default function WorkshopDelivery({
     onSuccess: () => {
       toast.success("Workshop booking canceled")
       refetch()
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      queryClient.invalidateQueries({ queryKey: ['journeys'] })
+      queryClient.invalidateQueries({ queryKey: ['services'] })
     },
     onError: () => {
       toast.error("Failed to cancel. Please try again.")

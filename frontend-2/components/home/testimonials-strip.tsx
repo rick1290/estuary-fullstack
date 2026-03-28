@@ -36,7 +36,7 @@ export default function TestimonialsStrip() {
 
   if (isLoading) {
     return (
-      <section className="py-16 bg-cream-50">
+      <section className="py-16 bg-[#f0ede8] border-y border-[#e0d8ce]">
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -60,7 +60,7 @@ export default function TestimonialsStrip() {
   }
 
   return (
-    <section className="py-16 bg-cream-50">
+    <section className="py-16 bg-[#f0ede8] border-y border-[#e0d8ce]">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
@@ -71,7 +71,7 @@ export default function TestimonialsStrip() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-8 text-center"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-8 text-center"
           >
             Their Words
           </motion.span>
@@ -83,7 +83,7 @@ export default function TestimonialsStrip() {
                 variants={itemFade}
                 className="bg-white rounded-2xl border border-sage-200/60 p-6"
               >
-                <blockquote className="font-serif text-[15px] italic font-normal leading-relaxed text-olive-800 mb-5">
+                <blockquote className="font-serif text-[15px] italic font-normal leading-relaxed text-[#2a2218] mb-5">
                   &ldquo;{review.comment}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">

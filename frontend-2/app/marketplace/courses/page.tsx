@@ -19,7 +19,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
 
   return (
     <MarketplaceLayout
-      title={<>Transformative <em className="italic text-terracotta-600">Courses</em></>}
+      title={<>Transformative <em className="italic text-[#c4856a]">Courses</em></>}
       eyebrow="Learning Journeys"
       description="Discover comprehensive courses designed to guide your personal growth journey"
       initialSearchQuery={query}

@@ -199,7 +199,7 @@ export default function BecomePractitionerPage() {
   }
 
   return (
-    <div className="bg-cream-50 text-olive-900">
+    <div className="bg-[#f8f5f0] text-[#2a2218]">
       {/* ─── HERO ─── */}
       <section className="pt-16 pb-12 md:pt-24 md:pb-16 px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center">
@@ -217,20 +217,20 @@ export default function BecomePractitionerPage() {
 
             <motion.h1
               variants={itemFade}
-              className="font-serif text-4xl sm:text-5xl md:text-[56px] font-normal leading-[1.15] tracking-tight text-olive-900 mb-5"
+              className="font-serif text-4xl sm:text-5xl md:text-[56px] font-light leading-[1.15] tracking-tight text-[#2a2218] mb-5"
             >
               You&apos;re Holding Space
               <br />
               for Everyone &mdash;
               <br />
-              <em className="italic text-terracotta-600">
+              <em className="italic text-[#c4856a]">
                 Who&apos;s Holding It for You?
               </em>
             </motion.h1>
 
             <motion.p
               variants={itemFade}
-              className="text-lg font-light leading-relaxed text-olive-600 max-w-lg mx-auto mb-9"
+              className="text-lg font-light leading-relaxed text-[#6b6258] max-w-lg mx-auto mb-9"
             >
               You became a practitioner to serve &mdash; not to manage five
               platforms before your first session. Estuary is one home for your
@@ -242,16 +242,15 @@ export default function BecomePractitionerPage() {
               variants={itemFade}
               className="flex flex-col sm:flex-row gap-3 items-center justify-center"
             >
-              <Button
-                size="lg"
+              <button
                 onClick={handleGetStarted}
-                className="bg-olive-800 hover:bg-olive-700 text-cream-50 rounded-full px-9 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
+                className="inline-flex items-center gap-2 bg-[#4a5e4a] text-white text-[14.5px] font-medium px-9 py-4 rounded-full hover:bg-[#6b7f6b] shadow-lg hover:shadow-xl transition-all"
               >
                 Start Free
-              </Button>
+              </button>
               <a
                 href="#features"
-                className="text-sm text-olive-500 hover:text-terracotta-600 border-b border-olive-300 hover:border-terracotta-600 pb-0.5 transition-colors"
+                className="text-sm text-[#9b9088] hover:text-[#c4856a] border-b border-[#e0d8ce] hover:border-[#c4856a] pb-0.5 transition-colors"
               >
                 See How It Works &darr;
               </a>
@@ -272,7 +271,7 @@ export default function BecomePractitionerPage() {
       </section>
 
       {/* ─── SOCIAL PROOF ─── */}
-      <div className="border-y border-sage-200/60 bg-sage-50/30 py-7 overflow-x-auto">
+      <div className="border-y border-[#e0d8ce] bg-[#f0ede8] py-7 overflow-x-auto">
         <div className="flex gap-6 px-6 min-w-max md:min-w-0 md:flex-wrap md:justify-center">
           {[
             {
@@ -320,26 +319,26 @@ export default function BecomePractitionerPage() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             The Problem
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-[#2a2218] mb-5"
           >
             You Became a Practitioner
             <br />
             to Serve &mdash;{" "}
-            <em className="italic text-terracotta-600">
+            <em className="italic text-[#c4856a]">
               Not to Manage Software
             </em>
           </motion.h2>
-          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600 mb-5">
+          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-[#6b6258] mb-5">
             You hold space for transformation. You guide people through some of
             the most important moments of their lives.
           </motion.p>
-          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600 mb-5">
+          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-[#6b6258] mb-5">
             But somewhere along the way, you also became a part-time IT person
             &mdash; scheduling on one platform, streaming on another, hosting
             courses somewhere else, taking payments on a fourth app, and hoping
@@ -347,17 +346,17 @@ export default function BecomePractitionerPage() {
           </motion.p>
           <motion.blockquote
             variants={itemFade}
-            className="font-serif text-xl sm:text-2xl italic text-olive-800 leading-snug my-7 pl-5 border-l-2 border-terracotta-500"
+            className="font-serif text-xl sm:text-2xl italic text-[#2a2218] leading-snug my-7 pl-5 border-l-2 border-[#c4856a]"
           >
             It works. But it drains you.
           </motion.blockquote>
-          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600">
+          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-[#6b6258]">
             You deserve infrastructure as intentional as your practice.
           </motion.p>
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
+      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
 
       {/* ─── FEATURES ─── */}
       <section id="features" className="py-16 md:py-20 px-4 sm:px-6 scroll-mt-20">
@@ -370,18 +369,18 @@ export default function BecomePractitionerPage() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             The Solution
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-[#2a2218] mb-5"
           >
             One Home for{" "}
-            <em className="italic text-terracotta-600">Everything You Do</em>
+            <em className="italic text-[#c4856a]">Everything You Do</em>
           </motion.h2>
-          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600 mb-8">
+          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-[#6b6258] mb-8">
             No integrations. No brittle links. One login &mdash; for you and a
             seamless experience for every client.
           </motion.p>
@@ -444,7 +443,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
+      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
 
       {/* ─── PLATFORM COMPARISON ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -456,14 +455,14 @@ export default function BecomePractitionerPage() {
           variants={stagger}
         >
           <motion.div variants={itemFade} className="text-center mb-10">
-            <span className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4">
+            <span className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4">
               Why Estuary
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5">
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-[#2a2218] mb-5">
               Compare Estuary{" "}
-              <em className="italic text-terracotta-600">With Others</em>
+              <em className="italic text-[#c4856a]">With Others</em>
             </h2>
-            <p className="text-base font-light leading-relaxed text-olive-600 max-w-xl mx-auto">
+            <p className="text-base font-light leading-relaxed text-[#6b6258] max-w-xl mx-auto">
               Most platforms make you choose between booking, content, courses,
               or community. Estuary brings it all together &mdash; with no
               monthly subscription.
@@ -538,7 +537,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
+      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
 
       {/* ─── PRICING ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -647,21 +646,21 @@ export default function BecomePractitionerPage() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             Growth
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-5"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-[#2a2218] mb-5"
           >
             Built for Where You&apos;re Going &mdash;
             <br />
-            <em className="italic text-terracotta-600">
+            <em className="italic text-[#c4856a]">
               Not Just Where You Are
             </em>
           </motion.h2>
-          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600 mb-8">
+          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-[#6b6258] mb-8">
             Estuary scales with you &mdash; without switching platforms,
             re-learning tools, or paying more to unlock the next tier.
           </motion.p>
@@ -710,7 +709,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
+      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
 
       {/* ─── TESTIMONIALS ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -723,17 +722,17 @@ export default function BecomePractitionerPage() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             Real Stories
           </motion.span>
           <motion.h2
             variants={itemFade}
-            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-normal leading-[1.2] mb-8"
+            className="font-serif text-3xl sm:text-4xl md:text-[42px] font-light leading-[1.2] text-[#2a2218] mb-8"
           >
             Real Practitioners.
             <br />
-            <em className="italic text-terracotta-600">Real Relief.</em>
+            <em className="italic text-[#c4856a]">Real Relief.</em>
           </motion.h2>
 
           <motion.div
@@ -785,7 +784,7 @@ export default function BecomePractitionerPage() {
         </motion.div>
       </section>
 
-      <div className="h-px bg-sage-200/60 mx-4 sm:mx-6" />
+      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
 
       {/* ─── MISSION ─── */}
       <section className="py-16 md:py-20 px-4 sm:px-6">
@@ -798,16 +797,16 @@ export default function BecomePractitionerPage() {
         >
           <motion.span
             variants={itemFade}
-            className="block text-xs font-medium tracking-widest uppercase text-sage-600 mb-4"
+            className="block text-xs font-medium tracking-widest uppercase text-[#7c9a7e] mb-4"
           >
             Our Belief
           </motion.span>
           <motion.p
             variants={itemFade}
-            className="font-serif text-2xl sm:text-3xl font-normal leading-relaxed text-olive-800 mb-8"
+            className="font-serif text-2xl sm:text-3xl font-light leading-relaxed text-[#2a2218] mb-8"
           >
             Healing is{" "}
-            <em className="italic text-terracotta-600">relational</em>. It&apos;s
+            <em className="italic text-[#c4856a]">relational</em>. It&apos;s
             embodied. It unfolds slowly and deeply, and your tools should
             honor that.
           </motion.p>
@@ -820,7 +819,7 @@ export default function BecomePractitionerPage() {
             />
           </motion.div>
 
-          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-olive-600">
+          <motion.p variants={itemFade} className="text-base font-light leading-relaxed text-[#6b6258]">
             It&apos;s infrastructure that gets out of your way so you can do
             the work you came here to do.
           </motion.p>
@@ -828,50 +827,69 @@ export default function BecomePractitionerPage() {
       </section>
 
       {/* ─── FINAL CTA ─── */}
-      <section className="bg-gradient-to-br from-terracotta-100/60 via-sage-100/40 to-sage-200/60 py-16 md:py-24 px-4 sm:px-6 text-center">
+      <section className="relative bg-[#3d2e1e] py-20 md:py-24 px-4 sm:px-6 text-center overflow-hidden">
+        {/* Subtle radial gradient orbs */}
+        <div
+          className="absolute -top-[100px] -right-[100px] w-[500px] h-[500px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(124,154,126,0.12) 0%, transparent 65%)' }}
+        />
+        <div
+          className="absolute -bottom-[80px] left-[25%] w-[400px] h-[400px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(196,133,106,0.10) 0%, transparent 65%)' }}
+        />
+
         <motion.div
-          className="max-w-xl mx-auto"
+          className="max-w-xl mx-auto relative z-10"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={stagger}
         >
+          <motion.div
+            variants={itemFade}
+            className="inline-flex items-center gap-2.5 mb-6"
+          >
+            <div className="w-5 h-px bg-[#7c9a7e]" />
+            <span className="text-[11px] font-medium tracking-[0.14em] uppercase text-[#7c9a7e]">
+              Ready?
+            </span>
+          </motion.div>
+
           <motion.h2
             variants={itemFade}
-            className="font-serif text-4xl sm:text-5xl font-normal leading-[1.15] mb-4"
+            className="font-serif text-4xl sm:text-5xl font-light leading-[1.1] text-[#f8f5f0] mb-5"
           >
             Your Practice
             <br />
-            <em className="italic text-terracotta-600">Has a Home Now</em>
+            <em className="italic text-[#d4a08c]">Has a Home Now</em>
           </motion.h2>
           <motion.p
             variants={itemFade}
-            className="text-base font-light leading-relaxed text-olive-600 max-w-md mx-auto mb-9"
+            className="text-base font-light leading-relaxed text-[#f8f5f0]/65 max-w-md mx-auto mb-9"
           >
             Join practitioners who&apos;ve stopped juggling &mdash; and started
             growing.
           </motion.p>
           <motion.div
             variants={itemFade}
-            className="flex flex-col sm:flex-row gap-3 items-center justify-center"
+            className="flex flex-col sm:flex-row gap-4 items-center justify-center"
           >
-            <Button
-              size="lg"
+            <button
               onClick={handleGetStarted}
-              className="bg-olive-800 hover:bg-olive-700 text-cream-50 rounded-full px-9 py-6 text-base font-medium shadow-lg"
+              className="inline-flex items-center gap-2 bg-[#4a5e4a] text-white text-[14.5px] font-medium px-9 py-4 rounded-full hover:bg-[#6b7f6b] transition-colors"
             >
               Start Free &mdash; No Credit Card
-            </Button>
+            </button>
             <a
               href="#"
-              className="text-sm text-olive-500 hover:text-terracotta-600 border-b border-olive-300 hover:border-terracotta-600 pb-0.5 transition-colors"
+              className="text-[14px] text-[#f8f5f0]/50 border-b border-[#f8f5f0]/20 pb-0.5 hover:text-[#f8f5f0]/80 hover:border-[#f8f5f0]/40 transition-colors"
             >
               Book a Demo
             </a>
           </motion.div>
           <motion.p
             variants={itemFade}
-            className="text-xs text-olive-500 mt-5 tracking-wide"
+            className="text-xs text-[#f8f5f0]/40 mt-5 tracking-wide"
           >
             Setup takes 15 minutes &middot; Cancel anytime
           </motion.p>
