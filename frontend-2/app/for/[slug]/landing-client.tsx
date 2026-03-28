@@ -35,14 +35,20 @@ export default function PractitionerLandingClient({ modality }: PractitionerLand
   const modalityDescription = modality.description || modality.short_description || ""
 
   const handleCTA = () => {
+    // Store modality for pre-selection in onboarding
+    if (modality.slug) {
+      sessionStorage.setItem("onboarding_modality", modality.slug)
+    }
+
     if (isAuthenticated) {
-      router.push("/become-practitioner/application")
+      router.push("/become-practitioner/onboarding")
     } else {
       openAuthModal({
-        defaultTab: "register",
-        redirectUrl: "/become-practitioner/application",
-        title: `Join as a ${modalityName} Practitioner`,
-        description: "Create your free account to get started",
+        defaultTab: "signup",
+        redirectUrl: "/become-practitioner/onboarding",
+        serviceType: "practitioner-application",
+        title: `Start Your ${modalityName} Practice`,
+        description: "Create your free account — takes 30 seconds",
       })
     }
   }
