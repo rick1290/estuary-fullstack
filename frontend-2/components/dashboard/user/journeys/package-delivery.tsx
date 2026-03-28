@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   bookingsRetrieveOptions,
   bookingsListOptions,
@@ -106,6 +106,7 @@ function PackageDeliverySkeleton() {
 export default function PackageDelivery({ bookingUuid, journeyData }: PackageDeliveryProps) {
   const router = useRouter()
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const queryClient = useQueryClient()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   const { mutate: cancelBooking, isPending: isCancelling } = useMutation({
@@ -119,6 +120,11 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
     onSuccess: () => {
       toast.success("Package booking canceled")
       router.push("/dashboard/user/journeys")
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsRetrieve'] })
+      queryClient.invalidateQueries({ queryKey: ['bookingsList'] })
+      queryClient.invalidateQueries({ queryKey: ['journeys'] })
+      queryClient.invalidateQueries({ queryKey: ['services'] })
     },
     onError: () => {
       toast.error("Failed to cancel booking")
