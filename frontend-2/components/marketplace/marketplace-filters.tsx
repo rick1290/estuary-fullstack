@@ -19,12 +19,14 @@ interface MarketplaceFiltersProps {
   showServiceTypeFilter?: boolean
   showPriceFilter?: boolean
   showRatingFilter?: boolean
+  showCategoriesFilter?: boolean
 }
 
 export default function MarketplaceFilters({
   showServiceTypeFilter = true,
   showPriceFilter = true,
   showRatingFilter = true,
+  showCategoriesFilter = true,
 }: MarketplaceFiltersProps) {
   const { filters, updateFilter, resetFilters, toggleArrayFilter } = useMarketplaceFilters()
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
@@ -268,7 +270,7 @@ export default function MarketplaceFilters({
           </div>
 
           {/* Categories Filter */}
-          {categories.length > 0 && (
+          {showCategoriesFilter && categories.length > 0 && (
             <div className="space-y-3">
               <Label className="text-sm font-medium text-olive-900">Categories</Label>
               {isLoadingCategories ? (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, BarChart3, Users, DollarSign, Eye, SlidersHorizontal } from "lucide-react"
+import { Plus, Search, BarChart3, Users, DollarSign, Eye, SlidersHorizontal, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -395,19 +395,20 @@ export default function StreamsDashboardV2() {
         onTabChange={setActiveTab}
       />
 
-      <div className="flex justify-start px-1 -mt-2 mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-sage-600 hover:text-sage-800"
-          onClick={() => router.push(`/streams/${practitionerStream?.public_uuid || practitionerStream?.id}`)}
-        >
-          <Eye className="h-4 w-4" />
-          View My Stream
-        </Button>
-      </div>
-
       <div className="px-4 sm:px-6 py-4 space-y-6">
+        {/* View public stream link */}
+        <div className="flex justify-end -mt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-olive-600 h-8 text-xs"
+            onClick={() => router.push(`/streams/${practitionerStream?.public_uuid || practitionerStream?.id}`)}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            View Public Stream
+            <ExternalLink className="h-3 w-3 opacity-50" />
+          </Button>
+        </div>
         {/* Analytics Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>

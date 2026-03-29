@@ -23,7 +23,7 @@ export default async function WorkshopsPage({ searchParams }: WorkshopsPageProps
       eyebrow="Group Experiences"
       description="Join transformative group experiences led by expert practitioners"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters showServiceTypeFilter={false} />}
+      sidebar={<MarketplaceFilters showServiceTypeFilter={false} showCategoriesFilter={false} />}
       patternType="flow"
     >
       <ServiceListings serviceType="workshop" />
