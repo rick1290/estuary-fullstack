@@ -634,18 +634,16 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Service Price</span>
-                <span className="font-medium">${booking.price_charged || "0.00"}</span>
+                <span className="font-medium">
+                  ${((booking.service as any)?.price_cents ? ((booking.service as any).price_cents / 100).toFixed(2) : (booking as any).price_charged || "0.00")}
+                </span>
               </div>
-              {booking.discount_amount && parseFloat(booking.discount_amount) > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Discount</span>
-                  <span className="font-medium text-green-600">-${booking.discount_amount}</span>
-                </div>
-              )}
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total Paid</span>
-                <span className="font-serif text-lg font-normal text-olive-900">${booking.final_amount || "0.00"}</span>
+                <span className="font-serif text-lg font-normal text-olive-900">
+                  ${(((booking as any).credits_allocated || (booking.service as any)?.price_cents || 0) / 100).toFixed(2)}
+                </span>
               </div>
               <Badge variant={booking.payment_status === "paid" ? "success" : "warning"}>
                 {booking.payment_status_display || booking.payment_status}
@@ -737,7 +735,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             <Separator />
             <div className="flex justify-between text-sm">
               <span className="text-olive-600">Refund to client</span>
-              <span className="font-medium text-olive-900">${booking.price_charged || booking.final_amount || "0.00"}</span>
+              <span className="font-medium text-olive-900">${(((booking as any).credits_allocated || (booking.service as any)?.price_cents || 0) / 100).toFixed(2)}</span>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
