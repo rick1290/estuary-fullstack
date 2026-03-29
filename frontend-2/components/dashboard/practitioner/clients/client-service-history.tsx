@@ -162,7 +162,7 @@ export default function ClientServiceHistory({ clientId }: ClientServiceHistoryP
                 const serviceType = normalizeServiceType(service)
 
                 return (
-                  <TableRow key={booking.id} className="hover:bg-muted/50">
+                  <TableRow key={booking.id} className="hover:bg-sage-50/50">
                     <TableCell>
                       <div className="flex items-center">
                         <div className="mr-2 text-muted-foreground">

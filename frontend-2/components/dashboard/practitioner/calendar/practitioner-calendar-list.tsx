@@ -363,7 +363,7 @@ function ScheduleTable({
     </div>
 
     {/* Desktop table view */}
-    <div className="rounded-md border overflow-x-auto hidden sm:block">
+    <div className="rounded-xl border border-sage-200/60 bg-white overflow-x-auto hidden sm:block">
       <Table className="min-w-[540px]">
         <TableHeader>
           <TableRow>
@@ -391,7 +391,7 @@ function ScheduleTable({
             return (
               <TableRow
                 key={scheduleEvent.id}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-sage-50/50"
                 onClick={() => router.push(detailsUrl)}
               >
                 <TableCell>
