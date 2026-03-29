@@ -113,7 +113,7 @@ export default function PractitionerPage({ params }: { params: Promise<{ slug: s
       <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#f8f5f0]/95 backdrop-blur-sm border-t border-[#e0d8ce] px-4 py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
         <button
           onClick={() => {
-            const el = document.getElementById('booking-section')
+            const el = document.getElementById('offerings') || document.getElementById('booking-section')
             if (el) {
               el.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
