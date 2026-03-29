@@ -324,7 +324,7 @@ export default function BookingFormsPage({
     // Redirect back
     toast.success("All forms submitted! Redirecting to your booking...")
     setTimeout(() => {
-      router.push(`/dashboard/user/bookings/${id}`)
+      router.push(`/dashboard/user/journeys/${id}`)
     }, 1000)
   }
 
@@ -559,7 +559,7 @@ export default function BookingFormsPage({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <Button variant="outline" asChild>
-            <Link href={`/dashboard/user/bookings/${id}`}>
+            <Link href={`/dashboard/user/journeys/${id}`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Booking
             </Link>
@@ -625,7 +625,7 @@ export default function BookingFormsPage({
           className="flex items-center gap-2 pl-0 hover:pl-2 transition-all"
           asChild
         >
-          <Link href={`/dashboard/user/bookings/${id}`}>
+          <Link href={`/dashboard/user/journeys/${id}`}>
             <ArrowLeft className="h-4 w-4" />
             Back to Booking
           </Link>
@@ -815,7 +815,7 @@ export default function BookingFormsPage({
         {!allDone && (
           <div className="flex justify-end gap-3 pb-8">
             <Button variant="outline" asChild>
-              <Link href={`/dashboard/user/bookings/${id}`}>Cancel</Link>
+              <Link href={`/dashboard/user/journeys/${id}`}>Cancel</Link>
             </Button>
             <Button
               onClick={handleSubmitAll}
@@ -838,7 +838,7 @@ export default function BookingFormsPage({
         {allDone && (
           <div className="flex justify-center pb-8">
             <Button asChild>
-              <Link href={`/dashboard/user/bookings/${id}`}>
+              <Link href={`/dashboard/user/journeys/${id}`}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Return to Booking
               </Link>
