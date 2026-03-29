@@ -39,12 +39,21 @@ export default function JourneysList() {
 
   // Auto-switch to Completed tab when a new journey completes (not on initial load)
   const prevCompletedCount = useRef<number | null>(null)
+  const initialLoadDone = useRef(false)
   useEffect(() => {
+    if (!initialLoadDone.current) {
+      // Skip the first data load (0 → N transition)
+      if (completedJourneys.length > 0 || !isLoading) {
+        initialLoadDone.current = true
+        prevCompletedCount.current = completedJourneys.length
+      }
+      return
+    }
     if (prevCompletedCount.current !== null && completedJourneys.length > prevCompletedCount.current) {
       setActiveTab("completed")
     }
     prevCompletedCount.current = completedJourneys.length
-  }, [completedJourneys.length])
+  }, [completedJourneys.length, isLoading])
 
   const filteredAll = useMemo(
     () => filterJourneys(journeys, activeFilter),

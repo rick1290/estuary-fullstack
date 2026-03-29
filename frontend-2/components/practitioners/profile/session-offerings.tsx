@@ -85,7 +85,7 @@ export default function SessionOfferings({
   const hasMore = filteredSessions.length > INITIAL_VISIBLE_COUNT
 
   return (
-    <div className="mt-10 mb-10">
+    <div id="offerings" className="mt-10 mb-10 scroll-mt-20">
       <p className="text-xs font-medium tracking-widest uppercase text-sage-600 mb-2">Offerings</p>
       <h2 className="font-serif text-xl font-normal text-olive-900 mb-5">Sessions, Bundles & Packages</h2>
 
@@ -129,16 +129,12 @@ export default function SessionOfferings({
             return (
               <Card key={session.id} className="overflow-hidden transition-all border border-sage-200/60">
                 <CardContent className="p-0">
-                  <div className="flex items-center gap-4 p-5">
-                    {/* Service Image/Icon */}
+                  {/* Desktop: horizontal row */}
+                  <div className="hidden sm:flex items-center gap-4 p-5">
                     <div className="flex-shrink-0">
                       {session.image_url ? (
                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-sage-100">
-                          <img
-                            src={session.image_url}
-                            alt={session.name}
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={session.image_url} alt={session.name} className="w-full h-full object-cover" />
                         </div>
                       ) : (
                         <div className="w-16 h-16 rounded-xl bg-sage-50 flex items-center justify-center">
@@ -146,33 +142,66 @@ export default function SessionOfferings({
                         </div>
                       )}
                     </div>
-
-                    {/* Service Details */}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-base font-medium text-olive-900 mb-1 truncate">{session.name}</h3>
-
                       <span className="text-xs px-2.5 py-1 bg-sage-50 text-olive-600 rounded-full font-light capitalize inline-block mb-2">
                         {session.service_type_display || serviceType}
                       </span>
-
                       <div className="flex flex-wrap gap-4 text-xs font-light text-olive-600">
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5 text-sage-500" />
                           <span>{session.duration_minutes || session.duration} minutes</span>
                         </div>
-
                         <div className="flex items-center gap-1.5">
                           <MapPin className="h-3.5 w-3.5 text-sage-500" />
                           <span>{session.location_type.charAt(0).toUpperCase() + session.location_type.slice(1)}</span>
                         </div>
                       </div>
                     </div>
-
-                    {/* Price & CTA */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       <p className="text-base font-semibold text-olive-900">{session.price ? `$${formatPrice(session.price)}` : "Free"}</p>
-
                       <Button asChild size="sm" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full text-sm">
+                        <Link href={getServiceDetailUrl(session)}>
+                          {getServiceCtaText(serviceType)}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Mobile: stacked layout */}
+                  <div className="sm:hidden p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0">
+                        {session.image_url ? (
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-sage-100">
+                            <img src={session.image_url} alt={session.name} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-sage-50 flex items-center justify-center">
+                            <ServiceIcon className="h-5 w-5 text-sage-600" strokeWidth={1.5} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-olive-900 mb-1">{session.name}</h3>
+                        <span className="text-[10px] px-2 py-0.5 bg-sage-50 text-olive-600 rounded-full font-light capitalize inline-block">
+                          {session.service_type_display || serviceType}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs font-light text-olive-500 mb-3">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-sage-400" />
+                        {session.duration_minutes || session.duration} min
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-sage-400" />
+                        {session.location_type.charAt(0).toUpperCase() + session.location_type.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-base font-semibold text-olive-900">{session.price ? `$${formatPrice(session.price)}` : "Free"}</p>
+                      <Button asChild size="sm" className="bg-olive-800 hover:bg-olive-700 text-white rounded-full text-xs px-4 min-h-[44px]">
                         <Link href={getServiceDetailUrl(session)}>
                           {getServiceCtaText(serviceType)}
                         </Link>
