@@ -14,6 +14,7 @@ export interface MarketplaceFilters {
   maxPrice: number
   rating: string
   search: string
+  sort: string
   page: number
 }
 
@@ -39,6 +40,7 @@ export function useMarketplaceFilters() {
       maxPrice: parseInt(searchParams.get('maxPrice') || '500'),
       rating: searchParams.get('rating') || 'any',
       search: searchParams.get('q') || '',
+      sort: searchParams.get('sort') || 'relevance',
       page: parseInt(searchParams.get('page') || '1'),
     }
   }, [searchParams])

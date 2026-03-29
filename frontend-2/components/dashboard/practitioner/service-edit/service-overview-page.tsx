@@ -19,7 +19,7 @@ import { Progress } from "@/components/ui/progress"
 import {
   Users, Star, Calendar as CalendarIcon, DollarSign, Eye, Clock,
   TrendingUp, CheckCircle2, PlayCircle, CalendarClock,
-  ExternalLink, ArrowRight, Loader2, Settings,
+  ExternalLink, ArrowRight, Loader2, Settings, Copy, Link2,
   AlertTriangle, CalendarPlus, Archive, Package, Sparkles,
 } from "lucide-react"
 import { format, isFuture, isPast } from "date-fns"
@@ -489,6 +489,27 @@ export function ServiceOverviewPage({ serviceId }: ServiceOverviewPageProps) {
         <Card className="p-4">
           <h4 className="text-sm font-medium mb-3">Quick Actions</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start h-9"
+              onClick={() => {
+                const url = `${window.location.origin}${getServiceDetailUrl(service)}`
+                navigator.clipboard.writeText(url)
+                toast({ title: "Link copied", description: "Service link copied to clipboard" })
+              }}
+            >
+              <Link2 className="h-3.5 w-3.5 mr-2" />
+              Copy Share Link
+              <Copy className="h-3 w-3 ml-auto opacity-50" />
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start h-9" asChild>
+              <Link href={`/dashboard/practitioner/services/${serviceId}/settings`}>
+                <Settings className="h-3.5 w-3.5 mr-2" />
+                Edit Service
+                <ArrowRight className="h-3 w-3 ml-auto opacity-50" />
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" className="justify-start h-9" asChild>
               <Link href={getServiceDetailUrl(service)} target="_blank" rel="noopener noreferrer">
                 <Eye className="h-3.5 w-3.5 mr-2" />

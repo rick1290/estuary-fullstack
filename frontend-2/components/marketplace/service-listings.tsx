@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ServiceCard from "@/components/ui/service-card"
 
 // Fallback mock data for development
@@ -178,11 +179,19 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
 
   // Build query parameters for API from URL filters
   const queryParams = useMemo(() => {
+    const sortMap: Record<string, string> = {
+      relevance: '-is_featured,-average_rating',
+      'price-low': 'price_cents',
+      'price-high': '-price_cents',
+      rating: '-average_rating',
+      newest: '-created_at',
+    }
+
     const params: any = {
       page_size: PAGE_SIZE,
       page: page,
-      ordering: '-is_featured,-average_rating',
-      is_active: true,  // Only show active services
+      ordering: sortMap[filters.sort] || sortMap.relevance,
+      is_active: true,
     }
 
     // Search query
@@ -440,11 +449,23 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
 
   return (
     <div className="w-full">
-      {/* Results count */}
-      <div className="mb-6">
+      {/* Results count + sort */}
+      <div className="mb-6 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {startResult}-{endResult} of {totalResults} results
+          Showing <span className="font-medium text-olive-700">{startResult}-{endResult}</span> of {totalResults} results
         </p>
+        <Select value={filters.sort} onValueChange={(value) => updateFilter('sort', value)}>
+          <SelectTrigger className="w-[160px] h-9 text-sm">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="relevance">Relevance</SelectItem>
+            <SelectItem value="price-low">Price: Low to High</SelectItem>
+            <SelectItem value="price-high">Price: High to Low</SelectItem>
+            <SelectItem value="rating">Highest Rated</SelectItem>
+            <SelectItem value="newest">Newest</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Services grid */}

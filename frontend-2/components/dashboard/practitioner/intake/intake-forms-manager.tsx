@@ -418,7 +418,7 @@ export default function IntakeFormsManager() {
                 <div className="rounded-2xl bg-gradient-to-br from-sage-100 to-sage-200/60 p-4 mb-4 group-hover:from-sage-200 group-hover:to-sage-300/60 transition-colors">
                   <FileText className="h-8 w-8 text-sage-700" />
                 </div>
-                <h3 className="font-medium text-olive-900 mb-1">Create Intake Form</h3>
+                <h3 className="font-serif text-base font-normal text-olive-900 mb-1">Create Intake Form</h3>
                 <p className="text-sm text-olive-500 max-w-[220px]">
                   Ask clients questions before their session
                 </p>
@@ -434,7 +434,7 @@ export default function IntakeFormsManager() {
                 <div className="rounded-2xl bg-gradient-to-br from-terracotta-100 to-terracotta-200/60 p-4 mb-4 group-hover:from-terracotta-200 group-hover:to-terracotta-300/60 transition-colors">
                   <Shield className="h-8 w-8 text-terracotta-700" />
                 </div>
-                <h3 className="font-medium text-olive-900 mb-1">Create Consent Form</h3>
+                <h3 className="font-serif text-base font-normal text-olive-900 mb-1">Create Consent Form</h3>
                 <p className="text-sm text-olive-500 max-w-[220px]">
                   Get signed consent before sessions
                 </p>
@@ -475,7 +475,7 @@ export default function IntakeFormsManager() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-medium text-olive-900 truncate">
+                          <h3 className="font-serif text-base font-normal text-olive-900 truncate">
                             {template.title}
                           </h3>
                           {template.description && (
@@ -1012,7 +1012,7 @@ export default function IntakeFormsManager() {
                   <FileText className="h-7 w-7 text-sage-700" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-olive-900">Intake Questionnaire</h3>
+                  <h3 className="font-serif text-base font-normal text-olive-900">Intake Questionnaire</h3>
                   <p className="text-xs text-olive-500 mt-1">
                     Ask clients questions before their session begins
                   </p>
@@ -1031,7 +1031,7 @@ export default function IntakeFormsManager() {
                   <Shield className="h-7 w-7 text-terracotta-700" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-olive-900">Consent Form</h3>
+                  <h3 className="font-serif text-base font-normal text-olive-900">Consent Form</h3>
                   <p className="text-xs text-olive-500 mt-1">
                     Get signed consent and acknowledgment before sessions
                   </p>

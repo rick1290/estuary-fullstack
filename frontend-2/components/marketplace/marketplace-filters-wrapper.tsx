@@ -9,6 +9,7 @@ interface MarketplaceFiltersWrapperProps {
   showServiceTypeFilter?: boolean
   showPriceFilter?: boolean
   showRatingFilter?: boolean
+  showCategoriesFilter?: boolean
 }
 
 function MarketplaceFiltersSkeleton() {

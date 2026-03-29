@@ -315,7 +315,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             <span className="hidden sm:inline">Back</span>
           </Button>
           <div className="min-w-0">
-            <h1 className="font-serif text-xl sm:text-2xl font-normal text-olive-900 truncate">{booking.service?.name || booking.title || "Booking"}</h1>
+            <h1 className="font-serif text-lg sm:text-xl font-normal text-olive-900 truncate">{booking.service?.name || booking.title || "Booking"}</h1>
             <p className="text-muted-foreground text-sm">Booking #{booking.public_uuid?.slice(-8) || booking.id}</p>
           </div>
         </div>
@@ -331,7 +331,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
             <Button
               onClick={handleComplete}
               disabled={completeMutation.isPending}
-              className="bg-green-600 hover:bg-green-700 min-h-[44px]"
+              className="bg-sage-700 hover:bg-sage-800 min-h-[44px]"
             >
               {completeMutation.isPending ? (
                 <>
@@ -477,7 +477,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   <div className="flex flex-col gap-2">
                     <Button
                       className={`w-full flex items-center justify-center gap-2 ${
-                        isSessionJoinable(booking) ? "bg-green-600 hover:bg-green-700" : ""
+                        isSessionJoinable(booking) ? "bg-sage-700 hover:bg-sage-800" : ""
                       }`}
                       disabled={!isSessionJoinable(booking)}
                       onClick={() => router.push(`/room/${booking.room.public_uuid}/lobby`)}
@@ -510,7 +510,7 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="font-medium">{booking.user?.full_name || "Unknown"}</h3>
+                  <h3 className="font-serif text-base font-normal text-olive-900">{booking.user?.full_name || "Unknown"}</h3>
                   <div className="space-y-1 mt-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-4 w-4" />
