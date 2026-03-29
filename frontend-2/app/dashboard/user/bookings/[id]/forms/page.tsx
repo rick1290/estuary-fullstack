@@ -3,7 +3,6 @@
 import React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { getSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,6 +36,7 @@ interface ConsentForm {
   is_signed: boolean
   signed_at?: string
   signer_name?: string
+  consent_document_id?: number | string
 }
 
 interface QuestionOption {
@@ -75,20 +75,6 @@ interface BookingFormsData {
 
 // ----- Helpers -----
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-
-async function apiFetch(url: string, options?: RequestInit) {
-  const session = await getSession()
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options?.headers as Record<string, string>),
-  }
-  if (session?.accessToken) {
-    headers["Authorization"] = `Bearer ${session.accessToken}`
-  }
-  return fetch(url, { ...options, headers, credentials: "include" })
-}
-
 // ----- Component -----
 
 export default function BookingFormsPage({
@@ -125,15 +111,16 @@ export default function BookingFormsPage({
     setIsLoading(true)
     setError(null)
     try {
-      const res = await apiFetch(
-        `${API_URL}/api/v1/intake/bookings/${id}/forms/`
-      )
-      if (!res.ok) {
+      const { intakeBookingsFormsRetrieve } = await import("@/src/client/sdk.gen")
+      const apiRes = await intakeBookingsFormsRetrieve({
+        path: { booking_uuid: id },
+      })
+      const raw = apiRes.data as any
+      if (!raw) {
         throw new Error("Failed to load forms")
       }
-      const raw = await res.json()
       // Handle wrapped response
-      const apiData = raw && typeof raw === "object" && "data" in raw ? raw.data : raw
+      const apiData = raw && typeof raw === "object" && "data" in raw && raw.data ? raw.data : raw
 
       // Transform API response (forms array) into the shape the page expects
       let data: BookingFormsData
@@ -152,6 +139,7 @@ export default function BookingFormsPage({
               legal_text: tpl.latest_consent?.legal_text || tpl.description || '',
               is_signed: f.signed || false,
               signer_name: f.signature?.signer_name || '',
+              consent_document_id: tpl.latest_consent?.id,
             }
           } else if (tpl.form_type === 'intake' && tpl.questions) {
             // Capture the template ID for submission
@@ -226,19 +214,16 @@ export default function BookingFormsPage({
 
     setIsSigningConsent(true)
     try {
-      const res = await apiFetch(
-        `${API_URL}/api/v1/intake/bookings/${id}/forms/consent/`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            signer_name: signerName.trim(),
-            agreed: true,
-          }),
-        }
-      )
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        throw new Error(errData?.detail || "Failed to sign consent form")
+      const { intakeConsentSignaturesCreate } = await import("@/src/client/sdk.gen")
+      const res = await intakeConsentSignaturesCreate({
+        body: {
+          booking_uuid: id,
+          consent_document: Number(formsData?.consent_form?.consent_document_id || formsData?.consent_form?.id),
+          signer_name: signerName.trim(),
+        } as any,
+      })
+      if (!res.data && !res.response?.ok) {
+        throw new Error("Failed to sign consent form")
       }
       setConsentSigned(true)
       toast.success("Consent form signed successfully.")
