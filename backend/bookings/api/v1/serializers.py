@@ -267,8 +267,11 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     def get_intake_forms_status(self, obj):
         """Check intake form status for this booking"""
         try:
-            from intake.models import IntakeFormLink, IntakeResponse
-            form_links = IntakeFormLink.objects.filter(service=obj.service)
+            from intake.models import ServiceForm, IntakeResponse
+            if not obj.service:
+                return {'has_forms': False}
+
+            form_links = ServiceForm.objects.filter(service=obj.service)
             if not form_links.exists():
                 return {'has_forms': False}
 
