@@ -829,17 +829,10 @@ function IntakeResponsesSection({ bookingId, status }: { bookingId: string; stat
   useEffect(() => {
     const fetchResponses = async () => {
       try {
-        const { getSession } = await import("next-auth/react")
-        const session = await getSession()
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-        const res = await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingId}/forms/responses/`, {
-          headers: {
-            ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
-          },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setResponses(data)
+        const { intakeBookingsFormsResponsesRetrieve } = await import("@/src/client/sdk.gen")
+        const res = await intakeBookingsFormsResponsesRetrieve({ path: { booking_uuid: bookingId } })
+        if (res.data) {
+          setResponses(res.data)
         }
       } catch {
         // Silently fail

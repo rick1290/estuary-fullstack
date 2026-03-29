@@ -180,14 +180,14 @@ export function SessionDetailPage({
   const resolvedBackHref = backHref || `/dashboard/practitioner/services/${serviceId}`
   const resolvedBackLabel = backLabel || service?.name || "Service"
 
-  // Session actions for header
-  const headerActions = (
-    <div className="flex items-center gap-2 flex-wrap">
+  // Session action buttons — shared between desktop header and mobile bar
+  const actionButtons = (
+    <>
       {canMarkInProgress && (
         <Button
           size="sm"
           variant="outline"
-          className="h-8 sm:h-8 min-h-[44px] sm:min-h-0 text-xs"
+          className="h-8 min-h-[44px] sm:min-h-0 text-xs"
           onClick={() => markInProgressMutation.mutate({
             path: { id: sessionId },
             body: { service: parseInt(serviceId) },
@@ -206,7 +206,7 @@ export function SessionDetailPage({
         <Button
           size="sm"
           variant="outline"
-          className="h-8 sm:h-8 min-h-[44px] sm:min-h-0 text-xs"
+          className="h-8 min-h-[44px] sm:min-h-0 text-xs"
           onClick={() => markCompletedMutation.mutate({
             path: { id: sessionId },
             body: { service: parseInt(serviceId) },
@@ -222,13 +222,20 @@ export function SessionDetailPage({
         </Button>
       )}
       {session.room?.public_uuid && (
-        <Button size="sm" className="h-8 sm:h-8 min-h-[44px] sm:min-h-0 text-xs" asChild>
+        <Button size="sm" className="h-8 min-h-[44px] sm:min-h-0 text-xs" asChild>
           <Link href={`/room/${session.room.public_uuid}/lobby`}>
             <Video className="h-3.5 w-3.5 mr-1.5" />
             Join Room
           </Link>
         </Button>
       )}
+    </>
+  )
+
+  // Desktop: inline in header. Mobile: hidden (shown below header instead)
+  const headerActions = (
+    <div className="hidden sm:flex items-center gap-2">
+      {actionButtons}
     </div>
   )
 
@@ -257,6 +264,13 @@ export function SessionDetailPage({
             </>
           )}
         </div>
+
+        {/* Mobile action buttons — below header, full width */}
+        {(canMarkInProgress || canMarkCompleted || session.room?.public_uuid) && (
+          <div className="flex sm:hidden items-center gap-2 px-4 pb-3 overflow-x-auto">
+            {actionButtons}
+          </div>
+        )}
       </CompactServiceHeader>
 
       <div className="max-w-6xl mx-auto w-full px-4 py-4 sm:px-6 sm:py-6">

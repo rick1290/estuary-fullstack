@@ -319,7 +319,51 @@ function ScheduleTable({
   }
 
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <>
+    {/* Mobile card view */}
+    <div className="space-y-2 sm:hidden">
+      {events.map((scheduleEvent) => {
+        const calendarEvent = scheduleEvent.event
+        const isServiceSession = scheduleEvent.event_type === 'service_session'
+        const isVirtual = calendarEvent?.service?.location_type === 'virtual'
+        const attendeeName = isServiceSession
+          ? calendarEvent?.attendees?.[0]?.full_name
+          : calendarEvent?.client?.full_name
+        const detailsUrl = isServiceSession
+          ? `/dashboard/practitioner/sessions/${scheduleEvent.id}`
+          : `/dashboard/practitioner/bookings/${calendarEvent?.public_uuid || scheduleEvent.id}`
+
+        return (
+          <div
+            key={scheduleEvent.id}
+            className="flex items-center gap-3 p-3 bg-white border border-sage-200/60 rounded-xl cursor-pointer hover:shadow-sm transition-shadow"
+            onClick={() => router.push(detailsUrl)}
+          >
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-sage-50 shrink-0">
+              {isVirtual ? <Video className="h-4 w-4 text-sage-600" /> : <MapPin className="h-4 w-4 text-terracotta-600" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-olive-900 truncate">{scheduleEvent.title}</p>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-olive-500">
+                {scheduleEvent.date && (
+                  <span>{format(parseISO(scheduleEvent.date), "MMM d")} · {scheduleEvent.startTime}</span>
+                )}
+                {attendeeName && <span>· {attendeeName}</span>}
+              </div>
+            </div>
+            <Badge
+              variant={statusVariants[scheduleEvent.status as keyof typeof statusVariants] || "secondary"}
+              className="shrink-0 text-[10px]"
+            >
+              {scheduleEvent.status?.charAt(0).toUpperCase() + scheduleEvent.status?.slice(1)}
+            </Badge>
+          </div>
+        )
+      })}
+    </div>
+
+    {/* Desktop table view */}
+    <div className="rounded-md border overflow-x-auto hidden sm:block">
       <Table className="min-w-[540px]">
         <TableHeader>
           <TableRow>
@@ -473,5 +517,6 @@ function ScheduleTable({
         </TableBody>
       </Table>
     </div>
+    </>
   )
 }

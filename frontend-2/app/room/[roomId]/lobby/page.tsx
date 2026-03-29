@@ -41,24 +41,21 @@ export default function RoomLobbyPage() {
   const [consentName, setConsentName] = useState('');
 
   useEffect(() => {
-    // Only check if we have a booking UUID from the access data
     const bookingUuid = (accessData as any)?.booking?.public_uuid || (accessData as any)?.my_booking?.public_uuid;
     if (!bookingUuid) return;
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
-      credentials: 'include',
-    })
-      .then(res => res.json())
-      .then(data => {
-        const forms = data?.data || data;
+    (async () => {
+      try {
+        const { intakeBookingsFormsRetrieve } = await import("@/src/client/sdk.gen");
+        const res = await intakeBookingsFormsRetrieve({ path: { booking_uuid: bookingUuid } });
+        const forms = (res.data as any)?.data || res.data;
         if (forms?.consent_required && !forms?.consent_signed) {
           setConsentNeeded(true);
           const consentForm = forms.forms?.find((f: any) => f.template?.form_type === 'consent' && !f.signed);
           setConsentData(consentForm);
         }
-      })
-      .catch(() => {});
+      } catch {}
+    })();
   }, [accessData]);
 
   const handleJoinRoom = (settings: any) => {
@@ -199,15 +196,13 @@ export default function RoomLobbyPage() {
                   setSigningConsent(true);
                   try {
                     const bookingUuid = (accessData as any)?.booking?.public_uuid || (accessData as any)?.my_booking?.public_uuid;
-                    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                    await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/consent/`, {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
+                    const { intakeConsentSignaturesCreate } = await import("@/src/client/sdk.gen");
+                    await intakeConsentSignaturesCreate({
+                      body: {
+                        booking_uuid: bookingUuid,
                         consent_document: consentData.template?.latest_consent?.id,
                         signer_name: consentName.trim(),
-                      }),
+                      } as any,
                     });
                     setConsentNeeded(false);
                   } catch (err) {

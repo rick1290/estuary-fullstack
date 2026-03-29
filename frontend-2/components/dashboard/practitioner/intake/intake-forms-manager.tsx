@@ -284,13 +284,9 @@ export default function IntakeFormsManager() {
 
   const deleteQuestionMutation = useMutation({
     mutationFn: async ({ templateId, questionId }: { templateId: number; questionId: number }) => {
-      // Question delete not in generated client yet — use SDK base
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      const res = await fetch(`${baseUrl}/api/v1/intake/templates/${templateId}/questions/${questionId}/`, {
-        method: "DELETE",
-        credentials: "include",
-      })
-      if (!res.ok) throw new Error("Failed to delete question")
+      const { intakeQuestionsDestroy } = await import("@/src/client/sdk.gen")
+      const res = await intakeQuestionsDestroy({ path: { id: questionId } })
+      if (res.error) throw new Error("Failed to delete question")
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })

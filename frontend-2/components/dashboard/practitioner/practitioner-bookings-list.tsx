@@ -292,7 +292,48 @@ export default function PractitionerBookingsList() {
               </div>
             )
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <>
+            {/* Mobile card view */}
+            <div className="space-y-2 sm:hidden">
+              {filteredBookings.map((booking) => {
+                const startTime = booking.service_session?.start_time
+                return (
+                  <div
+                    key={booking.id}
+                    className="flex items-center gap-3 p-3 bg-white border border-sage-200/60 rounded-xl cursor-pointer hover:shadow-sm transition-shadow"
+                    onClick={() => router.push(`/dashboard/practitioner/bookings/${booking.public_uuid || booking.id}`)}
+                  >
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage src={booking.user?.avatar_url || ""} alt={booking.user?.full_name || ""} />
+                      <AvatarFallback className="text-xs">
+                        {(booking.user?.full_name || "U").split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-olive-900 truncate">
+                        {booking.user?.full_name || booking.user?.email || "Unknown"}
+                      </p>
+                      <p className="text-xs text-olive-500 truncate">{booking.service?.name || "Unknown Service"}</p>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-olive-500">
+                        {startTime && (
+                          <span>{format(parseISO(startTime), "MMM d")} · {format(parseISO(startTime), "h:mm a")}</span>
+                        )}
+                        {!startTime && <span>Not scheduled</span>}
+                      </div>
+                    </div>
+                    <Badge
+                      variant={statusVariants[booking.status as keyof typeof statusVariants] || "secondary"}
+                      className="shrink-0 text-[10px]"
+                    >
+                      {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="rounded-md border overflow-x-auto hidden sm:block">
               <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
@@ -417,6 +458,7 @@ export default function PractitionerBookingsList() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </TabsContent>
       </Tabs>

@@ -26,16 +26,10 @@ export default function PasswordTab() {
   useState(() => {
     const check = async () => {
       try {
-        const session = await getSession()
-        if (!session?.accessToken) return
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-        const res = await fetch(`${baseUrl}/api/v1/auth/user/`, {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setHasPassword(data.has_password ?? true)
-        }
+        const { authMe } = await import("@/src/client/sdk.gen")
+        const res = await authMe()
+        const data = res.data as any
+        setHasPassword(data?.has_password ?? true)
       } catch {
         setHasPassword(true)
       }
@@ -45,22 +39,14 @@ export default function PasswordTab() {
 
   const changePasswordMutation = useMutation({
     mutationFn: async (body: Record<string, string>) => {
-      const session = await getSession()
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      const res = await fetch(`${baseUrl}/api/v1/drf/auth/change-password/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
-        },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const data = await res.json()
+      const { authChangePassword } = await import("@/src/client/sdk.gen")
+      const res = await authChangePassword({ body: body as any })
+      if (res.error) {
+        const data = res.error as any
         const firstError = Object.values(data).flat()[0]
         throw new Error(typeof firstError === "string" ? firstError : "Failed to update password")
       }
-      return res.json()
+      return res.data
     },
     onSuccess: () => {
       setSuccess(true)

@@ -58,16 +58,12 @@ export default function CreditsTab() {
     if (!selectedAmount) return
     setPurchasing(true)
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${baseUrl}/api/v1/credits/purchase/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount_cents: selectedAmount * 100 }),
+      const { creditsPurchaseCreate } = await import("@/src/client/sdk.gen")
+      const response = await creditsPurchaseCreate({
+        body: { amount_cents: selectedAmount * 100 } as any,
       })
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        throw new Error(errorData?.detail || 'Purchase failed')
+      if (response.error) {
+        throw new Error((response.error as any)?.detail || 'Purchase failed')
       }
       toast({
         title: "Credits purchased",

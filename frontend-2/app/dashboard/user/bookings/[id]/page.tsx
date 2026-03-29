@@ -728,13 +728,14 @@ function FormsStatusBanner({ bookingUuid }: { bookingUuid: string }) {
   const [formsStatus, setFormsStatus] = useState<any>(null)
 
   useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-    fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
-      credentials: 'include',
-    })
-      .then(res => res.json())
-      .then(data => setFormsStatus(data?.data || data))
-      .catch(() => {})
+    (async () => {
+      try {
+        const { intakeBookingsFormsRetrieve } = await import("@/src/client/sdk.gen")
+        const res = await intakeBookingsFormsRetrieve({ path: { booking_uuid: bookingUuid } })
+        const data = (res.data as any)?.data || res.data
+        setFormsStatus(data)
+      } catch {}
+    })()
   }, [bookingUuid])
 
   if (!formsStatus?.has_forms) return null

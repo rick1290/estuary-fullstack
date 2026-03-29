@@ -38,10 +38,9 @@ export default function StreamsLayout({
   const { data: topics } = useQuery({
     queryKey: ['stream-topics'],
     queryFn: async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const res = await fetch(`${baseUrl}/api/v1/stream-posts/topics/`)
-      if (!res.ok) return []
-      const data = await res.json()
+      const { streamPostsTopicsRetrieve } = await import("@/src/client/sdk.gen")
+      const res = await streamPostsTopicsRetrieve()
+      const data = res.data as any
       return data?.data || data || []
     },
     staleTime: 1000 * 60 * 10, // 10 min cache
