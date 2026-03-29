@@ -66,7 +66,7 @@ export function PayoutHistoryTable({ payouts }: PayoutHistoryTableProps) {
         </Select>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border overflow-x-auto -mx-2 sm:mx-0">
+        <div className="rounded-xl border border-sage-200/60 bg-white overflow-x-auto -mx-2 sm:mx-0">
           <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
@@ -88,7 +88,7 @@ export function PayoutHistoryTable({ payouts }: PayoutHistoryTableProps) {
                 filteredPayouts.map((payout) => (
                   <TableRow
                     key={payout.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer hover:bg-sage-50/50"
                     onClick={() => handleRowClick(payout)}
                   >
                     <TableCell>#{payout.id}</TableCell>

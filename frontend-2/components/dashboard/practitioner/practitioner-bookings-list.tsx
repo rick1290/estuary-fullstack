@@ -152,7 +152,7 @@ export default function PractitionerBookingsList() {
             <Skeleton className="h-10 w-full sm:w-40" />
           </div>
         </div>
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-xl border border-sage-200/60 bg-white overflow-x-auto">
           <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
@@ -333,7 +333,7 @@ export default function PractitionerBookingsList() {
             </div>
 
             {/* Desktop table view */}
-            <div className="rounded-md border overflow-x-auto hidden sm:block">
+            <div className="rounded-xl border border-sage-200/60 bg-white overflow-x-auto hidden sm:block">
               <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>

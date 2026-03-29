@@ -84,7 +84,7 @@ export default function PractitionerEarnings() {
         </Card>
       </div>
 
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-xl border border-sage-200/60 bg-white overflow-x-auto">
         <div className="p-4 bg-cream-50/50">
           <h3 className="text-sm font-medium text-olive-900">Recent Transactions</h3>
         </div>
