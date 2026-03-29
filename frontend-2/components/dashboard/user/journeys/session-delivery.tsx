@@ -334,7 +334,7 @@ export default function SessionDelivery({
       {/* ── MAIN CONTENT ── */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {/* Pre-session forms banner */}
-        <FormsStatusBanner bookingUuid={booking?.public_uuid} />
+        <FormsStatusBanner bookingUuid={bookingUuid} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
           {/* ── LEFT COLUMN ── */}

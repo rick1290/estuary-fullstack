@@ -370,27 +370,25 @@ export default function Navbar() {
                     </SheetClose>
                     <Separator />
                     {user?.hasPractitionerAccount && (
-                      <Button
-                        variant="ghost"
-                        className="justify-start gap-2 px-2"
-                        onClick={() => {
-                          handleSwitchRole()
-                        }}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        <span>{isPractitioner ? "Switch to Customer View" : "Switch to Practitioner View"}</span>
-                      </Button>
+                      <SheetClose asChild>
+                        <button
+                          className="flex w-full items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm hover:bg-accent transition-colors"
+                          onClick={handleSwitchRole}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          <span>{isPractitioner ? "Switch to Client View" : "Switch to Practitioner View"}</span>
+                        </button>
+                      </SheetClose>
                     )}
-                    <Button
-                      variant="ghost"
-                      className="justify-start gap-2 px-2"
-                      onClick={() => {
-                        handleLogout()
-                      }}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Logout</span>
-                    </Button>
+                    <SheetClose asChild>
+                      <button
+                        className="flex w-full items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </SheetClose>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
