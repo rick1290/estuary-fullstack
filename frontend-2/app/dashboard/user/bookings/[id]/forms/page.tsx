@@ -67,6 +67,7 @@ interface IntakeQuestion {
 interface BookingFormsData {
   consent_form?: ConsentForm
   intake_questions: IntakeQuestion[]
+  intake_template_id?: number | string
   booking_id: string
   service_name?: string
   practitioner_name?: string
@@ -140,6 +141,7 @@ export default function BookingFormsPage({
         // New API format: { has_forms, forms: [...] }
         let consentForm: ConsentForm | undefined
         const intakeQuestions: IntakeQuestion[] = []
+        let intakeTemplateId: number | string | undefined
 
         for (const f of apiData.forms) {
           const tpl = f.template || {}
@@ -152,6 +154,8 @@ export default function BookingFormsPage({
               signer_name: f.signature?.signer_name || '',
             }
           } else if (tpl.form_type === 'intake' && tpl.questions) {
+            // Capture the template ID for submission
+            intakeTemplateId = tpl.id
             for (const q of tpl.questions) {
               intakeQuestions.push({
                 id: q.id?.toString() || q.text,
@@ -170,6 +174,7 @@ export default function BookingFormsPage({
         data = {
           consent_form: consentForm,
           intake_questions: intakeQuestions,
+          intake_template_id: intakeTemplateId,
           booking_id: apiData.booking_id || id,
           service_name: apiData.service_name,
           practitioner_name: apiData.practitioner_name,
@@ -276,16 +281,16 @@ export default function BookingFormsPage({
 
     setIsSubmittingIntake(true)
     try {
-      const res = await apiFetch(
-        `${API_URL}/api/v1/intake/bookings/${id}/forms/intake/`,
-        {
-          method: "POST",
-          body: JSON.stringify({ responses }),
-        }
-      )
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        throw new Error(errData?.detail || "Failed to submit intake form")
+      const { intakeResponsesCreate } = await import("@/src/client/sdk.gen")
+      const res = await intakeResponsesCreate({
+        body: {
+          booking_uuid: id,
+          form_template: Number(formsData?.intake_template_id),
+          responses,
+        } as any,
+      })
+      if (!res.data) {
+        throw new Error("Failed to submit intake form")
       }
       setIntakeSubmitted(true)
       toast.success("Intake form submitted successfully.")

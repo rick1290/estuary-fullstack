@@ -42,10 +42,15 @@ export default function FormsStatusBanner({ bookingUuid }: FormsStatusBannerProp
 
   if (allDone) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-sage-50 border border-sage-200 mb-4">
-        <CheckCircle className="h-4 w-4 text-sage-600" />
-        <span className="text-sm text-sage-800">All pre-session forms completed</span>
-      </div>
+      <Link href={`/dashboard/user/bookings/${bookingUuid}/forms`}>
+        <div className="flex items-center justify-between p-3 rounded-lg bg-sage-50 border border-sage-200 mb-4 cursor-pointer hover:shadow-sm transition-shadow">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-sage-600" />
+            <span className="text-sm text-sage-800">Pre-session forms completed</span>
+          </div>
+          <span className="text-xs text-sage-600">View responses →</span>
+        </div>
+      </Link>
     )
   }
 
