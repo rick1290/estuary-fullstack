@@ -9,7 +9,9 @@ from intake.models import FormTemplate, FormQuestion, ConsentDocument, ServiceFo
 from intake.api.v1.serializers import (
     FormTemplateSerializer, FormQuestionSerializer, ConsentDocumentSerializer,
     ServiceFormSerializer, IntakeResponseSerializer, ConsentSignatureSerializer,
-    BookingFormsStatusSerializer
+    BookingFormsStatusSerializer,
+    IntakeResponseCreateSerializer, ConsentSignatureCreateSerializer,
+    FormQuestionCreateSerializer, ConsentDocumentCreateSerializer,
 )
 
 
@@ -308,3 +310,149 @@ class PractitionerFormsViewSet(viewsets.ViewSet):
             'intake_responses': IntakeResponseSerializer(responses, many=True).data,
             'consent_signatures': ConsentSignatureSerializer(signatures, many=True).data,
         })
+
+
+# ── Standard CRUD ViewSets ───────────────────────────────────────────────────
+
+class IntakeResponseViewSet(viewsets.ModelViewSet):
+    """
+    Standard CRUD for intake form responses.
+    POST /api/v1/intake/responses/ — submit intake form answers.
+    GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+    """
+    serializer_class = IntakeResponseCreateSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['form_template']
+
+    def get_queryset(self):
+        qs = IntakeResponse.objects.filter(user=self.request.user).select_related(
+            'booking', 'form_template'
+        ).order_by('-submitted_at')
+        # Allow filtering by booking UUID via query param
+        booking_uuid = self.request.query_params.get('booking')
+        if booking_uuid:
+            qs = qs.filter(booking__public_uuid=booking_uuid)
+        return qs
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return IntakeResponseCreateSerializer
+        return IntakeResponseSerializer
+
+    def perform_create(self, serializer):
+        """Auto-set user, link previous response, set is_prefilled."""
+        user = self.request.user
+        form_template = serializer.validated_data['form_template']
+
+        # Find previous response for pre-fill tracking
+        prev = IntakeResponse.objects.filter(
+            user=user, form_template=form_template
+        ).order_by('-submitted_at').first()
+
+        serializer.save(
+            user=user,
+            is_prefilled=bool(prev),
+            previous_response=prev,
+        )
+
+
+class ConsentSignatureViewSet(viewsets.ModelViewSet):
+    """
+    Standard CRUD for consent signatures.
+    POST /api/v1/intake/consent-signatures/ — sign a consent form.
+    GET  /api/v1/intake/consent-signatures/ — list your signatures.
+    """
+    serializer_class = ConsentSignatureCreateSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['consent_document']
+
+    def get_queryset(self):
+        qs = ConsentSignature.objects.filter(user=self.request.user).select_related(
+            'booking', 'consent_document'
+        ).order_by('-signed_at')
+        booking_uuid = self.request.query_params.get('booking')
+        if booking_uuid:
+            qs = qs.filter(booking__public_uuid=booking_uuid)
+        return qs
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return ConsentSignatureCreateSerializer
+        return ConsentSignatureSerializer
+
+    def perform_create(self, serializer):
+        """Auto-set user, capture IP + user agent, handle duplicates."""
+        user = self.request.user
+        booking = serializer.validated_data['booking']
+        consent_document = serializer.validated_data['consent_document']
+
+        # Check for existing signature (idempotent)
+        existing = ConsentSignature.objects.filter(
+            booking=booking, user=user, consent_document=consent_document
+        ).first()
+        if existing:
+            # Return existing instead of creating duplicate
+            # Raise a validation error that the view will handle
+            raise serializers.ValidationError({
+                'detail': 'Already signed',
+                'signature': ConsentSignatureSerializer(existing).data,
+            })
+
+        serializer.save(
+            user=user,
+            ip_address=self._get_client_ip(self.request),
+            user_agent=self.request.META.get('HTTP_USER_AGENT', ''),
+        )
+
+    def create(self, request, *args, **kwargs):
+        """Override to handle duplicate signature gracefully."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_create(serializer)
+        except serializers.ValidationError as e:
+            # If it's a duplicate, return the existing signature with 200
+            if hasattr(e, 'detail') and isinstance(e.detail, dict) and 'signature' in e.detail:
+                return Response(e.detail['signature'], status=status.HTTP_200_OK)
+            raise
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+
+class FormQuestionCRUDViewSet(viewsets.ModelViewSet):
+    """
+    Standard CRUD for form questions.
+    POST /api/v1/intake/questions/ — add a question to a template.
+    """
+    serializer_class = FormQuestionCreateSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['template']
+
+    def get_queryset(self):
+        return FormQuestion.objects.filter(
+            template__practitioner__user=self.request.user
+        ).select_related('template').order_by('order')
+
+
+class ConsentDocumentCRUDViewSet(viewsets.ModelViewSet):
+    """
+    Standard CRUD for consent document versions.
+    POST /api/v1/intake/consent-documents/ — create new consent version.
+    """
+    serializer_class = ConsentDocumentCreateSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['template']
+
+    def get_queryset(self):
+        return ConsentDocument.objects.filter(
+            template__practitioner__user=self.request.user
+        ).select_related('template').order_by('-version')

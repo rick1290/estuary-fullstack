@@ -80,3 +80,63 @@ class BookingFormsStatusSerializer(serializers.Serializer):
     intake_completed = serializers.BooleanField()
     forms_url = serializers.CharField()
     forms = serializers.ListField(child=serializers.DictField())
+
+
+# ── CRUD Serializers (for auto-generated OpenAPI schemas) ────────────────────
+
+class IntakeResponseCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating intake responses via standard CRUD."""
+    from bookings.models import Booking
+    booking_uuid = serializers.SlugRelatedField(
+        slug_field='public_uuid',
+        source='booking',
+        queryset=Booking.objects.all(),
+        write_only=True,
+    )
+
+    class Meta:
+        model = IntakeResponse
+        fields = [
+            'id', 'public_uuid', 'booking_uuid', 'booking', 'form_template',
+            'responses', 'submitted_at', 'is_prefilled', 'previous_response',
+            'created_at'
+        ]
+        read_only_fields = [
+            'id', 'public_uuid', 'booking', 'submitted_at',
+            'is_prefilled', 'previous_response', 'created_at'
+        ]
+
+
+class ConsentSignatureCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating consent signatures via standard CRUD."""
+    from bookings.models import Booking
+    booking_uuid = serializers.SlugRelatedField(
+        slug_field='public_uuid',
+        source='booking',
+        queryset=Booking.objects.all(),
+        write_only=True,
+    )
+
+    class Meta:
+        model = ConsentSignature
+        fields = [
+            'id', 'booking_uuid', 'booking', 'consent_document',
+            'signer_name', 'signed_at', 'ip_address', 'user_agent'
+        ]
+        read_only_fields = ['id', 'booking', 'signed_at', 'ip_address', 'user_agent']
+
+
+class FormQuestionCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating questions via standard CRUD."""
+    class Meta:
+        model = FormQuestion
+        fields = ['id', 'template', 'question_type', 'label', 'help_text', 'is_required', 'options', 'order']
+        read_only_fields = ['id']
+
+
+class ConsentDocumentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating consent document versions via standard CRUD."""
+    class Meta:
+        model = ConsentDocument
+        fields = ['id', 'template', 'legal_text', 'version', 'created_at']
+        read_only_fields = ['id', 'version', 'created_at']

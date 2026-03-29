@@ -3215,6 +3215,353 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/intake/consent-documents/:
+    get:
+      operationId: intake_consent_documents_list
+      description: |-
+        Standard CRUD for consent document versions.
+        POST /api/v1/intake/consent-documents/ — create new consent version.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsentDocumentCreateList'
+          description: ''
+    post:
+      operationId: intake_consent_documents_create
+      description: |-
+        Standard CRUD for consent document versions.
+        POST /api/v1/intake/consent-documents/ — create new consent version.
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentDocumentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsentDocumentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsentDocumentCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentDocumentCreate'
+          description: ''
+  /api/v1/intake/consent-documents/{id}/:
+    get:
+      operationId: intake_consent_documents_retrieve
+      description: |-
+        Standard CRUD for consent document versions.
+        POST /api/v1/intake/consent-documents/ — create new consent version.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentDocumentCreate'
+          description: ''
+    put:
+      operationId: intake_consent_documents_update
+      description: |-
+        Standard CRUD for consent document versions.
+        POST /api/v1/intake/consent-documents/ — create new consent version.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentDocumentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsentDocumentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsentDocumentCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentDocumentCreate'
+          description: ''
+    patch:
+      operationId: intake_consent_documents_partial_update
+      description: |-
+        Standard CRUD for consent document versions.
+        POST /api/v1/intake/consent-documents/ — create new consent version.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsentDocumentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConsentDocumentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConsentDocumentCreateRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentDocumentCreate'
+          description: ''
+    delete:
+      operationId: intake_consent_documents_destroy
+      description: |-
+        Standard CRUD for consent document versions.
+        POST /api/v1/intake/consent-documents/ — create new consent version.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/intake/consent-signatures/:
+    get:
+      operationId: intake_consent_signatures_list
+      description: |-
+        Standard CRUD for consent signatures.
+        POST /api/v1/intake/consent-signatures/ — sign a consent form.
+        GET  /api/v1/intake/consent-signatures/ — list your signatures.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsentSignatureList'
+          description: ''
+    post:
+      operationId: intake_consent_signatures_create
+      description: Override to handle duplicate signature gracefully.
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentSignatureCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsentSignatureCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsentSignatureCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentSignatureCreate'
+          description: ''
+  /api/v1/intake/consent-signatures/{id}/:
+    get:
+      operationId: intake_consent_signatures_retrieve
+      description: |-
+        Standard CRUD for consent signatures.
+        POST /api/v1/intake/consent-signatures/ — sign a consent form.
+        GET  /api/v1/intake/consent-signatures/ — list your signatures.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentSignature'
+          description: ''
+    put:
+      operationId: intake_consent_signatures_update
+      description: |-
+        Standard CRUD for consent signatures.
+        POST /api/v1/intake/consent-signatures/ — sign a consent form.
+        GET  /api/v1/intake/consent-signatures/ — list your signatures.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentSignatureCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsentSignatureCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsentSignatureCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentSignatureCreate'
+          description: ''
+    patch:
+      operationId: intake_consent_signatures_partial_update
+      description: |-
+        Standard CRUD for consent signatures.
+        POST /api/v1/intake/consent-signatures/ — sign a consent form.
+        GET  /api/v1/intake/consent-signatures/ — list your signatures.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsentSignatureCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConsentSignatureCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConsentSignatureCreateRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentSignatureCreate'
+          description: ''
+    delete:
+      operationId: intake_consent_signatures_destroy
+      description: |-
+        Standard CRUD for consent signatures.
+        POST /api/v1/intake/consent-signatures/ — sign a consent form.
+        GET  /api/v1/intake/consent-signatures/ — list your signatures.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/intake/platform-templates/:
     get:
       operationId: intake_platform_templates_list
@@ -3281,6 +3628,356 @@ paths:
               schema:
                 $ref: '#/components/schemas/FormTemplate'
           description: ''
+  /api/v1/intake/questions/:
+    get:
+      operationId: intake_questions_list
+      description: |-
+        Standard CRUD for form questions.
+        POST /api/v1/intake/questions/ — add a question to a template.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFormQuestionCreateList'
+          description: ''
+    post:
+      operationId: intake_questions_create
+      description: |-
+        Standard CRUD for form questions.
+        POST /api/v1/intake/questions/ — add a question to a template.
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormQuestionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormQuestionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormQuestionCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormQuestionCreate'
+          description: ''
+  /api/v1/intake/questions/{id}/:
+    get:
+      operationId: intake_questions_retrieve
+      description: |-
+        Standard CRUD for form questions.
+        POST /api/v1/intake/questions/ — add a question to a template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormQuestionCreate'
+          description: ''
+    put:
+      operationId: intake_questions_update
+      description: |-
+        Standard CRUD for form questions.
+        POST /api/v1/intake/questions/ — add a question to a template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormQuestionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormQuestionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormQuestionCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormQuestionCreate'
+          description: ''
+    patch:
+      operationId: intake_questions_partial_update
+      description: |-
+        Standard CRUD for form questions.
+        POST /api/v1/intake/questions/ — add a question to a template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFormQuestionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFormQuestionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFormQuestionCreateRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormQuestionCreate'
+          description: ''
+    delete:
+      operationId: intake_questions_destroy
+      description: |-
+        Standard CRUD for form questions.
+        POST /api/v1/intake/questions/ — add a question to a template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/intake/responses/:
+    get:
+      operationId: intake_responses_list
+      description: |-
+        Standard CRUD for intake form responses.
+        POST /api/v1/intake/responses/ — submit intake form answers.
+        GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIntakeResponseList'
+          description: ''
+    post:
+      operationId: intake_responses_create
+      description: |-
+        Standard CRUD for intake form responses.
+        POST /api/v1/intake/responses/ — submit intake form answers.
+        GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntakeResponseCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntakeResponseCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntakeResponseCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeResponseCreate'
+          description: ''
+  /api/v1/intake/responses/{id}/:
+    get:
+      operationId: intake_responses_retrieve
+      description: |-
+        Standard CRUD for intake form responses.
+        POST /api/v1/intake/responses/ — submit intake form answers.
+        GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeResponse'
+          description: ''
+    put:
+      operationId: intake_responses_update
+      description: |-
+        Standard CRUD for intake form responses.
+        POST /api/v1/intake/responses/ — submit intake form answers.
+        GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntakeResponseCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntakeResponseCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntakeResponseCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeResponseCreate'
+          description: ''
+    patch:
+      operationId: intake_responses_partial_update
+      description: |-
+        Standard CRUD for intake form responses.
+        POST /api/v1/intake/responses/ — submit intake form answers.
+        GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIntakeResponseCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIntakeResponseCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIntakeResponseCreateRequest'
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeResponseCreate'
+          description: ''
+    delete:
+      operationId: intake_responses_destroy
+      description: |-
+        Standard CRUD for intake form responses.
+        POST /api/v1/intake/responses/ — submit intake form answers.
+        GET  /api/v1/intake/responses/ — list your responses (filterable by booking).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - intake
+      security:
+      - cookieAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/intake/services/{service_pk}/forms/:
     get:
       operationId: intake_services_forms_list
@@ -16007,6 +16704,125 @@ components:
         * `basic` - Basic
         * `professional` - Professional
         * `premium` - Premium
+    ConsentDocumentCreate:
+      type: object
+      description: Serializer for creating consent document versions via standard
+        CRUD.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        template:
+          type: integer
+        legal_text:
+          type: string
+          description: Full consent/waiver text
+        version:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - legal_text
+      - template
+    ConsentDocumentCreateRequest:
+      type: object
+      description: Serializer for creating consent document versions via standard
+        CRUD.
+      properties:
+        template:
+          type: integer
+        legal_text:
+          type: string
+          minLength: 1
+          description: Full consent/waiver text
+      required:
+      - legal_text
+      - template
+    ConsentSignature:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking:
+          type: integer
+        consent_document:
+          type: integer
+        user:
+          type: integer
+          readOnly: true
+        signer_name:
+          type: string
+          description: Typed name as e-signature
+          maxLength: 255
+        signed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ip_address:
+          type: string
+          readOnly: true
+          nullable: true
+        user_agent:
+          type: string
+          readOnly: true
+      required:
+      - booking
+      - consent_document
+      - signer_name
+    ConsentSignatureCreate:
+      type: object
+      description: Serializer for creating consent signatures via standard CRUD.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking:
+          type: integer
+          readOnly: true
+        consent_document:
+          type: integer
+        signer_name:
+          type: string
+          description: Typed name as e-signature
+          maxLength: 255
+        signed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ip_address:
+          type: string
+          readOnly: true
+          nullable: true
+        user_agent:
+          type: string
+          readOnly: true
+      required:
+      - consent_document
+      - signer_name
+    ConsentSignatureCreateRequest:
+      type: object
+      description: Serializer for creating consent signatures via standard CRUD.
+      properties:
+        booking_uuid:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+          writeOnly: true
+        consent_document:
+          type: integer
+        signer_name:
+          type: string
+          minLength: 1
+          description: Typed name as e-signature
+          maxLength: 255
+      required:
+      - booking_uuid
+      - consent_document
+      - signer_name
     ConversationDetail:
       type: object
       description: Detailed serializer for conversations including messages.
@@ -16393,7 +17209,7 @@ components:
           type: integer
           readOnly: true
         question_type:
-          $ref: '#/components/schemas/FormQuestionQuestionTypeEnum'
+          $ref: '#/components/schemas/QuestionType4daEnum'
         label:
           type: string
           maxLength: 500
@@ -16411,31 +17227,67 @@ components:
       required:
       - label
       - question_type
-    FormQuestionQuestionTypeEnum:
-      enum:
-      - short_text
-      - long_text
-      - single_choice
-      - multiple_choice
-      - yes_no
-      - scale
-      - date
-      - file_upload
-      type: string
-      description: |-
-        * `short_text` - Short Text
-        * `long_text` - Long Text
-        * `single_choice` - Single Choice
-        * `multiple_choice` - Multiple Choice
-        * `yes_no` - Yes/No
-        * `scale` - Scale (1-10)
-        * `date` - Date
-        * `file_upload` - File Upload
+    FormQuestionCreate:
+      type: object
+      description: Serializer for creating questions via standard CRUD.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        template:
+          type: integer
+        question_type:
+          $ref: '#/components/schemas/QuestionType4daEnum'
+        label:
+          type: string
+          maxLength: 500
+        help_text:
+          type: string
+        is_required:
+          type: boolean
+        options:
+          nullable: true
+          description: 'Options for choice questions: [''Option A'', ''Option B'']'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - label
+      - question_type
+      - template
+    FormQuestionCreateRequest:
+      type: object
+      description: Serializer for creating questions via standard CRUD.
+      properties:
+        template:
+          type: integer
+        question_type:
+          $ref: '#/components/schemas/QuestionType4daEnum'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 500
+        help_text:
+          type: string
+        is_required:
+          type: boolean
+        options:
+          nullable: true
+          description: 'Options for choice questions: [''Option A'', ''Option B'']'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - label
+      - question_type
+      - template
     FormQuestionRequest:
       type: object
       properties:
         question_type:
-          $ref: '#/components/schemas/FormQuestionQuestionTypeEnum'
+          $ref: '#/components/schemas/QuestionType4daEnum'
         label:
           type: string
           minLength: 1
@@ -16609,6 +17461,103 @@ components:
           description: When image was applied to a service
       required:
       - user_prompt
+    IntakeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        public_uuid:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Public UUID for API exposure
+        booking:
+          type: integer
+        form_template:
+          type: integer
+        user:
+          type: integer
+          readOnly: true
+        responses:
+          description: 'Answers keyed by question ID: {''123'': ''answer''}'
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_prefilled:
+          type: boolean
+          readOnly: true
+          description: True if carried from a previous booking
+        previous_response:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Previous response this was pre-filled from
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - booking
+      - form_template
+      - responses
+    IntakeResponseCreate:
+      type: object
+      description: Serializer for creating intake responses via standard CRUD.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        public_uuid:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Public UUID for API exposure
+        booking:
+          type: integer
+          readOnly: true
+        form_template:
+          type: integer
+        responses:
+          description: 'Answers keyed by question ID: {''123'': ''answer''}'
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_prefilled:
+          type: boolean
+          readOnly: true
+          description: True if carried from a previous booking
+        previous_response:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Previous response this was pre-filled from
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - form_template
+      - responses
+    IntakeResponseCreateRequest:
+      type: object
+      description: Serializer for creating intake responses via standard CRUD.
+      properties:
+        booking_uuid:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+          writeOnly: true
+        form_template:
+          type: integer
+        responses:
+          description: 'Answers keyed by question ID: {''123'': ''answer''}'
+      required:
+      - booking_uuid
+      - form_template
+      - responses
     JournalEntry:
       type: object
       properties:
@@ -18751,6 +19700,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/City'
+    PaginatedConsentDocumentCreateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentDocumentCreate'
+    PaginatedConsentSignatureList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentSignature'
     PaginatedConversationListList:
       type: object
       required:
@@ -18843,6 +19838,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FeatureRequest'
+    PaginatedFormQuestionCreateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormQuestionCreate'
     PaginatedFormTemplateList:
       type: object
       required:
@@ -18889,6 +19907,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GeneratedImage'
+    PaginatedIntakeResponseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntakeResponse'
     PaginatedJournalEntryList:
       type: object
       required:
@@ -19979,6 +21020,33 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
+    PatchedConsentDocumentCreateRequest:
+      type: object
+      description: Serializer for creating consent document versions via standard
+        CRUD.
+      properties:
+        template:
+          type: integer
+        legal_text:
+          type: string
+          minLength: 1
+          description: Full consent/waiver text
+    PatchedConsentSignatureCreateRequest:
+      type: object
+      description: Serializer for creating consent signatures via standard CRUD.
+      properties:
+        booking_uuid:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+          writeOnly: true
+        consent_document:
+          type: integer
+        signer_name:
+          type: string
+          minLength: 1
+          description: Typed name as e-signature
+          maxLength: 255
     PatchedConversationDetailRequest:
       type: object
       description: Detailed serializer for conversations including messages.
@@ -20054,6 +21122,29 @@ components:
           type: string
           minLength: 1
           default: feature
+    PatchedFormQuestionCreateRequest:
+      type: object
+      description: Serializer for creating questions via standard CRUD.
+      properties:
+        template:
+          type: integer
+        question_type:
+          $ref: '#/components/schemas/QuestionType4daEnum'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 500
+        help_text:
+          type: string
+        is_required:
+          type: boolean
+        options:
+          nullable: true
+          description: 'Options for choice questions: [''Option A'', ''Option B'']'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
     PatchedFormTemplateRequest:
       type: object
       properties:
@@ -20071,6 +21162,19 @@ components:
           description: Suggested modality for this template
         is_active:
           type: boolean
+    PatchedIntakeResponseCreateRequest:
+      type: object
+      description: Serializer for creating intake responses via standard CRUD.
+      properties:
+        booking_uuid:
+          type: string
+          format: uuid
+          description: Public UUID for API exposure
+          writeOnly: true
+        form_template:
+          type: integer
+        responses:
+          description: 'Answers keyed by question ID: {''123'': ''answer''}'
     PatchedJournalEntryRequest:
       type: object
       properties:
@@ -22743,6 +23847,26 @@ components:
         * `low` - Low
         * `medium` - Medium
         * `high` - High
+    QuestionType4daEnum:
+      enum:
+      - short_text
+      - long_text
+      - single_choice
+      - multiple_choice
+      - yes_no
+      - scale
+      - date
+      - file_upload
+      type: string
+      description: |-
+        * `short_text` - Short Text
+        * `long_text` - Long Text
+        * `single_choice` - Single Choice
+        * `multiple_choice` - Multiple Choice
+        * `yes_no` - Yes/No
+        * `scale` - Scale (1-10)
+        * `date` - Date
+        * `file_upload` - File Upload
     RecordingStatusEnum:
       enum:
       - none
