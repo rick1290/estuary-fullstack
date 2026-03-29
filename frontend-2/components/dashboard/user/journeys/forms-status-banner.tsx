@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { getSession } from "next-auth/react"
 import { CheckCircle, FileText, ChevronRight } from "lucide-react"
 
 interface FormsStatusBannerProps {
@@ -17,17 +16,10 @@ export default function FormsStatusBanner({ bookingUuid }: FormsStatusBannerProp
 
     const fetchForms = async () => {
       try {
-        const session = await getSession()
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        const res = await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
-          headers: {
-            ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}),
-          },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setFormsStatus(data?.data || data)
-        }
+        const { intakeBookingsFormsRetrieve } = await import("@/src/client/sdk.gen")
+        const res = await intakeBookingsFormsRetrieve({ path: { booking_uuid: bookingUuid } })
+        const data = res.data as any
+        setFormsStatus(data?.data || data)
       } catch {
         // Silently fail
       }

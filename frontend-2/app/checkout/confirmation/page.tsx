@@ -323,15 +323,9 @@ function FormsPrompt({ bookingUuid }: { bookingUuid: string }) {
   useEffect(() => {
     const checkForms = async () => {
       try {
-        const session = await getSession()
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        const res = await fetch(`${baseUrl}/api/v1/intake/bookings/${bookingUuid}/forms/`, {
-          headers: {
-            ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}),
-          },
-        })
-        const data = await res.json()
-        const forms = data?.data || data
+        const { intakeBookingsFormsRetrieve } = await import("@/src/client/sdk.gen")
+        const res = await intakeBookingsFormsRetrieve({ path: { booking_uuid: bookingUuid } })
+        const forms = (res.data as any)?.data || res.data
         setHasForms(forms?.has_forms || false)
       } catch {
         // Silently fail — form prompt is optional

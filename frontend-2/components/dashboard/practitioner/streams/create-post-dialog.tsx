@@ -72,12 +72,9 @@ export default function CreatePostDialog({ open, onOpenChange, onCreatePost, str
     queryKey: ['practitioner-services-for-post', user?.practitionerId],
     queryFn: async () => {
       if (!user?.practitionerId) return { results: [] }
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${baseUrl}/api/v1/services/?practitioner=${user.practitionerId}&is_active=true`, {
-        credentials: 'include',
-      })
-      if (!response.ok) return { results: [] }
-      return response.json()
+      const { servicesList } = await import("@/src/client/sdk.gen")
+      const res = await servicesList({ query: { practitioner: user.practitionerId, is_active: true } as any })
+      return (res.data as any) || { results: [] }
     },
     enabled: open && !!user?.practitionerId,
   })
