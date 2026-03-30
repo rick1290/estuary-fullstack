@@ -53,9 +53,12 @@ export default function UpcomingWorkshopsSection() {
     practitioner: {
       id: service.practitioner?.public_uuid || service.practitioner?.id || service.primary_practitioner?.public_uuid || service.primary_practitioner?.id,
       name: service.practitioner?.display_name || service.primary_practitioner?.display_name || 'Practitioner',
-      image: service.practitioner?.profile_image_url || service.primary_practitioner?.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      image: service.practitioner?.profile_image_url || service.primary_practitioner?.profile_image_url || '',
     },
-    date: service.start_date ? new Date(service.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
+    date: (() => {
+      const d = service.next_session_date || service.start_date || service.sessions?.[0]?.start_time
+      return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'
+    })(),
     capacity: service.max_participants || service.capacity || 10,
     location: service.location_type === 'virtual'
       ? 'Virtual'
@@ -68,7 +71,7 @@ export default function UpcomingWorkshopsSection() {
     description: service.description || 'Join this transformative workshop experience.',
     rating: service.average_rating || 4.8,
     reviewCount: service.total_reviews || 0,
-    image: service.image_url || service.featured_image || `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=400&h=300&fit=crop`,
+    image: service.cover_image_url || service.image_url || service.featured_image || '',
   }))
 
   const scrollLeft = () => {
