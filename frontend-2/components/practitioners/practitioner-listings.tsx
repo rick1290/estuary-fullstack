@@ -85,7 +85,7 @@ export default function PractitionerListings({
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl border border-[rgba(74,63,53,0.05)] p-5">
               <div className="flex items-start gap-3.5 mb-3">
-                <Skeleton className="w-14 h-14 rounded-full shrink-0" />
+                <Skeleton className="w-[72px] h-[72px] rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="h-3 w-1/2" />
@@ -296,7 +296,7 @@ function PractitionerGridCard({ practitioner }: { practitioner: any }) {
               <img
                 src={image}
                 alt={name}
-                className="w-14 h-14 rounded-full object-cover border-2 border-[rgba(74,63,53,0.06)]"
+                className="w-[72px] h-[72px] rounded-full object-cover border-2 border-[rgba(74,63,53,0.06)]"
               />
             ) : (
               <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center border-2 border-[rgba(74,63,53,0.06)]`}>
