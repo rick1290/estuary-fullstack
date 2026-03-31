@@ -1,0 +1,19 @@
+[     854ms] [WARNING]  [33m[1m⚠[22m[39m Runtime config is deprecated and will be removed in Next.js 16. Please remove the usage of "next/config" from your project. @ https://www.masterclass.com/_next/static/chunks/pages/_app-a7324b8f04f843f6.js:0
+[    1094ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/user/cart-data?deep=true:0
+[    1094ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/users/current?deep=false:0
+[    1129ms] [WARNING] %cairgap.js%c Report-only mode enabled font-size:larger;font-weight:bold;border-radius:0.25em;padding:0.08em 0.25em;;color:amber;background-color:#6e3e00  @ https://www.masterclass.com/_next/static/chunks/14098.4975768c30128456.js:0
+[    1176ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/user/cart-data?deep=true:0
+[    1177ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/users/current?deep=false:0
+[    1300ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/users/current?deep=false:0
+[    1431ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/users/current?deep=false:0
+[    1444ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/user/cart-data?deep=true:0
+[    1545ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/users/current?deep=false:0
+[    1570ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/user/cart-data?deep=true:0
+[    1694ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.masterclass.com/jsonapi/v1/user/cart-data?deep=true:0
+[    1848ms] [WARNING] [TikTok Pixel] - Missing "value" parameter
+Issue: Events shared are missing a 'value' parameter'. This is used calculate ROAS for people and the bid for your highest value customers. 
+Suggestion: Go to your source code and include the "value" parameter. See https://ads.tiktok.com/help/article/standard-events-parameters?redirected=2 for more information. @ https://www.masterclass.com/_next/static/chunks/14098.4975768c30128456.js:0
+[    2694ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://www.masterclass.com/:0
+[    2703ms] [WARNING] Snowplow: sp already exists @ https://www.masterclass.com/_next/static/chunks/14098.4975768c30128456.js:0
+[    2752ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://www.masterclass.com/:0
+[    3205ms] [ERROR] Failed to load resource: net::ERR_FAILED @ chrome-extension://invalid/:0
