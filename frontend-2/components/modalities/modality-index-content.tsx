@@ -164,12 +164,17 @@ export default function ModalityIndexContent() {
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: category.color || "#9CAF88" }}
                         />
-                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-olive-900">
-                          {category.name}
-                        </h2>
+                        <Link href={`/modalities/category/${category.slug}`} className="hover:text-terracotta-700 transition-colors">
+                          <h2 className="font-serif text-2xl sm:text-3xl font-normal text-olive-900 group-hover:text-terracotta-700">
+                            {category.name}
+                          </h2>
+                        </Link>
                         <span className="text-sm text-olive-500 font-light">
                           {catModalities.length} {catModalities.length === 1 ? "modality" : "modalities"}
                         </span>
+                        <Link href={`/modalities/category/${category.slug}`} className="text-xs text-sage-600 hover:text-sage-800 ml-auto hidden sm:inline-flex items-center gap-1 transition-colors">
+                          View all →
+                        </Link>
                       </div>
                       {category.short_description && (
                         <p className="text-sm font-light text-olive-600 max-w-2xl ml-6">

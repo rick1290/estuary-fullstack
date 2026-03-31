@@ -151,8 +151,9 @@ export default function PractitionerMessageDetail() {
   })
 
   // Get the other user from conversation
+  // Compare as strings since useAuth returns id as string but API returns number
   const otherUser = conversation?.participants?.find(
-    (p) => p.user?.id !== user?.id
+    (p) => String(p.user?.id) !== String(user?.id) && String(p.user?.id) !== String(user?.numericId)
   )?.user
 
   useEffect(() => {

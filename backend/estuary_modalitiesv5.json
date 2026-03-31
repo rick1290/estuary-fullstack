@@ -1,0 +1,254 @@
+{
+  "version": "1.5",
+  "last_updated": "2026-03-19",
+  "notes": "v1.5 changes: (1) Split 'Divination & Symbolic Systems' into 'Symbolic Systems & Soul Mapping' and 'Divination & Oracular Arts'. (2) Split 'Dreamwork & Altered States' into 'Dreamwork' and 'Hypnotherapy & Inner Journeying'. (3) Split 'Somatic & Movement' into 'Somatic Healing' and 'Movement Arts'. (4) Merged 'Holistic Health Systems' and 'Herbalism & Plant Healing' into 'Natural Medicine & Healing Traditions'. (5) Psychic & Spiritual Arts expanded with Clairsentience, Clairaudience, Claircognizance, Empathic Healing, Palmistry. (6) Spiritual Mentorship moved to Coaching & Guidance. (7) Soul Plan Reading moved to Symbolic Systems & Soul Mapping.",
+  "categories": [
+    {
+      "id": "symbolic",
+      "label": "Symbolic Systems & Soul Mapping",
+      "modalities": [
+        { "name": "Astrology", "is_new": false },
+        { "name": "Astrocartography", "is_new": false },
+        { "name": "Kabbalistic Astrology", "is_new": false },
+        { "name": "Mayan Astrology", "is_new": false },
+        { "name": "Human Design", "is_new": true },
+        { "name": "Gene Keys", "is_new": false },
+        { "name": "Numerology", "is_new": false },
+        { "name": "Enneagram", "is_new": false },
+        { "name": "Soul Plan Reading", "is_new": false }
+      ]
+    },
+    {
+      "id": "divination",
+      "label": "Divination & Oracular Arts",
+      "modalities": [
+        { "name": "Tarot", "is_new": false },
+        { "name": "Oracle Cards", "is_new": true },
+        { "name": "Aura Reading", "is_new": false },
+        { "name": "Clairvoyance", "is_new": true },
+        { "name": "Clairsentience", "is_new": true },
+        { "name": "Clairaudience", "is_new": true },
+        { "name": "Claircognizance", "is_new": true },
+        { "name": "Psychic Reading", "is_new": false },
+        { "name": "Mediumship", "is_new": false },
+        { "name": "Akashic Records Reading", "is_new": false },
+        { "name": "Palmistry / Hand Reading", "is_new": true },
+        { "name": "Channeling", "is_new": true }
+      ]
+    },
+    {
+      "id": "psychic",
+      "label": "Psychic & Spiritual Arts",
+      "modalities": [
+        { "name": "Psychic Healing", "is_new": false },
+        { "name": "Empathic Healing", "is_new": true },
+        { "name": "Cord Cutting", "is_new": true },
+        { "name": "Ancestor Work", "is_new": true },
+        { "name": "Spiritual Direction", "is_new": true }
+      ]
+    },
+    {
+      "id": "dreamwork",
+      "label": "Dreamwork",
+      "modalities": [
+        { "name": "Dreamwork", "is_new": false },
+        { "name": "Lucid Dreaming", "is_new": false },
+        { "name": "Dream Yoga", "is_new": false },
+        { "name": "Dream Interpretation", "is_new": true }
+      ]
+    },
+    {
+      "id": "hypno",
+      "label": "Hypnotherapy & Inner Journeying",
+      "modalities": [
+        { "name": "Hypnotherapy", "is_new": false },
+        { "name": "Guided Imagery / Visualization", "is_new": true },
+        { "name": "Past Life Regression Therapy", "is_new": false },
+        { "name": "Regression Therapy", "is_new": true }
+      ]
+    },
+    {
+      "id": "energy",
+      "label": "Energy & Vibrational Healing",
+      "modalities": [
+        { "name": "Reiki", "is_new": false },
+        { "name": "Energy Healing", "is_new": false },
+        { "name": "Bioenergetic Healing", "is_new": false },
+        { "name": "Distance Energy Work", "is_new": false },
+        { "name": "Quantum Healing", "is_new": false },
+        { "name": "Chakra Balancing", "is_new": false },
+        { "name": "Energy Clearing", "is_new": false },
+        { "name": "Crystal Healing", "is_new": false },
+        { "name": "Sound Healing", "is_new": false },
+        { "name": "Color Therapy", "is_new": false },
+        { "name": "Pranic Healing", "is_new": true },
+        { "name": "Healing Touch", "is_new": true },
+        { "name": "Jin Shin Jyutsu", "is_new": true },
+        { "name": "Matrix Reimprinting", "is_new": true }
+      ]
+    },
+    {
+      "id": "shamanism",
+      "label": "Shamanism",
+      "notes": "Western practitioners in this space often prefer 'shamanic practitioner' over 'shaman' to honor indigenous lineage distinctions. Consider acknowledging this on the category page.",
+      "modalities": [
+        { "name": "Shamanic Healing", "is_new": false },
+        { "name": "Shamanic Journeying", "is_new": false },
+        { "name": "Soul Retrieval", "is_new": true },
+        { "name": "Power Animal Retrieval", "is_new": true },
+        { "name": "Extraction Healing", "is_new": true },
+        { "name": "Ancestral Healing", "is_new": true },
+        { "name": "Psychopomp Work", "is_new": true },
+        { "name": "Core Shamanism", "is_new": true },
+        { "name": "Shamanic Breathwork", "is_new": true }
+      ]
+    },
+    {
+      "id": "natural-medicine",
+      "label": "Natural Medicine & Healing Traditions",
+      "notes": "Merged from 'Holistic Health Systems' and 'Herbalism & Plant Healing'. No psychedelic or substance-adjacent modalities included.",
+      "modalities": [
+        { "name": "Naturopathy", "is_new": false },
+        { "name": "Homeopathy", "is_new": false },
+        { "name": "Ayurveda", "is_new": false },
+        { "name": "Aromatherapy", "is_new": false },
+        { "name": "Traditional Chinese Medicine (TCM)", "is_new": true },
+        { "name": "Functional Nutrition", "is_new": true },
+        { "name": "Nutritional Counseling", "is_new": true },
+        { "name": "Herbalism", "is_new": false },
+        { "name": "Herbal Medicine", "is_new": true },
+        { "name": "Flower Essences", "is_new": true },
+        { "name": "Flower Remedies", "is_new": true },
+        { "name": "Bach Flower Therapy", "is_new": true },
+        { "name": "Tinctures & Tonics", "is_new": true },
+        { "name": "Medicinal Mushrooms", "is_new": true },
+        { "name": "Adaptogens", "is_new": true },
+        { "name": "Plant Spirit Medicine", "is_new": true },
+        { "name": "Wildcrafting", "is_new": true }
+      ]
+    },
+    {
+      "id": "yoga",
+      "label": "Yoga",
+      "modalities": [
+        { "name": "Yoga (general)", "is_new": false },
+        { "name": "Hatha Yoga", "is_new": true },
+        { "name": "Vinyasa Yoga", "is_new": true },
+        { "name": "Ashtanga Yoga", "is_new": true },
+        { "name": "Kundalini Yoga", "is_new": true },
+        { "name": "Yin Yoga", "is_new": true },
+        { "name": "Restorative Yoga", "is_new": true },
+        { "name": "Iyengar Yoga", "is_new": true },
+        { "name": "Power Yoga", "is_new": true },
+        { "name": "Hot Yoga", "is_new": true },
+        { "name": "Yoga Nidra", "is_new": true },
+        { "name": "Prenatal Yoga", "is_new": true },
+        { "name": "Trauma-Informed Yoga", "is_new": true },
+        { "name": "Yoga Therapy", "is_new": true, "notes": "Distinct credentialed specialty (C-IAYT). Consider separate vetting requirements." },
+        { "name": "Somatic Yoga", "is_new": true },
+        { "name": "Anusara Yoga", "is_new": true },
+        { "name": "Aerial Yoga", "is_new": true }
+      ]
+    },
+    {
+      "id": "breathwork",
+      "label": "Breathwork",
+      "notes": "Organized into 3 clusters: conscious_connected (therapeutic/journey styles), pranayama (yogic lineage), and functional (science-based/performance). Some pranayama techniques overlap with the Yoga category — consider cross-category tagging.",
+      "modalities": [
+        { "name": "Breathwork (general)", "is_new": false, "cluster": "general" },
+        { "name": "Holotropic Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Rebirthing Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Transformational Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Conscious Connected Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Neurodynamic Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Clarity Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Somatic Breathwork", "is_new": true, "cluster": "conscious_connected" },
+        { "name": "Pranayama", "is_new": true, "cluster": "pranayama" },
+        { "name": "Kapalabhati", "is_new": true, "cluster": "pranayama" },
+        { "name": "Nadi Shodhana (Alternate Nostril)", "is_new": true, "cluster": "pranayama" },
+        { "name": "Breath of Fire", "is_new": true, "cluster": "pranayama" },
+        { "name": "Ujjayi Breath", "is_new": true, "cluster": "pranayama" },
+        { "name": "Wim Hof Method", "is_new": true, "cluster": "functional" },
+        { "name": "Buteyko Method", "is_new": true, "cluster": "functional" },
+        { "name": "Box Breathing", "is_new": true, "cluster": "functional", "notes": "Technique more than a modality — may be better as a tag within other offerings than a standalone listing." },
+        { "name": "4-7-8 Breathing", "is_new": true, "cluster": "functional", "notes": "Technique more than a modality — may be better as a tag within other offerings than a standalone listing." },
+        { "name": "Coherent / Resonance Breathing", "is_new": true, "cluster": "functional" }
+      ]
+    },
+    {
+      "id": "somatic",
+      "label": "Somatic Healing",
+      "modalities": [
+        { "name": "Somatic Therapy", "is_new": true },
+        { "name": "Somatic Experiencing", "is_new": true, "gray_zone": true, "notes": "Widely practiced in wellness contexts but also used by licensed therapists. Verify credential approach." },
+        { "name": "Somatic Coaching", "is_new": true },
+        { "name": "Hakomi Method", "is_new": true },
+        { "name": "Focusing (Gendlin)", "is_new": true }
+      ]
+    },
+    {
+      "id": "movement",
+      "label": "Movement Arts",
+      "modalities": [
+        { "name": "Qigong", "is_new": false },
+        { "name": "Tai Chi", "is_new": false },
+        { "name": "Alexander Technique", "is_new": false },
+        { "name": "Dance / Movement Therapy", "is_new": true },
+        { "name": "Thai Yoga Bodywork", "is_new": true },
+        { "name": "Feldenkrais Method", "is_new": true },
+        { "name": "Pilates (Therapeutic)", "is_new": true },
+        { "name": "Continuum Movement", "is_new": true }
+      ]
+    },
+    {
+      "id": "bodywork",
+      "label": "Bodywork & Touch",
+      "modalities": [
+        { "name": "Massage Therapy", "is_new": true },
+        { "name": "Craniosacral Therapy", "is_new": true },
+        { "name": "Reflexology", "is_new": true },
+        { "name": "Acupressure", "is_new": true },
+        { "name": "Acupuncture", "is_new": true }
+      ]
+    },
+    {
+      "id": "mindbody",
+      "label": "Mind-Body Practices",
+      "modalities": [
+        { "name": "Meditation", "is_new": false },
+        { "name": "Mindfulness", "is_new": false },
+        { "name": "Tapping / EFT", "is_new": false },
+        { "name": "Transcendental Meditation", "is_new": true },
+        { "name": "MBSR (Mindfulness-Based Stress Reduction)", "is_new": true },
+        { "name": "Loving-Kindness Meditation", "is_new": true },
+        { "name": "Body Scan", "is_new": true },
+        { "name": "Progressive Muscle Relaxation", "is_new": true },
+        { "name": "Biofeedback", "is_new": true },
+        { "name": "Autogenic Training", "is_new": true },
+        { "name": "Gratitude Practice", "is_new": true },
+        { "name": "Internal Family Systems (IFS)", "is_new": true, "gray_zone": true, "notes": "Popular in spiritual/healing-adjacent space but also used by licensed therapists. Verify credential approach." },
+        { "name": "Polyvagal / Nervous System Work", "is_new": true },
+        { "name": "Neurofeedback", "is_new": true, "gray_zone": true, "notes": "Typically requires clinical training. Verify credential approach." }
+      ]
+    },
+    {
+      "id": "expressive",
+      "label": "Expressive & Creative Arts",
+      "modalities": [
+        { "name": "Art Therapy", "is_new": true },
+        { "name": "Music Therapy", "is_new": true },
+        { "name": "Expressive Arts Therapy", "is_new": true },
+        { "name": "Writing as Healing", "is_new": true }
+      ]
+    },
+    {
+      "id": "coaching",
+      "label": "Coaching & Guidance",
+      "modalities": [
+        { "name": "Holistic Life Coaching", "is_new": false },
+        { "name": "Spiritual Counseling / Direction", "is_new": true },
+        { "name": "Spiritual Mentorship", "is_new": true }
+      ]
+    }
+  ]
+}
