@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { createMetadata } from "@/lib/seo"
 import { SITE_URL } from "@/lib/seo"
-import { breadcrumbSchema } from "@/lib/json-ld"
+import { breadcrumbSchema, itemListSchema } from "@/lib/json-ld"
 import { JsonLd } from "@/components/seo/json-ld"
 import ModalityCategoryPageContent from "@/components/modalities/modality-category-page-content"
 
@@ -59,15 +59,30 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     `Explore ${name} modalities on Estuary. Find practitioners and services in ${name.toLowerCase()}.`
 
   return createMetadata({
-    title: `${name} Modalities`,
+    title: `${name} — Practitioners & Services`,
     description,
     path: `/modalities/category/${slug}`,
   })
 }
 
+async function fetchModalities(categorySlug: string) {
+  try {
+    const res = await fetch(
+      `${API_URL}/api/v1/modalities/?page_size=200&category_ref__slug=${categorySlug}`,
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    return json?.data?.results || json?.results || []
+  } catch {
+    return []
+  }
+}
+
 export default async function ModalityCategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
   const category = await fetchCategory(slug)
+  const modalities = await fetchModalities(slug)
   const name = category?.name || toTitleCase(slug)
 
   return (
@@ -79,6 +94,17 @@ export default async function ModalityCategoryPage({ params }: CategoryPageProps
           { name, url: `${SITE_URL}/modalities/category/${slug}` },
         ])}
       />
+      {modalities.length > 0 && (
+        <JsonLd
+          data={itemListSchema(
+            modalities.map((m: any) => ({
+              name: m.name,
+              url: `${SITE_URL}/modalities/${m.slug}`,
+              description: m.short_description || m.description || '',
+            }))
+          )}
+        />
+      )}
       <ModalityCategoryPageContent slug={slug} />
     </>
   )

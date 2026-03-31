@@ -94,7 +94,7 @@ export default function BrowseModalitiesSection() {
             return (
               <motion.div key={cat.id} variants={itemFade}>
                 <Link
-                  href={`/modalities#${slug}`}
+                  href={`/modalities/category/${slug}`}
                   className="group block h-full"
                 >
                   <div

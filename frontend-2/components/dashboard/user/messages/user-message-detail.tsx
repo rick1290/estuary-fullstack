@@ -125,8 +125,9 @@ export default function UserMessageDetail() {
   })
 
   // Get the other user (practitioner) from conversation
+  // Compare as strings since useAuth returns id as string but API returns number
   const practitioner = conversation?.participants?.find(
-    (p) => p.user?.id !== user?.id
+    (p) => String(p.user?.id) !== String(user?.id) && String(p.user?.id) !== String(user?.numericId)
   )?.user
 
   useEffect(() => {
@@ -567,7 +568,7 @@ export default function UserMessageDetail() {
             <Button onClick={() => {
               setShowPractitionerInfo(false)
               // Navigate to practitioner profile
-              window.location.href = `/practitioners/${conversation?.participants?.find(p => p.user?.id !== user?.id)?.practitioner?.slug || practitioner?.id}`
+              window.location.href = `/practitioners/${conversation?.participants?.find(p => String(p.user?.id) !== String(user?.id))?.practitioner?.slug || practitioner?.id}`
             }}>
               View Full Profile
             </Button>
