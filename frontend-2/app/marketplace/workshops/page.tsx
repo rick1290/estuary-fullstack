@@ -1,6 +1,5 @@
 import { createMetadata } from "@/lib/seo"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
-import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
 import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata = createMetadata({

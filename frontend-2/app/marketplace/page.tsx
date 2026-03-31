@@ -1,6 +1,5 @@
 import { createMetadata } from "@/lib/seo"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
-import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
 import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata = createMetadata({
@@ -22,7 +21,6 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
       title={<>Wellness <em className="italic text-[#c4856a]">Marketplace</em></>}
       description="Discover transformative experiences to nurture your mind, body, and spirit"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters />}
       patternType="flow"
     >
       <ServiceListings />
