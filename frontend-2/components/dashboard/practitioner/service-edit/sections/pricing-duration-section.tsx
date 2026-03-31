@@ -136,6 +136,41 @@ export function PricingDurationSection({
           </div>
         </div>
 
+        {/* Maximum Capacity */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="max_participants">Maximum Capacity</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Maximum number of participants per session. Leave empty for no limit.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="max-w-xs">
+            <Input
+              id="max_participants"
+              type="number"
+              role="spinbutton"
+              value={localData.max_participants || ""}
+              onChange={(e) => {
+                const val = e.target.value
+                handleChange("max_participants", val === "" || val === "0" ? null : parseInt(val))
+              }}
+              placeholder="No limit"
+              min="1"
+              step="1"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Maximum number of participants per session. Leave empty for no limit.
+          </p>
+        </div>
+
         {/* Participants - Only show for group services */}
         {isGroupService && (
           <>

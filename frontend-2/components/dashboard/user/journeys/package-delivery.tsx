@@ -391,7 +391,7 @@ export default function PackageDelivery({ bookingUuid, journeyData }: PackageDel
             className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-sage-600 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            My Journeys
+            My Journey
           </Link>
           <div className="flex items-center gap-2">
             {totalCount > 0 && (

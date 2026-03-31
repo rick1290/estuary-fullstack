@@ -173,9 +173,10 @@ export function VideoRoom({
           }
           .lk-participant-tile video {
             border-radius: 16px !important;
-            object-fit: cover !important;
+            object-fit: contain !important;
             height: 100% !important;
             width: 100% !important;
+            background: #1a1a1a;
           }
           .lk-participant-tile .lk-participant-placeholder {
             border-radius: 16px !important;
@@ -307,7 +308,7 @@ export function VideoRoom({
         `}</style>
         <div className="h-screen flex flex-col bg-gradient-to-br from-cream-50 via-sage-50/30 to-cream-50" style={{
           '--lk-fg': '#4a5548',
-          '--lk-bg': 'transparent',
+          '--lk-bg': 'rgba(255, 255, 255, 0.95)',
           '--lk-bg-2': 'rgba(156, 175, 136, 0.08)',
           '--lk-bg-3': 'rgba(156, 175, 136, 0.12)',
           '--lk-border': 'rgba(156, 175, 136, 0.25)',
@@ -473,7 +474,7 @@ export function VideoRoom({
             {/* Chat Sidebar */}
             {showChat && roomType !== 'individual' && (
               <div className="absolute inset-0 sm:relative sm:inset-auto w-full sm:w-80 bg-white/95 backdrop-blur-md border-l border-sage-200 flex flex-col shadow-lg z-20">
-                <div className="p-3 sm:p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
+                <div className="shrink-0 p-3 sm:p-4 border-b border-sage-200 flex items-center justify-between bg-sage-50/50">
                   <h3 className="text-olive-900 font-medium">Chat</h3>
                   <Button
                     variant="ghost"
@@ -484,10 +485,12 @@ export function VideoRoom({
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-hidden">
                   <Chat
                     style={{
                       height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
                       backgroundColor: 'transparent',
                       '--lk-chat-bg': 'transparent',
                       '--lk-chat-input-bg': 'rgba(156, 175, 136, 0.1)',
@@ -556,7 +559,7 @@ export function VideoRoom({
                   '--lk-danger-bg': 'rgb(220, 38, 38)',
                   '--lk-danger-hover-bg': 'rgb(185, 28, 28)',
                   '--lk-fg': '#4a5548',
-                  '--lk-bg': 'transparent',
+                  '--lk-bg': 'rgba(255, 255, 255, 0.95)',
                 } as React.CSSProperties}>
                   <ControlBar
                     variation={isHost ? "verbose" : "minimal"}
@@ -969,29 +972,30 @@ function EndSessionButton({ onEndSession }: { onEndSession: () => Promise<void> 
     setIsEnding(true);
 
     try {
-      // Notify all participants to disconnect before calling the API
+      // 1. Call the end session API first (most important)
+      await onEndSession();
+
+      // 2. Notify other participants to disconnect
       if (connectionState === ConnectionState.Connected) {
         try {
           room.localParticipant.publishData(
             new TextEncoder().encode(JSON.stringify({ type: 'session_ended' })),
             { reliable: true }
           );
-          // Small delay to let the message propagate
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (e) {
-          console.warn('Failed to send session_ended message:', e);
+          // Brief delay to let the message propagate before we disconnect
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch {
+          // Non-critical — participants will see room closed anyway
         }
       }
 
-      // Call the end session API
-      await onEndSession();
-
-      // Disconnect from the room
-      if (connectionState === ConnectionState.Connected) {
+      // 3. Disconnect ourselves
+      try {
         await room.disconnect(true);
+      } catch {
+        // Room may already be disconnecting — that's fine
       }
     } catch (error) {
-      console.error('Error ending session:', error);
       setIsEnding(false);
       setShowConfirm(false);
     }
@@ -1047,13 +1051,16 @@ function HostControlHandler() {
   const room = useRoomContext();
 
   useEffect(() => {
-    const handleDataReceived = (payload: Uint8Array) => {
+    const handleDataReceived = (payload: Uint8Array, participant?: any) => {
       try {
         const message = JSON.parse(new TextDecoder().decode(payload));
         const localIdentity = room.localParticipant.identity;
 
-        // session_ended is broadcast to all participants (no participantId filter)
+        // session_ended is broadcast to all participants
+        // Skip if we're the one who sent it (host ending the call handles its own disconnect)
         if (message.type === 'session_ended') {
+          const senderIdentity = participant?.identity
+          if (senderIdentity === localIdentity) return; // Don't self-disconnect
           room.disconnect(true);
           return;
         }

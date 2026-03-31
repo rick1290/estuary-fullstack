@@ -43,7 +43,7 @@ export default function SessionsPage() {
             <div className="bg-white border border-sage-200/60 rounded-xl p-6 space-y-4">
               <div className="space-y-3">
                 {[
-                  { step: "1", text: "Go to My Journeys in your dashboard. You'll see all your upcoming sessions listed with dates and times." },
+                  { step: "1", text: "Go to My Journey in your dashboard. You'll see all your upcoming sessions listed with dates and times." },
                   { step: "2", text: "Click on the session you want to join. A \"Join Session\" button appears 15 minutes before the scheduled start time." },
                   { step: "3", text: "Clicking the button takes you to the session lobby, where you can check your camera and microphone before entering." },
                   { step: "4", text: "When you're ready, click \"Enter Room\" to join the live video session with your practitioner." },
@@ -107,7 +107,7 @@ export default function SessionsPage() {
             </div>
             <div className="bg-white border border-sage-200/60 rounded-xl p-6">
               <p className="text-[15px] text-olive-600 leading-relaxed">
-                For in-person sessions, the practitioner's address or venue is shown on your booking detail page. You can find this by going to My Journeys and clicking on the session. Arrive a few minutes early so you have time to settle in. If you need directions or have trouble finding the location, you can message your practitioner directly through the platform.
+                For in-person sessions, the practitioner's address or venue is shown on your booking detail page. You can find this by going to My Journey and clicking on the session. Arrive a few minutes early so you have time to settle in. If you need directions or have trouble finding the location, you can message your practitioner directly through the platform.
               </p>
             </div>
           </section>
@@ -137,7 +137,7 @@ export default function SessionsPage() {
               </p>
               <ul className="space-y-2">
                 {[
-                  "Go to My Journeys and click on the session you'd like to reschedule.",
+                  "Go to My Journey and click on the session you'd like to reschedule.",
                   "Click the \"Reschedule\" button and choose a new available time from the practitioner's calendar.",
                   "Your original time slot is released and the new time is confirmed immediately.",
                   "You'll receive an updated confirmation email with the new details.",

@@ -45,7 +45,7 @@ export default function VideoPage() {
             <div className="bg-white border border-sage-200/60 rounded-xl p-6">
               <div className="space-y-3">
                 {[
-                  { step: "1", text: "Go to your session detail page in My Journeys. The \"Join Session\" button appears 15 minutes before the scheduled start time." },
+                  { step: "1", text: "Go to your session detail page in My Journey. The \"Join Session\" button appears 15 minutes before the scheduled start time." },
                   { step: "2", text: "Click the button to enter the pre-join lobby where you can test your camera and microphone." },
                   { step: "3", text: "When you are ready, click \"Enter Room\" to join the live video session with your practitioner." },
                 ].map((item) => (

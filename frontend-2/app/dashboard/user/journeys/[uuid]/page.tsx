@@ -86,7 +86,7 @@ export default function JourneyDetailPage({
       <Button variant="outline" className="mt-4 rounded-full" asChild>
         <Link href="/dashboard/user/journeys">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to My Journeys
+          Back to My Journey
         </Link>
       </Button>
     </div>

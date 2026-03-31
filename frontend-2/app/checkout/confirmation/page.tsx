@@ -290,7 +290,7 @@ export default function ConfirmationPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 min-h-[44px]">
             <Link href="/dashboard/user/journeys">
-              View My Journeys
+              View My Journey
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </Button>

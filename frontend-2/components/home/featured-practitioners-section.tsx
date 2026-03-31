@@ -51,7 +51,7 @@ export default function FeaturedPractitionersSection() {
     name: practitioner.display_name || practitioner.full_name || 'Practitioner',
     specialty: practitioner.primary_specialty || practitioner.professional_title || 'Wellness Practitioner',
     location: practitioner.primary_location?.city || practitioner.location || 'Virtual',
-    image: practitioner.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+    image: practitioner.profile_image_url || '',
     rating: practitioner.average_rating || 4.8,
     reviews: practitioner.total_reviews || 0,
     modalities: practitioner.modalities?.map(m => m.name) || practitioner.primary_services?.slice(0,3).map(s => s.name) || ['Wellness'],

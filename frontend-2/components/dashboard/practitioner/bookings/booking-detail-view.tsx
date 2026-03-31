@@ -35,9 +35,7 @@ import {
   AlertCircle,
   Mail,
   Phone,
-  MessageSquare,
   Edit,
-  Copy,
   Save,
   X,
   FileText
@@ -384,14 +382,6 @@ export default function BookingDetailView({ bookingId }: BookingDetailViewProps)
                   Join Session
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Message Client
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Booking Link
-              </DropdownMenuItem>
               {booking.can_be_canceled && (
                 <>
                   <DropdownMenuSeparator />

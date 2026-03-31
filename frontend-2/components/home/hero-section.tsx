@@ -112,7 +112,7 @@ export default function HeroSection() {
                 {facePractitioners.map((p: any, i: number) => (
                   <img
                     key={p.public_uuid || p.id || i}
-                    src={p.profile_image_url || `https://i.pravatar.cc/80?img=${i + 10}`}
+                    src={p.profile_image_url || ''}
                     alt={p.display_name || p.full_name || "Practitioner"}
                     className="w-9 h-9 rounded-full border-2 border-cream-50 object-cover"
                   />

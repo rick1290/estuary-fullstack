@@ -62,7 +62,7 @@ const bookingSteps = [
   },
   {
     step: "Confirmation",
-    description: "Once your booking is confirmed, you'll receive an email with all the details — date, time, and how to join. The booking also appears in My Journeys.",
+    description: "Once your booking is confirmed, you'll receive an email with all the details — date, time, and how to join. The booking also appears in My Journey.",
   },
 ]
 
@@ -192,7 +192,7 @@ export default function BookingPage() {
                   <ul className="space-y-2">
                     {[
                       "You'll receive a confirmation email with the session details, date, time, and a link to join (for virtual sessions).",
-                      "The booking appears immediately in your My Journeys dashboard.",
+                      "The booking appears immediately in your My Journey dashboard.",
                       "For sessions, you can reschedule up to 24 hours before the start time.",
                       "A reminder email is sent 24 hours and 1 hour before your session.",
                     ].map((item, i) => (

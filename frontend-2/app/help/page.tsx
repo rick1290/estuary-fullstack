@@ -61,7 +61,7 @@ const clientCategories = [
     href: "/help/account",
   },
   {
-    title: "My Journeys",
+    title: "My Journey",
     description: "Track your progress, write journal entries, and leave reviews.",
     icon: Map,
     href: "/help/journeys",

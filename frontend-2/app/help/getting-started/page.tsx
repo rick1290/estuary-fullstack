@@ -37,7 +37,7 @@ const steps = [
     icon: Video,
     title: "Join your session",
     description:
-      "When it's time, go to My Journeys in your dashboard. Your session will show a \"Join\" button 15 minutes before the scheduled start. Click it to enter the lobby, check your camera and microphone, and join the video room when you're ready.",
+      "When it's time, go to My Journey in your dashboard. Your session will show a \"Join\" button 15 minutes before the scheduled start. Click it to enter the lobby, check your camera and microphone, and join the video room when you're ready.",
   },
   {
     icon: Star,

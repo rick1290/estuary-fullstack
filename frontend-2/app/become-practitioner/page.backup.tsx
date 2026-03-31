@@ -208,7 +208,7 @@ export default function BecomePractitionerPage() {
                       </p>
                       <div className="flex items-center gap-3">
                         <img 
-                          src="https://i.pravatar.cc/40?img=47"
+                          src=""
                           alt="Sarah"
                           className="w-8 h-8 rounded-full"
                         />
@@ -388,14 +388,14 @@ export default function BecomePractitionerPage() {
                 {
                   name: "Dr. Sarah Johnson",
                   role: "Mindfulness Coach",
-                  image: "https://i.pravatar.cc/400?img=47",
+                  image: '',
                   story: "After 10 years in corporate wellness, I finally took the leap to start my own practice. Estuary made it possible to replace my salary in just 6 months. The subscription streams feature has been life-changing—I now have 200+ monthly subscribers.",
                   stats: { clients: "350+", revenue: "$12k/mo", rating: "4.9" }
                 },
                 {
                   name: "Michael Rivera",
                   role: "Yoga & Movement Therapist",
-                  image: "https://i.pravatar.cc/400?img=33",
+                  image: '',
                   story: "I was skeptical about online platforms, but Estuary feels different. It's not just about transactions—it's a real community. I've connected with amazing practitioners and my virtual workshops are always full.",
                   stats: { clients: "180+", revenue: "$8k/mo", rating: "5.0" }
                 }

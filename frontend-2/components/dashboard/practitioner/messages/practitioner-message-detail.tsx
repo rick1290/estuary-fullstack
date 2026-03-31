@@ -11,20 +11,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Send,
   Paperclip,
   Smile,
-  MoreVertical,
   Info,
   Calendar,
   FileText,
@@ -430,25 +422,9 @@ export default function PractitionerMessageDetail() {
           <Button variant="ghost" size="icon" title="Share a service" onClick={() => setShowShareService(true)}>
             <FileText className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" title="Schedule a session">
-            <Calendar className="h-4 w-4" />
-          </Button>
           <Button variant="ghost" size="icon" title="Client info" onClick={() => setShowClientInfo(true)}>
             <Info className="h-4 w-4" />
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <X className="h-4 w-4 mr-2" />
-                Clear conversation
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Search, X, Filter, MessageSquarePlus, Users, Heart, BookOpen, MessageSquare } from "lucide-react"
+import { Search, X, MessageSquarePlus, Users, Heart, BookOpen, MessageSquare } from "lucide-react"
 import DashboardEmptyState from "@/components/dashboard/practitioner/empty-states/dashboard-empty-state"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { 
@@ -131,9 +131,6 @@ export default function PractitionerMessagesList() {
 
       <div className="flex justify-between items-center px-4 py-2">
         <span className="text-sm text-muted-foreground">{filteredConversations.length} Conversations</span>
-        <Button variant="ghost" size="icon" title="Filter conversations">
-          <Filter className="h-4 w-4" />
-        </Button>
       </div>
 
       <ScrollArea className="flex-1">

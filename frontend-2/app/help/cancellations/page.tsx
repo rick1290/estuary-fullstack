@@ -85,7 +85,7 @@ export default function CancellationsPage() {
             <div className="bg-white border border-sage-200/60 rounded-xl p-6">
               <div className="space-y-3">
                 {[
-                  { step: "1", text: "Go to My Journeys in your dashboard and find the booking you'd like to cancel." },
+                  { step: "1", text: "Go to My Journey in your dashboard and find the booking you'd like to cancel." },
                   { step: "2", text: "Click on the booking to open its detail page." },
                   { step: "3", text: "Click the \"Cancel\" button. You'll see a confirmation dialog." },
                   { step: "4", text: "Select a reason for cancelling (optional but helpful for practitioners) and confirm." },

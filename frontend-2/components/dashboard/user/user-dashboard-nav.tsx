@@ -32,7 +32,7 @@ export default function UserDashboardNav() {
   const navItems: NavItem[] = [
     { label: "Home", path: "/dashboard/user", icon: <Home className="h-4 w-4 shrink-0" /> },
     { label: "Messages", path: "/dashboard/user/messages", icon: <MessageSquare className="h-4 w-4 shrink-0" /> },
-    { label: "My Journeys", path: "/dashboard/user/journeys", icon: <Calendar className="h-4 w-4 shrink-0" /> },
+    { label: "My Journey", path: "/dashboard/user/journeys", icon: <Calendar className="h-4 w-4 shrink-0" /> },
     { label: "My Streams", path: "/dashboard/user/streams", icon: <RssIcon className="h-4 w-4 shrink-0" /> },
     { label: "My Favorites", path: "/dashboard/user/favorites", icon: <Heart className="h-4 w-4 shrink-0" /> },
     { label: "Settings", path: "/dashboard/user/profile", icon: <Settings className="h-4 w-4 shrink-0" /> },

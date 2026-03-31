@@ -20,7 +20,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
-      image: "https://i.pravatar.cc/150?img=47",
+      image: '',
     },
     price: 85,
     duration: 60,
@@ -38,7 +38,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 2,
       name: "Michael Chen",
-      image: "https://i.pravatar.cc/150?img=33",
+      image: '',
     },
     price: 240,
     sessionCount: 5,
@@ -56,7 +56,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 3,
       name: "Aisha Patel",
-      image: "https://i.pravatar.cc/150?img=44",
+      image: '',
     },
     price: 150,
     date: "May 15, 2023",
@@ -76,7 +76,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 4,
       name: "James Wilson",
-      image: "https://i.pravatar.cc/150?img=12",
+      image: '',
     },
     price: 350,
     duration: "4 weeks",
@@ -95,7 +95,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 5,
       name: "Emma Rodriguez",
-      image: "https://i.pravatar.cc/150?img=32",
+      image: '',
     },
     price: 95,
     duration: 90,
@@ -113,7 +113,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 6,
       name: "David Kim",
-      image: "https://i.pravatar.cc/150?img=52",
+      image: '',
     },
     price: 280,
     sessionCount: 4,
@@ -131,7 +131,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 1,
       name: "Dr. Sarah Johnson",
-      image: "https://i.pravatar.cc/150?img=47",
+      image: '',
     },
     price: 299,
     duration: "6 weeks",
@@ -150,7 +150,7 @@ const MOCK_SERVICES = [
     practitioner: {
       id: 6,
       name: "David Kim",
-      image: "https://i.pravatar.cc/150?img=52",
+      image: '',
     },
     price: 120,
     date: "June 10, 2023",
@@ -268,7 +268,7 @@ export default function ServiceListings({ serviceType, serviceTypes }: ServiceLi
       id: service.practitioner?.public_uuid || service.primary_practitioner?.public_uuid || service.practitioner?.id || service.primary_practitioner?.id,
       slug: service.primary_practitioner?.slug || service.practitioner?.slug,
       name: service.practitioner?.display_name || service.primary_practitioner?.display_name || 'Practitioner',
-      image: service.practitioner?.profile_image_url || service.primary_practitioner?.profile_image_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      image: service.practitioner?.profile_image_url || service.primary_practitioner?.profile_image_url || '',
     },
     price: service.price_cents ? Math.floor(service.price_cents / 100) : service.price || 0,
     duration: service.duration_minutes || service.duration || 60,

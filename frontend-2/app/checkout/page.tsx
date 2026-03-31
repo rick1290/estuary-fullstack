@@ -292,6 +292,11 @@ export default function CheckoutPage() {
     )
   }
 
+  // For workshops, find the selected session to get its date/time
+  const selectedSession = selectedSessionIds.length > 0 && (serviceData as any).sessions
+    ? (serviceData as any).sessions.find((s: any) => s.id === selectedSessionIds[0])
+    : null
+
   // Transform API data to component format
   const service = {
     id: serviceData.id,
@@ -386,14 +391,20 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                       <span className="text-muted-foreground truncate text-xs sm:text-sm">
-                        {serviceType === "courses" && service.firstSessionDate && service.lastSessionDate
-                          ? `${new Date(service.firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                          : selectedDate || "Flexible"}
+                        {selectedSession?.start_time
+                          ? new Date(selectedSession.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                          : serviceType === "courses" && service.firstSessionDate && service.lastSessionDate
+                            ? `${new Date(service.firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                            : selectedDate || "Flexible"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                      <span className="text-muted-foreground truncate text-xs sm:text-sm">{selectedTime || "TBC"}</span>
+                      <span className="text-muted-foreground truncate text-xs sm:text-sm">
+                        {selectedSession?.start_time
+                          ? new Date(selectedSession.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                          : selectedTime || "TBC"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 col-span-2">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />

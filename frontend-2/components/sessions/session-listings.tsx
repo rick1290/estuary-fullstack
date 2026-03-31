@@ -59,7 +59,7 @@ const MOCK_SESSIONS = [
     rating: 4.8,
     reviewCount: 89,
     categories: ["Energy Work", "Healing"],
-    image: "/session-image-3.jpg",
+    image: '',
     description: "Balance your energy centers and restore harmony through gentle healing techniques.",
   },
 ]

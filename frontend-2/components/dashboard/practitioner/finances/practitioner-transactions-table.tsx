@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { Download, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, User } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { payoutsEarningsPurchasesRetrieveOptions } from "@/src/client/@tanstack/react-query.gen"
 import { Button } from "@/components/ui/button"
@@ -389,11 +389,6 @@ export function PractitionerTransactionsTable() {
           </Button>
         </div>
 
-        {/* Export Button */}
-        <Button className="w-full md:w-auto">
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
       </div>
 
       {/* Purchases List */}
