@@ -147,7 +147,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
 
   return (
     <Link href={profileUrl} className="block">
-      <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl group cursor-pointer relative">
+      <Card className="bg-white border border-[rgba(74,63,53,0.05)] hover:shadow-[0_16px_48px_rgba(74,63,53,0.08)] hover:-translate-y-1 transition-all duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] rounded-2xl group cursor-pointer relative">
         {/* Featured accent bar */}
         {practitioner.is_featured && (
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-terracotta-400 to-sage-400 rounded-t-xl" />
@@ -183,7 +183,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
             <div className="flex-1 min-w-0">
               {/* Row 1: Name + Heart */}
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors truncate">
+                <h3 className="font-serif text-lg font-medium text-[#4A3F35] group-hover:text-[#C4956A] transition-colors truncate">
                   {displayName}
                 </h3>
                 <Button
@@ -242,7 +242,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                     {practitioner.specializations.slice(0, 4).map((specialization) => (
                       <span
                         key={specialization.id}
-                        className="text-[11px] px-2.5 py-0.5 bg-cream-50 border border-sage-200 text-olive-600 rounded-full"
+                        className="text-[11px] px-2.5 py-0.5 bg-[#E8EDE4] text-[#6B6560] rounded-full"
                       >
                         {specialization.content}
                       </span>
@@ -260,7 +260,7 @@ export default function PractitionerRowCard({ practitioner, initialLiked = false
                 ) : (
                   <div className="flex-1" />
                 )}
-                <span className="bg-olive-900 hover:bg-olive-800 text-cream-50 rounded-full px-4 py-1.5 text-[11px] sm:text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap self-start sm:self-auto">
+                <span className="bg-[#4A3F35] hover:bg-[#5c4f42] text-white rounded-full px-4 py-1.5 text-[11px] sm:text-[12px] font-medium flex-shrink-0 transition-colors whitespace-nowrap self-start sm:self-auto">
                   View Profile
                 </span>
               </div>

@@ -21,16 +21,20 @@ function FilterChip({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  // Keep dropdown open across URL-driven re-renders
+  const openRef = useRef(false)
+  openRef.current = open
 
   // Close on outside click
   useEffect(() => {
-    if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (openRef.current && ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
-  }, [open])
+  }, [])
 
   return (
     <div ref={ref} className="relative">
@@ -51,13 +55,15 @@ function FilterChip({
         <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''} ${active ? 'text-white/70' : 'text-[#9B9590]'}`} />
       </button>
 
-      {open && (
-        <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl border border-[rgba(74,63,53,0.08)] shadow-[0_12px_40px_rgba(74,63,53,0.12)] p-4 min-w-[260px] max-h-[400px] overflow-y-auto"
-          style={{ scrollbarWidth: "thin" }}
-        >
-          {children}
-        </div>
-      )}
+      <div
+        className={`absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl border border-[rgba(74,63,53,0.08)] shadow-[0_12px_40px_rgba(74,63,53,0.12)] p-4 min-w-[260px] max-h-[400px] overflow-y-auto transition-all duration-200 ${
+          open ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
+        }`}
+        style={{ scrollbarWidth: "thin" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
     </div>
   )
 }

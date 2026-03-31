@@ -22,8 +22,6 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
       eyebrow="Personal Sessions"
       description="Connect with practitioners for one-on-one sessions, bundles, and packages"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFiltersWrapper showServiceTypeFilter={false} />}
-      patternType="wave"
     >
       <ServiceListings serviceTypes={["session", "bundle", "package"]} />
     </MarketplaceLayout>
