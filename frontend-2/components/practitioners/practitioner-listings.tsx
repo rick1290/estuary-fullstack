@@ -176,14 +176,14 @@ export default function PractitionerListings({
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 sm:mb-8">
-        <p className="text-sm text-olive-600">
-          Showing <span className="font-medium text-olive-900">{startResult}-{endResult}</span> of <span className="font-medium text-olive-900">{totalResults}</span> practitioners
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-sm text-muted-foreground">
+          Showing <span className="font-medium text-olive-700">{startResult}-{endResult}</span> of {totalResults} practitioners
         </p>
 
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-[200px] bg-white border-sage-300 rounded-xl">
-            <SelectValue placeholder="Sort By" />
+          <SelectTrigger className="w-[160px] h-9 text-sm">
+            <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="relevance">Relevance</SelectItem>

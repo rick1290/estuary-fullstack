@@ -1,6 +1,5 @@
 import { createMetadata } from "@/lib/seo"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
-import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
 import ServiceListings from "@/components/marketplace/service-listings"
 
 export const metadata = createMetadata({
@@ -23,8 +22,6 @@ export default async function WorkshopsPage({ searchParams }: WorkshopsPageProps
       eyebrow="Group Experiences"
       description="Join transformative group experiences led by expert practitioners"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters showServiceTypeFilter={false} showCategoriesFilter={false} />}
-      patternType="flow"
     >
       <ServiceListings serviceType="workshop" />
     </MarketplaceLayout>

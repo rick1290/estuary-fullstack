@@ -112,15 +112,15 @@ export default function ServiceCard({
   const hasServiceImage = image && (image.startsWith('http') || image.startsWith('data:'))
 
   return (
-    <Link href={href} className="group block animate-slide-up" style={{animationDelay: `${index * 0.1}s`}}>
-      <Card className="bg-white border border-sage-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-xl cursor-pointer overflow-hidden">
+    <Link href={href} className="group block animate-slide-up" style={{animationDelay: `${index * 0.05}s`}}>
+      <Card className="bg-white border border-[rgba(74,63,53,0.05)] hover:shadow-[0_16px_48px_rgba(74,63,53,0.08)] hover:-translate-y-1 transition-all duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] rounded-2xl cursor-pointer overflow-hidden">
         {/* Cover Image with overlaid badges */}
         {hasServiceImage ? (
-          <div className="relative w-full h-36 sm:h-44 md:h-52 overflow-hidden bg-gradient-to-br from-cream-50 to-sage-50">
+          <div className="relative w-full aspect-[16/10] overflow-hidden bg-gradient-to-br from-[#E8EDE4] to-[#F5EDE2]">
             <img
               src={image}
               alt={title}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
             />
             <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 flex items-start justify-between gap-2">
               <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm text-olive-800 text-[10px] font-medium px-2.5 py-1 shadow-sm">
@@ -140,22 +140,19 @@ export default function ServiceCard({
             </div>
           </div>
         ) : (
-          <div className="relative w-full h-28 overflow-hidden bg-gradient-to-br from-cream-50 via-sage-50 to-terracotta-50">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="h-8 w-8 text-sage-300" strokeWidth="1" />
-            </div>
-            <div className="absolute top-3 left-3">
-              <Badge variant={getBadgeVariant()} className="text-[10px]">
+          <div className="relative w-full aspect-[16/10] overflow-hidden" style={{ background: `linear-gradient(135deg, ${['#E8EDE4','#F5EAE0','#EDE8E0','#E8EBE4','#F0E8E0'][index % 5]}, #FAF7F2)` }}>
+            <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+              <span className="inline-flex items-center rounded-lg bg-white/80 backdrop-blur-sm text-[#4A3F35] text-[10px] font-medium px-2.5 py-1 shadow-sm">
                 <Sparkles className="h-2.5 w-2.5 mr-1" strokeWidth="1.5" />
                 {getServiceTypeLabel()}
-              </Badge>
+              </span>
             </div>
           </div>
         )}
 
         <CardContent className="p-4 sm:p-5">
           {/* Title */}
-          <h3 className="text-base font-medium text-olive-900 group-hover:text-sage-700 transition-colors line-clamp-1">
+          <h3 className="font-serif text-base font-medium text-[#4A3F35] group-hover:text-[#C4956A] transition-colors line-clamp-1">
             {title}
           </h3>
 

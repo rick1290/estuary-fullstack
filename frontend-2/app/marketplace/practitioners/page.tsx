@@ -1,6 +1,5 @@
 import { createMetadata } from "@/lib/seo"
 import MarketplaceLayout from "@/components/marketplace/marketplace-layout"
-import MarketplaceFilters from "@/components/marketplace/marketplace-filters"
 import PractitionerListings from "@/components/practitioners/practitioner-listings"
 
 export const metadata = createMetadata({
@@ -29,8 +28,6 @@ export default async function PractitionersPage({ searchParams }: PractitionersP
       eyebrow="Wellness Guides"
       description="Connect with practitioners who can support your personal growth journey"
       initialSearchQuery={query}
-      sidebar={<MarketplaceFilters showServiceTypeFilter={false} showPriceFilter={false} showRatingFilter={false} showCategoriesFilter={false} />}
-      patternType="leaf"
     >
       <PractitionerListings query={query} location={location} categories={categories} />
     </MarketplaceLayout>

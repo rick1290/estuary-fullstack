@@ -3,13 +3,10 @@
 import type React from "react"
 import { type ReactNode, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { Search, Filter } from "lucide-react"
+import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Separator } from "@/components/ui/separator"
-import type { PatternType } from "@/components/ui/background-pattern"
+import MarketplaceFilterChips from "./marketplace-filter-chips"
 
 interface MarketplaceLayoutProps {
   children: ReactNode
@@ -19,25 +16,20 @@ interface MarketplaceLayoutProps {
   searchPlaceholder?: string
   initialSearchQuery?: string
   sidebar?: ReactNode
-  patternType?: PatternType
+  patternType?: string
 }
 
 export default function MarketplaceLayout({
   children,
   title,
   description,
-  eyebrow = "Wellness Services",
   searchPlaceholder = "Search for services, practitioners, or keywords...",
   initialSearchQuery = "",
-  sidebar,
-  patternType = "wave",
 }: MarketplaceLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
-  // Determine which tab is active based on the current path
   const getActiveTab = () => {
     if (pathname === "/marketplace") return "all"
     if (pathname === "/marketplace/courses") return "courses"
@@ -50,7 +42,6 @@ export default function MarketplaceLayout({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (!searchQuery.trim()) return
-
     const basePath = pathname.split("?")[0]
     router.push(`${basePath}?q=${encodeURIComponent(searchQuery)}`)
   }
@@ -66,111 +57,94 @@ export default function MarketplaceLayout({
     router.push(routes[value])
   }
 
+  const activeTab = getActiveTab()
+
+  const tabs = [
+    { value: "all", label: "All" },
+    { value: "sessions", label: "Sessions" },
+    { value: "workshops", label: "Workshops" },
+    { value: "courses", label: "Courses" },
+    { value: "practitioners", label: "Practitioners" },
+  ]
+
   return (
-    <div className="w-full bg-[#f8f5f0] pb-8">
-      {/* Header Section */}
-      <div className="w-full pt-10 sm:pt-16 pb-16 sm:pb-24">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-6 sm:mb-8">
-            <span className="block text-[10px] sm:text-xs font-medium tracking-wide sm:tracking-widest uppercase text-[#7c9a7e] mb-3 sm:mb-4">
-              {eyebrow}
-            </span>
-            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-[#2a2218] mb-3 sm:mb-4">
+    <div className="w-full bg-[#f8f5f0] min-h-screen">
+      {/* Header — not sticky, clean and compact */}
+      <div className="bg-[#f8f5f0] border-b border-[rgba(74,63,53,0.06)]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Title + Search row */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pt-6 pb-4">
+            <h1 className="font-serif text-2xl sm:text-3xl font-normal text-[#4A3F35] shrink-0">
               {title}
             </h1>
-            {description && (
-              <p className="mx-auto max-w-2xl text-sm sm:text-base font-light text-[#6b6258] leading-relaxed mb-6 sm:mb-8">
-                {description}
-              </p>
-            )}
-          </div>
 
-          {/* Service Type Toggle Navigation */}
-          <div className="mx-auto mb-6 sm:mb-8 max-w-3xl">
-            <Tabs value={getActiveTab()} onValueChange={handleTabChange} className="w-full">
-              <TabsList
-                className="w-full bg-white p-1 rounded-2xl border border-sage-200/60 flex overflow-x-auto no-scrollbar"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as any}
+            <form
+              onSubmit={handleSearch}
+              className="flex-1 max-w-xl flex items-center bg-white/80 backdrop-blur-sm rounded-full border border-[rgba(74,63,53,0.08)] overflow-hidden"
+            >
+              <div className="pl-4">
+                <Search className="h-4 w-4 text-[#9B9590]" strokeWidth="1.5" />
+              </div>
+              <Input
+                className="flex-1 border-0 bg-transparent px-3 py-2.5 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 text-[#4A3F35] placeholder:text-[#9B9590]"
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="p-1.5 mr-1 text-[#9B9590] hover:text-[#4A3F35]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <Button
+                type="submit"
+                size="sm"
+                className="m-1 bg-[#4A3F35] hover:bg-[#5c4f42] text-white rounded-full px-5 text-xs"
               >
-                <TabsTrigger value="all" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
-                  All
-                </TabsTrigger>
-                <TabsTrigger value="courses" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
-                  Courses
-                </TabsTrigger>
-                <TabsTrigger value="workshops" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
-                  Workshops
-                </TabsTrigger>
-                <TabsTrigger value="sessions" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
-                  Sessions
-                </TabsTrigger>
-                <TabsTrigger value="practitioners" className="flex-1 flex-shrink-0 min-w-0 data-[state=active]:bg-[#3d2e1e] data-[state=active]:text-white data-[state=active]:shadow-sm rounded-xl text-[11px] sm:text-sm px-1.5 sm:px-4">
-                  Practitioners
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+                Search
+              </Button>
+            </form>
           </div>
 
-          {/* Search Bar */}
-          <form
-            onSubmit={handleSearch}
-            className="mx-auto flex max-w-2xl items-center overflow-hidden rounded-2xl bg-white border border-sage-200/60 shadow-sm"
+          {/* Tabs row — underline style */}
+          <div
+            className="flex gap-6 overflow-x-auto border-b border-[rgba(74,63,53,0.08)]"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            <div className="flex items-center justify-center pl-4 sm:pl-5">
-              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-sage-500" strokeWidth="1.5" />
-            </div>
-            <Input
-              className="flex-1 border-0 bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-[#2a2218] placeholder:text-[#9b9088]"
-              placeholder={searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button type="submit" size="sm" className="m-1.5 sm:m-2 bg-[#3d2e1e] hover:bg-[#5c4435] text-white rounded-full px-4 sm:px-6 text-xs sm:text-sm">
-              Search
-            </Button>
-          </form>
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => handleTabChange(tab.value)}
+                className={`shrink-0 pb-3 text-[14px] font-medium transition-all relative ${
+                  activeTab === tab.value
+                    ? "text-[#4A3F35]"
+                    : "text-[#9B9590] hover:text-[#6B6560]"
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.value && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#4A3F35] rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="h-px bg-[#e0d8ce] mx-4 sm:mx-6" />
-
-      {/* Main Content Area */}
-      <div className="container mx-auto mt-6 sm:mt-8 px-4 sm:px-6 lg:px-8 pb-16">
-        {/* Mobile Filters Toggle Button */}
-        {sidebar && (
-          <div className="mb-6 lg:hidden">
-            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="w-full border-sage-200/60 text-olive-700 hover:bg-sage-50 rounded-xl" size="default">
-                  <Filter className="mr-2 h-4 w-4" strokeWidth="1.5" />
-                  Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[85%] max-w-[350px] p-6">
-                <SheetHeader className="mb-6">
-                  <SheetTitle className="text-xl font-normal font-serif">Filters</SheetTitle>
-                </SheetHeader>
-                <Separator className="mb-6" />
-                {sidebar}
-              </SheetContent>
-            </Sheet>
-          </div>
-        )}
-
-        {/* Main Content Area */}
-        <div className="flex gap-8">
-          {/* Desktop Sidebar */}
-          {sidebar && (
-            <aside className="hidden w-[280px] shrink-0 lg:block">
-              <div className="bg-white rounded-2xl p-6 border border-sage-200/60 sticky top-6">
-                {sidebar}
-              </div>
-            </aside>
-          )}
-
-          {/* Main Content */}
-          <main className="flex-1 w-full">{children}</main>
+      {/* Sticky filter chips bar */}
+      <div className="sticky top-[64px] z-40 border-b border-[rgba(74,63,53,0.04)]" style={{ backgroundColor: "rgba(248,245,240,0.97)" }}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <MarketplaceFilterChips />
         </div>
+      </div>
+
+      {/* Content — full width, no sidebar */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="w-full">{children}</main>
       </div>
     </div>
   )
