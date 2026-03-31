@@ -206,7 +206,7 @@ export default function Navbar() {
             <div className="hidden md:flex md:items-center md:gap-1">
               <Link href="/dashboard/user/journeys" className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13.5px] font-medium text-[#6b6258] hover:bg-[#f0ede8] hover:text-[#2a2218] transition-colors">
                 <Calendar className="h-3.5 w-3.5" />
-                <span>My Journeys</span>
+                <span>My Journey</span>
               </Link>
               <Link href="/dashboard/user/messages" className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13.5px] font-medium text-[#6b6258] hover:bg-[#f0ede8] hover:text-[#2a2218] transition-colors">
                 <MessageSquare className="h-3.5 w-3.5" />
@@ -222,7 +222,7 @@ export default function Navbar() {
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/placeholder-user.jpg" alt={user?.firstName || "User"} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarFallback className="bg-olive-800 text-cream-50">
                         {user?.firstName?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -238,7 +238,7 @@ export default function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/user/journeys" className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span>My Journeys</span>
+                      <span>My Journey</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -347,7 +347,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 rounded-md px-2 min-h-[44px] py-2 text-sm hover:bg-accent"
                       >
                         <Calendar className="h-4 w-4" />
-                        <span>My Journeys</span>
+                        <span>My Journey</span>
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>

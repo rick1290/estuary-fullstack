@@ -127,7 +127,7 @@ export default function AccountPage() {
               href="/help/journeys"
               className="text-sm text-sage-600 hover:text-sage-700 font-medium"
             >
-              My Journeys
+              My Journey
             </Link>
           </div>
           <div className="text-center">

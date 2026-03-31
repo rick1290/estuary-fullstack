@@ -68,7 +68,13 @@ export function personSchema(practitioner: {
   bio?: string
   profile_image_url?: string
   specializations?: string[]
+  average_rating?: number | string
+  average_rating_float?: number | string
+  total_reviews?: number
 }) {
+  const rating = Number(practitioner.average_rating || practitioner.average_rating_float || 0)
+  const reviewCount = practitioner.total_reviews || 0
+
   return {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -79,6 +85,15 @@ export function personSchema(practitioner: {
     jobTitle: "Wellness Practitioner",
     ...(practitioner.specializations?.length && {
       knowsAbout: practitioner.specializations,
+    }),
+    ...(rating > 0 && reviewCount > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: rating.toFixed(1),
+        reviewCount: String(reviewCount),
+        bestRating: "5",
+        worstRating: "1",
+      },
     }),
   }
 }

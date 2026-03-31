@@ -21,7 +21,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useStripeConnectStatus } from "@/hooks/use-stripe-connect-status"
 import PractitionerFlowTabs from "@/components/dashboard/practitioner/practitioner-flow-tabs"
 import PractitionerRecentRipples from "@/components/dashboard/practitioner/practitioner-recent-ripples"
-import PractitionerStats from "@/components/dashboard/practitioner/practitioner-stats"
+
 import SetupChecklist from "@/components/dashboard/practitioner/setup-checklist"
 
 export default function PractitionerDashboardPage() {
@@ -104,10 +104,7 @@ export default function PractitionerDashboardPage() {
         </p>
       </div>
 
-      {/* Pulse Bar */}
-      <div className="mb-6">
-        <PractitionerStats />
-      </div>
+      {/* Stats moved to dedicated analytics page */}
 
       {/* Setup Checklist */}
       <SetupChecklist />

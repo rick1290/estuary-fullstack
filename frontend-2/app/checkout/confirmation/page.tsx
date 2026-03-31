@@ -132,7 +132,7 @@ export default function ConfirmationPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-sage-100 rounded-full mb-3 sm:mb-4">
             <CheckCircle2 className="h-7 w-7 sm:h-8 sm:w-8 text-sage-600" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-olive-900 mb-2">{getTitle()}</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-olive-900 mb-2">{getTitle()}</h1>
           <p className="text-sm sm:text-base text-olive-600">Confirmation sent to your email</p>
         </div>
 
@@ -290,7 +290,7 @@ export default function ConfirmationPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 min-h-[44px]">
             <Link href="/dashboard/user/journeys">
-              View My Journeys
+              View My Journey
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </Button>

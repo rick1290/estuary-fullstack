@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 
 export const metadata = {
-  title: "My Journeys | Estuary Help",
+  title: "My Journey | Estuary Help",
   description: "Understand how Journeys work on Estuary — track progress, write journal entries, and leave reviews.",
 }
 
@@ -57,7 +57,7 @@ export default function JourneysPage() {
         </Link>
 
         <h1 className="font-serif text-3xl font-normal text-olive-900 mb-2">
-          My Journeys
+          My Journey
         </h1>
         <p className="text-olive-500 mb-10">
           How Journeys work, what they track, and how to use journals and reviews to reflect on your experience.
@@ -72,7 +72,7 @@ export default function JourneysPage() {
             </div>
             <div className="bg-white border border-sage-200/60 rounded-xl p-6">
               <p className="text-[15px] text-olive-600 leading-relaxed mb-3">
-                A Journey is your personal record of a service you've purchased on Estuary. Every time you book a session, workshop, course, or package, a new Journey is created in your dashboard under "My Journeys."
+                A Journey is your personal record of a service you've purchased on Estuary. Every time you book a session, workshop, course, or package, a new Journey is created in your dashboard under "My Journey."
               </p>
               <p className="text-[15px] text-olive-600 leading-relaxed">
                 Think of it as a living document for your wellness experience. It holds everything related to that booking — the schedule, your practitioner's details, session recordings (if available), your journal entries, and your review. Journeys stay in your account even after a service is completed, so you can always look back on your progress.

@@ -23,6 +23,8 @@ import {
   Loader2,
   ShieldCheck,
   Upload,
+  Pencil,
+  Eye,
 } from "lucide-react"
 import UserDashboardLayout from "@/components/dashboard/user-dashboard-layout"
 import Link from "next/link"
@@ -64,10 +66,16 @@ interface IntakeQuestion {
   previous_response?: string | string[] | number
 }
 
+interface IntakeCompletedResponse {
+  responses: Record<string, any>
+  submitted_at?: string
+}
+
 interface BookingFormsData {
   consent_form?: ConsentForm
   intake_questions: IntakeQuestion[]
   intake_template_id?: number | string
+  intake_completed_response?: IntakeCompletedResponse
   booking_id: string
   service_name?: string
   practitioner_name?: string
@@ -99,6 +107,7 @@ export default function BookingFormsPage({
   const [responses, setResponses] = useState<Record<string, any>>({})
   const [isSubmittingIntake, setIsSubmittingIntake] = useState(false)
   const [intakeSubmitted, setIntakeSubmitted] = useState(false)
+  const [isEditingIntake, setIsEditingIntake] = useState(false)
 
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<
@@ -129,6 +138,7 @@ export default function BookingFormsPage({
         let consentForm: ConsentForm | undefined
         const intakeQuestions: IntakeQuestion[] = []
         let intakeTemplateId: number | string | undefined
+        let intakeCompletedResponse: IntakeCompletedResponse | undefined
 
         for (const f of apiData.forms) {
           const tpl = f.template || {}
@@ -144,7 +154,22 @@ export default function BookingFormsPage({
           } else if (tpl.form_type === 'intake' && tpl.questions) {
             // Capture the template ID for submission
             intakeTemplateId = tpl.id
+
+            // Capture completed response data if form was already submitted
+            if (f.completed && f.response) {
+              intakeCompletedResponse = {
+                responses: f.response.responses || {},
+                submitted_at: f.response.submitted_at,
+              }
+            }
+
             for (const q of tpl.questions) {
+              // If already completed, use the saved responses; otherwise use previous_responses for pre-fill
+              const savedResponse = f.completed && f.response?.responses
+                ? f.response.responses[q.id?.toString()] ?? undefined
+                : undefined
+              const prefillResponse = f.previous_responses?.[q.id?.toString()] ?? undefined
+
               intakeQuestions.push({
                 id: q.id?.toString() || q.text,
                 question_text: q.text || q.label || q.question_text || '',
@@ -153,7 +178,7 @@ export default function BookingFormsPage({
                 options: q.options?.map((o: any) => typeof o === 'string' ? { id: o, label: o, value: o } : { id: o.id || o.value, label: o.label || o.text, value: o.value || o.id }),
                 scale_min: q.scale_min,
                 scale_max: q.scale_max,
-                previous_response: f.previous_responses?.[q.id?.toString()] ?? undefined,
+                previous_response: savedResponse ?? prefillResponse,
               })
             }
           }
@@ -163,6 +188,7 @@ export default function BookingFormsPage({
           consent_form: consentForm,
           intake_questions: intakeQuestions,
           intake_template_id: intakeTemplateId,
+          intake_completed_response: intakeCompletedResponse,
           booking_id: apiData.booking_id || id,
           service_name: apiData.service_name,
           practitioner_name: apiData.practitioner_name,
@@ -181,7 +207,13 @@ export default function BookingFormsPage({
         setSignerName(data.consent_form.signer_name || "")
       }
 
-      // Pre-fill intake responses
+      // Mark intake as already submitted if the API says so
+      if (data.intake_completed_response) {
+        setIntakeSubmitted(true)
+        setIsEditingIntake(false)
+      }
+
+      // Pre-fill intake responses (from completed data or previous responses)
       const prefilled: Record<string, any> = {}
       data.intake_questions?.forEach((q) => {
         if (q.previous_response !== undefined && q.previous_response !== null) {
@@ -302,13 +334,18 @@ export default function BookingFormsPage({
       await handleSignConsent()
     }
 
-    // Then submit intake if there are questions
+    // Then submit intake if there are questions (or re-submit if editing)
     if (
       formsData?.intake_questions &&
       formsData.intake_questions.length > 0 &&
-      !intakeSubmitted
+      (!intakeSubmitted || isEditingIntake)
     ) {
+      // When editing, temporarily mark as not submitted so handleSubmitIntake works
+      if (isEditingIntake) {
+        setIntakeSubmitted(false)
+      }
       await handleSubmitIntake()
+      setIsEditingIntake(false)
     }
 
     // Redirect back
@@ -505,6 +542,70 @@ export default function BookingFormsPage({
     }
   }
 
+  // ----- Read-only answer renderer -----
+
+  const renderReadOnlyAnswer = (question: IntakeQuestion, answer: any) => {
+    if (answer === undefined || answer === null || answer === "") {
+      return <span className="italic text-muted-foreground/60">No response</span>
+    }
+
+    switch (question.question_type) {
+      case "multiple_choice": {
+        const selected: string[] = Array.isArray(answer) ? answer : [answer]
+        if (selected.length === 0) {
+          return <span className="italic text-muted-foreground/60">No response</span>
+        }
+        // Map values back to labels if options are available
+        const labels = selected.map((val) => {
+          const opt = question.options?.find((o) => o.value === val)
+          return opt?.label || val
+        })
+        return <span>{labels.join(", ")}</span>
+      }
+
+      case "single_choice": {
+        const opt = question.options?.find((o) => o.value === answer)
+        return <span>{opt?.label || answer}</span>
+      }
+
+      case "yes_no":
+        return <span className="capitalize">{answer}</span>
+
+      case "scale":
+        return (
+          <span>
+            {answer}
+            {question.scale_min !== undefined && question.scale_max !== undefined && (
+              <span className="text-muted-foreground/60 ml-1">
+                (out of {question.scale_max})
+              </span>
+            )}
+          </span>
+        )
+
+      case "date":
+        try {
+          return (
+            <span>
+              {new Date(answer).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          )
+        } catch {
+          return <span>{answer}</span>
+        }
+
+      case "file_upload":
+        return <span className="italic">File uploaded</span>
+
+      default:
+        return <span className="whitespace-pre-wrap">{String(answer)}</span>
+    }
+  }
+
   // ----- Loading state -----
 
   if (isLoading) {
@@ -565,7 +666,7 @@ export default function BookingFormsPage({
   const hasIntake =
     formsData?.intake_questions && formsData.intake_questions.length > 0
   const allDone =
-    (!hasConsent || consentSigned) && (!hasIntake || intakeSubmitted)
+    (!hasConsent || consentSigned) && (!hasIntake || (intakeSubmitted && !isEditingIntake))
 
   if (!hasConsent && !hasIntake) {
     return (
@@ -758,26 +859,83 @@ export default function BookingFormsPage({
                 <CardTitle className="font-serif text-lg font-normal text-olive-900">
                   Intake Questionnaire
                 </CardTitle>
-                {intakeSubmitted && (
+                {intakeSubmitted && !isEditingIntake && (
                   <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
                 )}
               </div>
-              <CardDescription>
-                Please answer the following questions to help your practitioner
-                prepare for your session.
-              </CardDescription>
+              {intakeSubmitted && !isEditingIntake ? (
+                <CardDescription>
+                  Your responses have been submitted.
+                  {formsData.intake_completed_response?.submitted_at && (
+                    <span className="block mt-1 text-xs text-muted-foreground">
+                      Submitted on{" "}
+                      {new Date(formsData.intake_completed_response.submitted_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </CardDescription>
+              ) : (
+                <CardDescription>
+                  Please answer the following questions to help your practitioner
+                  prepare for your session.
+                </CardDescription>
+              )}
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {intakeSubmitted ? (
-                <div className="flex items-center gap-3 rounded-md border border-green-200 bg-green-50 p-4">
-                  <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                  <p className="text-sm font-medium text-green-800">
-                    Your responses have been submitted. Thank you!
-                  </p>
-                </div>
+              {intakeSubmitted && !isEditingIntake ? (
+                <>
+                  {/* Read-only view of submitted responses */}
+                  {formsData.intake_questions.map((question, index) => {
+                    const answer = responses[question.id]
+                    return (
+                      <div key={question.id} className="space-y-1">
+                        {index > 0 && <Separator className="mb-4" />}
+                        <p className="text-sm font-medium text-olive-900 leading-snug">
+                          {question.question_text}
+                        </p>
+                        <div className="text-sm text-muted-foreground bg-sage-50/40 rounded-md px-3 py-2">
+                          {renderReadOnlyAnswer(question, answer)}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {/* Edit Responses button */}
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditingIntake(true)}
+                      className="w-full"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit Responses
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <>
+                  {isEditingIntake && (
+                    <div className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 p-3 mb-2">
+                      <p className="text-sm text-amber-800">
+                        You are editing your previously submitted responses.
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsEditingIntake(false)}
+                        className="text-amber-700 hover:text-amber-900"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Only
+                      </Button>
+                    </div>
+                  )}
                   {formsData.intake_questions.map((question, index) => (
                     <div key={question.id} className="space-y-2">
                       {index > 0 && <Separator className="mb-4" />}
@@ -817,6 +975,8 @@ export default function BookingFormsPage({
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Submitting...
                 </>
+              ) : isEditingIntake ? (
+                "Update Responses"
               ) : (
                 "Submit Forms"
               )}

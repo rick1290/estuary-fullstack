@@ -384,7 +384,7 @@ export default function CourseDelivery({ bookingUuid, journeyData }: CourseDeliv
             className="inline-flex items-center gap-2 text-[13px] text-olive-500 hover:text-olive-700 transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            My Journeys
+            My Journey
           </Link>
           <span
             className={`inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase px-3 py-1 rounded-full ${

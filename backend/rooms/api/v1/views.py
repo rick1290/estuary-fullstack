@@ -482,10 +482,8 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
         2. Remove all participants from the LiveKit room (kicks them gracefully)
         3. Mark the Room as ended
         4. Mark all participants as left
+        5. Auto-mark the ServiceSession and associated Bookings as completed
 
-        NOTE: This does NOT mark the ServiceSession as completed.
-        The practitioner must explicitly mark the session as completed
-        from their dashboard after reviewing the session.
         The LiveKit room is NOT deleted — it will expire naturally
         via empty_timeout, allowing rejoin within ~5 minutes if needed.
         """
@@ -549,6 +547,20 @@ class RoomViewSet(viewsets.ReadOnlyModelViewSet):
             # 4. Mark all active participants as left
             active_participants = room.participants.filter(left_at__isnull=True)
             active_participants.update(left_at=now)
+
+            # 5. Auto-mark ServiceSession as completed
+            if room.service_session and room.service_session.status in ('scheduled', 'in_progress'):
+                room.service_session.status = 'completed'
+                room.service_session.actual_end_time = now
+                room.service_session.save(update_fields=['status', 'actual_end_time', 'updated_at'])
+                logger.info(f"Auto-marked ServiceSession {room.service_session.id} as completed")
+
+                # Also mark associated bookings as completed
+                from bookings.models import Booking
+                Booking.objects.filter(
+                    service_session=room.service_session,
+                    status='confirmed'
+                ).update(status='completed', completed_at=now)
 
             # Build redirect info for the frontend
             redirect_info = {}

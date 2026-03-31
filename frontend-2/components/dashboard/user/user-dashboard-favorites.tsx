@@ -94,27 +94,27 @@ export default function UserDashboardFavorites() {
         {practitioners.length > 0 && (
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">Practitioners</h3>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {practitioners.map((practitioner: any) => (
                 <Link
                   key={practitioner.id}
                   href={`/practitioners/${practitioner.slug || practitioner.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-cream-50/50 hover:bg-sage-50 transition-colors"
+                  className="flex flex-col items-center gap-2 p-4 rounded-lg border border-sage-100 bg-cream-50/50 hover:bg-sage-50 hover:border-sage-200 transition-colors h-full text-center"
                 >
-                  <Avatar className="h-12 w-12">
+                  <Avatar className="h-14 w-14">
                     <AvatarImage src={practitioner.profile_image_url} />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-br from-sage-100 to-terracotta-100 text-olive-700">
                       {practitioner.display_name?.charAt(0) || 'P'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 w-full">
                     <p className="font-medium text-sm truncate">
                       {practitioner.display_name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {practitioner.professional_title || "Wellness Practitioner"}
                     </p>
-                    <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center justify-center gap-3 mt-1.5">
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
                         <span className="text-xs">{practitioner.average_rating || 0}</span>

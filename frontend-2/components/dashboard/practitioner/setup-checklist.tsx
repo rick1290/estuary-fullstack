@@ -88,7 +88,7 @@ export default function SetupChecklist() {
                     <PartyPopper className="h-6 w-6 text-sage-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-olive-900">You're all set!</h3>
+                    <h3 className="font-serif font-semibold text-olive-900">You're all set!</h3>
                     <p className="text-sm text-muted-foreground">
                       Your practice is ready to receive clients. Great work!
                     </p>

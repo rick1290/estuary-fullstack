@@ -44,7 +44,7 @@ export default function RoomError({
           >
             <Link href="/dashboard/user/journeys">
               <CalendarDays className="h-4 w-4 mr-2" />
-              Back to My Journeys
+              Back to My Journey
             </Link>
           </Button>
         </div>

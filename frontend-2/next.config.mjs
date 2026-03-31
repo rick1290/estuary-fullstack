@@ -9,8 +9,19 @@ const nextConfig = {
   },
   transpilePackages: ['@livekit/components-react', '@livekit/components-core'],
   images: {
-    unoptimized: true,
-    domains: ['localhost'],
+    remotePatterns: [
+      // Local development
+      { protocol: 'http', hostname: 'localhost' },
+      // Unsplash (modality/category images)
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      // Placeholder avatars
+      { protocol: 'https', hostname: 'i.pravatar.cc' },
+      // Cloudflare R2 storage (media uploads)
+      { protocol: 'https', hostname: '*.r2.dev' },
+      { protocol: 'https', hostname: '*.r2.cloudflarestorage.com' },
+      // Backend API-served images (production)
+      { protocol: 'https', hostname: '*.onrender.com' },
+    ],
   },
   async rewrites() {
     return [

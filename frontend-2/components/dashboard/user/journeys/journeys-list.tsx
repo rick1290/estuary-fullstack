@@ -116,7 +116,7 @@ export default function JourneysList() {
     <div className="space-y-5">
       {/* Page header */}
       <h1 className="font-serif text-2xl font-normal text-olive-900">
-        My Journeys
+        My Journey
       </h1>
 
       {/* Tabs + Filters */}

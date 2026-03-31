@@ -206,7 +206,7 @@ function HeroSection({
             href="/dashboard/user/journeys"
             className="hover:text-[#5a5040] transition-colors"
           >
-            My Journeys
+            My Journey
           </Link>
           <ChevronRight className="w-3 h-3" />
           <Link
