@@ -64,23 +64,9 @@ export default function RoomPage() {
   const endSessionMutation = useMutation(roomsEndSessionCreateMutation());
 
   const handleLeaveRoom = () => {
-    // Clean up and redirect to session detail pages
+    // Clean up and redirect to post-call screen
     sessionStorage.removeItem('roomSettings');
-
-    const sessionId = accessData?.service_session?.id;
-    const bookingUuid = (accessData as any)?.my_booking?.public_uuid;
-
-    if (accessData?.role === 'host' && sessionId) {
-      // Practitioner → session detail page where they can review & mark complete
-      router.push(`/dashboard/practitioner/sessions/${sessionId}`);
-    } else if (bookingUuid) {
-      // Client → journey detail page where they can review & leave feedback
-      router.push(`/dashboard/user/journeys/${bookingUuid}`);
-    } else if (accessData?.role === 'host') {
-      router.push('/dashboard/practitioner');
-    } else {
-      router.push('/dashboard/user');
-    }
+    router.push(`/room/${roomId}/complete`);
   };
 
   const handleStartRecording = async (options: {
