@@ -389,7 +389,7 @@ export default function ModalityCategoryPageContent({ slug }: ModalityCategoryPa
                     <h3 className="text-sm font-medium text-olive-900 group-hover:text-terracotta-700 transition-colors">
                       {cat.name}
                     </h3>
-                    <p className="text-xs text-olive-500 mt-1">{cat.modalities?.length || '—'} modalities</p>
+                    <p className="text-xs text-olive-500 mt-1">{cat.modality_count || cat.modalities?.length || '—'} modalities</p>
                   </Link>
                 ))}
               </div>

@@ -97,6 +97,7 @@ export default async function ModalityCategoryPage({ params }: CategoryPageProps
       {modalities.length > 0 && (
         <JsonLd
           data={itemListSchema(
+            `${name} Modalities`,
             modalities.map((m: any) => ({
               name: m.name,
               url: `${SITE_URL}/modalities/${m.slug}`,
