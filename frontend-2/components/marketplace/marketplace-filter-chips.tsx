@@ -100,7 +100,7 @@ export default function MarketplaceFilterChips() {
     (filters.rating !== "any" ? 1 : 0)
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+    <div className="flex items-center gap-2 pb-1 flex-wrap">
       {/* Modality filter */}
       <FilterChip
         label="Modality"
