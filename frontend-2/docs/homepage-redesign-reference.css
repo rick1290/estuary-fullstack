@@ -1,0 +1,1834 @@
+400;0,500;0,600;0,700;1,300;1,400;1,500\u0026family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400\u0026display=swap\" rel=\"stylesheet\"\u003e
+\u003cstyle\u003e
+:root {
+  --sage: #7A8B6F;
+  --sage-light: #95A888;
+  --sage-muted: #B8C4AE;
+  --sage-pale: #E8EDE4;
+  --clay: #C4956A;
+  --clay-light: #D4AA83;
+  --clay-warm: #E8C9A8;
+  --bark: #4A3F35;
+  --bark-light: #6B5D50;
+  --cream: #FAF7F2;
+  --cream-warm: #F5EDE2;
+  --mist: #F0EDE8;
+  --white: #FFFFFF;
+  --text-primary: #2D2A26;
+  --text-secondary: #6B6560;
+  --text-muted: #9B9590;
+  --amber: #D4A84B;
+  --amber-light: #F0DDB4;
+  --rose: #C98B8B;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--cream);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ NAV ============ */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 48px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(250, 247, 242, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(74, 63, 53, 0.06);
+  transition: all 0.4s ease;
+}
+.nav.scrolled {
+  background: rgba(250, 247, 242, 0.95);
+  box-shadow: 0 1px 20px rgba(74, 63, 53, 0.06);
+}
+.nav-logo {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--bark);
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.25s;
+}
+.nav-links a:hover { color: var(--bark); }
+.nav-cta {
+  padding: 8px 20px;
+  background: var(--sage);
+  color: var(--white) !important;
+  border-radius: 8px;
+  font-weight: 500 !important;
+  transition: all 0.25s !important;
+}
+.nav-cta:hover { background: var(--bark) !important; }
+
+/* ============ HERO ============ */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 48px 80px;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(122, 139, 111, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 80% 60%, rgba(196, 149, 106, 0.1) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(196, 149, 106, 0.06) 0%, transparent 70%);
+  animation: bgShift 12s ease-in-out infinite alternate;
+}
+@keyframes bgShift {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+
+/* Floating organic shapes */
+.hero-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.06;
+  z-index: 0;
+}
+.hero-shape-1 {
+  width: 600px; height: 600px;
+  background: var(--sage);
+  top: -200px; right: -150px;
+  animation: float1 20s ease-in-out infinite;
+}
+.hero-shape-2 {
+  width: 400px; height: 400px;
+  background: var(--clay);
+  bottom: -100px; left: -100px;
+  animation: float2 16s ease-in-out infinite;
+}
+.hero-shape-3 {
+  width: 200px; height: 200px;
+  background: var(--sage-muted);
+  top: 30%; left: 10%;
+  animation: float3 14s ease-in-out infinite;
+}
+@keyframes float1 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-30px, 20px) rotate(5deg); } }
+@keyframes float2 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(20px, -30px) rotate(-3deg); } }
+@keyframes float3 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(15px, 15px); } }
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 800px;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(122, 139, 111, 0.1);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sage);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeUp 0.8s ease both;
+}
+.hero-eyebrow .pulse {
+  width: 6px; height: 6px;
+  background: var(--sage);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--bark);
+  margin-bottom: 20px;
+  animation: fadeUp 0.8s ease 0.1s both;
+}
+.hero h1 em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--sage);
+}
+.hero-sub {
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto 44px;
+  animation: fadeUp 0.8s ease 0.2s both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Discovery Paths ---- */
+.discovery-paths {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 720px;
+  width: 100%;
+  margin-bottom: 48px;
+  animation: fadeUp 0.8s ease 0.35s both;
+}
+.discovery-card {
+  position: relative;
+  padding: 28px 24px;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(74, 63, 53, 0.06);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  text-align: left;
+  overflow: hidden;
+}
+.discovery-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.discovery-card:nth-child(1)::before { background: linear-gradient(135deg, rgba(122,139,111,0.08), rgba(122,139,111,0.02)); }
+.discovery-card:nth-child(2)::before { background: linear-gradient(135deg, rgba(196,149,106,0.08), rgba(196,149,106,0.02)); }
+.discovery-card:nth-child(3)::before { background: linear-gradient(135deg, rgba(212,168,75,0.08), rgba(212,168,75,0.02)); }
+.discovery-card:hover::before { opacity: 1; }
+.discovery-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(74, 63, 53, 0.08);
+  border-color: transparent;
+}
+.discovery-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+.discovery-card:nth-child(1) .discovery-icon { background: var(--sage-pale); }
+.discovery-card:nth-child(2) .discovery-icon { background: var(--clay-warm); }
+.discovery-card:nth-child(3) .discovery-icon { background: var(--amber-light); }
+.discovery-card h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--bark);
+  margin-bottom: 6px;
+}
+.discovery-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.discovery-arrow {
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: all 0.3s;
+  opacity: 0;
+  transform: translateX(-4px);
+}
+.discovery-card:hover .discovery-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ---- Search Bar ---- */
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 600px;
+  width: 100%;
+  padding: 6px 6px 6px 24px;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 2px 20px rgba(74, 63, 53, 0.06);
+  border: 1px solid rgba(74, 63, 53, 0.08);
+  transition: all 0.3s;
+  animation: fadeUp 0.8s ease 0.45s both;
+}
+.hero-search:focus-within {
+  box-shadow: 0 4px 30px rgba(74, 63, 53, 0.1);
+  border-color: var(--sage-muted);
+}
+.search-icon { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+.hero-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text-primary);
+  background: transparent;
+}
+.hero-search input::placeholder { color: var(--text-muted); }
+.search-btn {
+  padding: 12px 28px;
+  background: var(--sage);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  white-space: nowrap;
+}
+.search-btn:hover { background: var(--bark); }
+
+/* ---- Quick tags ---- */
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  animation: fadeUp 0.8s ease 0.55s both;
+}
+.hero-tag {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(74, 63, 53, 0.08);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.hero-tag:hover {
+  background: var(--white);
+  border-color: var(--sage-muted);
+  color: var(--bark);
+}
+
+/* ============ HAPPENING NOW ============ */
+.happening {
+  padding: 80px 48px;
+  position: relative;
+}
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 8px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 400;
+  color: var(--bark);
+}
+.section-title em {
+  font-style: italic;
+  color: var(--clay);
+}
+.section-link {
+  font-size: 14px;
+  color: var(--sage);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.25s;
+  white-space: nowrap;
+}
+.section-link:hover { color: var(--bark); }
+
+/* Activity ticker */
+.activity-ticker {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(122, 139, 111, 0.06);
+  border-radius: 100px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  animation: tickerSlide 30s linear infinite;
+}
+.ticker-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--sage);
+}
+@keyframes tickerSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Happening cards — asymmetric layout */
+.happening-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+}
+.happening-card {
+  background: var(--white);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(74, 63, 53, 0.05);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+  position: relative;
+}
+.happening-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(74, 63, 53, 0.08);
+}
+.happening-card.featured {
+  grid-row: span 2;
+}
+.card-image {
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  background: var(--mist);
+  position: relative;
+  overflow: hidden;
+}
+.featured .card-image {
+  aspect-ratio: 16/14;
+}
+.card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+.card-image-placeholder.img-1 { background: linear-gradient(135deg, var(--sage-pale), var(--cream-warm)); }
+.card-image-placeholder.img-2 { background: linear-gradient(135deg, var(--clay-warm), var(--cream)); }
+.card-image-placeholder.img-3 { background: linear-gradient(135deg, var(--amber-light), var(--cream-warm)); }
+.card-image-placeholder.img-4 { background: linear-gradient(135deg, var(--mist), var(--sage-pale)); }
+.card-image-placeholder.img-5 { background: linear-gradient(135deg, var(--cream-warm), var(--clay-warm)); }
+
+.card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+.badge-live {
+  background: rgba(122, 139, 111, 0.9);
+  color: var(--white);
+}
+.badge-live .badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #90EE90;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.badge-soon {
+  background: rgba(196, 149, 106, 0.9);
+  color: var(--white);
+}
+.badge-new {
+  background: rgba(212, 168, 75, 0.85);
+  color: var(--white);
+}
+.card-spots {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  z-index: 2;
+}
+
+.card-body {
+  padding: 20px;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.card-type {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.type-workshop { color: var(--clay); }
+.type-session { color: var(--sage); }
+.type-course { color: var(--amber); }
+.card-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--bark);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.featured .card-title {
+  font-size: 24px;
+}
+.card-desc {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-practitioner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.practitioner-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--sage-pale);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sage);
+}
+.practitioner-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.card-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bark);
+}
+
+/* ============ INTENT DISCOVERY ============ */
+.intent-section {
+  padding: 80px 48px 100px;
+  background: var(--white);
+  position: relative;
+}
+.intent-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74,63,53,0.08), transparent);
+}
+.intent-intro {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 48px;
+}
+.intent-intro p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.intent-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.intent-card {
+  padding: 28px 24px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+.intent-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  transition: opacity 0.35s;
+}
+.intent-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(74, 63, 53, 0.06);
+}
+.intent-card-1 { background: var(--sage-pale); }
+.intent-card-2 { background: #F5EAE0; }
+.intent-card-3 { background: #EDE8E0; }
+.intent-card-4 { background: #E8EBE4; }
+.intent-card-5 { background: #F0E8E0; }
+.intent-card-6 { background: #E5E8E2; }
+.intent-card-7 { background: #F2EDE4; }
+.intent-card-8 { background: #E8E5E0; }
+
+.intent-emoji {
+  font-size: 28px;
+  margin-bottom: 14px;
+  display: block;
+}
+.intent-card h4 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--bark);
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+.intent-card p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+.intent-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============ FEATURED PRACTITIONERS ============ */
+.practitioners {
+  padding: 100px 48px;
+  position: relative;
+  overflow: hidden;
+}
+.practitioners-scroll {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-bottom: 8px;
+}
+.practitioners-scroll::-webkit-scrollbar { display: none; }
+
+.practitioner-card {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  background: var(--white);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(74, 63, 53, 0.05);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+}
+.practitioner-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(74, 63, 53, 0.1);
+}
+.practitioner-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  position: relative;
+  overflow: hidden;
+}
+.practitioner-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+.pi-1 { background: linear-gradient(160deg, var(--sage-pale), var(--cream-warm)); }
+.pi-2 { background: linear-gradient(160deg, var(--clay-warm), var(--cream)); }
+.pi-3 { background: linear-gradient(160deg, #E8E5E0, var(--sage-pale)); }
+.pi-4 { background: linear-gradient(160deg, var(--cream-warm), var(--mist)); }
+.pi-5 { background: linear-gradient(160deg, var(--amber-light), var(--cream)); }
+
+.practitioner-info {
+  padding: 20px;
+}
+.practitioner-specialty {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sage);
+  margin-bottom: 6px;
+}
+.practitioner-card-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--bark);
+  margin-bottom: 6px;
+}
+.practitioner-tagline {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.practitioner-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.practitioner-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stat-star { color: var(--amber); }
+
+/* ============ SOCIAL PROOF STRIP ============ */
+.social-strip {
+  padding: 40px 48px;
+  background: var(--sage);
+  color: var(--white);
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  position: relative;
+  overflow: hidden;
+}
+.social-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url(\"data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='rgba(255,255,255,0.06)'/%3E%3C/svg%3E\");
+}
+.social-stat {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.social-number {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.social-label {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* ============ PRACTITIONER CTA ============ */
+.practitioner-cta {
+  padding: 100px 48px;
+  background: var(--bark);
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+.practitioner-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 80% 50%, rgba(122, 139, 111, 0.15) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 20% 80%, rgba(196, 149, 106, 0.1) 0%, transparent 60%);
+}
+.cta-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.cta-quote {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  opacity: 0.95;
+}
+.cta-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.cta-author-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.cta-author-name {
+  font-weight: 500;
+  font-size: 15px;
+}
+.cta-author-title {
+  font-size: 13px;
+  opacity: 0.7;
+}
+.cta-right h2 {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.5vw, 42px);
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+.cta-right h2 em {
+  font-style: italic;
+  color: var(--clay-light);
+}
+.cta-right p {
+  font-size: 15px;
+  line-height: 1.7;
+  opacity: 0.8;
+  margin-bottom: 32px;
+}
+.cta-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 36px;
+}
+.cta-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+.cta-feature-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: var(--clay);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+}
+.cta-btn:hover { background: var(--clay-light); transform: translateY(-2px); }
+
+/* ============ FOOTER ============ */
+.footer {
+  padding: 64px 48px 32px;
+  background: var(--cream);
+  border-top: 1px solid rgba(74, 63, 53, 0.06);
+}
+.footer-top {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 48px;
+}
+.footer-brand p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-top: 12px;
+  max-width: 280px;
+}
+.footer h4 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--bark);
+  margin-bottom: 16px;
+}
+.footer ul { list-style: none; }
+.footer ul li { margin-bottom: 10px; }
+.footer ul a {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.25s;
+}
+.footer ul a:hover { color: var(--bark); }
+.footer-bottom {
+  padding-top: 24px;
+  border-top: 1px solid rgba(74, 63, 53, 0.06);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ============ SCROLL REVEALS ============ */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .nav { padding: 0 24px; }
+  .hero { padding: 100px 24px 60px; }
+  .discovery-paths { grid-template-columns: 1fr; max-width: 400px; }
+  .happening { padding: 60px 24px; }
+  .happening-grid { grid-template-columns: 1fr; }
+  .happening-card.featured { grid-row: span 1; }
+  .intent-section { padding: 60px 24px 80px; }
+  .intent-grid { grid-template-columns: repeat(2, 1fr); }
+  .practitioners { padding: 60px 24px; }
+  .social-strip { flex-wrap: wrap; gap: 32px; padding: 32px 24px; }
+  .practitioner-cta { padding: 60px 24px; }
+  .cta-layout { grid-template-columns: 1fr; gap: 40px; }
+  .footer { padding: 48px 24px 24px; }
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+\u003c/style\u003e
+\u003c/head\u003e
+\u003cbody\u003e
+
+\u003c!-- NAV --\u003e
+\u003cnav class=\"nav\" id=\"nav\"\u003e
+  \u003cdiv class=\"nav-logo\"\u003eE S T U A R Y\u003c/div\u003e
+  \u003cul class=\"nav-links\"\u003e
+    \u003cli\u003e\u003ca href=\"#\"\u003ePractitioners\u003c/a\u003e\u003c/li\u003e
+    \u003cli\u003e\u003ca href=\"#\"\u003eWorkshops\u003c/a\u003e\u003c/li\u003e
+    \u003cli\u003e\u003ca href=\"#\"\u003eModalities\u003c/a\u003e\u003c/li\u003e
+    \u003cli\u003e\u003ca href=\"#\"\u003eStreams\u003c/a\u003e\u003c/li\u003e
+    \u003cli\u003e\u003ca href=\"#\" class=\"nav-cta\"\u003eGet Started\u003c/a\u003e\u003c/li\u003e
+  \u003c/ul\u003e
+\u003c/nav\u003e
+
+\u003c!-- HERO --\u003e
+\u003csection class=\"hero\"\u003e
+  \u003cdiv class=\"hero-bg\"\u003e
+    \u003cdiv class=\"hero-shape hero-shape-1\"\u003e\u003c/div\u003e
+    \u003cdiv class=\"hero-shape hero-shape-2\"\u003e\u003c/div\u003e
+    \u003cdiv class=\"hero-shape hero-shape-3\"\u003e\u003c/div\u003e
+  \u003c/div\u003e
+  \u003cdiv class=\"hero-content\"\u003e
+    \u003cdiv class=\"hero-eyebrow\"\u003e
+      \u003cspan class=\"pulse\"\u003e\u003c/span\u003e
+      420+ practitioners · 2,800+ sessions booked
+    \u003c/div\u003e
+
+    \u003ch1\u003eFind Your Path to\u003cbr\u003eWellness \u0026 \u003cem\u003eGrowth\u003c/em\u003e\u003c/h1\u003e
+    \u003cp class=\"hero-sub\"\u003eConnect with vetted practitioners, join transformative workshops, and discover modalities that meet you where you are.\u003c/p\u003e
+
+    \u003c!-- Discovery Paths --\u003e
+    \u003cdiv class=\"discovery-paths\"\u003e
+      \u003cdiv class=\"discovery-card\"\u003e
+        \u003cdiv class=\"discovery-icon\"\u003e🧭\u003c/div\u003e
+        \u003cspan class=\"discovery-arrow\"\u003e→\u003c/span\u003e
+        \u003ch3\u003eFind a Practitioner\u003c/h3\u003e
+        \u003cp\u003eBrowse by modality, specialty, or availability\u003c/p\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"discovery-card\"\u003e
+        \u003cdiv class=\"discovery-icon\"\u003e✨\u003c/div\u003e
+        \u003cspan class=\"discovery-arrow\"\u003e→\u003c/span\u003e
+        \u003ch3\u003eJoin a Workshop\u003c/h3\u003e
+        \u003cp\u003eLive \u0026 recorded sessions starting this week\u003c/p\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"discovery-card\"\u003e
+        \u003cdiv class=\"discovery-icon\"\u003e🌿\u003c/div\u003e
+        \u003cspan class=\"discovery-arrow\"\u003e→\u003c/span\u003e
+        \u003ch3\u003eExplore Modalities\u003c/h3\u003e
+        \u003cp\u003eDiscover 148 healing \u0026 growth practices\u003c/p\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003c!-- Search --\u003e
+    \u003cdiv class=\"hero-search\"\u003e
+      \u003cspan class=\"search-icon\"\u003e🔍\u003c/span\u003e
+      \u003cinput type=\"text\" placeholder=\"Try \u0026quot;reiki near me\u0026quot; or \u0026quot;anxiety support\u0026quot; or \u0026quot;breathwork workshop\u0026quot;\"\u003e
+      \u003cbutton class=\"search-btn\"\u003eSearch\u003c/button\u003e
+    \u003c/div\u003e
+
+    \u003c!-- Quick tags --\u003e
+    \u003cdiv class=\"hero-tags\"\u003e
+      \u003cspan class=\"hero-tag\"\u003eEnergy Healing\u003c/span\u003e
+      \u003cspan class=\"hero-tag\"\u003eBreathwork\u003c/span\u003e
+      \u003cspan class=\"hero-tag\"\u003eSomatic Therapy\u003c/span\u003e
+      \u003cspan class=\"hero-tag\"\u003eMeditation\u003c/span\u003e
+      \u003cspan class=\"hero-tag\"\u003eSound Healing\u003c/span\u003e
+      \u003cspan class=\"hero-tag\"\u003eYoga\u003c/span\u003e
+      \u003cspan class=\"hero-tag\"\u003eReiki\u003c/span\u003e
+    \u003c/div\u003e
+  \u003c/div\u003e
+\u003c/section\u003e
+
+\u003c!-- HAPPENING NOW --\u003e
+\u003csection class=\"happening\"\u003e
+  \u003c!-- Activity ticker --\u003e
+  \u003cdiv class=\"activity-ticker\" id=\"ticker\"\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e Maria just booked a Reiki session with Elena R.\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e 3 new practitioners joined this week\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e Breathwork Circle starts in 2 hours\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e 14 people enrolled in Somatic Release Workshop\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e Jason completed his 10th session — congrats!\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e Maria just booked a Reiki session with Elena R.\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e 3 new practitioners joined this week\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e Breathwork Circle starts in 2 hours\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e 14 people enrolled in Somatic Release Workshop\u003c/div\u003e
+    \u003cdiv class=\"ticker-item\"\u003e\u003cspan class=\"ticker-dot\"\u003e\u003c/span\u003e Jason completed his 10th session — congrats!\u003c/div\u003e
+  \u003c/div\u003e
+
+  \u003cdiv class=\"section-header reveal\"\u003e
+    \u003cdiv\u003e
+      \u003cdiv class=\"section-label\"\u003eHappening This Week\u003c/div\u003e
+      \u003ch2 class=\"section-title\"\u003eDon't Miss \u003cem\u003eWhat's Next\u003c/em\u003e\u003c/h2\u003e
+    \u003c/div\u003e
+    \u003ca href=\"#\" class=\"section-link\"\u003eView all events →\u003c/a\u003e
+  \u003c/div\u003e
+
+  \u003cdiv class=\"happening-grid reveal\"\u003e
+    \u003c!-- Featured large card --\u003e
+    \u003cdiv class=\"happening-card featured\"\u003e
+      \u003cdiv class=\"card-image\"\u003e
+        \u003cdiv class=\"card-image-placeholder img-1\"\u003e🧘‍♀️\u003c/div\u003e
+        \u003cdiv class=\"card-badge badge-live\"\u003e\u003cspan class=\"badge-dot\"\u003e\u003c/span\u003e Live Today\u003c/div\u003e
+        \u003cdiv class=\"card-spots\"\u003e6 spots left\u003c/div\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"card-body\"\u003e
+        \u003cdiv class=\"card-meta\"\u003e
+          \u003cspan class=\"card-type type-workshop\"\u003eWorkshop\u003c/span\u003e
+          \u003cspan class=\"card-date\"\u003e· Today at 6:00 PM PST\u003c/span\u003e
+        \u003c/div\u003e
+        \u003ch3 class=\"card-title\"\u003eSomatic Release \u0026 Nervous System Regulation\u003c/h3\u003e
+        \u003cp class=\"card-desc\"\u003eA 90-minute immersive workshop combining somatic experiencing, breathwork, and gentle movement to help you release stored tension and restore your body's natural equilibrium.\u003c/p\u003e
+        \u003cdiv class=\"card-footer\"\u003e
+          \u003cdiv class=\"card-practitioner\"\u003e
+            \u003cdiv class=\"practitioner-avatar\"\u003eAR\u003c/div\u003e
+            \u003cspan class=\"practitioner-name\"\u003eDr. Amara Rodriguez\u003c/span\u003e
+          \u003c/div\u003e
+          \u003cspan class=\"card-price\"\u003e$45\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003c!-- Smaller cards --\u003e
+    \u003cdiv class=\"happening-card\"\u003e
+      \u003cdiv class=\"card-image\"\u003e
+        \u003cdiv class=\"card-image-placeholder img-2\"\u003e🔮\u003c/div\u003e
+        \u003cdiv class=\"card-badge badge-soon\"\u003eTomorrow\u003c/div\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"card-body\"\u003e
+        \u003cdiv class=\"card-meta\"\u003e
+          \u003cspan class=\"card-type type-session\"\u003e1:1 Session\u003c/span\u003e
+          \u003cspan class=\"card-date\"\u003e· Open slots available\u003c/span\u003e
+        \u003c/div\u003e
+        \u003ch3 class=\"card-title\"\u003eIntuitive Energy Reading\u003c/h3\u003e
+        \u003cdiv class=\"card-footer\"\u003e
+          \u003cdiv class=\"card-practitioner\"\u003e
+            \u003cdiv class=\"practitioner-avatar\"\u003eLK\u003c/div\u003e
+            \u003cspan class=\"practitioner-name\"\u003eLuna Kingsley\u003c/span\u003e
+          \u003c/div\u003e
+          \u003cspan class=\"card-price\"\u003e$85\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"happening-card\"\u003e
+      \u003cdiv class=\"card-image\"\u003e
+        \u003cdiv class=\"card-image-placeholder img-3\"\u003e🌬️\u003c/div\u003e
+        \u003cdiv class=\"card-badge badge-new\"\u003eNew\u003c/div\u003e
+        \u003cdiv class=\"card-spots\"\u003e12 spots left\u003c/div\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"card-body\"\u003e
+        \u003cdiv class=\"card-meta\"\u003e
+          \u003cspan class=\"card-type type-course\"\u003eCourse\u003c/span\u003e
+          \u003cspan class=\"card-date\"\u003e· Starts Apr 5\u003c/span\u003e
+        \u003c/div\u003e
+        \u003ch3 class=\"card-title\"\u003e4-Week Breathwork Foundations\u003c/h3\u003e
+        \u003cdiv class=\"card-footer\"\u003e
+          \u003cdiv class=\"card-practitioner\"\u003e
+            \u003cdiv class=\"practitioner-avatar\"\u003eMH\u003c/div\u003e
+            \u003cspan class=\"practitioner-name\"\u003eMichael Hartley\u003c/span\u003e
+          \u003c/div\u003e
+          \u003cspan class=\"card-price\"\u003e$120\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"happening-card\"\u003e
+      \u003cdiv class=\"card-image\"\u003e
+        \u003cdiv class=\"card-image-placeholder img-4\"\u003e🎵\u003c/div\u003e
+        \u003cdiv class=\"card-badge badge-soon\"\u003eThursday\u003c/div\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"card-body\"\u003e
+        \u003cdiv class=\"card-meta\"\u003e
+          \u003cspan class=\"card-type type-workshop\"\u003eWorkshop\u003c/span\u003e
+          \u003cspan class=\"card-date\"\u003e· Apr 3 at 7 PM\u003c/span\u003e
+        \u003c/div\u003e
+        \u003ch3 class=\"card-title\"\u003eSound Bath \u0026 Crystal Healing\u003c/h3\u003e
+        \u003cdiv class=\"card-footer\"\u003e
+          \u003cdiv class=\"card-practitioner\"\u003e
+            \u003cdiv class=\"practitioner-avatar\"\u003eSR\u003c/div\u003e
+            \u003cspan class=\"practitioner-name\"\u003eSage Riverstone\u003c/span\u003e
+          \u003c/div\u003e
+          \u003cspan class=\"card-price\"\u003e$35\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"happening-card\"\u003e
+      \u003cdiv class=\"card-image\"\u003e
+        \u003cdiv class=\"card-image-placeholder img-5\"\u003e💆\u003c/div\u003e
+        \u003cdiv class=\"card-badge badge-live\"\u003e\u003cspan class=\"badge-dot\"\u003e\u003c/span\u003e Booking Now\u003c/div\u003e
+      \u003c/div\u003e
+      \u003cdiv class=\"card-body\"\u003e
+        \u003cdiv class=\"card-meta\"\u003e
+          \u003cspan class=\"card-type type-session\"\u003e1:1 Session\u003c/span\u003e
+          \u003cspan class=\"card-date\"\u003e· Flexible scheduling\u003c/span\u003e
+        \u003c/div\u003e
+        \u003ch3 class=\"card-title\"\u003eTrauma-Informed Somatic Bodywork\u003c/h3\u003e
+        \u003cdiv class=\"card-footer\"\u003e
+          \u003cdiv class=\"card-practitioner\"\u003e
+            \u003cdiv class=\"practitioner-avatar\"\u003eJW\u003c/div\u003e
+            \u003cspan class=\"practitioner-name\"\u003eJordan West\u003c/span\u003e
+          \u003c/div\u003e
+          \u003cspan class=\"card-price\"\u003e$110\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+  \u003c/div\u003e
+\u003c/section\u003e
+
+\u003c!-- INTENT-BASED DISCOVERY --\u003e
+\u003csection class=\"intent-section\"\u003e
+  \u003cdiv class=\"intent-intro reveal\"\u003e
+    \u003cdiv class=\"section-label\"\u003eWhat Brings You Here?\u003c/div\u003e
+    \u003ch2 class=\"section-title\"\u003eStart with What You \u003cem\u003eNeed\u003c/em\u003e\u003c/h2\u003e
+    \u003cp\u003eYou don't need to know the modality — just what you're going through. We'll match you with the right practitioners and practices.\u003c/p\u003e
+  \u003c/div\u003e
+  \u003cdiv class=\"intent-grid reveal\"\u003e
+    \u003cdiv class=\"intent-card intent-card-1\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e😮‍💨\u003c/span\u003e
+      \u003ch4\u003eStress \u0026 Anxiety\u003c/h4\u003e
+      \u003cp\u003eBreathwork, meditation, somatic therapy \u0026 more\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e62 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-2\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e💔\u003c/span\u003e
+      \u003ch4\u003eGrief \u0026 Loss\u003c/h4\u003e
+      \u003cp\u003eGrief counseling, energy healing, spiritual support\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e34 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-3\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e🔄\u003c/span\u003e
+      \u003ch4\u003eLife Transition\u003c/h4\u003e
+      \u003cp\u003eCoaching, astrology, shamanic guidance\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e48 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-4\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e🌱\u003c/span\u003e
+      \u003ch4\u003ePersonal Growth\u003c/h4\u003e
+      \u003cp\u003eMindfulness, yoga, transformational coaching\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e71 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-5\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e🩹\u003c/span\u003e
+      \u003ch4\u003eChronic Pain\u003c/h4\u003e
+      \u003cp\u003eAcupuncture, bodywork, craniosacral therapy\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e29 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-6\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e😴\u003c/span\u003e
+      \u003ch4\u003eSleep \u0026 Rest\u003c/h4\u003e
+      \u003cp\u003eYoga nidra, sound healing, relaxation techniques\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e23 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-7\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e🔮\u003c/span\u003e
+      \u003ch4\u003eSpiritual Exploration\u003c/h4\u003e
+      \u003cp\u003ePsychic readings, channeling, plant medicine\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e55 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"intent-card intent-card-8\"\u003e
+      \u003cspan class=\"intent-emoji\"\u003e💪\u003c/span\u003e
+      \u003ch4\u003ePhysical Wellness\u003c/h4\u003e
+      \u003cp\u003eMovement, nutrition, holistic fitness, Ayurveda\u003c/p\u003e
+      \u003cdiv class=\"intent-count\"\u003e38 practitioners\u003c/div\u003e
+    \u003c/div\u003e
+  \u003c/div\u003e
+\u003c/section\u003e
+
+\u003c!-- FEATURED PRACTITIONERS --\u003e
+\u003csection class=\"practitioners\"\u003e
+  \u003cdiv class=\"section-header reveal\"\u003e
+    \u003cdiv\u003e
+      \u003cdiv class=\"section-label\"\u003eVetted \u0026 Verified\u003c/div\u003e
+      \u003ch2 class=\"section-title\"\u003eFeatured \u003cem\u003ePractitioners\u003c/em\u003e\u003c/h2\u003e
+    \u003c/div\u003e
+    \u003ca href=\"#\" class=\"section-link\"\u003eBrowse all practitioners →\u003c/a\u003e
+  \u003c/div\u003e
+
+  \u003cdiv class=\"practitioners-scroll reveal\"\u003e
+    \u003cdiv class=\"practitioner-card\"\u003e
+      \u003cdiv class=\"practitioner-img\"\u003e\u003cdiv class=\"practitioner-img-placeholder pi-1\"\u003e🧘‍♀️\u003c/div\u003e\u003c/div\u003e
+      \u003cdiv class=\"practitioner-info\"\u003e
+        \u003cdiv class=\"practitioner-specialty\"\u003eSomatic Experiencing\u003c/div\u003e
+        \u003cdiv class=\"practitioner-card-name\"\u003eDr. Amara Rodriguez\u003c/div\u003e
+        \u003cdiv class=\"practitioner-tagline\"\u003eSpecializes in trauma release \u0026 nervous system regulation\u003c/div\u003e
+        \u003cdiv class=\"practitioner-stats\"\u003e
+          \u003cspan\u003e\u003cspan class=\"stat-star\"\u003e★\u003c/span\u003e 4.9\u003c/span\u003e
+          \u003cspan\u003e· 230+ sessions\u003c/span\u003e
+          \u003cspan\u003e· Online \u0026 In-person\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"practitioner-card\"\u003e
+      \u003cdiv class=\"practitioner-img\"\u003e\u003cdiv class=\"practitioner-img-placeholder pi-2\"\u003e🌿\u003c/div\u003e\u003c/div\u003e
+      \u003cdiv class=\"practitioner-info\"\u003e
+        \u003cdiv class=\"practitioner-specialty\"\u003eReiki \u0026 Energy Healing\u003c/div\u003e
+        \u003cdiv class=\"practitioner-card-name\"\u003eElena Reyes\u003c/div\u003e
+        \u003cdiv class=\"practitioner-tagline\"\u003e20 years of Usui Reiki · gentle, heart-centered approach\u003c/div\u003e
+        \u003cdiv class=\"practitioner-stats\"\u003e
+          \u003cspan\u003e\u003cspan class=\"stat-star\"\u003e★\u003c/span\u003e 5.0\u003c/span\u003e
+          \u003cspan\u003e· 180+ sessions\u003c/span\u003e
+          \u003cspan\u003e· Online\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"practitioner-card\"\u003e
+      \u003cdiv class=\"practitioner-img\"\u003e\u003cdiv class=\"practitioner-img-placeholder pi-3\"\u003e🌬️\u003c/div\u003e\u003c/div\u003e
+      \u003cdiv class=\"practitioner-info\"\u003e
+        \u003cdiv class=\"practitioner-specialty\"\u003eBreathwork \u0026 Meditation\u003c/div\u003e
+        \u003cdiv class=\"practitioner-card-name\"\u003eMichael Hartley\u003c/div\u003e
+        \u003cdiv class=\"practitioner-tagline\"\u003eHolotropic breathwork facilitator · anxiety \u0026 stress focus\u003c/div\u003e
+        \u003cdiv class=\"practitioner-stats\"\u003e
+          \u003cspan\u003e\u003cspan class=\"stat-star\"\u003e★\u003c/span\u003e 4.8\u003c/span\u003e
+          \u003cspan\u003e· 150+ sessions\u003c/span\u003e
+          \u003cspan\u003e· Online \u0026 In-person\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"practitioner-card\"\u003e
+      \u003cdiv class=\"practitioner-img\"\u003e\u003cdiv class=\"practitioner-img-placeholder pi-4\"\u003e🎵\u003c/div\u003e\u003c/div\u003e
+      \u003cdiv class=\"practitioner-info\"\u003e
+        \u003cdiv class=\"practitioner-specialty\"\u003eSound Healing\u003c/div\u003e
+        \u003cdiv class=\"practitioner-card-name\"\u003eSage Riverstone\u003c/div\u003e
+        \u003cdiv class=\"practitioner-tagline\"\u003eCrystal bowls, gongs \u0026 tuning forks · deep relaxation\u003c/div\u003e
+        \u003cdiv class=\"practitioner-stats\"\u003e
+          \u003cspan\u003e\u003cspan class=\"stat-star\"\u003e★\u003c/span\u003e 4.9\u003c/span\u003e
+          \u003cspan\u003e· 95 sessions\u003c/span\u003e
+          \u003cspan\u003e· In-person\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+
+    \u003cdiv class=\"practitioner-card\"\u003e
+      \u003cdiv class=\"practitioner-img\"\u003e\u003cdiv class=\"practitioner-img-placeholder pi-5\"\u003e💫\u003c/div\u003e\u003c/div\u003e
+      \u003cdiv class=\"practitioner-info\"\u003e
+        \u003cdiv class=\"practitioner-specialty\"\u003eShamanic Healing\u003c/div\u003e
+        \u003cdiv class=\"practitioner-card-name\"\u003eDavid Two Ravens\u003c/div\u003e
+        \u003cdiv class=\"practitioner-tagline\"\u003eSoul retrieval, power animal journeys \u0026 ceremonial work\u003c/div\u003e
+        \u003cdiv class=\"practitioner-stats\"\u003e
+          \u003cspan\u003e\u003cspan class=\"stat-star\"\u003e★\u003c/span\u003e 4.9\u003c/span\u003e
+          \u003cspan\u003e· 310+ sessions\u003c/span\u003e
+          \u003cspan\u003e· Online \u0026 In-person\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+  \u003c/div\u003e
+\u003c/section\u003e
+
+\u003c!-- SOCIAL PROOF STRIP --\u003e
+\u003cdiv class=\"social-strip\"\u003e
+  \u003cdiv class=\"social-stat\"\u003e
+    \u003cdiv class=\"social-number\" data-count=\"420\"\u003e0\u003c/div\u003e
+    \u003cdiv class=\"social-label\"\u003eVerified Practitioners\u003c/div\u003e
+  \u003c/div\u003e
+  \u003cdiv class=\"social-stat\"\u003e
+    \u003cdiv class=\"social-number\" data-count=\"2800\"\u003e0\u003c/div\u003e
+    \u003cdiv class=\"social-label\"\u003eSessions Booked\u003c/div\u003e
+  \u003c/div\u003e
+  \u003cdiv class=\"social-stat\"\u003e
+    \u003cdiv class=\"social-number\" data-count=\"148\"\u003e0\u003c/div\u003e
+    \u003cdiv class=\"social-label\"\u003eModalities\u003c/div\u003e
+  \u003c/div\u003e
+  \u003cdiv class=\"social-stat\"\u003e
+    \u003cdiv class=\"social-number\" data-count=\"4.9\" data-decimal=\"true\"\u003e0\u003c/div\u003e
+    \u003cdiv class=\"social-label\"\u003eAvg. Rating\u003c/div\u003e
+  \u003c/div\u003e
+\u003c/div\u003e
+
+\u003c!-- PRACTITIONER CTA --\u003e
+\u003csection class=\"practitioner-cta\"\u003e
+  \u003cdiv class=\"cta-layout reveal\"\u003e
+    \u003cdiv class=\"cta-left\"\u003e
+      \u003cp class=\"cta-quote\"\u003e\"Estuary gave me the tools and the clients I needed to finally go full-time with my practice. I went from 3 bookings a month to 20+ — and the platform handles everything.\"\u003c/p\u003e
+      \u003cdiv class=\"cta-author\"\u003e
+        \u003cdiv class=\"cta-author-avatar\"\u003e🌿\u003c/div\u003e
+        \u003cdiv\u003e
+          \u003cdiv class=\"cta-author-name\"\u003eElena Reyes\u003c/div\u003e
+          \u003cdiv class=\"cta-author-title\"\u003eReiki Master · Estuary practitioner since 2025\u003c/div\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+    \u003c/div\u003e
+    \u003cdiv class=\"cta-right\"\u003e
+      \u003ch2\u003eYour Practice\u003cbr\u003eFinally Has a \u003cem\u003eHome\u003c/em\u003e\u003c/h2\u003e
+      \u003cp\u003eJoin a growing community of wellness practitioners. We handle scheduling, payments, and client matching — you focus on what you do best.\u003c/p\u003e
+      \u003cdiv class=\"cta-features\"\u003e
+        \u003cdiv class=\"cta-feature\"\u003e
+          \u003cdiv class=\"cta-feature-icon\"\u003e📅\u003c/div\u003e
+          \u003cspan\u003eBuilt-in scheduling \u0026 session management\u003c/span\u003e
+        \u003c/div\u003e
+        \u003cdiv class=\"cta-feature\"\u003e
+          \u003cdiv class=\"cta-feature-icon\"\u003e💳\u003c/div\u003e
+          \u003cspan\u003eIntegrated payments — get paid instantly\u003c/span\u003e
+        \u003c/div\u003e
+        \u003cdiv class=\"cta-feature\"\u003e
+          \u003cdiv class=\"cta-feature-icon\"\u003e📊\u003c/div\u003e
+          \u003cspan\u003eClient matching \u0026 growth analytics\u003c/span\u003e
+        \u003c/div\u003e
+        \u003cdiv class=\"cta-feature\"\u003e
+          \u003cdiv class=\"cta-feature-icon\"\u003e🎥\u003c/div\u003e
+          \u003cspan\u003eBuilt-in video for virtual sessions\u003c/span\u003e
+        \u003c/div\u003e
+      \u003c/div\u003e
+      \u003ca href=\"#\" class=\"cta-btn\"\u003eGet Started Free →\u003c/a\u003e
+    \u003c/div\u003e
+  \u003c/div\u003e
+\u003c/section\u003e
+
+\u003c!-- FOOTER --\u003e
+\u003cfooter class=\"footer\"\u003e
+  \u003cdiv class=\"footer-top\"\u003e
+    \u003cdiv class=\"footer-brand\"\u003e
+      \u003cdiv class=\"nav-logo\"\u003eE S T U A R Y\u003c/div\u003e
+      \u003cp\u003eA marketplace connecting clients with vetted wellness practitioners across 148 modalities. Find your path to healing and growth.\u003c/p\u003e
+    \u003c/div\u003e
+    \u003cdiv\u003e
+      \u003ch4\u003eExplore\u003c/h4\u003e
+      \u003cul\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eFind a Practitioner\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eBrowse Modalities\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eWorkshops\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eCourses\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eStreams\u003c/a\u003e\u003c/li\u003e
+      \u003c/ul\u003e
+    \u003c/div\u003e
+    \u003cdiv\u003e
+      \u003ch4\u003eFor Practitioners\u003c/h4\u003e
+      \u003cul\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eList Your Practice\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eHow It Works\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003ePricing\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eSuccess Stories\u003c/a\u003e\u003c/li\u003e
+      \u003c/ul\u003e
+    \u003c/div\u003e
+    \u003cdiv\u003e
+      \u003ch4\u003eCompany\u003c/h4\u003e
+      \u003cul\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eAbout\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eBlog\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eContact\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003ePrivacy\u003c/a\u003e\u003c/li\u003e
+        \u003cli\u003e\u003ca href=\"#\"\u003eTerms\u003c/a\u003e\u003c/li\u003e
+      \u003c/ul\u003e
+    \u003c/div\u003e
+  \u003c/div\u003e
+  \u003cdiv class=\"footer-bottom\"\u003e
+    \u003cspan\u003e© 2026 Estuary. All rights reserved.\u003c/span\u003e
+    \u003cspan\u003eMade with care for the healing community.\u003c/span\u003e
+  \u003c/div\u003e
+\u003c/footer\u003e
+
+\u003cscript\u003e
+// Nav scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () =\u003e {
+  nav.classList.toggle('scrolled', window.scrollY \u003e 40);
+});
+
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) =\u003e {
+  entries.forEach((entry, i) =\u003e {
+    if (entry.isIntersecting) {
+      setTimeout(() =\u003e entry.target.classList.add('visible'), i * 80);
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+reveals.forEach(el =\u003e revealObserver.observe(el));
+
+// Animated counters
+const counters = document.querySelectorAll('.social-number');
+const counterObserver = new IntersectionObserver((entries) =\u003e {
+  entries.forEach(entry =\u003e {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = parseFloat(el.dataset.count);
+      const isDecimal = el.dataset.decimal === 'true';
+      const duration = 1600;
+      const start = performance.now();
+      const animate = (now) =\u003e {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = target * eased;
+        if (isDecimal) {
+          el.textContent = current.toFixed(1);
+        } else {
+          el.textContent = Math.floor(current).toLocaleString() + (progress \u003c 1 ? '' : '+');
+        }
+        if (progress \u003c 1) requestAnimationFrame(animate);
+      };
+      requestAnimationFrame(animate);
+      counterObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+counters.forEach(el =\u003e counterObserver.observe(el));
+\u003c/script\u003e
+
+\u003c/body\u003e
+\u003c/html\u003e
+"])</script><script nonce="">self.__next_f.push([1,"6:[[\"$\",\"$L54\",null,{}],[\"$\",\"$L55\",null,{\"artifact\":{\"title\":\"estuary-homepage.html\",\"language\":\"$undefined\",\"type\":\"text/html\",\"content\":\"$56\",\"description\":\"Discover vetted wellness practitioners, join transformative workshops, and explore 148+ healing modalities. Connect with experts in meditation, reiki, breathwork, and more.\",\"content_score\":7,\"seo_title\":\"Estuary — Find Wellness Practitioners \u0026 Workshops\"},\"remixBaseUrl\":\"https://claude.ai\",\"artifactId\":\"b35e8359-7da9-419f-b718-804cb6744064\",\"activitySessionId\":\"c5276a8d-51a6-4652-8535-d38fa3d0d4bd\",\"shouldTakeSnapshot\":{\"mobile\":true,\"desktop\":true}}]]
+"])</script><script nonce="">self.__next_f.push([1,"57:I[3611703225,[],\"IconMark\"]
+"])</script><script nonce="">self.__next_f.push([1,"a:{\"metadata\":[[\"$\",\"title\",\"0\",{\"children\":\"Estuary — Find Wellness Practitioners \u0026 Workshops | Claude\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Discover vetted wellness practitioners, join transformative workshops, and explore 148+ healing modalities. Connect with experts in meditation, reiki, breathwork, and more.\"}],[\"$\",\"link\",\"2\",{\"rel\":\"manifest\",\"href\":\"/manifest.json?v=f0ecac8d7c\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"3\",{\"name\":\"robots\",\"content\":\"noindex, nofollow\"}],[\"$\",\"meta\",\"4\",{\"name\":\"application-ld+json\",\"content\":\"{\\\"@context\\\":\\\"https://schema.org\\\",\\\"@type\\\":\\\"CreativeWork\\\",\\\"name\\\":\\\"Estuary — Find Wellness Practitioners \u0026 Workshops\\\",\\\"description\\\":\\\"Discover vetted wellness practitioners, join transformative workshops, and explore 148+ healing modalities. Connect with experts in meditation, reiki, breathwork, and more.\\\",\\\"publisher\\\":{\\\"@type\\\":\\\"Organization\\\",\\\"name\\\":\\\"claude.ai\\\",\\\"url\\\":\\\"https://claude.ai\\\"},\\\"url\\\":\\\"https://claude.ai/public/artifacts/b35e8359-7da9-419f-b718-804cb6744064\\\",\\\"encodingFormat\\\":\\\"text/html\\\"}\"}],[\"$\",\"meta\",\"5\",{\"name\":\"apple-itunes-app\",\"content\":\"app-id=6473753684\"}],[\"$\",\"meta\",\"6\",{\"name\":\"mobile-web-app-capable\",\"content\":\"yes\"}],[\"$\",\"link\",\"7\",{\"href\":\"/images/claude_app_icon.png\",\"media\":\"$undefined\",\"rel\":\"apple-touch-startup-image\"}],[\"$\",\"meta\",\"8\",{\"name\":\"apple-mobile-web-app-status-bar-style\",\"content\":\"default\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:title\",\"content\":\"Estuary — Find Wellness Practitioners \u0026 Workshops\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:description\",\"content\":\"Discover vetted wellness practitioners, join transformative workshops, and explore 148+ healing modalities. Connect with experts in meditation, reiki, breathwork, and more.\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:url\",\"content\":\"https://claude.ai/public/artifacts/b35e8359-7da9-419f-b718-804cb6744064\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:site_name\",\"content\":\"Claude\"}],[\"$\",\"meta\",\"13\",{\"property\":\"og:image\",\"content\":\"https://claude.ai/images/claude_ogimage.png\"}],[\"$\",\"meta\",\"14\",{\"property\":\"og:image:width\",\"content\":\"1200\"}],[\"$\",\"meta\",\"15\",{\"property\":\"og:image:height\",\"content\":\"630\"}],[\"$\",\"meta\",\"16\",{\"property\":\"og:image:alt\",\"content\":\"estuary-homepage.html\"}],[\"$\",\"meta\",\"17\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"18\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"19\",{\"name\":\"twitter:title\",\"content\":\"Estuary — Find Wellness Practitioners \u0026 Workshops\"}],[\"$\",\"meta\",\"20\",{\"name\":\"twitter:description\",\"content\":\"Discover vetted wellness practitioners, join transformative workshops, and explore 148+ healing modalities. Connect with experts in meditation, reiki, breathwork, and more.\"}],[\"$\",\"meta\",\"21\",{\"name\":\"twitter:image\",\"content\":\"https://claude.ai/images/claude_ogimage.png\"}],[\"$\",\"link\",\"22\",{\"rel\":\"shortcut icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"23\",{\"rel\":\"icon\",\"href\":\"/favicon.svg\",\"type\":\"image/svg+xml\"}],[\"$\",\"link\",\"24\",{\"rel\":\"icon\",\"href\":\"/favicon-32x32.png\",\"sizes\":\"32x32\",\"type\":\"image/png\"}],[\"$\",\"link\",\"25\",{\"rel\":\"icon\",\"href\":\"/favicon-16x16.png\",\"sizes\":\"16x16\",\"type\":\"image/png\"}],[\"$\",\"link\",\"26\",{\"rel\":\"apple-touch-icon\",\"href\":\"/apple-touch-icon.png\"}],[\"$\",\"$L57\",\"27\",{}]],\"error\":null,\"digest\":\"$undefined\"}
+"])</script><script nonce="">self.__next_f.push([1,"f:\"$a:metadata\"
+"])</script><script nonce="">document.querySelectorAll('body link[rel="icon"], body link[rel="apple-touch-icon"]').forEach(el => document.head.appendChild(el))</script><script nonce="">$RB=[];$RV=function(a){$RT=performance.now();for(var b=0;b<a.length;b+=2){var c=a[b],e=a[b+1];null!==e.parentNode&&e.parentNode.removeChild(e);var f=c.parentNode;if(f){var g=c.previousSibling,h=0;do{if(c&&8===c.nodeType){var d=c.data;if("/$"===d||"/&"===d)if(0===h)break;else h--;else"$"!==d&&"$?"!==d&&"$~"!==d&&"$!"!==d&&"&"!==d||h++}d=c.nextSibling;f.removeChild(c);c=d}while(c);for(;e.firstChild;)f.insertBefore(e.firstChild,c);g.data="$";g._reactRetry&&requestAnimationFrame(g._reactRetry)}}a.length=0};
+$RC=function(a,b){if(b=document.getElementById(b))(a=document.getElementById(a))?(a.previousSibling.data="$~",$RB.push(a,b),2===$RB.length&&("number"!==typeof $RT?requestAnimationFrame($RV.bind(null,$RB)):(a=performance.now(),setTimeout($RV.bind(null,$RB),2300>a&&2E3<a?2300-a:$RT+300-a)))):b.parentNode.removeChild(b)};$RC("B:1","S:1")</script><script nonce="">$RC("B:0","S:0")</script><script nonce="">(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.nonce='eSLjeg7VWMC5M+vGu00kxw==';d.innerHTML="window.__CF$cv$params={r:'9e4cab035c0a351f',t:'MTc3NDkzMTk0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='eSLjeg7VWMC5M+vGu00kxw==';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><div hidden=""></div><div class="root"><div class="min-h-screen h-full w-full flex flex-col flex-1"><div class="min-h-screen h-full w-full flex flex-col flex-1 grow"><div class="flex h-full w-full flex-col min-h-screen bg-bg-200" style="min-height: 100vh; display: flex; flex-direction: column; flex-grow: 1;"><div class="text-text-200 flex items-center justify-between gap-2 py-1.5 md:pt-2 md:pb-0 px-5"><div class="flex flex-1 items-center justify-between"><div class="flex items-center gap-4"><a href="https://claude.ai/" class="inline-block transition-opacity hover:opacity-100" target="_self"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 16" class="block -translate-y-[0.75px] text-text-000" height="15.655" fill="currentColor" aria-label="Claude"><path d="M7.98 15.73C6.50667 15.73 5.17667 15.4367 3.99 14.85C2.81 14.2567 1.88 13.4167 1.2 12.33C0.526669 11.2367 0.190002 9.96334 0.190002 8.51001C0.190002 7.01001 0.526669 5.67334 1.2 4.50001C1.87334 3.32668 2.8 2.41668 3.98 1.77001C5.16667 1.11668 6.49334 0.790009 7.96 0.790009C8.88667 0.790009 9.81667 0.896676 10.75 1.11001C11.69 1.32334 12.5033 1.64001 13.19 2.06001V5.36001H12.29C12.05 4.22668 11.5867 3.36334 10.9 2.77001C10.2133 2.17668 9.24 1.88001 7.98 1.88001C6.85334 1.88001 5.91334 2.15334 5.16 2.70001C4.40667 3.24001 3.84667 3.98334 3.48 4.93001C3.12 5.87001 2.94 6.94668 2.94 8.16001C2.94 9.37334 3.14667 10.4733 3.56 11.46C3.97334 12.44 4.57667 13.2167 5.37 13.79C6.16334 14.3567 7.11 14.64 8.21 14.64C8.97667 14.64 9.63667 14.4733 10.19 14.14C10.75 13.8 11.2167 13.3533 11.59 12.8C11.97 12.2467 12.3367 11.5667 12.69 10.76H13.63L12.99 14.43C12.35 14.8567 11.5733 15.18 10.66 15.4C9.75334 15.62 8.86 15.73 7.98 15.73ZM15.15 14.63C15.4833 14.5833 15.7433 14.53 15.93 14.47C16.1167 14.41 16.2633 14.3167 16.37 14.19C16.4767 14.0567 16.53 13.8733 16.53 13.64V2.96001L15.15 2.31001V1.65001L18.12 0.26001H18.91V13.64C18.91 13.8733 18.9633 14.0567 19.07 14.19C19.1767 14.3167 19.3233 14.41 19.51 14.47C19.6967 14.53 19.96 14.5833 20.3 14.63V15.5H15.15V14.63ZM24.44 15.73C23.8867 15.73 23.39 15.6167 22.95 15.39C22.51 15.1567 22.1667 14.8367 21.92 14.43C21.68 14.0233 21.56 13.5567 21.56 13.03C21.56 12.2633 21.7967 11.6233 22.27 11.11C22.75 10.5967 23.47 10.2033 24.43 9.93001L27.87 8.96001V7.56001C27.87 6.85334 27.7033 6.31668 27.37 5.95001C27.0433 5.58334 26.5633 5.40001 25.93 5.40001C25.37 5.40001 24.93 5.57668 24.61 5.93001C24.2967 6.27668 24.14 6.75668 24.14 7.37001V8.35001H22.47C22.2833 8.23001 22.1367 8.06334 22.03 7.85001C21.93 7.63668 21.88 7.40334 21.88 7.15001C21.88 6.67668 22.06 6.24001 22.42 5.84001C22.78 5.43334 23.2633 5.11334 23.87 4.88001C24.4833 4.64668 25.16 4.53001 25.9 4.53001C26.8133 4.53001 27.5933 4.67334 28.24 4.96001C28.8933 5.24668 29.39 5.66668 29.73 6.22001C30.0767 6.77334 30.25 7.43668 30.25 8.21001V13.5C30.25 13.7333 30.29 13.9133 30.37 14.04C30.45 14.1667 30.5867 14.2667 30.78 14.34C30.98 14.4133 31.2633 14.4767 31.63 14.53V15.39C31.0967 15.5967 30.5633 15.7 30.03 15.7C29.4367 15.7 28.9567 15.56 28.59 15.28C28.23 15 28.0067 14.6 27.92 14.08C27.44 14.62 26.9067 15.03 26.32 15.31C25.7333 15.59 25.1067 15.73 24.44 15.73ZM25.62 14.13C26.0067 14.13 26.3967 14.0433 26.79 13.87C27.1833 13.69 27.5433 13.4433 27.87 13.13V9.87001L25.43 10.61C24.9233 10.7567 24.5433 10.99 24.29 11.31C24.0433 11.6233 23.92 12.0267 23.92 12.52C23.92 12.8267 23.9933 13.1033 24.14 13.35C24.2867 13.59 24.49 13.78 24.75 13.92C25.01 14.06 25.3 14.13 25.62 14.13ZM36.56 15.73C35.48 15.73 34.68 15.4467 34.16 14.88C33.6467 14.3133 33.39 13.53 33.39 12.53V6.91001L32.01 6.37001V5.70001L34.98 4.53001H35.77V12.12C35.77 12.7533 35.9233 13.2233 36.23 13.53C36.5433 13.8367 37.0133 13.99 37.64 13.99C38.0533 13.99 38.4833 13.8967 38.93 13.71C39.3833 13.5167 39.8 13.27 40.18 12.97V6.91001L38.8 6.37001V5.70001L41.77 4.53001H42.56V12.91C42.56 13.17 42.6133 13.37 42.72 13.51C42.8333 13.65 42.9833 13.7533 43.17 13.82C43.3567 13.88 43.6167 13.9333 43.95 13.98V14.84L40.97 15.69H40.18V13.96C39.6667 14.4933 39.0867 14.9233 38.44 15.25C37.8 15.57 37.1733 15.73 36.56 15.73ZM49.61 15.73C48.7367 15.73 47.9567 15.51 47.27 15.07C46.5833 14.6233 46.0467 14.02 45.66 13.26C45.28 12.5 45.09 11.66 45.09 10.74C45.09 9.56668 45.3167 8.51001 45.77 7.57001C46.2233 6.63001 46.8733 5.89001 47.72 5.35001C48.5733 4.80334 49.5767 4.53001 50.73 4.53001C51.0767 4.53001 51.43 4.56668 51.79 4.64001C52.15 4.70668 52.4967 4.81001 52.83 4.95001V2.96001L51.45 2.31001V1.65001L54.42 0.26001H55.21V12.91C55.21 13.17 55.2633 13.37 55.37 13.51C55.4833 13.65 55.6333 13.7533 55.82 13.82C56.0067 13.88 56.2667 13.9333 56.6 13.98V14.84L53.62 15.69H52.83V14.39C52.3833 14.8167 51.8867 15.1467 51.34 15.38C50.7933 15.6133 50.2167 15.73 49.61 15.73ZM50.6 14.12C50.9867 14.12 51.3733 14.0467 51.76 13.9C52.1467 13.7467 52.5033 13.5367 52.83 13.27V6.38001C52.2567 5.92001 51.6167 5.69001 50.91 5.69001C50.1767 5.69001 49.5567 5.89001 49.05 6.29001C48.55 6.68334 48.1767 7.21334 47.93 7.88001C47.69 8.54668 47.57 9.28334 47.57 10.09C47.57 10.8567 47.6767 11.5433 47.89 12.15C48.11 12.7567 48.4467 13.2367 48.9 13.59C49.3533 13.9433 49.92 14.12 50.6 14.12ZM62.93 15.73C61.9433 15.73 61.0533 15.4967 60.26 15.03C59.4733 14.5567 58.8567 13.9033 58.41 13.07C57.9633 12.2367 57.74 11.3 57.74 10.26C57.74 9.18001 57.9667 8.20334 58.42 7.33001C58.88 6.45668 59.51 5.77334 60.31 5.28001C61.1167 4.78001 62.0167 4.53001 63.01 4.53001C63.77 4.53001 64.4667 4.68668 65.1 5.00001C65.7333 5.31334 66.2567 5.76001 66.67 6.34001C67.09 6.92001 67.37 7.59001 67.51 8.35001L60.14 10.66C60.3333 11.62 60.7267 12.38 61.32 12.94C61.92 13.4933 62.67 13.77 63.57 13.77C64.31 13.77 64.9767 13.5733 65.57 13.18C66.17 12.78 66.7 12.18 67.16 11.38L67.93 11.63C67.7633 12.4433 67.44 13.16 66.96 13.78C66.4867 14.4 65.9 14.88 65.2 15.22C64.5067 15.56 63.75 15.73 62.93 15.73ZM64.95 8.03001C64.8567 7.55668 64.6933 7.14001 64.46 6.78001C64.2267 6.42001 63.94 6.14001 63.6 5.94001C63.2667 5.74001 62.9033 5.64001 62.51 5.64001C62.01 5.64001 61.57 5.79334 61.19 6.10001C60.8167 6.40001 60.5267 6.83001 60.32 7.39001C60.1133 7.95001 60.01 8.60001 60.01 9.34001C60.01 9.46668 60.0133 9.56334 60.02 9.63001L64.95 8.03001Z"></path></svg></a><div class="max-md:hidden text-text-300 inline-block text-left text-xs">Content is user-generated and unverified.</div></div></div><div class="flex gap-2 pl-2"><div class="max-md:hidden"><div class="w-fit" data-state="closed"><button class="inline-flex
+  items-center
+  justify-center
+  relative
+  isolate
+  shrink-0
+  can-focus
+  select-none
+  disabled:pointer-events-none
+  disabled:opacity-50
+  disabled:shadow-none
+  disabled:drop-shadow-none font-base-bold
+          border-0.5
+          overflow-hidden
+          transition
+          duration-100
+          backface-hidden h-8 w-8 rounded-md Button_fill__JiIcX Button_secondary__Teecd" type="button" aria-label="Copy link"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M240,88.23a54.43,54.43,0,0,1-16,37L189.25,160a54.27,54.27,0,0,1-38.63,16h-.05A54.63,54.63,0,0,1,96,119.84a8,8,0,0,1,16,.45A38.62,38.62,0,0,0,150.58,160h0a38.39,38.39,0,0,0,27.31-11.31l34.75-34.75a38.63,38.63,0,0,0-54.63-54.63l-11,11A8,8,0,0,1,135.7,59l11-11A54.65,54.65,0,0,1,224,48,54.86,54.86,0,0,1,240,88.23ZM109,185.66l-11,11A38.41,38.41,0,0,1,70.6,208h0a38.63,38.63,0,0,1-27.29-65.94L78,107.31A38.63,38.63,0,0,1,144,135.71a8,8,0,0,0,16,.45A54.86,54.86,0,0,0,144,96a54.65,54.65,0,0,0-77.27,0L32,130.75A54.62,54.62,0,0,0,70.56,224h0a54.28,54.28,0,0,0,38.64-16l11-11A8,8,0,0,0,109,185.66Z"></path></svg></button></div></div><div class="max-md:hidden"><div class="w-fit" data-state="closed"><button class="inline-flex
+  items-center
+  justify-center
+  relative
+  isolate
+  shrink-0
+  can-focus
+  select-none
+  disabled:pointer-events-none
+  disabled:opacity-50
+  disabled:shadow-none
+  disabled:drop-shadow-none font-base-bold
+          border-0.5
+          overflow-hidden
+          transition
+          duration-100
+          backface-hidden h-8 w-8 rounded-md Button_fill__JiIcX Button_secondary__Teecd" type="button" aria-label="Report"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M42.76,50A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.93,0,28.54-4.75,43.82-18a8,8,0,0,0,2.76-6V56A8,8,0,0,0,218.76,50c-28,24.23-51.72,12.49-79.21-1.12C111.07,34.76,78.78,18.79,42.76,50ZM216,172.25c-26.79,21.16-49.87,9.74-76.45-3.41-25-12.35-52.81-26.13-83.55-8.4V59.79c26.79-21.16,49.87-9.75,76.45,3.4,25,12.35,52.82,26.13,83.55,8.4Z"></path></svg></button></div></div><button class="inline-flex
+  items-center
+  justify-center
+  relative
+  isolate
+  shrink-0
+  can-focus
+  select-none
+  disabled:pointer-events-none
+  disabled:opacity-50
+  disabled:shadow-none
+  disabled:drop-shadow-none font-base-bold
+          border-0.5
+          overflow-hidden
+          transition
+          duration-100
+          backface-hidden h-8 w-8 rounded-md rounded py-1 px-2 max-w-full whitespace-nowrap text-ellipsis overflow-hidden md:hidden Button_fill__JiIcX Button_secondary__Teecd" type="button" aria-label="More options for estuary-homepage.html" id="radix-_r_2_" aria-haspopup="menu" aria-expanded="false" data-state="closed"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M144,128a16,16,0,1,1-16-16A16,16,0,0,1,144,128ZM60,112a16,16,0,1,0,16,16A16,16,0,0,0,60,112Zm136,0a16,16,0,1,0,16,16A16,16,0,0,0,196,112Z"></path></svg></button><a class="inline-flex
+  items-center
+  justify-center
+  relative
+  isolate
+  shrink-0
+  can-focus
+  select-none
+  disabled:pointer-events-none
+  disabled:opacity-50
+  disabled:shadow-none
+  disabled:drop-shadow-none font-base-bold
+        overflow-hidden
+        transition-transform
+        will-change-transform
+        ease-[cubic-bezier(0.165,0.85,0.45,1)]
+        duration-150
+        hover:scale-y-[1.015]
+        hover:scale-x-[1.005]
+        backface-hidden
+        after:absolute
+        after:inset-0
+        after:bg-[radial-gradient(at_bottom,hsla(var(--bg-000)/20%),hsla(var(--bg-000)/0%))]
+        after:opacity-0
+        after:transition
+        after:duration-200
+        after:translate-y-2
+        hover:after:opacity-100
+        hover:after:translate-y-0 h-8 rounded-md px-3 min-w-[4rem] whitespace-nowrap !text-xs  pl-2 pr-2.5 gap-1 Button_fill__JiIcX Button_primary__0oSjX" href="https://claude.ai/remixv2?uuid=b35e8359-7da9-419f-b718-804cb6744064"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 256 256"><path d="M237.66,178.34a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L212.69,192H200.94a72.12,72.12,0,0,1-58.59-30.15l-41.72-58.4A56.1,56.1,0,0,0,55.06,80H32a8,8,0,0,1,0-16H55.06a72.12,72.12,0,0,1,58.59,30.15l41.72,58.4A56.1,56.1,0,0,0,200.94,176h11.75l-10.35-10.34a8,8,0,0,1,11.32-11.32ZM143,107a8,8,0,0,0,11.16-1.86l1.2-1.67A56.1,56.1,0,0,1,200.94,80h11.75L202.34,90.34a8,8,0,0,0,11.32,11.32l24-24a8,8,0,0,0,0-11.32l-24-24a8,8,0,0,0-11.32,11.32L212.69,64H200.94a72.12,72.12,0,0,0-58.59,30.15l-1.2,1.67A8,8,0,0,0,143,107Zm-30,42a8,8,0,0,0-11.16,1.86l-1.2,1.67A56.1,56.1,0,0,1,55.06,176H32a8,8,0,0,0,0,16H55.06a72.12,72.12,0,0,0,58.59-30.15l1.2-1.67A8,8,0,0,0,113,149Z"></path></svg>Customize</a></div></div><div class="relative grow flex-1" style="flex: 1 1 auto;"><div class="border-x-bg-200 border-t-bg-200 border-b-bg-200 absolute h-full w-full border-[1.5rem]"></div><div class="absolute inset-0 flex flex-col overflow-hidden border-0.5 border-border-200 inset-2 rounded-xl transition-all duration-200 ease-out"><div class="ease-out duration-200 h-full w-full relative border-none"><div class="relative h-full w-full border-none bg-bg-100"><iframe class="h-full w-full" sandbox="allow-scripts allow-same-origin" title="Claude content" loading="lazy" src="./Estuary — Find Wellness Practitioners &amp; Workshops _ Claude_files/b35e8359-7da9-419f-b718-804cb6744064.html" allow="fullscreen; clipboard-write" referrerpolicy="no-referrer" style="zoom: 1;"></iframe></div></div></div></div><div class="description-text-300 flex justify-center items-center p-2 text-center text-xs md:hidden">Content is user-generated and unverified.</div><div class="md:hidden"><div role="region" aria-label="Notifications (F8)" tabindex="-1" style="pointer-events: none;"><ol tabindex="-1" class="fixed top-0 z-toast flex flex-col gap-3 p-4 draggable-none" style="right: var(--launch-drawer-width, 0px);"></ol></div></div></div></div></div></div><div role="region" aria-label="Notifications (F8)" tabindex="-1" style="pointer-events: none;"><ol tabindex="-1" class="fixed top-0 z-toast flex flex-col gap-3 p-4 draggable-none" style="right: var(--launch-drawer-width, 0px);"></ol></div><iframe src="./Estuary — Find Wellness Practitioners &amp; Workshops _ Claude_files/isolated-segment.html" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin" title="" style="display: none;"></iframe><script id="sift-snippet" data-nscript="afterInteractive">
+          var _sift = (window._sift = window._sift || []);
+          _sift.push(["_setAccount", "99dfa2e716"]);
+          _sift.push(["_setTrackerUrl", "s-cdn.anthropic.com"]);
+          _sift.push(["_setUserId", "5f7c381e-c42e-4c59-8d2a-88564c620f03"]);
+          _sift.push(["_setSessionId", "c5276a8d-51a6-4652-8535-d38fa3d0d4bd"]);
+          _sift.push(["_trackPageview"]);
+      </script><next-route-announcer style="position: absolute;"><template shadowrootmode="open"><div aria-live="assertive" id="__next-route-announcer__" role="alert" style="position: absolute; border: 0px; height: 1px; margin: -1px; padding: 0px; width: 1px; clip: rect(0px, 0px, 0px, 0px); overflow: hidden; white-space: nowrap; overflow-wrap: normal;"></div></template></next-route-announcer><script src="./Estuary — Find Wellness Practitioners &amp; Workshops _ Claude_files/s.js" data-nscript="lazyOnload"></script><iframe id="intercom-frame" style="position: absolute !important; opacity: 0 !important; width: 1px !important; height: 1px !important; top: 0 !important; left: 0 !important; border: none !important; display: block !important; z-index: -1 !important; pointer-events: none;" aria-hidden="true" tabindex="-1" title="Intercom" src="./Estuary — Find Wellness Practitioners &amp; Workshops _ Claude_files/saved_resource(1).html"></iframe><div class="intercom-lightweight-app"><style id="intercom-lightweight-app-style" type="text/css">
+  @keyframes intercom-lightweight-app-launcher {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes intercom-lightweight-app-gradient {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes intercom-lightweight-app-messenger {
+    0% {
+      opacity: 0;
+      transform: scale(0);
+    }
+    40% {
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .intercom-lightweight-app {
+    position: fixed;
+    z-index: 2147483001;
+    width: 0;
+    height: 0;
+    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  }
+
+  .intercom-lightweight-app-gradient {
+    position: fixed;
+    z-index: 2147483002;
+    width: 500px;
+    height: 500px;
+    bottom: 0;
+    right: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at bottom right,
+      rgba(29, 39, 54, 0.16) 0%,
+      rgba(29, 39, 54, 0) 72%);
+    animation: intercom-lightweight-app-gradient 200ms ease-out;
+  }
+
+  .intercom-lightweight-app-launcher {
+    position: fixed;
+    z-index: 2147483003;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none;
+    bottom: 20px;
+    right: 20px;
+    max-width: 48px;
+    width: 48px;
+    max-height: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #0099CC;
+    cursor: pointer;
+    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.06), 0 2px 32px 0 rgba(0, 0, 0, 0.16);
+    transition: transform 167ms cubic-bezier(0.33, 0.00, 0.00, 1.00);
+    box-sizing: content-box;
+  }
+
+
+  .intercom-lightweight-app-launcher:hover {
+    transition: transform 250ms cubic-bezier(0.33, 0.00, 0.00, 1.00);
+    transform: scale(1.1)
+  }
+
+  .intercom-lightweight-app-launcher:active {
+    transform: scale(0.85);
+    transition: transform 134ms cubic-bezier(0.45, 0, 0.2, 1);
+  }
+
+
+  .intercom-lightweight-app-launcher:focus {
+    outline: none;
+
+    
+  }
+
+  .intercom-lightweight-app-launcher-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 48px;
+    transition: transform 100ms linear, opacity 80ms linear;
+  }
+
+  .intercom-lightweight-app-launcher-icon-open {
+    
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      
+  }
+
+  .intercom-lightweight-app-launcher-icon-open svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .intercom-lightweight-app-launcher-icon-open svg path {
+    fill: rgb(255, 255, 255);
+  }
+
+  .intercom-lightweight-app-launcher-icon-self-serve {
+    
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      
+  }
+
+  .intercom-lightweight-app-launcher-icon-self-serve svg {
+    height: 44px;
+  }
+
+  .intercom-lightweight-app-launcher-icon-self-serve svg path {
+    fill: rgb(255, 255, 255);
+  }
+
+  .intercom-lightweight-app-launcher-custom-icon-open {
+    max-height: 24px;
+    max-width: 24px;
+
+    
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      
+  }
+
+  .intercom-lightweight-app-launcher-icon-minimize {
+    
+        opacity: 0;
+        transform: rotate(-60deg) scale(0);
+      
+  }
+
+  .intercom-lightweight-app-launcher-icon-minimize svg path {
+    fill: rgb(255, 255, 255);
+  }
+
+  /* Extended launcher styles */
+  .intercom-lightweight-app-launcher.intercom-launcher-extended {
+    width: calc(180px - 30px);
+    max-width: calc(180px - 30px);
+    height: calc(45px - 26px);
+    max-height: calc(45px - 26px);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 16px 12px 12px !important;
+    gap: 6px;
+    /* Use theme background instead of hardcoded gradient */
+    background: #0099CC;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0px -2px 50px rgba(0, 0, 0, 0.1);
+    
+  }
+
+  .intercom-lightweight-app-launcher.intercom-launcher-extended .intercom-lightweight-app-launcher-icon {
+    position: relative;
+    width: 24px;
+    height: 24px;
+  }
+
+  .intercom-lightweight-app-launcher-text {
+    /* Match text color with launcher icon */
+    color: rgb(255, 255, 255);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+    opacity: 1;
+    transition: opacity 80ms linear;
+  }
+
+  .intercom-lightweight-app-messenger {
+    position: fixed;
+    z-index: 2147483003;
+    overflow: hidden;
+    background-color: #ffffff;
+    animation: intercom-lightweight-app-messenger 250ms cubic-bezier(0, 1, 1, 1);
+    transform-origin: bottom right;
+
+    
+        width: 400px;
+        height: calc(100% - 40px);
+        max-height: 704px;
+        min-height: 250px;
+        right: 20px;
+        bottom: 20px;
+        box-shadow: 0 5px 40px rgba(0,0,0,0.16);
+      
+
+    border-radius: 24px;
+  }
+
+  .intercom-lightweight-app-messenger-header {
+    height: 64px;
+    border-bottom: none;
+    background: #ffffff;
+  }
+
+  .intercom-lightweight-app-messenger-footer{
+    position:absolute;
+    bottom:0;
+    width: 100%;
+    height: 80px;
+    background: #ffffff;
+    font-size: 14px;
+    line-height: 21px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.05);
+  }
+
+  @media print {
+    .intercom-lightweight-app {
+      display: none;
+    }
+  }
+</style>
