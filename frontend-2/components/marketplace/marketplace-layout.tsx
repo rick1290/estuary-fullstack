@@ -110,22 +110,25 @@ export default function MarketplaceLayout({
             </form>
           </div>
 
-          {/* Tabs row */}
+          {/* Tabs row — underline style */}
           <div
-            className="flex gap-1 pb-3 overflow-x-auto"
+            className="flex gap-6 overflow-x-auto border-b border-[rgba(74,63,53,0.08)]"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {tabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => handleTabChange(tab.value)}
-                className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                className={`shrink-0 pb-3 text-[14px] font-medium transition-all relative ${
                   activeTab === tab.value
-                    ? "bg-[#4A3F35] text-white shadow-sm"
-                    : "text-[#6B6560] hover:bg-white/80 hover:text-[#4A3F35]"
+                    ? "text-[#4A3F35]"
+                    : "text-[#9B9590] hover:text-[#6B6560]"
                 }`}
               >
                 {tab.label}
+                {activeTab === tab.value && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#4A3F35] rounded-full" />
+                )}
               </button>
             ))}
           </div>
