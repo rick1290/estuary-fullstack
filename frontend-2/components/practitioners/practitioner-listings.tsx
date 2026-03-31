@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
-import ClientPractitionerRowCard from "./client-practitioner-row-card"
+import { AlertCircle, ChevronLeft, ChevronRight, Star, MapPin, CheckCircle } from "lucide-react"
+import Link from "next/link"
 
 interface PractitionerListingsProps {
   query?: string
@@ -81,20 +81,19 @@ export default function PractitionerListings({
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-10 w-full sm:w-48" />
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 flex gap-4 sm:gap-6">
-              <Skeleton className="w-16 h-16 sm:w-24 sm:h-24 rounded-full flex-shrink-0" />
-              <div className="flex-1">
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2 mb-4" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-2/3 mb-4" />
-                <div className="flex justify-between items-center">
-                  <Skeleton className="h-6 w-20" />
-                  <Skeleton className="h-8 w-24" />
+            <div key={i} className="bg-white rounded-2xl border border-[rgba(74,63,53,0.05)] p-5">
+              <div className="flex items-start gap-3.5 mb-3">
+                <Skeleton className="w-14 h-14 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-16" />
                 </div>
               </div>
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-3 w-24" />
             </div>
           ))}
         </div>
@@ -195,9 +194,9 @@ export default function PractitionerListings({
         </Select>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {apiPractitioners.map((practitioner) => (
-          <ClientPractitionerRowCard key={practitioner.public_uuid || practitioner.id} practitioner={practitioner} />
+          <PractitionerGridCard key={practitioner.public_uuid || practitioner.id} practitioner={practitioner} />
         ))}
       </div>
 
@@ -257,5 +256,110 @@ export default function PractitionerListings({
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Grid Card ──────────────────────────────────────────────────────────────
+
+const GRADIENTS = [
+  "from-[#E8EDE4] to-[#F5EDE2]",
+  "from-[#E8C9A8] to-[#FAF7F2]",
+  "from-[#E8E5E0] to-[#E8EDE4]",
+  "from-[#F5EDE2] to-[#F0EDE8]",
+  "from-[#F0DDB4] to-[#FAF7F2]",
+]
+
+function PractitionerGridCard({ practitioner }: { practitioner: any }) {
+  const name = practitioner.display_name || `${practitioner.user?.first_name || ''} ${practitioner.user?.last_name || ''}`.trim() || "Practitioner"
+  const title = practitioner.professional_title || ""
+  const image = practitioner.profile_image_url || ""
+  const slug = practitioner.slug || practitioner.public_uuid || practitioner.id
+  const rating = practitioner.average_rating || practitioner.average_rating_float || 0
+  const reviewCount = practitioner.total_reviews || practitioner.review_count || 0
+  const yearsExp = practitioner.years_experience || practitioner.experience_years || 0
+  const bio = practitioner.bio ? (practitioner.bio.length > 80 ? practitioner.bio.slice(0, 80) + "..." : practitioner.bio) : ""
+  const specializations = (practitioner.specializations || []).slice(0, 3)
+  const location = practitioner.primary_location?.city_name
+    ? `${practitioner.primary_location.city_name}, ${practitioner.primary_location.state_abbreviation || ''}`
+    : null
+  const nameHash = name.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0)
+  const gradient = GRADIENTS[nameHash % GRADIENTS.length]
+
+  return (
+    <Link href={`/practitioners/${slug}`} className="group block h-full">
+      <div className="h-full bg-white rounded-2xl border border-[rgba(74,63,53,0.05)] p-5 transition-all duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(74,63,53,0.08)]">
+        {/* Top row: Avatar + Name + Title */}
+        <div className="flex items-start gap-3.5 mb-3">
+          {/* Circular avatar */}
+          <div className="relative shrink-0">
+            {image ? (
+              <img
+                src={image}
+                alt={name}
+                className="w-14 h-14 rounded-full object-cover border-2 border-[rgba(74,63,53,0.06)]"
+              />
+            ) : (
+              <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center border-2 border-[rgba(74,63,53,0.06)]`}>
+                <span className="text-lg font-serif text-olive-600/60">{name.charAt(0)}</span>
+              </div>
+            )}
+            {practitioner.is_verified && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-sage-600 rounded-full flex items-center justify-center ring-2 ring-white">
+                <CheckCircle className="h-3 w-3 text-white" fill="currentColor" strokeWidth={0} />
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h3 className="font-serif text-[17px] font-medium truncate group-hover:text-[#C4956A] transition-colors" style={{ color: "#4A3F35" }}>
+              {name}
+            </h3>
+            {title && (
+              <p className="text-[12px] truncate" style={{ color: "#7A8B6F" }}>
+                {title}
+              </p>
+            )}
+            {/* Rating inline with name */}
+            {rating > 0 && (
+              <div className="flex items-center gap-1 mt-1">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span className="text-[12px] font-medium" style={{ color: "#4A3F35" }}>{Number(rating).toFixed(1)}</span>
+                {reviewCount > 0 && <span className="text-[11px]" style={{ color: "#9B9590" }}>({reviewCount})</span>}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bio */}
+        {bio && (
+          <p className="text-[13px] leading-[1.5] mb-3 line-clamp-2" style={{ color: "#6B6560" }}>
+            {bio}
+          </p>
+        )}
+
+        {/* Tags */}
+        {specializations.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {specializations.map((s: any) => (
+              <span key={s.id || s.name || s.content} className="text-[10px] px-2 py-0.5 rounded-full bg-[#E8EDE4] text-[#6B6560]">
+                {s.content || s.name || s}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Bottom stats */}
+        <div className="flex items-center gap-3 text-[11px] pt-2 border-t border-[rgba(74,63,53,0.05)]" style={{ color: "#9B9590" }}>
+          {yearsExp > 0 && <span>{yearsExp}y experience</span>}
+          {yearsExp > 0 && location && <span>·</span>}
+          {location && (
+            <span className="flex items-center gap-0.5">
+              <MapPin className="h-3 w-3" /> {location}
+            </span>
+          )}
+          {!yearsExp && !location && <span>View profile →</span>}
+        </div>
+      </div>
+    </Link>
   )
 }
