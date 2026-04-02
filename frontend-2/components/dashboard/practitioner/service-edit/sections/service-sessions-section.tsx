@@ -347,6 +347,85 @@ export function ServiceSessionsSection({
         </div>
       )}
 
+      {/* Quick Add: Recurring Sessions — at top for visibility */}
+      {(isCourse || isWorkshop) && (
+        <Card className="p-4 border-dashed border-sage-300 bg-cream-50/30">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-olive-600" />
+              <h4 className="font-medium text-sm text-olive-900">Quick Add: Recurring Sessions</h4>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Generate weekly sessions automatically. Each will be titled sequentially ({isCourse ? '"Module 1", "Module 2"...' : '"Session 1", "Session 2"...'}).
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn("w-full justify-start text-left font-normal", !bulkStartDate && "text-muted-foreground")}
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {bulkStartDate ? format(bulkStartDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={bulkStartDate}
+                      onSelect={setBulkStartDate}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Time</Label>
+                <Input
+                  type="time"
+                  value={bulkTime}
+                  onChange={(e) => setBulkTime(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Number of Weeks</Label>
+                <Input
+                  type="number"
+                  value={bulkWeeks}
+                  onChange={(e) => setBulkWeeks(Math.max(2, Math.min(52, parseInt(e.target.value) || 2)))}
+                  min={2}
+                  max={52}
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addRecurringSessions}
+              disabled={!bulkStartDate || !bulkTime || bulkWeeks < 2 || bulkCreating}
+              className="w-full border-olive-300 text-olive-700 hover:bg-olive-50"
+            >
+              {bulkCreating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Repeat className="h-4 w-4 mr-2" />
+              )}
+              Generate {bulkWeeks} Weekly {isCourse ? 'Modules' : 'Sessions'}
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Existing Sessions */}
       <div className="space-y-2">
         {sessions.map((session: any, index: number) => {
@@ -406,25 +485,29 @@ export function ServiceSessionsSection({
                           <span>Rescheduling will notify {bookingCount} enrolled participant{bookingCount !== 1 ? 's' : ''}.</span>
                         </div>
                       )}
-                      <div className="space-y-2">
-                        <Label className="text-xs">{isCourse ? 'Module Title' : 'Session Title'}</Label>
-                        <Input
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder={isCourse ? "e.g., Introduction to Mindfulness" : "e.g., Morning Session"}
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Description</Label>
-                        <Textarea
-                          value={editDescription}
-                          onChange={(e) => setEditDescription(e.target.value)}
-                          placeholder="What will be covered in this session?"
-                          rows={2}
-                          className="text-sm"
-                        />
-                      </div>
+                      {!isWorkshop && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">{isCourse ? 'Module Title' : 'Session Title'}</Label>
+                          <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder={isCourse ? "e.g., Introduction to Mindfulness" : "e.g., Morning Session"}
+                            className="h-9"
+                          />
+                        </div>
+                      )}
+                      {!isWorkshop && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">Description</Label>
+                          <Textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder="What will be covered in this session?"
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label className="text-xs">Date</Label>
@@ -626,24 +709,28 @@ export function ServiceSessionsSection({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>{isCourse ? 'Module Title' : 'Session Title'} (optional)</Label>
-            <Input
-              value={sessionTitle}
-              onChange={(e) => setSessionTitle(e.target.value)}
-              placeholder={isCourse ? "e.g., Introduction to Mindfulness" : isWorkshop ? "e.g., Saturday Morning Workshop" : "e.g., Morning Session"}
-            />
-          </div>
+          {!isWorkshop && (
+            <div className="space-y-2">
+              <Label>{isCourse ? 'Module Title' : 'Session Title'} (optional)</Label>
+              <Input
+                value={sessionTitle}
+                onChange={(e) => setSessionTitle(e.target.value)}
+                placeholder={isCourse ? "e.g., Introduction to Mindfulness" : "e.g., Morning Session"}
+              />
+            </div>
+          )}
 
-          <div className="space-y-2">
-            <Label>Description (optional)</Label>
-            <Textarea
-              value={sessionDescription}
-              onChange={(e) => setSessionDescription(e.target.value)}
-              placeholder="What will be covered in this session?"
-              rows={3}
-            />
-          </div>
+          {!isWorkshop && (
+            <div className="space-y-2">
+              <Label>Description (optional)</Label>
+              <Textarea
+                value={sessionDescription}
+                onChange={(e) => setSessionDescription(e.target.value)}
+                placeholder="What will be covered in this session?"
+                rows={3}
+              />
+            </div>
+          )}
 
           <Button
             type="button"
@@ -661,85 +748,6 @@ export function ServiceSessionsSection({
           </Button>
         </div>
       </Card>
-
-      {/* Bulk Recurring Sessions Card */}
-      {(isCourse || isWorkshop) && (
-        <Card className="p-4 border-dashed border-sage-300 bg-cream-50/30">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-olive-600" />
-              <h4 className="font-medium text-sm text-olive-900">Quick Add: Recurring Sessions</h4>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Generate weekly sessions automatically. Each will be titled sequentially ({isCourse ? '"Module 1", "Module 2"...' : '"Session 1", "Session 2"...'}).
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label className="text-xs">Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn("w-full justify-start text-left font-normal", !bulkStartDate && "text-muted-foreground")}
-                    >
-                      <CalendarIcon className="mr-2 h-3 w-3" />
-                      {bulkStartDate ? format(bulkStartDate, "PPP") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={bulkStartDate}
-                      onSelect={setBulkStartDate}
-                      initialFocus
-                      disabled={(date) => date < new Date()}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Time</Label>
-                <Input
-                  type="time"
-                  value={bulkTime}
-                  onChange={(e) => setBulkTime(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Number of Weeks</Label>
-                <Input
-                  type="number"
-                  value={bulkWeeks}
-                  onChange={(e) => setBulkWeeks(Math.max(2, Math.min(52, parseInt(e.target.value) || 2)))}
-                  min={2}
-                  max={52}
-                  className="h-9"
-                />
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addRecurringSessions}
-              disabled={!bulkStartDate || !bulkTime || bulkWeeks < 2 || bulkCreating}
-              className="w-full border-olive-300 text-olive-700 hover:bg-olive-50"
-            >
-              {bulkCreating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Repeat className="h-4 w-4 mr-2" />
-              )}
-              Generate {bulkWeeks} Weekly {isCourse ? 'Modules' : 'Sessions'}
-            </Button>
-          </div>
-        </Card>
-      )}
 
       {isWorkshop && (
         <div className="rounded-lg bg-muted/50 p-4">

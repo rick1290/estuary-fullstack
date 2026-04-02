@@ -136,19 +136,40 @@ function DemographicsSection() {
 
             <div className="space-y-2">
               <Label htmlFor="max-participants" className="text-sm">Maximum Participants</Label>
+              {formState.serviceType !== 'session' && (
+                <div className="flex items-center gap-2 mb-2">
+                  <Switch
+                    id="no-limit-participants"
+                    checked={formState.max_participants === null || formState.max_participants === undefined}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        updateFormField("max_participants", null)
+                      } else {
+                        updateFormField("max_participants", 10)
+                      }
+                    }}
+                    disabled={formState.serviceType === 'session'}
+                  />
+                  <Label htmlFor="no-limit-participants" className="text-sm text-muted-foreground cursor-pointer">
+                    No limit
+                  </Label>
+                </div>
+              )}
               <Input
                 id="max-participants"
                 type="number"
                 min="1"
-                value={formState.max_participants || (formState.serviceType === 'session' ? 1 : 10)}
+                value={formState.max_participants ?? (formState.serviceType === 'session' ? 1 : '')}
                 onChange={(e) => updateFormField("max_participants", parseInt(e.target.value) || 1)}
                 className={errors.max_participants ? "border-destructive" : ""}
-                disabled={formState.serviceType === 'session'}
+                disabled={formState.serviceType === 'session' || formState.max_participants === null || formState.max_participants === undefined}
               />
               <p className="text-xs text-muted-foreground">
-                {formState.serviceType === 'session' 
+                {formState.serviceType === 'session'
                   ? 'Sessions are always 1-on-1'
-                  : 'Maximum people who can participate'
+                  : formState.max_participants === null || formState.max_participants === undefined
+                    ? 'No participant limit set'
+                    : 'Maximum people who can participate'
                 }
               </p>
               {errors.max_participants && <p className="text-sm text-destructive">{errors.max_participants}</p>}

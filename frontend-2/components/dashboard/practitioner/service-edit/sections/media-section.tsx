@@ -32,7 +32,7 @@ export function MediaSection({ service }: MediaSectionProps) {
   const queryClient = useQueryClient()
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [activeTab, setActiveTab] = useState("upload")
+  const [activeTab, setActiveTab] = useState("ai")
 
   // AI Generation state
   const [aiPrompt, setAiPrompt] = useState("")

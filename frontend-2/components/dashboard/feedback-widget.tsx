@@ -62,6 +62,9 @@ export default function FeedbackWidget() {
   // Determine if user is a practitioner
   const isPractitioner = user?.hasPractitionerAccount && pathname?.startsWith("/dashboard/practitioner")
 
+  // Move feedback button up on pages where it overlaps with fixed bottom navigation (e.g. service creation wizard)
+  const isServiceCreation = pathname?.includes("/service-creation") || pathname?.includes("/services/create")
+
   // Feedback mutation — works for both practitioners and regular users
   const createMutation = useMutation({
     ...featureRequestsCreateMutation(),
@@ -123,9 +126,10 @@ export default function FeedbackWidget() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed bottom-4 right-4 z-40 flex items-center justify-center rounded-full shadow-md transition-all duration-200 group",
+          "fixed z-40 flex items-center justify-center rounded-full shadow-md transition-all duration-200 group right-4",
           "bg-olive-700/80 text-white hover:bg-olive-800 hover:shadow-lg backdrop-blur-sm",
           "h-10 w-10 hover:w-auto hover:px-3.5 hover:gap-2",
+          isServiceCreation ? "bottom-20" : "bottom-4",
           isOpen && "scale-0 opacity-0 pointer-events-none"
         )}
       >

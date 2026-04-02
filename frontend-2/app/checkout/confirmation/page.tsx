@@ -126,21 +126,25 @@ export default function ConfirmationPage() {
         </div>
       </div>
 
-      <div className="container max-w-3xl py-6 sm:py-12 px-4 sm:px-6">
-        {/* Success Header - Compact */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-sage-100 rounded-full mb-3 sm:mb-4">
-            <CheckCircle2 className="h-7 w-7 sm:h-8 sm:w-8 text-sage-600" />
-          </div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-olive-900 mb-2">{getTitle()}</h1>
-          <p className="text-sm sm:text-base text-olive-600">Confirmation sent to your email</p>
-        </div>
+      <div className="container max-w-6xl py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
+        {/* Two-column layout: left = confirmation details, right = order summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-10">
 
-        {/* Main Card */}
-        <Card className="mb-6 overflow-hidden">
-          <CardContent className="p-0">
+          {/* Left Column — Success + Session Details */}
+          <div className="lg:col-span-3">
+            {/* Success Header - Compact */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-sage-100 rounded-full flex-shrink-0">
+                <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7 text-sage-600" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-olive-900">{getTitle()}</h1>
+                <p className="text-sm text-olive-600">Confirmation sent to your email</p>
+              </div>
+            </div>
+
             {/* Confirmation Number Bar */}
-            <div className="bg-sage-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-sage-100">
+            <div className="bg-sage-50 px-4 sm:px-5 py-3 rounded-lg border border-sage-100 mb-5">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Confirmation Number</p>
@@ -162,38 +166,95 @@ export default function ConfirmationPage() {
               </div>
             </div>
 
-            {/* Service + Practitioner */}
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-6">
-                {/* Service Image + Info */}
-                <div className="flex items-start gap-3 sm:gap-4 w-full sm:flex-1 min-w-0">
-                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 overflow-hidden flex-shrink-0">
+            {/* Session Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-sage-50/50 rounded-lg border border-sage-100 mb-5">
+              {sessionTime && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-sage-600" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Date</p>
+                      <p className="font-medium text-olive-900">{formatSessionDate(sessionTime)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-sage-600" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Time</p>
+                      <p className="font-medium text-olive-900">{formatSessionTime(sessionTime)}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center gap-3">
+                {(service?.location_type || (booking as any).location_type) === "virtual" ? (
+                  <Video className="h-4 w-4 text-sage-600" />
+                ) : (
+                  <MapPin className="h-4 w-4 text-sage-600" />
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground">Location</p>
+                  <p className="font-medium text-olive-900">
+                    {(service?.location_type || (booking as any).location_type) === "virtual" ? "Virtual Session" : "In-person"}
+                  </p>
+                </div>
+              </div>
+              {booking.duration_minutes && (
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-sage-600" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Duration</p>
+                    <p className="font-medium text-olive-900">{booking.duration_minutes} min</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 min-h-[44px]">
+                <Link href="/dashboard/user/journeys">
+                  View My Journey
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 min-h-[44px]">
+                <Link href="/marketplace">Continue Browsing</Link>
+              </Button>
+            </div>
+
+            {/* Pre-session forms prompt */}
+            {booking?.public_uuid && (
+              <FormsPrompt bookingUuid={booking.public_uuid} />
+            )}
+          </div>
+
+          {/* Right Column — Order Summary + Next Steps */}
+          <div className="lg:col-span-2">
+            <Card className="mb-5 overflow-hidden lg:sticky lg:top-6">
+              <CardContent className="p-4 sm:p-5">
+                {/* Service + Practitioner */}
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-sage-100 to-terracotta-100 overflow-hidden flex-shrink-0">
                     {service.image_url ? (
                       <img src={service.image_url} alt={service.name} className="h-full w-full object-cover" />
                     ) : (
                       <div className="h-full w-full flex items-center justify-center">
-                        <span className="text-xl sm:text-2xl font-medium text-olive-600">{service.name?.charAt(0)}</span>
+                        <span className="text-xl font-medium text-olive-600">{service.name?.charAt(0)}</span>
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="font-semibold text-base sm:text-lg text-olive-900 mb-1">{service.name}</h2>
-                      {/* Price inline on mobile, separate column on desktop */}
-                      <div className="text-right sm:hidden flex-shrink-0">
-                        <p className="font-semibold text-olive-900">${totalPaid}</p>
-                        <p className="text-xs text-muted-foreground">paid</p>
-                      </div>
-                    </div>
+                    <h2 className="font-semibold text-base text-olive-900 mb-1 line-clamp-2">{service.name}</h2>
                     <div className="flex items-center gap-2">
                       {practitioner?.profile_image_url ? (
                         <img
                           src={practitioner.profile_image_url}
                           alt={practitioner.name || practitioner.display_name}
-                          className="h-6 w-6 rounded-full object-cover"
+                          className="h-5 w-5 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="h-6 w-6 rounded-full bg-sage-100 flex items-center justify-center">
+                        <div className="h-5 w-5 rounded-full bg-sage-100 flex items-center justify-center">
                           <User className="h-3 w-3 text-olive-600" />
                         </div>
                       )}
@@ -201,115 +262,55 @@ export default function ConfirmationPage() {
                     </div>
                   </div>
                 </div>
-                {/* Price - desktop only (shown inline on mobile above) */}
-                <div className="text-right hidden sm:block flex-shrink-0">
-                  <p className="font-semibold text-olive-900">${totalPaid}</p>
-                  <p className="text-xs text-muted-foreground">paid</p>
-                </div>
-              </div>
 
-              {/* Session Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-sage-50/50 rounded-lg">
-                {sessionTime && (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-sage-600" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Date</p>
-                        <p className="font-medium text-olive-900">{formatSessionDate(sessionTime)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-4 w-4 text-sage-600" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Time</p>
-                        <p className="font-medium text-olive-900">{formatSessionTime(sessionTime)}</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-                <div className="flex items-center gap-3">
-                  {(service?.location_type || (booking as any).location_type) === "virtual" ? (
-                    <Video className="h-4 w-4 text-sage-600" />
-                  ) : (
-                    <MapPin className="h-4 w-4 text-sage-600" />
-                  )}
-                  <div>
-                    <p className="text-xs text-muted-foreground">Location</p>
-                    <p className="font-medium text-olive-900">
-                      {(service?.location_type || (booking as any).location_type) === "virtual" ? "Virtual Session" : "In-person"}
-                    </p>
-                  </div>
+                <Separator className="mb-4" />
+
+                {/* Price */}
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm text-muted-foreground">Total paid</span>
+                  <span className="text-lg font-semibold text-olive-900">${totalPaid}</span>
                 </div>
-                {booking.duration_minutes && (
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-4 w-4 text-sage-600" />
+
+                {/* Receipt Link */}
+                <Button variant="outline" size="sm" className="w-full text-muted-foreground">
+                  <Download className="h-3 w-3 mr-1" />
+                  Download Receipt
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Next Steps */}
+            <Card>
+              <CardContent className="p-4 sm:p-5">
+                <h3 className="font-semibold text-olive-900 mb-3 text-sm">What's next?</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-7 w-7 rounded-full bg-sage-100 flex items-center justify-center flex-shrink-0">
+                      <Mail className="h-3.5 w-3.5 text-sage-600" />
+                    </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Duration</p>
-                      <p className="font-medium text-olive-900">{booking.duration_minutes} min</p>
+                      <p className="font-medium text-sm text-olive-900">Check your email</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(service?.location_type || (booking as any).location_type) === "virtual"
+                          ? "Join link and calendar invite sent"
+                          : "Address and details sent"}
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Next Steps - Compact */}
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <h3 className="font-semibold text-olive-900 mb-4">What's next?</h3>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded-full bg-sage-100 flex items-center justify-center flex-shrink-0">
-                  <Mail className="h-4 w-4 text-sage-600" />
+                  <div className="flex items-start gap-3">
+                    <div className="h-7 w-7 rounded-full bg-sage-100 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="h-3.5 w-3.5 text-sage-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-olive-900">Add to your calendar</p>
+                      <p className="text-xs text-muted-foreground">Calendar file attached to confirmation email</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-sm text-olive-900">Check your email</p>
-                  <p className="text-sm text-muted-foreground">
-                    {(service?.location_type || (booking as any).location_type) === "virtual"
-                      ? "Join link and calendar invite sent"
-                      : "Address and details sent"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded-full bg-sage-100 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="h-4 w-4 text-sage-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-olive-900">Add to your calendar</p>
-                  <p className="text-sm text-muted-foreground">Calendar file attached to confirmation email</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button asChild className="flex-1 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 min-h-[44px]">
-            <Link href="/dashboard/user/journeys">
-              View My Journey
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="flex-1 min-h-[44px]">
-            <Link href="/marketplace">Continue Browsing</Link>
-          </Button>
-        </div>
-
-        {/* Pre-session forms prompt — after all existing content */}
-        {booking?.public_uuid && (
-          <FormsPrompt bookingUuid={booking.public_uuid} />
-        )}
-
-        {/* Receipt Link */}
-        <div className="text-center mt-6">
-          <Button variant="link" size="sm" className="text-muted-foreground">
-            <Download className="h-3 w-3 mr-1" />
-            Download Receipt
-          </Button>
         </div>
       </div>
     </div>

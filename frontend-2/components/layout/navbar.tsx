@@ -213,6 +213,17 @@ export default function Navbar() {
                 <span>Messages</span>
               </Link>
 
+              {/* Practitioner Dashboard shortcut */}
+              {user?.hasPractitionerAccount && (
+                <Link
+                  href="/dashboard/practitioner"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13.5px] font-medium text-[#6b6258] hover:bg-[#f0ede8] hover:text-[#2a2218] transition-colors"
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  <span>Dashboard</span>
+                </Link>
+              )}
+
               {/* Notifications */}
               <NotificationsDropdown />
 

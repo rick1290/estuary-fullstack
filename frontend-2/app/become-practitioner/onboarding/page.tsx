@@ -211,11 +211,11 @@ export default function PractitionerOnboardingPage() {
         </div>
       </div>
 
-      {/* Step content — centered, breathing room */}
+      {/* Step content — centered, compact to stay above fold */}
       <div className="flex-1 overflow-y-auto pb-24">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           {/* Step title */}
-          <div className="mb-8">
+          <div className="mb-4">
             <p className="text-xs font-medium text-sage-600 uppercase tracking-wider mb-2">
               Step {currentStep} of 6
             </p>

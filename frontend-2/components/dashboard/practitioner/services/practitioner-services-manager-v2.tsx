@@ -145,11 +145,19 @@ export default function PractitionerServicesManagerV2() {
 
   const categories = categoriesData?.data?.results || categoriesData?.results || []
 
+  // Map frontend status labels to API status values
+  const statusToApiMap: Record<string, string> = {
+    active: "published",
+    draft: "draft",
+    inactive: "paused",
+    archived: "discontinued",
+  }
+
   // Build query parameters based on filters
   const queryParams = {
     ...(user?.practitionerId && { practitioner: user.practitionerId }), // Filter by current practitioner
     ...(activeTab !== "all" && { service_type: activeTab }),
-    ...(selectedStatus !== "all" && { status: selectedStatus }),
+    ...(selectedStatus !== "all" && { status: statusToApiMap[selectedStatus] || selectedStatus }),
     ...(selectedCategory === "uncategorized" && { uncategorized: true }),
     ...(selectedCategory !== "all" && selectedCategory !== "uncategorized" && { practitioner_category_id: parseInt(selectedCategory) }),
     ...(searchQuery && { search: searchQuery }),
@@ -211,20 +219,26 @@ export default function PractitionerServicesManagerV2() {
     },
   })
 
-  // Handle service deletion
+  // Handle service archival (sets status to 'archived' instead of deleting)
   const handleDeleteService = (serviceId: string) => {
-    if (confirm("Are you sure you want to delete this service?")) {
-      deleteMutation.mutate({ path: { id: parseInt(serviceId) } })
-    }
+    updateMutation.mutate({
+      path: { id: parseInt(serviceId) },
+      body: {
+        status: 'discontinued',
+        is_active: false,
+        is_public: false,
+      }
+    })
   }
 
   // Handle service status toggle
   const handleToggleStatus = (serviceId: string) => {
     const service = services.find(s => s.id?.toString() === serviceId)
     if (service) {
-      // Toggle between draft and active status
-      const newStatus = service.status === 'active' ? 'draft' : 'active'
-      const newIsActive = newStatus === 'active'
+      // Toggle between draft and published status
+      const isCurrentlyActive = service.status === 'active' || service.status === 'published'
+      const newStatus = isCurrentlyActive ? 'draft' : 'published'
+      const newIsActive = !isCurrentlyActive
       
       updateMutation.mutate({
         path: { id: parseInt(serviceId) },
@@ -273,7 +287,7 @@ export default function PractitionerServicesManagerV2() {
   // Compute stats from loaded services
   const stats = useMemo(() => {
     const displayed = sortedServices.map(convertServiceForDisplay)
-    const activeCount = displayed.filter((s: any) => s.status === 'active').length
+    const activeCount = displayed.filter((s: any) => s.status === 'active' || s.status === 'published').length
     const draftCount = displayed.filter((s: any) => s.status === 'draft').length
     const totalBookings = displayed.reduce((sum: number, s: any) => sum + (s.total_bookings || 0), 0)
     const rated = displayed.filter((s: any) => s.average_rating && parseFloat(s.average_rating) > 0)

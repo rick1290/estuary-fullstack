@@ -21,6 +21,8 @@ export default function JourneyCardWorkshop({ journey }: JourneyCardWorkshopProp
     ? toDate(journey.next_session_time)
     : null
   const isCompleted = journey.status === "completed"
+  const isUpcoming = nextSessionTime && nextSessionTime > new Date()
+  const isJoinable = isUpcoming && nextSessionTime && (nextSessionTime.getTime() - Date.now()) <= 15 * 60 * 1000
 
   return (
     <Link
@@ -87,9 +89,9 @@ export default function JourneyCardWorkshop({ journey }: JourneyCardWorkshopProp
           </div>
         </div>
 
-        {/* Right: type badge + status + chevron */}
-        <div className="hidden sm:flex flex-col items-end justify-between shrink-0">
-          <div className="flex items-center gap-2">
+        {/* Right: action indicator + type badge + status */}
+        <div className="flex flex-col items-end justify-between shrink-0">
+          <div className="hidden sm:flex items-center gap-2">
             <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
               Workshop
             </span>
@@ -103,7 +105,11 @@ export default function JourneyCardWorkshop({ journey }: JourneyCardWorkshopProp
               </span>
             )}
           </div>
-          <ChevronRight className="h-4 w-4 text-olive-300 group-hover:text-amber-500 transition-colors" />
+          <span className={`text-[12px] font-medium flex items-center gap-1 ${
+            isJoinable ? "text-amber-700" : "text-olive-400 group-hover:text-olive-600"
+          } transition-colors`}>
+            {isJoinable ? "Join" : "View"} <ChevronRight className="h-3.5 w-3.5" />
+          </span>
         </div>
       </div>
     </Link>
