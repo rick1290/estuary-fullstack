@@ -81,7 +81,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-4xl lg:text-5xl font-bold text-olive-800">
+                    <span className="text-4xl lg:text-5xl font-serif font-normal text-olive-800">
                       {practitioner.display_name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>
@@ -166,7 +166,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
                   disabled={isLoading}
                   aria-label={isLiked ? "Unlike practitioner" : "Like practitioner"}
                 >
-                  <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
+                  <Heart className={`h-4 w-4 transition-colors ${isLiked ? "fill-terracotta-500 text-terracotta-500" : ""}`} />
                 </Button>
               </div>
             </div>
@@ -206,7 +206,7 @@ export default function PractitionerHeader({ practitioner, onMessageClick }: Pra
           <Button
             variant="outline"
             size="default"
-            className="flex-1 sm:flex-none rounded-full min-h-[44px]"
+            className="flex-1 sm:flex-none rounded-full min-h-[44px] border-sage-200/60 text-olive-700 hover:bg-sage-50 hover:border-sage-300"
             onClick={onMessageClick}
           >
             <MessageCircle className="h-4 w-4 mr-2" />

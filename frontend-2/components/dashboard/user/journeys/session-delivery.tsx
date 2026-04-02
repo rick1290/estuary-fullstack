@@ -532,9 +532,8 @@ export default function SessionDelivery({
                 </div>
               )}
 
-            {/* Resources — completed only */}
-            {sessionState === "completed" &&
-              (effectiveBooking as any).resources &&
+            {/* Resources — show whenever available */}
+            {(effectiveBooking as any).resources &&
               Array.isArray((effectiveBooking as any).resources) &&
               (effectiveBooking as any).resources.length > 0 && (
                 <div>

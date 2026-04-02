@@ -393,8 +393,8 @@ export default function CheckoutPage() {
                       <span className="text-muted-foreground truncate text-xs sm:text-sm">
                         {selectedSession?.start_time
                           ? new Date(selectedSession.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-                          : serviceType === "courses" && service.firstSessionDate && service.lastSessionDate
-                            ? `${new Date(service.firstSessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                          : (serviceType === "course" || serviceType === "courses") && (service.firstSessionDate || service.nextSessionDate)
+                            ? new Date(service.firstSessionDate || service.nextSessionDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
                             : selectedDate || "Flexible"}
                       </span>
                     </div>
@@ -403,7 +403,9 @@ export default function CheckoutPage() {
                       <span className="text-muted-foreground truncate text-xs sm:text-sm">
                         {selectedSession?.start_time
                           ? new Date(selectedSession.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-                          : selectedTime || "TBC"}
+                          : (serviceType === "course" || serviceType === "courses") && service.firstSessionDate
+                            ? new Date(service.firstSessionDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                            : selectedTime || "TBC"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 col-span-2">
@@ -577,20 +579,26 @@ export default function CheckoutPage() {
                     )}
                   </Button>
 
-                  {/* Legal language and security information */}
-                  <div className="mt-3 text-center space-y-2">
-                    <p className="text-sm text-muted-foreground">
+                  {/* Trust indicators */}
+                  <div className="mt-4 pt-4 border-t border-sage-100 text-center space-y-2.5">
+                    <div className="flex items-center justify-center gap-4 text-olive-500">
+                      <span className="flex items-center gap-1 text-xs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Secure checkout
+                      </span>
+                      <span className="text-sage-300">|</span>
+                      <span className="text-xs">256-bit SSL encrypted</span>
+                      <span className="text-sage-300">|</span>
+                      <span className="text-xs">Stripe secure payments</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
                       By completing this payment, you agree to Estuary's{" "}
                       <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link>
                       {" "}and{" "}
                       <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
-                    </p>
-                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      Secure checkout powered by Stripe
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Need help?{" "}

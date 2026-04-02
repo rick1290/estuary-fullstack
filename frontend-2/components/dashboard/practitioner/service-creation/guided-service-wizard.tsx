@@ -237,7 +237,7 @@ export function GuidedServiceWizard() {
   const [pendingAiImageUrl, setPendingAiImageUrl] = useState<string | null>(null)
   const [aiPrompt, setAiPrompt] = useState("")
   const [generationsRemaining, setGenerationsRemaining] = useState<number | null>(null)
-  const [imageActiveTab, setImageActiveTab] = useState("upload")
+  const [imageActiveTab, setImageActiveTab] = useState("ai")
 
   // Publish choice state
   const [publishChoice, setPublishChoice] = useState<"publish" | "draft" | null>(null)

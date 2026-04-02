@@ -206,7 +206,7 @@ export default function Step2Specializations({
                     type="button"
                     onClick={() => toggleSelection(spec.id.toString(), 'specialization_ids')}
                     className={cn(
-                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
+                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all h-full min-h-[48px] flex items-center justify-center text-center",
                       isSelected
                         ? "border-sage-500 bg-sage-50 text-sage-700"
                         : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"
@@ -249,7 +249,7 @@ export default function Step2Specializations({
                     type="button"
                     onClick={() => toggleSelection(style.id.toString(), 'style_ids')}
                     className={cn(
-                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
+                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all h-full min-h-[48px] flex items-center justify-center text-center",
                       isSelected
                         ? "border-sage-500 bg-sage-50 text-sage-700"
                         : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"
@@ -288,7 +288,7 @@ export default function Step2Specializations({
                     type="button"
                     onClick={() => toggleSelection(topic.id.toString(), 'topic_ids')}
                     className={cn(
-                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
+                      "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all h-full min-h-[48px] flex items-center justify-center text-center",
                       isSelected
                         ? "border-sage-500 bg-sage-50 text-sage-700"
                         : "border-sage-200 bg-white text-olive-600 hover:border-sage-300"

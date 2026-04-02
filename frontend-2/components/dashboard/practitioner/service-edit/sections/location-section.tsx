@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { MapPin, Video, Users, Plus, Loader2 } from "lucide-react"
+import { MapPin, Video, Plus, Loader2 } from "lucide-react"
 import type { ServiceDetailReadable as ServiceReadable } from "@/src/client/types.gen"
 import { practitionerLocationsListOptions } from "@/src/client/@tanstack/react-query.gen"
 import { CreateLocationDialog } from "./create-location-dialog"
@@ -100,24 +100,12 @@ export function LocationSection({
               </Label>
             </div>
 
-            <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
-              <RadioGroupItem value="hybrid" id="hybrid" />
-              <Label htmlFor="hybrid" className="flex items-center gap-2 cursor-pointer flex-1">
-                <Users className="h-4 w-4" />
-                <div>
-                  <div className="font-medium">Hybrid</div>
-                  <div className="text-sm text-muted-foreground">
-                    Both online and in-person options
-                  </div>
-                </div>
-              </Label>
-            </div>
           </RadioGroup>
         </div>
 
 
         {/* In-Person Details */}
-        {(localData.location_type === "in_person" || localData.location_type === "hybrid") && (
+        {localData.location_type === "in_person" && (
           <div className="space-y-4 pl-6 border-l-2">
             <h4 className="font-medium">Physical Location</h4>
 

@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   serviceSessionsRetrieveOptions,
   serviceSessionsMarkCompletedCreateMutation,
-  serviceSessionsMarkInProgressCreateMutation,
   serviceSessionsPartialUpdateMutation,
   servicesRetrieveOptions,
   recordingsPartialUpdateMutation,
@@ -32,7 +31,6 @@ import {
   ExternalLink,
   Loader2,
   Film,
-  PlayCircle,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -46,7 +44,7 @@ import { SessionParticipantsList } from "./session-participants-list"
 const SESSION_STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; className?: string }> = {
   draft: { label: "Draft", variant: "outline" },
   scheduled: { label: "Scheduled", variant: "secondary" },
-  in_progress: { label: "In Progress", variant: "default", className: "bg-blue-600" },
+  in_progress: { label: "In Progress", variant: "default", className: "bg-sage-600" },
   completed: { label: "Completed", variant: "default", className: "bg-green-600" },
   canceled: { label: "Canceled", variant: "destructive" },
 }
@@ -93,18 +91,6 @@ export function SessionDetailPage({
     },
   })
 
-  const markInProgressMutation = useMutation({
-    ...serviceSessionsMarkInProgressCreateMutation(),
-    onSuccess: () => {
-      toast({ title: "Session started", description: "Session has been marked as in progress." })
-      refetch()
-      queryClient.invalidateQueries({ queryKey: ['services'] })
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed", description: error?.body?.detail || error?.message || "Could not update session", variant: "destructive" })
-    },
-  })
-
   const updateRecordingMutation = useMutation({
     ...recordingsPartialUpdateMutation(),
     onSuccess: () => {
@@ -136,7 +122,7 @@ export function SessionDetailPage({
     }
   }, [session])
 
-  const isAnyMutating = markCompletedMutation.isPending || markInProgressMutation.isPending
+  const isAnyMutating = markCompletedMutation.isPending
 
   // Loading
   if (sessionLoading) {
@@ -166,8 +152,7 @@ export function SessionDetailPage({
   // Session info
   const sessionStatus = session.status || 'scheduled'
   const statusConfig = SESSION_STATUS_CONFIG[sessionStatus] || SESSION_STATUS_CONFIG.scheduled
-  const canMarkInProgress = sessionStatus === 'scheduled' || sessionStatus === 'draft'
-  const canMarkCompleted = sessionStatus === 'in_progress'
+  const canMarkCompleted = sessionStatus === 'in_progress' || sessionStatus === 'scheduled' || sessionStatus === 'draft'
   const bookings = session.bookings || []
   const attendeeCount = session.booking_count || bookings.length || 0
   const maxParticipants = session.max_participants
@@ -183,25 +168,6 @@ export function SessionDetailPage({
   // Session action buttons — shared between desktop header and mobile bar
   const actionButtons = (
     <>
-      {canMarkInProgress && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 min-h-[44px] sm:min-h-0 text-xs"
-          onClick={() => markInProgressMutation.mutate({
-            path: { id: sessionId },
-            body: { service: parseInt(serviceId) },
-          })}
-          disabled={isAnyMutating}
-        >
-          {markInProgressMutation.isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-          ) : (
-            <PlayCircle className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
-          )}
-          Mark In Progress
-        </Button>
-      )}
       {canMarkCompleted && (
         <Button
           size="sm"
@@ -221,7 +187,7 @@ export function SessionDetailPage({
           Mark Completed
         </Button>
       )}
-      {session.room?.public_uuid && (
+      {session.room?.public_uuid && sessionStatus !== 'completed' && sessionStatus !== 'canceled' && (
         <Button size="sm" className="h-8 min-h-[44px] sm:min-h-0 text-xs" asChild>
           <Link href={`/room/${session.room.public_uuid}/lobby`}>
             <Video className="h-3.5 w-3.5 mr-1.5" />
@@ -266,7 +232,7 @@ export function SessionDetailPage({
         </div>
 
         {/* Mobile action buttons — below header, full width */}
-        {(canMarkInProgress || canMarkCompleted || session.room?.public_uuid) && (
+        {(canMarkCompleted || session.room?.public_uuid) && (
           <div className="flex sm:hidden items-center gap-2 px-4 pb-3 overflow-x-auto">
             {actionButtons}
           </div>
@@ -528,25 +494,6 @@ export function SessionDetailPage({
                   {statusConfig.label}
                 </Badge>
                 <div className="space-y-2">
-                  {canMarkInProgress && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full justify-start min-h-[44px]"
-                      onClick={() => markInProgressMutation.mutate({
-                        path: { id: sessionId },
-                        body: { service: parseInt(serviceId) },
-                      })}
-                      disabled={isAnyMutating}
-                    >
-                      {markInProgressMutation.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-                      ) : (
-                        <PlayCircle className="h-3.5 w-3.5 mr-2 text-blue-600" />
-                      )}
-                      Mark In Progress
-                    </Button>
-                  )}
                   {canMarkCompleted && (
                     <Button
                       size="sm"

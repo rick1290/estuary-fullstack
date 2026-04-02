@@ -23,6 +23,7 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
   const isCompleted = journey.status === "completed"
   const isUnscheduled = journey.status === "unscheduled"
   const isUpcoming = nextSessionTime && nextSessionTime > new Date()
+  const isJoinable = isUpcoming && nextSessionTime && (nextSessionTime.getTime() - Date.now()) <= 15 * 60 * 1000
 
   return (
     <Link
@@ -102,9 +103,9 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
           </div>
         </div>
 
-        {/* Right: type badge + status + chevron */}
-        <div className="hidden sm:flex flex-col items-end justify-between shrink-0">
-          <div className="flex items-center gap-2">
+        {/* Right: action indicator + type badge + status */}
+        <div className="flex flex-col items-end justify-between shrink-0">
+          <div className="hidden sm:flex items-center gap-2">
             <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-sage-50 text-sage-600">
               Session
             </span>
@@ -129,7 +130,11 @@ export default function JourneyCardSession({ journey }: JourneyCardSessionProps)
               </span>
             ) : null}
           </div>
-          <ChevronRight className="h-4 w-4 text-olive-300 group-hover:text-sage-500 transition-colors" />
+          <span className={`text-[12px] font-medium flex items-center gap-1 ${
+            isJoinable ? "text-sage-700" : "text-olive-400 group-hover:text-olive-600"
+          } transition-colors`}>
+            {isJoinable ? "Join" : "View"} <ChevronRight className="h-3.5 w-3.5" />
+          </span>
         </div>
 
         {/* Mobile form badge */}

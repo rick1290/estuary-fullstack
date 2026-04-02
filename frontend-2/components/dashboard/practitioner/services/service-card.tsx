@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  MoreVertical, Eye, Trash2, Copy, Globe, EyeOff, Settings, LayoutDashboard,
+  MoreVertical, Eye, Archive, Copy, Globe, EyeOff, Settings, LayoutDashboard,
   Calendar, Clock, DollarSign, ImageIcon, Star, Users, BookOpen, ShoppingBag, AlertTriangle
 } from "lucide-react"
 import { getServiceTypeConfig } from "@/lib/service-type-config"
@@ -242,20 +242,20 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
               onClick={() => setDeleteDialogOpen(true)}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Delete</span>
+              <Archive className="mr-2 h-4 w-4" />
+              <span>Archive</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardFooter>
 
-      {/* Delete confirmation dialog */}
+      {/* Archive confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Service?</DialogTitle>
+            <DialogTitle>Archive Service?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{service.name}&quot;? This action cannot be undone.
+              Are you sure you want to archive &quot;{service.name}&quot;? Archived services are hidden from clients but can be restored later.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -263,7 +263,7 @@ export default function ServiceCard({ service, onDelete, onToggleStatus, onDupli
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm}>
-              Delete
+              Archive
             </Button>
           </DialogFooter>
         </DialogContent>

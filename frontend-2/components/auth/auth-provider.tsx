@@ -38,6 +38,29 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     const authParam = searchParams.get("auth")
     const redirect = searchParams.get("redirect")
     const serviceType = searchParams.get("serviceType")
+    const callbackUrl = searchParams.get("callbackUrl")
+    const sessionExpired = searchParams.get("session")
+
+    // Open login modal when callbackUrl is present (middleware redirect) or session expired
+    if (callbackUrl || sessionExpired === "expired") {
+      setModalOptions({
+        defaultTab: "login",
+        redirectUrl: callbackUrl || undefined,
+        title: "Sign in to continue",
+        description: callbackUrl ? "Please sign in to access this page" : "Your session has expired. Please sign in again.",
+      })
+      setIsOpen(true)
+
+      // Clean up URL
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+      newSearchParams.delete("callbackUrl")
+      newSearchParams.delete("session")
+      const newUrl = newSearchParams.toString()
+        ? `${window.location.pathname}?${newSearchParams.toString()}`
+        : window.location.pathname
+      router.replace(newUrl)
+      return
+    }
 
     if (authParam === "login" || authParam === "signup") {
       setModalOptions({
@@ -52,11 +75,11 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
       newSearchParams.delete("auth")
       newSearchParams.delete("redirect")
       newSearchParams.delete("serviceType")
-      
-      const newUrl = newSearchParams.toString() 
+
+      const newUrl = newSearchParams.toString()
         ? `${window.location.pathname}?${newSearchParams.toString()}`
         : window.location.pathname
-      
+
       router.replace(newUrl)
     }
   }, [searchParams, router])

@@ -52,7 +52,7 @@ export default function OnboardingCompletePage() {
         </div>
       )}
 
-      <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Success Animation */}
         <motion.div
           initial={{ scale: 0 }}
@@ -72,10 +72,10 @@ export default function OnboardingCompletePage() {
           transition={{ delay: 0.3 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-olive-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-olive-900 mb-4">
             Welcome to Estuary! 🎉
           </h1>
-          <p className="text-xl text-olive-600 max-w-2xl mx-auto">
+          <p className="text-xl text-olive-600 max-w-2xl mx-auto font-serif">
             Your practitioner profile has been submitted and is under review
           </p>
         </motion.div>
@@ -145,7 +145,7 @@ export default function OnboardingCompletePage() {
           transition={{ delay: 0.7 }}
           className="mb-12"
         >
-          <h2 className="text-2xl font-bold text-olive-900 mb-6 text-center">
+          <h2 className="text-2xl font-serif font-bold text-olive-900 mb-6 text-center">
             Complete Your Profile
           </h2>
 
