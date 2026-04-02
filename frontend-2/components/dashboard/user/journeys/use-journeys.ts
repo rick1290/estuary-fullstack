@@ -60,7 +60,7 @@ export function useJourneys() {
   )
 
   const upcomingJourneys = useMemo(
-    () => journeys.filter((j) => j.status === "upcoming"),
+    () => journeys.filter((j) => j.status === "upcoming" || j.status === "active"),
     [journeys]
   )
 
