@@ -89,18 +89,18 @@ function CourseSessionSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#faf8f5] to-[#f5f2ed]">
       {/* Hero skeleton */}
-      <div className="bg-gradient-to-br from-teal-50 via-[#faf8f5] to-[#f0ede8]/30 px-6 py-12 pb-16">
+      <div className="bg-gradient-to-br from-sage-50 via-[#faf8f5] to-[#f0ede8]/30 px-6 py-12 pb-16">
         <div className="max-w-6xl mx-auto space-y-4">
-          <Skeleton className="h-4 w-48 bg-teal-100/50" />
+          <Skeleton className="h-4 w-48 bg-sage-100/50" />
           <div className="flex gap-2">
-            <Skeleton className="h-6 w-28 bg-teal-100/50 rounded-full" />
-            <Skeleton className="h-6 w-24 bg-teal-100/50 rounded-full" />
+            <Skeleton className="h-6 w-28 bg-sage-100/50 rounded-full" />
+            <Skeleton className="h-6 w-24 bg-sage-100/50 rounded-full" />
           </div>
-          <Skeleton className="h-12 w-3/4 bg-teal-100/50" />
-          <Skeleton className="h-5 w-1/3 bg-teal-100/50" />
+          <Skeleton className="h-12 w-3/4 bg-sage-100/50" />
+          <Skeleton className="h-5 w-1/3 bg-sage-100/50" />
           <div className="flex gap-4 pt-2">
-            <Skeleton className="h-8 w-36 bg-teal-100/50 rounded-full" />
-            <Skeleton className="h-5 w-20 bg-teal-100/50" />
+            <Skeleton className="h-8 w-36 bg-sage-100/50 rounded-full" />
+            <Skeleton className="h-5 w-20 bg-sage-100/50" />
           </div>
         </div>
       </div>
@@ -133,8 +133,8 @@ function StatusBadge({ state }: { state: ModuleState }) {
   switch (state) {
     case "upcoming":
       return (
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-teal-700 border border-teal-200 bg-teal-50 rounded-full px-2.5 py-0.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-sage-700 border border-sage-200 bg-sage-50 rounded-full px-2.5 py-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-sage-500 animate-pulse" />
           Upcoming
         </span>
       )
@@ -195,7 +195,7 @@ function HeroSection({
     session?.title ?? `Module ${moduleNumber}`
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-[#faf8f5] to-[#f0ede8]/30">
+    <div className="relative overflow-hidden bg-gradient-to-br from-sage-50 via-[#faf8f5] to-[#f0ede8]/30">
       {/* Subtle decorative radials */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(45,106,106,0.06)_0%,transparent_50%),radial-gradient(ellipse_at_10%_80%,rgba(156,175,136,0.08)_0%,transparent_45%)]" />
 
@@ -224,7 +224,7 @@ function HeroSection({
         <div className="max-w-[660px]">
           {/* Eyebrow badges */}
           <div className="flex items-center gap-2 flex-wrap mb-3.5">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-teal-700 border border-teal-200 bg-teal-100 rounded-full px-2.5 py-0.5">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-sage-700 border border-sage-200 bg-sage-100 rounded-full px-2.5 py-0.5">
               Module {moduleNumber} of {totalModules}
             </span>
             <StatusBadge state={moduleState} />
@@ -254,7 +254,7 @@ function HeroSection({
                       alt={practitioner.name ?? "Practitioner"}
                     />
                   ) : null}
-                  <AvatarFallback className="bg-gradient-to-br from-teal-100 to-teal-200 text-teal-700 text-xs font-serif italic">
+                  <AvatarFallback className="bg-gradient-to-br from-sage-100 to-sage-200 text-sage-700 text-xs font-serif italic">
                     {practitioner.name?.charAt(0) ?? "P"}
                   </AvatarFallback>
                 </Avatar>
@@ -377,7 +377,7 @@ function MainColumn({
                   key={i}
                   className="flex items-start gap-2.5 px-4 py-3.5 bg-[#faf8f5] border border-[#e0d8ce]/40 rounded-lg"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 mt-2 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-sage-500 mt-2 shrink-0" />
                   <span className="text-[13.5px] text-[#6b6258] leading-snug">
                     {item.trim()}
                   </span>
@@ -394,7 +394,7 @@ function MainColumn({
           {!isEditingNotes && (
             <button
               onClick={() => setIsEditingNotes(true)}
-              className="text-[11px] font-medium text-teal-600 hover:text-teal-800 transition-colors normal-case tracking-normal"
+              className="text-[11px] font-medium text-sage-600 hover:text-sage-800 transition-colors normal-case tracking-normal"
             >
               Edit
             </button>
@@ -406,14 +406,14 @@ function MainColumn({
               value={clientNotes}
               onChange={(e) => setClientNotes(e.target.value)}
               placeholder="Add personal notes about this module..."
-              className="min-h-[120px] resize-y border-[#e0d8ce] focus:border-teal-400 bg-white rounded-xl"
+              className="min-h-[120px] resize-y border-[#e0d8ce] focus:border-sage-400 bg-white rounded-xl"
             />
             <div className="flex gap-2">
               <Button
                 size="sm"
                 onClick={() => saveNotes(clientNotes)}
                 disabled={isSavingNotes}
-                className="bg-teal-600 hover:bg-teal-700 text-white rounded-full text-xs"
+                className="bg-sage-600 hover:bg-sage-700 text-white rounded-full text-xs"
               >
                 {isSavingNotes ? "Saving..." : "Save Notes"}
               </Button>
@@ -456,8 +456,8 @@ function MainColumn({
                     key={recording?.id ?? i}
                     className="flex items-center gap-3.5 p-4 bg-[#faf8f5] border border-[#e0d8ce]/40 rounded-lg hover:shadow-sm transition-shadow"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
-                      <Film className="w-[18px] h-[18px] text-teal-600" />
+                    <div className="w-10 h-10 rounded-lg bg-sage-50 flex items-center justify-center shrink-0">
+                      <Film className="w-[18px] h-[18px] text-sage-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-[#2a2218] truncate">
@@ -473,7 +473,7 @@ function MainColumn({
                     <div className="flex gap-2 shrink-0">
                       <Button
                         size="sm"
-                        className="bg-teal-50 text-teal-700 hover:bg-teal-100 border-0 rounded-full text-xs gap-1.5"
+                        className="bg-sage-50 text-sage-700 hover:bg-sage-100 border-0 rounded-full text-xs gap-1.5"
                         variant="ghost"
                       >
                         <PlayCircle className="w-3 h-3" />
@@ -503,6 +503,53 @@ function MainColumn({
           </div>
         )}
 
+      {/* Session Resources */}
+      {(booking as any).resources &&
+        Array.isArray((booking as any).resources) &&
+        ((booking as any).resources as any[]).length > 0 && (
+          <div className="bg-white border border-[#e0d8ce]/60 rounded-xl shadow-sm p-6">
+            <div className="text-[11px] font-medium uppercase tracking-widest text-[#9b9088] mb-4 pb-2.5 border-b border-[#e0d8ce]/60">
+              Resources &amp; Materials
+            </div>
+            <div className="space-y-2.5">
+              {((booking as any).resources as any[]).map(
+                (resource: any, i: number) => (
+                  <div
+                    key={resource?.id ?? i}
+                    className="flex items-center gap-3.5 p-4 bg-[#faf8f5] border border-[#e0d8ce]/40 rounded-lg hover:shadow-sm transition-shadow cursor-pointer"
+                    onClick={() => {
+                      if (resource?.file_url) window.open(resource.file_url, "_blank")
+                      else if (resource?.external_url) window.open(resource.external_url, "_blank")
+                    }}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-sage-50 flex items-center justify-center shrink-0">
+                      <FileText className="w-[18px] h-[18px] text-sage-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[#2a2218] truncate">
+                        {resource.title ?? "Resource"}
+                      </div>
+                      {resource.description && (
+                        <div className="text-xs text-[#9b9088]">{resource.description}</div>
+                      )}
+                    </div>
+                    {(resource.file_url || resource.external_url) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full text-xs gap-1.5 text-[#9b9088] shrink-0"
+                      >
+                        <Download className="w-3 h-3" />
+                        Download
+                      </Button>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
+
       {/* Practitioner Notes - completed state */}
       {moduleState === "completed" &&
         (booking as any).practitioner_notes && (
@@ -510,7 +557,7 @@ function MainColumn({
             <div className="text-[11px] font-medium uppercase tracking-widest text-[#9b9088] mb-4 pb-2.5 border-b border-[#e0d8ce]/60">
               Practitioner Notes
             </div>
-            <div className="bg-[#faf8f5] border border-[#e0d8ce]/40 border-l-[3px] border-l-teal-500 rounded-r-lg p-5">
+            <div className="bg-[#faf8f5] border border-[#e0d8ce]/40 border-l-[3px] border-l-sage-500 rounded-r-lg p-5">
               <p className="text-[14px] font-light leading-relaxed text-[#6b6258]">
                 {(booking as any).practitioner_notes}
               </p>
@@ -523,7 +570,7 @@ function MainColumn({
                         alt={practitioner.name ?? "Practitioner"}
                       />
                     ) : null}
-                    <AvatarFallback className="bg-gradient-to-br from-teal-100 to-teal-200 text-teal-700 text-[10px] font-serif italic">
+                    <AvatarFallback className="bg-gradient-to-br from-sage-100 to-sage-200 text-sage-700 text-[10px] font-serif italic">
                       {practitioner.name?.charAt(0) ?? "P"}
                     </AvatarFallback>
                   </Avatar>
@@ -542,7 +589,7 @@ function MainColumn({
           {prevModule ? (
             <Button
               variant="outline"
-              className="rounded-full border-[#e0d8ce] text-[#6b6258] hover:border-teal-300 hover:text-teal-700 text-sm gap-2"
+              className="rounded-full border-[#e0d8ce] text-[#6b6258] hover:border-sage-300 hover:text-sage-700 text-sm gap-2"
               asChild
             >
               <Link
@@ -558,7 +605,7 @@ function MainColumn({
           {nextModule ? (
             <Button
               variant="outline"
-              className="rounded-full border-[#e0d8ce] text-[#6b6258] hover:border-teal-300 hover:text-teal-700 text-sm gap-2"
+              className="rounded-full border-[#e0d8ce] text-[#6b6258] hover:border-sage-300 hover:text-sage-700 text-sm gap-2"
               asChild
             >
               <Link
@@ -631,13 +678,13 @@ function Sidebar({
             {startTime && (
               <>
                 <div className="flex items-center gap-2 text-[13px] text-[#f5f0e8]/60 mb-1">
-                  <Calendar className="w-3 h-3 text-teal-300" />
+                  <Calendar className="w-3 h-3 text-sage-300" />
                   <span className="font-medium text-[#f5f0e8]/90">
                     {format(startTime, "EEEE, MMMM d")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[13px] text-[#f5f0e8]/60">
-                  <Clock className="w-3 h-3 text-teal-300" />
+                  <Clock className="w-3 h-3 text-sage-300" />
                   {format(startTime, "h:mm a")}
                   {endTime && ` - ${format(endTime, "h:mm a")}`}
                 </div>
@@ -648,9 +695,9 @@ function Sidebar({
 
         {/* Ticket tear */}
         <div className="flex items-center -mx-[1px]">
-          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-teal-50 via-[#faf8f5] to-[#f0ede8]/30 shrink-0 relative z-10" />
+          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-sage-50 via-[#faf8f5] to-[#f0ede8]/30 shrink-0 relative z-10" />
           <div className="flex-1 border-t-[1.5px] border-dashed border-[#e0d8ce]/60 mx-1" />
-          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-teal-50 via-[#faf8f5] to-[#f0ede8]/30 shrink-0 relative z-10" />
+          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-sage-50 via-[#faf8f5] to-[#f0ede8]/30 shrink-0 relative z-10" />
         </div>
 
         {/* Ticket stub */}
@@ -658,7 +705,7 @@ function Sidebar({
           {duration && (
             <div className="flex justify-between py-[7px] border-b border-[#e0d8ce]/60 text-[13px]">
               <span className="flex items-center gap-1.5 text-[#9b9088]">
-                <Clock className="w-3 h-3 text-teal-600" />
+                <Clock className="w-3 h-3 text-sage-600" />
                 Duration
               </span>
               <span className="font-medium text-[#2a2218]">
@@ -668,7 +715,7 @@ function Sidebar({
           )}
           <div className="flex justify-between py-[7px] border-b border-[#e0d8ce]/60 text-[13px]">
             <span className="flex items-center gap-1.5 text-[#9b9088]">
-              <MapPin className="w-3 h-3 text-teal-600" />
+              <MapPin className="w-3 h-3 text-sage-600" />
               Location
             </span>
             <span className="font-medium text-[#2a2218] text-right text-xs">
@@ -677,7 +724,7 @@ function Sidebar({
           </div>
           <div className="flex justify-between py-[7px] text-[13px]">
             <span className="flex items-center gap-1.5 text-[#9b9088]">
-              <FileText className="w-3 h-3 text-teal-600" />
+              <FileText className="w-3 h-3 text-sage-600" />
               Status
             </span>
             <span className="font-medium text-[#2a2218] capitalize text-xs">
@@ -700,7 +747,7 @@ function Sidebar({
         </div>
         <div className="w-full h-2 bg-[#e0d8ce]/50 rounded-full overflow-hidden">
           <div
-            className="h-full bg-teal-500 rounded-full transition-all duration-500"
+            className="h-full bg-sage-500 rounded-full transition-all duration-500"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -711,9 +758,9 @@ function Sidebar({
               key={i}
               className={`w-2.5 h-2.5 rounded-full ${
                 i + 1 === moduleNumber
-                  ? "bg-teal-500 ring-2 ring-teal-500/30"
+                  ? "bg-sage-500 ring-2 ring-sage-500/30"
                   : i < completedCount
-                    ? "bg-teal-500/60"
+                    ? "bg-sage-500/60"
                     : "bg-[#e0d8ce]"
               }`}
             />
@@ -726,7 +773,7 @@ function Sidebar({
         {/* Join Session - live or upcoming+joinable */}
         {canJoin && isVirtual && roomUuid && (
           <Button
-            className="w-full h-[50px] rounded-full bg-teal-600 hover:bg-teal-700 text-white text-[15px] font-medium gap-2"
+            className="w-full h-[50px] rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[15px] font-medium gap-2"
             asChild
           >
             <a href={`/room/${roomUuid}/lobby`}>
@@ -739,7 +786,7 @@ function Sidebar({
         {/* Back to Course */}
         <Button
           variant="outline"
-          className="w-full h-11 rounded-full border-[#e0d8ce] text-[#6b6258] hover:border-teal-300 hover:text-teal-700 text-sm gap-2"
+          className="w-full h-11 rounded-full border-[#e0d8ce] text-[#6b6258] hover:border-sage-300 hover:text-sage-700 text-sm gap-2"
           asChild
         >
           <Link href={`/dashboard/user/journeys/${courseUuid}`}>
@@ -759,7 +806,7 @@ function Sidebar({
                 alt={practitioner.name ?? "Practitioner"}
               />
             ) : null}
-            <AvatarFallback className="bg-gradient-to-br from-teal-100 to-teal-200 text-teal-700 font-serif text-lg italic">
+            <AvatarFallback className="bg-gradient-to-br from-sage-100 to-sage-200 text-sage-700 font-serif text-lg italic">
               {practitioner.name?.charAt(0) ?? "P"}
             </AvatarFallback>
           </Avatar>
@@ -772,7 +819,7 @@ function Sidebar({
           <Button
             size="sm"
             variant="ghost"
-            className="text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-full text-xs shrink-0 gap-1.5"
+            className="text-sage-700 bg-sage-50 hover:bg-sage-100 rounded-full text-xs shrink-0 gap-1.5"
           >
             <MessageSquare className="w-3 h-3" />
             Message
