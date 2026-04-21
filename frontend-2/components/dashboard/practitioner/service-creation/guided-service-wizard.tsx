@@ -57,8 +57,11 @@ import {
   modalitiesListOptions,
   modalityCategoriesListOptions,
   aiImagesGenerateCreateMutation,
-  servicesUploadCoverImageCreateMutation
+  servicesUploadCoverImageCreateMutation,
+  practitionerLocationsListOptions,
+  serviceSessionsCreateMutation
 } from "@/src/client/@tanstack/react-query.gen"
+import { CreateLocationDialog } from "../service-edit/sections/create-location-dialog"
 import Link from "next/link"
 import { PractitionerPageHeader } from "../practitioner-page-header"
 import {
@@ -97,6 +100,7 @@ const phase2Schema = z.object({
   duration_minutes: z.number().min(1, "Duration must be at least 1 minute"),
   max_participants: z.number().min(1),
   location_type: z.enum(["virtual", "in_person"]),
+  practitioner_location: z.number().optional(),
   schedule_id: z.string().optional(),
 })
 
@@ -273,6 +277,22 @@ export function GuidedServiceWizard() {
     ...schedulesListOptions({}),
   })
 
+  const { data: practitionerLocationsData, isLoading: locationsLoading, refetch: refetchLocations } = useQuery({
+    ...practitionerLocationsListOptions(),
+  })
+  const practitionerLocations = practitionerLocationsData?.results || []
+  const [showCreateLocationDialog, setShowCreateLocationDialog] = useState(false)
+
+  type WizardSession = {
+    id: string
+    title: string
+    start_time: string
+    end_time: string
+    max_participants?: number
+  }
+  const [wizardSessions, setWizardSessions] = useState<WizardSession[]>([])
+  const [sessionsError, setSessionsError] = useState<string | null>(null)
+
   // Form setup
   const form = useForm<WizardFormData>({
     resolver: zodResolver(wizardSchema),
@@ -283,6 +303,7 @@ export function GuidedServiceWizard() {
       duration_minutes: 60,
       max_participants: 1,
       location_type: "virtual",
+      practitioner_location: undefined,
       modalityId: "",
       practitionerCategoryId: "",
       shortDescription: "",
@@ -296,6 +317,7 @@ export function GuidedServiceWizard() {
   const needsConfigStep = selectedServiceType === 'bundle' || selectedServiceType === 'package'
   const isPackage = selectedServiceType === 'package'
   const isBundle = selectedServiceType === 'bundle'
+  const isWorkshopOrCourse = selectedServiceType === 'workshop' || selectedServiceType === 'course'
 
   // Build phases array dynamically based on service type
   const phases = useMemo(() => {
@@ -312,7 +334,11 @@ export function GuidedServiceWizard() {
 
     base.push({ key: "basic-info", title: "Basic Info", icon: FileText })
 
-    if (!isPackage) {
+    if (isWorkshopOrCourse) {
+      base.push({ key: "pricing-duration", title: "Pricing", icon: DollarSign })
+      base.push({ key: "location", title: "Location", icon: MapPin })
+      base.push({ key: "sessions", title: "Sessions", icon: Calendar })
+    } else if (!isPackage) {
       base.push({ key: "delivery", title: "Details", icon: Clock })
     }
 
@@ -320,7 +346,7 @@ export function GuidedServiceWizard() {
     base.push({ key: "review", title: "Review & Launch", icon: CheckCircle2 })
 
     return base
-  }, [isBundle, isPackage])
+  }, [isBundle, isPackage, isWorkshopOrCourse])
 
   const totalPhases = phases.length
   const currentPhaseKey = phases[currentPhase - 1]?.key || "type"
@@ -486,6 +512,38 @@ export function GuidedServiceWizard() {
         return
       }
 
+      // Create scheduled sessions for workshops/courses
+      if (wizardSessions.length > 0) {
+        const publishing = form.formState.submitCount > 0
+        const sessionStatus = publishing ? "scheduled" : "draft"
+        let sessionFailures = 0
+        for (const [idx, s] of wizardSessions.entries()) {
+          try {
+            await (serviceSessionsCreateMutation() as any).mutationFn({
+              body: {
+                service: data.id,
+                title: s.title || undefined,
+                start_time: new Date(s.start_time),
+                end_time: new Date(s.end_time),
+                sequence_number: idx + 1,
+                status: sessionStatus,
+                max_participants: form.getValues("max_participants"),
+              },
+            })
+          } catch (err) {
+            sessionFailures += 1
+            console.error("Session create failed", err)
+          }
+        }
+        if (sessionFailures > 0) {
+          toast({
+            title: `${sessionFailures} session(s) couldn't be scheduled`,
+            description: "Your service was created. Add the missing sessions in Settings → Sessions & Schedule.",
+            variant: "destructive",
+          })
+        }
+      }
+
       // Chain image upload/apply after service creation
       try {
         if (pendingImageFile) {
@@ -543,8 +601,49 @@ export function GuidedServiceWizard() {
         return packageFinalPrice > 0
       case "basic-info":
         return await form.trigger(["name", "shortDescription", "description"])
-      case "delivery":
-        return await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+      case "delivery": {
+        const fieldsValid = await form.trigger(["price", "duration_minutes", "max_participants", "location_type"])
+        const locType = form.getValues("location_type")
+        const locId = form.getValues("practitioner_location")
+        if (locType === "in_person" && !locId) {
+          form.setError("practitioner_location", {
+            type: "manual",
+            message: "Please select or add a location for in-person services",
+          })
+          return false
+        }
+        return fieldsValid
+      }
+      case "pricing-duration":
+        return await form.trigger(["price", "duration_minutes", "max_participants"])
+      case "location": {
+        const fieldsValid = await form.trigger(["location_type"])
+        const locType = form.getValues("location_type")
+        const locId = form.getValues("practitioner_location")
+        if (locType === "in_person" && !locId) {
+          form.setError("practitioner_location", {
+            type: "manual",
+            message: "Please select or add a location for in-person services",
+          })
+          return false
+        }
+        return fieldsValid
+      }
+      case "sessions": {
+        if (wizardSessions.length === 0) {
+          setSessionsError("Add at least one scheduled session before continuing.")
+          return false
+        }
+        const invalid = wizardSessions.find(
+          (s) => !s.start_time || !s.end_time || new Date(s.end_time) <= new Date(s.start_time)
+        )
+        if (invalid) {
+          setSessionsError("Each session needs a start and end time, and must end after it starts.")
+          return false
+        }
+        setSessionsError(null)
+        return true
+      }
       case "image":
         // Image step is optional — always valid
         return true
@@ -656,6 +755,7 @@ export function GuidedServiceWizard() {
       max_participants: finalMaxParticipants,
       min_participants: 1,
       location_type: data.location_type,
+      ...(data.practitioner_location && { practitioner_location: data.practitioner_location }),
       status: isPublish ? 'active' : 'draft',
       is_active: isPublish,
       is_public: isPublish,
@@ -773,6 +873,50 @@ export function GuidedServiceWizard() {
                       : "You can finish setting it up anytime from your dashboard."}
                   </p>
                 </motion.div>
+
+                {/* Intake form prompt — workshops, courses, or in-person services */}
+                {(selectedServiceType === "workshop" ||
+                  selectedServiceType === "course" ||
+                  form.getValues("location_type") === "in_person") && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="mb-6"
+                  >
+                    <Card className="border-terracotta-200 bg-terracotta-50/40">
+                      <CardContent className="p-4 flex items-start gap-3">
+                        <div className="w-10 h-10 bg-terracotta-100 rounded-full flex items-center justify-center shrink-0">
+                          <Shield className="h-5 w-5 text-terracotta-700" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm mb-1">Need an intake form?</h4>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {selectedServiceType === "workshop" || selectedServiceType === "course"
+                              ? "For group or ceremonial work, intake forms help you screen participants for safety and fit."
+                              : "For in-person services, intake forms let you collect relevant history before clients arrive."}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => router.push("/dashboard/practitioner/intake")}
+                            >
+                              Create intake form
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => router.push(`/dashboard/practitioner/services/${createdServiceId}`)}
+                            >
+                              Not now
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
 
                 {/* Level Up Cards */}
                 <motion.div
@@ -1282,10 +1426,10 @@ export function GuidedServiceWizard() {
               </motion.div>
             )}
 
-            {/* Delivery Details Phase (skipped for packages) */}
-            {currentPhaseKey === "delivery" && (
+            {/* Delivery / Pricing / Location Phases (unified card, section-gated) */}
+            {(currentPhaseKey === "delivery" || currentPhaseKey === "pricing-duration" || currentPhaseKey === "location") && (
               <motion.div
-                key="phase-delivery"
+                key={`phase-${currentPhaseKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -1293,47 +1437,82 @@ export function GuidedServiceWizard() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>How will you deliver it?</CardTitle>
+                    <CardTitle>
+                      {currentPhaseKey === "pricing-duration" && "Pricing & Duration"}
+                      {currentPhaseKey === "location" && "Where will it happen?"}
+                      {currentPhaseKey === "delivery" && "How will you deliver it?"}
+                    </CardTitle>
                     <CardDescription>
-                      Set up the practical details of your service
+                      {currentPhaseKey === "pricing-duration" && "Set the price, duration, and capacity for each session."}
+                      {currentPhaseKey === "location" && "Choose where attendees will meet you."}
+                      {currentPhaseKey === "delivery" && "Set up the practical details of your service"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {(currentPhaseKey === "delivery" || currentPhaseKey === "pricing-duration") && (
                     <div className="grid gap-6 md:grid-cols-2">
                       {/* Price - with $ prefix, matching settings page */}
                       <FormField
                         control={form.control}
                         name="price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <DollarSign className="h-4 w-4" />
-                              {needsConfigStep ? `${selectedServiceType === 'bundle' ? 'Bundle' : 'Package'} Price` : 'Price'}
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative max-w-xs">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                  $
-                                </span>
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  min="0"
-                                  placeholder="0"
-                                  className="pl-8"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormDescription>
-                              {needsConfigStep
-                                ? "Price was set in the previous step. You can adjust it here if needed."
-                                : "Set to 0 for free services"
-                              }
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const priceGuidance: Record<string, { placeholder: string; hint: string }> = {
+                            session: {
+                              placeholder: "e.g. 120",
+                              hint: "Most practitioners charge $80–$180 per session. Free is fine too — set to 0.",
+                            },
+                            workshop: {
+                              placeholder: "e.g. 75",
+                              hint: "Group workshops typically run $40–$150 per participant depending on length.",
+                            },
+                            course: {
+                              placeholder: "e.g. 350",
+                              hint: "Multi-session courses typically run $200–$800 total.",
+                            },
+                            bundle: {
+                              placeholder: "e.g. 500",
+                              hint: "Bundles are usually priced at a 10–20% discount vs. buying sessions individually.",
+                            },
+                            package: {
+                              placeholder: "e.g. 400",
+                              hint: "Packages combine multiple services — price to reflect the total value.",
+                            },
+                          }
+                          const guidance = priceGuidance[selectedServiceType] || {
+                            placeholder: "0",
+                            hint: "Set to 0 for free services",
+                          }
+                          return (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <DollarSign className="h-4 w-4" />
+                                {needsConfigStep ? `${selectedServiceType === 'bundle' ? 'Bundle' : 'Package'} Price` : 'Price'}
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative max-w-xs">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                    $
+                                  </span>
+                                  <Input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    placeholder={guidance.placeholder}
+                                    className="pl-8"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormDescription>
+                                {needsConfigStep
+                                  ? "Price was set in the previous step. You can adjust it here if needed."
+                                  : guidance.hint
+                                }
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )
+                        }}
                       />
 
                       {/* Duration - with preset buttons, matching settings page */}
@@ -1384,7 +1563,10 @@ export function GuidedServiceWizard() {
                         )}
                       />
                     </div>
+                    )}
 
+                    {(currentPhaseKey === "delivery" || currentPhaseKey === "location") && (
+                    <>
                     {/* Location Type */}
                     <FormField
                       control={form.control}
@@ -1449,6 +1631,114 @@ export function GuidedServiceWizard() {
                       )}
                     />
 
+                    {/* Practitioner Location picker — shown when In-Person selected */}
+                    {form.watch("location_type") === "in_person" && (
+                      <FormField
+                        control={form.control}
+                        name="practitioner_location"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3 pl-6 border-l-2">
+                            <FormLabel className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4" />
+                              Select Address
+                              <span className="text-destructive">*</span>
+                            </FormLabel>
+                            {locationsLoading ? (
+                              <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-sm text-muted-foreground">Loading locations...</span>
+                              </div>
+                            ) : practitionerLocations.length > 0 ? (
+                              <div className="space-y-3">
+                                <Select
+                                  value={field.value?.toString()}
+                                  onValueChange={(value) => field.onChange(parseInt(value))}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Choose a location" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {practitionerLocations.map((location: any) => {
+                                      const displayName =
+                                        location.name ||
+                                        `${location.address_line1}, ${location.city_name || ""}, ${location.state_code || ""}`
+                                      return (
+                                        <SelectItem key={location.id} value={location.id.toString()}>
+                                          <div className="flex flex-col">
+                                            <span className="font-medium">{displayName}</span>
+                                            {location.name && (
+                                              <span className="text-xs text-muted-foreground">
+                                                {location.address_line1}, {location.city_name}, {location.state_code}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </SelectItem>
+                                      )
+                                    })}
+                                  </SelectContent>
+                                </Select>
+
+                                {field.value && (() => {
+                                  const selected = practitionerLocations.find((l: any) => l.id === field.value)
+                                  if (!selected) return null
+                                  return (
+                                    <div className="p-3 border rounded-lg bg-muted/30">
+                                      <div className="flex items-start gap-2 text-sm">
+                                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                        <div>
+                                          <p className="font-medium">{selected.name || "Location"}</p>
+                                          <p className="text-muted-foreground">{selected.address_line1}</p>
+                                          {selected.address_line2 && (
+                                            <p className="text-muted-foreground">{selected.address_line2}</p>
+                                          )}
+                                          <p className="text-muted-foreground">
+                                            {selected.city_name}, {selected.state_code} {selected.postal_code}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })()}
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setShowCreateLocationDialog(true)}
+                                  className="w-full"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add New Location
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                                <p className="text-sm text-muted-foreground">
+                                  You haven't added any locations yet. Add your first location to offer in-person services.
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => setShowCreateLocationDialog(true)}
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Your First Location
+                                </Button>
+                              </div>
+                            )}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    </>
+                    )}
+
+                    {(currentPhaseKey === "delivery" || currentPhaseKey === "pricing-duration") && (
+                    <>
                     {/* Max Participants */}
                     <FormField
                       control={form.control}
@@ -1517,6 +1807,178 @@ export function GuidedServiceWizard() {
                         )}
                       />
                     )}
+                    </>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Sessions Phase — workshops & courses only */}
+            {currentPhaseKey === "sessions" && (
+              <motion.div
+                key="phase-sessions"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      When will it happen?
+                    </CardTitle>
+                    <CardDescription>
+                      Add at least one scheduled date and time. Clients can't book a {selectedServiceType} until it has a scheduled session.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {wizardSessions.length === 0 && (
+                      <div className="p-6 border-2 border-dashed rounded-lg text-center">
+                        <Calendar className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mb-3">
+                          No sessions added yet. Add your first session to make this {selectedServiceType} bookable.
+                        </p>
+                      </div>
+                    )}
+
+                    {wizardSessions.map((session, index) => (
+                      <Card key={session.id} className="border-muted">
+                        <CardContent className="pt-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary">Session {index + 1}</Badge>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setWizardSessions(wizardSessions.filter((s) => s.id !== session.id))
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`session-title-${session.id}`}>Title (optional)</Label>
+                            <Input
+                              id={`session-title-${session.id}`}
+                              placeholder={selectedServiceType === "course" ? `Week ${index + 1}` : "e.g. Morning session"}
+                              value={session.title}
+                              onChange={(e) => {
+                                setWizardSessions(
+                                  wizardSessions.map((s) =>
+                                    s.id === session.id ? { ...s, title: e.target.value } : s
+                                  )
+                                )
+                              }}
+                            />
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`session-start-${session.id}`}>Start</Label>
+                              <Input
+                                id={`session-start-${session.id}`}
+                                type="datetime-local"
+                                value={session.start_time}
+                                onChange={(e) => {
+                                  setWizardSessions(
+                                    wizardSessions.map((s) =>
+                                      s.id === session.id ? { ...s, start_time: e.target.value } : s
+                                    )
+                                  )
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`session-end-${session.id}`}>End</Label>
+                              <Input
+                                id={`session-end-${session.id}`}
+                                type="datetime-local"
+                                value={session.end_time}
+                                onChange={(e) => {
+                                  setWizardSessions(
+                                    wizardSessions.map((s) =>
+                                      s.id === session.id ? { ...s, end_time: e.target.value } : s
+                                    )
+                                  )
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {sessionsError && (
+                      <p className="text-sm text-destructive">{sessionsError}</p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const duration = form.getValues("duration_minutes") || 60
+                          const last = wizardSessions[wizardSessions.length - 1]
+                          const baseStart = last?.start_time
+                            ? new Date(new Date(last.start_time).getTime() + 7 * 24 * 60 * 60 * 1000)
+                            : (() => {
+                                const d = new Date()
+                                d.setDate(d.getDate() + 7)
+                                d.setHours(18, 0, 0, 0)
+                                return d
+                              })()
+                          const baseEnd = new Date(baseStart.getTime() + duration * 60 * 1000)
+                          const toLocalInput = (d: Date) => {
+                            const pad = (n: number) => String(n).padStart(2, "0")
+                            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                          }
+                          setWizardSessions([
+                            ...wizardSessions,
+                            {
+                              id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                              title: "",
+                              start_time: toLocalInput(baseStart),
+                              end_time: toLocalInput(baseEnd),
+                            },
+                          ])
+                          setSessionsError(null)
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Session
+                      </Button>
+
+                      {wizardSessions.length > 0 && selectedServiceType === "course" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            const last = wizardSessions[wizardSessions.length - 1]
+                            if (!last?.start_time || !last?.end_time) return
+                            const nextStart = new Date(new Date(last.start_time).getTime() + 7 * 24 * 60 * 60 * 1000)
+                            const nextEnd = new Date(new Date(last.end_time).getTime() + 7 * 24 * 60 * 60 * 1000)
+                            const toLocalInput = (d: Date) => {
+                              const pad = (n: number) => String(n).padStart(2, "0")
+                              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                            }
+                            setWizardSessions([
+                              ...wizardSessions,
+                              {
+                                id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                                title: `Week ${wizardSessions.length + 1}`,
+                                start_time: toLocalInput(nextStart),
+                                end_time: toLocalInput(nextEnd),
+                              },
+                            ])
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Duplicate + 1 Week
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1905,6 +2367,20 @@ export function GuidedServiceWizard() {
           }} />
         </DialogContent>
       </Dialog>
+
+      <CreateLocationDialog
+        open={showCreateLocationDialog}
+        onOpenChange={setShowCreateLocationDialog}
+        onLocationCreated={() => {
+          setShowCreateLocationDialog(false)
+          refetchLocations().then((res) => {
+            const newest = res.data?.results?.[0]
+            if (newest?.id) {
+              form.setValue("practitioner_location", newest.id, { shouldValidate: true })
+            }
+          })
+        }}
+      />
         </div>
       </>
     </TooltipProvider>

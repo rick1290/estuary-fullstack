@@ -1,61 +1,51 @@
 "use client"
 
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { MapPin, Video, Plus, Loader2, Globe } from "lucide-react"
 import { useServiceForm } from "@/hooks/use-service-form"
+import { practitionerLocationsListOptions } from "@/src/client/@tanstack/react-query.gen"
+import { CreateLocationDialog } from "@/components/dashboard/practitioner/service-edit/sections/create-location-dialog"
 
 export default function LocationStep() {
   const { formState, updateFormField } = useServiceForm()
-  const [locationType, setLocationType] = useState(formState.locationType || "online")
-  const [address, setAddress] = useState(formState.address || "")
-  const [city, setCity] = useState(formState.city || "")
-  const [state, setState] = useState(formState.state || "")
-  const [zipCode, setZipCode] = useState(formState.zipCode || "")
-  const [meetingLink, setMeetingLink] = useState(formState.meetingLink || "")
-  const [meetingPlatform, setMeetingPlatform] = useState(formState.meetingPlatform || "")
-  const [locationNotes, setLocationNotes] = useState(formState.locationNotes || "")
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+
+  const locationType = formState.location_type || "virtual"
+  const practitionerLocationId = formState.practitioner_location_id
+
+  const { data: locationsData, isLoading: locationsLoading, refetch } = useQuery({
+    ...practitionerLocationsListOptions(),
+    enabled: locationType === "in_person" || locationType === "hybrid",
+  })
+
+  const locations = locationsData?.results || []
 
   const handleLocationTypeChange = (value: string) => {
-    setLocationType(value)
-    updateFormField("locationType", value)
-  }
-
-  const updateAddressField = (field: string, value: string) => {
-    switch (field) {
-      case "address":
-        setAddress(value)
-        updateFormField("address", value)
-        break
-      case "city":
-        setCity(value)
-        updateFormField("city", value)
-        break
-      case "state":
-        setState(value)
-        updateFormField("state", value)
-        break
-      case "zipCode":
-        setZipCode(value)
-        updateFormField("zipCode", value)
-        break
-      case "meetingLink":
-        setMeetingLink(value)
-        updateFormField("meetingLink", value)
-        break
-      case "meetingPlatform":
-        setMeetingPlatform(value)
-        updateFormField("meetingPlatform", value)
-        break
-      case "locationNotes":
-        setLocationNotes(value)
-        updateFormField("locationNotes", value)
-        break
+    updateFormField("location_type", value)
+    if (value === "virtual") {
+      updateFormField("practitioner_location_id", undefined)
     }
   }
+
+  const handleLocationCreated = () => {
+    setShowCreateDialog(false)
+    refetch()
+  }
+
+  const needsPhysicalLocation = locationType === "in_person" || locationType === "hybrid"
 
   return (
     <div className="space-y-6">
@@ -64,116 +54,177 @@ export default function LocationStep() {
         <p className="text-muted-foreground">Specify where your service will take place.</p>
       </div>
 
-      <RadioGroup value={locationType} onValueChange={handleLocationTypeChange} className="space-y-4">
-        <div className="flex items-start space-x-2">
-          <RadioGroupItem value="online" id="online" />
-          <div className="grid gap-1.5">
-            <Label htmlFor="online" className="font-medium">
-              Online
-            </Label>
-            <p className="text-sm text-muted-foreground">Service will be delivered virtually via video conferencing.</p>
-          </div>
-        </div>
-
-        <div className="flex items-start space-x-2">
-          <RadioGroupItem value="in_person" id="in_person" />
-          <div className="grid gap-1.5">
-            <Label htmlFor="in_person" className="font-medium">
-              In Person
-            </Label>
-            <p className="text-sm text-muted-foreground">Service will be delivered at a physical location.</p>
-          </div>
-        </div>
-
-        <div className="flex items-start space-x-2">
-          <RadioGroupItem value="hybrid" id="hybrid" />
-          <div className="grid gap-1.5">
-            <Label htmlFor="hybrid" className="font-medium">
-              Hybrid
-            </Label>
-            <p className="text-sm text-muted-foreground">Service will be available both online and in person.</p>
-          </div>
-        </div>
-      </RadioGroup>
-
-      {(locationType === "online" || locationType === "hybrid") && (
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            <h3 className="font-medium">Online Details</h3>
-
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Meeting links will be automatically generated for each booking through our integrated video platform.
-              </p>
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium">How it works:</p>
-                <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                  <li>• Secure meeting rooms are created for each session</li>
-                  <li>• Links are sent automatically to participants</li>
-                  <li>• No need to manage your own video platform</li>
-                </ul>
+      <div className="space-y-3">
+        <Label>Service Location*</Label>
+        <RadioGroup value={locationType} onValueChange={handleLocationTypeChange}>
+          <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+            <RadioGroupItem value="virtual" id="virtual" />
+            <Label htmlFor="virtual" className="flex items-center gap-2 cursor-pointer flex-1">
+              <Video className="h-4 w-4" />
+              <div>
+                <div className="font-medium">Online</div>
+                <div className="text-sm text-muted-foreground">
+                  Service delivered via video call
+                </div>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="locationNotes">Additional Notes (optional)</Label>
-              <Textarea
-                id="locationNotes"
-                placeholder="Any special instructions for online sessions..."
-                value={locationNotes}
-                onChange={(e) => updateAddressField("locationNotes", e.target.value)}
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+            <RadioGroupItem value="in_person" id="in_person" />
+            <Label htmlFor="in_person" className="flex items-center gap-2 cursor-pointer flex-1">
+              <MapPin className="h-4 w-4" />
+              <div>
+                <div className="font-medium">In-Person</div>
+                <div className="text-sm text-muted-foreground">
+                  Service at your physical location
+                </div>
+              </div>
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+            <RadioGroupItem value="hybrid" id="hybrid" />
+            <Label htmlFor="hybrid" className="flex items-center gap-2 cursor-pointer flex-1">
+              <Globe className="h-4 w-4" />
+              <div>
+                <div className="font-medium">Hybrid</div>
+                <div className="text-sm text-muted-foreground">
+                  Available both online and in-person
+                </div>
+              </div>
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {needsPhysicalLocation && (
+        <div className="space-y-4 pl-6 border-l-2">
+          <h4 className="font-medium">Physical Location</h4>
+
+          <div className="space-y-3">
+            <Label htmlFor="address">Select Address*</Label>
+
+            {locationsLoading ? (
+              <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading locations...</span>
+              </div>
+            ) : locations.length > 0 ? (
+              <div className="space-y-3">
+                <Select
+                  value={practitionerLocationId?.toString()}
+                  onValueChange={(value) =>
+                    updateFormField("practitioner_location_id", parseInt(value))
+                  }
+                >
+                  <SelectTrigger id="address">
+                    <SelectValue placeholder="Choose a location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((location: any) => {
+                      const displayName =
+                        location.name ||
+                        `${location.address_line1}, ${location.city_name || ""}, ${location.state_code || ""}`
+                      return (
+                        <SelectItem key={location.id} value={location.id.toString()}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{displayName}</span>
+                            {location.name && (
+                              <span className="text-xs text-muted-foreground">
+                                {location.address_line1}, {location.city_name}, {location.state_code}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+
+                {practitionerLocationId && (
+                  <div className="p-3 border rounded-lg bg-muted/30">
+                    {(() => {
+                      const selectedLocation = locations.find(
+                        (l: any) => l.id === practitionerLocationId
+                      )
+                      if (!selectedLocation) return null
+                      return (
+                        <div className="text-sm space-y-1">
+                          <div className="flex items-start gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                              <p className="font-medium">
+                                {selectedLocation.name || "Location"}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {selectedLocation.address_line1}
+                              </p>
+                              {selectedLocation.address_line2 && (
+                                <p className="text-muted-foreground">
+                                  {selectedLocation.address_line2}
+                                </p>
+                              )}
+                              <p className="text-muted-foreground">
+                                {selectedLocation.city_name}, {selectedLocation.state_code}{" "}
+                                {selectedLocation.postal_code}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCreateDialog(true)}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Location
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    You haven't added any locations yet. Add your first location to offer
+                    in-person services.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => setShowCreateDialog(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Location
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
-      {(locationType === "in_person" || locationType === "hybrid") && (
+      {(locationType === "virtual" || locationType === "hybrid") && (
         <Card>
-          <CardContent className="p-4 space-y-4">
-            <h3 className="font-medium">Physical Location</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                placeholder="Street address"
-                value={address}
-                onChange={(e) => updateAddressField("address", e.target.value)}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  placeholder="City"
-                  value={city}
-                  onChange={(e) => updateAddressField("city", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  placeholder="State"
-                  value={state}
-                  onChange={(e) => updateAddressField("state", e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="zipCode">ZIP Code</Label>
-              <Input
-                id="zipCode"
-                placeholder="ZIP Code"
-                value={zipCode}
-                onChange={(e) => updateAddressField("zipCode", e.target.value)}
-              />
+          <CardContent className="p-4 space-y-3">
+            <h3 className="font-medium flex items-center gap-2">
+              <Video className="h-4 w-4" />
+              Online Details
+            </h3>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm font-medium">How it works:</p>
+              <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                <li>• Secure meeting rooms are created for each session</li>
+                <li>• Links are sent automatically to participants</li>
+                <li>• No need to manage your own video platform</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
@@ -183,12 +234,18 @@ export default function LocationStep() {
         <Label htmlFor="locationNotes">Additional Location Notes</Label>
         <Textarea
           id="locationNotes"
-          placeholder="Provide any additional details about the location, parking, access, etc."
+          placeholder="Parking, access instructions, meeting instructions, etc."
           rows={3}
-          value={locationNotes}
-          onChange={(e) => updateAddressField("locationNotes", e.target.value)}
+          value={formState.locationNotes || ""}
+          onChange={(e) => updateFormField("locationNotes", e.target.value)}
         />
       </div>
+
+      <CreateLocationDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onLocationCreated={handleLocationCreated}
+      />
     </div>
   )
 }

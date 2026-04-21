@@ -31,7 +31,7 @@ interface ServiceFormData extends Partial<ServiceCreateUpdateRequestWritable> {
   
   // Location & Delivery
   location_type: string
-  address_id?: number // NEW: Physical address for in-person services
+  practitioner_location_id?: number // FK to practitioner's saved location
   locationNotes?: string
   languages?: string[]
   
@@ -164,7 +164,7 @@ const initialFormData: ServiceFormData = {
   
   // Location & Delivery
   location_type: "virtual",
-  address_id: undefined,
+  practitioner_location_id: undefined,
   languages: [],
   
   // Status & Visibility
@@ -376,8 +376,8 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
 
       case "location":
         if (formState.location_type === "in_person" || formState.location_type === "hybrid") {
-          if (!formState.address) {
-            newErrors.address = "Address is required for in-person services"
+          if (!formState.practitioner_location_id) {
+            newErrors.practitioner_location_id = "Please select or add a location for in-person services"
             valid = false
           }
         }
@@ -409,7 +409,7 @@ export function ServiceFormProvider({ children, initialData = {}, serviceId }: S
       age_min: formState.age_min,
       age_max: formState.age_max,
       location_type: formState.location_type,
-      address: formState.address,
+      practitioner_location: formState.practitioner_location_id,
       what_youll_learn: formState.what_youll_learn || formState.learningGoals?.join('\n'),
       prerequisites: formState.prerequisites,
       includes: formState.includes,
