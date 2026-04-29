@@ -79,60 +79,86 @@ def create_room_for_confirmed_booking(sender, instance: Booking, created: bool, 
 def create_room_for_session(sender, instance: ServiceSession, created: bool, **kwargs):
     """
     Create a room when a service session is created for workshops and courses.
+
+    Room creation is deferred to on_commit so it can't run for ServiceSessions
+    whose enclosing transaction (booking creation) rolls back.
     """
     if created:
+        # Skip unscheduled (draft) sessions — packages and bundles seed N draft
+        # ServiceSessions with start_time=None at purchase time. They get a real
+        # time later when the user actually picks a slot, and the room should be
+        # created at that point — not now.
+        if not instance.start_time:
+            return
+
         # Check if session already has a room
         if hasattr(instance, 'livekit_room') and instance.livekit_room:
             return
-        
+
         # Check if service is virtual/online
         if not _requires_video_room(instance.service):
             return
-        
-        try:
-            # Determine room type: service type takes precedence over session_type
-            # This ensures courses/workshops always get the right room type
-            room_type = 'group'  # Default
-            if instance.service.is_course:
-                room_type = 'group'  # Courses are interactive group classes
-            elif instance.service.service_type and instance.service.service_type.code == 'workshop':
-                room_type = 'group'  # Workshops are collaborative
-            elif instance.service.service_type and instance.service.service_type.code == 'session':
-                # Only standalone sessions (not course/workshop) get individual rooms
-                room_type = 'individual'
-            
-            # Get or create appropriate template
-            template = _get_room_template_for_service(instance.service, room_type)
-            
-            # Create room
-            room = Room.objects.create(
-                service_session=instance,
-                room_type=room_type,
-                template=template,
-                created_by=instance.service.primary_practitioner.user if instance.service.primary_practitioner else None,
-                name=f"{instance.service.name} - Session {instance.sequence_number or 1}",
-                scheduled_start=instance.start_time,
-                scheduled_end=instance.end_time,
-                max_participants=instance.max_participants or 100,
-                recording_enabled=_should_enable_recording(instance.service),
-                sip_enabled=_should_enable_sip(instance.service),
-                metadata={
-                    'service_session_id': str(instance.id),
-                    'service_id': str(instance.service.id),
-                    'practitioner_id': str(instance.service.primary_practitioner.id) if instance.service.primary_practitioner else None,
-                    'service_name': instance.service.name,
-                    'session_number': instance.sequence_number or 1,
-                }
-            )
-            
-            logger.info(f"Created room {room.name} for session {instance.id}")
-            
-            # Enable SIP if configured
-            if room.sip_enabled and hasattr(room, 'dial_in_number'):
-                enable_sip_for_room(room)
-            
-        except Exception as e:
-            logger.error(f"Failed to create room for session {instance.id}: {e}")
+
+        from django.db import transaction
+        transaction.on_commit(lambda: _create_room_for_session_impl(instance))
+        return  # All work happens on_commit; nothing else to do synchronously
+
+
+def _create_room_for_session_impl(instance):
+    """Actual room creation work, deferred to transaction commit."""
+    # Re-check post-commit since other writers may have raced
+    instance.refresh_from_db()
+    if hasattr(instance, 'livekit_room') and instance.livekit_room:
+        return
+    if not instance.start_time:
+        # Defensive: don't create rooms for sessions that ended up unscheduled
+        # by the time the transaction committed.
+        return
+
+    try:
+        # Determine room type: service type takes precedence over session_type
+        # This ensures courses/workshops always get the right room type
+        room_type = 'group'  # Default
+        if instance.service.is_course:
+            room_type = 'group'  # Courses are interactive group classes
+        elif instance.service.service_type and instance.service.service_type.code == 'workshop':
+            room_type = 'group'  # Workshops are collaborative
+        elif instance.service.service_type and instance.service.service_type.code == 'session':
+            # Only standalone sessions (not course/workshop) get individual rooms
+            room_type = 'individual'
+
+        # Get or create appropriate template
+        template = _get_room_template_for_service(instance.service, room_type)
+
+        # Create room
+        room = Room.objects.create(
+            service_session=instance,
+            room_type=room_type,
+            template=template,
+            created_by=instance.service.primary_practitioner.user if instance.service.primary_practitioner else None,
+            name=f"{instance.service.name} - Session {instance.sequence_number or 1}",
+            scheduled_start=instance.start_time,
+            scheduled_end=instance.end_time,
+            max_participants=instance.max_participants or 100,
+            recording_enabled=_should_enable_recording(instance.service),
+            sip_enabled=_should_enable_sip(instance.service),
+            metadata={
+                'service_session_id': str(instance.id),
+                'service_id': str(instance.service.id),
+                'practitioner_id': str(instance.service.primary_practitioner.id) if instance.service.primary_practitioner else None,
+                'service_name': instance.service.name,
+                'session_number': instance.sequence_number or 1,
+            }
+        )
+
+        logger.info(f"Created room {room.name} for session {instance.id}")
+
+        # Enable SIP if configured
+        if room.sip_enabled and hasattr(room, 'dial_in_number'):
+            enable_sip_for_room(room)
+
+    except Exception as e:
+        logger.error(f"Failed to create room for session {instance.id}: {e}")
 
 
 # ========== Booking Updates ==========
@@ -190,17 +216,23 @@ def room_pre_save(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Room)
 def room_post_save(sender, instance, created, **kwargs):
-    """Handle room post-save events."""
+    """Handle room post-save events.
+
+    Network-side-effect work (LiveKit calls) is deferred to on_commit so that
+    if the outer transaction rolls back (e.g. booking creation fails after the
+    Room was created in-memory) we don't leave orphaned rooms in LiveKit cloud.
+    """
+    from django.db import transaction
+
     if created:
-        # Create room in LiveKit
-        create_livekit_room(instance)
-    
+        transaction.on_commit(lambda: create_livekit_room(instance))
+
     # Handle status transitions
     if getattr(instance, '_status_changed_to_active', False):
-        handle_room_started(instance)
-    
+        transaction.on_commit(lambda: handle_room_started(instance))
+
     if getattr(instance, '_status_changed_to_ended', False):
-        handle_room_ended(instance)
+        transaction.on_commit(lambda: handle_room_ended(instance))
 
 
 def create_livekit_room(room):
@@ -263,7 +295,15 @@ def handle_room_started(room):
         now = timezone.now()
         start_time = session.start_time
 
-        if start_time:
+        if not start_time:
+            # Unscheduled draft session (e.g. bundle/package child that hasn't
+            # been booked into a slot yet). Do not change session status here —
+            # it must remain 'draft' until the user actually picks a time.
+            logger.info(
+                f"Room {room.id} started but session {session.id} is unscheduled "
+                f"(start_time=None, status={session.status}) — leaving as-is"
+            )
+        else:
             from datetime import timedelta
             join_window_start = start_time - timedelta(minutes=15)
             if now >= join_window_start:
@@ -276,11 +316,6 @@ def handle_room_started(room):
                     f"Room {room.id} started but session {session.id} starts at {start_time} "
                     f"(too early, keeping status={session.status})"
                 )
-        else:
-            # No start time — allow marking in_progress
-            session.actual_start_time = now
-            session.status = 'in_progress'
-            session.save(update_fields=['actual_start_time', 'status'])
 
     # Send notifications to participants
     send_room_started_notifications(room)
@@ -292,26 +327,78 @@ def handle_room_ended(room):
     """
     Handle actions when a room ends.
 
-    Note: Session lifecycle (in_progress, completed) is tracked on ServiceSession,
-    not on Booking. Booking status remains 'confirmed' throughout the session.
+    Drives both ServiceSession and Booking transitions to `completed` (and
+    finalizes earnings) when the LiveKit room finishes — provided at least one
+    participant actually joined. If no one joined, this is a no-show: leave
+    statuses alone and let the no-show flow handle it separately.
     """
     # Calculate duration
     if room.actual_start and room.actual_end:
         room.total_duration_seconds = int((room.actual_end - room.actual_start).total_seconds())
         room.save(update_fields=['total_duration_seconds'])
 
-    # Update service session if applicable
-    if room.service_session:
-        # Update ServiceSession with actual end time and status
-        room.service_session.actual_end_time = timezone.now()
-        room.service_session.status = 'completed'
-        room.service_session.save(update_fields=['actual_end_time', 'status'])
-
-    # End all active participant sessions
+    # End all active participant sessions first so the no-show check below
+    # reflects accurate join history.
     active_participants = room.participants.filter(left_at__isnull=True)
     for participant in active_participants:
         participant.left_at = timezone.now()
         participant.save(update_fields=['left_at'])
+
+    # Skip unscheduled draft sessions — they should remain 'draft' until the user
+    # actually books a slot, regardless of any phantom room lifecycle events.
+    if not (room.service_session and room.service_session.start_time):
+        if room.service_session:
+            logger.info(
+                f"Room {room.id} ended but session {room.service_session.id} is unscheduled "
+                f"(start_time=None) — leaving status as {room.service_session.status}"
+            )
+        # Stop recording if active and bail
+        if room.recording_status in ['active', 'starting']:
+            stop_room_recording(room)
+        logger.info(f"Room {room.id} ended")
+        return
+
+    session = room.service_session
+
+    # No-show guard: only auto-complete if someone actually joined the room.
+    # Empty-timeout-driven endings (LiveKit closes after 5 min of nobody joining)
+    # should NOT mark sessions completed and start the earnings clock.
+    had_participants = room.participants.exists()
+
+    if not had_participants:
+        logger.info(
+            f"Room {room.id} ended with zero participants — treating as no-show, "
+            f"leaving session {session.id} status={session.status}"
+        )
+        # Stop recording if somehow active
+        if room.recording_status in ['active', 'starting']:
+            stop_room_recording(room)
+        return
+
+    # Real completion: update ServiceSession + drive each Booking through
+    # mark_booking_completed (handles status, earnings, package progress, review request).
+    session.actual_end_time = timezone.now()
+    session.status = 'completed'
+    session.save(update_fields=['actual_end_time', 'status'])
+
+    try:
+        from bookings.services import BookingService
+        booking_service = BookingService()
+        confirmed_bookings = list(session.bookings.filter(status='confirmed'))
+        for booking in confirmed_bookings:
+            try:
+                booking_service.mark_booking_completed(booking)
+            except Exception as e:
+                logger.error(
+                    f"Room {room.id} ended: failed to mark booking {booking.id} completed: {e}",
+                    exc_info=True,
+                )
+        logger.info(
+            f"Room {room.id} ended: completed {len(confirmed_bookings)} booking(s) "
+            f"for session {session.id}"
+        )
+    except Exception as e:
+        logger.error(f"Room {room.id} ended: BookingService completion path failed: {e}", exc_info=True)
 
     # Stop recording if active
     if room.recording_status in ['active', 'starting']:

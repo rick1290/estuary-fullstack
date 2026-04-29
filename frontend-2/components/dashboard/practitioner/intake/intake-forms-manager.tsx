@@ -173,6 +173,7 @@ export default function IntakeFormsManager() {
 
   // Create dialog step: "pick-type" | "details"
   const [createStep, setCreateStep] = useState<"pick-type" | "details">("pick-type")
+  const [titleError, setTitleError] = useState<string | null>(null)
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -222,11 +223,15 @@ export default function IntakeFormsManager() {
       const res = await intakeTemplatesCreate({ body: body as any })
       return res.data
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["intake-templates"] })
       setCreateDialogOpen(false)
       resetCreateForm()
       toast.success("Template created")
+      // Drop the user straight into the editor for the new template
+      if (data?.id) {
+        setSelectedTemplateId(data.id)
+      }
     },
     onError: (err: Error) => toast.error(err.message || "Couldn't create template"),
   })
@@ -334,6 +339,7 @@ export default function IntakeFormsManager() {
     setNewType("intake")
     setNewDescription("")
     setCreateStep("pick-type")
+    setTitleError(null)
   }
 
   function resetQuestionForm() {
@@ -658,12 +664,14 @@ export default function IntakeFormsManager() {
                                   size="icon"
                                   className="h-9 w-9 sm:h-7 sm:w-7 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-olive-500 hover:text-destructive"
                                   title="Delete question"
-                                  onClick={() =>
-                                    deleteQuestionMutation.mutate({
-                                      templateId: selectedTemplate.id,
-                                      questionId: q.id,
-                                    })
-                                  }
+                                  onClick={() => {
+                                    if (confirm(`Delete the question "${q.label}"? This cannot be undone.`)) {
+                                      deleteQuestionMutation.mutate({
+                                        templateId: selectedTemplate.id,
+                                        questionId: q.id,
+                                      })
+                                    }
+                                  }}
                                 >
                                   <X className="h-3.5 w-3.5" />
                                 </Button>
@@ -679,6 +687,30 @@ export default function IntakeFormsManager() {
                                       className="h-9 text-sm"
                                     />
                                   </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-xs">Type</Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {QUESTION_TYPE_OPTIONS.map((opt) => {
+                                        const Icon = opt.icon
+                                        const isActive = qType === opt.value
+                                        return (
+                                          <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setQType(opt.value)}
+                                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all border ${
+                                              isActive
+                                                ? "bg-sage-100 border-sage-400 text-sage-800"
+                                                : "bg-white border-olive-200 text-olive-600 hover:border-olive-300"
+                                            }`}
+                                          >
+                                            <Icon className="h-3 w-3" />
+                                            {opt.label}
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-2">
                                       <Label className="text-xs">Help Text</Label>
@@ -686,7 +718,7 @@ export default function IntakeFormsManager() {
                                         value={qHelpText}
                                         onChange={(e) => setQHelpText(e.target.value)}
                                         className="h-9 text-sm"
-                                        placeholder="Optional"
+                                        placeholder="Additional context for the client"
                                       />
                                     </div>
                                     <div className="flex items-end gap-3 pb-0.5">
@@ -700,7 +732,7 @@ export default function IntakeFormsManager() {
                                       </div>
                                     </div>
                                   </div>
-                                  {isChoiceType(q.question_type) && (
+                                  {isChoiceType(qType) && (
                                     <div className="space-y-2">
                                       <Label className="text-xs">Options (comma-separated)</Label>
                                       <Input
@@ -716,7 +748,6 @@ export default function IntakeFormsManager() {
                                       className="text-xs h-8"
                                       disabled={!qLabel.trim() || addQuestionMutation.isPending}
                                       onClick={() => {
-                                        // Delete old question and re-add with updated data
                                         deleteQuestionMutation.mutate(
                                           { templateId: selectedTemplate.id, questionId: q.id },
                                           {
@@ -724,10 +755,10 @@ export default function IntakeFormsManager() {
                                               addQuestionMutation.mutate({
                                                 templateId: selectedTemplate.id,
                                                 label: qLabel.trim(),
-                                                question_type: q.question_type,
+                                                question_type: qType,
                                                 help_text: qHelpText.trim(),
                                                 required: qRequired,
-                                                options: isChoiceType(q.question_type)
+                                                options: isChoiceType(qType)
                                                   ? qOptions.split(",").map((s) => s.trim()).filter(Boolean)
                                                   : [],
                                               })
@@ -1068,10 +1099,10 @@ export default function IntakeFormsManager() {
                 </Badge>
                 <button
                   type="button"
-                  className="text-xs text-olive-500 hover:text-olive-700 underline ml-auto"
+                  className="ml-auto inline-flex items-center gap-1 rounded-md border border-olive-200 px-2 py-1 text-xs font-medium text-olive-700 hover:bg-olive-50 hover:border-olive-300"
                   onClick={() => setCreateStep("pick-type")}
                 >
-                  Change
+                  Change type
                 </button>
               </div>
 
@@ -1080,13 +1111,20 @@ export default function IntakeFormsManager() {
                 <Input
                   id="tpl-title"
                   value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
+                  onChange={(e) => {
+                    setNewTitle(e.target.value)
+                    if (titleError) setTitleError(null)
+                  }}
+                  className={titleError ? "border-destructive focus-visible:ring-destructive" : ""}
                   placeholder={
                     newType === "intake"
                       ? "e.g. New Client Intake Form"
                       : "e.g. Session Consent Agreement"
                   }
                 />
+                {titleError && (
+                  <p className="text-xs text-destructive">{titleError}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -1114,14 +1152,18 @@ export default function IntakeFormsManager() {
                 Cancel
               </Button>
               <Button
-                disabled={!newTitle.trim() || createMutation.isPending}
-                onClick={() =>
+                disabled={createMutation.isPending}
+                onClick={() => {
+                  if (!newTitle.trim()) {
+                    setTitleError("Please give your template a title.")
+                    return
+                  }
                   createMutation.mutate({
                     title: newTitle.trim(),
                     form_type: newType,
                     description: newDescription.trim(),
                   })
-                }
+                }}
               >
                 {createMutation.isPending ? "Creating..." : "Create"}
               </Button>
@@ -1158,13 +1200,25 @@ export default function IntakeFormsManager() {
               ))}
             </div>
           ) : !platformTemplates || platformTemplates.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-10">
               <div className="rounded-2xl bg-olive-100/60 p-3 inline-block mb-3">
                 <Library className="h-6 w-6 text-olive-500" />
               </div>
-              <p className="text-sm text-olive-500">
-                No platform templates available yet.
+              <p className="text-sm text-olive-700 mb-1">No platform templates yet</p>
+              <p className="text-xs text-olive-500 max-w-sm mx-auto mb-4">
+                We&apos;re curating a starter library. In the meantime, build your own — it only takes a minute.
               </p>
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => {
+                  setPlatformBrowserOpen(false)
+                  setCreateDialogOpen(true)
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Build your own from scratch
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
@@ -1338,8 +1392,8 @@ export default function IntakeFormsManager() {
                     {/* Attach Button */}
                     <Button
                       size="sm"
-                      variant="ghost"
-                      className="shrink-0 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-sage-50 hover:bg-sage-100 text-sage-700"
+                      variant="outline"
+                      className="shrink-0 rounded-lg bg-sage-50 hover:bg-sage-100 text-sage-700 border-sage-200"
                       disabled={attachMutation.isPending}
                       onClick={(e) => {
                         e.stopPropagation()

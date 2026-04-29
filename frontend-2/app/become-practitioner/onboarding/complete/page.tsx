@@ -150,33 +150,42 @@ export default function OnboardingCompletePage() {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <Card className="border-sage-200 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/dashboard/practitioner?tab=services')}>
+            <Card className="border-sage-200 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push('/dashboard/practitioner/services/new')}>
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Plus className="h-6 w-6 text-sage-700" />
                 </div>
                 <h3 className="font-medium text-olive-900 mb-2">Create Services</h3>
-                <p className="text-sm text-olive-600">Add sessions, workshops, or courses to offer</p>
+                <p className="text-sm text-olive-600 mb-3">Add sessions, workshops, or courses to offer</p>
+                <span className="text-sm font-medium text-sage-700 inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                  Get Started <ArrowRight className="h-4 w-4" />
+                </span>
               </CardContent>
             </Card>
 
-            <Card className="border-sage-200 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/dashboard/practitioner?tab=schedule')}>
+            <Card className="border-sage-200 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push('/dashboard/practitioner/availability')}>
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-terracotta-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Calendar className="h-6 w-6 text-terracotta-700" />
                 </div>
                 <h3 className="font-medium text-olive-900 mb-2">Set Your Schedule</h3>
-                <p className="text-sm text-olive-600">Configure weekly availability and time slots</p>
+                <p className="text-sm text-olive-600 mb-3">Configure weekly availability and time slots</p>
+                <span className="text-sm font-medium text-terracotta-700 inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                  Set Availability <ArrowRight className="h-4 w-4" />
+                </span>
               </CardContent>
             </Card>
 
-            <Card className="border-sage-200 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/dashboard/practitioner?tab=profile')}>
+            <Card className="border-sage-200 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push('/dashboard/practitioner?tab=profile')}>
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-blush-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Settings className="h-6 w-6 text-blush-700" />
                 </div>
                 <h3 className="font-medium text-olive-900 mb-2">Enhance Profile</h3>
-                <p className="text-sm text-olive-600">Add credentials, photos, videos, and more</p>
+                <p className="text-sm text-olive-600 mb-3">Add credentials, photos, videos, and more</p>
+                <span className="text-sm font-medium text-blush-700 inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                  Edit Profile <ArrowRight className="h-4 w-4" />
+                </span>
               </CardContent>
             </Card>
           </div>

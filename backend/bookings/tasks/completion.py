@@ -1,10 +1,21 @@
+"""
+Booking completion task.
+
+Periodic safety net that marks confirmed bookings as completed once their
+end_time has passed. The primary completion driver is the LiveKit
+`room_finished` webhook (see `rooms.signals.handle_room_ended`); this task
+catches in-person bookings (no room) and any virtual sessions where the
+webhook didn't fire (LiveKit outage, network blip, etc.).
+
+Runs every 30 minutes via Celery Beat (`mark-bookings-complete`).
+"""
 from celery import shared_task
 from django.utils import timezone
 from django.db.models import Q, Max
 from datetime import timedelta
 import logging
 
-from .models import Booking
+from bookings.models import Booking
 from payments.models import EarningsTransaction
 
 logger = logging.getLogger(__name__)

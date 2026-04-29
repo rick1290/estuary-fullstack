@@ -33,13 +33,13 @@ const ONBOARDING_STEPS: Step[] = [
     number: 4,
     title: "Credentials",
     description: "Add certifications & education",
-    estimatedTime: "Skip ok"
+    estimatedTime: "Optional"
   },
   {
     number: 5,
     title: "Questions",
     description: "Common client questions",
-    estimatedTime: "Skip ok"
+    estimatedTime: "Optional"
   },
   {
     number: 6,
@@ -56,7 +56,12 @@ interface ProgressStepperProps {
 
 export default function ProgressStepper({ currentStep, completedSteps }: ProgressStepperProps) {
   const totalSteps = ONBOARDING_STEPS.length
-  const progressPercentage = ((completedSteps.length) / totalSteps) * 100
+  // Count in-progress step as half-credit so the final step reads ~92% rather than 83%.
+  const inProgressBoost = currentStep > completedSteps.length ? 0.5 : 0
+  const progressPercentage = Math.min(
+    100,
+    ((completedSteps.length + inProgressBoost) / totalSteps) * 100
+  )
 
   return (
     <div className="w-full">

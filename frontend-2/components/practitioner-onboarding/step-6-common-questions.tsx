@@ -63,19 +63,27 @@ export default function Step6CommonQuestions({
       return
     }
 
+    const finalQuestions = [...questions]
+    if (currentQuestion.trim() && currentAnswer.trim()) {
+      finalQuestions.push({
+        title: currentQuestion,
+        answer: currentAnswer,
+        order: finalQuestions.length,
+      })
+    }
+
     setIsSubmitting(true)
     setError(null)
 
     try {
-      // Submit questions
-      for (const question of questions) {
+      for (const question of finalQuestions) {
         await createQuestionMutation.mutateAsync({
           path: { id: practitionerId },
           body: question
         })
       }
 
-      onComplete({ questions })
+      onComplete({ questions: finalQuestions })
     } catch (error: any) {
       console.error('Error saving questions:', error)
       setError('Failed to save questions. Please try again.')
@@ -109,15 +117,8 @@ export default function Step6CommonQuestions({
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">FAQ - Common Questions (Optional)</CardTitle>
         <CardDescription className="text-olive-600">
-          Add questions and answers that clients often ask to help them feel more prepared
+          Add questions and answers clients often ask. You can skip this and add them later from your dashboard.
         </CardDescription>
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
-        >
-          Skip →
-        </button>
       </CardHeader>
 
       <CardContent>
@@ -222,13 +223,6 @@ export default function Step6CommonQuestions({
             </Alert>
           )}
 
-          {/* Skip Info */}
-          <div className="p-4 bg-terracotta-50 rounded-lg border border-terracotta-200">
-            <p className="text-sm text-olive-700 text-center">
-              <span className="font-medium">Not ready to add FAQs?</span> You can skip this step and add them later from your dashboard profile.
-            </p>
-          </div>
-
         </form>
       </CardContent>
     </Card>
@@ -260,7 +254,7 @@ export default function Step6CommonQuestions({
           <Button
             type="submit"
             form="step-5-form"
-            disabled={isSubmitting || questions.length === 0}
+            disabled={isSubmitting}
             className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
           >
             {isSubmitting ? (

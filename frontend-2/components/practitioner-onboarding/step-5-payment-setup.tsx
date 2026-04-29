@@ -196,7 +196,7 @@ export default function Step5PaymentSetup({
             disabled={isLoading}
             className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
           >
-            Complete Setup
+            Finish Without Payment
           </Button>
         </div>
       </div>

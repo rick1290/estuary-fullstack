@@ -237,7 +237,11 @@ export default function Step2Specializations({
                 <Users className="h-4 w-4 text-sage-600" />
                 Teaching/Coaching Styles
               </label>
-              <span className="text-sm text-olive-500">Optional</span>
+              <span className="text-sm text-olive-500">
+                {(formData.style_ids?.length || 0) === 0
+                  ? "Optional · select all that apply"
+                  : `${formData.style_ids?.length} selected`}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -276,7 +280,11 @@ export default function Step2Specializations({
                 <Lightbulb className="h-4 w-4 text-sage-600" />
                 Topics
               </label>
-              <span className="text-sm text-olive-500">Optional</span>
+              <span className="text-sm text-olive-500">
+                {(formData.topic_ids?.length || 0) === 0
+                  ? "Optional · select all that apply"
+                  : `${formData.topic_ids?.length} selected`}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -320,7 +328,7 @@ export default function Step2Specializations({
               </span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               {modalityCategories.map((cat) => {
                 const catModalities = modalitiesByCategory[(cat as any).slug ?? ""] || []
                 if (catModalities.length === 0) return null
@@ -329,11 +337,17 @@ export default function Step2Specializations({
                 ).length
                 const isOpen = openCategories.has(cat.name || "")
                 return (
-                  <div key={cat.id} className="border-b border-sage-100 last:border-b-0">
+                  <div
+                    key={cat.id}
+                    className={cn(
+                      "rounded-lg border overflow-hidden transition-colors",
+                      isOpen ? "border-sage-200 bg-white" : "border-sage-100 bg-sage-50/40 hover:bg-sage-50"
+                    )}
+                  >
                     <button
                       type="button"
                       onClick={() => toggleCategory(cat.name || "")}
-                      className="w-full flex items-center justify-between py-2.5 text-sm font-medium text-olive-800 hover:text-olive-900"
+                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-olive-800 hover:text-olive-900"
                     >
                       <span className="flex items-center gap-2">
                         <div
@@ -352,7 +366,7 @@ export default function Step2Specializations({
                       </div>
                     </button>
                     {isOpen && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-3 pb-3 pt-1 border-t border-sage-100">
                         {catModalities.map((modality) => {
                           const isSelected = formData.modality_ids?.includes(modality.id.toString()) || false
                           return (
