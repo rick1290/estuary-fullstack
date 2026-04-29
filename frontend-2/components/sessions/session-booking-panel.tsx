@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe, ArrowRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, Video, Globe, ArrowRight, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAuthModal } from "@/components/auth/auth-provider"
 import { bookingsCheckAvailabilityCreate, bookingsAvailableDatesCreate } from "@/src/client"
@@ -256,6 +256,7 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
   const displayedTimeSlots = showAllTimes ? timeSlots : timeSlots.slice(0, 6)
 
   const practitioner = session.primary_practitioner
+  const [imageFailed, setImageFailed] = useState(false)
   const imageUrl = session.image_url
   const practitionerName = practitioner?.display_name || practitioner?.name
   const practitionerImage = practitioner?.profile_image_url
@@ -304,14 +305,26 @@ export default function SessionBookingPanel({ session, compact = false }: Sessio
         {!compact && (
           <div className="relative">
             <div className="aspect-[4/3] w-full">
-              {imageUrl ? (
+              {imageUrl && !imageFailed ? (
                 <img
                   src={imageUrl}
                   alt={session.name || 'Session'}
                   className="w-full h-full object-cover"
+                  onError={() => setImageFailed(true)}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50" />
+                <div className="relative w-full h-full bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50 flex items-center justify-center">
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, #9CAF88 0, transparent 40%), radial-gradient(circle at 80% 70%, #E07A5F 0, transparent 40%)" }} />
+                  <div className="relative flex flex-col items-center gap-2 text-center px-6">
+                    <div className="w-12 h-12 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                      <Sparkles className="h-6 w-6 text-sage-700" />
+                    </div>
+                    <p className="text-sm font-medium text-olive-800 line-clamp-2">{session.name || 'Wellness Session'}</p>
+                    {practitionerName && (
+                      <p className="text-xs text-olive-600">with {practitionerName}</p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 

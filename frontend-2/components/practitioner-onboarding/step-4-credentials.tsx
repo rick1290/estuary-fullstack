@@ -87,27 +87,35 @@ export default function Step4Credentials({
       return
     }
 
+    // Auto-include any in-progress entry the user typed but didn't click "Add"
+    const finalCerts = [...certifications]
+    if (currentCert.certificate.trim() && currentCert.institution.trim()) {
+      finalCerts.push(currentCert)
+    }
+    const finalEdus = [...educations]
+    if (currentEdu.degree.trim() && currentEdu.educational_institute.trim()) {
+      finalEdus.push(currentEdu)
+    }
+
     setIsSubmitting(true)
     setError(null)
 
     try {
-      // Submit certifications
-      for (const cert of certifications) {
+      for (const cert of finalCerts) {
         await createCertificationMutation.mutateAsync({
           path: { id: practitionerId },
           body: cert
         })
       }
 
-      // Submit educations
-      for (const edu of educations) {
+      for (const edu of finalEdus) {
         await createEducationMutation.mutateAsync({
           path: { id: practitionerId },
           body: edu
         })
       }
 
-      onComplete({ certifications, educations })
+      onComplete({ certifications: finalCerts, educations: finalEdus })
     } catch (error: any) {
       console.error('Error saving credentials:', error)
       setError('Failed to save credentials. Please try again.')
@@ -125,15 +133,8 @@ export default function Step4Credentials({
       <CardHeader>
         <CardTitle className="text-2xl text-olive-900">Credentials & Education (Optional)</CardTitle>
         <CardDescription className="text-olive-600">
-          Build trust by adding your professional credentials and education
+          Build trust by adding your professional credentials and education. You can skip this and add them later from your dashboard.
         </CardDescription>
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="text-sm text-sage-600 hover:text-sage-700 hover:underline mt-2"
-        >
-          Skip →
-        </button>
       </CardHeader>
 
       <CardContent>
@@ -292,13 +293,6 @@ export default function Step4Credentials({
             </Alert>
           )}
 
-          {/* Skip Info */}
-          <div className="p-4 bg-terracotta-50 rounded-lg border border-terracotta-200">
-            <p className="text-sm text-olive-700 text-center">
-              <span className="font-medium">Not ready to add credentials?</span> You can skip this step and add them later from your dashboard.
-            </p>
-          </div>
-
         </form>
       </CardContent>
     </Card>
@@ -330,7 +324,7 @@ export default function Step4Credentials({
           <Button
             type="submit"
             form="step-4-form"
-            disabled={isSubmitting || (certifications.length === 0 && educations.length === 0)}
+            disabled={isSubmitting}
             className="px-8 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800"
           >
             {isSubmitting ? (

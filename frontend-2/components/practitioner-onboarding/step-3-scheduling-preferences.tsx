@@ -123,7 +123,8 @@ export default function Step3SchedulingPreferences({
           {/* Note */}
           <div className="p-4 bg-sage-50 rounded-lg border border-sage-200">
             <p className="text-sm text-olive-700">
-              <span className="font-medium">Coming soon:</span> You'll be able to set your weekly availability schedule from your dashboard.
+              <span className="font-medium">Up next:</span> Once you finish setup, head to{" "}
+              <span className="font-medium">Dashboard → Availability</span> to set your weekly hours and bookable time slots.
             </p>
           </div>
 

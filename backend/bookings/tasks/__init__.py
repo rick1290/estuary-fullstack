@@ -1,12 +1,7 @@
 """
-Bookings tasks module.
-Import existing tasks to maintain backwards compatibility.
+Bookings tasks package.
 """
-
-# Import existing tasks from tasks.py
-from ..tasks import *
-
-# Import booking reminder tasks
+from .completion import mark_completed_bookings
 from .reminders import *
 from .reschedule import *
 from .rooms import *

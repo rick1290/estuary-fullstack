@@ -79,6 +79,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import CompactCategoryManager from "../categories/compact-category-manager"
 import { BundleConfigStep } from "./steps/bundle-config-step"
 import { WizardPackageBuilder, type PackageServiceItem } from "./steps/wizard-package-builder"
@@ -874,6 +875,47 @@ export function GuidedServiceWizard() {
                   </p>
                 </motion.div>
 
+                {/* Availability nudge — every published service needs bookable slots */}
+                {publishChoice === "publish" && selectedServiceType !== "bundle" && selectedServiceType !== "package" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="mb-6"
+                  >
+                    <Card className="border-sage-300 bg-sage-50/60">
+                      <CardContent className="p-4 flex items-start gap-3">
+                        <div className="w-10 h-10 bg-sage-100 rounded-full flex items-center justify-center shrink-0">
+                          <Calendar className="h-5 w-5 text-sage-700" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm mb-1">Set up availability so clients can book</h4>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Until you add available time slots, your service will show "No availability in the next 30 days" and clients won't be able to book it.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => router.push("/dashboard/practitioner/availability")}
+                            >
+                              <Calendar className="mr-2 h-4 w-4" />
+                              Set up availability
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => router.push(`/dashboard/practitioner/services/${createdServiceId}`)}
+                            >
+                              Later
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+
                 {/* Intake form prompt — workshops, courses, or in-person services */}
                 {(selectedServiceType === "workshop" ||
                   selectedServiceType === "course" ||
@@ -1054,10 +1096,6 @@ export function GuidedServiceWizard() {
                               onValueChange={(value) => {
                                 field.onChange(value)
                                 setSelectedServiceType(value)
-                                // Auto-advance to next phase after selection
-                                setTimeout(() => {
-                                  setCurrentPhase(2)
-                                }, 300)
                               }}
                               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                             >
@@ -1070,7 +1108,7 @@ export function GuidedServiceWizard() {
                                     className={cn(
                                       "relative flex flex-col p-4 cursor-pointer rounded-lg border-2 transition-all",
                                       field.value === type.code
-                                        ? "border-primary bg-primary/5"
+                                        ? "border-primary bg-primary/10 ring-2 ring-primary/30 shadow-sm"
                                         : "border-border hover:border-primary/50"
                                     )}
                                   >
@@ -1079,6 +1117,9 @@ export function GuidedServiceWizard() {
                                       value={type.code}
                                       className="sr-only"
                                     />
+                                    {field.value === type.code && (
+                                      <CheckCircle2 className="absolute top-2 right-2 h-5 w-5 text-primary" />
+                                    )}
                                     <div className="flex items-start gap-3">
                                       <div className={cn("p-2 rounded-lg", type.color)}>
                                         <Icon className="h-5 w-5" />
@@ -1199,15 +1240,14 @@ export function GuidedServiceWizard() {
                         className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
                       >
                         <Sparkles className="h-4 w-4 text-primary" />
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={useTemplate}
-                            onChange={(e) => setUseTemplate(e.target.checked)}
-                            className="rounded"
-                          />
+                        <Checkbox
+                          id="use-template"
+                          checked={useTemplate}
+                          onCheckedChange={(v) => setUseTemplate(v === true)}
+                        />
+                        <Label htmlFor="use-template" className="text-sm font-normal cursor-pointer">
                           Use our recommended template for {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name}s
-                        </label>
+                        </Label>
                       </motion.div>
                     )}
 
@@ -2197,57 +2237,75 @@ export function GuidedServiceWizard() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Review Summary Card */}
-                    <div className="border rounded-lg overflow-hidden">
-                      {(pendingImagePreview || pendingAiImageUrl) && (
+                    <div className="border rounded-lg overflow-hidden bg-white">
+                      {(pendingImagePreview || pendingAiImageUrl) ? (
                         <img
                           src={pendingImagePreview || pendingAiImageUrl || ""}
                           alt="Cover"
-                          className="w-full h-40 object-cover"
+                          className="w-full h-48 object-cover"
                         />
+                      ) : (
+                        <div className="relative w-full h-32 bg-gradient-to-br from-cream-100 via-sage-50 to-terracotta-50 flex items-center justify-center">
+                          <div className="flex items-center gap-2 text-olive-500 text-xs">
+                            <ImageIcon className="h-4 w-4" />
+                            No cover image — a default placeholder will be shown
+                          </div>
+                        </div>
                       )}
                       <div className="p-5 space-y-4">
                         {/* Type + Name */}
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 flex-wrap">
                           <Badge variant="secondary" className="mt-0.5">
                             {SERVICE_TYPES.find(t => t.code === selectedServiceType)?.name || 'Service'}
                           </Badge>
-                          <h3 className="text-lg font-semibold">{form.watch("name") || "Untitled Service"}</h3>
+                          <h3 className="text-lg font-semibold flex-1">{form.watch("name") || "Untitled Service"}</h3>
                         </div>
 
                         {/* Short Description */}
-                        <p className="text-sm text-muted-foreground">
-                          {(form.watch("shortDescription") || "").length > 120
-                            ? form.watch("shortDescription").substring(0, 120) + "..."
-                            : form.watch("shortDescription") || "No description"}
+                        <p className="text-sm text-muted-foreground italic">
+                          {form.watch("shortDescription") || "No description"}
                         </p>
 
-                        {/* Price, Duration, Location */}
-                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                        {/* Price, Duration, Location, Participants */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
                           {isPackage && packageSessions.length > 0 ? (
                             <>
-                              <span className="font-medium text-primary">${packageFinalPrice.toFixed(2)}</span>
-                              <span className="text-muted-foreground">|</span>
+                              <span className="font-medium text-primary text-base">${packageFinalPrice.toFixed(2)}</span>
+                              <span className="text-muted-foreground">·</span>
                               <span>{packageSessions.length} sessions</span>
-                              <span className="text-muted-foreground">|</span>
+                              <span className="text-muted-foreground">·</span>
                               <span>{packageSessions.reduce((sum, s) => sum + (s.service?.duration_minutes || 0), 0)} min total</span>
                             </>
                           ) : (
                             <>
-                              <span className="font-medium">${form.watch("price") || "0"}</span>
-                              <span className="text-muted-foreground">|</span>
+                              <span className="font-medium text-primary text-base">${form.watch("price") || "0"}</span>
+                              <span className="text-muted-foreground">·</span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
                                 {form.watch("duration_minutes") || 60} min
                               </span>
-                              <span className="text-muted-foreground">|</span>
+                              <span className="text-muted-foreground">·</span>
                               <span className="flex items-center gap-1">
                                 {form.watch("location_type") === "virtual" ? (
                                   <Video className="h-3.5 w-3.5" />
                                 ) : (
                                   <MapPin className="h-3.5 w-3.5" />
                                 )}
-                                {form.watch("location_type") === "virtual" ? "Virtual" : "In-Person"}
+                                {form.watch("location_type") === "virtual" ? "Virtual" : (() => {
+                                  const locId = form.watch("practitioner_location")
+                                  const loc = practitionerLocations.find((l: any) => l.id === locId)
+                                  return loc?.name || loc?.city || "In-person"
+                                })()}
                               </span>
+                              {(form.watch("max_participants") || 1) > 1 && (
+                                <>
+                                  <span className="text-muted-foreground">·</span>
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3.5 w-3.5" />
+                                    Up to {form.watch("max_participants")}
+                                  </span>
+                                </>
+                              )}
                             </>
                           )}
                         </div>
@@ -2267,8 +2325,60 @@ export function GuidedServiceWizard() {
                             )}
                           </div>
                         )}
+
+                        {/* Full description excerpt */}
+                        {form.watch("description") && (
+                          <div className="pt-3 border-t border-sage-100">
+                            <p className="text-xs font-medium uppercase tracking-wider text-olive-500 mb-2">About this service</p>
+                            <p className="text-sm text-olive-700 line-clamp-4 whitespace-pre-wrap">
+                              {form.watch("description")}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Sessions list for workshops/courses */}
+                        {isWorkshopOrCourse && wizardSessions.length > 0 && (
+                          <div className="pt-3 border-t border-sage-100">
+                            <p className="text-xs font-medium uppercase tracking-wider text-olive-500 mb-2">
+                              {wizardSessions.length} scheduled session{wizardSessions.length !== 1 ? "s" : ""}
+                            </p>
+                            <ul className="space-y-1 text-sm text-olive-700">
+                              {wizardSessions.slice(0, 3).map((s, i) => (
+                                <li key={s.id} className="flex items-center gap-2">
+                                  <Calendar className="h-3.5 w-3.5 text-olive-400" />
+                                  <span>{s.title || `Session ${i + 1}`}</span>
+                                  <span className="text-olive-500 text-xs">
+                                    {new Date(s.start_time).toLocaleDateString()}
+                                  </span>
+                                </li>
+                              ))}
+                              {wizardSessions.length > 3 && (
+                                <li className="text-xs text-olive-500 italic">
+                                  +{wizardSessions.length - 3} more
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* Availability heads-up */}
+                    {selectedServiceType !== "bundle" && selectedServiceType !== "package" && (
+                      <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
+                        <Calendar className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                        <div className="text-sm text-amber-900">
+                          <p className="font-medium mb-0.5">Heads up — clients can't book until you set availability.</p>
+                          <p className="text-amber-800">
+                            After publishing, head to{" "}
+                            <Link href="/dashboard/practitioner/availability" className="underline font-medium">
+                              Availability
+                            </Link>{" "}
+                            to add bookable time slots.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     <p className="text-center text-sm text-muted-foreground">
                       Published services are immediately visible to clients. Drafts can be completed later.

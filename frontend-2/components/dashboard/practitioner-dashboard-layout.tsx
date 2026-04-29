@@ -60,6 +60,7 @@ interface MenuItem {
   icon: React.ReactNode
   path: string
   comingSoon?: boolean
+  hint?: string
   submenu?: {
     text: string
     icon: React.ReactNode
@@ -100,7 +101,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
   const menuItems: MenuItem[] = [
     { text: "Dashboard", icon: <BarChart className="h-4 w-4" />, path: "/dashboard/practitioner" },
     { text: "Services", icon: <Spa className="h-4 w-4" />, path: "/dashboard/practitioner/services" },
-    { text: "Streams", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/streams" },
+    { text: "Streams", icon: <MessageSquare className="h-4 w-4" />, path: "/dashboard/practitioner/streams", hint: "Articles, video, audio" },
     { text: "Availability", icon: <Clock className="h-4 w-4" />, path: "/dashboard/practitioner/availability" },
     { text: "Schedule", icon: <Calendar className="h-4 w-4" />, path: "/dashboard/practitioner/schedule" },
     { text: "Client Bookings", icon: <CalendarCheck className="h-4 w-4" />, path: "/dashboard/practitioner/bookings" },
@@ -219,13 +220,19 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
       <Link
         key={item.text}
         href={item.path}
+        title={item.hint}
         className={cn(
           "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
           isActive && "bg-sage-100 text-sage-700",
         )}
       >
         {item.icon}
-        {item.text}
+        <span className="flex flex-col leading-tight">
+          <span>{item.text}</span>
+          {item.hint && (
+            <span className="text-[11px] font-normal text-olive-500">{item.hint}</span>
+          )}
+        </span>
       </Link>
     )
   }
@@ -288,7 +295,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               <Badge variant="secondary" className="ml-auto bg-terracotta-100 text-terracotta-700 text-xs">New</Badge>
             </Link>
             <Link
-              href="/dashboard/practitioner/settings"
+              href="/dashboard/practitioner/settings?tab=payment"
+              title={showStripeWarning ? "Payment setup needs your attention" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                 showStripeWarning && "text-amber-700"
@@ -302,7 +310,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
               </div>
               Settings
               {showStripeWarning && (
-                <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+                <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" aria-label="Payment setup incomplete" />
               )}
             </Link>
 
@@ -428,7 +436,8 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                     <Badge variant="secondary" className="ml-auto bg-terracotta-100 text-terracotta-700 text-xs">New</Badge>
                   </Link>
                   <Link
-                    href="/dashboard/practitioner/settings"
+                    href="/dashboard/practitioner/settings?tab=payment"
+                    title={showStripeWarning ? "Payment setup needs your attention" : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                       showStripeWarning && "text-amber-700"
@@ -442,7 +451,7 @@ export default function PractitionerDashboardLayout({ children }: PractitionerDa
                     </div>
                     Settings
                     {showStripeWarning && (
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-500 ml-auto" aria-label="Payment setup incomplete" />
                     )}
                   </Link>
 
